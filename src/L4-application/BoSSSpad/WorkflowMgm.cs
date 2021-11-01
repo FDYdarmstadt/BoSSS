@@ -480,9 +480,9 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                     foreach (var s in this.Sessions) {
-                        Console.Write("Session " + s.ID + " ... ");
+                        //Console.Write("Session " + s.ID + " ... ");
                         grids.AddRange(s.GetGrids());
-                        Console.WriteLine(" done.");
+                        //Console.WriteLine(" done.");
                     }
 
                     m_Grids = grids.ToArray();
