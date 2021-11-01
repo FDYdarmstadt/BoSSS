@@ -43,13 +43,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// compute a suitable timestep for various combinations of grid resolutions and level-set degrees
         /// </summary>
-        /// <returns></returns>
         double ComputeTimestep(int gridResolution, int lsDegree, int AMRlevel);
 
         /// <summary>
         /// 
         /// </summary>
-        /// <returns></returns>
         double getEndTime();
 
     }
@@ -91,7 +89,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-
         public static void LevelSetAdvectionTest2D(
 
             [Values(2, 3, 4)] int LSdegree,
@@ -126,9 +123,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         }
 
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
-        /// </summary>
+        ///// <summary>
+        ///// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        ///// </summary>
         //[Test]
         //public static void LevelSetAdvectionTest3D(
         //    [Values(2, 3, 4)] int LSdegree,
@@ -147,9 +144,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         //}
 
 
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
-        /// </summary>
+        ///// <summary>
+        ///// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        ///// </summary>
         //[Test]
         //public static void LevelSetAdvectionOnWallTest2D(
         //    [Values(Math.PI/4, Math.PI/3, Math.PI/6)] double contactAngle,
@@ -166,9 +163,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         //}
 
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
-        /// </summary>
+        ///// <summary>
+        ///// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
+        ///// </summary>
         //[Test]
         //public static void LevelSetAdvectionOnWallTest3D(
         //    [Values(Math.PI / 4, Math.PI / 3, Math.PI / 6)] double contactAngle,
@@ -185,9 +182,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
         //}
 
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetScalingTest"/>
-        /// </summary>
+        ///// <summary>
+        ///// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetScalingTest"/>
+        ///// </summary>
         //[Test]
         //public static void LevelSetScalingTest(
         //    [Values(2)] int spatialDimension,
@@ -206,9 +203,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         //}
 
 
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetRotationTest"/>
-        /// </summary>
+        ///// <summary>
+        ///// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetRotationTest"/>
+        ///// </summary>
         //[Test]
         //public static void LevelSetRotationTest(
         //    [Values(2)] int spatialDimension,
