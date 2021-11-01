@@ -598,16 +598,7 @@ namespace BoSSS.Application.XNSEC {
             C.savetodb = true;
             //dbPath = @"\\hpccluster\hpccluster-scratch\gutierrez\NatConvStudyTEST";
             C.DbPath = dbPath;// "D:\\bosss_db_NatConvection";
-            C.NumberOfHomotopyArraySubdivisions = numOfSteps;
-          
-
-            if(numOfSteps == 1) {
-                C.useHomotopie = false;
-            } else if(numOfSteps > 1) {
-                C.useHomotopie = true;
-            } else {
-                throw new NotImplementedException("ups");
-            }
+           
 
             C.ID = "70b79f17-1347-405d-b7b9-c584c648d9f0";
             //C.ProjectName = "NaturalConvectionSquareCavity";

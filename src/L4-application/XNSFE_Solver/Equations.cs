@@ -178,7 +178,7 @@ namespace BoSSS.Application.XNSFE_Solver {
         public override string CodomainName => codomainName;
     }
 
-    class InterfaceNSE_Evaporation_Newton : InterfaceNSE_Evaporation {
+   public class InterfaceNSE_Evaporation_Newton : InterfaceNSE_Evaporation {
 
         public InterfaceNSE_Evaporation_Newton(string phaseA,
             string phaseB,
@@ -205,7 +205,7 @@ namespace BoSSS.Application.XNSFE_Solver {
 
     
 
-    class InterfaceContinuity_Evaporation : SurfaceEquation {
+    public class InterfaceContinuity_Evaporation : SurfaceEquation {
 
         string codomainName;
         string phaseA, phaseB;
@@ -241,7 +241,7 @@ namespace BoSSS.Application.XNSFE_Solver {
     /// <summary>
     /// same as <see cref="InterfaceContinuity_Evaporation"/> but using Newton solver compatible components
     /// </summary>
-    class InterfaceContinuity_Evaporation_Newton : InterfaceContinuity_Evaporation {
+    public class InterfaceContinuity_Evaporation_Newton : InterfaceContinuity_Evaporation {
 
         public InterfaceContinuity_Evaporation_Newton(string phaseA,
             string phaseB,
