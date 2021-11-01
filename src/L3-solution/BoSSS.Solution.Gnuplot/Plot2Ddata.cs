@@ -460,6 +460,37 @@ namespace BoSSS.Solution.Gnuplot {
         /// </summary>
         public double? bmargin = null;
 
+        /// <summary>
+        /// Modify Format, so all lines look distinct
+        /// </summary>
+        public void ModFormat() {
+            (DashTypes dash, PointTypes point, LineColors color) RawFormat = ((DashTypes)1, (PointTypes)1, (LineColors)7);
+            var dashesCount = Enum.GetNames(typeof(DashTypes)).Length;
+            var pointsCount = Enum.GetNames(typeof(PointTypes)).Length;
+            var colorsCount = Enum.GetNames(typeof(LineColors)).Length;
+            foreach (var g in dataGroups) {
+                var name = g.Name;
+
+                // modify format
+                ModDashType(name, RawFormat.dash);
+                ModPointType(name, RawFormat.point);
+                ModLineColor(name, RawFormat.color);
+
+                // cylcle formats
+                RawFormat.point++;
+                if((int)RawFormat.point > pointsCount) {
+                    RawFormat.point = (PointTypes)1;
+                    RawFormat.dash++;
+                    if ((int)RawFormat.dash > dashesCount) {
+                        RawFormat.dash = (DashTypes)1;
+                        RawFormat.color--;
+                        if ((int)RawFormat.color < 1) {
+                            RawFormat.color = (LineColors)colorsCount;
+                        }
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Modification the dash type (<see cref="PlotFormat.DashType"/>).
