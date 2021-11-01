@@ -177,9 +177,6 @@ namespace BoSSS.Application.XNSEC {
                 quadOrder *= 2;
                 quadOrder += 1;
             }
-            Console.WriteLine("///////////////////////////////////////");
-            Console.WriteLine("// Using a quadrature order equal to:  " + quadOrder);
-            Console.WriteLine("///////////////////////////////////////");
             return quadOrder;
         }
 
