@@ -53,7 +53,7 @@ namespace ilPSP {
         /// Start-indices of sub-blocks.
         /// </summary>
         /// <param name="blockType">
-        /// The block type index, e.g. the return value of <see cref="GetBlockType(int)"/>.
+        /// The block type index, e.g. the return value of <see cref="GetBlockType"/>.
         /// </param>
         /// <returns>
         /// Start-indices of sub-blocks, for the respective block type.
@@ -69,8 +69,8 @@ namespace ilPSP {
         /// Block index.
         /// </param>
         /// <returns>
-        /// The block type, 
-        /// an index into <see cref="BlockLen"/>, <see cref="Subblk_i0"/>, <see cref="SubblkLen"/>.
+        /// The block type, which can e.g. be used as an argument for 
+        /// an index into <see cref="GetSubblkLen"/> and <see cref="GetSubblk_i0(int)"/>.
         /// </returns>
         int GetBlockType(long iBlock);
 

@@ -976,8 +976,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 bool zeroR = false;
                 if ((Math.Abs(rNodes.First()) == 0.0)) {
-                    throw new NotImplementedException();
                     zeroR = true;
+                    throw new NotImplementedException();
                 }
                 bool fullcirclePhi = false;
                 if ((Math.Abs(phiNodes.First() - phiNodes.Last()) == 1)) {
@@ -986,12 +986,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 bool quartercircleThetaMinus = false;
                 if ((Math.Abs(thetaNodes.First()) == 0.5)) {
                     throw new NotImplementedException();
-                    quartercircleThetaMinus = true;
+                    //quartercircleThetaMinus = true;
                 }
                 bool quartercircleThetaPlus = false;
                 if ((Math.Abs(thetaNodes.Last()) == 0.5)) {
                     throw new NotImplementedException();
-                    quartercircleThetaPlus = true;
+                    //quartercircleThetaPlus = true;
                 }
 
                 int NoOfrNodes = rNodes.Length;

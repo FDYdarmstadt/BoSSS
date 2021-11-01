@@ -494,7 +494,8 @@ namespace MiniBatchProcessor {
             // infinity loop
             // =============
 
-            int AvailableProcs = Math.Min(Environment.ProcessorCount, config.MaxProcessors);
+            //int AvailableProcs = Math.Max(1, Math.Min(Environment.ProcessorCount, config.MaxProcessors));
+            int AvailableProcs = Math.Max(1, config.MaxProcessors);
             bool ExclusiveUse = false;
 
             var Running = new List<Tuple<Thread, ProcessThread>>();

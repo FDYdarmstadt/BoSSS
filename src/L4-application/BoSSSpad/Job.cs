@@ -337,7 +337,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
             } else {
-                Console.Error.WriteLine($"Warning: no database is set for the job to submit; nothing ma be saved.");
+                Console.Error.WriteLine($"Warning: no database is set for the job to submit; nothing may be saved.");
             }
 
             // finally, serialize the object
@@ -522,15 +522,19 @@ namespace BoSSS.Application.BoSSSpad {
             public string BatchProcessorIdentifierToken {
                 get {
                     if(m_BatchProcessorIdentifierToken.IsNullOrEmpty()) {
-                        string DD = this.DeploymentDirectory.FullName;
-                        if(DD != null && Directory.Exists(DD))
-                        try {
-                            var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
-                            m_BatchProcessorIdentifierToken = l.Trim();
+                        string DD = this.DeploymentDirectory?.FullName;
+                        if (DD != null && Directory.Exists(DD)) {
+                            try
+                            {
+                                var l = File.ReadAllText(Path.Combine(DD, "IdentifierToken.txt"));
+                                m_BatchProcessorIdentifierToken = l.Trim();
 
-                        } catch(Exception) {
-                            // job was probably deployed, but never submitted
-                            // ignore this.
+                            }
+                            catch (Exception)
+                            {
+                                // job was probably deployed, but never submitted
+                                // ignore this.
+                            }
                         }
                     }
 
@@ -563,6 +567,65 @@ namespace BoSSS.Application.BoSSSpad {
             int? ExitCodeCache = null;
 
 
+            bool ReadExitCache(out JobStatus status, out int? ExitCode) {
+                ExitCode = null;
+                status = JobStatus.Unknown;
+
+                if (this.DeploymentDirectory == null)
+                    return false;
+
+                string path = Path.Combine(this.DeploymentDirectory.FullName, "JobStatus_ExitCode.txt");
+                if(!File.Exists(path))
+                    return false;
+
+                try {
+                    using(var str = new StreamReader(path)) {
+                        string l1 = str.ReadLine();
+                        status = Enum.Parse<JobStatus>(l1);
+                        string l2 = str.ReadLine();
+                        if(!l2.IsEmptyOrWhite()) {
+                            ExitCode = int.Parse(l2);
+                        }
+                    }
+
+                } catch (Exception) {
+                    return false;
+                }
+                return true;
+            }
+
+            /// <summary>
+            /// If job deployment is finished (<see cref="JobStatus.FinishedSuccessful"/> or <see cref="JobStatus.FailedOrCanceled"/>),
+            /// the <paramref name="status"/> and <paramref name="ExitCode"/> are stored in a file within the deployment directory.
+            /// 
+            /// This has two advantages:
+            /// - less load for the job manager
+            /// - most job managers forget jobs after a couple of days, so we better rememeber.
+            /// </summary>
+            void RememberCache(JobStatus status, int? ExitCode) {
+
+
+                
+
+                string path = Path.Combine(this.DeploymentDirectory.FullName, "JobStatus_ExitCode.txt");
+                
+
+                try {
+                    using(var str = new StreamWriter(path)) {
+                        str.WriteLine(status.ToString());
+                        if(ExitCode != null)
+                            str.WriteLine(ExitCode.Value);
+                        str.Flush();
+                    }
+
+                } catch (Exception) {
+                   
+                }
+
+            }
+
+
+
             /// <summary>
             /// Status of the deployment
             /// </summary>
@@ -574,25 +637,43 @@ namespace BoSSS.Application.BoSSSpad {
                     if(m_owner.AssignedBatchProc == null)
                         return JobStatus.PreActivation;
 
-                    var s = m_owner.AssignedBatchProc.EvaluateStatus(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory.FullName);
-                    string ExitCodeStr = s.ExitCode.HasValue ? s.ExitCode.Value.ToString() : "null";
-                    this.ExitCodeCache = s.ExitCode;
+                    JobStatus bpc_status;
+                    int? ExitCode;
+                    bool alreadyKnow = true;
+                    string ExitCodeStr = null;
+                    try {
 
-                    if(s.Item1 == JobStatus.FinishedSuccessful) {
-                        StatusCache = s.Item1;
-                        if(s.ExitCode == null || s.ExitCode != 0)
+                        alreadyKnow = ReadExitCache(out bpc_status, out ExitCode);
+
+                        if(!alreadyKnow)
+                            (bpc_status, ExitCode) = m_owner.AssignedBatchProc.EvaluateStatus(this.BatchProcessorIdentifierToken, this.optInfo, this.DeploymentDirectory?.FullName);
+                        ExitCodeStr = ExitCode.HasValue ? ExitCode.Value.ToString() : "null";
+                        this.ExitCodeCache = ExitCode;
+                    } catch(Exception e) {
+                        Console.Error.WriteLine($"{e.GetType().Name} during job status evaluation: {e.Message}");
+                        bpc_status = JobStatus.Unknown;
+                        ExitCode = null;
+                    }
+
+
+                    if(bpc_status == JobStatus.FinishedSuccessful) {
+                        StatusCache = bpc_status;
+                        if(ExitCode == null || ExitCode != 0)
                             throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FinishedSuccessful}, but exit code is {ExitCodeStr} -- expecting 0.");
+                        if(!alreadyKnow)
+                            RememberCache(bpc_status, ExitCode);
                     }
                         
-                    if(s.Item1 == JobStatus.FailedOrCanceled) {
-                        StatusCache = s.Item1;
-                        if(s.ExitCode == null || s.ExitCode == 0)
+                    if(bpc_status == JobStatus.FailedOrCanceled) {
+                        StatusCache = bpc_status;
+                        if(ExitCode == null || ExitCode == 0)
                             this.ExitCodeCache = -655321;
                         //    throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FailedOrCanceled}, but exit code is {ExitCodeStr} -- expecting any number except 0.");
-
+                        if(!alreadyKnow)
+                            RememberCache(bpc_status, ExitCode);
                     }
 
-                    return s.Item1;
+                    return bpc_status;
                 }
             }
 
@@ -679,6 +760,12 @@ namespace BoSSS.Application.BoSSSpad {
                     return new DirectoryInfo[0];
 
                 bool DirMatch(DirectoryInfo dir1, DirectoryInfo dir2) {
+                    if (dir1 == null && dir2 == null)
+                        return true;
+                    if (dir1 == null) // dir2 must be not null
+                        return false;
+                    if (dir2 == null) // dir1 must be not null
+                        return false;
                     string _dir1 = dir1.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                     string _dir2 = dir2.FullName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
                     return _dir1.Equals(_dir2);
@@ -1052,15 +1139,33 @@ namespace BoSSS.Application.BoSSSpad {
                 return;
             }
 
+            string EscapeKack(string p) {
+                if (p.Contains(' ')) {
+                    // i hate escaping
+                    if (System.IO.Path.DirectorySeparatorChar == '\\') {
+                        // probably windows --> use quotes
+                        p = "\"" + p + "\"";
+                    } else {
+                        // Linux etc.
+                        p = p.Replace(" ", "\\ ");
+                    }
+
+                }
+                return p;
+            }
+
             string StderrFile = AssignedBatchProc.GetStderrFile(ld.BatchProcessorIdentifierToken, ld.DeploymentDirectory.FullName);
             string StdoutFile = AssignedBatchProc.GetStdoutFile(ld.BatchProcessorIdentifierToken, ld.DeploymentDirectory.FullName);
 
             if (StdoutFile != null && StderrFile != null) {
                 ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = typeof(btail.TailMain).Assembly.Location;
+                psi.UseShellExecute = true;
+                psi.WindowStyle = ProcessWindowStyle.Normal;
+                psi.FileName = "dotnet";
+                psi.Arguments = EscapeKack(typeof(btail.TailMain).Assembly.Location);
                 btail.TailMain.SetArgs(psi, StdoutFile, StderrFile);
 
-                Console.WriteLine("Starting console...");
+                Console.WriteLine($"Starting external console ...");
                 Console.WriteLine("(You may close the new window at any time, the job will continue.)");
 
                 Process p = Process.Start(psi);
@@ -1161,7 +1266,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc != null)
                     throw new NotSupportedException("Job can only be activated once.");
                 AssignedBatchProc = bpc;
-
+                //Debugger.Launch();
                 if(DeleteOldDeploymentsAndSessions || UndocumentedSuperHack)
                     this.DeleteOldDeploymentsAndSessions();
 
@@ -1196,7 +1301,7 @@ namespace BoSSS.Application.BoSSSpad {
                     var rr = bpc.Submit(this, DeploymentDirectory);
                     File.WriteAllText(Path.Combine(DeploymentDirectory, "IdentifierToken.txt"), rr.id);
 
-                    Deployment dep = AllDeployments.SingleOrDefault(d => d.BatchProcessorIdentifierToken.Equals(rr.id));
+                    Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
                     if(dep == null)
                         m_Deployments.Add(new Deployment(new DirectoryInfo(DeploymentDirectory), this, rr.optJobObj));
                     else

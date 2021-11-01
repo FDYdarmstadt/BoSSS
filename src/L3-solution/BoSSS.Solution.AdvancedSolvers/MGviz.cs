@@ -9,6 +9,34 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
+
+    public static class MGopExtensions {
+
+        /// <summary>
+        /// Converts a solution vector from some multigrid level into DG fields-
+        /// </summary>
+        public static DGField[] ProlongateSolToDg<T>(this MultigridOperator op, T V, string baseName)
+            where T : IList<double> //
+        {
+            var viz = new MGViz(op);
+            return viz.ProlongateSolToDg(V.ToArray(), baseName);
+        }
+
+        /// <summary>
+        /// Converts a RHS/residual vector from some multigrid level into DG fields-
+        /// </summary>
+        public static DGField[] ProlongateRhsToDg<T>(this MultigridOperator op, T V, string baseName) 
+            where T : IList<double> //
+        {
+            var viz = new MGViz(op);
+            return viz.ProlongateRhsToDg(V.ToArray(), baseName);
+        }
+
+
+    }
+
+
+
     /// <summary>
     /// Utility class for visualization of intermediate results.
     /// </summary>
@@ -32,7 +60,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return -1;
         }
 
-        public DGField[] ProlongateToDg(double[] V, string name) {
+        public DGField[] ProlongateSolToDg(double[] V, string name) {
+            return ProlongateToDg(V, name, false);
+        }
+
+        public DGField[] ProlongateRhsToDg(double[] V, string name) {
+            return ProlongateToDg(V, name, true);
+        }
+
+        public DGField[] ProlongateToDg(double[] V, string name, bool OnRes = false) {
             double[] Curr = ProlongateToTop(V);
 
             var gdat = m_op.BaseGridProblemMapping.GridDat;
@@ -46,7 +82,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     dgCurrentSol[i] = new SinglePhaseField(basis, name + i);
             }
             CoordinateVector cv = new CoordinateVector(dgCurrentSol);
-            m_op.FinestLevel.TransformSolFrom(cv, Curr);
+            if(OnRes )
+                m_op.FinestLevel.TransformSolFrom(cv, Curr);
+            else 
+                m_op.FinestLevel.TransformSolFrom(cv, Curr);
             return dgCurrentSol;
         }
 

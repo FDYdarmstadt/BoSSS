@@ -72,6 +72,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\internal\src\private-mag\XDGShock\XDGShock.csproj" />
     <ProjectReference Include="..\..\..\..\internal\src\private-mag\XDGShock_MPITests\XDGShock_MPITests.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj" />
@@ -111,6 +112,7 @@
     <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
     <ProjectReference Include="..\XNSFE_Solver\XNSFE_Solver.csproj" />
+    <ProjectReference Include="..\ZLS\ZLS.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <PreBuildEvent>git describe --long &gt; "$(ProjectDir)\version.txt"

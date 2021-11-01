@@ -638,7 +638,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         // ++++++++++++++++++++++++
 
 
-                        using(new BlockTrace("XDG-Evaluate", ft, true)) {
+                        using(new BlockTrace("XDG-Evaluate", ft, false)) {
                             this.XdgOperator.InvokeParameterUpdate(time, __CurrentState, this.Parameters.ToArray());
 
                             var eval = XdgOperator.GetEvaluatorEx(this.LsTrk, __CurrentState, this.Parameters, Mapping, LsTrkHistoryIndex);
@@ -765,7 +765,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns a collection of local and global condition numbers in order to assess the operators stability
         /// </summary>
         public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null) {
-            return TimesteppingBase.OperatorAnalysis(VarGroups);
+            return TimesteppingBase.OperatorAnalysis(VarGroups, false);
         }
 
         public XdgBDFTimestepping m_BDF_Timestepper;
@@ -821,11 +821,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                     success = m_RK_Timestepper.Solve(phystime, dt);
                 }
             }
-
+ 
             double[] AvailTimesAfter;
             if(TimesteppingBase.Config_LevelSetHandling != LevelSetHandling.None) {
-                AvailTimesAfter = LsTrk.RegionsHistory.AvailabelIndices.Select((int iHist) => LsTrk.RegionsHistory[iHist].Time).ToArray();
-                Assert.IsTrue((AvailTimesAfter[0] - (phystime + dt)).Abs() < dt * 1e-7, "Error in Level-Set tracker time");
+                AvailTimesAfter = LsTrk.RegionsHistory.AvailableIndices.Select((int iHist) => LsTrk.RegionsHistory[iHist].Time).ToArray();
+                if(!AvailTimesAfter[0].ApproxEqual(phystime + dt))
+                    throw new ApplicationException($"Internal algorithm inconsistency: Error in Level-Set tracker time; expecting time {phystime + dt}, but most recent tracker time is {AvailTimesAfter[0]}");
             }
              
             if(!ilPSP.DoubleExtensions.ApproxEqual(this.LsTrk.Regions.Time, phystime + dt))

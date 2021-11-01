@@ -70,50 +70,13 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            /*
-             * should not be required anymore?
-             * Delete
-    
-            bool Evap = false;
-            // not sure if this works always, idea is to determine on startup which solver should be run.
-            // default is XNSE<XNSE_Control>
-            try {
-                // peek at control file and select correct solver depending on controlfile type
-                // parse arguments
-                args = ArgsFromEnvironmentVars(args);
-                CommandLineOptions opt = new CommandLineOptions();
-                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-                bool argsParseSuccess;
-                argsParseSuccess = parser.ParseArguments(args, opt);
-
-                if(!argsParseSuccess) {
-                    System.Environment.Exit(-1);
-                }
-
-                if(opt.ControlfilePath != null) {
-                    opt.ControlfilePath = opt.ControlfilePath.Trim();
-                }
-
-                XNSE_Control ctrlV2 = null;
-                XNSE_Control[] ctrlV2_ParameterStudy = null;
-
-                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
-                Evap = ctrlV2 is XNSFE_Control | ctrlV2_ParameterStudy is XNSFE_Control[];
-            } catch {
-                Console.WriteLine("Error while determining control type, using default behavior for 'XNSE_Control'");
-            }
-
-            if(Evap) {
-                XNSFE<XNSFE_Control>._Main(args, false, delegate () {
-                    var p = new XNSFE<XNSFE_Control>();
-                    return p;
-                });
-            } else {
-            */
-
+                        
             //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ShericalHarmonoicsPostprocessingTest();
             //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
             //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
+            //NUnit.Framework.Assert.IsTrue(false, "remove me");
             //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
             {
                 XNSE._Main(args, false, delegate () {
@@ -215,6 +178,21 @@ namespace BoSSS.Application.XNSE_Solver {
                 throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Velocity not found");
             }
             return pVel;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected int PressureDegree() {
+            int pPres;
+            if(Pressure != null)
+                return Pressure.Basis.Degree;
+            if(this.Control.FieldOptions.TryGetValue(VariableNames.Pressure, out FieldOpts v)) {
+                pPres = v.Degree;
+            } else {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Pressure not found");
+            }
+            return pPres;
         }
 
         
@@ -351,6 +329,9 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /// <summary>
+        /// Operator/equation assembly
+        /// </summary>
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             OperatorFactory opFactory = new OperatorFactory();
@@ -361,7 +342,7 @@ namespace BoSSS.Application.XNSE_Solver {
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
-            FinalOperatorSettings(XOP);
+            FinalOperatorSettings(XOP, D);
             XOP.Commit();
 
             return XOP;
@@ -371,11 +352,24 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Misc adjustments to the spatial operator before calling <see cref="ISpatialOperator.Commit"/>
         /// </summary>
         /// <param name="XOP"></param>
-        protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {
+        protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.LinearizationHint = XOP.IsLinear == true ? LinearizationHint.AdHoc : this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+
+
+            // elementary checks on operator
+            if(XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation) != D)
+                throw new ApplicationException("Operator configuration messed up.");
+            if(XOP.DomainVar.IndexOf(VariableNames.Pressure) != D)
+                throw new ApplicationException("Operator configuration messed up.");
+            for(int d = 0; d < D; d++) {
+                if(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationComponent(d)) != d)
+                    throw new ApplicationException("Operator configuration messed up.");
+                if(XOP.DomainVar.IndexOf(VariableNames.Velocity_d(d)) != d)
+                    throw new ApplicationException("Operator configuration messed up.");
+            }
         }
 
         /// <summary>
@@ -554,10 +548,7 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(var f = new FuncTrace()) {
                 dt = GetTimestep();
-
-                //Console.WriteLine("Spatial dimension is: " + GridData.SpatialDimension);
-
-               
+                
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                 Console.WriteLine($"Done with time step {TimestepNo}.");

@@ -64,10 +64,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         } else {
                             if(!object.ReferenceEquals(LsTrk, NonXDG_LsTrk))
                                 throw new ArgumentException("Level Set Tracker mismatch: Someone has used the freak API and did not cleaned it up properly.");
-                        } 
+                        }
                     }
 
-                   
+
                     xop = op as XSpatialOperatorMk2;
 
 
@@ -87,7 +87,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     quadOrder = op.GetOrderFromQuadOrderFunction(Solution.BasisS, ParamFields.Select(p => p != null ? p.Basis : null), Solution.BasisS);
-                   
+
                     if(__MgConfig == null) {
                         MgConfig = new MultigridOperator.ChangeOfBasisConfig[1][];
                         MgConfig[0] = new MultigridOperator.ChangeOfBasisConfig[NoOfVar];
@@ -197,7 +197,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             public MultigridOperator.ChangeOfBasisConfig[][] MgConfig;
 
-            public double time;
+            public double time = 1.0e30;
 
             /// <summary>
             /// Implementation of <see cref="OperatorEvalOrLin"/>
@@ -256,15 +256,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
                             for(int j = 0; j < J; j++) {
                                 int[] Neigs = gdat.iLogicalCells.CellNeighbours[j];
-                                
+
                                 NoOfMtxBlocks++; //               diagonal block
                                 NoOfMtxBlocks += Neigs.Length; // off-diagonal block
 
-                                
+
                             }
                             NoOfMtxBlocks = NoOfMtxBlocks.MPISum();
 
-                            
+
 
                             opMtx.GetMemoryInfo(out long allc, out long used);
 
@@ -310,7 +310,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // -----------------------
 
                     using(new BlockTrace("Mass_Matrix_comp", tr)) {
-                        if (LsTrk != null) {
+                        if(LsTrk != null) {
 
 
                             var massFact = LsTrk.GetXDGSpaceMetrics(spcIDs, quadOrder).MassMatrixFactory;
@@ -429,7 +429,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             void DGevaluation(double[] OpAffine) {
                 this.op.InvokeParameterUpdate(this.time, this.SolutionFields, this.ParamFields);
-               
+
                 var eval = op.GetEvaluatorEx(this.SolMapping, this.ParamFields, this.SolMapping);
                 eval.time = 0.0;
 
@@ -485,9 +485,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// If provided, the mapping must be partition-equal (<see cref="Partitioning_Extensions.EqualsPartition(IPartitioning, IPartitioning)"/>) to <paramref name="Solution"/>
         /// </param>
         static public void Solve(this ISpatialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
-            MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null, 
-            NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null, 
-            AggregationGridData[] MultigridSequence = null, 
+            MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null,
+            NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null,
+            AggregationGridData[] MultigridSequence = null,
             bool verbose = false, QueryHandler queryHandler = null) {
             using(var tr = new FuncTrace()) {
 
@@ -546,7 +546,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Console.WriteLine("No multigrid sequence available - using only one mesh level.");
                     }
                 }
-                
+
                 // solver
                 // ======
 
@@ -562,7 +562,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     G.verbose = verbose;
                     G.AssembleMatrix(out var opMtx, out double[] opAff, out var MassMatrix, G.SolutionFields, true, out _);
-                   
+
+
+
                     // setup of multigrid operator
                     // ---------------------------
 
@@ -573,15 +575,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(verbose)
                         Console.WriteLine("Setting up multigrid operator...");
 
-                    var MultigridOp = new MultigridOperator(G.AggBasisS, Solution, 
-                        opMtx, MassMatrix, G.MgConfig, 
+                    var MultigridOp = new MultigridOperator(G.AggBasisS, Solution,
+                        opMtx, MassMatrix, G.MgConfig,
                         op.DomainVar.Select(varName => op.FreeMeanValue[varName]).ToArray());
 
                     SolverFactory SF = new SolverFactory(nsc, lsc);
                     SF.GenerateLinear(out solver, G.AggBasisS, G.MgConfig);
-                                        
+
                     using(new BlockTrace("Solver_Init", tr)) {
-                         solver.Init(MultigridOp);
+                        solver.Init(MultigridOp);
                     }
 
                     solverSetup.Stop();
@@ -592,6 +594,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         MultigridOp.GetMemoryInfo(out long AllocMem, out long UsedMem);
                         Console.WriteLine("  Memory reserved|used by multi-grid operator {0:F2} | {1:F2} MB", (double)AllocMem / (1024.0 * 1024.0), (double)UsedMem / (1024.0 * 1024.0));
                     }
+                    //LastMtx = MultigridOp.OperatorMatrix.CloneAs();
 
                     // call the linear solver
                     // ----------------------
@@ -608,7 +611,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         if(optRHS != null)
                             RHSvec.AccV(1.0, new CoordinateVector(optRHS));
-                        
+
                         MultigridOp.UseSolver(solver, G.SolutionVec, RHSvec);
 
                         NoOfIterations = solver.ThisLevelIterations;
@@ -685,7 +688,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
         }
-        
+
+        //public static BlockMsrMatrix LastMtx;
+
         /// <summary>
         /// Easy-to-use driver routine for operator analysis
         /// </summary>
@@ -699,7 +704,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         /// <returns></returns>
         /// <seealso cref="BoSSS.Solution.Application{T}.OperatorAnalysis"/>
-        static public IDictionary<string,double> OperatorAnalysis(this ISpatialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
+        static public IDictionary<string, double> OperatorAnalysis(this ISpatialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
 
             var G = new MatrixAssembler(op, Mapping, null, null, MgConfig);
 
@@ -728,7 +733,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
                    MgConfig, op);
             }
 
+            //long J = G.gdat.CellPartitioning.TotalLength;
+            //ana.PrecondOpMatrix.SaveToTextFileSparse("OpMatrix-J" + J + ".txt");
+
             return ana.GetNamedProperties();
         }
+
+
+        /// <summary>
+        /// Easy-to-use driver routine to obtain the bloc-preconditioned operator matrix.
+        /// </summary>
+        /// <param name="op"></param>
+        /// <param name="Mapping">
+        /// Current Solution resp. solution approximation;
+        /// Any matrix analysis is performed at this linearization point.
+        /// </param>
+        /// <param name="MgConfig">
+        /// provisional; not that the block preconditioning configured here has huge effects on the condition number.
+        /// </param>
+        /// <returns></returns>
+        static public BlockMsrMatrix GetMatrix(this ISpatialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
+
+            var G = new MatrixAssembler(op, Mapping, null, null, MgConfig);
+
+            G.AssembleMatrix(out var Op_Matrix, out var Op_Affine, out var MassMatrix, G.SolutionFields, true, out _);
+
+            var MultigridOp = new MultigridOperator(G.AggBasisS, Mapping,
+                        Op_Matrix, MassMatrix, G.MgConfig,
+                        op.DomainVar.Select(varName => op.FreeMeanValue[varName]).ToArray());
+
+            return MultigridOp.OperatorMatrix;
+
+        }
+
     }
 }

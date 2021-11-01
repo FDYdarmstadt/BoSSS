@@ -111,7 +111,7 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
-                        typeof(MPITest.Program),
+                        typeof(MPITest.Program)
                     };
             }
         }
@@ -134,6 +134,7 @@ namespace PublicTestRunner {
                         typeof(LTSTests.Program),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
+                        typeof(ZwoLevelSetSolver.ZLS)
                     };
             }
         }
@@ -286,12 +287,9 @@ namespace PublicTestRunner {
                 throw new IOException("unable to find file '" + PartialPath + "'");
             }
 
-            if (r.Length > 1) {
-                foreach (string s in r) {
-                    Console.WriteLine(string.Format("Path {0}", s));
-                }
-                throw new IOException("The path '" + PartialPath + "' has been found several times. Did you specify the path correctly?");
-            }
+            //if (r.Length > 1) {
+            //    throw new IOException("The path '" + PartialPath + "' has been found several times: " + r.ToConcatString("", ", ", ";") + " Did you specify the path correctly?");
+            //}
 
             return r;
         }
@@ -367,10 +365,18 @@ namespace PublicTestRunner {
                 }
             }
 
+            List<string> FileNamesOnly = new List<string>();
+            foreach(string filePath in s) {
+                string fileName = Path.GetFileName(filePath);
+                if(FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
+                    throw new IOException($"Dependent Filename {fileName} is not unique for test assembly {a}. (full Path {filePath}).");
+            }
+
+
             return (r.Count, r.ToArray(), l.ToArray(), s.ToArray());
         }
 
-
+        /*
         class MyTestFilter : NUnit.Framework.Internal.TestFilter {
             public override TNode AddToXml(TNode parentNode, bool recursive) {
                 throw new NotImplementedException();
@@ -380,7 +386,7 @@ namespace PublicTestRunner {
                 throw new NotImplementedException();
             }
         }
-
+        */
 
         static TextWriterAppender logger_output = null;
         static Stream tracerfile;

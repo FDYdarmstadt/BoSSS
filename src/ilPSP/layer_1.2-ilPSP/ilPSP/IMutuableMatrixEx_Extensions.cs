@@ -31,7 +31,7 @@ namespace ilPSP.LinSolvers {
     public static class IMutuableMatrixEx_Extensions {
 
         /// <summary>
-        /// Returns a collection of all occupied columns in a the row <paramref name="RowIndex"/>;
+        /// Returns a collection of all occupied columns in a the row <paramref name="iRow"/>;
         /// </summary>
         /// <returns>
         /// The column indices of non-zero/allocated entries.
@@ -48,6 +48,7 @@ namespace ilPSP.LinSolvers {
         /// Sets all entries in a row to 0
         /// </summary>
         /// <param name="i">row index in global indices</param>
+        /// <param name="M"></param>
         static public void ClearRow(this IMutableMatrixEx M, long i) {
             long[] ColIdx = null;
             double[] Values = null;

@@ -880,7 +880,7 @@ namespace ilPSP.Utils {
                     acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
                 }
 
-            } else if( acc_index != null && b_index == null) {
+            } else if(acc_index != null && b_index == null) {
 
                 int N = acc_index.Count;
                 for (int i = 0; i < N; i++) {

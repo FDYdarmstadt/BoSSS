@@ -61,6 +61,22 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             return levels;
         }
+
+
+        public override bool Equals(object obj) {
+            if (!base.Equals(obj))
+                return false;
+            var other = obj as AMRonNarrowband;
+            if (other == null)
+                return false;
+            if (other.levelSet != this.levelSet)
+                return false;
+            return true;
+        }
+
+        public override int GetHashCode() {
+            return base.GetHashCode();
+        }
     }
 
     public class AMRForRigidObject : AMRLevelIndicatorWithLevelset {

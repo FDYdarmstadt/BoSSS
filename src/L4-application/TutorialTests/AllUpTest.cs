@@ -32,46 +32,7 @@ namespace BoSSS.Application.TutorialTests {
     [TestFixture]
     static public class AllUpTest {
 
-        /// <summary>
-        /// Finalization.
-        /// </summary>
-        static public void OneTimeTearDown(bool killBatch) {
-            
-            if (killBatch) {
-                Console.WriteLine("Must ... finish ... ...  MiniBatchProcessor ... ");
-                Console.Out.Flush();
-
-                // try to terminate batch processor, if still running:
-                int timeoucount = 0;
-                while (MiniBatchProcessor.Server.GetIsRunning(null)) {
-                    Console.WriteLine("Terminating MiniBatchProcessor...");
-                    MiniBatchProcessor.Server.SendTerminationSignal(TimeOutInSeconds: -1);
-                    if(timeoucount > 0)
-                        Thread.Sleep(10000);
-
-                    timeoucount++;
-                    if (timeoucount > 100) {
-                        Assert.Fail("Unable to kill MiniBatchProcessor - server");
-                    }
-                }
-
-                Console.WriteLine("MiniBatchProcessor terminated.");
-            }
-        }
-
-        /// <summary>
-        /// Init.
-        /// </summary>
-        static public bool OneTimeSetUp() {
-            Console.WriteLine("OneTimeSetup: starting 'MiniBatchProcessor'...");
-            bool r = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
-            if(r)
-                Console.WriteLine("started within this process.");
-            else
-                Console.WriteLine("already running.");
-            
-            return r;
-        }
+        
 
         internal static string DirectoryOffset = "";
 
@@ -210,13 +171,54 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
-        static public void RunWorksheet(string TexPartialPath) {
+        static public void RunWorksheet(string NotebookPartialPath) {
+            using(new NotebookRunner(NotebookPartialPath, DirectoryOffset)) { }
+        }
+
+    }
+
+    /// <summary>
+    /// Runs some Jupyter Notebook or old BoSSS worksheet (.bws, .tex) as a test.
+    /// </summary>
+    public class NotebookRunner : IDisposable {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public NotebookRunner(string __NotebookPartialPath, string __DirectoryOffset) {
+            NotebookPartialPath = __NotebookPartialPath;
+            DirectoryOffset = __DirectoryOffset;
+            RunWorksheet();
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public void Dispose() {
+            OneTimeTearDown();
+        }
+
+        /// <summary>
+        /// see https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/implementing-dispose
+        /// </summary>
+        protected virtual void Dispose(bool disposing) {
+            this.Dispose();
+        }
+
+
+        string NotebookPartialPath;
+        string DirectoryOffset;
+
+        /// <summary>
+        /// Runs some worksheet contained in the BoSSS handbook.
+        /// </summary>
+        void RunWorksheet() {
 
             // locate script
-            string TexFileName = TexPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
+            string TexFileName = NotebookPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
             string FullTexName;
             if (!File.Exists(TexFileName)) {
-                FullTexName = LocateFile(TexPartialPath).Single();
+                FullTexName = LocateFile(NotebookPartialPath).Single();
             } else {
                 FullTexName = TexFileName;
             }
@@ -224,7 +226,7 @@ namespace BoSSS.Application.TutorialTests {
             Assert.IsTrue(File.Exists(FullTexName), "unable to find source: " + FullTexName);
 
             // start the minibatchprocessor which is used internally
-            bool iStartedThisShit = OneTimeSetUp();
+            OneTimeSetUp();
 
             BoSSSpad.Job.UndocumentedSuperHack = true;
             BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
@@ -245,12 +247,12 @@ namespace BoSSS.Application.TutorialTests {
                 Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
             } finally {
                 // shutting down the local mini batch processor:
-                OneTimeTearDown(iStartedThisShit);
+                OneTimeTearDown();
             }
         }
 
 
-        static string[] LocateFile(string PartialPath) {
+        string[] LocateFile(string PartialPath) {
             DirectoryInfo repoRoot;
             if(!DirectoryOffset.IsEmptyOrWhite())
                 repoRoot = new DirectoryInfo(DirectoryOffset);
@@ -292,5 +294,49 @@ namespace BoSSS.Application.TutorialTests {
             return ret.ToArray();
         }
 
+        bool killBatch;
+
+        /// <summary>
+        /// Finalization.
+        /// </summary>
+        void OneTimeTearDown() {
+            
+            if (killBatch) {
+                Console.WriteLine("Must ... finish ... ...  MiniBatchProcessor ... ");
+                Console.Out.Flush();
+
+                // try to terminate batch processor, if still running:
+                int timeoucount = 0;
+                while (MiniBatchProcessor.Server.GetIsRunning(null)) {
+                    Console.WriteLine("Terminating MiniBatchProcessor...");
+                    MiniBatchProcessor.Server.SendTerminationSignal(TimeOutInSeconds: -1);
+                    if(timeoucount > 0)
+                        Thread.Sleep(10000);
+
+                    timeoucount++;
+                    if (timeoucount > 100) {
+                        Assert.Fail("Unable to kill MiniBatchProcessor - server");
+                    }
+                }
+
+                Console.WriteLine("MiniBatchProcessor terminated.");
+            }
+        }
+
+        /// <summary>
+        /// Init.
+        /// </summary>
+        void OneTimeSetUp() {
+            Console.WriteLine("OneTimeSetup: starting 'MiniBatchProcessor'...");
+            bool r = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
+            if(r)
+                Console.WriteLine("started within this process.");
+            else
+                Console.WriteLine("already running.");
+            
+            killBatch = r;
+        }
+
     }
+
 }

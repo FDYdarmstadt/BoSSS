@@ -112,10 +112,45 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// global index
-        /// cell in which the reference point is located
+        /// (MPI) global index of cell in which the reference point is located
         /// </summary>
         long m_ReferenceCell;
+
+        /// <summary>
+        /// (MPI) global index of cell in which the reference point for floating/free-mean-value solutions (<see cref="ISpatialOperator.FreeMeanValue"/>) is located
+        /// </summary>
+        public long ReferenceCell {
+            get {
+                return m_ReferenceCell;
+            }
+        }
+
+        /// <summary>
+        /// - on owner process: <see cref="ReferenceCell"/> in local coordinates
+        /// - negative otherwise
+        /// </summary>
+        public int ReferenceCell_local {
+            get {
+                int RefCellLocal;
+                if(BaseGridProblemMapping.IsInLocalRange(ReferenceCell))
+                    RefCellLocal = BaseGridProblemMapping.TransformIndexToLocal(ReferenceCell);
+                else
+                    RefCellLocal = int.MinValue;
+                return RefCellLocal;
+            }
+        }
+
+
+
+
+        //public int ReferenceCell {
+        //    get {
+        //        var part = BaseGridProblemMapping.GridDat.CellPartitioning;
+        //        if(part.IsInLocalRange()
+
+        //    }
+
+        //}
 
         /// <summary>
         /// Global Indices into <see cref="BaseGridProblemMapping"/>
@@ -511,7 +546,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 #if DEBUG
                         for(long iRow = this.m_OperatorMatrix.RowPartitioning.i0; iRow < this.m_OperatorMatrix.RowPartitioning.iE; iRow++) {
-                            Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
+                            //Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
                         }
 #endif
                     }
@@ -945,10 +980,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// 
+        /// Uses the linear solver <paramref name="solver"/> to solve the system; this includes:
+        /// - transformation of the <paramref name="IN_RHS"/> into the multigrid space, 
+        /// - solving in the multigrid space
+        /// - transformation of the solution back to the <see cref="BaseGridProblemMapping"/>, <paramref name="INOUT_X"/> as an output.
         /// </summary>
         /// <param name="solver"></param>
         /// <param name="INOUT_X">
+        /// - in output: an optional guess for the solution
         /// - on exit: (hopefully) the solution to the linear problem
         /// </param>
         /// <param name="IN_RHS">
@@ -993,6 +1032,86 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// Computes the residual for a given solution approximation
+        /// </summary>
+        /// <param name="IN_X">
+        /// an approximate solution
+        /// </param>
+        /// <param name="IN_RHS">
+        /// right-hand-side of the linear problem
+        /// </param>
+        /// <param name="OUT_Resi">
+        /// On output, 
+        /// </param>
+        public void ComputeResidual<T1, T2, T3>(T3 OUT_Resi, T1 IN_X, T2 IN_RHS)
+            where T1 : IList<double>
+            where T2 : IList<double>
+            where T3 : IList<double> //
+        {
+            using(new FuncTrace()) {
+                if(this.LevelIndex != 0)
+                    throw new NotSupportedException("Not Inteded to be called on any multi-grid level but the finest one.");
+
+                int I = this.Mapping.ProblemMapping.LocalLength;
+                if(IN_X.Count != I)
+                    throw new ArgumentException("Vector length mismatch.", "INOUT_X");
+                if(IN_RHS.Count != I)
+                    throw new ArgumentException("Vector length mismatch.", "IN_RHS");
+                 if(OUT_Resi.Count != I)
+                    throw new ArgumentException("Vector length mismatch.", "OUT_Resi");
+               
+                if(this.FinerLevel != null)
+                    throw new NotSupportedException("This method may only be called on the top level.");
+
+                //if(this.Mapping.AggGrid.NoOfAggregateCells != this.Mapping.ProblemMapping.GridDat.Cells.NoOfCells)
+                //    throw new ArgumentException();
+                //int J = this.Mapping.AggGrid.NoOfAggregateCells;
+
+
+                int L = this.Mapping.LocalLength;
+                double[] X = new double[L];
+                double[] B = new double[L];
+                this.TransformRhsInto(IN_RHS, B, true);
+                this.TransformSolInto(IN_X, X);
+
+                double[] Resi = new double[L];
+                Resi.SetV(B);
+                this.OperatorMatrix.SpMV(-1.0, X, 1.0, Resi);
+
+                this.TransformRhsFrom(OUT_Resi, Resi);
+            }
+        }
+
+        /// <summary>
+        /// Computes the residual for a given solution approximation
+        /// </summary>
+        /// <param name="IN_X">
+        /// an approximate solution
+        /// </param>
+        /// <param name="IN_RHS">
+        /// right-hand-side of the linear problem
+        /// </param>
+        /// <param name="OUT_Resi">
+        /// On output, 
+        /// </param>
+        public double[] ComputeResidual<T1, T2>(T1 IN_X, T2 IN_RHS)
+            where T1 : IList<double>
+            where T2 : IList<double>//
+        {
+            double[] Resi = new double[BaseGridProblemMapping.LocalLength];
+            ComputeResidual(Resi, IN_X, IN_RHS);
+            return Resi;
+        }
+
+
+
+        /// <summary>
+        /// Transforms a solution from the <see cref="BaseGridProblemMapping"/> into this levels <see cref="Mapping"/>,
+        /// i.e. application of the inverse of right-side preconditioner <see cref="RightChangeOfBasis_Inverse"/>.
+        /// </summary>
+        /// <param name="u_IN">input, length according to <see cref="BaseGridProblemMapping"/></param>
+        /// <param name="v_OUT">output, length according to <see cref="Mapping"/></param>
         public void TransformSolInto<T1, T2>(T1 u_IN, T2 v_OUT)
             where T1 : IList<double>
             where T2 : IList<double> 
@@ -1016,9 +1135,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
+        /// <summary>
+        /// Transforms a right-hand-side from the <see cref="BaseGridProblemMapping"/> into this levels <see cref="Mapping"/>,
+        /// i.e. application of the left-side preconditioner <see cref="LeftChangeOfBasis"/>.
+        /// </summary>
+        /// <param name="u_IN">input, length according to <see cref="BaseGridProblemMapping"/></param>
+        /// <param name="v_OUT">output, length according to <see cref="Mapping"/></param>
+        /// <param name="ApplyRef">
+        /// apply additional modification due to free-mean-value fixing (aka. pressure reference point), <see cref="FreeMeanValue"/>
+        /// </param>
         public void TransformRhsInto<T1, T2>(T1 u_IN, T2 v_OUT, bool ApplyRef)
             where T1 : IList<double>
-            where T2 : IList<double> 
+            where T2 : IList<double> //
         {
             if(this.FinerLevel != null)
                 throw new NotSupportedException("Only supported on finest level.");

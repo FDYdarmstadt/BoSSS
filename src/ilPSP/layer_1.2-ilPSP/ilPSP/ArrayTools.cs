@@ -22,8 +22,8 @@ namespace ilPSP.Utils {
 
 
     /// <summary>
-    /// some static functions, which should help manipulating matrixes and vectors;
-    /// not very high-performant, but helpful;
+    /// some static functions, which should help manipulating matrices and vectors;
+    /// not very high-performance, but helpful;
     /// </summary>
     static public class ArrayTools {
 

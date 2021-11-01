@@ -71,7 +71,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// Activation of second level-set.
+        /// Activation of second level-set (fluid/solid boundary)
         /// </summary>
         [DataMember]
         virtual public bool UseImmersedBoundary {
@@ -425,14 +425,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double[] prescribedLSwaveData;
 
-
-        /// <summary>
-        /// The termination criterion for fully coupled/implicit level-set evolution.
-        /// </summary>
-        [DataMember]
-        public double LevelSet_ConvergenceCriterion = 1.0e-6;
-
-
         /// <summary>
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         /// </summary>
@@ -750,6 +742,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         public override bool Equals(object obj) {
+            //System.Diagnostics.Debugger.Launch();
             if(!base.Equals(obj))
                 return false;
 
