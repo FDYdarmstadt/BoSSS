@@ -113,7 +113,7 @@ namespace BoSSS.Application.XNSFE_Solver {
     }
     */
 
-    class InterfaceNSE_Evaporation : SurfaceEquation {
+    public class InterfaceNSE_Evaporation : SurfaceEquation {
 
         string codomainName;
         string phaseA, phaseB;
