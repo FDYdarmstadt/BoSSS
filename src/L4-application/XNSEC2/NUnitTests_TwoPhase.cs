@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Application.XNSE_Solver.Tests;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
@@ -64,7 +65,7 @@ namespace BoSSS.Application.XNSEC {
 #endif
             ) {
             var Tst = new ViscosityJumpTest(spatialDimension);
-      
+
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfTensionMode, constantDensity: true, 1);
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
 
@@ -97,7 +98,7 @@ namespace BoSSS.Application.XNSEC {
             bool constantDensity = true;
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.FullySymmetric, constantDensity: constantDensity, GridResolution: GridRes, CutCellQuadratureType: CutCellQuadratureType, SurfTensionMode: SurfTensionMode);
             C.SkipSolveAndEvaluateResidual = !performsolve;
-             C.EnableTemperature = false;
+            C.EnableTemperature = false;
             C.EnableMassFractions = false;
             C.ImmediatePlotPeriod = 1;
             XNSECSolverTest(Tst, C);
@@ -112,7 +113,7 @@ namespace BoSSS.Application.XNSEC {
             double AgglomerationTreshold = 0.1;
 
             var LaLa = new List<XNSEC_Control>();
-            foreach(var Res in ResolutionS) {
+            foreach (var Res in ResolutionS) {
                 var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode: vmode, constantDensity: true, CutCellQuadratureType: CutCellQuadratureType, SurfTensionMode: SurfTensionMode, GridResolution: Res);
                 C.SkipSolveAndEvaluateResidual = true;
                 LaLa.Add(C);
@@ -144,7 +145,7 @@ namespace BoSSS.Application.XNSEC {
 
             var Tst = new ChannelTest(angle);
             int gridResolution = 1;
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType,  SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, constantDensity: true, gridResolution);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, constantDensity: true, gridResolution);
             C.EnableTemperature = false;
             C.EnableMassFractions = false;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -174,6 +175,7 @@ namespace BoSSS.Application.XNSEC {
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
             C.EnableTemperature = false;
             C.EnableMassFractions = false;
+            //C.ImmediatePlotPeriod = 1;
             //C.NonLinearSolver.verbose = true;
             //C.NonLinearSolver.MaxSolverIterations = 5;
             XNSECSolverTest(Tst, C);
@@ -187,7 +189,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="SolverMode_performsolve"></param>
         /// <param name="CutCellQuadratureType"></param>
         /// <param name="stm"></param>
-        [Test]
+        //[Test]
         public static void PseudoTwoDimensionalTwoPhaseFlow(
             [Values(2)] int deg,
             [Values(0, 0.1)] double AgglomerationTreshold,
@@ -198,112 +200,24 @@ namespace BoSSS.Application.XNSEC {
             ) {
             ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
 
-            int resolution = 10;            
+            int resolution = 5;
             var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, constantDensity: true, resolution);
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
-   
-            
+            C.ThermalParameters.hVap = 1;
+            C.ThermalParameters.rho_A = 1;
+            C.ThermalParameters.rho_B = 0.5;
             C.NonLinearSolver.MaxSolverIterations = 50;
+            C.prescribedMassflux_Evaluator = (X, t) => 1.0;
             XNSECSolverTest(Tst, C);
 
             //ASScalingTest(Tst, new[] { 8, 16, 32,64 }, ViscosityMode.FullySymmetric, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
         }
 
-
-
-
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-        //[Test]
-        public static void LevelSetAdvectionTest2D_fwd(
-               [Values(2, 3, 4)] int LSdegree,
-               [Values(0, 1, 2)] int AMRlevel,
-               [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
-               [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
-            LevelSetAdvectionTest2D(LSdegree, AMRlevel, levelSetEvolution, levelSetHandling, false);
-        }
-
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
-        /// </summary>
-        //[Test]
-        public static void LevelSetAdvectionTest2D_reverse(
-           [Values(2, 3, 4)] int LSdegree,
-           [Values(0, 1, 2)] int AMRlevel,
-           [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
-           [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling) {
-            LevelSetAdvectionTest2D(LSdegree, AMRlevel, levelSetEvolution, levelSetHandling, true);
-        }
-
-        public static void LevelSetAdvectionTest2D(
-
-    [Values(2, 3, 4)] int LSdegree,
-    [Values(0, 1, 2)] int AMRlevel,
-    [Values(LevelSetEvolution.FastMarching, LevelSetEvolution.StokesExtension)] LevelSetEvolution levelSetEvolution,
-    [Values(LevelSetHandling.LieSplitting)] LevelSetHandling levelSetHandling,
-    [Values(false, true)] bool reversed) {
-            int gridResolution;
-            switch (LSdegree) {
-                case 2: gridResolution = 3; break;
-                case 3: gridResolution = 2; break;
-                //case 4: gridResolution = 1; break;
-                default:
-                gridResolution = 1; break;
-            }
-
-            if (LSdegree == 4 && AMRlevel > 0 && levelSetEvolution == LevelSetEvolution.StokesExtension)
-                return;
-
-            var Tst = new LevelSetAdvectionTestXNSEC(2, LSdegree, reversed);
-            var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, gridResolution, AMRlevel);
-            C.SkipSolveAndEvaluateResidual = false;
-            C.ImmediatePlotPeriod = 1;
-            C.NonLinearSolver.verbose = true;
-            //string IO = $"LSAdvectionTest2D-deg{LSdegree}-amrLvl{AMRlevel}-lsEvo{levelSetEvolution}-rev{reversed}-grdRes{gridResolution}";
-            //C.ImmediatePlotPeriod = 1;
-            //C.SuperSampling = 3;
-
-            LevelSetUnitTests.LevelSetTest(Tst, C);
-
-            //Solution.Application.DeleteOldPlotFiles(); // delete plot files if we don't throw an exception!
-        }
-
-        public class LevelSetAdvectionTestXNSEC : LevelSetAdvectionTest, IXNSEClsTest {
-
-            public LevelSetAdvectionTestXNSEC(int spatDim, int LevelSetDegree, bool reversed) : base(spatDim, LevelSetDegree, reversed) {
-            }
-
-            public int NumberOfChemicalComponents => 1;
-
-            public bool ChemicalReactionTermsActive => false;
-
-            public double[] GravityDirection => new double[] { 0, 0, 0 };
-
-            public Func<double[], double, double> GetMassFractions(string species, int q) {
-                switch (base.SpatialDimension) {
-                    case 2:
-                    if (q == 0) {
-                        return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
-                    } else {
-                        throw new ArgumentOutOfRangeException();
-                    }
-                    default:
-                    throw new ArgumentOutOfRangeException();
-                }
-            }
-
-            public Func<double[], double, double> GetTemperature(string species) {
-                switch (base.SpatialDimension) {
-                    case 2:
-                    return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
-
-                    default:
-                    throw new ArgumentOutOfRangeException();
-                }
-            }
-        }
+        
 
         /// <summary>
         /// <see cref="TranspiratingChannelTest"/>
@@ -377,151 +291,27 @@ namespace BoSSS.Application.XNSEC {
             public Func<double[], double, double> GetMassFractions(string species, int q) {
                 switch (base.SpatialDimension) {
                     case 2:
-                    if (q == 0) {
-                        return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
-                    } else {
-                        throw new ArgumentOutOfRangeException();
-                    }
+                        if (q == 0) {
+                            return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
+                        } else {
+                            throw new ArgumentOutOfRangeException();
+                        }
                     default:
-                    throw new ArgumentOutOfRangeException();
+                        throw new ArgumentOutOfRangeException();
                 }
             }
 
             public Func<double[], double, double> GetTemperature(string species) {
                 switch (base.SpatialDimension) {
                     case 2:
-                    return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
+                        return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
 
                     default:
-                    throw new ArgumentOutOfRangeException();
+                        throw new ArgumentOutOfRangeException();
                 }
             }
         }
 
-        public interface IXNSEClsTest : IXNSElsTest, IXNSECTest {
-        }
-
-        private static XNSEC_Control LSTstObj2CtrlObj(IXNSEClsTest tst, int FlowSolverDegree, int maxNoTimesteps,
-            LevelSetEvolution levelSetEvolution, LevelSetHandling levelSetHandling,
-            int GridResolution = 1, int AMRlevel = 0) {
-            XNSEC_Control C = new XNSEC_Control();
-            int D = tst.SpatialDimension;
-
-            // database setup
-            // ==============
-
-            C.DbPath = null;
-            C.savetodb = false;
-            C.ProjectName = "LevelSet/" + tst.GetType().Name;
-            C.ProjectDescription = "Test";
-
-            // DG degree
-            // =========
-
-            C.SetDGdegree(FlowSolverDegree);
-
-            // grid
-            // ====
-
-            C.GridFunc = () => tst.CreateGrid(GridResolution);
-
-            // boundary conditions
-            // ===================
-
-            foreach (var kv in tst.GetBoundaryConfig()) {
-                C.BoundaryValues.Add(kv);
-            }
-
-            // Physical parameters
-            // ====================
-
-            C.PhysicalParameters.rho_A = tst.rho_A;
-            C.PhysicalParameters.rho_B = tst.rho_B;
-            C.PhysicalParameters.mu_A = tst.mu_A;
-            C.PhysicalParameters.mu_B = tst.mu_B;
-            C.PhysicalParameters.Sigma = tst.Sigma;
-            C.PhysicalParameters.Material = tst.Material;
-            C.PhysicalParameters.IncludeConvection = tst.IncludeConvection;
-
-            // initial values and exact solution
-            // =================================
-
-            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
-            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
-
-            foreach (var spc in new[] { "A", "B" }) {
-                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
-                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
-
-                for (int d = 0; d < D; d++) {
-                    C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
-                }
-
-                C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
-
-                for (int d = 0; d < D; d++) {
-                    Func<double[], double, double> Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
-                    C.SetGravity(spc, d, Gravity_d);
-                }
-            }
-
-            C.Phi = tst.GetPhi();
-            C.InitialValues_Evaluators.Add("Phi", tst.GetPhi().Convert_Xt2X(0.0));
-
-            // advanced spatial discretization settings
-            // ========================================
-
-            //C.CutCellQuadratureType = CutCellQuadratureType;
-
-            // timestepping and solver
-            // =======================
-
-            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-
-            C.Option_LevelSetEvolution = levelSetEvolution;
-            //if (levelSetEvolution == LevelSetEvolution.Fourier) {   // ToDo: refactor Fourier initialization!
-            //    int numSp = 640;
-            //    double[] FourierP = new double[numSp];
-            //    double[] samplP = new double[numSp];
-            //    for (int sp = 0; sp < numSp; sp++) {
-            //        FourierP[sp] = sp * (2 * Math.PI / (double)numSp);
-            //        samplP[sp] = ((LevelSetAdvectiontTest)tst).Radius;
-            //    }
-
-            //    C.FourierLevSetControl = new FourierLevSetControl(FourierType.Polar, 2 * Math.PI, FourierP, samplP, 0.1) {
-            //        center = new double[] { 0.0, 0.0},
-            //        FourierEvolve = Fourier_Evolution.MaterialPoints,
-            //        centerMove = CenterMovement.Reconstructed,
-            //    };
-            //}
-
-            C.Timestepper_LevelSetHandling = levelSetHandling;
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-
-            // adaptive mesh refinement
-            if (AMRlevel > 0) {
-                C.AdaptiveMeshRefinement = true;
-                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = AMRlevel });
-                C.AMR_startUpSweeps = AMRlevel;
-            }
-
-            double dt = tst.ComputeTimestep(GridResolution, FlowSolverDegree, AMRlevel);
-            C.dtFixed = dt;
-            double T = tst.getEndTime();
-            int timesteps = (int)(T / dt);
-            C.NoOfTimesteps = (timesteps > maxNoTimesteps) ? maxNoTimesteps : timesteps;
-            C.Endtime = dt * C.NoOfTimesteps;
-
-            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver.ConvergenceCriterion = 1e-9;
-
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-
-            // return
-            // ======
-
-            return C;
-        }
 
         /// <summary>
         /// a periodic channel flow, with water on bottom and air on top
@@ -597,8 +387,8 @@ namespace BoSSS.Application.XNSEC {
                 switch (species) {
                     case "A": rho = rho_A; break;
                     case "B":
-                    rho = rho_B; break;
-                    throw new ArgumentException();
+                        rho = rho_B; break;
+                        throw new ArgumentException();
                 }
 
                 if (mu_A == 0.0 && mu_B == 0) {

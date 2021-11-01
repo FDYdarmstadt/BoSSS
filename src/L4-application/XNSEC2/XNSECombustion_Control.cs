@@ -262,11 +262,11 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public double PenaltyHeatConduction = 1.0;
 
-        /// <summary>
-        /// Number of subdivisions of the homotopy algorithm
-        /// </summary>
-        [DataMember]
-        public int NumberOfHomotopyArraySubdivisions = 10;
+        ///// <summary>
+        ///// Number of subdivisions of the homotopy algorithm
+        ///// </summary>
+        //[DataMember]
+        //public int NumberOfHomotopyArraySubdivisions = 10;
 
         ///// <summary>
         ///// Terms activated in the SIP-Viscosity terms
@@ -293,19 +293,18 @@ namespace BoSSS.Application.XNSEC {
         public double[] GravityDirection = { 0.0, 1.0, 0.0 };
 
 
-
         /// <summary>
         ///
         /// </summary>
         [DataMember]
         public double phi;
 
-        /// <summary>
-        /// Switch for activating the selfmade Homotopie algorithm. The variable <see cref="homotopieVariableName"/>
-        /// is gradually incremented until the desired value <see cref="homotopieAimedValue"/> is reached.
-        /// </summary>
-        [DataMember]
-        public bool useHomotopie = false;
+        ///// <summary>
+        ///// Switch for activating the selfmade Homotopie algorithm. The variable <see cref="homotopieVariableName"/>
+        ///// is gradually incremented until the desired value <see cref="homotopieAimedValue"/> is reached.
+        ///// </summary>
+        //[DataMember]
+        //public bool useHomotopie = false;
 
         /// <summary>
         /// Switch for using variable (equivalence ratio dependent) parameters of the one Step combustion model
@@ -409,25 +408,25 @@ namespace BoSSS.Application.XNSEC {
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>[]> ExactSolutionMassFractions;
 
-        /// <summary>
-        ///
-        /// </summary>
-        [DataMember]
-        public double[] m_HomotopyArray;
+        ///// <summary>
+        /////
+        ///// </summary>
+        //[DataMember]
+        //public double[] m_HomotopyArray;
 
-        public double[] HomotopyArray {
-            get {
-                if(m_HomotopyArray == null && useHomotopie) {
-                    m_HomotopyArray = GenericBlas.Linspace(0, homotopieAimedValue, NumberOfHomotopyArraySubdivisions);
-                    var tmpArray = GenericBlas.SinLinSpacing(0, 2 * homotopieAimedValue, 0.8, NumberOfHomotopyArraySubdivisions * 2);
-                    m_HomotopyArray = tmpArray.GetSubVector(0, NumberOfHomotopyArraySubdivisions);
-                    m_HomotopyArray[0] = 1.0;
+        //public double[] HomotopyArray {
+        //    get {
+        //        if(m_HomotopyArray == null && useHomotopie) {
+        //            m_HomotopyArray = GenericBlas.Linspace(0, homotopieAimedValue, NumberOfHomotopyArraySubdivisions);
+        //            var tmpArray = GenericBlas.SinLinSpacing(0, 2 * homotopieAimedValue, 0.8, NumberOfHomotopyArraySubdivisions * 2);
+        //            m_HomotopyArray = tmpArray.GetSubVector(0, NumberOfHomotopyArraySubdivisions);
+        //            m_HomotopyArray[0] = 1.0;
 
-                    m_HomotopyArray.Clear();
-                }
-                return m_HomotopyArray;
-            }
-        }
+        //            m_HomotopyArray.Clear();
+        //        }
+        //        return m_HomotopyArray;
+        //    }
+        //}
 
 
         [DataMember]

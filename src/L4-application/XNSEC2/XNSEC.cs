@@ -34,6 +34,13 @@ namespace BoSSS.Application.XNSEC {
             //NUnitTest.COMBUSTION_CoFlowFlame_TEST();
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
+
+
+            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(0.0, 3, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, NonLinearSolverCode.Newton);
+            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
+
+
+
             //NUnitTest.IncompressibleSteadyPoiseuilleFlowTest(); //
             //NUnitTest.CavityNaturalConvection();
             //NUnitTest.IncompressibleSteadyPoiseuilleFlowTest(); //
@@ -42,19 +49,18 @@ namespace BoSSS.Application.XNSEC {
             //NUnitTest.IncompressibleUnsteadyTaylorVortexTest(); //
 
             //NUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0, false, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
             //NUnitTest.NuNit_ChannelTest(2, 0.0, ViscosityMode.FullySymmetric, 60.0 * Math.PI / 180.0, XQuadFactoryHelper.MomentFittingVariants.Saye);
 
             //NUnitTest.LevelSetAdvectionTest2D(2, 0, Solution.LevelSetTools.LevelSetEvolution.FastMarching, Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
             //NUnitTest.BcTest_PressureOutletTest(2, 2, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false);
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //NUnitTest.PseudoTwoDimensionalTwoPhaseFlow(2, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, differentFluids: true);
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-            //XNSE_Solver.Tests.ASUnitTest.TranspiratingChannelTest(2, 0.1, 0.2, ViscosityMode.FullySymmetric, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, NonLinearSolverCode.Newton);
-
-            //XNSFE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(0, 3, 0, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, NonLinearSolverCode.Newton);
-
             //NUnitTest.TranspiratingChannelTest(2, 0.1, 0.2, ViscosityMode.FullySymmetric, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, NonLinearSolverCode.Newton);
+            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
+
+            //NUnitTest.PseudoTwoDimensionalTwoPhaseFlow(2, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, differentFluids: false);
+            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
+
+
             //Console.WriteLine("tests passed!!!!!!!!!!!");
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
@@ -67,10 +73,10 @@ namespace BoSSS.Application.XNSEC {
             //NUnitTest.TwoPhaseIncompressibleSteadyPoiseuilleFlowTest(); // TODO!
             ////NUnitTest.ThermodynamicPressureTest(); // TODO
 
-            BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensionalTwoPhaseFlow()", "--delplt" }, false, delegate () {
-                var p = new XNSEC();
-                return p;
-            });
+            //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensionalTwoPhaseFlow()", "--delplt" }, false, delegate () {
+            //    var p = new XNSEC();
+            //    return p;
+            //});
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //-n 4./ XNSEC.exe - c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.NaturalConvectionSquareCavityTest()"
@@ -359,6 +365,46 @@ namespace BoSSS.Application.XNSEC {
 
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
+            switch (Control.AdvancedDiscretizationOptions.SST_isotropicMode) {
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine:
+                    MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
+                    opFactory.AddParameter(maxSigmaParameter);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
+                    BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
+                    break;
+
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
+                case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
+                    BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
+                    break;
+
+                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
+                case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
+                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
+                    BeltramiGradientAndCurvature lsGradientAndCurvature =
+                        FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
+                    opFactory.AddParameter(lsGradientAndCurvature);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
+                    break;
+
+                case SurfaceStressTensor_IsotropicMode.Curvature_Fourier:
+                    FourierLevelSet ls = (FourierLevelSet)lsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
+                    var fourier = new FourierEvolver(
+                        VariableNames.LevelSetCG,
+                        ls,
+                        Control.FourierLevSetControl,
+                        Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Curvature].Degree);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, fourier);
+                    //lsUpdater.AddEvolver(VariableNames.LevelSetCG, fourier);
+                    opFactory.AddParameter(fourier);
+                    break;
+
+                default:
+                    throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handled.");
+
+            }
 
             if (config.isEvaporation) {
                 //Console.WriteLine("Including mass transfer.");
@@ -385,6 +431,11 @@ namespace BoSSS.Application.XNSEC {
             opFactory.AddEquation(new LowMachContinuity(D, "B", config, boundaryMap, EoS_B, Control.dtFixed));
             opFactory.AddEquation(new InterfaceContinuityLowMach(config, D, LsTrk, config.isMatInt));
 
+            // === evaporation extension === //
+            if (config.isEvaporation) {
+                opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton("A", "B", D, config));
+            }
+
             var rho0 = new Density_t0(config.NoOfChemicalSpecies, (MaterialLaw_MultipleSpecies)EoS_A);
             opFactory.AddParameter(rho0);
             //lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, rho0);
@@ -395,6 +446,11 @@ namespace BoSSS.Application.XNSEC {
             opFactory.AddEquation(new LowMachNavierStokes("B", d, D, boundaryMap, config, EoS_B));
             opFactory.AddEquation(new NSEInterface_LowMach("A", "B", d, D, boundaryMap, config, EoS_A, EoS_B, config.isMovingMesh));
             // opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config)); // Maybe later...
+
+            // === evaporation extension === //
+            if (config.isEvaporation) {
+                opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, config));
+            }
         }
 
         /// <summary>

@@ -54,7 +54,7 @@ namespace BoSSS.Application.XNSEC {
 
             public Func<double[], double, double> GetPhi() {
                 return ((_2D)(delegate (double x, double y) {
-                    return (x - 2.0);
+                    return (x - 2.4);
                 })).Convert_xy2X().Convert_X2Xt();
             }
 
