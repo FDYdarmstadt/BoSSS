@@ -232,7 +232,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool CheckTermination(ref bool success, double norm_CurRes, double fnorminit, List<double> normHistory, int itc) {
             using(var tr = new FuncTrace()) {
-                //tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 tr.Info($"Checking termination criterion: Iter {itc}, Current residual norm {norm_CurRes}, Initial Residual Norm {fnorminit}");
                 
                  if(ConvCrit > 0) {
@@ -355,6 +355,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public bool HomotopyNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
 
             using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = false;
                 // Initialization
                 // =============
 
@@ -380,7 +381,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 OnIterationCallback(0, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
                 double fnorminit = norm_CurRes;
                 List<double> normHistory = new List<double>();
-                normHistory.Add(norm_CurRes);
+                if(HomotopyParameter >= 1.0)
+                    normHistory.Add(norm_CurRes);
 
                 // Homotopy Solution extrapolation
                 // ===============================
@@ -461,7 +463,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 using(new BlockTrace("Slv Iter", tr)) {
 
                     bool ResidualCrit(double fac = 1.0) {
-                        return norm_CurRes <= ConvCrit * fnorminit * fac + ConvCrit * fac;
+                        double __ConvCrit = 1.0e-6;
+                        double thresh = __ConvCrit * fnorminit * fac + __ConvCrit * fac;
+                        bool ret = norm_CurRes <= thresh;
+                        tr.Info($"Pre-final convergence in Homotopy loop: {ret} (threshold = {thresh}, cur Res = {norm_CurRes}, init Res = {fnorminit}, ConvCrit = {ConvCrit}, fac = {fac})");
+                        return ret;
                     }
 
 
@@ -489,7 +495,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         bool GoodForHomoIncrease = ResidualCrit(HomotopyStepAcceptedFactor) && HomotopyParameter < 1.0;
                         bool BadHomo = (HomoStepCounter >= HomotopyStepLongFail
-                                        || TrustRegionDelta < 5e-6
+                                        //|| TrustRegionDelta < 5e-6 // Don't use this! It may cause a wrong/unintended fail -- and reduction of homotopy parameter -- at the end of the iteration, when we are almost converged.
                         ) && (AcceptedHomoSolutions.Count > 0);
 
                         if (TrustRegionDelta < 5e-6) {
@@ -593,7 +599,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         IterCounter++;
                         HomoStepCounter++;
                         NewtonStep(SolutionVec, IterCounter, CurSol, CurRes, HomotopyParameter, ref norm_CurRes, ref TrustRegionDelta);
-                        normHistory.Add(norm_CurRes);
+                        if(HomotopyParameter >= 1.0)
+                            normHistory.Add(norm_CurRes);
                     }
                 }
 

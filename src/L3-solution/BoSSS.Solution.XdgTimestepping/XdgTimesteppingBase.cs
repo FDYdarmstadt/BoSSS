@@ -500,9 +500,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                    
                     //// plotting during Newton iterations:  
                     //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
-                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 3);
-                    
-                    
+                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
+                                        
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];
                         if(field is XDGField) {
@@ -681,8 +680,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
 
-
-                /*{
+                /*
+                {
                     Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
                     var bla = ana.MinimalEigen();
                     Console.WriteLine("done: " + bla.lambdaMin);
