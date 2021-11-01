@@ -21,6 +21,7 @@ namespace BoSSS.Application.XNSERO_Solver {
     public class XNSERO_Control : XNSE_Control {
 
         public XNSERO_Control() {
+            //Debugger.Launch();
             base.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             // Set default values to LevelSet (one could still overwrite those)

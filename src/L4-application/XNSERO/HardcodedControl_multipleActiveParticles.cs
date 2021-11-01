@@ -25,7 +25,7 @@ using MPI.Wrappers;
 namespace BoSSS.Application.XNSERO_Solver {
 
     public static class MultiplePacticles {
-        public static XNSERO_Control Main(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength =6, double noOfParticles = 1) {
+        public static XNSERO_Control Main(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength =15, double noOfParticles = 4) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // Particle Properties
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 1000;
-            double activeStress = -1e1;
+            double activeStress = 1e1;
             double nextParticleDistance = particleLength * 3;
             double domainLength = nextParticleDistance * noOfParticles;
             List<string> boundaryValues = new List<string> {
@@ -61,34 +61,34 @@ namespace BoSSS.Application.XNSERO_Solver {
             Random angle = new Random();
             int j = 0;
             List<Particle> particles = new List<Particle>();
-            while (-4.5 + j * nextParticleDistance * aspectRatio * 1.6 < domainLength / 2) {
+            while (-2.5 + j * nextParticleDistance * aspectRatio * 1.6 < domainLength / 2) {
                 int i = 0;
-                while (-domainLength * 5 / 2 + nextParticleDistance / 2 + i * nextParticleDistance < -domainLength /3) {
+                while (-domainLength * 5 / 2 + nextParticleDistance / 2 + i * nextParticleDistance < domainLength*5/2){//-domainLength /3) {
                     double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
                     angle2 = 0;// angle2.MPIBroadcast(0);
-                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength * 5 / 2 + nextParticleDistance / 2 + i * nextParticleDistance, -4.5 + 1.6 * j * nextParticleDistance * aspectRatio }, angle2, activeStress, new double[] { 1, 0 }));
+                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength * 5 / 2 + nextParticleDistance / 2 + i * nextParticleDistance, -2.5+ 1.6 * j * nextParticleDistance * aspectRatio }, angle2, activeStress, new double[] { 1, 0 }));
 
                     i += 1;
                 }
                 j += 1;
             }
-            particles.Add(new Particle_Ellipsoid(noMotion, domainLength / 5, domainLength / 5, new double[] { 0, 0 }, 0, 0, new double[] { 0, 0 }));
-            j = 0;
-            while (-4.5 + j * nextParticleDistance * aspectRatio * 1.6 < domainLength / 2) {
-                int i = 0;
-                while (domainLength / 3 + nextParticleDistance / 2 + i * nextParticleDistance < domainLength * 5 / 2) {
-                    double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
-                    angle2 = 0;// angle2.MPIBroadcast(0);
-                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { domainLength / 3 + nextParticleDistance / 2 + i * nextParticleDistance, -4.5 + 1.6 * j * nextParticleDistance * aspectRatio }, angle2, activeStress, new double[] { 1, 0 }));
+            //particles.Add(new Particle_Ellipsoid(noMotion, domainLength / 5, domainLength / 5, new double[] { 0, 0 }, 0, 0, new double[] { 0, 0 }));
+            //j = 0;
+            //while (-4.5 + j * nextParticleDistance * aspectRatio * 1.6 < domainLength / 2) {
+            //    int i = 0;
+            //    while (domainLength / 3 + nextParticleDistance / 2 + i * nextParticleDistance < domainLength * 5 / 2) {
+            //        double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
+            //        angle2 = 0;// angle2.MPIBroadcast(0);
+            //        particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { domainLength / 3 + nextParticleDistance / 2 + i * nextParticleDistance, -4.5 + 1.6 * j * nextParticleDistance * aspectRatio }, angle2, activeStress, new double[] { 1, 0 }));
 
-                    i += 1;
-                }
-                j += 1;
-            }
+            //        i += 1;
+            //    }
+            //    j += 1;
+            //}
             C.AddBoundaryValue("Wall_upper", "VelocityX#A", (X, t) => 0);
             C.AddBoundaryValue("Wall_lower", "VelocityX#A", (X, t) => 0);
             C.SetParticles(particles);
-            C.SetTimesteps(dt: 1e-3, noOfTimesteps: int.MaxValue);
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.4;
             C.LinearSolver.NoOfMultigridLevels = 1;
