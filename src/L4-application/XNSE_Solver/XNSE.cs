@@ -591,12 +591,14 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (var f = new FuncTrace()) {
                 if ((int)this.Control.TimeSteppingScheme >= 100) {
+                    
                     // this is a RK scheme, set here the maximum 
                     dt = this.GetTimestep();
-                    if(phystime + dt > this.Control.Endtime) {
+                    if (phystime + dt > this.Control.Endtime) {
                         Console.WriteLine("restricting time-step to reach end-time");
                         dt = this.Control.Endtime - phystime;
                     }
+                    if (TimestepNo == 1) dt = Math.Min(dt, 1e-3 * this.Control.dtFixed); // small start timestep, to get the levelset rolling
                 } else {
                     // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
                     dt = base.GetTimestep();
