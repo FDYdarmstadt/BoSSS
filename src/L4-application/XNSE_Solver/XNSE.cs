@@ -71,12 +71,12 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
                         
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ShericalHarmonoicsPostprocessingTest();
+            InitMPI();
+            DeleteOldPlotFiles();
+            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 2, 0.1, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
             //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
             //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me");
+            NUnit.Framework.Assert.IsTrue(false, "remove me");
             //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
             {
                 XNSE._Main(args, false, delegate () {
@@ -503,7 +503,8 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// Definition of the boundary condition on the immersed boundary, <see cref="XNSE_Control.UseImmersedBoundary"/>;
+        /// Definition of the boundary condition on the immersed boundary (fluid-solid boundary, level-set 1), 
+        /// <see cref="XNSE_Control.UseImmersedBoundary"/>;
         /// Override to customize.
         /// </summary>
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
@@ -548,7 +549,7 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(var f = new FuncTrace()) {
                 dt = GetTimestep();
-                
+
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                 Console.WriteLine($"Done with time step {TimestepNo}.");
