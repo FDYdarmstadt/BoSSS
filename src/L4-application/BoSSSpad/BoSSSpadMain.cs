@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Application.XNSEC;
 using BoSSS.Foundation.IO;
 using BoSSS.Platform;
 using Microsoft.DotNet.Interactive.Notebook;
@@ -495,6 +496,7 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);
             Console.WriteLine(typeof(ZwoLevelSetSolver.ZLS).FullName);
+            Console.WriteLine(typeof(XNSEC.XNSEC).FullName);
         }
 
 

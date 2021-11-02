@@ -23,7 +23,7 @@ using BoSSS.Application.XNSE_Solver;
 
 namespace BoSSS.Application.XNSFE_Solver {
 
-    class LevelSetVelocityEvaporative : LevelSetVelocity {
+    public class LevelSetVelocityEvaporative : LevelSetVelocity {
 
         ThermalParameters thermalParameters;
         XNSFE_OperatorConfiguration config;

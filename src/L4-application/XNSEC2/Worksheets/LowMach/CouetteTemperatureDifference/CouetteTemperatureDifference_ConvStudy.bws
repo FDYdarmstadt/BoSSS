@@ -1,0 +1,706 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Unable to open 'allowed database' for SlurmClient: jg11bano@lcluster2.hrz.tu-darmstadt.de, Slurm account: project01299 at path Y:\CounterDiffusionFlame_fullGeom. Check configuration file 'BatchProcessorConfig.json'. (ArgumentException : Database Directory 'Y:\CounterDiffusionFlame_fullGeom' does not exist.)
+SlurmClient: jg11bano@lcluster2.hrz.tu-darmstadt.de, Slurm account: project01299 will continue to work, but database synchronization on job submission might not work correctly.
+Unable to open 'allowed database' for SlurmClient: jg11bano@lcluster2.hrz.tu-darmstadt.de, Slurm account: project01299 at path Y:\SquareCavityConvStudy. Check configuration file 'BatchProcessorConfig.json'. (ArgumentException : Database Directory 'Y:\SquareCavityConvStudy' does not exist.)
+SlurmClient: jg11bano@lcluster2.hrz.tu-darmstadt.de, Slurm account: project01299 will continue to work, but database synchronization on job submission might not work correctly.
+Unable to open 'allowed database' for SlurmClient: jg11bano@lcluster2.hrz.tu-darmstadt.de, Slurm account: project01299 at path Y:\CounterDiffusionFlame_fullGeom. Check configuration file 'BatchProcessorConfig.json'. (ArgumentException : Database Directory 'Y:\CounterDiffusionFlame_fullGeom' does not exist.)
+SlurmClient: jg11bano@lcluster2.hrz.tu-darmstadt.de, Slurm account: project01299 will continue to work, but database synchronization on job submission might not work correctly.
+Unable to open 'allowed database' for SlurmClient: jg11bano@lcluster2.hrz.tu-darmstadt.de, Slurm account: project01299 at path Y:\BoSSS_DB. Check configuration file 'BatchProcessorConfig.json'. (ArgumentException : Database Directory 'Y:\BoSSS_DB' does not exist.)
+SlurmClient: jg11bano@lcluster2.hrz.tu-darmstadt.de, Slurm account: project01299 will continue to work, but database synchronization on job submission might not work correctly.
+Databases loaded:
+List of 0 instances of IDatabaseInfo {
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+**************
+==============
+using System.Diagnostics;
+using BoSSS.Solution.NSECommon;
+using static System.Math;
+using BoSSS.Solution.Queries;
+using BoSSS.Application.LowMachCombustionNSE;
+**************
+==============
+Type solver = typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSEMain);
+**************
+==============
+string WFlowName = "CouetteTempGrad"; 
+WorkflowMgm.Init(WFlowName);
+**************
+Project name is set to 'CouetteTempGrad'.
+
+==============
+var myBatch = new MiniBatchProcessorClient(@"C:\deploy-Mini");
+MiniBatchProcessor.Server.StartIfNotRunning();
+
+**************
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 13860.
+started.
+True
+==============
+string dbPath = @"C:\Databases\CouetteFlow_TEST";
+var myDb = OpenOrCreateDatabase(dbPath);
+**************
+Opening existing database 'C:\Databases\CouetteFlow_TEST'.
+
+==============
+ static class StaticFormulas {
+public static int getNumberOfcores(int cells, int p, int variableNumber){
+     int p2              = p -1;// dgDegree of pressure;
+     int DoFperCore      = 10000; // optimal value
+     int numOfMonomialsU = ((p+1)*(p+1)+ p +1)/2; // Total number of Dofs for one variable (not pressure)
+     int numOfMonomialsP = ((p2+1)*(p2+1)+ p2 +1)/2;// Total number of Dofs for pressure
+    
+     int totalDoFs  = (numOfMonomialsU*(variableNumber-1) + numOfMonomialsP)*cells;
+     int numOfCores = (totalDoFs)/DoFperCore;
+
+     numOfCores = Math.Min(10,Math.Max(1,numOfCores));
+     return numOfCores;
+     
+ }
+ }
+**************
+==============
+// ==========
+// Parameters
+// ==========
+int[] dgDegree = new int[]{1,2,3,4};
+int[] Resolutions = new int[]{2,3,4,5,6};
+var  NofCells = Resolutions.ToList().Select(r=> (int)Math.Pow(2,r)).ToArray();
+string baseJobName = "CouetteTempGrad"   
+**************
+==============
+**************
+==============
+for (int dg = 0; dg < dgDegree.Length; dg++){
+        for(int r = 0; r < NofCells.Length; r++){
+        string ending = "P" + dgDegree[dg] + "K" +NofCells[r];
+         string jobName       = string.Format(baseJobName + ending);
+         string StartupString = string.Format("cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.SteadyCouetteFlowWithTemperatureGradient({0}, {1} )", dgDegree[dg], Resolutions[r]  );
+
+           var oneJob = new Job(jobName, solver);
+          oneJob.ExecutionTime = "2:00:00"; // 
+        oneJob.SetControlStatement(StartupString);
+         oneJob.NumberOfMPIProcs = StaticFormulas.getNumberOfcores(NofCells[r]*NofCells[r],dgDegree[dg],4);
+         oneJob.Activate(myBatch);
+     
+    }
+}
+ 
+**************
+(7,42): error CS0103: The name `solver' does not exist in the current context
+No. of errors|warnings: 1|0.
+
+==============
+WorkflowMgm.BlockUntilAllJobsTerminate();
+**************
+Mini batch processor is already running.
+All jobs finished.
+
+==============
+string[] varnames = new string[]{"VelocityX","VelocityY","Temperature", "Pressure"};// 
+**************
+==============
+WorkflowMgm.Sessions
+**************
+List of 0 instances of ISessionInfo {
+}
+==============
+var ExpPlotS2 = new List<Plot2Ddata>(); 
+foreach (var varname in varnames) {
+var ExpPlotS = new List<Plot2Ddata>();
+foreach (int pDeg in dgDegree) {
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+        Si => (Convert.ToInt32(Si.KeysAndQueries["DGdegree:Temperature"]) == pDeg)  // function which is true on all sessions we are interested in: 
+     ).ToArray();
+    Plot2Ddata pDegPlot =
+     pDegSessions.ToEstimatedGridConvergenceData(varname,
+       xAxis_Is_hOrDof: false, // false selects DOFs for x-axis 
+       normType: NormType.L2_approximate);
+    // remember the freshly created plot object in a list: 
+    ExpPlotS.Add(pDegPlot);
+    
+    //Saving to a txt file
+    pDegPlot.SaveTextFileToPublish(@"C:\tmp\data\"+ varname+pDeg);
+   
+    
+}
+
+//Now merge all curves for a given (varname) in one plot
+var ExpPlot = ExpPlotS[0]; //           select 0-th object\newline 
+foreach (var p in ExpPlotS.Skip(1)) { // loop over other (skip 0-th entry)\newline 
+    ExpPlot = ExpPlot.Merge(p); //      merge \newline 
+}
+
+ExpPlot.dataGroups[0].Format.PointType = PointTypes.Diamond;
+ExpPlot.dataGroups[1].Format.PointType = PointTypes.Box;
+ExpPlot.dataGroups[2].Format.PointType = PointTypes.LowerTriangle;
+ExpPlot.dataGroups[3].Format.PointType = PointTypes.Circle;
+
+ExpPlot.dataGroups[0].Name = "$k = 1$";
+ExpPlot.dataGroups[1].Name = "$k = 2$";
+ExpPlot.dataGroups[2].Name = "$k = 3$";
+ExpPlot.dataGroups[3].Name = "$k = 4$";
+
+foreach (var p in ExpPlot.dataGroups) {
+    p.Format.PointSize = 0.8;
+    p.Format.DashType = DashTypes.Dotted;
+    p.Format.LineWidth = 1;
+}
+ExpPlotS2.Add(ExpPlot);
+}
+
+// Set appropiate names for pressure
+ExpPlotS2.Last().dataGroups[0].Name = "$k = 0$";
+ExpPlotS2.Last().dataGroups[1].Name = "$k = 1$";
+ExpPlotS2.Last().dataGroups[2].Name = "$k = 2$";
+ExpPlotS2.Last().dataGroups[3].Name = "$k = 3$";
+**************
+==============
+**************
+==============
+var multiplot = new Plot2Ddata[2,2];
+multiplot[0,0] = ExpPlotS2[0];
+multiplot[0,1] = ExpPlotS2[1];
+multiplot[1,0] = ExpPlotS2[2];
+multiplot[1,1] = ExpPlotS2[3];
+**************
+==============
+**************
+==============
+/// this already looks neat, but a few 
+/// formatting tweaks to make the multi-plot look nicer:
+multiplot[0,1].dataGroups[0].UseY2 = true; // label right on right column
+multiplot[0,1].ShowYtics = false;
+multiplot[0,1].ShowY2tics = true;
+
+multiplot[1,1].dataGroups[0].UseY2 = true; // label right on right column
+multiplot[1,1].ShowYtics = false;
+multiplot[1,1].ShowY2tics = true;
+ 
+multiplot[0,0].dataGroups[0].UseX2 = true; // label on top on top row
+multiplot[0,0].ShowXtics = false;
+multiplot[0,0].ShowX2tics = true;
+ 
+multiplot[0,1].dataGroups[0].UseX2 = true; // label on top on top row
+multiplot[0,1].ShowXtics = false;
+multiplot[0,1].ShowX2tics = true;
+
+
+multiplot[0,0].ShowLegend = false; 
+multiplot[0,1].ShowLegend = false; 
+multiplot[1,0].ShowLegend = false; 
+multiplot[1,1].ShowLegend = false; 
+// turn logarithm on for the secondary axis; 
+multiplot[0,0].LogX2 = true;
+multiplot[0,1].LogX2 = true;
+multiplot[1,0].LogX2 = true;
+multiplot[1,1].LogX2 = true;
+multiplot[0,0].LogY2 = true;
+multiplot[0,1].LogY2 = true;
+multiplot[1,0].LogY2 = true;
+multiplot[1,1].LogY2 = true;
+
+
+
+
+// set y ranges
+multiplot[0,0].YrangeMin = 1e-10;
+multiplot[0,0].YrangeMax = 1e-2;
+multiplot[1,0].YrangeMin = 1e-10;
+multiplot[1,0].YrangeMax = 1e0;
+ 
+multiplot[0,1].Y2rangeMin = 1e-10;
+multiplot[0,1].Y2rangeMax = 1e0;
+multiplot[1,1].Y2rangeMin = 1e-10;
+multiplot[1,1].Y2rangeMax = 1e0;
+
+ 
+// reduce the whitespace in between the plots:
+multiplot[0,0].rmargin = 2;
+multiplot[0,1].lmargin = 2;
+multiplot[1,0].rmargin = 2;
+multiplot[1,1].lmargin = 2;
+multiplot[0,0].bmargin = 0.5;
+multiplot[1,0].tmargin = 0.5;
+multiplot[0,1].bmargin = 0.5;
+multiplot[1,1].tmargin = 0.5;
+**************
+==============
+multiplot.PlotNow()
+**************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+System.Drawing.Bitmap
+==============
+multiplot[0,0].Regression();
+**************
+List of 4 instances of KeyValuePair{String,Double} {
+  0: [$k = 1$, 2.03033467217057]
+  1: [$k = 2$, 3.35517188744366]
+  2: [$k = 3$, 4.45007844359799]
+  3: [$k = 4$, 5.00569039334049]
+}
+==============
+multiplot.ToGnuplot().PlotCairolatex().SaveTo("C:\\tmp\\CouetteTempDiff\\errplt_couetteTDiff.tex");
+**************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+Using gnuplot: C:\Program Files (x86)\FDY\BoSSS\bin\native\win\gnuplot-gp510-20160418-win32-mingw\gnuplot\bin\gnuplot.exe
+
+==============
+**************
+==============
+var ExpPlotS2 = new List<Plot2Ddata>(); 
+foreach (var varname in varnames) {
+var ExpPlotS = new List<Plot2Ddata>();
+foreach (int pDeg in dgDegree) {
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+        Si => (Convert.ToInt32(Si.KeysAndQueries["DGdegree:Velocity*"]) == pDeg)  // function which is true on all sessions we are interested in: 
+     ).ToArray();
+    Plot2Ddata pDegPlot =
+     pDegSessions.ToEstimatedGridConvergenceData(varname,
+       xAxis_Is_hOrDof: false, // false selects DOFs for x-axis 
+       normType: NormType.L2_embedded);
+    // remember the freshly created plot object in a list: 
+    ExpPlotS.Add(pDegPlot);
+    
+    //Saving to a txt file
+    pDegPlot.SaveTextFileToPublish(@"C:\tmp\data\"+ varname+pDeg);
+   
+    
+}
+ 
+}
+**************
+System.IO.DirectoryNotFoundException: Could not find a part of the path 'C:\tmp\data\VelocityX1Data.txt'.. Type 'LastError' for details.
+
+==============
+**************
+==============
+**************
+==============
+string[] varnames = new string[]{"VelocityX","VelocityY","Temperature", "Pressure" };// 
+
+**************
+==============
+
+string basepath = @"C:\tmp\ConvPlots\data\ConvStudy_CouetteDiffTemperature";
+System.IO.Directory.CreateDirectory(basepath); // Create folder for storing data
+
+
+**************
+ConvStudy_CouetteDiffTemperature
+==============
+
+
+foreach (var varname in varnames) {
+    foreach (int pDeg in dgDegree) {
+       var pDegSessions = myDb.Sessions.Where(
+            Si => (Convert.ToInt32(Si.KeysAndQueries["DGdegree:Velocity*"]) == pDeg) // function which is true on all sessions we are interested in: 
+         ).ToArray();
+        Plot2Ddata pDegPlot =
+         pDegSessions.ToEstimatedGridConvergenceData(varname,
+           xAxis_Is_hOrDof: true, // false selects DOFs for x-axis 
+           normType: NormType.L2_approximate );
+            //Saving to a txt file
+        pDegPlot.SaveTextFileToPublish(basepath+"\\"+  varname + "DG" + pDeg, false);
+    }
+}
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
