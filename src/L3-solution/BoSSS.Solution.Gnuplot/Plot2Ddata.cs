@@ -476,7 +476,7 @@ namespace BoSSS.Solution.Gnuplot {
                 ModPointType(name, RawFormat.point);
                 ModLineColor(name, RawFormat.color);
 
-                // cylcle formats
+                // cycle formats
                 RawFormat.point++;
                 if((int)RawFormat.point > pointsCount) {
                     RawFormat.point = (PointTypes)1;
