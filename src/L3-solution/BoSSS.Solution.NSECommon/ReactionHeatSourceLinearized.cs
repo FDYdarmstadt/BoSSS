@@ -109,7 +109,7 @@ namespace BoSSS.Solution.NSECommon {
         double[] ReactionRateConstants;
         double[] molarMasses;
 
-        MaterialLaw EoS;
+        MaterialLaw_MultipleSpecies EoS;
         double rho;
         double m_Da;
         double TRef;
@@ -120,9 +120,8 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="HeatReleaseFactor">Heat release computed from the sum of the product of the stoichiometric coefficient, partial heat capacity and molar mass of species alpha for all species. I.e.: sum(alpha = 1.. ns)[v_\alpha cp_alpha M_alpha]. Must be computed locally for non-constant partial heat capacities in later iterations of the code.</param>   
         /// <param name="ReactionRateConstants">0. PreExpFactor/Damköhler number, 1. ActivationTemperature, 2. MassFraction0Exponent, 3. MassFraction1Exponent</param>  
-        /// <param name="OneOverMolarMass0MolarMass1"> 1/(M_infty^(a + b -1) * MolarMassFuel^a * MolarMassOxidizer^b). M_infty is the reference for the molar mass steming from non-dimensionalisation of the governing equations.</param>  
         /// <param name="EoS">MaterialLawCombustion</param>  
-        public ReactionHeatSourceJacobi(double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw EoS, double TRef, double cpRef, bool VariableOneStepParameters) {
+        public ReactionHeatSourceJacobi(double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw_MultipleSpecies EoS, double TRef, double cpRef, bool VariableOneStepParameters) {
             m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
             m_ParameterOrdering = new string[] { "kReact" };
             this.HeatReleaseFactor = HeatReleaseFactor;
@@ -175,37 +174,40 @@ namespace BoSSS.Solution.NSECommon {
         /// 
         /// </summary>
         protected double Source(double[] x, double[] parameters, double[] U) {
-            rho = EoS.GetDensity(U);
+       
             Debug.Assert(!double.IsNaN(rho));
             Debug.Assert(!double.IsInfinity(rho));
 
             double Ta = ReactionRateConstants[1];
-
-            //double Temperature = U[0]  > 1.0 ? U[0] : 1.0 ;
-            //double YF = U[1] > 0.0 ? U[1] : 0.0;
-            //double YO = U[2] > 0.0 ? U[2] : 0.0;
-
+ 
             double Temperature = U[0];
             double YF = U[1];
             double YO = U[2];
 
 
-            //===================================================
-            // Limiting the value of variables using known bounds
-            //====================================================
-            //double T_ad = 10;//  TODO include the right adiabatic temperature
-            //if (Temperature > T_ad) { // Limit the value of the temperature
-            //    //Console.WriteLine("Warning: Value of temperature too high (T: {0}) at point x=({1},{2})", Temperature, x[0], x[1]);
-            //    Temperature = T_ad;
-            //}
+            ////===================================================
+            //// Limit value of variables using known bounds
+            ////====================================================
 
-            //double lowBoundTemperature = 0.7; // actually should be 1
-            //if (Temperature < lowBoundTemperature) { // Limit the value of the temperature
-            //    //Console.WriteLine("Warning: Value of temperature too low (T: {0}) at point x=({1},{2})", Temperature, x[0], x[1]);
-            //    Temperature = lowBoundTemperature;
-            //}
+            Temperature = Temperature > 10 ? 10 : Temperature;
+            Temperature = Temperature < 0.7 ? 0.7 : Temperature;
+
+            YF = YF > 1.0 ? 1.0 : YF;
+            YF = YF < 0.0 ? 0.0 : YF;
+
+            YO = YO > 1.0 ? 1.0 : YO;
+            YO = YO < 0.0 ? 0.0 : YO;
 
 
+            double cp = 1.0;// EoS.GetMixtureHeatCapacity(U);
+
+            if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
+                Ta = EoS.m_ChemModel.getTa(YF, YO) / TRef;
+                HeatReleaseFactor = EoS.m_ChemModel.getHeatRelease(YF, YO) / (cpRef * TRef);
+            }
+
+
+            rho = EoS.GetDensity(U);
             double PM_CH4 = molarMasses[0];
             double PM_O2 = molarMasses[1];
             ReactionRate = m_Da * Math.Exp(-Ta / Temperature) * (rho * YF / PM_CH4) * (rho * YO / PM_O2);
@@ -226,15 +228,9 @@ namespace BoSSS.Solution.NSECommon {
             }
 
 
-            if (YF * YO > 1e-8 && VariableOneStepParameters) {//  calculate one-Step model parameters
-                Ta = ((MaterialLawCombustion)EoS).getTa(YF, YO) / TRef;
-                HeatReleaseFactor = ((MaterialLawCombustion)EoS).getHeatRelease(YF, YO) / (cpRef * TRef);
-            }
-    
-
         
 
-            return -HeatReleaseFactor * ReactionRate * PM_CH4;
+            return -HeatReleaseFactor * ReactionRate * PM_CH4 / cp;
 
         }
     }
