@@ -43,11 +43,7 @@ namespace BoSSS.Application.XNSEC {
     [TestFixture]
     static public partial class NUnitTest {
 
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ViscosityJumpTest"/>
-        /// </summary>
-        [Test]
-         
+       
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
