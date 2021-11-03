@@ -142,7 +142,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             this.ExpectedSlopes = new List<ValueTuple<XAxisDesignation, string, double, double>>();
 
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "TotCondNo-*", 2.35, 1.5));
+            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "TotCondNo-*", 2.4, 1.5));
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-*", 0.5, -0.2));
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerCut-*", 0.5, -0.2));
             ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyUncut-*", 0.5, -0.2));
