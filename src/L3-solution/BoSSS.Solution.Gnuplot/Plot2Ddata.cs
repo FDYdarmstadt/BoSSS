@@ -674,6 +674,11 @@ namespace BoSSS.Solution.Gnuplot {
             Plot2Ddata result = new Plot2Ddata(mergedGroups.ToArray());
             result.LogX = this.LogX;
             result.LogY = this.LogY;
+            result.ShowLegend = this.ShowLegend || other.ShowLegend;
+            result.ShowXtics = this.ShowXtics || other.ShowXtics;
+            result.ShowYtics = this.ShowYtics || other.ShowYtics;
+            result.ShowX2tics = this.ShowX2tics || other.ShowX2tics;
+            result.ShowY2tics = this.ShowY2tics || other.ShowY2tics;
             return result;
         }
 
