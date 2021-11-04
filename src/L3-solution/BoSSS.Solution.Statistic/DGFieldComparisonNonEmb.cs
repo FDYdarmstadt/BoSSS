@@ -220,6 +220,9 @@ namespace BoSSS.Solution.Statistic {
             ComputeErrors(DistFunc, __fields, out GridRes, out __DOFs, out Errors);
         }
 
+        /// <summary>
+        /// computation based on time-steps
+        /// </summary>
         static void ComputeErrors(Func<ConventionalDGField,ConventionalDGField,double> distFunc,
           IEnumerable<string> FieldsToCompare, 
           IEnumerable<ITimestepInfo> timestepS,
@@ -238,10 +241,10 @@ namespace BoSSS.Solution.Statistic {
                 List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>(); // 1st index: grid / 2nd index: enumeration
                 int i = 1;
                 foreach (var timestep in timestepS) {
-                    //Console.WriteLine("Loading timestep {0} of {1}, ({2})...", i, timestepS.Count(), timestep.ID);
-                    fields.Add(timestep.Fields);
+                    tr.Info(string.Format("Loading timestep {0} of {1}, ({2})...", i, timestepS.Count(), timestep.ID));
+                    fields.Add(timestep.Fields.Where(f => FieldsToCompare.Contains(f.Identification)).ToArray());
                     i++;
-                    //Console.WriteLine("done (Grid has {0} cells).", fields.Last().First().GridDat.CellPartitioning.TotalLength);
+                    tr.Info(string.Format("done (Grid has {0} cells).", fields.Last().First().GridDat.CellPartitioning.TotalLength));
                 }
 
 
@@ -273,20 +276,24 @@ namespace BoSSS.Solution.Statistic {
             }
         }
 
-
+        /// <summary>
+        /// computation based on DG-fields
+        /// </summary>
         static void ComputeErrors(Func<ConventionalDGField,ConventionalDGField,double> distFunc,
           IList<IEnumerable<DGField>> __fields, 
           out double[] GridRes, 
           out Dictionary<string, long[]> __DOFs, 
           out Dictionary<string, double[]> Errors) {
             using (var tr = new FuncTrace()) {
-                
+                tr.InfoToConsole = false;
                 if (__fields == null || __fields.Count() <= 2)
                     throw new ArgumentException("expecting at least solutions on two different meshes.");
+
+
                
                 // load the DG-Fields
                 List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>(__fields); // 1st index: grid / 2nd index: enumeration
-                
+                tr.Info("Computing errors for fields: " + fields[0].Select(f => f.Identification).ToConcatString("", ", ", ";"));
 
                 // sort according to grid resolution
                 {
@@ -310,6 +317,7 @@ namespace BoSSS.Solution.Statistic {
                         throw new ArgumentException("DG Field identifications must match on all mesh levels in order to be correlated.");
                     }
                 }
+                tr.Info("Comparison Names: " + FieldsToCompare.ToConcatString("", ", ", ";"));
 
 
                 // grids and resolution
@@ -335,7 +343,8 @@ namespace BoSSS.Solution.Statistic {
                         dof[iLevel] = coarse.Mapping.TotalLength;
 
                         //Console.WriteLine("done (Error is {0:0.####E-00}).", L2Error[iLevel]);
-                        tr.Info(string.Format("done (Error is {0:0.####E-00}).", L2Error[iLevel]));
+                        tr.Info(string.Format("done '{0}' on level {1} (Error is {2:0.####E-00}, dof {3}, h is {4}).", Identification, iLevel, L2Error[iLevel], dof[iLevel], GridRes[iLevel]));
+                       
                     }
 
                     Errors.Add(Identification, L2Error);

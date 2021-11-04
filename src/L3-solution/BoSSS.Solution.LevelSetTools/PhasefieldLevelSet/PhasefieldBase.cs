@@ -449,12 +449,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                         break;
                     }
                     break;
+                    
                     case PhasefieldControl.ModelType.modelC:
                     throw new NotImplementedException();
-                    break;
+                    //break;
+                    
                     default:
                     throw new ArgumentOutOfRangeException();
-                    break;
+                    //break;
                 }
 
                 #endregion

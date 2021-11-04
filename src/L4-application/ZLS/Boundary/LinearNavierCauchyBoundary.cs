@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ZwoLevelSetSolver.SolidPhase;
+using ZwoLevelSetSolver.ContactLine;
 
 namespace ZwoLevelSetSolver.Boundary {
     class LinearNavierCauchyBoundary : SurfaceEquation {
@@ -34,6 +35,8 @@ namespace ZwoLevelSetSolver.Boundary {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
 
             AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, D, 1, material.Viscosity));
+
+            //AddSurfaceComponent(new BoundaryViscosity(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),d,D, 1));
         }
 
         public override string FirstSpeciesName => fluidSpecies;

@@ -626,7 +626,7 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public double[] TimeLevelsInStack {
             get {
-                return RegionsHistory.AvailabelIndices.Select((int iHist) => RegionsHistory[iHist].Time).ToArray();
+                return RegionsHistory.AvailableIndices.Select((int iHist) => RegionsHistory[iHist].Time).ToArray();
             }
         }
 

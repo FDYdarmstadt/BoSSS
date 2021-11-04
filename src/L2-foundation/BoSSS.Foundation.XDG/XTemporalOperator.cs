@@ -232,7 +232,7 @@ namespace BoSSS.Foundation.XDG {
                 //double MaxTime = _LsTrk.RegionsHistory.AvailabelIndices.Max((int iHist) => _LsTrk.RegionsHistory[iHist].Time.Abs());
                 double[] AvailableTimes = _LsTrk.TimeLevelsInStack;
                 int ii = AvailableTimes.IndexOfMin((double t) => Math.Abs(t - this.time));
-                int BestTimeIdx = _LsTrk.RegionsHistory.AvailabelIndices[ii];
+                int BestTimeIdx = _LsTrk.RegionsHistory.AvailableIndices[ii];
 
                 if(Math.Abs(Math.Abs(time - _LsTrk.RegionsHistory[BestTimeIdx].Time)) >= time * 1e-10 + 1e-10)
                     Console.WriteLine("unknown time level");

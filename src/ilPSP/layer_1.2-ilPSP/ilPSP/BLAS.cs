@@ -608,6 +608,23 @@ namespace ilPSP.Utils {
             }
         }
 
+
+        /// <summary>
+        /// Fills an vector with random entries
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="seed">if negative, a time-dependent sees is used; otherwise, the seed value for the <see cref="Random"/> instance.</param>
+        static public void FillRandom<T>(this T a, int seed = -1) where T : IList<double> {
+            Random rnd = seed >= 0 ? new Random(seed) : new Random();
+            int L = a.Count;
+            
+            // default:
+            for (int i = 0; i < L; i++) {
+                a[i] = rnd.NextDouble();
+            }
+        }
+
+
         /// <summary>
         /// clear all entries.
         /// </summary>
@@ -863,7 +880,7 @@ namespace ilPSP.Utils {
                     acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
                 }
 
-            } else if( acc_index != null && b_index == null) {
+            } else if(acc_index != null && b_index == null) {
 
                 int N = acc_index.Count;
                 for (int i = 0; i < N; i++) {

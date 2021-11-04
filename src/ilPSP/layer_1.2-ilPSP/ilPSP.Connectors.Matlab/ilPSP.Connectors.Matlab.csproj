@@ -10,6 +10,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <DocumentationFile>bin\Release\ilPSP.Connectors.Matlab.XML</DocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Compile Update="Resource1.Designer.cs">

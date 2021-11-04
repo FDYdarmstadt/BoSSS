@@ -7,12 +7,18 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
-    
+
     /// <summary>
     /// Logging for Channel flow
     /// </summary>
     [Serializable]
-    public class ChannelFlowLogging : XNSEinSituPostProcessingModule {
+    public class ChannelFlowLogging : ChannelFlowLogging<XNSE_Control> { }
+
+    /// <summary>
+    /// Logging for Channel flow
+    /// </summary>
+    [Serializable]
+    public class ChannelFlowLogging<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
         
         /// <summary>
         /// 

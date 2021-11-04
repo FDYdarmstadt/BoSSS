@@ -7,6 +7,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
+
+    /// <summary>
+    /// Momentum equation for the Solid / ad-hoc linearization to be used with <see cref="BoSSS.Solution.Control.NonLinearSolverCode.Picard"/>
+    /// </summary>
     class LinearNavierCauchy : BulkEquation {
 
         string speciesName;
@@ -15,6 +19,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
+        
         public LinearNavierCauchy(string speciesName, Solid material, int d, int D) {
             this.speciesName = speciesName;
             this.material = material;
@@ -23,22 +28,25 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Pressure);
 
+            
             var convection = new LinearConvectionForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], D, material.Density);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
             AddComponent(convection);
+            //Console.WriteLine("##################### Rem: nix convection.");
+            
+            
 
             var pressure = new PressureGradientForm(SpeciesName, d);
             AddComponent(pressure);
-
-            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
-            //eulerAlmansi0.PenaltySafety = 0.0;
+            
+            // laplacian of displacement:
+            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, NavierCauchy.EulerAlamansiPenalty);
             AddComponent(eulerAlmansi0);
 
-            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
+            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, NavierCauchy.EulerAlamansiPenalty);
             AddComponent(eulerAlmansi1);
-            //eulerAlmansi1.PenaltySafety = 0.0;
-
+            
             var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
             AddComponent(viscosity);
 

@@ -130,6 +130,7 @@ namespace BoSSS.Application.BoSSSpad {
             //eval.ReferenceAssembly(typeof(XDGShock.Program).Assembly);
             //eval.ReferenceAssembly(typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSEMain).Assembly);
             // eval.ReferenceAssembly(typeof(NSE_SIMPLE.NSE_SIMPLEMain).Assembly);
+            eval.ReferenceAssembly(typeof(XNSEC.XNSEC).Assembly);
 
             //eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             //eval.ReferenceAssembly(typeof(FuelCell.FuelCellMain).Assembly);

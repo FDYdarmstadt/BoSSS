@@ -86,13 +86,15 @@ namespace BoSSS.Solution.NSECommon {
 
             for (int bc = 0; bc < Nusselt.Length; bc++) {
                 double LocalNusselt = NusseltIntegrals[bc].Evaluate();
-                double GlobalNusselt = 0.0;
+                Nusselt[bc] = LocalNusselt; 
 
-                unsafe {
-                    MPI.Wrappers.csMPI.Raw.Allreduce((IntPtr)(&LocalNusselt), (IntPtr)(&GlobalNusselt), 1, MPI.Wrappers.csMPI.Raw._DATATYPE.DOUBLE, MPI.Wrappers.csMPI.Raw._OP.SUM, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
-                }
+                //double GlobalNusselt = 0.0;
 
-                Nusselt[bc] = GlobalNusselt; 
+                //unsafe {
+                //    MPI.Wrappers.csMPI.Raw.Allreduce((IntPtr)(&LocalNusselt), (IntPtr)(&GlobalNusselt), 1, MPI.Wrappers.csMPI.Raw._DATATYPE.DOUBLE, MPI.Wrappers.csMPI.Raw._OP.SUM, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+                //}
+
+                //Nusselt[bc] = GlobalNusselt; 
             }
         }
     }

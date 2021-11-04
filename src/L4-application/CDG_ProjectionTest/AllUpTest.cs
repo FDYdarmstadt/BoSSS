@@ -27,8 +27,51 @@ namespace BoSSS.Application.CDG_ProjectionTest {
     [TestFixture]
     static public class AllUpTest {
 
-
+        /// <summary>
+        /// case 1, 2, 3
+        /// </summary>
         [Test]
+        static public void AllUp_globalOnly(
+#if DEBUG
+            [Values(0, 1, 2)] int caseNo,
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#else
+            [Values(0, 1, 2)] int caseNo,
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#endif
+            ) {
+            AllUp(caseNo, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.globalOnly);
+        }
+
+        /// <summary>
+        /// case 1, 2, 3
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly(
+#if DEBUG
+            [Values(0, 1, 2)] int caseNo,
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#else
+            [Values(0, 1, 2)] int caseNo,
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#endif
+            ) {
+            AllUp(caseNo, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+        }
+
+        
         static public void AllUp(
 #if DEBUG
             [Values(0, 1, 2)] int caseNo,
@@ -66,6 +109,9 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             Assert.IsTrue(p.passed);
         }
 
+        /// <summary>
+        /// LegendrePolynomial: case 3, 4, 5
+        /// </summary>
         [Test]
         static public void AllUp_LegendrePolynomial(
 #if DEBUG
@@ -103,6 +149,9 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             Assert.IsTrue(p.passed);
         }
 
+        /// <summary>
+        /// Cube: case 6
+        /// </summary>
         [Test]
         static public void AllUp_Cube(
 #if DEBUG

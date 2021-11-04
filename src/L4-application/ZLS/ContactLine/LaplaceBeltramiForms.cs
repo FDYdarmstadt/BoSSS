@@ -10,24 +10,24 @@ namespace ZwoLevelSetSolver.ContactLine {
     class FreeSlipContactLineForm : ContactLineForm {
 
         int d;
-        int D;
+        int Dim;
 
         public FreeSlipContactLineForm(int d, int D) : base(D) {
             this.d = d;
-            this.D = D;
+            this.Dim = D;
         }
 
         public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
             Vector SurfaceNormal_IN = FluidSurfaceNormal(ref cpv);
 
-            Vector Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
+            Vector Tangente_IN = SurfaceUtilities.Tangent(SurfaceNormal_IN, EdgeNormal);
 
             double Flx_InCell = 0;
             double m_sigma = Sigma(ref cpv);
 
             // isotropic surface tension terms
-            for(int m_d = 0; m_d < D; m_d++) {
+            for(int m_d = 0; m_d < this.Dim; m_d++) {
                 Flx_InCell -= m_sigma * (EdgeNormal[m_d] * Tangente_IN[m_d]) * EdgeNormal[d];
             }
             return Flx_InCell * V;

@@ -34,7 +34,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// Basic test case for advecting the level-set field
     /// in a constant velocity field
     /// </summary>
-    class LevelSetAdvectionTest : IXNSElsTest {
+    public class LevelSetAdvectionTest : IXNSElsTest {
 
         public bool TestImmersedBoundary => false;
 
@@ -68,7 +68,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             this.LevelsetPolynomialDegree = LevelSetDegree;
             sign = (reversed) ? -1 : 1;
         }
-
 
         public double dt {
             get {

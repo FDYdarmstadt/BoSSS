@@ -272,9 +272,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
-
 
             //DGField PosField = new SinglePhaseField(new Basis(gdat, 0), "positiveLevelSetWing");
             //DGField NegField = new SinglePhaseField(new Basis(gdat, 0), "negativeLevelSetWing");
@@ -297,14 +296,21 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //}
             //Tecplot.Tecplot.PlotFields(new DGField[] { PosField, NegField, IntersectField }, "LevelSetWings", 0.0, 1);
 
+            // check that the far fields are not touching in the species seperated by this levelset
+            var spc = Tracker.GetSpeciesSeparatedByLevSet(iLevSet);
+            CellMask spcMask = CellMask.GetEmptyMask(gdat);
+            foreach (var sp in spc) {
+                spcMask = spcMask.Union(Tracker.Regions.GetSpeciesMask(sp));
+            }
+            spcMask = spcMask.Complement();
 
-            EdgeMask touching = PosGrid.BoundaryEdgesMask.Intersect(NegGrid.BoundaryEdgesMask);
+            EdgeMask touching = PosGrid.BoundaryEdgesMask.Intersect(NegGrid.BoundaryEdgesMask).Except(spcMask.GetAllLocalEdgesMask());
             if (touching.NoOfItemsLocally > 0) {
                 Console.WriteLine("on Proc {0}: touching.NoOfItemsLocally = {1}", gdat.MpiRank, touching.NoOfItemsLocally);
                 throw new ArithmeticException("Error in level-set topology.");
             }
 
-            if(object.ReferenceEquals(OldLevSet, NewLevelSet)) {
+            if (object.ReferenceEquals(OldLevSet, NewLevelSet)) {
                 NewLevelSet = OldLevSet.CloneAs();
             } else {
                 NewLevelSet.Clear(NEAR);
@@ -446,7 +452,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 1 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
             // compute velocity extension
@@ -476,7 +482,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 2 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
             // then, on the rest of the domain
@@ -491,7 +497,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 3 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>( ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 
@@ -534,7 +540,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 4 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 
@@ -548,7 +554,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 5 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 

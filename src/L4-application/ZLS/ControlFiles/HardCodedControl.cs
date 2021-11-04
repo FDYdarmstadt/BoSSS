@@ -868,11 +868,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
-            double dt = 0.1; //0.01;
+            double dt = 0.01; //0.01;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 1; // 12500; // (int)(125.0 / dt);
+            C.NoOfTimesteps = 200; // 12500; // (int)(125.0 / dt);
             C.saveperiod = 10;
 
 
@@ -1289,7 +1289,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-        public static ZLS_Control BallInChannel(int p = 2, int kelem = 3) {
+        public static ZLS_Control BallInChannel(int p = 2, int kelem = 4) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 10;
             C.SuperSampling = 4;
@@ -1639,7 +1639,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region solver
 
             C.NonLinearSolver.MaxSolverIterations = 20;
-            C.NonLinearSolver.MinSolverIterations = 3;
+            C.NonLinearSolver.MinSolverIterations = 2;
             C.LinearSolver.MaxSolverIterations = 20;
             //C.Solver_MaxIterations = 50;
             

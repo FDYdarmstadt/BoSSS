@@ -27,13 +27,16 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
 
-            AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity));
+            if(artificialViscosity > 0)
+                // we should not add the SIP form if it is not intended at all, i.e. if 'artificialViscosity == 0';
+                // since evaluation of SIP forms is quite costly; 
+                AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity));
 
             var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
             AddComponent(source);
 
-            var velocityBoundaryPenalty = new EdgePenaltyForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d]);
-            AddComponent(velocityBoundaryPenalty);
+            //var velocityBoundaryPenalty = new EdgePenaltyForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d]);
+            //AddComponent(velocityBoundaryPenalty);
         }
 
         public override string SpeciesName => speciesName;

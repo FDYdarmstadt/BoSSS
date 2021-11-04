@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Application.XNSEC;
 using BoSSS.Foundation.IO;
 using BoSSS.Platform;
 using Microsoft.DotNet.Interactive.Notebook;
@@ -189,158 +190,93 @@ namespace BoSSS.Application.BoSSSpad {
             // launch the app
             // ==============
             bool IinitializedMPI = BoSSS.Solution.Application.InitMPI();
-            
-            switch (mode) {
-                //case Modes.Worksheet:
-                //throw new NotSupportedException("GUI has been removed; use Jupyter notebook!");
-                //var ws = new Worksheet(fileToOpen);
-                //ws.Shown += Worksheet.OnShown; // Workaround for wrong word-wrap on start-up of the application
-                //System.Windows.Forms.Application.Run(ws);
 
-                //ws.m_ExecutorOfCommandQueue_RegularTermination = false;
-                //Thread.Sleep(800);
+            try
+            {
+                switch (mode)
+                {
 
-                //if (ws.m_ExecutorOfCommandQueue.IsAlive) {
-                //    // hardcore
-                //    Thread.Sleep(5000);
-                //    if (ws.m_ExecutorOfCommandQueue.IsAlive) {
-                //        ws.m_ExecutorOfCommandQueue.Abort();
-                //    }
-                //}
-                //break;
+                    case Modes.Check:
+                        if (args.Length != 1)
+                        {
+                            PrintUsage();
+                            return int.MinValue;
+                        }
+                        InstallationChecker.CheckSetup();
+                        break;
 
-                //case Modes.Console:
-                //ReadEvalPrintLoop.REPL();
-                //break;
-
-                //case Modes.SimpleConsole:
-                //ReadEvalPrintLoop.REPL_Simple();
-                //break;
-
-                case Modes.Check:
-                if(args.Length != 1) {
-                    PrintUsage();
-                    return int.MinValue;
-                }
-                InstallationChecker.CheckSetup();
-                break;
-
-                case Modes.OldFileUpgrade: {
-                    string fileToOpen;
-                    if(args.Length != 2) {
-                        PrintUsage();
-                        return int.MinValue;
-                    }
-                    fileToOpen = args[1];
-                    OldFileToJupyter(fileToOpen);
-                    break;
-                }
-                
-
-
-                case Modes.JupyterBatch: {
-                    string fileToOpen;
-                    if(args.Length != 2) {
-                        PrintUsage();
-                        return int.MinValue;
-                    }
-                    fileToOpen = args[1];
-
-                    errCount = RunJupyter(fileToOpen);
-                    break;
-                }
-
-                case Modes.Batch:
-                case Modes.TexBatch: {
-                    string fileToOpen;
-                    if(args.Length != 2) {
-                        PrintUsage();
-                        return int.MinValue;
-                    }
-                    fileToOpen = args[1];
-                    string ConvFile = OldFileToJupyter(fileToOpen);
-                    errCount = RunJupyter(ConvFile);
-
-                    /*
-                    Document doc;
-                    if(fileToOpen.ToLowerInvariant().EndsWith(".tex")) {
-                        LatexIO.SplitTexFile(fileToOpen, out _, out doc);
-                    } else {
-                        doc = Document.Deserialize(fileToOpen);
-                    }
-                    string OutDir = Path.GetDirectoryName(fileToOpen);
-                    string DocNam = Path.GetFileNameWithoutExtension(fileToOpen) + ".texbatch";
-                    InteractiveShell.CurrentDoc = doc;
-                    InteractiveShell._CurrentDocFile = (new FileInfo(fileToOpen)).FullName;
-
-                    // Which text boxes should be removed before 'restart' occurs
-                    int f = 0;
-                    if(mode == Modes.TexBatch) {
-
-                       
-                        for(int iEntry = 0; iEntry < doc.CommandAndResult.Count; iEntry++) {
-                            var Entry = doc.CommandAndResult[iEntry];
-
-                            // Check whether there are boxes before restart
-                            if(Entry.Command.Equals("restart") || Entry.Command.Equals("restart;")) {
-                                f = iEntry;
+                    case Modes.OldFileUpgrade:
+                        {
+                            string fileToOpen;
+                            if (args.Length != 2)
+                            {
+                                PrintUsage();
+                                return int.MinValue;
                             }
-
-                            // bws was produced by Latex - some string replacements are necessary
-                            Entry.Command = LatexIO.Tex2Bws(Entry.Command);
+                            fileToOpen = args[1];
+                            OldFileToJupyter(fileToOpen);
+                            break;
                         }
 
-                        BoSSSpadGnuplotExtensions.PlotMode = PlotNowMode.CairoLatex;
-                    }
 
-                    // All boxes before 'restart' should not be counted as error
-                    int count = 0;
-                    foreach(Document.Tuple dt in doc.CommandAndResult) {
-                        Console.WriteLine(dt.Command);
-                        bool success = dt.Evaluate();
 
-                        if(!success && count >= f)
-                            errCount++;
+                    case Modes.JupyterBatch:
+                        {
+                            string fileToOpen;
+                            if (args.Length != 2)
+                            {
+                                PrintUsage();
+                                return int.MinValue;
+                            }
+                            fileToOpen = args[1];
 
-                        Console.WriteLine(Document.ResultStartMarker);
-                        Console.WriteLine(dt.InterpreterTextOutput);
-                        Console.WriteLine(Document.ResultEndMarker);
-
-                        count++;
-                    }
-
-                    if(mode == Modes.TexBatch) {
-                        LatexIO.Save_Texbatch(OutDir, DocNam, doc);
-                    } else {
-                        if(fileToOpen.EndsWith(".tex")) {
-
-                        } else {
-                            doc.Serialize(fileToOpen);
+                            errCount = RunJupyter(fileToOpen);
+                            break;
                         }
-                    }
-                    InteractiveShell.CurrentDoc = null;
-                    */
-                    break;
+
+                    case Modes.Batch:
+                    case Modes.TexBatch:
+                        {
+                            string fileToOpen;
+                            if (args.Length != 2)
+                            {
+                                PrintUsage();
+                                return int.MinValue;
+                            }
+                            fileToOpen = args[1];
+                            string ConvFile = OldFileToJupyter(fileToOpen);
+                            errCount = RunJupyter(ConvFile);
+
+
+                            break;
+                        }
+
+                    case Modes.Jupyterfile:
+                        {
+                            string fileToOpen;
+                            if (args.Length != 2)
+                            {
+                                PrintUsage();
+                                return int.MinValue;
+                            }
+                            fileToOpen = args[1];
+                            Jupyterfile(fileToOpen);
+                            break;
+                        }
+
+                    case Modes.RunBatch:
+                        errCount = SubprogramRunbatch.RunBatch(args.Skip(1).ToArray());
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
                 }
-
-                case Modes.Jupyterfile: {
-                    string fileToOpen;
-                    if(args.Length != 2) {
-                        PrintUsage();
-                        return int.MinValue;
-                    }
-                    fileToOpen = args[1];
-                    Jupyterfile(fileToOpen);
-                    break;
-                }
-
-                case Modes.RunBatch:
-                errCount = SubprogramRunbatch.RunBatch(args.Skip(1).ToArray());
-                break;
-
-                default:
-                throw new NotImplementedException();
+            } catch(Exception e) {
+                Console.WriteLine(e.GetType().Name + ": " + e.Message);
+                errCount = -666;
+                //throw new AggregateException(e);
             }
+
 
             if (IinitializedMPI)
                 BoSSS.Solution.Application.FinalizeMPI();
@@ -352,8 +288,22 @@ namespace BoSSS.Application.BoSSSpad {
         private static Mutex JupyterMutex = new Mutex(false, "JupyterMutex");
 
         private static int RunJupyter(string fileToOpen) {
+            int RetVal = RunJupyter(fileToOpen, false); // first try, don't allow errors
+            /*if(RetVal == 0)
+                return 0;
+
+            // if we have an error, we have no output; then, the error might be hard to fix;
+            // therefore, we have to re-run with `--allow-errors`;
+            // Rem.: if --allow-errors is used, the return value of `jupyter nbconvert` is always 0; therefore we would not detect any error if we use it beforehand.
+            //       as an alternative, one might convert to a notebook (`--to notebook --execute --allow-errors --output out.ipynb` 
+            //       and then parse the `out.ipynb` for exceptions and errors.
+            RunJupyter(fileToOpen, true);*/
+            return RetVal;
+        }
+
+        private static int RunJupyter(string fileToOpen, bool AllowErrors) {
             ProcessStartInfo psi = new ProcessStartInfo();
-            psi.FileName = @"C:\Windows\System32\cmd.exe";
+            string SuffixAllowErrors = AllowErrors ? "--allow-errors" : "";
 
             psi.WorkingDirectory = Directory.GetCurrentDirectory();
 
@@ -361,25 +311,50 @@ namespace BoSSS.Application.BoSSSpad {
             //psi.RedirectStandardOutput = true;
             //psi.RedirectStandardError = true;
 
+            bool MutexReleased = false;
             try {
                 Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
                 JupyterMutex.WaitOne();
                 Console.WriteLine("Mutex obtained!");
+                
+                Process p;
+                if(System.OperatingSystem.IsWindows()) {
+                    psi.FileName = @"C:\Windows\System32\cmd.exe";
 
-                var p = Process.Start(psi);
+                    // wait here a bit to avoid a port conflict...
+                    // when two notebooks are started simultaneously, we might run into the following:
+                    //  ---> System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.
+                    p = Process.Start(psi);
+                    Random rnd = new Random();
+                    Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode()%2217));
 
-                //p.StandardInput.WriteLine("dir");
-                p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
-                p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute");
-                p.StandardInput.WriteLine("exit");
-                p.WaitForExit();
+                    //p.StandardInput.WriteLine("dir");
+                    p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
+                    p.StandardInput.WriteLine("jupyter.exe nbconvert \"" + fileToOpen + "\" --to html --execute " + SuffixAllowErrors);
+                    p.StandardInput.WriteLine("exit");
 
+                    // wait here a bit more...
+                    Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode()%2217));
+
+                    JupyterMutex.ReleaseMutex();
+                    MutexReleased = true;
+                    p.WaitForExit();
+
+                } else {
+                    psi.FileName = @"jupyter";
+                    psi.Arguments = " nbconvert " + fileToOpen + " --to html --execute " + SuffixAllowErrors; 
+
+                    p = Process.Start(psi);
+                    p.WaitForExit();
+
+                }
                 Console.WriteLine("--------------------------------");
                 Console.WriteLine("Done with notebook");
                 Console.WriteLine("Exit code " + p.ExitCode);
                 return p.ExitCode;
             } finally {
-                JupyterMutex.ReleaseMutex();
+                if(!MutexReleased)
+                    JupyterMutex.ReleaseMutex();
             }
         }
 
@@ -409,6 +384,7 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.WriteLine("using BoSSS.Solution.Gnuplot;");
                 stw.WriteLine("using BoSSS.Application.BoSSSpad;");
                 stw.WriteLine("using BoSSS.Application.XNSE_Solver;");
+                stw.WriteLine("using BoSSS.Application.XNSFE_Solver;");
                 stw.WriteLine("using static BoSSS.Application.BoSSSpad.BoSSSshell;");
                 stw.WriteLine("Init();");
 
@@ -497,10 +473,10 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine("--------------------------------------------------");
             Console.WriteLine("    BoSSSpad.exe --Jupyterfile file.ipynb   Create file prepared for BoSSS");
             Console.WriteLine();
-            Console.WriteLine("Option 4: App deployment:");
+            Console.WriteLine("Option 4: Submit HPC job:");
             Console.WriteLine("--------------------------------------------------");
-            Console.WriteLine("    BoSSSpad.exe --deploy Solver.dll dest-dir  send some Solver app & deps to ");
-            Console.WriteLine("                                               destination directory dest-dir.");
+            Console.WriteLine("    BoSSSpad.exe --RunBatch --help  deploy and run some solver on a ");
+            Console.WriteLine("                                    cluster; Use --help for further info.");
             Console.WriteLine();
             Console.WriteLine();
             Console.WriteLine("Option 5: Installation check:");
@@ -517,8 +493,10 @@ namespace BoSSS.Application.BoSSSpad {
             Console.WriteLine(typeof(CNS.Program).FullName);
             Console.WriteLine(typeof(IBM_Solver.IBM_SolverMain).FullName);
             Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
+            Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);
             Console.WriteLine(typeof(ZwoLevelSetSolver.ZLS).FullName);
+            Console.WriteLine(typeof(XNSEC.XNSEC).FullName);
         }
 
 

@@ -213,7 +213,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="HomotopyValue">
         /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
         /// </param>
-        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output, double HomotopyValue) {
+        /// <param name="ApplyRef">
+        /// apply additional modification due to free-mean-value fixing (aka. pressure reference point), <see cref="MultigridOperator.FreeMeanValue"/>
+        /// </param>        
+        protected void EvaluateOperator(double alpha, IEnumerable<DGField> CurrentState, double[] Output, double HomotopyValue, bool ApplyRef = false) {
             if(alpha != 1.0)
                 throw new NotSupportedException("some moron has removed this");
 
@@ -256,7 +259,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // }
             }
 #endif
-            CurrentLin.TransformRhsInto(OpEvalRaw, Output, false);
+            CurrentLin.TransformRhsInto(OpEvalRaw, Output, ApplyRef);
         }
 
         int EvaluationCounter = 0;
@@ -306,24 +309,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
         /// </param>
         protected void Update(IEnumerable<DGField> CurrentState, double[] U0, double HomotopyValue) {
-            /*
-            DGField[] U0fields = this.ProblemMapping.BasisS.Select(
-                delegate(Basis b) {
-                    DGField ret;
-                    if (b is XDGBasis) {
-                        XDGField xf = new XDGField(b as XDGBasis);
-                        xf.UpdateBehaviour = BehaveUnder_LevSetMoovement.AutoExtrapolate;
-                        ret = xf;
-                    } else {
-                        ret = new SinglePhaseField(b);
-                    }
-                    return ret;
-                }).ToArray();
-
-            CoordinateVector u0Raw = new CoordinateVector(U0fields);
-
-            CurrentLin.TransformSolFrom(u0Raw, U0);
-            */
            
             this.UpdateLinearization(CurrentState, HomotopyValue);
             CurrentLin.TransformSolInto(new CoordinateVector(CurrentState), U0);
@@ -364,6 +349,63 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 LinearizationRHS.ClearEntries();
             CurrentLin.TransformRhsInto(OpAffineRaw, this.LinearizationRHS, true);
             this.LinearizationRHS.ScaleV(-1.0);
+        }
+
+
+        /// <summary>
+        /// This method tests that, 
+        /// if any entry in <see cref="ISpatialOperator.FreeMeanValue"/> is true, 
+        /// a change in the mean/average value of the respective variable must **not** have any effect on the residual.
+        /// </summary>
+        public void TestFreeMeanValue(CoordinateVector SolutionVec, double HomotopyValue) {
+
+            int L = this.CurrentLin.Mapping.LocalLength;
+         
+            if(CurrentLin.FreeMeanValue.Any()) {
+
+                double[] ResidualBeforMeanCor = new double[L];
+                double[] ResidualAfterMeanCor = new double[L];
+
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualBeforMeanCor, HomotopyValue);
+                double a = ResidualBeforMeanCor.MPI_L2Norm();
+                double aa = SolutionVec.L2Norm();
+
+
+                DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
+                bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
+                if(flds.Length != FreeMeanValue.Length)
+                    throw new ApplicationException();
+
+                const double arbitrary_distortion_value = 2000.1234;
+
+                for(int iFld = 0; iFld < flds.Length; iFld++) {
+                    if(FreeMeanValue[iFld]) {
+                        flds[iFld].AccConstant(arbitrary_distortion_value);
+                    }
+                }
+
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualAfterMeanCor, HomotopyValue);
+                double b = ResidualAfterMeanCor.MPI_L2Norm();
+                double bb = SolutionVec.L2Norm();
+
+                for(int iFld = 0; iFld < flds.Length; iFld++) {
+                    if(FreeMeanValue[iFld]) {
+                        flds[iFld].AccConstant(-arbitrary_distortion_value);
+                    }
+                }
+
+                
+                //double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
+                //ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
+                //DGField[] ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(ResidualDifference, "residualDifference");
+                //Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference", 0, 2);
+
+                double RefVal = Math.Max(Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(a, b)*1e-7), Math.Abs(aa-bb)*1e-7);
+                if(Math.Abs(a-b) > RefVal) {
+                    throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {a}; residual after distortion {b}");
+                }
+            }
+
         }
 
 

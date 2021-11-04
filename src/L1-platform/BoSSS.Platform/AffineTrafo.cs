@@ -19,6 +19,7 @@ using System.Runtime.Serialization;
 using ilPSP.Utils;
 using ilPSP;
 using System.Diagnostics;
+using System.IO;
 
 namespace BoSSS.Platform.LinAlg {
 
@@ -55,6 +56,22 @@ namespace BoSSS.Platform.LinAlg {
         /// </summary>
         /// <param name="D">spatial dimension</param>
         public AffineTrafo(int D) : this(D, D) {
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString() {
+            using (var stw = new StringWriter()) {
+                stw.WriteLine("Affine Trafo: Matrix ");
+                IMatrixExtensions.SaveToStream(this.Matrix, stw);
+                stw.Write("  offset vector: ");
+                stw.Write((new Vector(this.Affine)).ToString());
+                stw.WriteLine();
+                stw.WriteLine("---");
+                return stw.ToString();
+            }
         }
 
         /// <summary>

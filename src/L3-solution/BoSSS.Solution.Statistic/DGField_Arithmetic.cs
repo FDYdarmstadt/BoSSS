@@ -70,7 +70,7 @@ namespace BoSSS.Solution.Statistic {
                 Foundation.Grid.Classic.GridData fineGridData = GridHelper.ExtractGridData(fine.GridDat);
                 Foundation.Grid.Classic.GridData coarseGridData = GridHelper.ExtractGridData(coarse.GridDat);
 
-                DGFieldComparison.ComputeFine2CoarseMap(
+                DGFieldComparisonEmbedded.ComputeFine2CoarseMap(
                         fineGridData,
                         coarseGridData,
                         out var Fine2CoarseMapS);
@@ -81,14 +81,14 @@ namespace BoSSS.Solution.Statistic {
                         new Basis(fine.GridDat, Math.Max(coarse.Basis.Degree, fine.Basis.Degree)), 
                         coarse.Identification);
 
-                    DGFieldComparison.InjectDGField(Fine2CoarseMapS, _injected, coarse as ConventionalDGField);
+                    DGFieldComparisonEmbedded.InjectDGField(Fine2CoarseMapS, _injected, coarse as ConventionalDGField);
                     injected = _injected;
                 } else if(coarse is XDGField) {
                     XDGField _injected = new XDGField(
                         new XDGBasis((fine as XDGField).Basis.Tracker, Math.Max(coarse.Basis.Degree, fine.Basis.Degree)), 
                         coarse.Identification);
 
-                    DGFieldComparison.InjectXDGField(Fine2CoarseMapS, _injected, coarse as XDGField);
+                    DGFieldComparisonEmbedded.InjectXDGField(Fine2CoarseMapS, _injected, coarse as XDGField);
                     injected = _injected;
                 } else {
                     throw new NotSupportedException();

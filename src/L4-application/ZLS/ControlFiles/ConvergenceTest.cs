@@ -683,7 +683,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AddInitialValue("Phi", new Formula("X => -1"));
             C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
 
-            int K = 5;
+            int K = 0;
             VelocityX Vx = new VelocityX(K);
             VelocityY Vy = new VelocityY(K);
             //C.AddInitialValue("VelocityX#A", Vx);
@@ -770,9 +770,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
         }
         public class VelocityX : IBoundaryAndInitialData {
             int K;
-
-            public VelocityX(int K) {
+            double amplitude;
+            public VelocityX(int K, double amplitude = 0.1) {
                 this.K = K;
+                this.amplitude = amplitude;
             }
 
             public double Evaluate(double[] X, double t) {
@@ -782,12 +783,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
                     Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
                     sum = sum + (Math.Pow(-1, k) * Vvorx(x, 2 * (k + 1)));
                 }
-                return sum;
+                return amplitude * sum;
 
             }
 
             double Vvorx(double[] X, double lamda) {
-                return -Math.Sin(Math.PI * X[1]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+                return Math.Sin(Math.PI * X[1] * lamda);
             }
 
             public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
@@ -797,9 +798,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
         };
         public class VelocityY : IBoundaryAndInitialData {
             int K;
+            double amplitude;
 
-            public VelocityY(int K) {
+            public VelocityY(int K, double amplitude = 0.1) {
                 this.K = K;
+                this.amplitude = amplitude;
             }
 
             public double Evaluate(double[] X, double t) {
@@ -809,12 +812,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
                     Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
                     sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
                 }
-                return sum;
+                return amplitude * sum;
 
             }
 
             double Vvory(double[] X, double lamda) {
-                return Math.Cos(Math.PI * X[0]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+                return Math.Sin(Math.PI * X[0] * lamda);
             }
 
             public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {

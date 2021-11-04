@@ -114,6 +114,19 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
+        /// compiles an edge mask from a single chunk
+        /// </summary>
+        /// <param name="part">
+        /// a chunk
+        /// </param>
+        /// <param name="grddat">
+        /// the grid that this mask will be associated with;
+        /// </param>
+        public EdgeMask(IGridData grddat, Chunk part, MaskType mt = MaskType.Logical)
+            : this(grddat, new Chunk[] { part }, mt) {
+        }
+
+        /// <summary>
         /// Creates an edge mask for all edges with an edge tag that
         /// corresponds to the given <paramref name="edgeTagName"/>
         /// </summary>

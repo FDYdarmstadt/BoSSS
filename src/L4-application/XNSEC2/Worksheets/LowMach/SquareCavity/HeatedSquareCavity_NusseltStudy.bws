@@ -1,0 +1,1856 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 0 instances of IDatabaseInfo {
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+**************
+==============
+using System.Diagnostics;
+using BoSSS.Solution.NSECommon;
+using static System.Math;
+using BoSSS.Solution.Queries;
+using BoSSS.Application.LowMachCombustionNSE;
+using System.IO;
+using System.Globalization;
+**************
+(5,25): error CS0234: The type or namespace name `LowMachCombustionNSE' does not exist in the namespace `BoSSS.Application'. Are you missing an assembly reference?
+No. of errors|warnings: 1|0.
+
+==============
+string WFlowName = "HeatedSquareCavityConvStudy"; 
+WorkflowMgm.Init(WFlowName);
+**************
+Project name is set to 'HeatedSquareCavityConvStudy'.
+
+==============
+**************
+==============
+**************
+==============
+myDb.Sessions
+**************
+List of 72 instances of ISessionInfo {
+  0: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K128Ra2	12/30/2020 07:51:11	70c23a11...
+  1: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K64Ra2	12/30/2020 07:29:20	e57d4a3b...
+  2: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K32Ra2	12/30/2020 07:24:49	03eba0dd...
+  3: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K16Ra2	12/30/2020 07:23:29	6e425718...
+  4: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K128Ra2	12/30/2020 06:31:07	0a090a1c...
+  5: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K8Ra2	12/30/2020 06:31:07	8685840e...
+  6: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K4Ra2	12/30/2020 06:31:07	2c06c40a...
+  7: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K64Ra2	12/30/2020 06:20:06	568cdd31...
+  8: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K32Ra2	12/30/2020 06:17:06	4820df95...
+  9: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K16Ra2	12/30/2020 06:16:06	3ad8933e...
+  10: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K128Ra2	12/30/2020 05:49:44	9e400b44...
+  11: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K8Ra2	12/30/2020 05:49:44	85230b8a...
+  12: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K4Ra2	12/30/2020 05:49:44	6bd507b9...
+  13: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K64Ra2	12/30/2020 05:43:34	49b0727f...
+  14: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K32Ra2	12/30/2020 05:41:44	c7ee0221...
+  15: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K16Ra2	12/30/2020 05:40:54	0a1b240b...
+  16: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K128Ra2	12/30/2020 05:30:23	dc4fbcdd...
+  17: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K8Ra2	12/30/2020 05:30:23	c3ef168e...
+  18: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K4Ra2	12/30/2020 05:30:23	24c3ee83...
+  19: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K64Ra2	12/30/2020 05:27:33	0f4ee650...
+  20: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K32Ra2	12/30/2020 05:26:33	2516a536...
+  21: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K16Ra2	12/30/2020 05:26:03	7e3f033a...
+  22: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K128Ra1	12/30/2020 04:24:50	be726528...
+  23: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K8Ra2	12/30/2020 04:24:50	11d0a34b...
+  24: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K4Ra2	12/30/2020 04:24:50	f37fc1f2...
+  25: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K64Ra1	12/30/2020 04:13:59	fecc81cd...
+  26: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K32Ra1	12/30/2020 04:11:29	567370f5...
+  27: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K16Ra1	12/30/2020 04:10:39	aaabe369...
+  28: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K128Ra1	12/30/2020 03:45:47	76389943...
+  29: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K8Ra1	12/30/2020 03:45:47	92fec04d...
+  30: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K4Ra1	12/30/2020 03:45:47	f83cd901...
+  31: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K64Ra1	12/30/2020 03:40:27	70e1160d...
+  32: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K32Ra1	12/30/2020 03:38:57	edfa5247...
+  33: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K16Ra1	12/30/2020 03:38:17	747e1d02...
+  34: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K128Ra1	12/30/2020 03:25:56	ba13d295...
+  35: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K8Ra1	12/30/2020 03:25:56	fa453f84...
+  36: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K4Ra1	12/30/2020 03:25:56	000dc123...
+  37: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K64Ra1	12/30/2020 03:22:36	6517a239...
+  38: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K32Ra1	12/30/2020 03:21:26	24eadbe8...
+  39: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K16Ra1	12/30/2020 03:20:46	0b386175...
+  40: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K128Ra1	12/30/2020 03:15:46	3e668339...
+  41: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K8Ra1	12/30/2020 03:15:46	25feb836...
+  42: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K4Ra1	12/30/2020 03:15:46	50362344...
+  43: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K64Ra1	12/30/2020 03:14:05	8d58b485...
+  44: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K32Ra1	12/30/2020 03:13:15	9c6cddca...
+  45: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K16Ra1	12/30/2020 03:12:36	9c4a0cba...
+  46: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K128Ra0	12/30/2020 02:22:42	4329b168...
+  47: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K8Ra1	12/30/2020 02:22:42	5d225210...
+  48: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K4Ra1	12/30/2020 02:22:42	d6bf9b79...
+  49: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K64Ra0	12/30/2020 02:14:32	eae05a4e...
+  50: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K32Ra0	12/30/2020 02:12:42	018fecb8...
+  51: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K16Ra0	12/30/2020 02:11:52	138f3d2e...
+  52: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K128Ra0	12/30/2020 01:52:01	8aeb039c...
+  53: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K8Ra0	12/30/2020 01:52:01	b6498137...
+  54: HeatedSquareCavityConvStudy	HeatedSquareCavityP4K4Ra0	12/30/2020 01:52:01	d7a7ad68...
+  55: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K64Ra0	12/30/2020 01:48:00	8e3bff3c...
+  56: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K32Ra0	12/30/2020 01:46:50	0f773842...
+  57: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K16Ra0	12/30/2020 01:46:10	73594ce1...
+  58: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K128Ra0	12/30/2020 01:36:10	9b4c2b41...
+  59: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K8Ra0	12/30/2020 01:36:10	9136c990...
+  60: HeatedSquareCavityConvStudy	HeatedSquareCavityP3K4Ra0	12/30/2020 01:36:10	61598c3b...
+  61: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K64Ra0	12/30/2020 01:33:30	bb2b035f...
+  62: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K32Ra0	12/30/2020 01:32:30	5243fb39...
+  63: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K16Ra0	12/30/2020 01:32:00	2c55e1f4...
+  64: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K128Ra0	12/30/2020 01:27:10	38f291e8...
+  65: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K8Ra0	12/30/2020 01:27:10	c73061b7...
+  66: HeatedSquareCavityConvStudy	HeatedSquareCavityP2K4Ra0	12/30/2020 01:27:10	13826d61...
+  67: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K64Ra0	12/30/2020 01:25:39	499d2c52...
+  68: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K32Ra0	12/30/2020 01:24:59	2219cf4e...
+  69: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K8Ra0	12/30/2020 01:24:29	8fba6a66...
+  70: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K16Ra0	12/30/2020 01:24:29	e5bc78f2...
+  71: HeatedSquareCavityConvStudy	HeatedSquareCavityP1K4Ra0	12/30/2020 01:24:19	4875c627...
+}
+==============
+**************
+==============
+var myBatch = new MiniBatchProcessorClient(@"C:\deploy-Mini");
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Mini batch processor is already running.
+False
+==============
+string dbPath = @"C:\Databases\HeatedSquareCavity_NusseltStudy";
+var myDb      = OpenOrCreateDatabase(dbPath);
+**************
+Opening existing database 'C:\Databases\HeatedSquareCavity_NusseltStudy'.
+
+==============
+Type solver = typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSEMain);
+**************
+==============
+// ==========
+// Parameters
+// ==========
+int[] dgDegree = new int[]{1,2,3,4};//
+int[] Resolutions = new int[]{2,3,4,5,6,7};//
+//int[] dgDegree = new int[]{1,2};
+//int[] Resolutions = new int[]{3,4};
+
+double[] RaArr = new double[]{1e2,1e4,1e6};
+double[] newtonConvCriteria = new double[] {1e-10}; // 1e-5, 1e-7, 1e-9,
+double dt = -1;
+var  NofCells = Resolutions.ToList().Select(r=> (int)Math.Pow(2,r)).ToArray();
+string baseJobName = "HeatedSquareCavity"   
+**************
+==============
+NofCells
+**************
+List of 6 instances of Int32 {
+  0: 4
+  1: 8
+  2: 16
+  3: 32
+  4: 64
+  5: 128
+}
+==============
+for(int n = 0; n < RaArr.Length; n++){
+for (int dg = 0; dg < dgDegree.Length; dg++){
+        for(int r = 0; r < NofCells.Length; r++){
+        string ending = "P" + dgDegree[dg] + "K" +NofCells[r]+"Ra"+n;
+         string jobName       = string.Format(baseJobName + ending);
+         string StartupString = string.Format("cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity({0}, {1},{2}, {3}, @\"{4}\" )", dgDegree[dg], NofCells[r] ,RaArr[n], dt, dbPath);
+Console.WriteLine(StartupString);
+                var oneJob = new Job(jobName, solver);
+          oneJob.ExecutionTime = "0:15:00"; // 
+        oneJob.SetControlStatement(StartupString);
+         oneJob.NumberOfMPIProcs = NofCells[r] < 16? 1:6 ;//StaticFormulas.getNumberOfcores(NofCells[r]*NofCells[r],dgDegree[dg],4);
+         oneJob.Activate(myBatch);
+    }
+}
+}
+**************
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 4,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K4Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012415
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 8,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K8Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012418
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session 4875c627-1fe3-4445-94b9-2e45dba8f303 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\4875c627-1fe3-4445-94b9-2e45dba8f303\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 16,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session 4875c627-1fe3-4445-94b9-2e45dba8f303 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\4875c627-1fe3-4445-94b9-2e45dba8f303\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K16Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012423
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 32,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K32Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012427
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 64,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session 8fba6a66-f7f5-43e9-a89c-6da9dc24a222 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\8fba6a66-f7f5-43e9-a89c-6da9dc24a222\Session.info'.'
+Loading session e5bc78f2-cb8e-44d0-9b73-dcd8d6150ce3 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\e5bc78f2-cb8e-44d0-9b73-dcd8d6150ce3\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session 8fba6a66-f7f5-43e9-a89c-6da9dc24a222 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\8fba6a66-f7f5-43e9-a89c-6da9dc24a222\Session.info'.'
+Loading session e5bc78f2-cb8e-44d0-9b73-dcd8d6150ce3 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\e5bc78f2-cb8e-44d0-9b73-dcd8d6150ce3\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K64Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012433
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 128,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K128Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012439
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 4,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K4Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012444
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 8,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K8Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012449
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 16,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K16Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012453
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 32,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K32Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012458
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session 2219cf4e-0998-42bb-b3a5-b43fe8570e97 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\2219cf4e-0998-42bb-b3a5-b43fe8570e97\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 64,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session 2219cf4e-0998-42bb-b3a5-b43fe8570e97 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\2219cf4e-0998-42bb-b3a5-b43fe8570e97\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K64Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012507
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 128,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K128Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012514
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 4,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K4Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012520
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 8,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K8Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012526
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 16,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K16Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012531
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 32,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K32Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012536
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 64,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session 499d2c52-194b-41c8-b4ba-ecd5ee1b8089 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\499d2c52-194b-41c8-b4ba-ecd5ee1b8089\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K64Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012541
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 128,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K128Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012548
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 4,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K4Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012555
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 8,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K8Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012603
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 16,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K16Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012610
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 32,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K32Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012617
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 64,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K64Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012624
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 128,100, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K128Ra0 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012631
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 4,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K4Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012638
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 8,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K8Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012645
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 16,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K16Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012652
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 32,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K32Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012657
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 64,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K64Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012703
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 128,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K128Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012709
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session 13826d61-1a00-4f55-ae53-1b4d6f151450 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\13826d61-1a00-4f55-ae53-1b4d6f151450\Session.info'.'
+Loading session 38f291e8-0543-41f2-918e-4633c8980519 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\38f291e8-0543-41f2-918e-4633c8980519\Session.info'.'
+Loading session c73061b7-0c50-4dcf-971c-f8881248824e failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\c73061b7-0c50-4dcf-971c-f8881248824e\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 4,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K4Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012721
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 8,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K8Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012731
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 16,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K16Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012740
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 32,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K32Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012749
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 64,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K64Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012757
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 128,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K128Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012806
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 4,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K4Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012814
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 8,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K8Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012823
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 16,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K16Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012831
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 32,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K32Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012840
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 64,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K64Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012849
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 128,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K128Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012857
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 4,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K4Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012906
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 8,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K8Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012914
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 16,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K16Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012923
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 32,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K32Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012931
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 64,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K64Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012940
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 128,10000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K128Ra1 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012949
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 4,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K4Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_012957
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 8,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K8Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013006
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 16,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K16Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013014
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 32,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K32Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013023
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 64,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K64Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013031
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(1, 128,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP1K128Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013040
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 4,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K4Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013049
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 8,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K8Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013058
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 16,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K16Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013106
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 32,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K32Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013115
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 64,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K64Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013124
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(2, 128,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP2K128Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013132
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 4,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K4Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013140
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 8,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K8Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013147
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 16,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K16Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013153
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 32,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session 2c55e1f4-30b5-4fcf-98b2-d76a8f670771 failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\2c55e1f4-30b5-4fcf-98b2-d76a8f670771\Session.info'.'
+Deploying job HeatedSquareCavityP3K32Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013200
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 64,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K64Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013209
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(3, 128,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP3K128Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013218
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 4,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K4Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013225
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 8,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session 5243fb39-358a-4234-811e-3b1454c29b4a failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy\sessions\5243fb39-358a-4234-811e-3b1454c29b4a\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K8Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013234
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 16,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K16Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013244
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 32,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K32Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013253
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 64,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K64Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013303
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.NaturalConvectionSquareCavity(4, 128,1000000, -1, @"C:\Databases\HeatedSquareCavity_NusseltStudy" )
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+Deploying job HeatedSquareCavityP4K128Ra2 ... 
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\HeatedSquareCavityConvStudy-LowMachCombustionNSE2020Dec30_013312
+copied 26 files.
+deployment finished.
+Loading session be01cbcc-4cb5-4a91-8e09-2994fde360da failed with message 'Could not find file 'C:\Databases\HeatedSquareCavity_NusseltStudy_Ra1e5\sessions\be01cbcc-4cb5-4a91-8e09-2994fde360da\Session.info'.'
+
+
+==============
+Dictionary<int,double[]> All_p0values = new Dictionary<int,double[]>();
+**************
+==============
+foreach (int pDeg in dgDegree) {
+    double[] p0values;
+    var pDegSessions = myDb.Sessions.Where(
+         Si => (Convert.ToInt32(Si.KeysAndQueries["DGdegree:Velocity*"]) == pDeg) // function which is true on all sessions we are interested in: 
+      ).ToArray();
+
+    p0values = new double[pDegSessions.Length];
+    int i = 0;
+    foreach (var sess in pDegSessions) {
+        double p0value = sess.Timesteps.Last().Fields.Pick(0).ProbeAt(0, 0);
+        p0values[i] = p0value;
+        i++;
+    }
+All_p0values.Add(pDeg,p0values);
+}
+**************
+==============
+**************
+==============
+string basepath = @"C:\tmp\NaturalConvection\data\ThermoPress\";
+foreach (int dgDg in dgDegree) {
+    if (dgDg != 5) {
+        string names = "p0" + dgDg.ToString() + ".txt";
+        string txtpath = basepath + names;
+        using (StreamWriter stw = new StreamWriter(txtpath)) {
+            stw.WriteLine("x\ty");
+            for (int i = 0; i < Resolutions.Length; i++) {
+                stw.Write(Resolutions[i].ToString("E16", NumberFormatInfo.InvariantInfo) + "\t");
+                stw.Write(All_p0values[dgDg][i].ToString("E16", NumberFormatInfo.InvariantInfo));
+                stw.WriteLine();
+            }
+        }
+    }
+}
+**************
+==============
+string basepath = @"C:\Users\jfgj8\Dropbox\PaperdiffusionFlame\ama\data\NusseltStudy\";
+char ReChar     = '2';
+**************
+==============
+ Dictionary<int,double[]> All_NULeftvalues = new Dictionary<int,double[]>();
+Dictionary<int,double[]> All_NURightvalues = new Dictionary<int,double[]>();
+Dictionary<int,double[]> All_NUTopvalues = new Dictionary<int,double[]>();
+ foreach (int pDeg in dgDegree) {
+    var pDegSessions = myDb.Sessions.Where(
+         Si => ((Convert.ToInt32(Si.KeysAndQueries["DGdegree:Velocity*"]) == pDeg) &&
+          (((Si.KeysAndQueries["SessionName"]).ToString()).Last() == ReChar)
+       // &&(Convert.ToInt32(Si.KeysAndQueries["Grid:NoOfCells"])) > 64
+        ) // function which is true on all sessions we are interested in: 
+      ).ToArray();
+
+    double[] leftvalues = new double[pDegSessions.Length];
+    double[] rightvalues = new double[pDegSessions.Length];
+    int i = 0;
+    foreach (var sess in pDegSessions) {
+        var leftvalue  = sess.KeysAndQueries["NusseltLeft"];
+        var rightvalue = sess.KeysAndQueries["NusseltRigth"];
+        var numofcells = sess.KeysAndQueries["Grid:NoOfCells"];
+        leftvalues[i] = System.Convert.ToDouble(leftvalue);
+        rightvalues[i] = System.Convert.ToDouble(rightvalue);
+rightvalues[i]*=-1;
+        i++;
+    }
+All_NULeftvalues.Add(pDeg,leftvalues);
+All_NURightvalues.Add(pDeg,rightvalues);
+}
+
+**************
+==============
+foreach (int dgDg in dgDegree) {
+    string names   = "NusseltReLeft" + ReChar +"Dg" + dgDg.ToString() + ".txt";
+    string txtpath = basepath + names;
+    using (StreamWriter stw = new StreamWriter(txtpath)) {
+        stw.WriteLine("x\ty");
+        for (int i = 0; i < 4; i++) {
+            stw.Write(NofCellsInv[i].ToString("E16", NumberFormatInfo.InvariantInfo) + "\t");
+            stw.Write(All_NULeftvalues[dgDg][i].ToString("E16", NumberFormatInfo.InvariantInfo));
+            stw.WriteLine();
+        }
+    }
+}
+**************
+==============
+foreach (int dgDg in dgDegree) {
+    string names   = "NusseltReRight" + ReChar +"Dg" + dgDg.ToString() + ".txt";
+    string txtpath = basepath + names;
+    using (StreamWriter stw = new StreamWriter(txtpath)) {
+        stw.WriteLine("x\ty");
+        for (int i = 0; i < 4; i++) {
+            stw.Write(NofCellsInv[i].ToString("E16", NumberFormatInfo.InvariantInfo) + "\t");
+            stw.Write(All_NURightvalues[dgDg][i].ToString("E16", NumberFormatInfo.InvariantInfo));
+            stw.WriteLine();
+        }
+    }
+}
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+NofCellsInv
+**************
+List of 6 instances of Int32 {
+  0: 128
+  1: 64
+  2: 32
+  3: 16
+  4: 8
+  5: 4
+}
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+System.String
+==============
+ 
+**************
+==============
+**************
+==============
+**************
+==============
+myDb.Sessions.Pick(34).KeysAndQueries
+**************
+List of 229 instances of KeyValuePair{String,Object} {
+  0: [ProjectName, HeatedSquareCavityConvStudy]
+  1: [SessionName, HeatedSquareCavityP2K128Ra1]
+  2: [DGdegree:Velocity*, 2]
+  3: [DGdegree:Pressure, 1]
+  4: [DGdegree:Temperature, 2]
+  5: [DGdegree:ThermodynamicPressure, 1]
+  6: [DGdegree:MassFraction0, 2]
+  7: [DGdegree:MassFraction1, 2]
+  8: [DGdegree:MassFraction2, 2]
+  9: [DGdegree:MassFraction3, 2]
+  10: [DGdegree:MassFraction4, 2]
+  11: [DGdegree:MixtureFraction, 2]
+  12: [DGdegree:Density, 2]
+  13: [DGdegree:p_an, -1]
+  14: [DGdegree:u_an, -1]
+  15: [DGdegree:v_an, -1]
+  16: [DGdegree:T_an, -1]
+  17: [DGdegree:Y0_an, -1]
+  18: [DGdegree:Y1_an, -1]
+  19: [DGdegree:Y2_an, -1]
+  20: [DGdegree:Y3_an, -1]
+  21: [DGdegree:Z_an, -1]
+  22: [DGdegree:ERR_p, -1]
+  23: [DGdegree:ERR_u, -1]
+  24: [DGdegree:ERR_v, -1]
+  25: [DGdegree:ERR_T, -1]
+  26: [DGdegree:ERR_Y0, -1]
+  27: [DGdegree:ERR_Y1, -1]
+  28: [DGdegree:ERR_Y2, -1]
+  29: [DGdegree:ERR_Z, -1]
+  30: [Bndtype:NoSlipNeumann, auto:NoSlipNeumann]
+  31: [Bndtype:wall_tempfixed_left, auto:wall_tempfixed_left]
+  32: [Bndtype:wall_tempfixed_right, auto:wall_tempfixed_right]
+  33: [HomotopyArray[0], 1]
+  34: [HomotopyArray[1], 3.16227766016838]
+  35: [HomotopyArray[2], 10]
+  36: [HomotopyArray[3], 31.6227766016838]
+  37: [HomotopyArray[4], 100]
+  38: [YFuelInlet, 1]
+  39: [YOxInlet, 1]
+  40: [TFuelInlet, 1]
+  41: [TOxInlet, 1]
+  42: [zSt, 0.05]
+  43: [s, 4]
+  44: [EoS.Prandtl, 0.71]
+  45: [EoS.T_ref, 600]
+  46: [EoS.ThermodynamicPressureValue, -1]
+  47: [CC.MW_CH4, 16]
+  48: [CC.MW_O2, 32]
+  49: [CC.MW_CO2, 44]
+  50: [CC.MW_H2O, 18]
+  51: [CC.MW_N2, 28]
+  52: [CC.nu_CH4, -1]
+  53: [CC.nu_O2, -2]
+  54: [CC.nu_CO2, 1]
+  55: [CC.nu_H2O, 2]
+  56: [CC.PM_Air, 28.8288]
+  57: [CC.R_gas, 8.314]
+  58: [CC.PreExponentialFactor, 690000000000]
+  59: [CC.Ta, 15900]
+  60: [CC.HeatReleaseMass, 50100]
+  61: [CC.HeatReleaseMolar, 802400]
+  62: [physicsMode, 1]
+  63: [LRef, 0]
+  64: [pRef, 0]
+  65: [uRef, 0]
+  66: [MWRef, 0]
+  67: [muRef, 0]
+  68: [B, 0]
+  69: [DRef, 0]
+  70: [cpRef, 0]
+  71: [lambdaRef, 0]
+  72: [TRef, 0]
+  73: [rhoRef, 0]
+  74: [R_gas, 1]
+  75: [HeatRelease, -1]
+  76: [NoOfMultigridLevels, 1]
+  77: [TimesteppingMode, 1]
+  78: [GeneratedFromCode, True]
+  79: [ControlFileText_Index, 0]
+  80: [InitialValues_EvaluatorsVec[0].Key, VelocityX]
+  81: [InitialValues_EvaluatorsVec[1].Key, VelocityY]
+  82: [InitialValues_EvaluatorsVec[2].Key, Pressure]
+  83: [InitialValues_EvaluatorsVec[3].Key, Temperature]
+  84: [InitialValues_EvaluatorsVec[4].Key, ThermodynamicPressure]
+  85: [dtFixed, 1.79769313486232E+304]
+  86: [PenaltyViscMomentum, 1]
+  87: [PenaltyHeatConduction, 1]
+  88: [NumberOfHomotopyArraySubdivisions, 10]
+  89: [MomentumConvection_OK, True]
+  90: [MomentumDiffusion_OK, True]
+  91: [myviscosityTerms, 7]
+  92: [VelocityBlockPrecondMode, 7]
+  93: [PressureBlockPrecondMode, 0]
+  94: [GravityDirection[0], 0]
+  95: [GravityDirection[1], 1]
+  96: [GravityDirection[2], 0]
+  97: [RedimensionalizeVariables, False]
+  98: [FlamePosition, 0]
+  99: [phi, 0]
+  100: [useHomotopie, False]
+  101: [VariableOneStepParameters, True]
+  102: [usesimplifiedGeometry, False]
+  103: [homotopieVariable, Reynolds]
+  104: [homotopieAimedValue, 0]
+  105: [PlotNewtonIterations, False]
+  106: [SensorVariable, ReactionRate]
+  107: [PrintMatrix, False]
+  108: [TestMatrix, False]
+  109: [usePotentialFlow, False]
+  110: [BDFOrder, 1]
+  111: [MatParamsMode, 1]
+  112: [m_HomotopyArray[0], 1]
+  113: [m_HomotopyArray[1], 3.16227766016838]
+  114: [m_HomotopyArray[2], 10]
+  115: [m_HomotopyArray[3], 31.6227766016838]
+  116: [m_HomotopyArray[4], 100]
+  117: [cpOne, True]
+  118: [rhoOne, False]
+  119: [ViscosityOption, 3]
+  120: [ManufacturedSolutionSwitch, False]
+  121: [AnalyticsolutionSwitch, False]
+  122: [EdgeTagsNusselt[0], wall_tempfixed_left]
+  123: [EdgeTagsNusselt[1], wall_tempfixed_right]
+  124: [EdgeTagsNusselt[2], NoSlipNeumann]
+  125: [m_physicsMode, 1]
+  126: [BaseRefinementLevel, 1]
+  127: [RefinementLevel, 1]
+  128: [UseFDJ, False]
+  129: [IgnoreVectorizedFluxes, False]
+  130: [ThermodynamicPressureMode, 1]
+  131: [InitialMass, 1]
+  132: [AmbientPressure, 1]
+  133: [ChemReactionActive, True]
+  134: [HomotopyApproach, 0]
+  135: [sparkOK, True]
+  136: [T_ref_Sutherland, 600]
+  137: [Reynolds, 100]
+  138: [Rayleigh, 10000]
+  139: [Gamma, 1]
+  140: [Prandtl, 0.71]
+  141: [Schmidt, 1]
+  142: [Lewis[0], 1]
+  143: [Lewis[1], 1]
+  144: [Lewis[2], 1]
+  145: [Lewis[3], 1]
+  146: [Lewis[4], 1]
+  147: [Froude, 0.923038460737146]
+  148: [Damk, 1]
+  149: [NumberOfProducts, 3]
+  150: [MolarMasses[0], 1]
+  151: [MolarMasses[1], 1]
+  152: [MolarMasses[2], 1]
+  153: [MolarMasses[3], 1]
+  154: [MolarMasses[4], 1]
+  155: [ReactionRateConstants[0], 100]
+  156: [ReactionRateConstants[1], 3]
+  157: [ReactionRateConstants[2], 1]
+  158: [ReactionRateConstants[3], 1]
+  159: [StoichiometricCoefficients[0], -1]
+  160: [StoichiometricCoefficients[1], -2]
+  161: [StoichiometricCoefficients[2], 1]
+  162: [StoichiometricCoefficients[3], 2]
+  163: [StoichiometricCoefficients[4], 0]
+  164: [M_ref, 1]
+  165: [PartialHeatCapacities[0], 1.5]
+  166: [PartialHeatCapacities[1], 1]
+  167: [PartialHeatCapacities[2], 1]
+  168: [PartialHeatCapacities[3], 1]
+  169: [PartialHeatCapacities[4], 1]
+  170: [S_coef, 4]
+  171: [TimeOrder, 2]
+  172: [_MyThermodynamicPressureMode, 0]
+  173: [myPearsonSensorVariable, 0]
+  174: [UsePearssonSensor, False]
+  175: [SensorLimit, 1E-07]
+  176: [LinearSolver.verbose, False]
+  177: [LinearSolver.MaxKrylovDim, 30]
+  178: [LinearSolver.MaxSolverIterations, 2000]
+  179: [LinearSolver.MinSolverIterations, 2]
+  180: [LinearSolver.ConvergenceCriterion, 1E-12]
+  181: [LinearSolver.SolverCode, 2]
+  182: [LinearSolver.NoOfMultigridLevels, 1]
+  183: [LinearSolver.SolverMode, 0]
+  184: [LinearSolver.exp_localPrec_muA, 1]
+  185: [LinearSolver.exp_localPrec_Min_dt, 0]
+  186: [LinearSolver.TargetBlockSize, 10000]
+  187: [LinearSolver.pMaxOfCoarseSolver, 1]
+  188: [NonLinearSolver.verbose, True]
+  189: [NonLinearSolver.MaxSolverIterations, 25]
+  190: [NonLinearSolver.MinSolverIterations, 2]
+  191: [NonLinearSolver.ConvergenceCriterion, 1E-09]
+  192: [NonLinearSolver.UnderRelax, 1]
+  193: [NonLinearSolver.SolverCode, 2]
+  194: [NonLinearSolver.constantNewtonIterations, 1]
+  195: [NonLinearSolver.Globalization, 1]
+  196: [AgglomerationThreshold, 0.1]
+  197: [MultiStepInit, True]
+  198: [TimeSteppingScheme, 1]
+  199: [GridPartType, 5]
+  200: [NoOfTimesteps, 1]
+  201: [staticTimestep, True]
+  202: [Endtime, 1.79769313486232E+308]
+  203: [saveperiod, 1]
+  204: [rollingSaves, False]
+  205: [dtMin, 1.79769313486232E+304]
+  206: [dtMax, 1.79769313486232E+304]
+  207: [ImmediatePlotPeriod, -1]
+  208: [SuperSampling, 2]
+  209: [savetodb, True]
+  210: [logFileDirectory, .]
+  211: [Paramstudy_ContinueOnError, True]
+  212: [DynamicLoadBalancing_RedistributeAtStartup, False]
+  213: [DynamicLoadBalancing_Period, -1]
+  214: [DynamicLoadBalancing_ImbalanceThreshold, 0.12]
+  215: [DynamicLoadBalancing_On, False]
+  216: [AdaptiveMeshRefinement, False]
+  217: [AMR_startUpSweeps, 1]
+  218: [CutCellQuadratureType, 5]
+  219: [ContinueOnIoError, True]
+  220: [BurstSave, 1]
+  221: [Grid:NoOfCells, 16384]
+  222: [Grid:SpatialDimension, 2]
+  223: [Grid:hMax, 0.0110485434560398]
+  224: [Grid:hMin, 0.0078125]
+  225: [NusseltLeft, 1.33074979605784]
+  226: [NusseltRigth, -1.32764699899638]
+  227: [NusseltAdiabatic, 0.00017993519879317]
+  228: [ThermodynamicPressureCalc, 0.914638664323136]
+}
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

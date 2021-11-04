@@ -556,6 +556,12 @@ namespace ilPSP {
         /// True, if all elements in <paramref name="A"/> are also in <paramref name="B"/>.
         /// </summary>
         public static bool IsSubsetOf<T>(this IEnumerable<T> A, IEnumerable<T> B) {
+            if (A == null || A.Count() == 0)
+                return true;
+            if (B == null && (A != null && A.Count() > 0))
+                // B is empty, but A containes something.
+                return false;
+
             T[] Barray = B.ToArray();
 
             foreach (var a in A) {
@@ -711,5 +717,46 @@ namespace ilPSP {
             }
             return r;
         }
+
+
+        /// <summary>
+        /// Helps to print an enumeration of objects into a nice string, e.g. something like:
+        /// ```
+        ///   (obj1, obj2, obj3)
+        /// ```
+        /// </summary>
+        /// <param name="ie"></param>
+        /// <param name="firstSign">
+        /// first part of the return string
+        /// </param>
+        /// <param name="separator">
+        /// separator between elements
+        /// </param>
+        /// <param name="lastSign">
+        /// final part of the return string
+        /// </param>
+        /// <returns></returns>
+        public static string ToConcatString(this System.Collections.IEnumerable ie, string firstSign, string separator, string lastSign) {
+            using(var stw = new StringWriter()) {
+                if(!firstSign.IsEmptyOrWhite())
+                    stw.Write(firstSign);
+                int L = ie.Count();
+                int cnt = 0;
+                foreach(var o in ie) {
+                    if (o != null)
+                        stw.Write(o);
+                    else
+                        stw.Write("Null");
+                    if(cnt < (L - 1))
+                        stw.Write(separator);
+                    cnt++;
+                }
+                if(!lastSign.IsEmptyOrWhite())
+                    stw.Write(lastSign);
+                
+                return stw.ToString();
+            }
+        }
+
     }
 }

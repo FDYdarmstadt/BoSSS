@@ -220,6 +220,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 #endif
                     var iLPar = maxDgBasis.GridDat.iLogicalCells; // cells of *parent* grid
 
+                    
+
                     for (int j = 0; j < Jagg; j++) { // loop over aggregate cells
                         Debug.Assert(ArrayTools.ListEquals(Ag2Pt[j], C2F[j]));
 

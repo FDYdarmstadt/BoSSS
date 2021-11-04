@@ -180,8 +180,9 @@ namespace BoSSS.Solution.XNSECommon {
     }
 
     /// <summary>
-    /// Cell-wise mean value, required for the for the localized Lax-Friedrichs flux <see cref="XNSECommon.Operator.Convection.ConvectionInBulk_LLF"/>,
-    /// to have a constant Eigenvalue along an edge.
+    /// Cell-wise mean value, required for the for the 
+    /// localized Lax-Friedrichs flux <see cref="XNSECommon.Operator.Convection.ConvectionInBulk_LLF"/>,
+    /// to have a constant Eigenvalue (aka. flow direction) along an edge.
     /// </summary>
     public class Velocity0Mean : ParameterS, ILevelSetParameter {
         protected int D;
@@ -471,7 +472,8 @@ namespace BoSSS.Solution.XNSECommon {
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             IGridData gridData = DomainVarFields.First().Value.GridDat;
             Basis basis = new Basis(gridData, degree);
-            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, parameterNames[0], SinglePhaseField.Factory);
+            //VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, parameterNames[0], SinglePhaseField.Factory);
+            VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D.ForLoop( d => new SinglePhaseField(basis, ParameterNames[d])) );
 
             (string, DGField)[] normals = new (string, DGField)[D];
             for (int d = 0; d < D; ++d) {

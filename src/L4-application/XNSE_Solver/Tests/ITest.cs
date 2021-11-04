@@ -47,11 +47,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         Func<double[], double, double> GetPhi();
 
-        ///// <summary>
-        ///// if known the exact solution will be set
-        ///// </summary>
-        //bool setExtSol { get; }
-
         /// <summary>
         /// Time step size.
         /// </summary>
@@ -77,13 +72,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// density of fluid A
         /// </summary>
         double rho_B { get; }
-
-        ///// <summary> interface speed in normal direction at time <paramref name="t"/>. </summary>
-        //BoSSS.Foundation.ScalarFunction GetS(double time);
-
-
-        ///// <summary> some external surface force (usually, only of use for manufactured solutions)</summary>
-        //ScalarFunction GetSF(double time, int d);
 
         /// <summary>
         /// is the interface a material one or is it non-material?
@@ -118,43 +106,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         double[] AcceptableResidual {
             get;
         }
-    }
-
-    interface IXHeatTest : ITest {
-        /// <summary>
-        /// heat capacity of fluid A
-        /// </summary>
-        double c_A { get; }
-
-        /// <summary>
-        /// heat capacity of fluid A
-        /// </summary>
-        double c_B { get; }
-
-        /// <summary> heat conductivity fluid A </summary>
-        double k_A { get; }
-
-        /// <summary> heat conductivity fluid B </summary>
-        double k_B { get; }
-
-        /// <summary> saturation temperature </summary>
-        double T_sat { get; }
-
-        /// <summary> latent heat of evaporation </summary>
-        double h_vap { get; }
-
-        /// <summary>
-        /// Exact solution/Initial value for Temperature, for species <paramref name="species"/>.
-        /// </summary>
-        Func<double[], double, double> GetT(string species);
-
-        /// <summary>
-        /// Exact solution for total thermal energy.
-        /// </summary>
-        Func<double, double> GetE();
-
-        bool CheckT { get; }
-        bool CheckE { get; }
     }
 
     public interface IXNSETest : ITest {
@@ -200,12 +151,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         Func<double[], double, double> GetPhi2U(int d);
     }
-
-    interface IXNSFETest : IXNSETest, IXHeatTest {
-
-    }
-
-
 
     public interface IXNSECTest : IXNSETest {
 

@@ -170,6 +170,32 @@ namespace BoSSS.Solution.Queries {
                 GetField(app.IOFields, fieldName).L2Error(referenceSolution.Vectorize(), quadratureOrder);
         }
 
+
+        /// <summary>
+        /// Computes the L2 error, **ignoring any constant offset**, of field <paramref name="fieldName"/> with
+        /// respect to the given <paramref name="referenceSolution"/> using a
+        /// quadrature rule of order <paramref name="quadratureOrder"/>.
+        /// 
+        /// This is typically used for comparing e.g. hydrodynamic pressures, where the mean-value of the pressure is not determined by the incompressible equation
+        /// </summary>
+        /// <param name="fieldName">
+        /// The name of the field to be evaluated
+        /// </param>
+        /// <param name="referenceSolution">
+        /// The reference solution
+        /// </param>
+        /// <param name="quadratureOrder">
+        /// The desired order of the integration rule
+        /// </param>
+        /// <returns>
+        /// The error of <paramref name="fieldName"/> in the L2 norm.
+        /// </returns>
+        public static Query L2ErrorNoMean(string fieldName, Func<double[], double> referenceSolution, int quadratureOrder) {
+            return (app, time) =>
+                GetField(app.IOFields, fieldName).L2ErrorNoMean(referenceSolution.Vectorize(), quadratureOrder);
+        }
+
+
         /// <summary>
         /// Computes the L2 error of field <paramref name="fieldName"/> with
         /// respect to a field with the same name stored in the time-step with

@@ -51,6 +51,13 @@ namespace BoSSS.Solution.XheatCommon {
                 DefineConvective(D, boundaryMap, spcName, capSpc, LFFSpc, config.useUpwind);               
             }
 
+            if (config.isHeatSource) {
+                string heatsource = BoSSS.Solution.NSECommon.VariableNames.HeatSource;
+                string heatsourceOfSpecies = heatsource + "#" + SpeciesName;
+                var heatsourceComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(heatsourceOfSpecies, speciesName);
+                AddComponent(heatsourceComponent);
+                AddParameter(heatsourceOfSpecies);
+            }
 
             // viscous operator (laplace)
             // ==========================
@@ -151,7 +158,15 @@ namespace BoSSS.Solution.XheatCommon {
                 default: throw new ArgumentException("Unknown species.");
             }
 
-            cap = capSpc;  
+            cap = capSpc;
+
+            if (config.isHeatSource) {
+                string heatsource = BoSSS.Solution.NSECommon.VariableNames.HeatSource;
+                string heatsourceOfSpecies = heatsource + "#" + SpeciesName;
+                var heatsourceComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(heatsourceOfSpecies, speciesName);
+                AddComponent(heatsourceComponent);
+                AddParameter(heatsourceOfSpecies);
+            }
 
             // viscous operator (laplace)
             // ==========================
@@ -323,7 +338,10 @@ namespace BoSSS.Solution.XheatCommon {
         }        
 
         protected override void DefineConvective(int dimension, double capA, double capB, double LFFA, double LFFB, ThermalMultiphaseBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            AddComponent(new HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+            if (!isMovingMesh) {
+                AddComponent(new HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+            }
+            // nothing to do when Moving Mesh
         }
     }
 
@@ -437,7 +455,7 @@ namespace BoSSS.Solution.XheatCommon {
 
                 //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
                 var Visc = new ConductivityAtLevelSet_material(dimension, kF, kS, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName, iLevSet: iLevSet);
-                AddComponent(Visc);
+                AddComponent(Visc);                
             } else {
                 throw new NotImplementedException();
             }

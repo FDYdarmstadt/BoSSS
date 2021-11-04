@@ -849,7 +849,8 @@ namespace BoSSS.Solution.Control {
         public double dtMax = -1;
 
         /// <summary>
-        /// Sets/Gets a fixed time-step size.
+        /// Sets/Gets a fixed time-step size;
+        /// Values greater than 1e100 are deemed to be steady-state
         /// </summary>
         [JsonIgnore]  
         public double dtFixed {
@@ -860,8 +861,19 @@ namespace BoSSS.Solution.Control {
                 return dtMin;
             }
             set {
-                dtMin = value;
-                dtMax = value;
+                if(value < 0)
+                    throw new ArgumentOutOfRangeException();
+
+                if(value > 1e100) {
+                    m_TimesteppingMode = _TimesteppingMode.Steady;
+                    dtMax = double.MaxValue / 1e4;
+                    dtMin = double.MaxValue / 1e4;
+                } else {
+                    m_TimesteppingMode = _TimesteppingMode.Transient;
+
+                    dtMin = value;
+                    dtMax = value;
+                }
             }
         }
 

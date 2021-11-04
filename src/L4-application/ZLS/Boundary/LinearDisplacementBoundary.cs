@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZwoLevelSetSolver.ContactLine;
 
 namespace ZwoLevelSetSolver.Boundary {
     class LinearDisplacementBoundary : SurfaceEquation {
@@ -23,6 +24,10 @@ namespace ZwoLevelSetSolver.Boundary {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
 
             AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 1, artificialViscosity));
+
+            AddSurfaceComponent(new BoundaryViscosityForm(ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 0.000));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(
+                ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)).ToArray());
         }
 
         public override string FirstSpeciesName => fluidSpecies;

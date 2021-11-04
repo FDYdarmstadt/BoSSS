@@ -358,82 +358,83 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
 
             void Initialize() {
+                using(new FuncTrace()) {
 
-
-                EdgeMask fullEM;
-                if(IsLocal) {
-                    fullEM = Patch.GetAllLocalEdgesMask();
-                } else {
-                    SubGrid maskSG = new SubGrid(Patch);
-                    fullEM = maskSG.AllEdgesMask;
-                }
-                EdgeMask constraintsMask = fullEM;
-
-                if(this.IsLocal) {
-                    DomainLimitBitMask = this.DomainLimit?.GetBitMask();
-                    PatchBitMask = this.Patch.GetBitMask();
-                } else {
-                    DomainLimitBitMask = this.DomainLimit?.GetBitMaskWithExternal();
-                    PatchBitMask = this.Patch.GetBitMaskWithExternal();
-                }
-
-
-                // assemble matrix
-                // =============== 
-
-                List<long> BlockI0 = new List<long>();
-                List<int> BlockLen = new List<int>();
-                long i0 = 0;
-                int nodeCount = 0;
-                foreach(int iEdg in constraintsMask.ItemEnum) {
-                    if(ConsiderEdge(iEdg, out _, out _)) {
-
-                        int NoOfNodes = GetNodeSet(iEdg).NoOfNodes;
-
-                        BlockI0.Add(i0);
-                        BlockLen.Add(NoOfNodes);
-                        i0 += NoOfNodes;
-                        nodeCount += NoOfNodes;
+                    EdgeMask fullEM;
+                    if(IsLocal) {
+                        fullEM = Patch.GetAllLocalEdgesMask();
+                    } else {
+                        SubGrid maskSG = new SubGrid(Patch);
+                        fullEM = maskSG.AllEdgesMask;
                     }
-                }
+                    EdgeMask constraintsMask = fullEM;
 
-                IBlockPartitioning rowBlockPart = new BlockPartitioning(nodeCount, BlockI0, BlockLen, this.comm, true);
-                IBlockPartitioning colBlockPart;
-                if(IsLocal) {
-                    colBlockPart = m_Mapping.GetLocalBlockPartitioning();
-                } else {
-                    colBlockPart = m_Mapping;
-                }
-                A = new BlockMsrMatrix(rowBlockPart, colBlockPart);
-                assembleConstrainsMatrix(A, constraintsMask);
-
-
-
-                // test with matlab
-                if(owner.diagOutputMatlab) {
-                    MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
-                    Console.WriteLine("Calling MATLAB/Octave...");
-                    using(BatchmodeConnector bmc = new BatchmodeConnector()) {
-                        bmc.PutSparseMatrix(A, "A");
-                        bmc.Cmd("rank_A = rank(full(A))");
-                        bmc.Cmd("rank_AT = rank(full(A'))");
-                        bmc.GetMatrix(output, "[rank_A, rank_AT]");
-
-                        bmc.Execute(false);
+                    if(this.IsLocal) {
+                        DomainLimitBitMask = this.DomainLimit?.GetBitMask();
+                        PatchBitMask = this.Patch.GetBitMask();
+                    } else {
+                        DomainLimitBitMask = this.DomainLimit?.GetBitMaskWithExternal();
+                        PatchBitMask = this.Patch.GetBitMaskWithExternal();
                     }
 
-                    Console.WriteLine("A: No of Rows = {0}; rank = {1}", A.NoOfRows, output[0, 0]);
-                    Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
+
+                    // assemble matrix
+                    // =============== 
+
+                    List<long> BlockI0 = new List<long>();
+                    List<int> BlockLen = new List<int>();
+                    long i0 = 0;
+                    int nodeCount = 0;
+                    foreach(int iEdg in constraintsMask.ItemEnum) {
+                        if(ConsiderEdge(iEdg, out _, out _)) {
+
+                            int NoOfNodes = GetNodeSet(iEdg).NoOfNodes;
+
+                            BlockI0.Add(i0);
+                            BlockLen.Add(NoOfNodes);
+                            i0 += NoOfNodes;
+                            nodeCount += NoOfNodes;
+                        }
+                    }
+
+                    IBlockPartitioning rowBlockPart = new BlockPartitioning(nodeCount, BlockI0, BlockLen, this.comm, true);
+                    IBlockPartitioning colBlockPart;
+                    if(IsLocal) {
+                        colBlockPart = m_Mapping.GetLocalBlockPartitioning();
+                    } else {
+                        colBlockPart = m_Mapping;
+                    }
+                    A = new BlockMsrMatrix(rowBlockPart, colBlockPart);
+                    assembleConstrainsMatrix(A, constraintsMask);
+
+
+
+                    // test with matlab
+                    if(owner.diagOutputMatlab) {
+                        MultidimensionalArray output = MultidimensionalArray.Create(1, 2);
+                        Console.WriteLine("Calling MATLAB/Octave...");
+                        using(BatchmodeConnector bmc = new BatchmodeConnector()) {
+                            bmc.PutSparseMatrix(A, "A");
+                            bmc.Cmd("rank_A = rank(full(A))");
+                            bmc.Cmd("rank_AT = rank(full(A'))");
+                            bmc.GetMatrix(output, "[rank_A, rank_AT]");
+
+                            bmc.Execute(false);
+                        }
+
+                        Console.WriteLine("A: No of Rows = {0}; rank = {1}", A.NoOfRows, output[0, 0]);
+                        Console.WriteLine("AT: No of Rows = {0}; rank = {1}", A.Transpose().NoOfRows, output[0, 1]);
+                    }
+
+                    // initialize solver
+                    // =================
+
+                    AT = A.Transpose();
+                    BlockMsrMatrix AAT = BlockMsrMatrix.Multiply(A, AT);
+                    AAT.AssumeSymmetric = true;
+
+                    InitSolver(AAT);
                 }
-
-                // initialize solver
-                // =================
-
-                AT = A.Transpose();
-                BlockMsrMatrix AAT = BlockMsrMatrix.Multiply(A, AT);
-                AAT.AssumeSymmetric = true;
-
-                InitSolver(AAT);
             }
 
 

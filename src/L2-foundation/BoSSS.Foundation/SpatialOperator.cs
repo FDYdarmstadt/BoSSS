@@ -1627,7 +1627,6 @@ namespace BoSSS.Foundation {
 
                                 ne.m_outputBndEdge = outputBndEdge;
 
-
                                 ne.Execute();
 
                                 ne.m_Output = null;

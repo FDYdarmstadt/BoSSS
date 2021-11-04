@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -225,6 +226,13 @@ namespace ilPSP.Tracing {
         /// </summary>
         [DataMember]
         internal long m_TicksSpentinBlocking = 0;
+
+        [JsonIgnore]
+        public TimeSpan TimeSpentInMPIBlocking {
+            get {
+                return new TimeSpan(m_TicksSpentinBlocking);
+            }
+        }
 
         /// <summary>
         /// Ticks spent in blocking MPI routines.

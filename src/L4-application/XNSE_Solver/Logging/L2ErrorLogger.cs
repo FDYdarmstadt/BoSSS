@@ -11,14 +11,19 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Application.XNSE_Solver {
-    
+namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
     /// <summary>
     /// Errors against exact solution (<see cref="XNSE_Control.ExactSolutionVelocity"/>, <see cref="XNSE_Control.ExactSolutionPressure"/>)
     /// </summary>
     [Serializable]
-    public class L2ErrorLogger : XNSEinSituPostProcessingModule {
+    public class L2ErrorLogger: L2ErrorLogger<XNSE_Control> { }
+
+    /// <summary>
+    /// Errors against exact solution (<see cref="XNSE_Control.ExactSolutionVelocity"/>, <see cref="XNSE_Control.ExactSolutionPressure"/>)
+    /// </summary>
+    [Serializable]
+    public class L2ErrorLogger<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
         
         /// <summary>
         /// Null: no log-file will be created; only queries will be saved
@@ -41,17 +46,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// (<see cref="XNSE_Control.ExactSolutionVelocity"/> and <see cref="XNSE_Control.ExactSolutionPressure"/>).
         /// </summary>
         internal double[] ComputeL2Error(double time) {
-            int D = this.SolverMain.GridData.SpatialDimension;
+            int D = this.SolverMainOverride.GridData.SpatialDimension;
             double[] Ret = new double[D + 1];
 
             string[] fluidSpecies;
-            if(this.SolverMain is BoSSS.Application.XNSE_Solver.XNSE newSolver) {
-                fluidSpecies = newSolver.XOperator.Species.ToArray();
-            } else if(this.SolverMain is XNSE_Solver.Legacy.XNSE_SolverMain oldSolver) {
-                fluidSpecies = new[] { "A", "B" };
-            } else {
-                throw new NotImplementedException("missing some cast here");
-            }
+            fluidSpecies = this.SolverMainOverride.XOperator.Species.ToArray();
+
 
 
             if (this.Control.ExactSolutionVelocity == null && this.Control.ExactSolutionPressure == null)
@@ -110,7 +110,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                     SpeciesId spId = this.LsTrk.GetSpeciesId(spc);
                     var scheme = SchemeHelper.GetVolumeQuadScheme(spId);
-                    var rule = scheme.Compile(this.SolverMain.GridData, order);
+                    var rule = scheme.Compile(this.SolverMainOverride.GridData, order);
 
                     DiffInt += this.CurrentPressure.GetSpeciesShadowField(spc).LxError(this.Control.ExactSolutionPressure[spc].Vectorize(time), (X, a, b) => (a - b), rule);
                     Volume +=  this.CurrentPressure.GetSpeciesShadowField(spc).LxError(null, (X, a, b) => (1.0), rule); // exact volume of the 

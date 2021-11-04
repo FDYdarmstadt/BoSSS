@@ -20,7 +20,7 @@ namespace ZwoLevelSetSolver.ContactLine {
             Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
             Vector SurfaceNormal_IN = FluidSurfaceNormal(ref cpv);
 
-            Vector Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
+            Vector Tangente_IN = SurfaceUtilities.Tangent(SurfaceNormal_IN, EdgeNormal);
 
             double Flx_InCell = 0;
             double m_sigma = Sigma(ref cpv);
@@ -44,7 +44,7 @@ namespace ZwoLevelSetSolver.ContactLine {
             Vector EdgeNormal = SolidSurfaceNormal(ref cpv);
             Vector SurfaceNormal_IN = FluidSurfaceNormal(ref cpv);
 
-            Vector Tangente_IN = Tangent(SurfaceNormal_IN, EdgeNormal);
+            Vector Tangente_IN = SurfaceUtilities.Tangent(SurfaceNormal_IN, EdgeNormal);
 
             double Flx_InCell = 0;
             double m_sigma = Sigma(ref cpv);

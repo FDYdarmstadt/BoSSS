@@ -139,11 +139,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected override void CreateFields() {
 
-            ///// Before creating fields make sure the operator is cleared, so that the equations are instantiated with the correct LsTrk and stuff...
-            ///// This is not that clear: This functionality should theoretically belong to <see cref="CreateEquationsAndSolvers(GridUpdateDataVaultBase)"/>,
-            ///// However the Operator and its equations are instantiated on the first call of <see cref="Operator"/> when it is empty. 
-            ///// These occur in this method e.g. in <see cref="InstantiateSolutionFields"/> in the derived classes <see cref="DgApplicationWithSolver{T}"/> and <see cref="XdgApplicationWithSolver{T}"/>
-            ///// So nulling the Operator here ensures, that it is created again with the updated LsTrk and stuff...
+            // Before creating fields make sure the operator is cleared, so that the equations are instantiated with the correct LsTrk and stuff...
+            // This is not that clear: This functionality should theoretically belong to <see cref="CreateEquationsAndSolvers(GridUpdateDataVaultBase)"/>,
+            // However the Operator and its equations are instantiated on the first call of <see cref="Operator"/> when it is empty. 
+            // These occur in this method e.g. in <see cref="InstantiateSolutionFields"/> in the derived classes <see cref="DgApplicationWithSolver{T}"/> and <see cref="XdgApplicationWithSolver{T}"/>
+            // So nulling the Operator here ensures, that it is created again with the updated LsTrk and stuff...
             ClearOperator();
 
             base.CreateFields();
@@ -161,7 +161,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var resFields = InstantiateResidualFields();
             CurrentResidualVector = new CoordinateVector(resFields);
             foreach(var f in resFields) {
-                base.RegisterField(f);
+                base.RegisterField(f/*,IOListOption.Always*/);
             }
 
             CreateAdditionalFields();
@@ -332,9 +332,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="TimestepNo"></param>
-        /// <param name="newGrid"></param>
-        /// <param name="old2NewGrid"></param>
         protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
             using (var tr = new FuncTrace()) {
 
@@ -657,6 +654,28 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         internal override void ClearOperator() {
             m_XOperator = null;
+        }
+
+        bool PlotShadowfields = false;
+        /// <summary>
+        /// Plot using Tecplot
+        /// </summary>
+        protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+            if (PlotShadowfields) {
+                List<DGField> Fields2Plot = new List<DGField>();
+                foreach (var field in this.m_RegisteredFields) {
+                    if (field is XDGField xField) {
+                        foreach (var spc in xField.Basis.Tracker.SpeciesNames) {
+                            Fields2Plot.Add(xField.GetSpeciesShadowField(spc));
+                        }
+                    } else {
+                        Fields2Plot.Add(field);
+                    }
+                }
+                Tecplot.Tecplot.PlotFields(Fields2Plot, this.GetType().Name.Split('`').First() + "-" + timestepNo, physTime, superSampling);
+            } else {
+                base.PlotCurrentState(physTime, timestepNo, superSampling);
+            }
         }
     }
 

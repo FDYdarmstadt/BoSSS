@@ -31,7 +31,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'TEST|AnyCPU'">
     <OutputPath>bin\TEST\</OutputPath>
     <Optimize>true</Optimize>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>

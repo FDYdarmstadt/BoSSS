@@ -46,7 +46,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
         }
 
+        public override bool Equals(object obj) {
+            if (!base.Equals(obj))
+                return false;
+            
+            return true;
+        }
 
+        public override int GetHashCode() {
+            return base.GetHashCode();
+        }
 
 
     }

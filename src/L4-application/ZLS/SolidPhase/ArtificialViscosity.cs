@@ -7,17 +7,19 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
+    
+    
     class ArtificialViscosity : BulkEquation {
 
         string speciesName;
 
-        Solid material;
+        //Solid material;
 
         string codomainName;
 
         public ArtificialViscosity(string speciesName, double viscosity, int d, int D) {
             this.speciesName = speciesName;
-            this.material = material;
+            //this.material = material;
             this.codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
             
@@ -27,7 +29,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public override string SpeciesName => speciesName;
 
-        public override double MassScale => material.Density;
+        public override double MassScale => 1.0;// material.Density;
 
         public override string CodomainName => codomainName;
 

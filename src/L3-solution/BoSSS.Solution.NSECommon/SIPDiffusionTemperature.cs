@@ -177,7 +177,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         protected override double Diffusivity(double[] U, double[,] GradU, Vector NodeCoordinates) {
             //double Diffusivity = ((MaterialLawLowMach)EoS).GetHeatConductivity(U[0]); // Just a Temperature dependence
-            double Diffusivity = ((MaterialLawMultiSpecies)EoS).GetHeatConductivity(U[0]); // Just a Temperature dependence
+            double Diffusivity = ((MaterialLaw_MultipleSpecies)EoS).GetHeatConductivity(U[0]); // Just a Temperature dependence
 
             Debug.Assert(Diffusivity >= 0.0);
             Diffusivity *= 1 / (m_reynolds * m_Prandtl);

@@ -11,13 +11,13 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string speciesName;
 
-        Solid material;
+        //Solid material;
 
         string codomainName;
 
         public PressurePenalty(string speciesName, double scale) {
             this.speciesName = speciesName;
-            this.material = material;
+            //this.material = material;
             this.codomainName = BoSSS.Solution.NSECommon.EquationNames.ContinuityEquation;
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Pressure);
 

@@ -230,7 +230,7 @@ namespace ilPSP.LinSolvers {
         /// </param>
         /// <param name="Values">
         /// Ouput, the values for the respective columns in <paramref name="ColumnIndices"/>,
-        /// allocation works in the same way as for <see cref="ColumnIndices"/>.
+        /// allocation works in the same way as for <paramref name="ColumnIndices"/>.
         /// </param>
         /// <returns>
         /// Number of entries used in <paramref name="ColumnIndices"/> and <paramref name="Values"/>.

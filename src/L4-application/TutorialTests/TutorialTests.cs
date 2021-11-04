@@ -36,13 +36,18 @@ namespace BoSSS.Application.TutorialTests {
 
             // if we enter Main, it seems we are executing the tutorial tests locally...
             // so delete any local tex files since we want to run the scripts from doc/handbook
-            var localTexFiles = (new DirectoryInfo(Directory.GetCurrentDirectory())).GetFiles("*.tex");
-            foreach (var f in localTexFiles) {
-                f.Delete();
+            foreach(string ext in new[] { "*.tex", "*.ipynb" }) {
+                var localTexFiles = (new DirectoryInfo(Directory.GetCurrentDirectory())).GetFiles(ext);
+                foreach(var f in localTexFiles) {
+                    f.Delete();
+                }
             }
 
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
+
+            AllUpTest.Run__MetaJobManager();
+            return 0;
             
             // start the minibatchprocessor which is used internally
             //bool iStartedThisShit = AllUpTest.OneTimeSetUp();

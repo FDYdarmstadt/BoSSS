@@ -6,7 +6,11 @@ using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Tracing;
 using ilPSP.Utils;
+using log4net.Appender;
+using log4net.Config;
+using log4net.Layout;
 using Microsoft.DotNet.Interactive.Formatting;
 using System;
 using System.Collections;
@@ -90,21 +94,26 @@ namespace BoSSS.Application.BoSSSpad {
                      e.Message);
                 InteractiveShell.LastError = e;
             }
-
+            InitTraceFile();
 
             AddObjectFormatter<SinglePhaseField>();
             AddObjectFormatter<Foundation.XDG.XDGField>();
             AddObjectFormatter<Foundation.XDG.XDGField.SpeciesShadowField>();
             AddObjectFormatter<IGridData>();
+            AddObjectFormatter<IGridInfo>();
+            AddObjectFormatter<IGrid>();
 
             AddObjectFormatter<ISessionInfo>();
             AddObjectFormatter<IDatabaseInfo>();
             AddObjectFormatter<ITimestepInfo>();
 
             AddEnumFormatter<IGridInfo>();
+            AddEnumFormatter<IGridData>();
+            AddEnumFormatter<IGrid>();
             AddEnumFormatter<IDatabaseInfo>();
             AddEnumFormatter<ISessionInfo>();
             AddEnumFormatter<ITimestepInfo>();
+            AddEnumFormatter<Job.Deployment>();
 
             AddDictFormatter<string, Job>();
             AddDictFormatter<string, IEnumerable<ISessionInfo>>(optValFormatter: (SessionEnum => SessionEnum.Count() + " sessions"));
@@ -135,7 +144,40 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             var ls = new Foundation.XDG.LevelSet(new Basis(g, 2), "phi");
+        }
 
+
+        static TextWriterAppender logger_output = null;
+        static Stream tracerfile;
+        static TextWriter tracertxt;
+
+        static void InitTraceFile() {
+
+            if (logger_output != null)
+                throw new ApplicationException("Already called."); // is seems this object is designed so that it stores at max one session per lifetime
+
+
+            string settingsDir = Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+            string tracingDir = Path.Combine(settingsDir, "bossspad-trace");
+            if (!System.IO.Directory.Exists(tracingDir))
+                System.IO.Directory.CreateDirectory(tracingDir);
+            DateTime nau = DateTime.Now;
+            string baseneme = Path.Combine(tracingDir, $"trace.{nau.ToString("MMMdd_HHmmss")}-{nau.Millisecond}.txt");
+            Console.WriteLine("Tracing file: " + baseneme);
+
+            tracerfile = new FileStream(baseneme, FileMode.Create, FileAccess.Write, FileShare.Read);
+            tracertxt = new StreamWriter(tracerfile);
+
+            TextWriterAppender fa = new TextWriterAppender();
+            fa.ImmediateFlush = true;
+            //fa.Writer = Console.Out;
+            fa.Writer = tracertxt;
+            fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+            fa.ActivateOptions();
+            BasicConfigurator.Configure(fa);
+            logger_output = fa;
+
+            Tracer.NamespacesToLog = new string[] { "" };
         }
 
 
@@ -567,6 +609,7 @@ namespace BoSSS.Application.BoSSSpad {
             return fo;
         }
 
+        /*
         static internal string _CurrentDocFile = null;
 
         /// <summary>
@@ -586,6 +629,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return _CurrentDocFile;
             }
         }
+        
 
         /// <summary>
         /// Directory where the current file is stored.
@@ -598,7 +642,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return Path.GetDirectoryName(f);
             }
         }
-
+        */
         /// <summary>
         /// <see cref="GridImporter.Import(string)"/>
         /// </summary>
@@ -817,24 +861,23 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             if (supersampling > 3) {
-                Console.WriteLine("Plotting with a supersampling greater than 3 is deactivated because it would very likely exceed this machines memory.");
-                Console.WriteLine("Higher supersampling values are supported by external plot application.");
+                Console.WriteLine($"Supersampling {supersampling} requested, but limiting to 3 because higher values would very likely exceed this computers memory.");
+                Console.WriteLine($"Note: Higher supersampling values are supported by external plot application, or by using e.g. the Tecplot class directly.");
                 supersampling = 3;
             }
 
             string directory = Path.GetDirectoryName(filename);
             string FullPath;
             if (directory == null || directory.Length <= 0) {
-                directory = CurrentDocDir ?? "";
+                directory = Directory.GetCurrentDirectory();
                 FullPath = Path.Combine(directory, filename);
             } else {
                 FullPath = filename;
             }
 
             Console.WriteLine("Writing output file {0}...", FullPath);
-
-
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(flds, FullPath, time, supersampling);
+            Console.WriteLine("done.");
 
         }
 
@@ -861,8 +904,19 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        /// <summary>
+        /// Default execution queue, used mainly by worksheets in the Continuous Integration Workflow;
+        /// </summary>
+        public static BatchProcessorClient GetDefaultQueue() {
+            // quick hack 
+            if(ilPSP.Environment.MPIEnv.Hostname.Contains("fdygitrunner", StringComparison.InvariantCultureIgnoreCase))
+                return ExecutionQueues[2];
+            if(ilPSP.Environment.MPIEnv.Hostname.Contains("jenkins-linux", StringComparison.InvariantCultureIgnoreCase))
+                return ExecutionQueues[1];
 
-
+            
+            return ExecutionQueues[0];
+        }
 
 
         /// <summary>

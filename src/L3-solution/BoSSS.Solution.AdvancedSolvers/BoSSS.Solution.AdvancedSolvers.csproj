@@ -12,6 +12,7 @@
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\BoSSS.Solution.AdvancedSolvers.xml</DocumentationFile>
+    <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'TEST|AnyCPU' ">
     <Optimize>true</Optimize>
