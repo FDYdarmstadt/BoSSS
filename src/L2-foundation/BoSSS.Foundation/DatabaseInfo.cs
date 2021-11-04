@@ -326,9 +326,10 @@ namespace BoSSS.Foundation.IO {
         /// Reference equality
         /// </summary>
         public bool Equals(IDatabaseInfo other) {
+            if(other == null)
+                return false;
             if(object.ReferenceEquals(this, other))
                 return true;
-
 
             string mName = System.Environment.MachineName.ToLowerInvariant();
 
@@ -360,7 +361,7 @@ namespace BoSSS.Foundation.IO {
             if (object.ReferenceEquals(obj, this))
                 return true;
 
-            return this.Equals(obj as NullDatabaseInfo);
+            return this.Equals(obj as DatabaseInfo);
         }
 
         /// <summary>
