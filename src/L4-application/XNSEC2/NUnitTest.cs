@@ -171,12 +171,13 @@ namespace BoSSS.Application.XNSEC {
         public static void IncompressibleUnsteadyTaylorVortexTest() {
             using(var p = new XNSEC()) {
                 var c = BoSSS.Application.XNSEC.FullNSEControlExamples.NUnitUnsteadyTaylorVortex();
+                c.ImmediatePlotPeriod = 1;
                 p.Init(c);
                 p.RunSolverMode();
                 //   p.CheckJacobian();
                 double err_u = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityX];
                 double err_v = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityY];
-                double err_p = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.Pressure];
+                double err_p = (double)p.QueryHandler.QueryResults["SolL2err_p"];
                 double thres_vel = 0.02;
                 double thres_p = 0.55;
 
@@ -489,9 +490,7 @@ namespace BoSSS.Application.XNSEC {
             C.savetodb = false;
             C.ProjectName = "XNSEC/" + tst.GetType().Name;
             C.ProjectDescription = "Test";
-            C.EnableMassFractions = false;
-            C.EnableTemperature = false;
-            C.rhoOne = constantDensity;
+
 
             // DG degree
             // =========
@@ -518,6 +517,9 @@ namespace BoSSS.Application.XNSEC {
             C.PhysicalParameters.rho_B = tst.rho_B;
             C.PhysicalParameters.mu_A = tst.mu_A;
             C.PhysicalParameters.mu_B = tst.mu_B;
+            C.ThermalParameters.rho_A = tst.rho_A;
+            C.ThermalParameters.rho_B = tst.rho_B;    
+
             C.PhysicalParameters.Sigma = tst.Sigma;
             C.PhysicalParameters.IncludeConvection = tst.IncludeConvection;
 
@@ -602,7 +604,9 @@ namespace BoSSS.Application.XNSEC {
             C.LinearSolver.SolverCode = solvercode;
             C.GravityDirection = tst.GravityDirection;
             C.ChemicalReactionActive = tst.ChemicalReactionTermsActive;
-
+            C.EnableMassFractions = tst.EnableMassFractions;
+            C.EnableTemperature = tst.EnableTemperature;
+            C.rhoOne = constantDensity;
             // return
             // ======
             Assert.AreEqual(C.UseImmersedBoundary, tst.TestImmersedBoundary);

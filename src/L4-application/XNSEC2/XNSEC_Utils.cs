@@ -1,17 +1,18 @@
 ﻿using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using BoSSS.Solution.Utils;
+using BoSSS.Solution.NSECommon;
+using BoSSS.Foundation.Grid;
+using System.Globalization;
 
 namespace BoSSS.Application.XNSEC {
 
@@ -107,7 +108,16 @@ namespace BoSSS.Application.XNSEC {
                 //errorField.GetSpeciesShadowField(sp).Acc(1.0,anfi)
                 //        }
 
-                base.QueryHandler.ValueQuery(errorField.Identification, errorField.L2Norm(), true);
+                if (field.Identification == Solution.NSECommon.VariableNames.Pressure)
+                    //base.QueryHandler.ValueQuery(errorField.Identification,
+                    //    errorField.L2ErrorNoMean(((Func<double[], double>)(X => 0.0)).Vectorize(), errorField.Basis.Degree * 2),
+                    //    true);
+                    base.QueryHandler.ValueQuery(errorField.Identification,                        
+                     errorField.L2ErrorNoMean(((Func<double[], double>)(X => 0.0)).Vectorize(), errorField.Basis.Degree * 2),
+                     true);
+                else
+                    base.QueryHandler.ValueQuery(errorField.Identification, errorField.L2Norm(), true);
+
             }
         }
 

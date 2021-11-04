@@ -417,7 +417,11 @@ namespace BoSSS.Solution.XheatCommon {
             return Ret;
         }
 
+        public override TermActivationFlags LevelSetTerms {
+            get { return TermActivationFlags.GradUxV | TermActivationFlags.V; }
+            
 
+        }
         /// <summary>
         /// the penalty flux
         /// </summary>

@@ -15,20 +15,16 @@ limitations under the License.
 */
 
 using BoSSS.Application.XNSE_Solver.Tests;
-using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.AdvancedSolvers.Testing;
 using BoSSS.Solution.Control;
-using BoSSS.Solution.LevelSetTools;
-using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
-using ilPSP;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
@@ -189,25 +185,57 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="SolverMode_performsolve"></param>
         /// <param name="CutCellQuadratureType"></param>
         /// <param name="stm"></param>
-        //[Test]
+        [Test]
         public static void PseudoTwoDimensionalTwoPhaseFlow(
             [Values(2)] int deg,
             [Values(0, 0.1)] double AgglomerationTreshold,
             [Values(false, true)] bool SolverMode_performsolve,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
-            [Values(false, true)] bool differentFluids
+            [Values(false, true)] bool differentFluids,
+            [Values(false, true)] bool RightBC_PressureOutlet
             ) {
-            ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
-
+            BoSSS.Solution.Application.InitMPI();
+            ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
             int resolution = 5;
-            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids);
+            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, false, RightBC_PressureOutlet);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, constantDensity: true, resolution);
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
-            C.ThermalParameters.hVap = 1;
-            C.ThermalParameters.rho_A = 1;
-            C.ThermalParameters.rho_B = 0.5;
-            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.ThermalParameters.hVap = 1; // value is not important, just needs to be seted to be able to use the prescribedMassflux_Evaluator
+
+            C.prescribedMassflux_Evaluator = (X, t) => 1.0;
+            XNSECSolverTest(Tst, C);
+
+            //ASScalingTest(Tst, new[] { 8, 16, 32,64 }, ViscosityMode.FullySymmetric, deg, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+        }
+
+        /// <summary>
+        /// Tests a fixed level set in a constant velocity field
+        /// </summary>
+        /// <param name="deg"></param>
+        /// <param name="AgglomerationTreshold"></param>
+        /// <param name="SolverMode_performsolve"></param>
+        /// <param name="CutCellQuadratureType"></param>
+        /// <param name="stm"></param>
+        [Test]
+        public static void PseudoTwoDimensionalTwoPhaseFlow_withviscosity(
+            [Values(2)] int deg,
+            [Values(0, 0.1)] double AgglomerationTreshold,
+            [Values(false, true)] bool SolverMode_performsolve,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(false, true)] bool differentFluids,
+                        [Values(false, true)] bool RightBC_PressureOutlet
+
+            ) {
+            BoSSS.Solution.Application.InitMPI();
+            ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
+            int resolution = 5;
+            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, ViscosityActive: true, RightBC_PressureOutlet);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, constantDensity: true, resolution);
+            C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
+            C.ThermalParameters.hVap = 1; // value is not important, just needs to be seted to be able to use the prescribedMassflux_Evaluator
+
             C.prescribedMassflux_Evaluator = (X, t) => 1.0;
             XNSECSolverTest(Tst, C);
 
@@ -217,7 +245,6 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.LevelSetAdvectionTest"/>
         /// </summary>
-        
 
         /// <summary>
         /// <see cref="TranspiratingChannelTest"/>
@@ -233,7 +260,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
             ) {
             var Tst = new TranspiratingChannelTestXNSEC(U2, periodicity);
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, constantDensity: true, GridResolution: 1); // surface tension plays no role in this test, so ignore it
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, constantDensity: true, GridResolution: 1);
             //C.SkipSolveAndEvaluateResidual = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.LinearSolver.MaxSolverIterations = 100;
@@ -258,6 +285,8 @@ namespace BoSSS.Application.XNSEC {
             public TranspiratingChannelTestXNSEC(double _U2, bool periodic = false, int spatDim = 2) : base(_U2, periodic, spatDim) {
             }
 
+            public bool EnableMassFractions => false;
+            public bool EnableTemperature => false;
             public int NumberOfChemicalComponents => 1;
 
             public bool ChemicalReactionTermsActive => false;
@@ -312,7 +341,6 @@ namespace BoSSS.Application.XNSEC {
             }
         }
 
-
         /// <summary>
         /// a periodic channel flow, with water on bottom and air on top
         /// </summary>
@@ -341,6 +369,9 @@ namespace BoSSS.Application.XNSEC {
                     return true;
                 }
             }
+
+            public bool EnableMassFractions => false;
+            public bool EnableTemperature => false;
 
             public bool IncludeConvection {
                 get {
