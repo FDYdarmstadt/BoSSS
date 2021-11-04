@@ -170,12 +170,22 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// Total number of chemical components involved in the solution
         /// </summary>
         int NumberOfChemicalComponents { get; }
-        
-        
+
+
         /// <summary>
         /// Activate chemical reaction related terms in the energy and species equations
         /// </summary>
         bool ChemicalReactionTermsActive { get; }
+
+        /// <summary>
+        /// Activate MassFraction equations
+        /// </summary>
+        bool EnableMassFractions { get; }
+
+        /// <summary>
+        /// Activate temperature equation
+        /// </summary>
+        bool EnableTemperature { get; }
 
         /// <summary>
         /// Directional vector of gravity 
