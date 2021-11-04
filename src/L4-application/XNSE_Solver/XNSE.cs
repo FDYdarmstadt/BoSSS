@@ -1,5 +1,6 @@
 ﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
@@ -18,12 +19,14 @@ using CommandLine;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using MPI.Wrappers;
 using System.Threading;
+using System.Reflection;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -223,7 +226,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
             int D = GridData.SpatialDimension;
-            
+
             if(iLevSet == 0) {
                 // +++++++++++++++++++
                 // the fluid interface 
@@ -257,7 +260,7 @@ namespace BoSSS.Application.XNSE_Solver {
             get {
                 if(Control.UseImmersedBoundary)
                     return 2;
-                else 
+                else
                     return 1;
             }
         }
@@ -371,6 +374,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 if(XOP.DomainVar.IndexOf(VariableNames.Velocity_d(d)) != d)
                     throw new ApplicationException("Operator configuration messed up.");
             }
+
+            PrintConfiguration();
         }
 
         /// <summary>
@@ -418,7 +423,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // === level set related parameters === //
             Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[0]).Basis.Degree);
-            opFactory.AddParameter(normalsParameter);            
+            opFactory.AddParameter(normalsParameter);
 
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
@@ -459,7 +464,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     break;
 
                 default:
-                throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handled.");
+                    throw new NotImplementedException($"option {Control.AdvancedDiscretizationOptions.SST_isotropicMode} is not handled.");
 
             }
 
@@ -548,9 +553,21 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            using(var f = new FuncTrace()) {
-                dt = GetTimestep();
-
+            using (var f = new FuncTrace()) {
+                if ((int)this.Control.TimeSteppingScheme >= 100) {
+                    
+                    // this is a RK scheme, set here the maximum 
+                    dt = this.GetTimestep();
+                    if (phystime + dt > this.Control.Endtime) {
+                        Console.WriteLine("restricting time-step to reach end-time");
+                        dt = this.Control.Endtime - phystime;
+                    }
+                    if (TimestepNo == 1) dt = Math.Min(dt, 1e-3 * this.Control.dtFixed); // small start timestep, to get the levelset rolling
+                } else {
+                    // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
+                    dt = base.GetTimestep();
+                }
+               
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                 Console.WriteLine($"Done with time step {TimestepNo}.");
@@ -558,5 +575,177 @@ namespace BoSSS.Application.XNSE_Solver {
                 return dt;
             }
         }
+        protected virtual List<DGField> GetInterfaceVelocity(){
+            int D = this.GridData.SpatialDimension;
+            var cm = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
+            var PhysParam = this.Control.PhysicalParameters;
+            var gdat = this.GridData;
+            var Tracker = this.LsTrk;
+
+            VectorField<XDGField> Velocity = new VectorField<XDGField>(D.ForLoop(d => (XDGField)m_RegisteredFields.SingleOrDefault(s => s.Identification == VariableNames.Velocity_d(d))));
+            var LevelSet = this.m_RegisteredFields.Where(s => s.Identification == VariableNames.LevelSetCG).SingleOrDefault();
+            int p = LevelSet.Basis.Degree;
+
+            Basis b = new Basis(gdat, 2 * p);
+            XDGBasis xb = new XDGBasis(Tracker, 2 * p);
+
+            VectorField<DGField> Normal = new VectorField<DGField>(D.ForLoop(d => m_RegisteredFields.SingleOrDefault(s => s.Identification == VariableNames.NormalVectorComponent(d)))).CloneAs();
+            // this normal is the direct gradient of phi, we normalize first, but only in cut cells!!
+            {
+                Normal.Clear();
+                Normal.Gradient(1.0, LevelSet);
+                SinglePhaseField Normalizer = new SinglePhaseField(b);
+                for (int d = 0; d < D; d++) {
+                    Normalizer.ProjectPow(1.0, Normal[d], 2.0, cm);
+                }
+                var NormalizerTemp = Normalizer.CloneAs();
+                Normalizer.Clear();
+                Normalizer.ProjectPow(1.0, NormalizerTemp, -0.5, cm);
+
+                Normal.ScalePointwise(1.0, Normalizer);
+            }
+
+            List<XDGField> xInterfaceVelocity = new List<XDGField>(); // = this.m_RegisteredFields.Where(s => s.Identification.Contains("IntefaceVelocityXDG")).ToList();
+            List<DGField> InterfaceVelocity = new List<DGField>(); // = this.m_RegisteredFields.Where(s => s.Identification.Contains("IntefaceVelocityDG")).ToList();
+            for (int d = 0; d < D; d++) {
+                var xField = (XDGField)this.m_RegisteredFields.Where(s => s.Identification == $"IntefaceVelocityXDG_{d}").SingleOrDefault();
+                if (xField == null) {
+                    xField = new XDGField(xb, $"IntefaceVelocityXDG_{d}");
+                    this.RegisterField(xField);
+                }
+                xInterfaceVelocity.Add(xField);
+
+                var Field = (DGField)this.m_RegisteredFields.Where(s => s.Identification == $"IntefaceVelocityDG_{d}").SingleOrDefault();
+                if (Field == null) {
+                    Field = new SinglePhaseField(b, $"IntefaceVelocityDG_{d}");
+                    this.RegisterField(Field);
+                }
+                InterfaceVelocity.Add(Field);
+            }
+
+            for (int d = 0; d < D; d++) {
+                var xField = xInterfaceVelocity[d];
+                xField.Clear();
+                xField.AccLaidBack(1.0, Velocity[d], cm);
+
+                var Field = InterfaceVelocity[d];
+                Field.Clear();
+                Field.AccLaidBack(PhysParam.rho_A, xField.GetSpeciesShadowField("A"), cm);
+                Field.AccLaidBack(PhysParam.rho_B, xField.GetSpeciesShadowField("B"), cm);
+                Field.Scale(1.0 / (PhysParam.rho_A + PhysParam.rho_B), cm);
+            }
+
+            //// Project normal
+            //var NormalInterfaceVelocity = InterfaceVelocity.Select(s => s.CloneAs()).ToArray();
+            //NormalInterfaceVelocity.ForEach(s => s.Clear());
+            //for (int i = 0; i < D; i++) {
+            //    var temp = NormalInterfaceVelocity[i].CloneAs();
+            //    temp.Clear();
+            //    for (int j = 0; j < D; j++) {
+            //        temp.ProjectProduct(1.0, Normal[j], InterfaceVelocity[i], cm, true);
+            //    }
+            //    NormalInterfaceVelocity[i].ProjectProduct(1.0, temp, Normal[i], cm, false);
+            //}
+            //for (int i = 0; i < D; i++) {
+            //    InterfaceVelocity[i].Clear();
+            //    InterfaceVelocity[i].Acc(1.0, NormalInterfaceVelocity[i]);
+            //}
+            return InterfaceVelocity;
+        }
+
+        public override double GetTimestep() {
+            double dt = this.Control.dtFixed;
+            double s = 0.5; // safety factor
+
+
+            var CC = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
+            if (CC.NoOfItemsLocally > 0) {
+                // search minimum grid width in cutcells
+                var hmin = double.MaxValue;
+                foreach (var chunk in CC) {
+                    for (int i = chunk.i0; i < chunk.i0 + chunk.Len; i++) {
+                        hmin = Math.Min(this.GridData.iGeomCells.h_min[i], hmin);
+                    }
+                }
+
+                // get level set degree
+                int p = 0;
+                try {
+                    p = ((DGField)LsTrk.LevelSets[0]).Basis.Degree;
+                } catch {
+                    Console.WriteLine("Cannot determine DG order of level set");
+                }
+
+                // capillary timestep
+                {
+                    var physParams = this.Control.PhysicalParameters;
+                    if (physParams.Sigma != 0) {
+                        double dt_cap = s * Math.Sqrt((physParams.rho_A + physParams.rho_B) * Math.Pow(hmin * (p + 1), 3.0) / (2 * Math.PI * Math.Abs(physParams.Sigma)));
+                        if (dt_cap < dt) {
+                            dt = Math.Min(dt_cap, dt);
+                            Console.WriteLine("Restricting time step size to: {0}, due to capillary timestep restriction", dt_cap);
+                        }
+                    }
+                }
+
+                // level set cfl
+                {
+                    int D = this.GridData.SpatialDimension;
+                    IList<string> LevelSetVelocityNames = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(VariableNames.LevelSetCG, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+                    if (this.RegisteredFields.Any(s => LevelSetVelocityNames.Any(x => x == s.Identification))) {
+                        // At this point the level set velocity is not updated to the correct value
+                        //VectorField<DGField> LevelSetVelocity = new VectorField<DGField>(D.ForLoop(d => RegisteredFields.SingleOrDefault(s => s.Identification == LevelSetVelocityNames[d])));
+
+                        var LevelSetVelocity = GetInterfaceVelocity();
+
+                        double dt_cfl = this.GridData.ComputeCFLTime(LevelSetVelocity.ToArray(), 10000, CC);
+                        dt_cfl *= s / Math.Pow(p, 2);
+                        if (dt_cfl < dt) {
+                            dt = Math.Min(dt_cfl, dt);
+                            Console.WriteLine("Restricting time step size to: {0}, due to level set cfl", dt_cfl);
+                        }
+                    }
+                }
+            }
+
+            // determine Minimum timestep over all processess
+            dt = MPIExtensions.MPIMin(dt);
+
+            return dt;
+        }
+
+        bool PrintOnlyOnce = true;
+        private void PrintConfiguration() {
+            if (PrintOnlyOnce) {
+                PrintOnlyOnce = false;
+                XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
+
+                Console.WriteLine("=============== {0} ===============", "Operator Configuration");
+                PropertyInfo[] properties = typeof(XNSE_OperatorConfiguration).GetProperties();
+                foreach (PropertyInfo property in properties) {
+                    if (property.PropertyType == typeof(bool)) {
+                        bool s = (bool)property.GetValue(config);
+                        Console.WriteLine("     {0,-30}:{1,3}", property.Name, "[" + (s == true ? "x" : " ") + "]");
+                    }
+                }
+
+                Console.WriteLine("=============== {0} ===============", "Linear Solver Configuration");
+                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.LinearSolver.SolverCode);
+                if (this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_mumps & this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_pardiso) {
+                    Console.WriteLine("TODO");
+                }
+
+                Console.WriteLine("=============== {0} ===============", "Nonlinear Solver Configuration");
+                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.NonLinearSolver.SolverCode);
+                Console.WriteLine("     {0,-30}:{1}", "Convergence Criterion", this.Control.NonLinearSolver.ConvergenceCriterion);
+                Console.WriteLine("     {0,-30}:{1}", "Globalization", this.Control.NonLinearSolver.Globalization);
+                Console.WriteLine("     {0,-30}:{1}", "Minsolver Iterations", this.Control.NonLinearSolver.MinSolverIterations);
+                Console.WriteLine("     {0,-30}:{1}", "Maxsolver Iterations", this.Control.NonLinearSolver.MaxSolverIterations);
+
+
+            }
+        }
+
+
     }
 }
