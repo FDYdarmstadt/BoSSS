@@ -9,17 +9,23 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
+    /// <summary>
+    /// Post-processing specific to <see cref="RisingBubble"/>
+    /// </summary>
+    [Serializable]
+    public class RisingBubble2DBenchmarkQuantities : RisingBubble2DBenchmarkQuantities<XNSE_Control> { }
 
     /// <summary>
     /// Post-processing specific to <see cref="RisingBubble"/>
     /// </summary>
     [Serializable]
-    public class RisingBubble2DBenchmarkQuantities : XNSEinSituPostProcessingModule {
+    public class RisingBubble2DBenchmarkQuantities<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
         
         /// <summary>
         /// 
@@ -46,9 +52,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         protected override void PerformTimestepPostProcessing(int iTimestep, double PhysTime) {
             using(new FuncTrace()) {
                 var R = ComputeBenchmarkQuantities_RisingBubble();
+                ITuple RT = R;
+                double[] RR = new double[RT.Length];
+                for(int i = 0; i < RT.Length; i++)
+                    RR[i] = (double) RT[i];
+
                 AppendToLog(iTimestep);
                 AppendToLog(PhysTime);
-                AppendToLog(R);
+                AppendToLog(RR);
 
 
                 base.QueryResultTable.LogValue("area", R.area);
@@ -86,7 +97,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             ).Execute();
 
             // center of mass/geometric center (for incompressible fluid)
-            int D = SolverMain.Grid.SpatialDimension;
+            int D = SolverMainOverride.Grid.SpatialDimension;
             MultidimensionalArray center = MultidimensionalArray.Create(1, D);
             CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
                 vqs.Compile(LsTrk.GridDat, order),

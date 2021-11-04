@@ -178,14 +178,17 @@ namespace BoSSS.Foundation {
         /// </param>
         virtual public void AccConstant(double a, CellMask cm) {
             using (new FuncTrace()) {
+                
                 if (cm == null) {
                     int J = GridDat.iLogicalCells.NoOfLocalUpdatedCells;
                     for (int j = 0; j < J; j++)
                         SetMeanValue(j, GetMeanValue(j) + a);
                 } else {
-                    foreach (var c in cm) {
-                        for (int j = 0; j < c.Len; j++)
-                            SetMeanValue(j + c.i0, GetMeanValue(j + c.i0) + a);
+                    if(cm.MaskType != MaskType.Logical)
+                        throw new ArgumentException("expecting logical cell mask");
+
+                    foreach(int j in cm.ItemEnum) {
+                        SetMeanValue(j, GetMeanValue(j) + a);
                     }
                 }
             }

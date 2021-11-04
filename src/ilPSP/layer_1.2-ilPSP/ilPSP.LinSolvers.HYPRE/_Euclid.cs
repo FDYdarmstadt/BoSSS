@@ -26,7 +26,8 @@ namespace ilPSP.LinSolvers.HYPRE {
     /// Euclid preconditioner;
     /// </summary>
     /// <remarks>
-    /// From HYPRE 2.4.0b Manual:<br/>
+    /// From HYPRE 2.4.0b Manual:
+    /// 
     /// The Euclid library is a scalable implementation of the Parallel ILU algorithm that was presented at
     /// SC99 [1], and published in expanded form in the SIAM Journal on Scientific Computing [2]. By
     /// scalable we mean that the factorization (setup) and application (triangular solve) timings remain
@@ -54,7 +55,7 @@ namespace ilPSP.LinSolvers.HYPRE {
         /// creates solver for MPI_COMM_WORLD communicator
         /// </summary>
         protected override void CreateSolver() {
-            HypreException.Check(Wrappers.Euclid.Create(csMPI.Raw._COMM.WORLD, out base.m_Solver));
+            HypreException.Check(Wrappers.Euclid.Create(m_comm, out base.m_Solver));
         }
 
 
@@ -67,6 +68,8 @@ namespace ilPSP.LinSolvers.HYPRE {
                 HypreException.Check(Wrappers.Euclid.HYPRE_EuclidSetILUT(m_Solver, value));
             }
         }
+
+        MPI_Comm m_comm = csMPI.Raw._COMM.WORLD;
 
         bool m_BJ = false;
 
@@ -156,6 +159,7 @@ namespace ilPSP.LinSolvers.HYPRE {
                 throw new ApplicationException("solver not initialized");
 
             HypreException.Check(Wrappers.Euclid.__HYPRE_EuclidSetup(m_Solver, m_Matrix.m_ParCSR_matrix, Rhs.ParCRS_vector, Unknowns.ParCRS_vector));
+            Wrappers.Euclid.HYPRE_EuclidSetStats(m_Solver, 2);
             Wrappers.Euclid.__HYPRE_EuclidSolve(m_Solver, m_Matrix.m_ParCSR_matrix, Rhs.ParCRS_vector, Unknowns.ParCRS_vector);
             // We dont want to raise an exception for
             // a 'method did not converge'- or 'nomerical breakdown' - Error
@@ -170,7 +174,7 @@ namespace ilPSP.LinSolvers.HYPRE {
         int m_Level = 1;
 
         /// <summary>
-        /// from HYPRE manual:<br/>
+        /// From HYPRE manual:
         /// Factorization level for ILU(k). Default: 1. Guidance: for 2D convection-diffusion and
         /// similar problems, fastest solution time is typically obtained with levels 4 through 8. For 3D
         /// problems fastest solution time is typically obtained with level 1.
@@ -180,8 +184,9 @@ namespace ilPSP.LinSolvers.HYPRE {
                 return m_Level;
             }
             set {
-                if (value < 1)
-                    throw new ArgumentOutOfRangeException("must be greater or equal to 1.");
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException("must be greater or equal to 0.");
+                // default is 1. But, of course ILU(0) can also be selected
                 m_Level = value;
                 HypreException.Check(Wrappers.Euclid.HYPRE_EuclidSetLevel(m_Solver, m_Level));
             }

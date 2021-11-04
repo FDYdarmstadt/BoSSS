@@ -192,7 +192,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             base.TerminationKey = true;
             dt = 1.0;
 
-            this.Op.Solve(this.u.Mapping, this.OpConfig,
+            this.Op.Solve(this.u.Mapping, MgConfig:this.OpConfig,
                 nsc: this.Control.NonLinearSolver, lsc: this.Control.LinearSolver,
                 MultigridSequence: base.MultigridSequence, 
                 verbose: true,

@@ -778,14 +778,23 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
                     //}
                     //radius /= (double)numFp;
 
+                    double vorzeichen = 1.0;
+                    switch (this.control.innerphase) {
+                        default:
+                        case "A":
+                            break;
+                        case "B":
+                            vorzeichen = -1.0;
+                            break;
+                    }
 
                     switch (LevSetForm) {
                         case PolarLevSetForm.quadratic: {
-                                results[nd] = x.Pow2() + y.Pow2() - radius.Pow2();
+                                results[nd] = vorzeichen * (x.Pow2() + y.Pow2() - radius.Pow2());
                                 break;
                             }
                         case PolarLevSetForm.signedDist: {
-                                results[nd] = Math.Sqrt(x.Pow2() + y.Pow2()) - radius;
+                                results[nd] = vorzeichen * (Math.Sqrt(x.Pow2() + y.Pow2()) - radius);
                                 break;
                             }
                         default:

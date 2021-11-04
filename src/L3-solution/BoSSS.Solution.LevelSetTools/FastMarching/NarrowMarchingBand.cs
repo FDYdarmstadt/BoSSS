@@ -272,9 +272,8 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 0 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
-
 
             //DGField PosField = new SinglePhaseField(new Basis(gdat, 0), "positiveLevelSetWing");
             //DGField NegField = new SinglePhaseField(new Basis(gdat, 0), "negativeLevelSetWing");
@@ -297,14 +296,21 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
             //}
             //Tecplot.Tecplot.PlotFields(new DGField[] { PosField, NegField, IntersectField }, "LevelSetWings", 0.0, 1);
 
+            // check that the far fields are not touching in the species seperated by this levelset
+            var spc = Tracker.GetSpeciesSeparatedByLevSet(iLevSet);
+            CellMask spcMask = CellMask.GetEmptyMask(gdat);
+            foreach (var sp in spc) {
+                spcMask = spcMask.Union(Tracker.Regions.GetSpeciesMask(sp));
+            }
+            spcMask = spcMask.Complement();
 
-            EdgeMask touching = PosGrid.BoundaryEdgesMask.Intersect(NegGrid.BoundaryEdgesMask);
+            EdgeMask touching = PosGrid.BoundaryEdgesMask.Intersect(NegGrid.BoundaryEdgesMask).Except(spcMask.GetAllLocalEdgesMask());
             if (touching.NoOfItemsLocally > 0) {
                 Console.WriteLine("on Proc {0}: touching.NoOfItemsLocally = {1}", gdat.MpiRank, touching.NoOfItemsLocally);
                 throw new ArithmeticException("Error in level-set topology.");
             }
 
-            if(object.ReferenceEquals(OldLevSet, NewLevelSet)) {
+            if (object.ReferenceEquals(OldLevSet, NewLevelSet)) {
                 NewLevelSet = OldLevSet.CloneAs();
             } else {
                 NewLevelSet.Clear(NEAR);
@@ -370,7 +376,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 }
 
                 if (GradNorm < 1.0e-12) { 
-                    //|| (!CCBitMask[j] && (GradNorm < 0.99 || GradNorm > 1.01))) { 
+                    //|| (!CCBitMask[j] && (GradNorm < 0.99 || GradNorm > 1.01))) {
 
                     // the level-set field is flat (+1 or -1) in cell j
                     // it must be initialized
@@ -446,7 +452,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 1 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
             // compute velocity extension
@@ -476,7 +482,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 2 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
             // then, on the rest of the domain
@@ -491,7 +497,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 3 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>( ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 
@@ -534,7 +540,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 4 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 
@@ -548,7 +554,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             if (plotMarchingSteps) {
                 TimestepNumber tsn = new TimestepNumber(new int[] { TimestepNo, 5 });
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat<DGField>(Velocity, ExtVel, NewLevelSet, LevelSetGrad), "NarrowMarchingBand" + tsn, 0.0, 2);
             }
 
 
@@ -1164,7 +1170,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 negEdgesScheme = SchHelper.GetEdgeQuadScheme(Tracker.GetSpeciesId("A"), UseDefaultFactories: false, IntegrationDomain: subGrid.InnerEdgesMask, fixedOrder: HMForder);
 
                 // integrate interface
-                // (Only the interface part contributes to the RHS; mutst be integrated fore EACH component.)
+                // (Only the interface part contributes to the RHS; must be integrated fore EACH component.)
                 DGField[] IfParams;
                 if (ComponentMode) {
                     IfParams = new DGField[] { Velocity[0] };
@@ -1190,7 +1196,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     //    whichSpc:Tracker.GetSpeciesId("A"));
                     XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map);
 
-                    MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.0);
+                    MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.1);
                     //mtxBuilder.SpeciesOperatorCoefficients[Tracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[Tracker.GetSpeciesId("A")];
                     mtxBuilder.CellLengthScales.Add(Tracker.GetSpeciesId("A"), dummy.CellLengthScales[Tracker.GetSpeciesId("A")]);
 
@@ -1343,7 +1349,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     essExtVelMatrix.SpMVpara(-1.0, x, 1.0, Resi_d);
                     double NORM_Resi_d = Resi_d.L2NormPow2().MPISum().Sqrt();
                     double RelResiNorm = NORM_Resi_d/NORM_rhs;
-
+                    
                     if(RelResiNorm > 1.0e-8) {
                         Console.WriteLine("WARNING: high solver residual in extension velocity solver: relative residual norm: {0:E2}", RelResiNorm);
                     }

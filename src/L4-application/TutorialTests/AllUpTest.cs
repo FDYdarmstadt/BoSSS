@@ -32,219 +32,232 @@ namespace BoSSS.Application.TutorialTests {
     [TestFixture]
     static public class AllUpTest {
 
-        /// <summary>
-        /// Finalization.
-        /// </summary>
-        static public void OneTimeTearDown(bool killBatch) {
-            
-            if (killBatch) {
-                Console.WriteLine("Must ... finish ... ...  MiniBatchProcessor ... ");
-                Console.Out.Flush();
-
-                // try to terminate batch processor, if still running:
-                int timeoucount = 0;
-                while (MiniBatchProcessor.Server.GetIsRunning(null)) {
-                    Console.WriteLine("Terminating MiniBatchProcessor...");
-                    MiniBatchProcessor.Server.SendTerminationSignal(TimeOutInSeconds: -1);
-                    if(timeoucount > 0)
-                        Thread.Sleep(10000);
-
-                    timeoucount++;
-                    if (timeoucount > 100) {
-                        Assert.Fail("Unable to kill MiniBatchProcessor - server");
-                    }
-                }
-
-                Console.WriteLine("MiniBatchProcessor terminated.");
-            }
-        }
-
-        /// <summary>
-        /// Init.
-        /// </summary>
-        static public bool OneTimeSetUp() {
-            /*
-            Console.WriteLine("OneTimeSetup: starting 'MiniBatchProcessor'...");
-            bool r = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
-            if(r)
-                Console.WriteLine("started within this process.");
-            else
-                Console.WriteLine("already running.");
-            
-            return r;
-            */
-            return false;
-        }
+        
 
         internal static string DirectoryOffset = "";
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.tex")]
+        [NUnitFileToCopyHack("quickStartCNS/IsentropicVortex.ipynb")]
         [Test]
         static public void Run__IsentropicVortex() {
-            RunWorksheet("quickStartCNS/IsentropicVortex.tex");
+            RunWorksheet("quickStartCNS/IsentropicVortex.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("InitialValues/InitialValues.tex")]
+        [NUnitFileToCopyHack("InitialValues/InitialValues.ipynb")]
         [Test]
         static public void Run__InitialValues() {
-            RunWorksheet("InitialValues/InitialValues.tex");
+            RunWorksheet("InitialValues/InitialValues.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.tex")]
+        [NUnitFileToCopyHack("BoundaryAndInitialData/BoundaryAndInitialData.ipynb")]
         [Test]
         static public void Run__BoundaryAndInitialData() {
-            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.tex");
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
+            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.tex")]
+        [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
         [Test]
         static public void Run__MetaJobManager() {
-            RunWorksheet("MetaJobManager/MetaJobManager.tex");
+            RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("GridGeneration/GridGeneration.tex")]
+        [NUnitFileToCopyHack("GridGeneration/GridGeneration.ipynb")]
         [Test]
         static public void Run__GridGeneration() {
-            RunWorksheet("GridGeneration/GridGeneration.tex");
+            RunWorksheet("GridGeneration/GridGeneration.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("quickStartIBM/channel.tex")]
+        [NUnitFileToCopyHack("quickStartIBM/channel.ipynb")]
         [Test]
         static public void Run__channel() {
-            RunWorksheet("quickStartIBM/channel.tex");
+            RunWorksheet("quickStartIBM/channel.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("shortTutorialMatlab/tutorialMatlab.tex")]
+        [NUnitFileToCopyHack("shortTutorialMatlab/tutorialMatlab.ipynb")]
         [Test]
         static public void Run__tutorialMatlab() {
-            RunWorksheet("shortTutorialMatlab/tutorialMatlab.tex");
+            RunWorksheet("shortTutorialMatlab/tutorialMatlab.ipynb");
         }
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("ue2Basics/ue2Basics.tex")]
+        [NUnitFileToCopyHack("ue2Basics/ue2Basics.ipynb")]
         [Test]
         static public void Run__ue2Basics() {
-            RunWorksheet("ue2Basics/ue2Basics.tex");
+            RunWorksheet("ue2Basics/ue2Basics.ipynb");
         }
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.tex")]
+        [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb")]
         [Test]
         static public void Run__SpatialOperatorNexpTimeInt() {
-            RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.tex");
+            RunWorksheet("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("ue5NumFluxConv/ue5NumFluxConv.tex")]
+        [NUnitFileToCopyHack("ue5NumFluxConv/ue5NumFluxConv.ipynb")]
         [Test]
         static public void Run__ue5NumFluxConv() {
-            RunWorksheet("ue5NumFluxConv/ue5NumFluxConv.tex");
+            RunWorksheet("ue5NumFluxConv/ue5NumFluxConv.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.tex")]
+        [NUnitFileToCopyHack("ue6ScalarConvStability/ue6ScalarConvStability.ipynb")]
         [Test]
         static public void Run__ue6ScalarConvStability() {
-            RunWorksheet("ue6ScalarConvStability/ue6ScalarConvStability.tex");
+            RunWorksheet("ue6ScalarConvStability/ue6ScalarConvStability.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial9-SIP/sip.tex")]
+        [NUnitFileToCopyHack("tutorial9-SIP/sip.ipynb")]
         [Test]
         static public void Run__sip() {
-            RunWorksheet("tutorial9-SIP/sip.tex");
+            RunWorksheet("tutorial9-SIP/sip.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.tex")]
+        [NUnitFileToCopyHack("tutorial10-PoissonSystem/Poisson.ipynb")]
         [Test]
         static public void Run__Poisson() {
-            RunWorksheet("tutorial10-PoissonSystem/Poisson.tex");
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__Poisson
+            RunWorksheet("tutorial10-PoissonSystem/Poisson.ipynb");
         }
 #endif
 
 #if !DEBUG
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.tex")]
+        [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.ipynb")]
         [Test]
         static public void Run__StokesEq() {
-            RunWorksheet("tutorial11-Stokes/StokesEq.tex");
+            RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
         }
 #endif
  
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex")]
+        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
         [Test]
         static public void Run__CsharpAndBoSSSpad() {
-            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.tex");
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
+            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
         }
 #endif
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.tex")]
+        [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
         [Test]
         static public void Run__convStudy() {
-            RunWorksheet("convergenceStudyTutorial/convStudy.tex");
+            RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
         }
 #endif
 
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
-        static public void RunWorksheet(string TexPartialPath) {
+        static public void RunWorksheet(string NotebookPartialPath) {
+            using(new NotebookRunner(NotebookPartialPath, DirectoryOffset)) { }
+        }
+
+    }
+
+    /// <summary>
+    /// Runs some Jupyter Notebook or old BoSSS worksheet (.bws, .tex) as a test.
+    /// </summary>
+    public class NotebookRunner : IDisposable {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public NotebookRunner(string __NotebookPartialPath, string __DirectoryOffset) {
+            NotebookPartialPath = __NotebookPartialPath;
+            DirectoryOffset = __DirectoryOffset;
+            RunWorksheet();
+        }
+
+        /// <summary>
+        /// %
+        /// </summary>
+        public void Dispose() {
+            OneTimeTearDown();
+        }
+
+        /// <summary>
+        /// see https://docs.microsoft.com/en-us/dotnet/standard/garbage-collection/implementing-dispose
+        /// </summary>
+        protected virtual void Dispose(bool disposing) {
+            this.Dispose();
+        }
+
+
+        string NotebookPartialPath;
+        string DirectoryOffset;
+
+        /// <summary>
+        /// Runs some worksheet contained in the BoSSS handbook.
+        /// </summary>
+        void RunWorksheet() {
 
             // locate script
-            string TexFileName = TexPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
+            string TexFileName = NotebookPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
             string FullTexName;
             if (!File.Exists(TexFileName)) {
-                FullTexName = LocateFile(TexPartialPath).Single();
+                FullTexName = LocateFile(NotebookPartialPath).Single();
             } else {
                 FullTexName = TexFileName;
             }
 
-            Assert.IsTrue(File.Exists(FullTexName), "unable to find TeX source: " + FullTexName);
+            Assert.IsTrue(File.Exists(FullTexName), "unable to find source: " + FullTexName);
 
             // start the minibatchprocessor which is used internally
-            bool iStartedThisShit = OneTimeSetUp();
+            OneTimeSetUp();
 
             BoSSSpad.Job.UndocumentedSuperHack = true;
             BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
             
             try {
                 // run test:
-                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { "--texbatch", FullTexName });
+                string mode;
+                if(Path.GetExtension(FullTexName).Equals(".tex", StringComparison.InvariantCultureIgnoreCase))
+                    mode = "--texbatch";
+                else
+                    mode = "--JupyterBatch";
+
+                
+                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, FullTexName });
 
                 Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", FullTexName, ErrCount);
                 Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
                 Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
             } finally {
                 // shutting down the local mini batch processor:
-                OneTimeTearDown(iStartedThisShit);
+                OneTimeTearDown();
             }
         }
 
 
-        static string[] LocateFile(string PartialPath) {
-            DirectoryInfo repoRoot = new DirectoryInfo(DirectoryOffset);
+        string[] LocateFile(string PartialPath) {
+            DirectoryInfo repoRoot;
+            if(!DirectoryOffset.IsEmptyOrWhite())
+                repoRoot = new DirectoryInfo(DirectoryOffset);
+            else
+                repoRoot = new DirectoryInfo(Directory.GetCurrentDirectory());
 
             // if we get here, we probably have access to the repository root directory.
             string[] r = LocateFileRecursive("", repoRoot, PartialPath);
@@ -281,5 +294,49 @@ namespace BoSSS.Application.TutorialTests {
             return ret.ToArray();
         }
 
+        bool killBatch;
+
+        /// <summary>
+        /// Finalization.
+        /// </summary>
+        void OneTimeTearDown() {
+            
+            if (killBatch) {
+                Console.WriteLine("Must ... finish ... ...  MiniBatchProcessor ... ");
+                Console.Out.Flush();
+
+                // try to terminate batch processor, if still running:
+                int timeoucount = 0;
+                while (MiniBatchProcessor.Server.GetIsRunning(null)) {
+                    Console.WriteLine("Terminating MiniBatchProcessor...");
+                    MiniBatchProcessor.Server.SendTerminationSignal(TimeOutInSeconds: -1);
+                    if(timeoucount > 0)
+                        Thread.Sleep(10000);
+
+                    timeoucount++;
+                    if (timeoucount > 100) {
+                        Assert.Fail("Unable to kill MiniBatchProcessor - server");
+                    }
+                }
+
+                Console.WriteLine("MiniBatchProcessor terminated.");
+            }
+        }
+
+        /// <summary>
+        /// Init.
+        /// </summary>
+        void OneTimeSetUp() {
+            Console.WriteLine("OneTimeSetup: starting 'MiniBatchProcessor'...");
+            bool r = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
+            if(r)
+                Console.WriteLine("started within this process.");
+            else
+                Console.WriteLine("already running.");
+            
+            killBatch = r;
+        }
+
     }
+
 }

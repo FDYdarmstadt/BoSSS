@@ -49,9 +49,9 @@ Source: ".\doc\ControlExamples\CNS\*"; DestDir: "{app}\doc\ControlExamples\CNS";
 [Icons]
 Name: "{group}\{cm:ProgramOnTheWeb,{#MyAppName}}"; Filename: "{#MyAppURL}"         
 Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{group}\Install Visualizers for Visual Studio"; Filename: "{app}\bin\Release\bcl.exe"; Parameters: "--visualizers-inst"
-Name: "{group}\BoSSSpad (console)"; Filename: "{app}\bin\Release\BoSSSpad.exe"; Parameters: "--console"        
-Name: "{group}\BoSSSpad (worksheet)"; Filename: "{app}\bin\Release\BoSSSpad.exe"
+;Name: "{group}\Install Visualizers for Visual Studio"; Filename: "{app}\bin\Release\bcl.exe"; Parameters: "--visualizers-inst"
+;Name: "{group}\BoSSSpad (console)"; Filename: "{app}\bin\Release\BoSSSpad.exe"; Parameters: "--console"        
+;Name: "{group}\BoSSSpad (worksheet)"; Filename: "{app}\bin\Release\BoSSSpad.exe"
 ;Name: "{group}\BoSSSpad (electron)"; Filename: "{app}\bin\BoSSSpad-win32-x64\BoSSSpad.exe"         
 ;Name: "{group}\BoSSS Handbook"; Filename: "{app}\doc\BoSSShandbook.pdf" 
 ;Name: "{group}\BoSSS API Reference"; Filename: "{app}\doc\APIreference\index.html" 
@@ -84,7 +84,7 @@ Root: HKLM; \
     ValueType: expandsz; \
     ValueName: "Path"; \
     ValueData: "{olddata};{app}\bin\Release;"; \
-    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release')) and ( not IsRegularUser() )
+    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release\net5.0')) and ( not IsRegularUser() )
 ; as regular user (non-admin): set BOSSS_INSTALL only local
 Root: HKCU; \
    Subkey: "Environment"; \
@@ -98,7 +98,7 @@ Root: HKCU; \
     ValueType: expandsz; \
     ValueName: "Path"; \
     ValueData: "{olddata};{app}\bin\Release;"; \
-    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release')) and ( IsRegularUser() )
+    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release\net5.0')) and ( IsRegularUser() )
 
 ;[Run]
 ; Filename: bcl.exe; \
@@ -114,9 +114,9 @@ Filename: {app}\bin\native\win\redist\MSMpiSetup-9.0.1.exe; \
     Parameters: "-force"; \
     StatusMsg: "Installing Microsoft MPI..."; \
 	Flags: waituntilterminated skipifsilent postinstall;
-Filename: {app}\bin\native\win\redist\NDP472-KB4054531-Web.exe;  \
-    StatusMsg: "Installing Microsoft .NET 4.7.2..."; \
-	Flags: waituntilterminated skipifsilent postinstall;
+;Filename: {app}\bin\native\win\redist\NDP472-KB4054531-Web.exe;  \
+;    StatusMsg: "Installing Microsoft .NET 4.7.2..."; \
+;	Flags: waituntilterminated skipifsilent postinstall;
 	
  
 [Code]

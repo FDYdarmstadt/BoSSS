@@ -220,6 +220,9 @@ namespace BoSSS.Solution.NSECommon {
             if (j == 2)
                 ret = 0.0;
 
+            //if (j == 2)
+            //    ret = rho * V ;
+
             return ret;
         }
 

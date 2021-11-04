@@ -131,7 +131,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.GlobalMarcher {
                     int[] bosssNeighbors;
                     int LocalLength = gridDat.CellPartitioning.LocalLength;
                     if (jCell < LocalLength) {
-                        Tuple<int, int, int>[] getCellNeighbors = gridDat.GetCellNeighboursViaEdges(jCell);
+                        var getCellNeighbors = gridDat.GetCellNeighboursViaEdges(jCell);
                         bosssNeighbors = getCellNeighbors.Select(tpl => tpl.Item1).ToArray();
                     } else {    // get cell neighbors for external cells                     
                         bosssNeighbors = extCellNeighbours[jCell - LocalLength];

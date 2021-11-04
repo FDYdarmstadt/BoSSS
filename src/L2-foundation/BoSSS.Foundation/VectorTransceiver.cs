@@ -25,6 +25,7 @@ using BoSSS.Platform;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using ilPSP;
+using ilPSP.Tracing;
 
 namespace BoSSS.Foundation.Comm {
 
@@ -198,117 +199,129 @@ namespace BoSSS.Foundation.Comm {
         /// are complete and returns;
         /// </summary>
         public void TransceiveFinish() {
-            //ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+            using (var tr = new FuncTrace()) {
+                //ilPSP.MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
 
-            //var Para = m_master.Parallel;
-            //var mul = this.m_ItemsPerCell;
+                //var Para = m_master.Parallel;
+                //var mul = this.m_ItemsPerCell;
 
-            //int rcvProc;
-            //V[] data;
-            //while (sms.GetNext(out rcvProc, out data)) {
-            //    int j_insert = Para.m_RcvCommListsInsertIndex[rcvProc];
+                //int rcvProc;
+                //V[] data;
+                //while (sms.GetNext(out rcvProc, out data)) {
+                //    int j_insert = Para.m_RcvCommListsInsertIndex[rcvProc];
 
-            //    int L = data.Length;
-            //    for( int i = 0; i < L; i++) {
-            //        int iDest = i + j_insert;
-            //        for( int iii = 0; iii < mul; iii++)
-            //            m_vector[iDest*mul + iii] = data[i*mul + iii];
-            //    }
-            //}
-
-
-            var Para = m_master.iParallel;
-            int mul = m_ItemsPerCell;
-
-            /*
-            for (int i = 0; i < Para.ProcessesToSendTo.Length; i++) {
-                int proc = Para.ProcessesToSendTo[i];
-                int[] CellIndexList = Para.m_SendCommLists[proc];
-                V[] SendBuf = new V[CellIndexList.Length];
-                
-                for (int ii = 0; ii < SendBuf.Length; ii++)
-                    for( int iii = 0; iii < mul; iii++)
-                        SendBuf[ii*mul + iii] = m_vector[CellIndexList[ii]*mul + iii];
-
-                sms.Transmitt(proc, SendBuf);
-            }
-             */
-
-            int MyRank;
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MyRank);
-
-            var rvcProc = Para.ProcessesToReceiveFrom;
-            var sndProc = Para.ProcessesToSendTo;
-
-            unsafe {
-                V[] _vector = m_vector as V[];
-
-                GCHandle _vector_Handle = default(GCHandle);
+                //    int L = data.Length;
+                //    for( int i = 0; i < L; i++) {
+                //        int iDest = i + j_insert;
+                //        for( int iii = 0; iii < mul; iii++)
+                //            m_vector[iDest*mul + iii] = data[i*mul + iii];
+                //    }
+                //}
 
 
-                try {
-                    int N = m_ItemsPerCell;
+                var Para = m_master.iParallel;
+                int mul = m_ItemsPerCell;
 
-                    byte* pCA = default(byte*);
-                    if (_vector != null) {
-                        _vector_Handle = GCHandle.Alloc(_vector, GCHandleType.Pinned);
-                        pCA = (byte*)Marshal.UnsafeAddrOfPinnedArrayElement(_vector, 0);
-                    }
+                /*
+                for (int i = 0; i < Para.ProcessesToSendTo.Length; i++) {
+                    int proc = Para.ProcessesToSendTo[i];
+                    int[] CellIndexList = Para.m_SendCommLists[proc];
+                    V[] SendBuf = new V[CellIndexList.Length];
+
+                    for (int ii = 0; ii < SendBuf.Length; ii++)
+                        for( int iii = 0; iii < mul; iii++)
+                            SendBuf[ii*mul + iii] = m_vector[CellIndexList[ii]*mul + iii];
+
+                    sms.Transmitt(proc, SendBuf);
+                }
+                 */
+
+                int MyRank;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MyRank);
+
+                var rvcProc = Para.ProcessesToReceiveFrom;
+                var sndProc = Para.ProcessesToSendTo;
+
+                unsafe {
+                    V[] _vector = m_vector as V[];
+
+                    GCHandle _vector_Handle = default(GCHandle);
 
 
+                    try {
+                        int N = m_ItemsPerCell;
 
-                    int sz = Marshal.SizeOf(typeof(V));
-
-                    // Receiving ...
-                    // -------------
-
-                    // over all processes from which we receive data...
-                    for (int i = 0; i < rvcProc.Length; i++) {
-
-                        // Source processor and insert index and no of elements to receive ...
-                        int pOrigin = rvcProc[i];
-                        int iInsert = Para.RcvCommListsInsertIndex[pOrigin];
-                        int Len = Para.RcvCommListsNoOfItems[pOrigin];
-
-                        IntPtr insertAddr;
-                        if (_vector != null)
-                            insertAddr = (IntPtr)(pCA + iInsert * N * sz);
-                        else {
-                            RcvBufferPin[i] = GCHandle.Alloc(RcvBuffer[i]);
-                            insertAddr = Marshal.UnsafeAddrOfPinnedArrayElement(RcvBuffer[i], 0);
+                        byte* pCA = default(byte*);
+                        if (_vector != null) {
+                            _vector_Handle = GCHandle.Alloc(_vector, GCHandleType.Pinned);
+                            pCA = (byte*)Marshal.UnsafeAddrOfPinnedArrayElement(_vector, 0);
                         }
 
-                        // MPI receive
-                        csMPI.Raw.Irecv(insertAddr,
-                            Len * N * sz, csMPI.Raw._DATATYPE.BYTE, pOrigin,
-                            4442 + pOrigin,
-                            csMPI.Raw._COMM.WORLD,
-                            out rqst[i + sndProc.Length]);
-                    }
-
-                    // Wait for comm to finish
-                    // -----------------------
-
-                    Array.Clear(staTussies, 0, staTussies.Length);
-                    csMPI.Raw.Waitall(rqst.Length, rqst, staTussies);
-                } finally {
-                    // release GC handles
-                    // ==================
 
 
-                    for (int i = 0; i < SendBufferPin.Length; i++)
-                        SendBufferPin[i].Free();
+                        int sz = Marshal.SizeOf(typeof(V));
+
+                        // Receiving ...
+                        // -------------
+
+                        // over all processes from which we receive data...
+                        for (int i = 0; i < rvcProc.Length; i++) {
+
+                            // Source processor and insert index and no of elements to receive ...
+                            int pOrigin = rvcProc[i];
+                            int iInsert = Para.RcvCommListsInsertIndex[pOrigin];
+                            int Len = Para.RcvCommListsNoOfItems[pOrigin];
+
+                            IntPtr insertAddr;
+                            if (_vector != null)
+                                insertAddr = (IntPtr)(pCA + iInsert * N * sz);
+                            else {
+                                RcvBufferPin[i] = GCHandle.Alloc(RcvBuffer[i]);
+                                insertAddr = Marshal.UnsafeAddrOfPinnedArrayElement(RcvBuffer[i], 0);
+                            }
+
+                            // MPI receive
+                            csMPI.Raw.Irecv(insertAddr,
+                                Len * N * sz, csMPI.Raw._DATATYPE.BYTE, pOrigin,
+                                4442 + pOrigin,
+                                csMPI.Raw._COMM.WORLD,
+                                out rqst[i + sndProc.Length]);
+                        }
+
+                        // Wait for comm to finish
+                        // -----------------------
+                        foreach(int proc in rvcProc)
+                            tr.Info("waiting for proc: " + proc);
+                        foreach(var rq in rqst) {
+                            bool isSet;
+                            MPI_Status status;
+                            csMPI.Raw.MPI_GetStatusOfRequest(rq, out isSet, out status);
+                            tr.Info(String.Format("status of source {0}, tag {1}, isSet {2}: {3}", status.MPI_SOURCE, status.MPI_TAG, isSet, status.MPI_ERROR));
+                        }
 
 
-                    if (_vector != null) {
-                        _vector_Handle.Free();
-                    } else {
-                        for (int i = 0; i < RcvBufferPin.Length; i++)
-                            RcvBufferPin[i].Free();
+                        Array.Clear(staTussies, 0, staTussies.Length);
+                        csMPI.Raw.Waitall(rqst.Length, rqst, staTussies);
+                        tr.Info("transfer finished");
+                        
+                    } finally {
+                        // release GC handles
+                        // ==================
+
+
+                        for (int i = 0; i < SendBufferPin.Length; i++)
+                            SendBufferPin[i].Free();
+
+
+                        if (_vector != null) {
+                            _vector_Handle.Free();
+                        } else {
+                            for (int i = 0; i < RcvBufferPin.Length; i++)
+                                RcvBufferPin[i].Free();
+                        }
                     }
                 }
             }
-
         }
     }
 

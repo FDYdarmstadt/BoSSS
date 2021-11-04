@@ -73,7 +73,7 @@ namespace BoSSS.Foundation.IO {
                         throw new IOException("Can't create temporary database directory because there is already a file with the same name ('" + UnZippedDirectory + "').");
                     }
 
-
+                    /*
                     ZipStorer zip = ZipStorer.Open(databasePath, FileAccess.Read);
                     // Read the central directory collection
                     List<ZipStorer.ZipFileEntry> dir = zip.ReadCentralDir();
@@ -84,6 +84,10 @@ namespace BoSSS.Foundation.IO {
                         zip.ExtractFile(entry, out_file);
                     }
                     zip.Close();
+                    */
+
+                    System.IO.Compression.ZipFile.ExtractToDirectory(databasePath, UnZippedDirectory);
+
 
                     DirectoryInfo di = new DirectoryInfo(UnZippedDirectory);
                     try {
@@ -221,7 +225,6 @@ namespace BoSSS.Foundation.IO {
                     string fullpath = Path.Combine(BasePath, RelPath);
 
                     FileStream fs = null;
-                    int i = 0;
 
                     fs = new FileStream(fullpath,
                         ForceOverride ? FileMode.Create : FileMode.CreateNew,
@@ -233,8 +236,6 @@ namespace BoSSS.Foundation.IO {
                     // ++++++++++++++++++++++++++++
                     // try to open file for reading
                     // ++++++++++++++++++++++++++++
-
-                    FileNotFoundException exc = null;
 
                     FileStream fs = new FileStream(Path.Combine(BasePath, RelPath),
                                 FileMode.Open, FileAccess.Read, FileShare.ReadWrite);

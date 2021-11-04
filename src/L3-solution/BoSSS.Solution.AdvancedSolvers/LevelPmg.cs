@@ -262,6 +262,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         double[] Res_f;
         double[] Cor_c;
 
+        public bool SkipLowOrderSolve = false;
+
         /// <summary>
         /// ~
         /// </summary>
@@ -282,22 +284,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Cor_f.SetV(X);
             var Mtx = m_op.OperatorMatrix;
 
-            // compute fine residual
-            Res_f.SetV(B);
-            Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+                // compute fine residual
+                Res_f.SetV(B);
+                Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
 
-            // project to low-p/coarse
-            double[] Res_c = lMask.GetSubVec(Res_f);
+            if (!SkipLowOrderSolve) {
+                // project to low-p/coarse
+                double[] Res_c = lMask.GetSubVec(Res_f);
 
-            // low-p solve
-            lowSolver.Solve(Cor_c, Res_c);
+                // low-p solve
+                lowSolver.Solve(Cor_c, Res_c);
 
-            // accumulate low-p correction
-            lMask.AccSubVec(Cor_c, Cor_f);
+                // accumulate low-p correction
+                lMask.AccSubVec(Cor_c, Cor_f);
 
-            // compute residual of low-order solution
-            Res_f.SetV(B);
-            Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+                // compute residual of low-order solution
+                Res_f.SetV(B);
+                Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+            }
 
             if (UseHiOrderSmoothing && AnyHighOrderTerms) {
                 // solver high-order 
@@ -349,9 +353,50 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_Iter++;
         }
 
+        /// <summary>
+        /// Called upon each iteration
+        /// </summary>
         public Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;
             set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Dispose() {
+            if(lowSolver != null) {
+                lowSolver.Dispose();
+                lowSolver = null;
+            }
+            if(hiSolver != null) {
+                hiSolver.Dispose();
+                hiSolver = null;
+            }
+
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public long UsedMemory() {
+            long r = 0;
+
+            foreach(var mda in this.HighOrderBlocks_LU) {
+                if(mda != null) {
+                    r += mda.Length * sizeof(double);
+                }
+            }
+
+            foreach(var ia in this.HighOrderBlocks_LUpivots) {
+                if(ia != null) {
+                    r += ia.Length * sizeof(int);
+                }
+            }
+
+
+            return r;
         }
     }
 }

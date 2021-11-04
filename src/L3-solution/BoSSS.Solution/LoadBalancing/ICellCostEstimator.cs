@@ -34,8 +34,14 @@ namespace BoSSS.Solution {
         /// <see cref="GetEstimatedCellCosts"/> for the given mapping
         /// cells and performance classes
         /// </summary>
-        /// <param name="performanceClassCount"></param>
-        /// <param name="cellToPerformanceClassMap"></param>
+        /// <param name="performanceClassCount">
+        /// 
+        /// </param>
+        /// <param name="cellToPerformanceClassMap">
+        /// Mapping from local cell to performance class
+        /// - index: local cell index
+        /// - content: performance class (between 0 and <see cref="CurrentPerformanceClassCount"/>)
+        /// </param>
         void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap);
 
         /// <summary>

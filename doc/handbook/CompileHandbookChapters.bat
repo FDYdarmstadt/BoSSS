@@ -1,16 +1,16 @@
-pdflatex main_BoundaryAndInitialData.tex     
-pdflatex main_convergenceStudyTutorial.tex   
-pdflatex main_CsharpAndBoSSSpad.tex          
-pdflatex main_GridGeneration.tex             
-pdflatex main_InitialValues.tex              
-pdflatex main_MetaJobManager.tex                
-pdflatex main_ParameterStudy.tex             
-pdflatex main_quickStartCNS.tex              
-pdflatex main_quickStartIBM.tex              
-pdflatex main_SpatialOperatorNexpTimeInt.tex 
-pdflatex main_tutorial10-PoissonSystem.tex   
-pdflatex main_tutorial11-Stokes.tex          
-pdflatex main_tutorial9-SIP.tex              
-pdflatex main_ue2Basics.tex                  
-pdflatex main_ue5NumFluxConv.tex             
-pdflatex main_ue6ScalarConvStability.tex     
+pdflatex -halt-on-error main_BoundaryAndInitialData.tex     
+pdflatex -halt-on-error main_convergenceStudyTutorial.tex   
+pdflatex -halt-on-error main_CsharpAndBoSSSpad.tex          
+pdflatex -halt-on-error main_GridGeneration.tex             
+pdflatex -halt-on-error main_InitialValues.tex              
+pdflatex -halt-on-error main_MetaJobManager.tex                
+pdflatex -halt-on-error main_ParameterStudy.tex             
+pdflatex -halt-on-error main_quickStartCNS.tex              
+pdflatex -halt-on-error main_quickStartIBM.tex              
+pdflatex -halt-on-error main_SpatialOperatorNexpTimeInt.tex 
+pdflatex -halt-on-error main_tutorial10-PoissonSystem.tex   
+pdflatex -halt-on-error main_tutorial11-Stokes.tex          
+pdflatex -halt-on-error main_tutorial9-SIP.tex              
+pdflatex -halt-on-error main_ue2Basics.tex                  
+pdflatex -halt-on-error main_ue5NumFluxConv.tex             
+pdflatex -halt-on-error main_ue6ScalarConvStability.tex     

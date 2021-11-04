@@ -21,7 +21,6 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Windows.Forms;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -201,6 +200,7 @@ namespace BoSSS.Application.BoSSSpad {
             return methods.Concat(assemblies.SelectMany(a => type.GetExtensionMethods(a)));
         }
 
+        /*
         /// <summary>
         /// Saves a textual representation of the given <paramref name="obj"/>
         /// to the clipboard.
@@ -211,7 +211,7 @@ namespace BoSSS.Application.BoSSSpad {
         public static void ToClipboard(this object obj) {
             Clipboard.SetText(obj.ToString());
         }
-
+        */
         /// <summary>
         /// Determines whether the string <paramref name="s"/> starts with any
         /// of the strings in <paramref name="potentialStartStrings"/>

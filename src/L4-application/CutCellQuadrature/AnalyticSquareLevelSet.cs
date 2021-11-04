@@ -207,6 +207,10 @@ namespace CutCellQuadrature {
                 }
             }
         }
+
+        public void CopyFrom(ILevelSet other) {
+            throw new NotImplementedException();
+        }
         #endregion
     }
 }

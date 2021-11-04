@@ -25,6 +25,7 @@ using ilPSP;
 using BoSSS.Foundation.Comm;
 using System.Collections.Generic;
 using BoSSS.Foundation.Grid.Classic;
+using MPI.Wrappers;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -85,23 +86,29 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-
-        public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId[] Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
+        /// <summary>
+        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// </summary>
+        public XDGSpaceMetrics GetXDGSpaceMetrics(IEnumerable<SpeciesId> Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
             //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
             //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
             //}
-
+            var _Spc = Spc.ToArray();
+#if TEST
+            MPICollectiveWatchDog.WatchAtRelease();
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+#endif
             var CutCellsQuadType = this.CutCellQuadratureType;
 
             //throw new NotImplementedException("todo");
             var dict = m_XDGSpaceMetricsHistory[HistoryIndex];
-            var key = Tuple.Create(Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
+            var key = Tuple.Create(_Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
             if(!dict.ContainsKey(key)) {
                 dict.Add(key,
                     new XDGSpaceMetrics(this,
                         GetXQuadFactoryHelper(CutCellsQuadType, HistoryIndex),
                         CutCellsQuadOrder,
-                        Spc,
+                        _Spc,
                         HistoryIndex
                         )
                 );
@@ -115,8 +122,6 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="Spc"></param>
         /// <param name="CutCellsQuadOrder"></param>
-        /// <param name="oldCcm"></param>
-        /// <param name="oldTs__AgglomerationTreshold"></param>
         /// <param name="__AgglomerationTreshold">
         /// Volume fraction, which triggers cell agglomeration;
         /// see <see cref="MultiphaseCellAgglomerator.AgglomerationThreshold"/></param>
@@ -214,7 +219,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// 1 (including) to -<see cref="GetPopulatedLength()"/> (including) 
             /// </summary>
-            public int[] AvailabelIndices {
+            public int[] AvailableIndices {
                 get {
                     var R = new int[GetPopulatedLength() + 1];
                     for(int i = 0; i < R.Length; i++) {
@@ -236,6 +241,20 @@ namespace BoSSS.Foundation.XDG {
             public int GetPopulatedLength() {
                 return History.Count;
             }
+
+            /// <summary>
+            /// indexes of all available times, i.e. all valid indexes to access <see cref="this[int]"/>
+            /// </summary>
+            public int[] PopulatedIndices {
+                get {
+                    int[] ret = new int[GetPopulatedLength() + 1];
+                    for(int i = 0; i < ret.Length; i++)
+                        ret[i] = 1 - i;
+                    return ret;
+                }
+            }
+
+
 
             /// <summary>
             /// Sontainer for previous states.
@@ -274,6 +293,17 @@ namespace BoSSS.Foundation.XDG {
                 }
                 m_Current = Replicator1(m_Current);
                 m_PushCount++;
+            }
+
+            internal T Pop(Func<T, T, T> Replacor1) {
+                T ret = m_Current;
+                m_Current = Replacor1(m_Current, History[0]);
+                for(int i = 0; i <= History.Count - 2; i++) {
+                    History[i] = History[i + 1];
+                }
+                History.RemoveAt(History.Count - 1);
+                m_PushCount--;
+                return ret;
             }
 
 

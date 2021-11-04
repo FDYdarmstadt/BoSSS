@@ -23,6 +23,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
 using BoSSS.Foundation.Grid.RefElements;
 using MPI.Wrappers;
+using ilPSP.Tracing;
 
 namespace BoSSS.Foundation.Quadrature {
 
@@ -241,92 +242,138 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="IQuadratureScheme{S, T}.Compile"/>
         /// </summary>
         public ICompositeQuadRule<TQuadRule> Compile(IGridData gridData, int order) {
+            using (var tr = new FuncTrace()) {
+                ilPSP.MPICollectiveWatchDog.Watch();
+                // set domain
+                TDomain baseDomain = Domain ?? GetDefaultDomain(gridData);
+                Debug.Assert(baseDomain.MaskType == MaskType.Geometrical);
 
-            // set domain
-            TDomain baseDomain = Domain ?? GetDefaultDomain(gridData);
-            Debug.Assert(baseDomain.MaskType == MaskType.Geometrical);
+#if TEST
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            tr.Info("Checkpoint C.1");
+#endif
+                // identify the reference elements
+                // ===============================
 
-            // identify the reference elements
-            // ===============================
+                RefElement[] RefElements;
+                //ID
+                RefElements = GetRefElements(gridData);
 
-            RefElement[] RefElements;
-            //ID
-            RefElements = GetRefElements(gridData);
+#if TEST
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            tr.Info("Checkpoint C.2");
+#endif
 
-            // define standard factories, if necessary
-            // =======================================
-            IEnumerable<IFactoryDomainPair<TQuadRule, TDomain>> factoryDomainPairs;
-            if (m_UseDefaultFactories) {
-                var defaultFactories = RefElements.Select(
-                        RefElm => (new FactoryDomainPair(
-                            GetDefaultRuleFactory(gridData, RefElm),
-                            GetDomainForRefElement(RefElm, gridData).Intersect(baseDomain)))
-                            );
+                // define standard factories, if necessary
+                // =======================================
+                IEnumerable<IFactoryDomainPair<TQuadRule, TDomain>> factoryDomainPairs;
+                if (m_UseDefaultFactories) {
+                    var defaultFactories = RefElements.Select(
+                            RefElm => (new FactoryDomainPair(
+                                GetDefaultRuleFactory(gridData, RefElm),
+                                GetDomainForRefElement(RefElm, gridData).Intersect(baseDomain)))
+                                );
 
-                var _factoryDomainPairs = new List<IFactoryDomainPair<TQuadRule, TDomain>>();
-                _factoryDomainPairs.AddRange(defaultFactories);
-                _factoryDomainPairs.AddRange(FactoryChain);
-                factoryDomainPairs = _factoryDomainPairs;
-            } else {
-                factoryDomainPairs = FactoryChain;
-            }
-
-            // apply factories
-            // ---------------
-            CompositeQuadRule<TQuadRule> fullRule = new CompositeQuadRule<TQuadRule>();
-            int i = -1;
-            foreach (var factoryDomainPair in factoryDomainPairs) {
-                i++;
-                TDomain currentDomain = baseDomain;
-                var RefElm = factoryDomainPair.RuleFactory.RefElement;
-
-                if (factoryDomainPair.Domain == null) {
-                    currentDomain = GetDomainForRefElement(RefElm, gridData).Intersect(baseDomain);
+                    var _factoryDomainPairs = new List<IFactoryDomainPair<TQuadRule, TDomain>>();
+                    _factoryDomainPairs.AddRange(defaultFactories);
+                    _factoryDomainPairs.AddRange(FactoryChain);
+                    factoryDomainPairs = _factoryDomainPairs;
                 } else {
-                    currentDomain = baseDomain.Intersect(factoryDomainPair.Domain);
-                    Debug.Assert(currentDomain.Except(GetDomainForRefElement(RefElm, gridData)).NoOfItemsLocally <= 0);
+                    factoryDomainPairs = FactoryChain;
                 }
 
-                // check the type of factory
-                if (!RefElements.Contains(factoryDomainPair.RuleFactory.RefElement)) {
-                    string simplexNames = "";
-                    for (int _i = 0; _i < RefElements.Length; _i++) {
-                        simplexNames += RefElements[_i].GetType().Name;
-                        if (_i < RefElements.Length - 1)
-                            simplexNames += ",";
+#if TEST
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            tr.Info("Checkpoint C.3");
+#endif
+
+                // apply factories
+                // ---------------
+                CompositeQuadRule<TQuadRule> fullRule = new CompositeQuadRule<TQuadRule>();
+                int i = -1;
+                foreach (var factoryDomainPair in factoryDomainPairs) {
+                    i++;
+                    TDomain currentDomain = baseDomain;
+                    var RefElm = factoryDomainPair.RuleFactory.RefElement;
+
+                    if (factoryDomainPair.Domain == null) {
+                        currentDomain = GetDomainForRefElement(RefElm, gridData).Intersect(baseDomain);
+                    } else {
+                        currentDomain = baseDomain.Intersect(factoryDomainPair.Domain);
+                        Debug.Assert(currentDomain.Except(GetDomainForRefElement(RefElm, gridData)).NoOfItemsLocally <= 0);
                     }
 
-                    throw new NotSupportedException("Found an illegal factory in the chain during quadrature scheme compilation: factories are required to work on '"
-                        + simplexNames
-                        + "'-elements, but this one works on '"
-                        + factoryDomainPair.RuleFactory.RefElement.GetType().ToString() + "'-elements.");
-                }
+#if TEST
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            tr.Info("Checkpoint C.4");
+#endif
 
-                // Causes parallel issues for classic HMF
-                // -> deactivated by Björn until classic HMF is fixed
-                if(gridData.MpiSize > 1) {
-                    var FactoryName = factoryDomainPair.RuleFactory.GetType().FullName;
-                    if(FactoryName.Contains("LevelSetSurfaceQuadRuleFactory"))
-                        throw new NotSupportedException("there is still an MPI BUG in the classic HMF");
-                }
-
-                if(currentDomain != null && currentDomain.NoOfItemsLocally <= 0) {
-                    continue;
-                }
-                
-
-                CompositeQuadRule<TQuadRule> currentRule = CompositeQuadRule<TQuadRule>.Create(
-                    factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain);
-
-                int prevIE = -1;
-                foreach (var CRP in currentRule) {
-                    if (prevIE >= 0) {
-                        if (CRP.Chunk.i0 < prevIE) {
-                            throw new ApplicationException("Quadrature rule factory " + factoryDomainPair.RuleFactory.GetType().Name + " produced an un-sorted quadrature rule!");
+                    // check the type of factory
+                    if (!RefElements.Contains(factoryDomainPair.RuleFactory.RefElement)) {
+                        string simplexNames = "";
+                        for (int _i = 0; _i < RefElements.Length; _i++) {
+                            simplexNames += RefElements[_i].GetType().Name;
+                            if (_i < RefElements.Length - 1)
+                                simplexNames += ",";
                         }
+
+                        throw new NotSupportedException("Found an illegal factory in the chain during quadrature scheme compilation: factories are required to work on '"
+                            + simplexNames
+                            + "'-elements, but this one works on '"
+                            + factoryDomainPair.RuleFactory.RefElement.GetType().ToString() + "'-elements.");
                     }
-                    prevIE = CRP.Chunk.JE;
-                }
+
+#if TEST
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            tr.Info("Checkpoint C.5");
+#endif
+
+                    // Causes parallel issues for classic HMF
+                    // -> deactivated by Björn until classic HMF is fixed
+                    if (gridData.MpiSize > 1) {
+                        var FactoryName = factoryDomainPair.RuleFactory.GetType().FullName;
+                        if (FactoryName.Contains("LevelSetSurfaceQuadRuleFactory"))
+                            throw new NotSupportedException("there is still an MPI BUG in the classic HMF");
+                    }
+
+#if TEST
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            tr.Info("Checkpoint C.6");
+#endif
+
+                    if (currentDomain != null && currentDomain.NoOfItemsLocally <= 0) {
+                        continue;
+                    }
+
+
+#if TEST
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            tr.Info("Checkpoint C.7");
+#endif
+
+                        CompositeQuadRule<TQuadRule> currentRule = CompositeQuadRule<TQuadRule>.Create(
+                            factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain);
+
+
+#if TEST
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            tr.Info("Checkpoint C.8");
+#endif
+
+                    int prevIE = -1;
+                    foreach (var CRP in currentRule) {
+                        if (prevIE >= 0) {
+                            if (CRP.Chunk.i0 < prevIE) {
+                                throw new ApplicationException("Quadrature rule factory " + factoryDomainPair.RuleFactory.GetType().Name + " produced an un-sorted quadrature rule!");
+                            }
+                        }
+                        prevIE = CRP.Chunk.JE;
+                    }
+
+#if TEST
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            tr.Info("Checkpoint C.9");
+#endif
 
 #if DEBUG
                 //// Check removed since there are situations where it is valid _not_
@@ -348,38 +395,44 @@ namespace BoSSS.Foundation.Quadrature {
 
 #endif
 
-                if (i == 0) {
-                    fullRule = currentRule;
-                } else {
-                    fullRule = CompositeQuadRule<TQuadRule>.Merge(fullRule, currentRule);
-                }
+                    if (i == 0) {
+                        fullRule = currentRule;
+                    } else {
+                        fullRule = CompositeQuadRule<TQuadRule>.Merge(fullRule, currentRule);
+                    }
 
-                if (fullRule != null && fullRule.Count() > 0) {
-                    int J = fullRule.Max(crp => crp.Chunk.JE);
-                    System.Collections.BitArray ChunkTest = new System.Collections.BitArray(J);
-                    foreach (var chunk in fullRule) {
-                        int IE = chunk.Chunk.JE;
-                        for (int ii = chunk.Chunk.i0; ii < IE; ii++) {
-                            if (ChunkTest[ii])
-                                throw new ArgumentException("More than one quadrature rule defined for integration item " + ii + ".");
-                            ChunkTest[ii] = true;
+                    if (fullRule != null && fullRule.Count() > 0) {
+                        int J = fullRule.Max(crp => crp.Chunk.JE);
+                        System.Collections.BitArray ChunkTest = new System.Collections.BitArray(J);
+                        foreach (var chunk in fullRule) {
+                            int IE = chunk.Chunk.JE;
+                            for (int ii = chunk.Chunk.i0; ii < IE; ii++) {
+                                if (ChunkTest[ii])
+                                    throw new ArgumentException("More than one quadrature rule defined for integration item " + ii + ".");
+                                ChunkTest[ii] = true;
 
+                            }
                         }
                     }
+
+#if TEST
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+            tr.Info("Checkpoint C.10");
+#endif
                 }
+
+                //// Check removed since there are situations where it is valid _not_
+                //// to return quadrature rule for a given cell/edge
+                //if (fullRule.NumberOfItems < baseDomain.NoOfItemsLocally) {
+                //    throw new InvalidOperationException(
+                //        "Insufficient quadrature rule factories for desired domain:"
+                //        + " (domain has " + baseDomain.NoOfItemsLocally
+                //        + " items, but quadrature rules were only found for "
+                //        + fullRule.NumberOfItems + " items.");
+                //}
+
+                return fullRule;
             }
-
-            //// Check removed since there are situations where it is valid _not_
-            //// to return quadrature rule for a given cell/edge
-            //if (fullRule.NumberOfItems < baseDomain.NoOfItemsLocally) {
-            //    throw new InvalidOperationException(
-            //        "Insufficient quadrature rule factories for desired domain:"
-            //        + " (domain has " + baseDomain.NoOfItemsLocally
-            //        + " items, but quadrature rules were only found for "
-            //        + fullRule.NumberOfItems + " items.");
-            //}
-
-            return fullRule;
         }
 
         private static Grid.RefElements.RefElement[] GetRefElements(IGridData gridData) {

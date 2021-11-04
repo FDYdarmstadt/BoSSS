@@ -722,8 +722,8 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="g">
         /// Grid object.
         /// </param>
-        static public Tuple<int, int, int>[] GetCellNeighboursViaEdges(this IGridData g, int jCell, bool OmmitPeriodic = false) {
-            List<Tuple<int, int, int>> ret = new List<Tuple<int, int, int>>();
+        static public (int jCellLoc, int iEdge, int InOrOut)[] GetCellNeighboursViaEdges(this IGridData g, int jCell, bool OmmitPeriodic = false) {
+            List<(int, int, int)> ret = new List<(int, int, int)>();
 
             int[,] __Edges = g.iLogicalEdges.CellIndices;
             var Cell2Edges_jCell = g.iLogicalCells.Cells2Edges[jCell];
@@ -741,7 +741,7 @@ namespace BoSSS.Foundation.Grid {
 
                 int jCellOut = __Edges[iEdge, iOther];
                 if (jCellOut >= 0 && (!OmmitPeriodic || __EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG)) {
-                    ret.Add(new Tuple<int, int, int>(jCellOut, iEdge, iOther));
+                    ret.Add((jCellOut, iEdge, iOther));
                 }
             }
 

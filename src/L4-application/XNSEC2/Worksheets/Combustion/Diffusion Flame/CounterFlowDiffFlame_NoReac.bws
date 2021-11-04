@@ -1,0 +1,923 @@
+restart
+**************
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 0 instances of IDatabaseInfo {
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+//LoadAssembly(@"C:\BoSSS\experimental\internal\src\private-gutz\L4-application\LowMachCombustionNSE\bin\Release\LowMachCombustionNSE.exe")
+**************
+==============
+using System.Diagnostics;
+using BoSSS.Solution.NSECommon;
+using static System.Math;
+using BoSSS.Solution.Queries;
+using BoSSS.Application.LowMachCombustionNSE;
+**************
+==============
+string WFlowName = "CounterDifFlame";
+WorkflowMgm.Init(WFlowName);
+**************
+Project name is set to 'CounterDifFlame'.
+
+==============
+// Configurations for lichtenberg
+//var myBatch = ExecutionQueues[1];
+//((SlurmClient)myBatch).Email = "gutierrez@fdy.tu-darmstadt.de";
+//((SlurmClient)myBatch).SlurmAccount = "project01299" 
+//myBatch.AllowedDatabases;
+**************
+==============
+**************
+==============
+**************
+==============
+ var myBatch = new MiniBatchProcessorClient(@"C:\deploy-Mini");
+MiniBatchProcessor.Server.StartIfNotRunning();
+
+**************
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 19676.
+True
+==============
+//string dbPath = @"Y:\CounterDiffusionFlame_fullGeom"; // Database in lichtenberg
+string dbPath = @"C:\Databases\CounterDiffFlame_Combustion_Refinement5";
+var myDb      = OpenOrCreateDatabase(dbPath);
+**************
+==============
+//myDb.Clear()
+**************
+==============
+**************
+==============
+static class StaticFormulas {
+    public static int getNumberOfcoresFromDOFs(int cells, int p, int variableNumber) {
+        int DoFperCore = 5000; // optimal value
+        int totalDoFs = getNumberOfDOFs(p, cells, variableNumber);
+        int numOfCores = (totalDoFs) / DoFperCore;
+        numOfCores = Math.Max(2, numOfCores);
+        numOfCores = Math.Min(numOfCores, 10);
+        return numOfCores;
+    }
+    public static int getNumberOfcoresFromCell(int cells, int p, int variableNumber) {
+        int CellsperCore = 1000; // optimal value
+        int numOfCores = (cells) / CellsperCore;
+        numOfCores = Math.Max(2, numOfCores);
+        numOfCores = Math.Min(numOfCores, 10);
+        return numOfCores;
+    }
+
+    public static int getNumberOfDOFs(int p, int ncells, int variableNumber) {
+        int p2 = p - 1;// dgDegree of pressure;
+        int numOfMonomialsU = ((p + 1) * (p + 1) + p + 1) / 2; // Total number of Dofs for one variable (not pressure)
+        int numOfMonomialsP = ((p2 + 1) * (p2 + 1) + p2 + 1) / 2;// Total number of Dofs for pressure
+        int DOFs = (numOfMonomialsU * (variableNumber - 1) + numOfMonomialsP) * ncells;
+        return DOFs;
+    }
+}
+**************
+==============
+WorkflowMgm.Sessions
+**************
+List of 0 instances of ISessionInfo {
+}
+==============
+**************
+==============
+Type solver = typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSEMain);
+
+**************
+==============
+WorkflowMgm.AllJobs
+**************
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+// ==========
+// Parameters
+// ==========
+int[] dgDegree = new int[]{2,3};
+int[] Resolutions = new int[]{3,4,5,6,7};
+int[] Refinements = new int[]{5};
+//double[] velMultipliers = new double[] {1,5,10,50};
+double[] velMultipliers = new double[] {0.1};
+double[] newtonConvCriteria = new double[] {1e-11}; // 1e-5, 1e-7, 1e-9,
+var  NofCells = Resolutions.ToList().Select(r=> (int)Math.Pow(2,r)).ToArray();
+
+string baseJobName = "CounterDifFlame"   
+**************
+==============
+NofCells
+**************
+List of 5 instances of Int32 {
+  0: 8
+  1: 16
+  2: 32
+  3: 64
+  4: 128
+}
+==============
+for (int n = 0; n < newtonConvCriteria.Length; n++) {
+    for (int w = 0; w < Refinements.Length; w++) {
+        for (int q = 0; q < velMultipliers.Length; q++) {
+            for (int dg = 0; dg < dgDegree.Length; dg++) {
+                for (int r = 0; r < NofCells.Length; r++) {
+                    int TotNumofCells = NofCells[r] * NofCells[r];
+                    Console.WriteLine("==========");
+                    string jobName       = string.Format("Full_" + baseJobName + "P" + dgDegree[dg] + "K" + NofCells[r] + "VelM" + velMultipliers[q] + "R" + Refinements[w]);
+                    string StartupString = string.Format("cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame({0}, {1},{2},{3},{4})", dgDegree[dg], NofCells[r], Refinements[w], velMultipliers[q], newtonConvCriteria[n]);
+                    Console.WriteLine("StartupString: {0}", StartupString);
+                    Console.WriteLine("jobName: {0}", jobName);
+                    Console.WriteLine("NumOfCells:" + TotNumofCells + "NumOfDOFs:" + StaticFormulas.getNumberOfDOFs(dgDegree[dg], NofCells[r] * NofCells[r], 8) + " ");
+                    Console.WriteLine("NumOfCores:" + StaticFormulas.getNumberOfcoresFromDOFs(NofCells[r] * NofCells[r], dgDegree[dg], 8));
+                    Console.WriteLine("==========");
+
+                }
+            }
+        }
+    }
+}
+
+**************
+==========
+StartupString: cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame(2, 8,5,0.1,1E-11)
+jobName: Full_CounterDifFlameP2K8VelM0.1R5
+NumOfCells:64NumOfDOFs:2880 
+NumOfCores:2
+==========
+==========
+StartupString: cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame(2, 16,5,0.1,1E-11)
+jobName: Full_CounterDifFlameP2K16VelM0.1R5
+NumOfCells:256NumOfDOFs:11520 
+NumOfCores:2
+==========
+==========
+StartupString: cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame(2, 32,5,0.1,1E-11)
+jobName: Full_CounterDifFlameP2K32VelM0.1R5
+NumOfCells:1024NumOfDOFs:46080 
+NumOfCores:9
+==========
+==========
+StartupString: cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame(2, 64,5,0.1,1E-11)
+jobName: Full_CounterDifFlameP2K64VelM0.1R5
+NumOfCells:4096NumOfDOFs:184320 
+NumOfCores:10
+==========
+==========
+StartupString: cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame(2, 128,5,0.1,1E-11)
+jobName: Full_CounterDifFlameP2K128VelM0.1R5
+NumOfCells:16384NumOfDOFs:737280 
+NumOfCores:10
+==========
+==========
+StartupString: cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame(3, 8,5,0.1,1E-11)
+jobName: Full_CounterDifFlameP3K8VelM0.1R5
+NumOfCells:64NumOfDOFs:4864 
+NumOfCores:2
+==========
+==========
+StartupString: cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame(3, 16,5,0.1,1E-11)
+jobName: Full_CounterDifFlameP3K16VelM0.1R5
+NumOfCells:256NumOfDOFs:19456 
+NumOfCores:3
+==========
+==========
+StartupString: cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame(3, 32,5,0.1,1E-11)
+jobName: Full_CounterDifFlameP3K32VelM0.1R5
+NumOfCells:1024NumOfDOFs:77824 
+NumOfCores:10
+==========
+==========
+StartupString: cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame(3, 64,5,0.1,1E-11)
+jobName: Full_CounterDifFlameP3K64VelM0.1R5
+NumOfCells:4096NumOfDOFs:311296 
+NumOfCores:10
+==========
+==========
+StartupString: cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame(3, 128,5,0.1,1E-11)
+jobName: Full_CounterDifFlameP3K128VelM0.1R5
+NumOfCells:16384NumOfDOFs:1245184 
+NumOfCores:10
+==========
+
+==============
+**************
+==============
+**************
+==============
+for (int n = 0; n < newtonConvCriteria.Length; n++) {
+    for (int w = 0; w < Refinements.Length; w++) {
+        for (int q = 0; q < velMultipliers.Length; q++) {
+            for (int dg = 0; dg < dgDegree.Length; dg++) {
+                for (int r = 0; r < NofCells.Length; r++) {
+                    string ending        = "P" + dgDegree[dg] + "K" + NofCells[r]+"V" + q+"R" +Refinements[w];
+                    string jobName       = string.Format("Full_" + baseJobName + ending);
+                    string StartupString = string.Format("cs:BoSSS.Application.LowMachCombustionNSE.FullNSEControlExamples.Full_CounterDiffusionFlame({0}, {1},{2},{3},{4})", dgDegree[dg], NofCells[r], Refinements[w], velMultipliers[q], newtonConvCriteria[n]);
+                    var oneJob           = new Job(jobName, solver);
+                    oneJob.ExecutionTime = "2:00:00"; // 
+                    oneJob.SetControlStatement(StartupString);
+                    oneJob.NumberOfMPIProcs = StaticFormulas.getNumberOfcoresFromDOFs(NofCells[r] * NofCells[r], dgDegree[dg],3);
+                    oneJob.Activate(myBatch);
+
+                }
+            }
+        }
+    }
+}
+**************
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CounterDifFlame-LowMachCombustionNSE2020Oct10_132434
+copied 28 files.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CounterDifFlame-LowMachCombustionNSE2020Oct10_132434-1
+copied 28 files.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CounterDifFlame-LowMachCombustionNSE2020Oct10_132434-2
+copied 28 files.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CounterDifFlame-LowMachCombustionNSE2020Oct10_132434-3
+copied 28 files.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CounterDifFlame-LowMachCombustionNSE2020Oct10_132434-4
+copied 28 files.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CounterDifFlame-LowMachCombustionNSE2020Oct10_132434-5
+copied 28 files.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CounterDifFlame-LowMachCombustionNSE2020Oct10_132434-6
+copied 28 files.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CounterDifFlame-LowMachCombustionNSE2020Oct10_132434-7
+copied 28 files.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CounterDifFlame-LowMachCombustionNSE2020Oct10_132434-8
+copied 28 files.
+deployment finished.
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CounterDifFlame-LowMachCombustionNSE2020Oct10_132434-9
+copied 28 files.
+deployment finished.
+
+==============
+ 
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+ 
+**************
+List of 0 instances of KeyValuePair{String,Job} {
+}
+==============
+ 
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+**************
+==============
+WorkflowMgm.Sessions
+**************
+List of 15 instances of ISessionInfo {
+  0: CounterDifFlame	Full_CounterDifFlameP4K128V0.1R5	10/10/2020 12:25:58	f847233f...
+  1: CounterDifFlame	Full_CounterDifFlameP4K64V0.1R5	10/10/2020 12:22:43	dde4a067...
+  2: CounterDifFlame	Full_CounterDifFlameP4K32V0.1R5	10/10/2020 12:21:47	04b70373...
+  3: CounterDifFlame	Full_CounterDifFlameP4K16V0.1R5	10/10/2020 12:21:27	dd34282e...
+  4: CounterDifFlame	Full_CounterDifFlameP4K8V0.1R5	10/10/2020 12:21:27	ff8f2f00...
+  5: CounterDifFlame	Full_CounterDifFlameP3K128V0.1R5	10/10/2020 12:01:49	af2bcfbd...
+  6: CounterDifFlame	Full_CounterDifFlameP3K64V0.1R5	10/10/2020 12:00:19	31c1474c...
+  7: CounterDifFlame	Full_CounterDifFlameP3K32V0.1R5	10/10/2020 11:59:39	c40a550c...
+  8: CounterDifFlame	Full_CounterDifFlameP3K16V0.1R5	10/10/2020 11:59:39	a096707d...
+  9: CounterDifFlame	Full_CounterDifFlameP3K8V0.1R5	10/10/2020 11:59:39	743fe6a2...
+  10: CounterDifFlame	Full_CounterDifFlameP2K128V0.1R5	10/10/2020 11:56:54	cb139bbd...
+  11: CounterDifFlame	Full_CounterDifFlameP2K64V0.1R5	10/10/2020 11:55:54	43092691...
+  12: CounterDifFlame	Full_CounterDifFlameP2K32V0.1R5	10/10/2020 11:55:24	80617fb4...
+  13: CounterDifFlame	Full_CounterDifFlameP2K16V0.1R5	10/10/2020 11:55:24	83fbd249...
+  14: CounterDifFlame	Full_CounterDifFlameP2K8V0.1R5	10/10/2020 11:55:24	a47a95dd...
+}
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+string[] varnames0 = new string[]{"VelocityX","VelocityY","Temperature", "Pressure",
+"MassFraction0","MassFraction1","MassFraction2","MassFraction3","MassFraction4" };// 
+string[] varnames = new string[]{"VelocityX","VelocityY", "Pressure"};// 
+**************
+==============
+var ExpPlotS2 = new List<Plot2Ddata>(); 
+foreach (var varname in varnames) {
+var ExpPlotS = new List<Plot2Ddata>();
+foreach (int pDeg in dgDegree) {
+    var pDegSessions = WorkflowMgm.Sessions.Where(
+        Si => (Convert.ToInt32(Si.KeysAndQueries["DGdegree:Velocity*"]) == pDeg)  // function which is true on all sessions we are interested in: 
+     ).ToArray();
+    Plot2Ddata pDegPlot =
+     pDegSessions.ToEstimatedGridConvergenceData(varname,
+       xAxis_Is_hOrDof: false, // false selects DOFs for x-axis 
+       normType: NormType.L2noMean_approximate);
+    // remember the freshly created plot object in a list: 
+    ExpPlotS.Add(pDegPlot);
+    
+    //Saving to a txt file
+    pDegPlot.SaveTextFileToPublish(@"C:\tmp\data\"+ varname+"DG"+pDeg);
+   
+    
+}
+ 
+}
+
+// Set appropiate names for pressure
+//ExpPlotS2.Last().dataGroups[0].Name = "$k = 1$";
+//ExpPlotS2.Last().dataGroups[1].Name = "$k = 2$";
+
+
+**************
+==============
+foreach (int pDeg in dgDegree) {
+ISessionInfo[]  pDegSessions = WorkflowMgm.Sessions.Where(
+        Si => (Convert.ToInt32(Si.KeysAndQueries["DGdegree:Velocity*"]) == pDeg)  // function which is true on all sessions we are interested in: 
+     ).ToArray(); // Select databases with a given dgdegree
+     
+     var sortedSessions = pDegSessions.OrderBy(o => o.Timesteps[1].Grid.NumberOfCells).ToList();
+     
+      // Select timestep corresponding to the converged solution
+     ITimestepInfo[] timesteps = sortedSessions.Select(s => s.Timesteps.Last()).ToArray();
+
+     // pick the timestep with the finest mesh
+     var fine    = timesteps.Last();
+     var notfine = timesteps.Take(timesteps.Length-1);
+    
+     
+     int c = 0;
+     foreach(var L in notfine){
+         DGField[] allErrors = new DGField[]{};
+         foreach (var varname in varnames) {
+            var fieldFine              = (fine.Fields.Where(s => (s.Identification == varname)).First()).CloneAs();
+            var fieldCoarse            = (L.Fields.Where(s => (s.Identification == varname)).First()).CloneAs(); //////////////////////
+            //fieldFine.Identification   = fieldFine.Identification  + "Fine"; 
+            //fieldCoarse.Identification = fieldCoarse.Identification  + "Coarse"; 
+            DGField err        = DGField_Arithmetic.ScaledSummation(fieldFine,-1.0, fieldCoarse ,-1.0);
+            err.Identification = varname + "err";
+       
+            allErrors = ArrayTools.Cat<DGField>(allErrors, new DGField[] {err});
+         }
+              BoSSS.Solution.Tecplot.Tecplot.PlotFields(allErrors,"Errors_DG"+pDeg+ "_Res"+c  ,0,2);
+          c++;    
+     }
+}
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+foreach (int pDeg in dgDegree) {
+ISessionInfo[]  pDegSessions = WorkflowMgm.Sessions.Where(
+        Si => (Convert.ToInt32(Si.KeysAndQueries["DGdegree:Velocity*"]) == pDeg)  // function which is true on all sessions we are interested in: 
+     ).ToArray(); // Select databases with a given dgdegree
+     
+     var sortedSessions = pDegSessions.OrderBy(o => o.Timesteps[1].Grid.NumberOfCells).ToList();
+     
+      // Select timestep corresponding to the converged solution
+     ITimestepInfo[] timesteps = sortedSessions.Select(s => s.Timesteps.Last()).ToArray();
+
+     // pick the timestep with the finest mesh
+     var fine    = timesteps.Last();
+     var notfine = timesteps.Take(timesteps.Length-1);
+    
+     int c = 0;
+     foreach(var L in notfine){
+         DGField[] allErrors = new DGField[]{};
+         foreach (var varname in varnames) {
+            var fieldFine   = (fine.Fields.Where(s => (s.Identification == varname)).First()).CloneAs();
+            var fieldCoarse = (L.Fields.Where(s => (s.Identification == varname)).First()).CloneAs(); //////////////////////
+            DGField err     = fieldFine.CloneAs();
+err = DGField_Arithmetic.ScaledSummation(err,1.0, fieldCoarse ,-1.0);
+            fieldFine.Identification   = fieldFine.Identification  + "Fine"; 
+            fieldCoarse.Identification = fieldCoarse.Identification  + "Coarse"; 
+     
+            err.Identification         = varname + "err";
+       
+            allErrors = ArrayTools.Cat<DGField>(allErrors, new DGField[] {err});
+         }
+              BoSSS.Solution.Tecplot.Tecplot.PlotFields(allErrors,"Errors_DG"+pDeg+ "_Res"+c  ,0,2);
+          c++;    
+     }
+     
+}
+**************
+==============
+LastError
+**************
+System.IndexOutOfRangeException: subarray end range out of range for dimension 0
+   at ilPSP.MultidimensionalArray.ExtractSubArrayShallow(Int32[] Istart, Int32[] Iend) in C:\BoSSS\experimental\public\src\ilPSP\layer_1.2-ilPSP\ilPSP\MultidimensionalArray.cs:line 692
+   at BoSSS.Foundation.DGField.TransformCoördinates(Int32 j0, Int32 L, Basis basis, MultidimensionalArray Coördinates, Int32 coördOffset, Int32 N, Boolean AffineLinear, MultidimensionalArray trfCoördinates) in C:\BoSSS\experimental\public\src\L2-foundation\BoSSS.Foundation\DGField_Evaluation.cs:line 172
+   at BoSSS.Foundation.DGField.EvaluateInternal(Int32 j0, Int32 L, NodeSet NS, Basis basis, MultidimensionalArray Coördinates, Int32 coördOffset, MultidimensionalArray ResultAcc, Double ResultPreScale) in C:\BoSSS\experimental\public\src\L2-foundation\BoSSS.Foundation\DGField_Evaluation.cs:line 75
+   at BoSSS.Foundation.SinglePhaseField.Evaluate(Int32 j0, Int32 Len, NodeSet NS, MultidimensionalArray result, Int32 ResultIndexOffset, Double ResultPreScale) in C:\BoSSS\experimental\public\src\L2-foundation\BoSSS.Foundation\SinglePhaseField.cs:line 97
+   at BoSSS.Foundation.DGField.Evaluate(Int32 j0, Int32 Len, NodeSet N, MultidimensionalArray result, Double ResultPreScale) in C:\BoSSS\experimental\public\src\L2-foundation\BoSSS.Foundation\DGField.cs:line 716
+   at BoSSS.Foundation.DGField.Evaluate(Int32 j0, Int32 Len, NodeSet N, MultidimensionalArray result) in C:\BoSSS\experimental\public\src\L2-foundation\BoSSS.Foundation\DGField.cs:line 723
+   at BoSSS.Solution.PlotDriver.ZoneDriver.SampleField(ScalarFunctionEx Evaluator) in C:\BoSSS\experimental\public\src\L3-solution\BoSSS.Solution\PlotDriver.cs:line 785
+   at BoSSS.Solution.PlotDriver.ZoneDriver.SampleField(ScalarFunctionEx field, Boolean showJumps) in C:\BoSSS\experimental\public\src\L3-solution\BoSSS.Solution\PlotDriver.cs:line 802
+   at BoSSS.Solution.Tecplot.Tecplot.TecplotZone.PlotZone(String ZoneName, Double time, IEnumerable`1 fieldsToPlot) in C:\BoSSS\experimental\public\src\L3-solution\BoSSS.Solution.Tecplot\Tecplot.cs:line 282
+   at BoSSS.Solution.PlotDriver.PlotFields(String fileNameBase, Double time, IEnumerable`1 fieldsToPlot) in C:\BoSSS\experimental\public\src\L3-solution\BoSSS.Solution\PlotDriver.cs:line 1127
+   at <InteractiveExpressionClass>.Host(Object& $retval)
+   at Mono.CSharp.Evaluator.Evaluate(String input, Object& result, Boolean& result_set)
+   at BoSSS.Application.BoSSSpad.ReadEvalPrintLoop.EvalPrint(String line, Assembly& AssemblyProduced) in C:\BoSSS\experimental\public\src\L4-application\BoSSSpad\ReadEvalPrintLoop.cs:line 348
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+ 
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+ 
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+**************
+==============
+**************
+==============
+**************
+System.IndexOutOfRangeException occurred: subarray end range out of range for dimension 0. Type 'LastError' for details.
+
+==============
+ myDb.Sessions.Pick(0).Export().Do()
+**************
+Starting export process... Data will be written to the following directory:
+C:\Users\jfgj8\AppData\Local\BoSSS\plots\sessions\CounterDifFlame__Full_CounterDifFlameP3K128V1R1__94037cfd-34b2-4d88-be77-a7567fb084da
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

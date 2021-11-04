@@ -38,6 +38,7 @@ namespace ilPSP.LinSolvers.MUMPS {
             m_MUMPS = mumpses[par];
         }
 
+#pragma warning disable 649
         public unsafe struct DMUMPS_STRUC_CS {
 
             public int sym, par, job;
@@ -119,6 +120,7 @@ namespace ilPSP.LinSolvers.MUMPS {
             public int lwk_user;
 
         };
+#pragma warning restore 649
 
         unsafe static int Extract_Pointers_d(double* component, double* dummyPointer) {
             if (component == null) {

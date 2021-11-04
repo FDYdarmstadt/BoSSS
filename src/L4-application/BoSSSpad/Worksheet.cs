@@ -975,8 +975,5 @@ namespace BoSSS.Application.BoSSSpad {
             Worksheet ws = (Worksheet)sender;
             ws.CommandsListHead.ResizeAll();
         }
-
-
-
     }
 }

@@ -26,6 +26,7 @@ using MPI.Wrappers;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.Utils.Geom;
+using System.IO;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -337,6 +338,25 @@ namespace BoSSS.Foundation.Grid.Classic {
                         info = (EdgeInfo)_info;
                     }
                 }
+
+                public override string ToString() {
+                    using(var stw = new StringWriter()) {
+                        stw.Write("ComputeEdgesHelper: ");
+                        stw.Write($"Cell1 = {Cell1}, ");
+                        stw.Write($"Cell2 = {Cell2}, ");
+                        stw.Write($"FaceIndex1 = {FaceIndex1}, ");
+                        stw.Write($"FaceIndex2 = {FaceIndex2}, ");
+                        stw.Write($"EdgeTag = {EdgeTag}, ");
+                        stw.Write($"info = {info}, ");
+                        stw.Write($"Cell1TrafoIdx = {Cell1TrafoIdx}, ");
+                        stw.Write($"Cell2TrafoIdx = {Cell2TrafoIdx}, ");
+                        stw.Write($"IsPeriodic = {IsPeriodic}, ");
+                        stw.Write($"Cell1_PeriodicTrafoIdx = {Cell1_PeriodicTrafoIdx}, ");
+                        stw.Write($"Cell2_PeriodicTrafoIdx = {Cell2_PeriodicTrafoIdx}.");
+
+                        return stw.ToString();
+                    }
+                }
             }
 
             /// <summary>
@@ -560,9 +580,17 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             internal void DetermineEdgeTrafo() {
-                using (new FuncTrace()) {
+                using (var ft = new FuncTrace()) {
+                    //ft.InfoToConsole = true;
 
+                   
                     m_CellsToEdgesTmp = new List<int>[m_owner.Cells.Count];
+
+                    //double mem1 = ft.GetMemoryMB().MPISum();
+                    //double cch1 = ((double)(Caching.Cache.UsedMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cov1 = ((double)(Caching.Cache.OverheadMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cno1 = Caching.Cache.NoOfUsedBanks.MPISum();
+                    //Console.WriteLine($"Checkpoint 1: mem is {mem1}, in cache {cch1} + {cov1} ({cno1})");
 
 
                     // preparation: helper vars
@@ -572,7 +600,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int NS = GridSimplices.Length;
                     int D = this.m_owner.SpatialDimension;
 
-                    List<Tuple<int,AffineTrafo>> e2cTrafo = new List<Tuple<int, AffineTrafo>>();
+                    List<(int iKref, AffineTrafo Tr)> e2cTrafo = new List<(int, AffineTrafo)>();
 
                     MultidimensionalArray[] VerticesFor_KrefEdge = this.EdgeRefElements.Select(KrefEdge => KrefEdge.Vertices).ToArray();
 
@@ -583,7 +611,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int skippedEdgesCount = 0;
                     List<int> skippedEdges = new List<int>();
                     for (int e = 0; e < this.m_EdgesTmp.Count; e++) {
-
+                        
                         // cache some vars..
                         // -----------------
                         var Edge = this.m_EdgesTmp[e];
@@ -612,6 +640,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int face1 = Edge.FaceIndex1;
                         int face2 = Edge.FaceIndex2;
 
+                        
 
                         // first face of edge: cell j1, face e1, in local coordinates of cell j1
                         NodeSet V_f1 = Kref1.GetFaceVertices(face1);
@@ -683,7 +712,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     throw new ArithmeticException("Newton divergence");
                             }
                         }
-
+                        
 
                         AffineTrafo newTrafo = null;
 
@@ -771,7 +800,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             cell1_edges.Add(e - skippedEdgesCount);
                             cell2_edges.Add(e - skippedEdgesCount);
                         }
-
+                        
                         {
                             var KrefEdge = this.EdgeRefElements[Edge.EdgeKrefIndex];
                             
@@ -789,11 +818,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                             var V2G = MultidimensionalArray.Create(V1.Lengths);
                             m_owner.TransformLocal2Global(V2, V2G, j2);
 
-                            //var JacDet1 = MultidimensionalArray.Create(1, V1.GetLength(0));
+                            //var JacDet1 = MultidimensionalArray.Create(1, V1.GetLength(0)); JacDet1.ApplyAll(x => x + 1.0);
                             //Kref1.JacobianDetTransformation(V1, JacDet1, 0, K_j1.Type, K_j1.TransformationParams);
                             var JacDet1 = m_owner.JacobianDeterminat.GetValue_Cell(V1, j1, 1);
                            
-                            //var JacDet2 = MultidimensionalArray.Create(1, V1.GetLength(0));
+                            //var JacDet2 = MultidimensionalArray.Create(1, V1.GetLength(0)); JacDet2.ApplyAll(x => x + 1.0);
                             //Kref1.JacobianDetTransformation(V2, JacDet2, 0, K_j2.Type, K_j2.TransformationParams);
                             var JacDet2 = m_owner.JacobianDeterminat.GetValue_Cell(V2, j2, 1);
 
@@ -803,35 +832,55 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 throw new ArithmeticException("Non-positive Jacobian found in cell " + j2 + ".");
                             
                             var RelScale = Math.Max(Math.Max(V1G.MaxdistBetweenRows(), V2G.MaxdistBetweenRows()), Math.Max(JacDet1.Max(), JacDet2.Max()));
-
+                            RelScale = 1261737681;
                             var Diff = V1G.CloneAs();
                             Diff.Acc(-1.0, V2G);
                             var err = Diff.L2Norm()/RelScale;
                             if (!(err <= 1.0e-8 || Edge.IsPeriodic))
                                 throw new ArithmeticException("Edges do not match geometrically.");
                         }
-
+                        
                         int iKref1 = this.m_owner.Cells.GetRefElementIndex(j1); 
                         int iKref2 = this.m_owner.Cells.GetRefElementIndex(j2); 
 
-                        Tuple<int,AffineTrafo> Trafo1Pair = new Tuple<int,AffineTrafo>(iKref1, Trafo1);
-                        Tuple<int,AffineTrafo> Trafo2Pair = new Tuple<int,AffineTrafo>(iKref2, Trafo2);
+                        (int iKref, AffineTrafo Tr) Trafo1Pair = (iKref1, Trafo1);
+                        (int iKref, AffineTrafo Tr) Trafo2Pair = (iKref2, Trafo2);
 
-                        Edge.Cell1TrafoIdx = e2cTrafo.IndexOf(Trafo1Pair, (a,b) => (a.Item1 == b.Item1 && a.Item2.ApproximateEquals(b.Item2)));
+                        Edge.Cell1TrafoIdx = e2cTrafo.IndexOf(Trafo1Pair, (a,b) => (a.iKref == b.iKref && a.Tr.ApproximateEquals(b.Tr)));
                         if (Edge.Cell1TrafoIdx < 0) {
                             e2cTrafo.Add(Trafo1Pair);
                             Edge.Cell1TrafoIdx = e2cTrafo.Count - 1;
                         }
-                        Edge.Cell2TrafoIdx = e2cTrafo.IndexOf(Trafo2Pair, (a, b) => (a.Item1 == b.Item1 && a.Item2.ApproximateEquals(b.Item2)));
+                        Edge.Cell2TrafoIdx = e2cTrafo.IndexOf(Trafo2Pair, (a, b) => (a.iKref == b.iKref && a.Tr.ApproximateEquals(b.Tr)));
                         if (Edge.Cell2TrafoIdx < 0) {
                             e2cTrafo.Add(Trafo2Pair);
                             Edge.Cell2TrafoIdx = e2cTrafo.Count - 1;
                         }
+                        
 
                         // store
                         // -----
                         this.m_EdgesTmp[e] = Edge;
                     }
+
+                    int NoOfEdges = m_EdgesTmp.Count.MPISum();
+                    ft.Info("NoOf e2c: " + e2cTrafo.Count.MPIMax());
+                    ft.Info("No of edges: " + NoOfEdges);
+                    
+                    //this.m_EdgesTmp = null;
+                    //this.m_CellsToEdgesTmp = null;
+                    //double mem2 = ft.GetMemoryMB().MPISum();
+                    //double cch2 = ((double)(BoSSS.Foundation.Caching.Cache.UsedMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cov2 = ((double)(Caching.Cache.OverheadMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cno2 = Caching.Cache.NoOfUsedBanks.MPISum();
+
+
+                    //double perEdge = (mem2 - mem1) / (NoOfEdges.MPISum());
+                    //Console.WriteLine($"Checkpoint 2: mem is {mem2}, inc is {mem2-mem1}, per proc {(mem2-mem1)/this.m_owner.MpiSize}, per edge {perEdge}");
+                    //Console.WriteLine($"Checkpoint 1: mem is {mem2}, in cache {cch2} + {cov2} ({cno2})");
+                    //csMPI.Raw.mpiFinalize();
+                    //System.Environment.Exit(-99);
+
 
                     if(skippedEdgesCount > 0) {
                         int sk = 1;
@@ -845,11 +894,96 @@ namespace BoSSS.Foundation.Grid.Classic {
                         m_EdgesTmp.RemoveRange(m_EdgesTmp.Count - skippedEdges.Count, skippedEdges.Count);
 
                     }
+
                     
+
+
+                   
+                    // MPI synchronization
+                    // ===================
+                    
+                    {
+                        // We must ensure that `e2cTrafo` is equal on all MPI ranks
+
+
+                        int MpiSize = m_owner.MpiSize;
+                        int myRank = m_owner.MpiRank;
+                        var All_e2c = e2cTrafo.MPIGatherO(0); // gather all trafos on rank 0...
+
+                        // unify the lists:
+                        //if(myRank == 1)
+                        //    Debugger.Launch();
+                        int[][] IdxRemapS = null;
+                        if(myRank == 0) {
+                            IdxRemapS = new int[MpiSize][];
+                            int rnk = 1;
+                            foreach(var Lst in All_e2c.Skip(1)) { // ... and unify the lists. (loop over MPI ranks...)
+                                int LL = Lst.Count;
+                                int[] IdxRemap = new int[LL];
+                                for(int l = 0; l < LL; l++) { // loop over e2c-Trafo of rank rnk
+                                    var tt = Lst[l];
+                                    int newIdx = e2cTrafo.IndexOf(tt, (a, b) => (a.iKref == b.iKref && a.Tr.ApproximateEquals(b.Tr)));
+                                    if(newIdx < 0) {
+                                        e2cTrafo.Add(tt);
+                                        newIdx = e2cTrafo.Count - 1;
+                                    }
+                                    IdxRemap[l] = newIdx; // trafo index `l` must be changed into `newIdx`
+                                }
+                                IdxRemapS[rnk] = IdxRemap;
+                                rnk++;
+                            }
+                        }
+                        // distribute affine trafos from rank 0 to all others:
+                        var new_e2cTrafo = e2cTrafo.MPIBroadcast(0);
+                        var old_e2cTrafo = e2cTrafo;
+                        if(myRank > 0)
+                            e2cTrafo = new_e2cTrafo;
+
+                        // distribute modified indices for trafos from rank 0 to all others:
+                        int[] myIdxRemapS;
+                        {
+                            int[] SendLoad;
+                            if(myRank == 0) {
+                                SendLoad = new int[e2cTrafo.Count * MpiSize];
+                                for(int r = 1; r < MpiSize; r++)
+                                    Array.Copy(IdxRemapS[r], 0, SendLoad, r * e2cTrafo.Count, IdxRemapS[r].Length);
+                            } else {
+                                SendLoad = null;
+                            }
+                            myIdxRemapS = SendLoad.MPIScatter(new_e2cTrafo.Count, 0);
+                        }
+
+                        // modify the indices for the new `e2cTrafo`-List
+                        if(myRank > 0) {
+                            int EE = m_EdgesTmp.Count;
+                            for(int e = 0; e < EE; e++) {
+                                var Edg = m_EdgesTmp[e];
+
+                                if(!old_e2cTrafo[Edg.Cell1TrafoIdx].Tr.ApproximateEquals(
+                                        e2cTrafo[myIdxRemapS[Edg.Cell1TrafoIdx]].Tr)) {
+                                    throw new ApplicationException("Mismatch in MPI edge-to-cell trafo synchronization.");
+                                }
+                                if(!old_e2cTrafo[Edg.Cell2TrafoIdx].Tr.ApproximateEquals(
+                                        e2cTrafo[myIdxRemapS[Edg.Cell2TrafoIdx]].Tr)) {
+                                    throw new ApplicationException("Mismatch in MPI edge-to-cell trafo synchronization (2).");
+                                }
+
+                                Edg.Cell1TrafoIdx = myIdxRemapS[Edg.Cell1TrafoIdx];
+                                Edg.Cell2TrafoIdx = myIdxRemapS[Edg.Cell2TrafoIdx];
+                                
+
+                                m_EdgesTmp[e] = Edg;
+                            }
+                        }
+
+                    }
+
+                    //*/
+
                     lock(padlock) {
                         this.e2C_offet = offset_counter;
-                        this.Edge2CellTrafos = e2cTrafo.Select(tt => tt.Item2).ToArray().ToList();
-                        this.Edge2CellTrafosRefElementIndices = e2cTrafo.Select(tt => tt.Item1).ToArray().ToList();
+                        this.Edge2CellTrafos = e2cTrafo.Select(tt => tt.Tr).ToArray().ToList();
+                        this.Edge2CellTrafosRefElementIndices = e2cTrafo.Select(tt => tt.iKref).ToArray().ToList();
                         
                         offset_counter += this.Edge2CellTrafos.Count;
                     }
@@ -1079,83 +1213,22 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // ++++++++++++++++++++++++++++++++
 
 
-                        // For each edge V1-V2 in the first polygon,
-                        //     Let H := Half-plane tangenting V1-V2, with the remaining
-                        //         vertices on the "inside".
-                        //     Let C := New empty polygon.
-                        //     For each edge V3-V4 in the second polygon,
-                        //         Let X := The intersection between V3-V4 and H.
-                        //         If V3 inside H, and V4 is outside H then,
-                        //             Add V3 to C.
-                        //             Add X to C.
-                        //         Else if both V3 and V4 lies outside H then,
-                        //             Skip.
-                        //         Else if V3 outside H, and V4 is inside H then,
-                        //             Add X to C.
-                        //         Else
-                        //             Add V3 to C.
-                        //     Replace the second polygon with C.
-
-
-
                         var first_polygon = CheckFace(VtxEdge1_Loc);
                         var second_polygon = CheckFace(VtxEdge2_Loc);
-                        double ref_area = Math.Min(SpanArea(first_polygon), SpanArea(second_polygon));
+                        double ref_area = Math.Min(SpanArea(first_polygon, "first"), SpanArea(second_polygon, "second"));
 
-                        var intersect = new List<Vector>(second_polygon);
-                        bool _conformal2 = true;
-                        for (int i = 0; i < first_polygon.Count; i++) {
-                            Vector V1 = first_polygon[i];
-                            int ip1 = (i + 1) % first_polygon.Count;
-                            Vector V2 = first_polygon[ip1];
 
-                            var H = AffineManifold.FromPoints(V1, V2);
-                            var Tol_Dist = Math.Max(V1.Abs(), V2.Abs()) * 1e-10;
 
-                            {
-                                int ip2 = (i + 2) % first_polygon.Count;
-                                var Pin = first_polygon[ip2];
-                                if (H.PointDistance(Pin) < 0)
-                                    H.Normal.ScaleInPlace(-1);
-                            }
-
-                            var C = new List<Vector>();
-                            for (int j = 0; j < intersect.Count; j++) {
-                                var V3 = intersect[j];
-                                int jp1 = (j + 1) % intersect.Count;
-                                var V4 = intersect[jp1];
-                                
-                                bool V3_in = H.PointDistance(V3) > (-1*Tol_Dist);
-                                bool V4_in = H.PointDistance(V4) > (-1*Tol_Dist);
-
-                                if (V3_in && !V4_in) {
-                                    C.Add(V3);
-                                    var Hx = AffineManifold.FromPoints(V3, V4);
-                                    var X = AffineManifold.Intersect2D(H, Hx);
-                                    C.Add(X);
-                                    _conformal2 = false;
-                                } else if (!V3_in && !V4_in) {
-                                    // skip
-                                    _conformal2 = false;
-                                } else if (!V3_in && V4_in) {
-                                    var Hx = AffineManifold.FromPoints(V3, V4);
-                                    var X = AffineManifold.Intersect2D(H, Hx);
-                                    C.Add(X);
-                                    _conformal2 = false;
-                                } else {
-                                    C.Add(V3);
-                                }
-                            }
-
-                            intersect = C;
-                        }
-
+                        (List<Vector> intersect, bool _conformal2) = PolygonalIntersect(first_polygon, second_polygon);
 
                         if (second_polygon.Count <= 2) {
                             return false;
                         }
+                        if (intersect.Count <= 2) {
+                            return false;
+                        }
 
-                        double span_area = SpanArea(intersect);
+                        double span_area = SpanArea(intersect, "intersect");
                         if (span_area < ref_area * (1.0e-10)) {
                             return false;
                         }
@@ -1177,7 +1250,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
                                 for (int j = 0; j < N1; j++) {
-                                    if (H.PointDistance(first_polygon[j]) < -1*Tol_Dist) {
+                                    if (H.PointDistance(first_polygon[j]) < -1 * Tol_Dist) {
                                         _conformal1 = false;
                                         break;
                                     }
@@ -1228,22 +1301,124 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
             }
 
-            private static double SpanArea(List<Vector> second_polygon) {
+            /// <summary>
+            /// intersection of two polygons
+            /// </summary>
+            /// <param name="first_polygon"></param>
+            /// <param name="second_polygon"></param>
+            /// <returns>
+            /// - the intersection 
+            /// - a boolean which indicates if the intersection is identical to the <paramref name="second_polygon"/>
+            /// </returns>
+            private static (List<Vector> intersect, bool _conformal2) PolygonalIntersect(List<Vector> first_polygon, List<Vector> second_polygon) {
+
+                //
+                // Polygon intersection algorithm:
+                //
+                // For each edge V1-V2 in the first polygon,
+                //     Let H := Half-plane tangenting V1-V2, with the remaining
+                //         vertices on the "inside".
+                //     Let C := New empty polygon.
+                //     For each edge V3-V4 in the second polygon,
+                //         Let X := The intersection between V3-V4 and H.
+                //         If V3 inside H, and V4 is outside H then,
+                //             Add V3 to C.
+                //             Add X to C.
+                //         Else if both V3 and V4 lies outside H then,
+                //             Skip.
+                //         Else if V3 outside H, and V4 is inside H then,
+                //             Add X to C.
+                //         Else
+                //             Add V3 to C.
+                //     Replace the second polygon with C.
+
+                bool _conformal2 = true;
+
+                List<Vector> intersect = new List<Vector>(second_polygon);
+                for (int i = 0; i < first_polygon.Count; i++) {
+                    Vector V1 = first_polygon[i];
+                    int ip1 = (i + 1) % first_polygon.Count;
+                    Vector V2 = first_polygon[ip1];
+
+                    var H = AffineManifold.FromPoints(V1, V2);
+                    var Tol_Dist = Math.Max(V1.Abs(), V2.Abs()) * 1e-10;
+
+                    {
+                        int ip2 = (i + 2) % first_polygon.Count;
+                        var Pin = first_polygon[ip2];
+                        if (H.PointDistance(Pin) < 0)
+                            H.Normal.ScaleInPlace(-1);
+                    }
+
+                    var C = new List<Vector>();
+                    for (int j = 0; j < intersect.Count; j++) {
+                        var V3 = intersect[j];
+                        int jp1 = (j + 1) % intersect.Count;
+                        var V4 = intersect[jp1];
+
+                        bool V3_in = H.PointDistance(V3) > (-1 * Tol_Dist);
+                        bool V4_in = H.PointDistance(V4) > (-1 * Tol_Dist);
+
+                        if (V3_in && !V4_in) {
+                            C.Add(V3);
+                            var Hx = AffineManifold.FromPoints(V3, V4);
+                            var X = AffineManifold.Intersect2D(H, Hx);
+                            C.Add(X);
+                            _conformal2 = false;
+                        } else if (!V3_in && !V4_in) {
+                            // skip
+                            _conformal2 = false;
+                        } else if (!V3_in && V4_in) {
+                            var Hx = AffineManifold.FromPoints(V3, V4);
+                            var X = AffineManifold.Intersect2D(H, Hx);
+                            C.Add(X);
+                            _conformal2 = false;
+                        } else {
+                            C.Add(V3);
+                        }
+                    }
+
+                    intersect = C;
+                }
+
+                return (intersect, _conformal2);
+            }
+
+            /// <summary>
+            /// Area of the parallelogram spanned by a polygons first and last edge
+            /// </summary>
+            private static double SpanArea(List<Vector> second_polygon, string errorMark) {
+                //try {
                 double span_area;
                 int N2 = second_polygon.Count;
+
+                if (N2 < 2)
+                    throw new ArgumentException($"Empty polygon, only {N2} vertices; ({errorMark}). ");
+
+
                 double sp1x = second_polygon[1][0] - second_polygon[0][0];
                 double sp1y = second_polygon[1][1] - second_polygon[0][1];
                 double sp2x = second_polygon[N2 - 1][0] - second_polygon[0][0];
                 double sp2y = second_polygon[N2 - 1][1] - second_polygon[0][1];
                 span_area = sp1x * sp2y - sp1y * sp2x;
                 return Math.Abs(span_area);
+                //} catch (Exception e) {
+                //    Random rnd = new Random();
+                //    using(var stw = new StreamWriter("SpanAreaChrash." + rnd.Next() + ".txt")) {
+                //        stw.WriteLine("Count " + second_polygon.Count);
+                //        foreach(var v in second_polygon) {
+                //            stw.WriteLine(v.ToString());
+                //        }
+                //        stw.Flush();
+                //        stw.Close();
+                //    }
+                //    throw new AggregateException(e);
+                //}
             }
 
             /// <summary>
-            /// 
+            /// Ensures that that in the 3D case -- i.e. when faces are 2D objects -- that vertices of an edge are in counter-clockwise sequence.  (or maybe clock-wise?)
             /// </summary>
-            /// <param name="VtxEdge1_Loc"></param>
-            /// <returns></returns>
             private static List<Vector> CheckFace(MultidimensionalArray _VtxEdge1_Loc) {
 
                 MultidimensionalArray VtxEdge1_Loc = MultidimensionalArray.Create(_VtxEdge1_Loc.Lengths);
@@ -1556,10 +1731,11 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             /// <summary>
-            /// sharing of edges between processors
+            /// sharing of edges between processors;
+            /// mainly required for the spectral element framework (continuous Galerkin) where an owner for each edge must be assigned
             /// </summary>
             internal void NegogiateNeighbourship() {
-                using (new FuncTrace()) {
+                using (var tr = new FuncTrace()) {
                     int Size = m_owner.MpiSize;
                     int myRank = m_owner.MpiRank;
                     int E = m_EdgesTmp.Count;
@@ -1571,41 +1747,59 @@ namespace BoSSS.Foundation.Grid.Classic {
                     var CellPart = m_owner.CellPartitioning;
                     int D = m_owner.SpatialDimension;
 
+                    tr.Info("No of locally updated cells: " + Jupdt);
+
+                    // Fk, 29jun21:
+                    // This function caused problems in larger parallel runs, especially with AMR+Load Balancing,
+                    // see also https://fdy-tuda.openproject.com/projects/ibm-rotating-cube/work_packages/441
+                    //
+                    // So, the assertions in this function should also be checked in Release mode, therefore
+                    // we do our own Debug_Assert here; Assertions can later be easily converted back to Debug.Assert.
+                    // The function argument ensures that expensive error messages are only composed on actual errors.
+                    void Debug_Assert(bool MustBeTrue, Func<string> message) {
+                        if(!MustBeTrue)
+                            
+                            throw new ApplicationException(message());
+                    }
+
+
+
+
                     // put boundary edges to the beginning
                     // ===================================
-                    {
+                    using(var bt0 = new BlockTrace("SortOutBndyEdges", tr)) {
                         int Ebnd = this.NoOfBoundaryEdges;
                         int Eint = E - Ebnd;
 
-#if DEBUG
+//#if DEBUG
                         for (int e = 0; e < E; e++) {
                             if (e < Eint)
-                                Debug.Assert(m_EdgesTmp[e].Cell2 >= 0);
+                                Debug_Assert(m_EdgesTmp[e].Cell2 >= 0, () => $"Second (out) cell out of range for internal cell; Eint = {Eint}, m_EdgesTmp[e].Cell2 = {m_EdgesTmp[e].Cell2}");
                             else
-                                Debug.Assert(m_EdgesTmp[e].Cell2 < 0);
+                                Debug_Assert(m_EdgesTmp[e].Cell2 < 0, () => $"Second (out) cell out of range for boundary cell; Eint = {Eint}, m_EdgesTmp[e].Cell2 = {m_EdgesTmp[e].Cell2}");
                         }
-#endif
+//#endif
 
                         var BndEdges = m_EdgesTmp.GetSubVector(Eint, Ebnd);
                         m_EdgesTmp.RemoveRange(Eint, Ebnd);
                         m_EdgesTmp.InsertRange(0, BndEdges);
 
                         var C2E = this.m_CellsToEdgesTmp;
-                        for (int j = 0; j < C2E.Length; j++) {
+                        for(int j = 0; j < C2E.Length; j++) {
                             var C2E_j = C2E[j];
                             int K = C2E_j.Count;
-                            for (int k = 0; k < K; k++) {
+                            for(int k = 0; k < K; k++) {
                                 int iEdge = C2E_j[k];
                                 Debug.Assert(iEdge >= 0 && iEdge < E);
 
-                                if (iEdge >= Eint) {
+                                if(iEdge >= Eint) {
                                     // correct re-ordering of boundary-edges
                                     iEdge -= Eint;
-                                    Debug.Assert(iEdge >= 0 && iEdge < Ebnd);
+                                    Debug_Assert(iEdge >= 0 && iEdge < Ebnd, () => "boundary edge out of range");
                                 } else {
                                     // correct re-ordering of internal-edges
                                     iEdge += Ebnd;
-                                    Debug.Assert(iEdge >= Ebnd && iEdge < E);
+                                    Debug_Assert(iEdge >= Ebnd && iEdge < E, () => "internal edge out of range");
                                 }
 
                                 C2E_j[k] = iEdge;
@@ -1618,24 +1812,23 @@ namespace BoSSS.Foundation.Grid.Classic {
                     // (and synchronize Edge-To-Cell transformations on different processors)
                     // ======================================================================
                     
-                    // 1st index: edge index
-                    // 2nd index: enumeration
-                    // Item1: process rank R
-                    // Item2: index of edge on rank R
+                    // - 1st index: edge index
+                    // - 2nd index: enumeration
+                    // - Item1: process rank R
+                    // - Item2: index of edge on rank R
                     Tuple<int, int>[][] EdgeIndicesOnOtherProcessors = new Tuple<int, int>[E][];
-                    {
+                    using(var bt1 = new BlockTrace("LocalIndicesForeign", tr)) {
+
                         for (int e = 0; e < E; e++) {
                             EdgeIndicesOnOtherProcessors[e] = new Tuple<int, int>[] { new Tuple<int, int>(myRank, e) };
                         }
 
 
-                        //var SendData = new Dictionary<int, Tuple<int, long, long, double[,], double[,]>[]>();
-                        //var Data = new List<Tuple<int, long, long, double[,], double[,]>>();
-                        var SendData = new Dictionary<int, Tuple<int, long, long, AffineTrafo, AffineTrafo>[]>();
-                        var Data = new List<Tuple<int, long, long, AffineTrafo, AffineTrafo>>();
+                        var SendData = new Dictionary<int, (int iEdge, long GIdx1, long GIdx2, AffineTrafo Tr1, AffineTrafo Tr2)[]>();
+                        var Data = new List<(int iEdge, long GIdx1, long GIdx2, AffineTrafo Tr1, AffineTrafo Tr2)>();
                         var C2E = this.m_CellsToEdgesTmp;
                         var EdgesTmp = this.m_EdgesTmp;
-
+                        
                         double[,] OriginAndNframe = new double[Math.Max(D, 1), Math.Max(D - 1, 1)];
                         for (int d = 0; d < (D - 1); d++) {
                             OriginAndNframe[d + 1, d] = 1.0;
@@ -1652,13 +1845,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                             foreach (int jCell in SndList) {
                                 var C2E_j = C2E[jCell];
                                 foreach (int iEdge in C2E_j) {
+                                    if(iEdge >= EdgesTmp.Count || iEdge < 0)
+                                        throw new ApplicationException($"inconsistent data: iEdge = {iEdge}, m_EdgesTmp.Count = {EdgesTmp.Count}.");
                                     var Edge = EdgesTmp[iEdge];
 
                                     if (Edge.Cell1 >= Jupdt || Edge.Cell2 >= Jupdt) {
                                         // found some edge 
 
-                                        Debug.Assert(Edge.Cell1 < Jupdt || Edge.Cell2 < Jupdt);
-                                        Debug.Assert(Edge.Cell1 == jCell || Edge.Cell2 == jCell);
+                                        Debug_Assert(Edge.Cell2 >= 0, () => $"How can a boundary edge be linked to an external cell? Jup = {Jupdt}, Edge: {Edge}");
+                                        Debug_Assert(Edge.Cell1 < Jupdt || Edge.Cell2 < Jupdt, () => "One cell index of some edge must be a local edge");
+                                        Debug_Assert(Edge.Cell1 == jCell || Edge.Cell2 == jCell, () => "Inconsistency in m_EdgesTmp");
 
 
                                         long GIdx1, GIdx2;
@@ -1666,13 +1862,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         if (Edge.Cell1 >= Jupdt) {
                                             // Cell1 is external
                                             // +++++++++++++++++
-                                            Debug.Assert(Edge.Cell2 < Jupdt);
+                                            Debug_Assert(Edge.Cell2 < Jupdt, () => "Inconsistency in m_EdgesTmp (1)");
 
                                             GIdx1 = GidxExt[Edge.Cell1 - Jupdt];
                                             GIdx2 = CellPart.i0 + Edge.Cell2;
                                             targRankE = CellPart.FindProcess(GIdx1);
-                                            Debug.Assert(targRankE != myRank);
-                                            Debug.Assert(CellPart.FindProcess(GIdx2) == myRank);
+                                            Debug_Assert(targRankE != myRank, () => "Inconsistency in m_EdgesTmp (2)");
+                                            Debug_Assert(CellPart.FindProcess(GIdx2) == myRank, () => "Inconsistency in m_EdgesTmp (3)");
                                         } else {
                                             // Cell2 is external
                                             // +++++++++++++++++
@@ -1681,8 +1877,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                                             GIdx1 = CellPart.i0 + Edge.Cell1;
                                             GIdx2 = GidxExt[Edge.Cell2 - Jupdt];
                                             targRankE = CellPart.FindProcess(GIdx2);
-                                            Debug.Assert(targRankE != myRank);
-                                            Debug.Assert(CellPart.FindProcess(GIdx1) == myRank);
+                                            Debug_Assert(targRankE != myRank, () => "Inconsistency in m_EdgesTmp (4)");
+                                            Debug_Assert(CellPart.FindProcess(GIdx1) == myRank, () => "Inconsistency in m_EdgesTmp (5)");
                                         }
 
                                         if (targRankE != targRank)
@@ -1691,10 +1887,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         AffineTrafo T1 = this.Edge2CellTrafos[Edge.Cell1TrafoIdx];
                                         AffineTrafo T2 = this.Edge2CellTrafos[Edge.Cell2TrafoIdx];
 
-                                        //double[,] T1_OriginAndNframe = T1.Transform(OriginAndNframe);
-                                        //double[,] T2_OriginAndNframe = T2.Transform(OriginAndNframe);
-
-                                        Data.Add(new Tuple<int, long, long, AffineTrafo, AffineTrafo>(iEdge, GIdx1, GIdx2, T1, T2));
+                                        Data.Add((iEdge, GIdx1, GIdx2, T1, T2));
                                     }
                                 }
 
@@ -1709,21 +1902,19 @@ namespace BoSSS.Foundation.Grid.Classic {
                             var RData = kv.Value;
 
                             foreach (var t in RData) {
-                                int iEdge_foreign = t.Item1;
-                                long Gidx1 = t.Item2;
-                                long Gidx2 = t.Item3;
-                                //double[,] T1_OriginAndNframe = t.Item4;
-                                //double[,] T2_OriginAndNframe = t.Item5;
-                                AffineTrafo T1 = t.Item4;
-                                AffineTrafo T2 = t.Item5;
+                                int iEdge_foreign = t.iEdge;
+                                long Gidx1 = t.GIdx1;
+                                long Gidx2 = t.GIdx2;
+                                AffineTrafo T1 = t.Tr1;
+                                AffineTrafo T2 = t.Tr2;
 
                                 int jCell_loc;
                                 if (CellPart.IsInLocalRange(Gidx1)) {
-                                    Debug.Assert(CellPart.FindProcess(Gidx2) == originRank);
+                                    Debug_Assert(CellPart.FindProcess(Gidx2) == originRank, () => "Global index (second cell) on wrong processor");
                                     jCell_loc = CellPart.TransformIndexToLocal((int)Gidx1);
                                 } else {
-                                    Debug.Assert(CellPart.IsInLocalRange(Gidx2));
-                                    Debug.Assert(CellPart.FindProcess(Gidx1) == originRank);
+                                    Debug_Assert(CellPart.IsInLocalRange(Gidx2), () => "Global index (second cell) on wrong processor (2)");
+                                    Debug_Assert(CellPart.FindProcess(Gidx1) == originRank, () => "Global index (first cell) on wrong processor");
                                     jCell_loc = CellPart.TransformIndexToLocal((int)Gidx2);
                                 }
 
@@ -1731,28 +1922,35 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 var C2E_jCell_loc = C2E[jCell_loc];
                                 int matchCount = 0;
                                 int iEdge_local = int.MinValue;
-                                foreach (int iEdge in C2E_jCell_loc) {
+                                foreach (int iEdge in C2E_jCell_loc) { // loop over all edges for cell `jCell_loc`
+                                    if(iEdge >= EdgesTmp.Count || iEdge < 0)
+                                        throw new ApplicationException($"inconsistent data (2): iEdge = {iEdge}, EdgesTmp.Count = {EdgesTmp.Count}.");
                                     var Edge = EdgesTmp[iEdge];
+                                    if(Edge.Cell2 < 0)
+                                        continue;
                                     bool bEdgeChanged = false;
+                                    // global edge indices of local data 
                                     long _Gidx1 = Edge.Cell1 < Jupdt ? Edge.Cell1 + CellPart.i0 : GidxExt[Edge.Cell1 - Jupdt];
-                                    long _Gidx2 = Edge.Cell2 < Jupdt ? Edge.Cell2 + CellPart.i0 : GidxExt[Edge.Cell2 - Jupdt];
+                                    long _Gidx2  = Edge.Cell2 < Jupdt ? Edge.Cell2 + CellPart.i0 : GidxExt[Edge.Cell2 - Jupdt];
 
                                     bool evenMatch = (_Gidx1 == Gidx1 && _Gidx2 == Gidx2);
                                     bool oddMatch = (_Gidx1 == Gidx2 && _Gidx2 == Gidx1);
 
                                     if (!(evenMatch || oddMatch))
                                         continue;
+                                    Debug_Assert(oddMatch != evenMatch, () => "edge is neither even nor odd");
 
                                     // in certain situations, which can occur e.g. with curved elements (e.g. a ring consisting of two curved quads)
                                     // there may actually be more than one edge between the same pair of cells
                                     // therefore, we have to check also the cell centers
 
                                     AffineTrafo _T1 = null, _T2 = null;
+                                    Debug_Assert(Edge.Cell1TrafoIdx < this.Edge2CellTrafos.Count && Edge.Cell1TrafoIdx >= 0, () => $"Edge between {_Gidx1}-{_Gidx2}; Received edge {Gidx1}-{Gidx2}; i0 = {CellPart.i0}; trafoidx1 ({Edge.Cell1TrafoIdx}) out of range (max is ${this.Edge2CellTrafos.Count}): iEdge = {iEdge}, {Edge}");
+                                    Debug_Assert(Edge.Cell2TrafoIdx < this.Edge2CellTrafos.Count && Edge.Cell2TrafoIdx >= 0, () => $"Edge between {_Gidx1}-{_Gidx2}; Received edge {Gidx1}-{Gidx2}; i0 = {CellPart.i0}; trafoidx2 ({Edge.Cell2TrafoIdx}) out of range (max is ${this.Edge2CellTrafos.Count}): iEdge = {iEdge}, {Edge}");
                                     if (evenMatch) {
                                         _T1 = this.Edge2CellTrafos[Edge.Cell1TrafoIdx];
                                         _T2 = this.Edge2CellTrafos[Edge.Cell2TrafoIdx];
                                     } else {
-                                        Debug.Assert(oddMatch == true);
                                         _T1 = this.Edge2CellTrafos[Edge.Cell2TrafoIdx];
                                         _T2 = this.Edge2CellTrafos[Edge.Cell1TrafoIdx];
                                     }
@@ -1790,15 +1988,17 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         if (iT1 < 0) {
                                             this.Edge2CellTrafos.Add(T1);
                                             iT1 = this.Edge2CellTrafos.Count - 1;
-                                            this.Edge2CellTrafosRefElementIndices.Add(0);
-                                            Debug.Assert(this.m_owner.Grid.RefElements.Length == 1);
+                                            this.Edge2CellTrafosRefElementIndices.Add(0); // for the moment, just assume only one ref element, index is always 0
+                                            if(this.m_owner.Grid.RefElements.Length != 1)
+                                                throw new NotImplementedException("Missing: handling of multiple reference elements");
                                         }
                                         int iT2 = this.Edge2CellTrafos.IndexOf(T2);
                                         if (iT2 < 0) {
                                             this.Edge2CellTrafos.Add(T2);
                                             iT2 = this.Edge2CellTrafos.Count - 1;
-                                            this.Edge2CellTrafosRefElementIndices.Add(0);
-                                            Debug.Assert(this.m_owner.Grid.RefElements.Length == 1);
+                                            this.Edge2CellTrafosRefElementIndices.Add(0); // for the moment, just assume only one ref element, index is always 0
+                                            if(this.m_owner.Grid.RefElements.Length != 1)
+                                                throw new NotImplementedException("Missing: handling of multiple reference elements");
                                         }
 
                                         if (evenMatch) {
@@ -1823,7 +2023,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         }
                                     }
 
-                                    if (bEdgeChanged) {
+                                    if(bEdgeChanged) {
+                                        if(iEdge >= EdgesTmp.Count || iEdge < 0)
+                                            throw new ApplicationException($"inconsistent data (2): iEdge = {iEdge}, EdgesTmp.Count = {EdgesTmp.Count}.");
                                         EdgesTmp[iEdge] = Edge;
                                     }
 
@@ -1859,7 +2061,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     // apply permutation
                     // ======================================================================
-                    {
+                    using(new BlockTrace("ApplyPermutation", tr)) {
                         int[] invEdgePermuation = new int[E];
                         for (int e = 0; e < E; e++) {
                             invEdgePermuation[EdgePermuation[e]] = e;
@@ -1868,6 +2070,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // permute edges
                         var newEdgesTmp = new List<ComputeEdgesHelper>(E);
                         for (int e = 0; e < E; e++) {
+                            Debug_Assert(EdgePermuation[e] < this.m_EdgesTmp.Count, () => "another out-of-range");
                             newEdgesTmp.Add(this.m_EdgesTmp[EdgePermuation[e]]);
                         }
                         this.m_EdgesTmp = newEdgesTmp;
@@ -2412,41 +2615,43 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// sets <see cref="NormalsForAffine"/>.
             /// </summary>
             internal void InitNormals() {
-                int E = this.Count;
-                int D = m_owner.SpatialDimension;
-                var __Normals = MultidimensionalArray.Create(E, D);
+                using(new FuncTrace()) {
+                    int E = this.Count;
+                    int D = m_owner.SpatialDimension;
+                    var __Normals = MultidimensionalArray.Create(E, D);
 
-                var Krefs = this.m_owner.Grid.RefElements;
+                    var Krefs = this.m_owner.Grid.RefElements;
 
-                MultidimensionalArray[,] FaceCenters = new MultidimensionalArray[Krefs.Length, Krefs.Max(Kref => Kref.NoOfFaces)];
+                    MultidimensionalArray[,] FaceCenters = new MultidimensionalArray[Krefs.Length, Krefs.Max(Kref => Kref.NoOfFaces)];
 
-                for (int e = 0; e < E; e++) {
-                    var Normal_e = __Normals.ExtractSubArrayShallow(new int[] { e, 0 }, new int[] { e, D - 1 });
+                    for(int e = 0; e < E; e++) {
+                        var Normal_e = __Normals.ExtractSubArrayShallow(new int[] { e, 0 }, new int[] { e, D - 1 });
 
-                    if (this.IsEdgeAffineLinear(e)) {
+                        if(this.IsEdgeAffineLinear(e)) {
 
-                        int jCell = this.CellIndices[e, 0];
-                        //var Kref = this.m_owner.Cells.GetRefElement(jCell);
-                        int iKref = this.m_owner.Cells.GetRefElementIndex(jCell);
-                        int iFace = this.FaceIndices[e, 0];
+                            int jCell = this.CellIndices[e, 0];
+                            //var Kref = this.m_owner.Cells.GetRefElement(jCell);
+                            int iKref = this.m_owner.Cells.GetRefElementIndex(jCell);
+                            int iFace = this.FaceIndices[e, 0];
 
-                        //this.GetNormals(e, 1, Kref.FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 }), Normal_e.ResizeShallow(1, 1, D));
-                        //todo
+                            //this.GetNormals(e, 1, Kref.FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 }), Normal_e.ResizeShallow(1, 1, D));
+                            //todo
 
-                        //if(FaceCenters[iKref, iFace] == null)
-                        //    FaceCenters[iKref, iFace] = Krefs[iKref].FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 });
-
-
-                        this.GetNormalsForCell(Krefs[iKref].GetFaceCenter(iFace), jCell, iFace, Normal_e);
+                            //if(FaceCenters[iKref, iFace] == null)
+                            //    FaceCenters[iKref, iFace] = Krefs[iKref].FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 });
 
 
-                    } else {
-                        // 
-                        Normal_e.SetAll(double.NaN);
+                            this.GetNormalsForCell(Krefs[iKref].GetFaceCenter(iFace), jCell, iFace, Normal_e);
+
+
+                        } else {
+                            // 
+                            Normal_e.SetAll(double.NaN);
+                        }
                     }
-                }
 
-                this.NormalsForAffine = __Normals;
+                    this.NormalsForAffine = __Normals;
+                }
             }
 
             /// <summary>

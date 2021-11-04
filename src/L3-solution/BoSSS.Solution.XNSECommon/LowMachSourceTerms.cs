@@ -67,7 +67,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// Heat release term on energy equation
     /// </summary>
     public class LowMach_HeatSource : ReactionHeatSourceJacobi, ISpeciesFilter {
-        public LowMach_HeatSource(string spcName, double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw EoS, double TRef, double cpRef, bool VariableOneStepParameters) : base(HeatReleaseFactor, ReactionRateConstants, molarmasses, EoS, TRef, cpRef, VariableOneStepParameters) {
+        public LowMach_HeatSource(string spcName, double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw_MultipleSpecies EoS, double TRef, double cpRef, bool VariableOneStepParameters) : base(HeatReleaseFactor, ReactionRateConstants, molarmasses, EoS, TRef, cpRef, VariableOneStepParameters) {
             ValidSpecies = spcName;
         }
 
@@ -83,7 +83,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// Reaction term on mass fraction equation
     /// </summary>
     public class LowMach_MassFractionSource : ReactionSpeciesSourceJacobi, ISpeciesFilter {
-        public LowMach_MassFractionSource(string spcName, double[] ReactionRateConstants, double[] StoichiometricCoefficients, double[] MolarMasses, MaterialLaw EoS, int NumberOfReactants, int SpeciesIndex, double TRef, double cpRef, bool VariableOneStepParameters) : base(ReactionRateConstants, StoichiometricCoefficients, MolarMasses, EoS, NumberOfReactants, SpeciesIndex, TRef, cpRef, VariableOneStepParameters) {
+        public LowMach_MassFractionSource(string spcName, double[] ReactionRateConstants, double[] StoichiometricCoefficients, double[] MolarMasses, MaterialLaw_MultipleSpecies EoS, int NumberOfReactants, int SpeciesIndex, double TRef, double cpRef, bool VariableOneStepParameters) : base(ReactionRateConstants, StoichiometricCoefficients, MolarMasses, EoS, NumberOfReactants, SpeciesIndex, TRef, cpRef, VariableOneStepParameters) {
 
             ValidSpecies = spcName;
         }
@@ -149,7 +149,7 @@ namespace BoSSS.Solution.XNSECommon {
             m_EoS = EoS;
             m_dt = dt;
             m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfChemicalComponents)); // Variables for the density evaluation
-            m_ParameterOrdering = new string[] { "Density0", "Density" };
+            m_ParameterOrdering = new string[] { "Density_t0", "Density" }; // Density is only added as a dummy  in order to be able to recognize it in the operator
         }
 
         public string ValidSpecies {
@@ -232,7 +232,8 @@ namespace BoSSS.Solution.XNSECommon {
         public LowMach_TimeDerivativep0(string spcName, double dt)  {
             ValidSpecies = spcName;
             m_dt = dt;
-            m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.ThermodynamicPressure + "_t0" };
+            //m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.ThermodynamicPressure + "_t0" };
+            m_ParameterOrdering = new string[] { "dp0dt"};
             m_ArgumentOrdering = new string[] { };// no arguments
         }
 
@@ -268,7 +269,7 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            // For now no update. In future dt could be dynamicaly changed here
+            // For now no update. In future dt could be dynamically changed here
             return;
         }
 
@@ -280,9 +281,12 @@ namespace BoSSS.Solution.XNSECommon {
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
-            double p0_Actual = cpv.Parameters[0];
-            double p0_Old = cpv.Parameters[1];
-            double dp0_dt = (p0_Actual - p0_Old) / m_dt;
+            //double p0_Actual = cpv.Parameters[0];
+            //double p0_Old = cpv.Parameters[1];
+            //double dp0_dt = (p0_Actual - p0_Old) / m_dt;
+
+
+            double dp0_dt = cpv.Parameters[0];
 
             return -dp0_dt * V;
         }

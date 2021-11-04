@@ -19,7 +19,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// which has proven to be very stable in DG.
     /// </summary>
     /// <remarks>
-    /// - implemented by Fk, jan21
+    /// - original implemented by Fk, jan21, <see cref="StokesExtensionEvolver"/>
+    /// - cloned and modified by Lauritz, april21
     /// </remarks>
     public class ImplicitStokesExtensionEvolver : ILevelSetEvolver {
 
@@ -27,12 +28,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public ImplicitStokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd) {
+        public ImplicitStokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true) {
             for (int d = 0; d < D; d++) {
                 if (!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
             }
-
+            this.fullStokes = fullStokes;
             this.SpatialDimension = D;
             this.AgglomThreshold = AgglomThreshold;
             this.m_HMForder = hMForder;
@@ -49,6 +50,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         string levelSetName;
         string[] parameters;
         IncompressibleBoundaryCondMap bcmap;
+        bool fullStokes;
 
         /// <summary>
         /// should only be the interface velocity vector; typically, a phase-averaged velocity.
@@ -59,6 +61,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// nix
         /// </summary>
         public IList<string> VariableNames => null;
+
+        
+        /// <summary>
+        /// Currently empty
+        /// </summary>
+        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => null;
 
 
         /// <summary>
@@ -108,12 +116,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="levelSet"></param>
-        /// <param name="time"></param>
-        /// <param name="dt"></param>
-        /// <param name="incremental"></param>
-        /// <param name="DomainVarFields"></param>
-        /// <param name="ParameterVarFields"></param>
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             int D = levelSet.Tracker.GridDat.SpatialDimension;
 
@@ -128,7 +130,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     f.Clear();
             }
 
-            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold);
+            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
             ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
             if (implicitTimeStepper == null) {

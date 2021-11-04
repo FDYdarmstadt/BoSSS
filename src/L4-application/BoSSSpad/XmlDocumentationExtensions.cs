@@ -20,10 +20,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using BoSSS.Platform;
+using System.Text.RegularExpressions;
 
 namespace BoSSS.Application.BoSSSpad {
 

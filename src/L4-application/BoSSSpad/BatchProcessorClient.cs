@@ -26,9 +26,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -86,6 +83,14 @@ namespace BoSSS.Application.BoSSSpad {
     abstract public class BatchProcessorClient {
 
         /// <summary>
+        /// 
+        /// </summary>
+        protected BatchProcessorClient() {
+            DotnetRuntime = "dotnet";
+        }
+
+
+        /// <summary>
         /// Base directory where the executables should be deployed,
         /// accessible from the local machine (e.g. a mounted path if the batch processor deploys on another computer system)
         /// </summary>
@@ -115,6 +120,18 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Runtime on the machine to execute Dotnet code.
+        /// - typically, this should be `dotnet` (for .NET5 and higher)
+        /// - could also be `mono` on Linux/Unix machines
+        /// </summary>
+        [DataMember] 
+        public string DotnetRuntime {
+            get;
+            set;
+        }
+
+
+        /// <summary>
         /// Specifies paths to databases which are accessible (i.e. allowed) to the computer system 
         /// on which this batch processor submits its jobs.
         /// 
@@ -134,6 +151,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <seealso cref="AllowedDatabasesPaths"/>
         public bool IsDatabaseAllowed(AppControl ctrl) {
+            //Debugger.Launch();
             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
                 return true;
             var dbi = ctrl.GetDatabase();
@@ -152,6 +170,7 @@ namespace BoSSS.Application.BoSSSpad {
                 fullDbPath = dbi.Path;
             }
 
+
             // check if path is allowed
             foreach(var pp in AllowedDatabasesPaths) {
                 if(!Path.IsPathRooted(pp.LocalMountPath)) {
@@ -166,7 +185,9 @@ namespace BoSSS.Application.BoSSSpad {
                     string PathAtRemote = pp.PathAtRemote;
                     if(PathAtRemote.IsEmptyOrWhite())
                         PathAtRemote = pp.LocalMountPath;
-                    
+                    PathAtRemote = PathAtRemote.TrimEnd(new char[] { '\\', '/' });
+
+                    string DirSep;
                     if(PathAtRemote.StartsWith("/")) {
                         // very likely to be a Unix path
 
@@ -176,16 +197,20 @@ namespace BoSSS.Application.BoSSSpad {
                         // (don't consider the other way, i.e. Unix to Windows:
                         // nobody who works on Linux seriously 
                         // considers a Windows HPC system).
+
+                        DirSep = "/";
+                    } else {
+                        DirSep = @"\";
                     }
 
-                    string fullAltPath = PathAtRemote + relDbPath;
+                    string fullAltPath = PathAtRemote + DirSep + relDbPath;
                     
                     if(ctrl.AlternateDbPaths != null) {
                         if(ctrl.AlternateDbPaths.Any(tt => tt.DbPath.Equals(fullAltPath)))
                             return true;
                     }
 
-                    (fullDbPath, default(string)).AddToArray(ref ctrl.AlternateDbPaths);
+                    (fullAltPath, default(string)).AddToArray(ref ctrl.AlternateDbPaths);
 
                     return true;
                 }
@@ -321,7 +346,7 @@ namespace BoSSS.Application.BoSSSpad {
             if(Path.IsPathRooted(dbDir))
                 throw new ArgumentException("Expecting a relative path.");
             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
-                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database.");
+                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
 
             var pp = AllowedDatabasesPaths[0];
 
@@ -331,6 +356,29 @@ namespace BoSSS.Application.BoSSSpad {
             var fullPath = System.IO.Path.Combine(pp.LocalMountPath, dbDir);
 
             return InteractiveShell.OpenOrCreateDatabase(fullPath);
+        }
+
+        /// <summary>
+        /// Creates (or opens) a database in a location which is ensured to work with this batch processor
+        /// </summary>
+        public IDatabaseInfo CreateTempDatabase() {
+             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
+
+            string relPath = null;
+            {
+                var rnd = new Random();
+                bool Exists;
+                do {
+                    var pathOffset = AllowedDatabasesPaths[0].LocalMountPath;
+                    var tempDir = rnd.Next().ToString();
+                    var __TempDir = new DirectoryInfo(Path.Combine(pathOffset, tempDir));
+                    Exists = __TempDir.Exists;
+                    relPath = tempDir;
+                } while (Exists == true);
+            }
+                        
+            return CreateOrOpenCompatibleDatabase(relPath);
         }
     }
 

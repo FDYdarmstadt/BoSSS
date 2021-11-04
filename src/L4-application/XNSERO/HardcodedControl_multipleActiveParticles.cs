@@ -78,7 +78,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.SetTimesteps(1e-1, 50000000);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.1;
             C.LinearSolver.NoOfMultigridLevels = 10;
             C.LinearSolver.MaxSolverIterations = 1000;
             C.LinearSolver.MinSolverIterations = 1;

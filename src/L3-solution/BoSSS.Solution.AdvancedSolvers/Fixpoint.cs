@@ -50,7 +50,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int MaxIter = 400;
         public int MinIter = 4;
         public double ConvCrit = 1e-9;
-        public int MinCoupledIterations = 4;
+        
 
         public ISolverSmootherTemplate m_LinearSolver;
 
@@ -67,7 +67,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public CoupledConvergenceReached CoupledIteration_Converged;
 
-        public int MaxCoupledIter = 1000;
+        public int MinCoupledIterations = 1;
+        public int MaxCoupledIter = 10;
 
 
         public delegate int IterationCounter(int NoIter, ref int coupledIter);
@@ -105,62 +106,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         return NoIter + 1;
                     };
 
-                //int[] Velocity_idx = SolutionVec.Mapping.GetSubvectorIndices(false, 0, 1, 2);
-                //int[] Stresses_idx = SolutionVec.Mapping.GetSubvectorIndices(false, 3, 4, 5);
-
-                //int[] Velocity_fields = new int[] { 0, 1, 2 };
-                //int[] Stress_fields = new int[] { 3, 4, 5 };
-
-                //int NoCoupledIterations = 10;
-
                 // iterate...
                 // ==========
-                //int NoOfMainIterations = 0;
                 using (new BlockTrace("Slv Iter", tr)) {
                     bool success = false;
                     
                     while (true) {
-                        if(NoOfIterations >= MinIter || NoOfCoupledIteration >= MinCoupledIterations) {
+                        if(NoOfIterations >= MinIter || NoOfCoupledIteration > MinCoupledIterations) {
                             if(ResidualNorm < ConvCrit && CoupledIteration_Converged()) {
                                 success = true;
                                 break;
                             }
-
-                            if(!(NoOfIterations < MaxIter && NoOfCoupledIteration < MaxCoupledIter)) {
+                            if(NoOfIterations > MaxIter || NoOfCoupledIteration > MaxCoupledIter) {
                                 break;
                             }
                         }
 
                         NoOfIterations = Iteration_Count(NoOfIterations, ref NoOfCoupledIteration);
 
-                        //DirectSolver ds = new DirectSolver();
-                        //ds.Init(this.CurrentLin);
-                        //double L2_Res = Residual.L2Norm();
                         this.m_LinearSolver.Init(this.CurrentLin);
                         Correction.ClearEntries();
                         if (Correction.Length != Residual.Length)
                             Correction = new double[Residual.Length];
                         this.m_LinearSolver.Solve(Correction, Residual);
-
-                        //if (NoOfIterations > NoCoupledIterations)
-                        //{
-                        //    if (solveVelocity)
-                        //    {
-                        //        Console.WriteLine("stress correction = 0");
-                        //        foreach (int idx in Stresses_idx)
-                        //        {
-                        //            Correction[idx] = 0.0;
-                        //        }
-                        //    }
-                        //    else
-                        //    {
-                        //        Console.WriteLine("velocity correction = 0");
-                        //        foreach (int idx in Velocity_idx)
-                        //        {
-                        //            Correction[idx] = 0.0;
-                        //        }
-                        //    }
-                        //}
 
                         // Residual may be invalid from now on...
                         Solution.AccV(UnderRelax, Correction);
@@ -176,40 +144,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // residual evaluation & callback
                         base.EvalLinearizedResidual(Solution, ref Residual);
                         ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
-
-                        //if (NoOfIterations > NoCoupledIterations)
-                        //{
-
-                        //    double coupledL2Res = 0.0;
-                        //    if (solveVelocity)
-                        //    {
-                        //        foreach (int idx in Velocity_idx)
-                        //        {
-                        //            coupledL2Res += Residual[idx].Pow2();
-                        //        }
-                        //    }
-                        //    else
-                        //    {
-                        //        foreach (int idx in Stresses_idx)
-                        //        {
-                        //            coupledL2Res += Residual[idx].Pow2();
-                        //        }
-                        //    }
-                        //    coupledL2Res = coupledL2Res.Sqrt();
-
-                        //    Console.WriteLine("coupled residual = {0}", coupledL2Res);
-
-                        //    if (solveVelocity && coupledL2Res < this.VelocitySolver_ConvergenceCriterion)
-                        //    {
-                        //        Console.WriteLine("SolveVelocity = false");
-                        //        this.solveVelocity = false;
-                        //    }
-                        //    else if (!solveVelocity && coupledL2Res < this.StressSolver_ConvergenceCriterion)
-                        //    {
-                        //        Console.WriteLine("SolveVelocity = true");
-                        //        this.solveVelocity = true;
-                        //    }
-                        //}
 
                         OnIterationCallback(NoOfIterations, Solution.CloneAs(), Residual.CloneAs(), this.CurrentLin);
                     }

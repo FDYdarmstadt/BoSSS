@@ -179,6 +179,12 @@ namespace bcl.deploy_at {
         /// dependencies to <see cref="targetDirectory"/>.
         /// </summary>
         public void Execute() {
+            Console.WriteLine(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Console.WriteLine(" NO LONGER SUPPORTED!!!");
+            Console.WriteLine(" USE `dotnet publish`");
+            Console.WriteLine(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            return;
+
             
             // Load executable and find all dependencies
             List<string> requiredFiles = new List<string>();
@@ -251,6 +257,11 @@ namespace bcl.deploy_at {
         /// See <see cref="IProgram.PrintUsage"/>.
         /// </summary>
         public void PrintUsage() {
+            Console.WriteLine(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Console.WriteLine(" NO LONGER SUPPORTED!!!");
+            Console.WriteLine(" USE `dotnet publish`");
+            Console.WriteLine(" !!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            Console.WriteLine();
             Console.WriteLine("Usage: bcl deploy-at $binaryFile $target {surpressNative}");
             Console.WriteLine("  Arguments:");
             Console.WriteLine("      binaryFile       An executable, e.g. NSE2b.exe,");

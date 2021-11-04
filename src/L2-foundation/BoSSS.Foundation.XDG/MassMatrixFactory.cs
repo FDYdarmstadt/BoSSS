@@ -531,7 +531,7 @@ namespace BoSSS.Foundation.XDG {
                     int BlockCnt = -1;
                     int[] BlockCell = Result[Species].jSub2jCell;
                     CellMask speciesCells = homie.LevelSetRegions.GetSpeciesMask(Species);
-                    CellQuadrature.GetQuadrature(
+                    var quad = CellQuadrature.GetQuadrature(
                         new int[] { Nnx, Nnx },
                         ctx,
                         scheme.Compile(ctx, quadorder),
@@ -546,21 +546,20 @@ namespace BoSSS.Foundation.XDG {
                             // Del_SaveIntegrationResults
                             // ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-                            for (int i = 0; i < Length; i++) {
+                            for(int i = 0; i < Length; i++) {
                                 int jCell = i0 + i;
                                 BlockCnt++;
 
                                 // insert ID block in agglomeration target cells (if necessary):
                                 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
                                 var Block = MassMatrixBlocksSpc.ExtractSubArrayShallow(BlockCnt, -1, -1);
-                                while (BlockCell[BlockCnt] < jCell) {
+                                while(BlockCell[BlockCnt] < jCell) {
                                     // agglomeration source/target cell that is not cut
                                     // mass matrix is identity (full) or zero (void)
                                     Block.Clear();
-                                    if (speciesCells.Contains(BlockCell[BlockCnt]))
-                                    {
+                                    if(speciesCells.Contains(BlockCell[BlockCnt])) {
                                         // cell is full
-                                        for (int nn = 0; nn < Nnx; nn++) {
+                                        for(int nn = 0; nn < Nnx; nn++) {
                                             Block[nn, nn] = 1.0;
                                         }
                                     }
@@ -579,7 +578,8 @@ namespace BoSSS.Foundation.XDG {
                                         Debug.Assert(Block[n, m] == Block[m, n]);
 #endif
                             }
-                        }).Execute();
+                        });
+                    quad.Execute();
                     // ------------------------------------ quadrature end.
 
                     BlockCnt++;

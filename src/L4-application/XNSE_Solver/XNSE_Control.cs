@@ -38,6 +38,8 @@ using BoSSS.Solution.EnergyCommon;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using ilPSP;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -69,12 +71,23 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// Activation of second level-set.
+        /// Activation of second level-set (fluid/solid boundary)
         /// </summary>
         [DataMember]
         virtual public bool UseImmersedBoundary {
             get;
             set;
+        }
+
+        /// <summary>
+        /// Temporary. Suggestion: Move Rigid body benchmarks to FSI solver in future.
+        /// Sets Parameter for Rigidbody.
+        /// </summary>
+        [DataMember]
+        public XRigid Rigidbody = new XRigid();
+
+        public void SetMaximalRefinementLevel(int maxLvl) {
+            this.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = maxLvl });
         }
 
         /// <summary>
@@ -89,7 +102,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Type of <see cref="XNSE"/>.
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(XNSE);
+            return typeof(XNSE<XNSE_Control>);
         }
 
         /// <summary>
@@ -100,21 +113,15 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// 
+        /// Set Field Options, i.e. the DG degrees
         /// </summary>
-        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity =  FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
             if(VelDegree < 1)
                 throw new ArgumentOutOfRangeException("Velocity degree must be 1 at minimum.");
             
             FieldOptions.Add("Velocity*", new FieldOpts() {
                 Degree = VelDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("FilteredVelocity*", new FieldOpts() {
-                SaveToDB = SaveFilteredVelocity
-            });
-            FieldOptions.Add("SurfaceForceDiagnostic*", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.FALSE
             });
             FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
                 Degree = VelDegree - 1,
@@ -134,14 +141,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = LevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            // the following variable names for the level set will replace the above ones in the new XNSE!
-            //FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
-            //FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
-            //    Degree = LevSetDegree,
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
             FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
                 Degree = LevSetDegree*2,
                 SaveToDB = SaveCurvature
@@ -207,6 +206,10 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public string methodTagLS;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [Obsolete] // really?
         public void SetLevelSetMethod(int method, FourierLevSetControl _FourierControl = null) {
 
             LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
@@ -310,18 +313,21 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// See <see cref="LoggingValues"/>
         /// </summary>
         [DataMember]
         public RefinementStrategy RefineStrategy = RefinementStrategy.constantInterface;
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// desired minimum refinement level at interface
         /// </summary>
         [DataMember]
         public int BaseRefinementLevel = 0;
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// maximum refinement level including additional refinement (contact line, curvature, etc.)
         /// </summary>
         [DataMember]
@@ -329,6 +335,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         /// <summary>
+        /// For legacy solver <see cref="Legacy.XNSE_SolverMain"/>
         /// additional refinement of the navier slip boundary 
         /// </summary>
         [DataMember]
@@ -364,6 +371,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public PhysicalParameters PhysicalParameters = new PhysicalParameters() {
             Material = true,
             IncludeConvection = false,
+            IncludeDiffusion = true,
             mu_A = 1.0,
             mu_B = 1.0,
             rho_A = 1.0,
@@ -386,10 +394,10 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
-        /// <summary>
-        /// defines the number of incremental timesteps in one gloabl timestep (for incrementInit)
-        /// </summary>
-        public int incrementTimesteps = 1;
+        ///// <summary>
+        ///// defines the number of incremental timesteps in one global timestep (for incrementInit)
+        ///// </summary>
+        //public int incrementTimesteps = 1;
 
        
         /// <summary>
@@ -404,14 +412,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public double[] prescribedLSwaveData;
 
-
-        /// <summary>
-        /// The termination criterion for fully coupled/implicit level-set evolution.
-        /// </summary>
-        [DataMember]
-        public double LevelSet_ConvergenceCriterion = 1.0e-6;
-
-
         /// <summary>
         /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
         /// </summary>
@@ -424,12 +424,6 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
 
-
-        /// <summary>
-        /// See <see cref="ContinuityProjection"/>
-        /// </summary>
-        [DataMember]
-        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
         /// <summary>
         /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
@@ -695,6 +689,8 @@ namespace BoSSS.Application.XNSE_Solver {
             c_B = 1.0,
             k_A = 1.0,
             k_B = 1.0,
+            alpha_A = 0.0,
+            alpha_B = 0.0,
         };
 
         /// <summary>
@@ -702,6 +698,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public bool NonlinearCouplingSolidFluid = false;
+
+        [DataMember]
+        public ClassifierType DynamicLoadbalancing_ClassifierType = ClassifierType.Species;
 
 
         /// <summary>
@@ -730,6 +729,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         public override bool Equals(object obj) {
+            //System.Diagnostics.Debugger.Launch();
             if(!base.Equals(obj))
                 return false;
 

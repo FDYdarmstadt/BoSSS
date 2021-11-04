@@ -69,7 +69,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// See <see cref="IGrid.ToString"/>
+        ///
         /// </summary>
         /// <returns></returns>
         public override string ToString() {

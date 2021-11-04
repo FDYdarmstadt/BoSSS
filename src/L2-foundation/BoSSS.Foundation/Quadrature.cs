@@ -32,9 +32,9 @@ namespace BoSSS.Foundation.Quadrature {
     /// </summary>
     public static class Quadrature_Bulksize {
         /// <summary>
-        /// Number of floats (#items * #nodes * #integrals per cell) done at maximum
+        /// Number of cells or edges done at maximum in a singe quadrature chunk
         /// </summary>
-        public static int CHUNK_DATA_LIMIT = 12*1024*1024;
+        public static int CHUNK_LIMIT = 20;//12*1024*1024;
     }
 
     /// <summary>
@@ -218,26 +218,34 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="NoOfItems">number of edges or cells to integrate</param>
         /// <param name="ruleNodes">quadrature rule nodes</param>
         protected virtual void AllocateBuffersInternal(int NoOfItems, NodeSet ruleNodes) {
-            Debug.Assert(ruleNodes.Dimension == 2);
-            if(this.m_ExEvaluate == null) {
-                if(m_EvalResults == null)
-                    m_EvalResults = new MultidimensionalArray(2 + m_IntegralsComponent.Length);
-                m_EvalResults.Allocate(((new int[] { NoOfItems, ruleNodes.GetLength(0) }).Concat(m_IntegralsComponent)).ToArray());
-            }
+            try {
+                Debug.Assert(ruleNodes.Dimension == 2);
+                if (this.m_ExEvaluate == null) {
+                    if (m_EvalResults == null)
+                        m_EvalResults = new MultidimensionalArray(2 + m_IntegralsComponent.Length);
+                    m_EvalResults.Allocate(((new int[] { NoOfItems, ruleNodes.GetLength(0) }).Concat(m_IntegralsComponent)).ToArray());
+                }
 
-            if(m_QuadResults == null)
-                m_QuadResults = new MultidimensionalArray(1 + m_IntegralsComponent.Length);
-            m_QuadResults.Allocate(((new int[] { NoOfItems }).Concat(m_IntegralsComponent)).ToArray());
+                if (m_QuadResults == null)
+                    m_QuadResults = new MultidimensionalArray(1 + m_IntegralsComponent.Length);
+                m_QuadResults.Allocate(((new int[] { NoOfItems }).Concat(m_IntegralsComponent)).ToArray());
 
-            if(this.m_ExEvaluate == null) {
-                m_EvalResultsCollapsed = m_EvalResults.ResizeShallow(
-                    (m_EvalResults.Lengths.Take(2).Concat(new int[] { m_TotalNoOfIntegralsPerItem })).ToArray());
-                m_QuadResultsCollapsed = m_QuadResults.ResizeShallow(
-                    (m_QuadResults.Lengths.Take(1).Concat(new int[] { m_TotalNoOfIntegralsPerItem })).ToArray());
+                if (this.m_ExEvaluate == null) {
+                    m_EvalResultsCollapsed = m_EvalResults.ResizeShallow(
+                        (m_EvalResults.Lengths.Take(2).Concat(new int[] { m_TotalNoOfIntegralsPerItem })).ToArray());
+                    m_QuadResultsCollapsed = m_QuadResults.ResizeShallow(
+                        (m_QuadResults.Lengths.Take(1).Concat(new int[] { m_TotalNoOfIntegralsPerItem })).ToArray());
+                }
+
+                if (m_AllocateBuffers != null)
+                    m_AllocateBuffers(NoOfItems, ruleNodes);
+
+            } catch (OutOfMemoryException oome) {
+                Console.Error.WriteLine($"{oome}: Number of nodes: " + ruleNodes.NoOfNodes);
+                Console.Error.WriteLine($"{oome}: Number of items: " + NoOfItems);
+
+                throw oome;
             }
-            
-            if(m_AllocateBuffers != null)
-                m_AllocateBuffers(NoOfItems, ruleNodes);
         }
 
 
@@ -258,8 +266,8 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         /// <param name="i0">local index of first cell or edge</param>
         /// <param name="Length">number of cells or edges to process</param>
-        /// <param name="QuadNodes">
-        /// Quadrature nodes in reference coordinates.
+        /// <param name="rule">
+        /// Quadrature nodes and weights in reference coordinates.
         /// </param>
         /// <param name="EvalResult">
         /// On exit, the result of the integrand evaluation.
@@ -332,7 +340,7 @@ namespace BoSSS.Foundation.Quadrature {
 
         /// <summary>
         /// - if smaller or equal 0, ignored; (default) 
-        /// - otherwise, an override to the global variable <see cref="Quadrature_Bulksize.CHUNK_DATA_LIMIT"/>
+        /// - otherwise, an override to the global variable <see cref="Quadrature_Bulksize.CHUNK_LIMIT"/>
         /// </summary>
         public int ChunkDataLimitOverride {
             get;
@@ -388,10 +396,11 @@ namespace BoSSS.Foundation.Quadrature {
                     int ItemSize = m_TotalNoOfIntegralsPerItem * NoOfNodes;
                     if(ItemSize <= 0)
                         continue;
-                    int cdl = Quadrature_Bulksize.CHUNK_DATA_LIMIT;
+                    int cdl = Quadrature_Bulksize.CHUNK_LIMIT;
                     if (ChunkDataLimitOverride > 0)
                         cdl = ChunkDataLimitOverride;
-                    int MaxChunkLength = Quadrature_Bulksize.CHUNK_DATA_LIMIT / ItemSize;
+                    //int MaxChunkLength = cdl / ItemSize;
+                    int MaxChunkLength = cdl;
                     if(MaxChunkLength < 1)
                         MaxChunkLength = 1;
 
@@ -701,11 +710,9 @@ namespace BoSSS.Foundation.Quadrature {
         /// limit for the maximum chunk size, i.e. <paramref name="NoOfElm"/> will be bound by <paramref name="Len"/>.
         /// </param>
         protected abstract void NextPart(out bool Linear, out int NoOfElm, int i0, int Len);
-                
+
         /// <summary>
-        /// used by <see cref="CellQuadrature.GetQuadrature"/>,
-        /// <see cref="EdgeQuadrature.GetQuadrature"/> and
-        /// <see cref="CellBoundaryQuadrature{T}.GetQuadrature"/>
+        /// see <see cref="Quadrature{TQuadRule, TDomain}.Evaluate"/>,
         /// </summary>
         public delegate void Del_Evaluate(int i0, int Length, TQuadRule rule, MultidimensionalArray EvalResult);
 

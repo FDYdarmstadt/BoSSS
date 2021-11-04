@@ -114,6 +114,10 @@ namespace BoSSS.Solution.LevelSetTools.FourierLevelSet {
         /// </summary>
         public bool enforceMassConservation = false;
 
+        /// <summary>
+        /// specify which phase should be the "inner", possible choices "A","B"
+        /// </summary>
+        public string innerphase = "A";
 
         /// <summary>
         /// ctr

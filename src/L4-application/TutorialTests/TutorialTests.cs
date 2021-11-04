@@ -29,22 +29,29 @@ namespace BoSSS.Application.TutorialTests {
     static class TutorialTestsMain {
 
         static int Main(string[] args) {
-            AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", "..", "..", "doc", "handbook");
+            AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", ".." ,"..", ".." , "doc", "handbook");
+            
+            if(!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), AllUpTest.DirectoryOffset)))
+                throw new IOException();
 
             // if we enter Main, it seems we are executing the tutorial tests locally...
             // so delete any local tex files since we want to run the scripts from doc/handbook
-            var localTexFiles = (new DirectoryInfo(Directory.GetCurrentDirectory())).GetFiles("*.tex");
-            foreach (var f in localTexFiles) {
-                f.Delete();
+            foreach(string ext in new[] { "*.tex", "*.ipynb" }) {
+                var localTexFiles = (new DirectoryInfo(Directory.GetCurrentDirectory())).GetFiles(ext);
+                foreach(var f in localTexFiles) {
+                    f.Delete();
+                }
             }
 
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
+
+            AllUpTest.Run__MetaJobManager();
+            return 0;
             
             // start the minibatchprocessor which is used internally
-            bool iStartedThisShit = AllUpTest.OneTimeSetUp();
-                    
-            
+            //bool iStartedThisShit = AllUpTest.OneTimeSetUp();
+
             var losScriptos = GetListOfScripts();
             int r = 0;
             int i = 1;
@@ -84,7 +91,7 @@ namespace BoSSS.Application.TutorialTests {
             AllUpTest.Run__ue5NumFluxConv();
 #endif
 */
-            AllUpTest.OneTimeTearDown(iStartedThisShit);
+            //AllUpTest.OneTimeTearDown(iStartedThisShit);
             csMPI.Raw.mpiFinalize();
             return r;
         }

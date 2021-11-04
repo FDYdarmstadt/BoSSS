@@ -522,8 +522,11 @@ namespace BoSSS.Application.Matrix_MPItest {
                 // create the test data
                 // ====================
 
+                ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
                 solver.Init(null);
+                ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
                 solver.RunSolverMode();
+                ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
 
                 Stopwatch stw = new Stopwatch();
                 stw.Reset();
@@ -555,9 +558,16 @@ namespace BoSSS.Application.Matrix_MPItest {
                 //M22.SaveToTextFileSparse(@"C:\tmp\M22.txt");
                 //M22xM21.SaveToTextFileSparse(@"C:\tmp\M22xM21.txt");
 
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
+
+                
                 using (var MatlabRef = new BatchmodeConnector()) {
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
                     MultidimensionalArray CheckRes = MultidimensionalArray.Create(1, 1);
+
 
                     MatlabRef.PutSparseMatrix(M, "M");
                     MatlabRef.PutVector(Bb4, "Bref");
@@ -585,6 +595,9 @@ namespace BoSSS.Application.Matrix_MPItest {
                 Console.WriteLine("Time spend in matrix operations: " + stw.Elapsed.TotalSeconds + " sec.");
 
                 TotTime_MatrixOp += stw.Elapsed;
+
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             }
         }
 

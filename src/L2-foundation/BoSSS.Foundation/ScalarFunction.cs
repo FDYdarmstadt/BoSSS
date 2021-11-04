@@ -24,11 +24,11 @@ namespace BoSSS.Foundation {
     /// vectorized definition.
     /// </summary>
     /// <param name="input">positions in space at which the function should be evaluated;
-    /// 1st index: point index;
-    /// 2nd index: spatial coordinate vector (from 0 to D-1);
+    /// - 1st index: point index;
+    /// - 2nd index: spatial coordinate vector (from 0 to D-1);
     /// </param>
     /// <param name="output">result of function evaluation;
-    /// 1st index: point index, corresponds with 1st index of <paramref name="input"/>
+    /// - 1st index: point index, corresponds with 1st index of <paramref name="input"/>
     /// </param>
     public delegate void ScalarFunction(MultidimensionalArray input, MultidimensionalArray output);
 
@@ -37,11 +37,11 @@ namespace BoSSS.Foundation {
     /// vectorized definition.
     /// </summary>
     /// <param name="input">positions in space at which the function should be evaluated;
-    /// 1st index: point index;
-    /// 2nd index: spatial coordinate vector (from 0 to D-1);
+    /// - 1st index: point index;
+    /// - 2nd index: spatial coordinate vector (from 0 to D-1);
     /// </param>
     /// <param name="output">result of function evaluation;
-    /// 1st index: point index, corresponds with 1st index of <paramref name="input"/>
+    /// - 1st index: point index, corresponds with 1st index of <paramref name="input"/>
     /// </param>
     /// <param name="time">
     /// time

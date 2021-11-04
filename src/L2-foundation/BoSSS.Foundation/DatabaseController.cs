@@ -52,11 +52,11 @@ namespace BoSSS.Foundation.IO {
         /// A fully qualified path.
         /// </param>
         /// <returns>
-        /// If <paramref name="path"/> starts with 'sftp', an
-        /// <see cref="SFTPFileSystemDriver"/> will be used. If the path is
-        /// null, <see cref="NullFileSystemDriver"/> will be used. Otherwise,
-        /// a local path will be assumed, which thus makes use of
-        /// <see cref="StandardFsDriver"/>
+        /// - If the path is
+        ///   null, <see cref="NullFileSystemDriver"/> will be used. 
+        /// - Otherwise,
+        ///   a local path will be assumed, which thus makes use of
+        ///   <see cref="StandardFsDriver"/>
         /// </returns>
         public static IFileSystemDriver GetFileSystemDriver(string path) {
 
@@ -511,6 +511,7 @@ namespace BoSSS.Foundation.IO {
         /// system.
         /// </summary>
         /// <param name="timestep">The time-step to be deleted.</param>
+        /// <param name="remove">if true, the timestep is also un-linked from the session</param>
         public void DeleteTimestep(ITimestepInfo timestep, bool remove) {
             string path = Path.Combine(
                 Path.Combine(timestep.Database.Path, "timesteps"),
@@ -734,7 +735,7 @@ namespace BoSSS.Foundation.IO {
         /// i.e. the copy operation is only performed 
         /// if the grid does not yet exist in the target database
         /// </summary>
-        /// <param name="grid">The grid to copy</param>
+        /// <param name="gridInfo">The grid to copy</param>
         /// <param name="dest">The target database</param>
         /// <returns>
         /// An IGridInfo object referring to the grid in the target database

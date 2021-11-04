@@ -10,12 +10,17 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver {
 
+    /// <summary>
+    /// 
+    /// </summary>
+    [Serializable]
+    class InterfacePointsLogger : InterfacePointsLogger<XNSE_Control> { }
 
     /// <summary>
     /// 
     /// </summary>
     [Serializable]
-    class InterfacePointsLogger : XNSEinSituPostProcessingModule {
+    class InterfacePointsLogger<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
         
         /// <summary>
         /// 

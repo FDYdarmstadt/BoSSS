@@ -303,111 +303,113 @@ namespace BoSSS.Foundation.XDG {
             where M : IMutableMatrixEx //
             where T : IList<double> //
         {
-            MPICollectiveWatchDog.Watch();
-            //var mtxS = GetFrameMatrices(Matrix, RowMap, ColMap);
+            using(var Ft = new FuncTrace()) {
+                MPICollectiveWatchDog.Watch();
+                //var mtxS = GetFrameMatrices(Matrix, RowMap, ColMap);
 
-            if (Matrix == null && Rhs == null)
-                // nothing to do
-                return;
+                if(Matrix == null && Rhs == null)
+                    // nothing to do
+                    return;
 
-            if (TotalNumberOfAgglomerations <= 0)
-                // nothing to do
-                return;
+                if(TotalNumberOfAgglomerations <= 0)
+                    // nothing to do
+                    return;
 
-            if (RowMapAggSw != null)
-                throw new NotImplementedException();
+                if(RowMapAggSw != null)
+                    throw new NotImplementedException();
 
-            // generate agglomeration sparse matrices
-            // ======================================
+                // generate agglomeration sparse matrices
+                // ======================================
 
-            int RequireRight;
-            if (Matrix == null) {
-                // we don't need multiplication-from-the-right at all
-                RequireRight = 0;
-            } else {
-                if (RowMap.EqualsUnsetteled(ColMap) && ArrayTools.ListEquals(ColMapAggSw, RowMapAggSw)) {
-                    // we can use the same matrix for right and left multiplication
-                    RequireRight = 1;
-
+                int RequireRight;
+                if(Matrix == null) {
+                    // we don't need multiplication-from-the-right at all
+                    RequireRight = 0;
                 } else {
-                    // separate matrix for the multiplication-from-the-right is required
-                    RequireRight = 2;
+                    if(RowMap.EqualsUnsetteled(ColMap) && ArrayTools.ListEquals(ColMapAggSw, RowMapAggSw)) {
+                        // we can use the same matrix for right and left multiplication
+                        RequireRight = 1;
+
+                    } else {
+                        // separate matrix for the multiplication-from-the-right is required
+                        RequireRight = 2;
+                    }
                 }
-            }
 
-            BlockMsrMatrix LeftMul = null, RightMul = null;
-            {
+                BlockMsrMatrix LeftMul = null, RightMul = null;
+                {
 
-                foreach (var kv in DictAgglomeration) {
-                    var Species = kv.Key;
-                    var m_Agglomerator = kv.Value;
+                    foreach(var kv in DictAgglomeration) {
+                        var Species = kv.Key;
+                        var m_Agglomerator = kv.Value;
 
-                    if (m_Agglomerator != null) {
+                        if(m_Agglomerator != null) {
 
-                        CellMask spcMask = this.Tracker.Regions.GetSpeciesMask(Species);
+                            CellMask spcMask = this.Tracker.Regions.GetSpeciesMask(Species);
 
-                        MiniMapping rowMini = new MiniMapping(RowMap, Species, this.Tracker.Regions);
-                        BlockMsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask);
-                        if (LeftMul == null) {
-                            LeftMul = LeftMul_Species;
-                        } else {
-                            LeftMul.Acc(1.0, LeftMul_Species);
-                        }
-
-
-                        if (!object.ReferenceEquals(LeftMul, RightMul) && RightMul != null) {
-                            MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
-                            BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask);
-
-                            if (RightMul == null) {
-                                RightMul = RightMul_Species;
+                            MiniMapping rowMini = new MiniMapping(RowMap, Species, this.Tracker.Regions);
+                            BlockMsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask);
+                            if(LeftMul == null) {
+                                LeftMul = LeftMul_Species;
                             } else {
-                                RightMul.Acc(1.0, RightMul_Species);
+                                LeftMul.Acc(1.0, LeftMul_Species);
                             }
 
-                        } else if (RequireRight == 1) {
-                            RightMul = LeftMul;
-                        } else {
-                            RightMul = null;
+
+                            if(!object.ReferenceEquals(LeftMul, RightMul) && RightMul != null) {
+                                MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
+                                BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask);
+
+                                if(RightMul == null) {
+                                    RightMul = RightMul_Species;
+                                } else {
+                                    RightMul.Acc(1.0, RightMul_Species);
+                                }
+
+                            } else if(RequireRight == 1) {
+                                RightMul = LeftMul;
+                            } else {
+                                RightMul = null;
+                            }
                         }
                     }
                 }
-            }
 
-            // apply the agglomeration to the matrix
-            // =====================================
+                // apply the agglomeration to the matrix
+                // =====================================
 
-            if (Matrix != null) {
-                BlockMsrMatrix RightMulTr = RightMul.Transpose();
+                if(Matrix != null) {
+                    BlockMsrMatrix RightMulTr = RightMul.Transpose();
 
-                BlockMsrMatrix _Matrix;
-                if (Matrix is BlockMsrMatrix) {
-                    _Matrix = (BlockMsrMatrix)((object)Matrix);
-                } else {
-                    _Matrix = Matrix.ToBlockMsrMatrix(RowMap, ColMap);
+                    BlockMsrMatrix _Matrix;
+                    if(Matrix is BlockMsrMatrix) {
+                        _Matrix = (BlockMsrMatrix)((object)Matrix);
+                    } else {
+                        _Matrix = Matrix.ToBlockMsrMatrix(RowMap, ColMap);
+                    }
+
+                    var AggMatrix = BlockMsrMatrix.Multiply(LeftMul, BlockMsrMatrix.Multiply(_Matrix, RightMulTr));
+
+                    if(object.ReferenceEquals(_Matrix, Matrix)) {
+                        _Matrix.Clear();
+                        _Matrix.Acc(1.0, AggMatrix);
+                    } else {
+                        Matrix.Acc(-1.0, _Matrix); //   das ist so
+                        Matrix.Acc(1.0, AggMatrix); //  meagaschlecht !!!!!!
+                    }
                 }
 
-                var AggMatrix = BlockMsrMatrix.Multiply(LeftMul, BlockMsrMatrix.Multiply(_Matrix, RightMulTr));
+                // apply the agglomeration to the Rhs
+                // ==================================
 
-                if (object.ReferenceEquals(_Matrix, Matrix)) {
-                    _Matrix.Clear();
-                    _Matrix.Acc(1.0, AggMatrix);
-                } else {
-                    Matrix.Acc(-1.0, _Matrix); //   das ist so
-                    Matrix.Acc(1.0, AggMatrix); //  meagaschlecht !!!!!!
+                if(Rhs != null) {
+
+                    double[] tmp = Rhs.ToArray();
+                    if(object.ReferenceEquals(tmp, Rhs))
+                        throw new ApplicationException("Flache kopie sollte eigentlich ausgeschlossen sein!?");
+
+                    LeftMul.SpMV(1.0, tmp, 0.0, Rhs);
                 }
-            }
-
-            // apply the agglomeration to the Rhs
-            // ==================================
-
-            if (Rhs != null) {
-
-                double[] tmp = Rhs.ToArray();
-                if (object.ReferenceEquals(tmp, Rhs))
-                    throw new ApplicationException("Flache kopie sollte eigentlich ausgeschlossen sein!?");
-
-                LeftMul.SpMV(1.0, tmp, 0.0, Rhs);
             }
         }
 
@@ -821,9 +823,6 @@ namespace BoSSS.Foundation.XDG {
 
                     // pass 1: determine agglomeration sources
                     // ---------------------------------------
-
-
-
                     List<int> AgglomCellsList = new List<int>();
                     {
                         // for the present timestep
@@ -1135,8 +1134,8 @@ namespace BoSSS.Foundation.XDG {
                                 iEdge--;
 
                                 double EdgeArea_iEdge = edgeArea[iEdge];
-
-                                _AgglomCellsEdges[iEdge] = true;
+                                
+                                _AgglomCellsEdges[iEdge] = true;                                
 
                                 Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
 
@@ -1149,10 +1148,10 @@ namespace BoSSS.Foundation.XDG {
                                 }
                                 //passed1[e] = true;
                                 //isAggCandidate[e] = AggCandidates[jCellNeigh];
-                                if (!AggCandidates[jCellNeigh])
+                                if (jCellNeigh < 0 || !AggCandidates[jCellNeigh])
                                     // not suitable for agglomeration
                                     continue;
-
+                                
                                 // volume fraction of neighbour cell
                                 double spcVol_neigh = CellVolumes[jCellNeigh];
                                 //double totVol_neigh = RefVolumes[grdDat.Cells.GetRefElementIndex(jCellNeigh)]; 
@@ -1230,9 +1229,10 @@ namespace BoSSS.Foundation.XDG {
                             FailedViz.SetMeanValue(j, 1);
                         }
 
+                        DGField[] LevelSets = Tracker.LevelSets.Select(s => (DGField)s).ToArray();
 
                         if (Katastrophenplot != null)
-                            Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, Tracker.LevelSets[0]));
+                            Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, LevelSets));
 
                         string message = ("Agglomeration failed - no candidate for agglomeration found");
                         if (ExceptionOnFailedAgglomeration)

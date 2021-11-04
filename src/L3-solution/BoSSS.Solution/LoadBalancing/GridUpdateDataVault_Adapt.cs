@@ -507,7 +507,12 @@ namespace BoSSS.Solution {
                             this.RestoreDGField(tmpLS[iLS], base.GetLSbackupName(iH, iLS));
                         }
 
-                        m_NewTracker.ReplaceCurrentTimeLevel(tmpLS, m_LsTrkPrivData.Versions[1 - iH], m_LsTrkPrivData.Times[1 - iH]);
+                        m_NewTracker.ReplaceCurrentTimeLevel(
+                            new LevelSetTracker.EssentialTrackerBackup() {
+                                LevelSets = tmpLS,
+                                Version = m_LsTrkPrivData.Versions[1 - iH],
+                                time = m_LsTrkPrivData.Times[1 - iH]
+                            });
 
                         if (iH < 1) {
                             m_NewTracker.PushStacks();

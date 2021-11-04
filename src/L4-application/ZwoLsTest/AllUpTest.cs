@@ -25,11 +25,6 @@ namespace BoSSS.Application.ZwoLsTest {
     [TestFixture]
     static public class AllUpTest {
 
-        [OneTimeSetUp]
-        static public void SetUp()
-        {
-            BoSSS.Solution.Application.InitMPI();
-        }
 
         [Test]
         static public void AllUp([Values(0.0, 0.3)] double AggTresh,

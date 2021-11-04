@@ -14,7 +14,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// in-situ post-processing for <see cref="CapillaryRise"/>
     /// </summary>
     [Serializable]
-    public class CapillaryHeightLogging : XNSEinSituPostProcessingModule {
+    public class CapillaryHeightLogging : CapillaryHeightLogging<XNSE_Control> { 
+    }
+
+    /// <summary>
+    /// in-situ post-processing for <see cref="CapillaryRise"/>
+    /// </summary>
+    [Serializable]
+    public class CapillaryHeightLogging<T> : XNSEinSituPostProcessingModule<T> where T:XNSE_Control, new() {
         
         /// <summary>
         /// filename

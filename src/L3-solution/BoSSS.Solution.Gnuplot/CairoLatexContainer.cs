@@ -205,6 +205,7 @@ namespace BoSSS.Solution.Gnuplot {
             }
         }
 
+        /*
         /// <summary>
         /// Compiles the Latex document (to pdf or eps, depending on <see cref="CairolatexContainer.PdfLatex"/>),
         /// and converts the output to a png image, which can be previewed in BoSSSpad.
@@ -283,6 +284,7 @@ namespace BoSSS.Solution.Gnuplot {
                 throw new NotImplementedException("Todo: implement conversion using 'dvipng' tool.");
             }
         }
+        */
     }
 
 

@@ -7,6 +7,7 @@ using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Classic;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.IO
 {
@@ -213,10 +214,9 @@ namespace BoSSS.Foundation.IO
             }
         }
 
-        public IGrid DeserializeGrid(Guid gridGuid)
-        {
-            using (Stream s = GetGridStream(false, gridGuid))
-            {
+        public IGrid DeserializeGrid(Guid gridGuid) {
+            //Debugger.Launch();
+            using(Stream s = GetGridStream(false, gridGuid)) {
                 IGrid grid = (IGrid)Driver.Deserialize(s, typeof(IGrid));
                 return grid;
             }

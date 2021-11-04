@@ -92,7 +92,7 @@ namespace ilPSP.LinSolvers.HYPRE {
 
             
             // matrix: init
-            MPI_Comm comm = csMPI.Raw._COMM.WORLD;
+            MPI_Comm comm = mtx.RowPartitioning.MPI_Comm;
             int ilower = (int) mtx.RowPartitioning.i0;
             int iupper = (int) ilower + mtx.RowPartitioning.LocalLength - 1;
             int jlower = (int) mtx.ColPartition.i0;

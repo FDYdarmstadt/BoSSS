@@ -29,6 +29,8 @@ using ilPSP.Utils;
 using ilPSP;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Foundation.Grid.Aggregation;
+using BoSSS.Foundation.Grid;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -78,7 +80,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             LevelSetTracker LsTrk,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
             ISpatialOperator abstractOperator,
-            DelUpdateLevelset _UpdateLevelset,
+            Func<ISlaveTimeIntegrator> _UpdateLevelset,
             RungeKuttaScheme _RKscheme,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
@@ -173,11 +175,25 @@ namespace BoSSS.Solution.XdgTimestepping {
             BlockMsrMatrix[] MassMatrixStack,
             double[][] k) {
 
+            double evo_dt = PhysTime + dt - this.m_LsTrk.Regions.Time;
+            
+
+            //Console.WriteLine();
+            //Console.WriteLine("  MoveLevelSetAndRelatedStuff:");
+            //Console.WriteLine("     time in tracker: " + this.m_LsTrk.Regions.Time);
+            //Console.WriteLine("     PhysTime:        " + PhysTime);
+            //Console.WriteLine("     Full dt:         " + dt);
+            //Console.WriteLine("     Target time:     " + (PhysTime + dt));
+            //Console.WriteLine("     Corrected dt:    " + evo_dt);
+            //Console.WriteLine("  - - - - - - -- - - - - - - - - - - - - - - - ");
+            
+
+
 
             // level-set evolution
             int oldPushCount = m_LsTrk.PushCount;
             int oldVersion = m_LsTrk.VersionCnt;
-            m_LastLevelSetResidual = this.UpdateLevelset(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
+            m_LastLevelSetResidual = this.UpdateLevelset().Update(locCurSt, this.m_LsTrk.Regions.Time, evo_dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
             int newVersion = m_LsTrk.VersionCnt;
             int newPushCount = m_LsTrk.PushCount;
 
@@ -186,6 +202,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (oldPushCount != newPushCount) {
                 throw new ApplicationException("Pushing the history stacks of the level-set tracker is reserved to the timestepper (during one timestep).");
             }
+
+            if(!this.m_LsTrk.Regions.Time.ApproxEqual(PhysTime + dt))
+                throw new ApplicationException($"Internal algorithm inconsistency: Error in Level-Set tracker time; expecting time {PhysTime + dt}, but most recent tracker time is {this.m_LsTrk.Regions.Time}");
+
 
 
             if (MassMatrixStack != null && MassMatrixStack.Length > 1) {
@@ -357,7 +377,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - true: solver algorithm successfully converged
         /// - false: something went wrong
         /// </returns>
-        public bool Solve(double phystime, double dt) {
+        override public bool Solve(double phystime, double dt) {
 
             Debug.Assert(m_RKscheme.c.Length == m_RKscheme.a.GetLength(0));
             Debug.Assert(m_RKscheme.b.Length == m_RKscheme.a.GetLength(1));
@@ -445,13 +465,26 @@ namespace BoSSS.Solution.XdgTimestepping {
             double[][] k = new double[m_RKscheme.Stages][];
             bool success = true;
             for (int s = 0; s < m_RKscheme.Stages; s++) {
-                success = success && RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
+                bool stageSuccess = RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
+                success = success && stageSuccess;
                 k[s] = new double[this.CurrentStateMapping.LocalLength];
                 UpdateChangeRate(phystime + dt * m_RKscheme.c[s], k[s]);
             }
 
+            // use eps embedded method, necessary when time derivative vanishes i.e. in Conti-Eq
+            // works when employing a stiffly accurate method, therefore check here the s.a. condition
+            bool StifflyAccurate = true;
+            StifflyAccurate &= m_RKscheme.c.Last().ApproxEqual(1.0);
+            for (int s = 0; s < m_RKscheme.Stages; s++) {
+                StifflyAccurate &= m_RKscheme.b[s].ApproxEqual(m_RKscheme.a[m_RKscheme.Stages - 1, s]);
+            }
+
             // final stage
-            RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
+            if (StifflyAccurate) {
+                // For stiffly accurate methods, the last intermediate value is already the final value
+            } else {
+                RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
+            }
 
             // ===========================================
             // update level-set (in the case of splitting)
@@ -482,14 +515,17 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
 
             m_CurrentPhystime = phystime + dt;
-            
+
+            if(Config_LevelSetHandling == LevelSetHandling.None) {
+                m_LsTrk.UpdateTracker(m_CurrentPhystime); // call is required to bring the internal time-stamp up-to-date;
+            }
+
             return success;
         }
 
         double m_CurrentPhystime;
 
-        private bool RKstage(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0,
-            double ActualLevSetRelTime) {
+        private bool RKstage(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime) {
 
             // detect whether the stage s is explicit or not: (implicit schemes can have some explicit stages too)
             bool isExplicit = m_RKscheme.a[s, s] == 0;
@@ -648,7 +684,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
 
                 //MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, 1.0);
-                if (Math.Abs(m_ImplStParams.m_ActualLevSetRelTime - m_ImplStParams.m_RelTime) > 1.0e-14) {
+                if (!m_ImplStParams.m_ActualLevSetRelTime.ApproxEqual(m_ImplStParams.m_RelTime)) {
                     if (m_ImplStParams.m_IterationCounter <= 0)// only push tracker in the first iter
                         m_LsTrk.PushStacks();
                     MoveLevelSetAndRelatedStuff(locCurSt,
@@ -657,6 +693,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     // note that we need to update the agglomeration
                     updateAgglom = true;
+                } else {
+                    //Console.WriteLine("skipping");
                 }
             }
 
@@ -846,7 +884,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
                     // move level-set:
-                    if(Math.Abs(ActualLevSetRelTime - RelTime) > 1.0e-14) {
+                    if(Math.Abs(ActualLevSetRelTime - RelTime) > 1.0e-14) { // Note: 'RelTime' is a relative time, i.e. between 0 and 1; comparing with absolute threshold is ok
 
                         this.m_LsTrk.PushStacks();
                         this.MoveLevelSetAndRelatedStuff(u0.Mapping.Fields.ToArray(), PhysTime, dt * RelTime, IterUnderrelax, Mass, k);
@@ -919,18 +957,14 @@ namespace BoSSS.Solution.XdgTimestepping {
                     throw new NotImplementedException();
                 }
 
-                // Inverse mass matrix * k: Zum Vergleich mit CNS IBMSplitRungeKutta
-                // BlockSolve(System bzw. mass matrix, double[], k[0])
-
-                //Console.WriteLine(String.Format("\nk[0]: L2-Norm of change rate = {0}", k[0].L2Norm()));
-                //k[0].SaveToTextFile(String.Format("k_CHANGERATE_{0}.txt", count));
-
-            
+               
 
                 // solve system
                 if (System != null) {
                     Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                     m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, RHS, this.CurrentStateMapping, this.CurrentStateMapping);
+
+                    
                     BlockSol(System, m_CurrentState, RHS);
                     m_CurrentAgglomeration.Extrapolate(this.CurrentStateMapping);
                 } else {
@@ -947,7 +981,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_CurrentState.Acc(1.0, u0);
             }
         }
-
+     
         /// <summary>
         /// Evaluation of only the spatial operator 
         /// </summary>
@@ -977,12 +1011,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             var basisS = this.CurrentStateMapping.BasisS.ToArray();
             int NoOfVars = basisS.Length;
 
+            double rhsTol = Math.Max(B.L2NormPow2() * (BLAS.MachineEps * 100), Math.Max(BLAS.MachineEps * 10, X.L2NormPow2() * (BLAS.MachineEps * 100))).MPIMax();
+
             MultidimensionalArray Block = null;
             double[] x = null, b = null;
 #if DEBUG
             var unusedIndex = new System.Collections.BitArray(B.Count);
 #endif
 
+           
             for (int j = 0; j < J; j++) { // loop over cells...
 
                 for(int iVar = 0; iVar < NoOfVars; iVar++) {
@@ -1002,23 +1039,41 @@ namespace BoSSS.Solution.XdgTimestepping {
                     M.ReadBlock(bS + M._RowPartitioning.i0, bS + M._ColPartitioning.i0, Block);
 
                     // extract part of RHS
+                    double broblems = 0.0;
                     for(int iRow = 0; iRow < Nj; iRow++) {
                         bool ZeroRow = Block.GetRow(iRow).L2NormPow2() == 0;
                         b[iRow] = B[iRow + bS];
 
                         if(ZeroRow) {
-                            if(b[iRow] != 0.0)
-                                throw new ArithmeticException();
-                            else
-                                Block[iRow, iRow] = 1.0;
+                            //if(b[iRow] != 0.0)
+                            //    //throw new ArithmeticException("RHS entry in zero row is " + b[iRow]);
+                                
+                            //else
+                                
+                            Block[iRow, iRow] = 1.0;
+
+                            broblems += b[iRow].Pow2();
+                            b[iRow] = 0.0;
                         }
 #if DEBUG
                         unusedIndex[iRow + bS] = true;
 #endif
                     }
+                    if(broblems > rhsTol) {
+                        //
+                        // Note: If the LHS/Matrix is zero, also the RHS must be zero, otherwise the linear problem has NO solution.
+                        //       For incompressible NSE, the mass-matrix block related to pressure is zero.
+                        //       The operator evaluation, i.e. the RHS contains the continuity equation residual and is typically small, but non-zero.
+                        //       Therefore, we can only test using a tolerance. 
+                        //
+
+                        throw new ArithmeticException($"RHS entry in zero row of magnitude {broblems.Sqrt()}, (cell {j}, variable {iVar})");
+                    }
+
 
                     // solve
                     Block.SolveSymmetric(x, b);
+
 
                     // store solution
                     for(int iRow = 0; iRow < Nj; iRow++) {
@@ -1026,6 +1081,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
                 }
             }
+
+
+
 #if DEBUG
             for(int i = 0; i < unusedIndex.Length; i++)
                 if(unusedIndex[i] == false && B[i] != 0.0)

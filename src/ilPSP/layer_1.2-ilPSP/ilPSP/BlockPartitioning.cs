@@ -180,6 +180,29 @@ namespace ilPSP {
             ConstructorCommon(FrameBlockSize, _Subblk_i0, _SubblkLen, _BlockType, MpiComm);
         }
 
+        /// <summary>
+        /// Creates a local clone of this object, which lives only on the MPI_SELF communicator.
+        /// </summary>
+        public BlockPartitioning GetLocalBlockPartitioning() {
+
+            int J = this.LocalNoOfBlocks;
+            int L = this.LocalLength;
+
+            int[][] _Subblk_i0 = this.m_Subblk_i0.Select(int_array => int_array.CloneAs()).ToArray();
+            int[][] _SubblkLen = this.m_SubblkLen.Select(int_array => int_array.CloneAs()).ToArray();
+            int[] _blockType = this.m_BlockType.CloneAs();
+
+            int FrameBlockSize;
+            if(this.AllBlockSizesEqual)
+                FrameBlockSize = GetBlockLen(FirstBlock);
+            else
+                FrameBlockSize = -1;
+
+            return new BlockPartitioning(L, FrameBlockSize, _Subblk_i0, _SubblkLen, _blockType, csMPI.Raw._COMM.SELF);
+        }
+
+
+
         private void ConstructorCommon(int FrameBlockSize, int[][] _Subblk_i0, int[][] _SubblkLen, int[] _BlockType, MPI_Comm MpiComm) {
             MPICollectiveWatchDog.Watch(MpiComm);
             int LocalLength = base.LocalLength;
@@ -377,8 +400,8 @@ namespace ilPSP {
         /// Block index.
         /// </param>
         /// <returns>
-        /// The block type, 
-        /// an index into <see cref="BlockLen"/>, <see cref="Subblk_i0"/>, <see cref="SubblkLen"/>.
+        /// The block type, which can e.g. be used as an argument for 
+        /// an index into <see cref="GetSubblkLen"/> and <see cref="GetSubblk_i0(int)"/>.
         /// </returns>
         public int GetBlockType(long iBlock) {
             m_BlocksPartition.TestIfInLocalRange(iBlock);

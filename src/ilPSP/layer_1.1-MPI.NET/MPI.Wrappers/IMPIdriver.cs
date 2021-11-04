@@ -77,6 +77,12 @@ namespace MPI.Wrappers {
 
 
         /// <summary>
+        /// Sends data from one process to all other processes in a communicator 
+        /// </summary>
+        void Scatter(IntPtr sendbuf, int sendcount, MPI_Datatype sendtype, IntPtr recvbuf, int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm);
+
+
+        /// <summary>
         /// MPI_ALLGATHERV can be thought of as MPI_GATHERV, but where all
         /// processes receive the result, instead of just the root. The block of
         /// data sent from the j-th process is received by every process and
@@ -356,11 +362,14 @@ namespace MPI.Wrappers {
         /// allocated by a nonblocking communication operation, then it is
         /// deallocated and the request handle is set to MPI_REQUEST_NULL.
         /// </summary>
-        /// <param name="count"></param>
-        /// <param name="array_of_requests"></param>
-        /// <param name="index"></param>
-        /// <param name="status"></param>
         void Waitany(int count, MPI_Request[] array_of_requests, out int index, out MPI_Status status);
+
+
+        /// <summary>
+        /// Waits for an <see cref="MPI_Request"/> to complete
+        /// </summary>
+        void Wait(ref MPI_Request request, out MPI_Status status);
+
 
         /// <summary>
         /// Return the parent communicator for this process.

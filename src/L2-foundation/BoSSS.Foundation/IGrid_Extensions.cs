@@ -242,6 +242,17 @@ namespace BoSSS.Foundation.Grid {
             foreach(string EdgeTagName in EdgeTagNamesToEnsure) {
                 g.AddEdgeTag(EdgeTagName);
             }
+
+            {
+                string[] allBndys = g.EdgeTagNames.Values.ToArray();
+                string[][] allBndys_allProcs = allBndys.MPIAllGatherO();
+
+                for(int r = 0; r < allBndys_allProcs.Length; r++) {
+                    if(!allBndys_allProcs[r].SetEquals(allBndys)) {
+                        throw new ApplicationException("Internal Error: mismatch in edge tag names among MPI processors.");
+                    }
+                }
+            }
         }
 
         private static byte[] SyncEdgeTagsOverMPI(Dictionary<string, byte> EdgeTagNames_Reverse) {
@@ -270,6 +281,8 @@ namespace BoSSS.Foundation.Grid {
                 throw new ApplicationException("Running out of edge tags.");
             }
 
+
+            // collect everything on rank 0, sync and broadcast:
 
             if (MyRank == 0) {
 
@@ -304,6 +317,8 @@ namespace BoSSS.Foundation.Grid {
                         AnyTranslation = AnyTranslation | (oldVal != newVal);
                         EdgeTagNames_Reverse[kv.Key] = newVal;
                         EtTanslations[oldVal] = newVal;
+                    } else {
+                        EdgeTagNames_Reverse.Add(kv.Key, kv.Value);
                     }
                 }
             }

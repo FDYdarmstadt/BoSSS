@@ -147,6 +147,12 @@ namespace BoSSS.PlotGenerator {
         public int SuperSampling = 0;
 
         /// <summary>
+        /// Plot <see cref="BoSSS.Foundation.XDG.XDGField"/> specieswise
+        /// </summary>
+        [DataMember]
+        public bool PlotShadowFields = false;
+
+        /// <summary>
         /// The selected reconstruction type
         /// </summary>
         [DataMember]

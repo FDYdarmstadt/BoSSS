@@ -1627,7 +1627,6 @@ namespace BoSSS.Foundation {
 
                                 ne.m_outputBndEdge = outputBndEdge;
 
-
                                 ne.Execute();
 
                                 ne.m_Output = null;
@@ -1793,7 +1792,11 @@ namespace BoSSS.Foundation {
 
                     // volume integration
                     // ------------------
+                    
+
+                    
                     SpatialOperator _Owner = (SpatialOperator)this.Owner;
+                    
                     if(volRule.Any() && DoVolume) {
                         using(new BlockTrace("Volume_Integration_(new)", tr)) {
                             var mtxBuilder = new LECVolumeQuadrature2<M, V>(_Owner);
@@ -1806,14 +1809,15 @@ namespace BoSSS.Foundation {
                     } else {
                         //tr.Info("volume integration skipped: cell mask is empty");
                     }
+                    //*/
 
                     // edge integration
                     // ----------------
+                    
                     if(!edgeRule.IsNullOrEmpty() && DoEdge) {
                         using(new BlockTrace("Edge_Integration_(new)", tr)) {
                             var mxtbuilder2 = new LECEdgeQuadrature2<M, V>(_Owner);
                             mxtbuilder2.m_alpha = alpha;
-                            //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!! Reminder: Edge integration skipped");
                             mxtbuilder2.Execute(edgeRule, CodomainMapping, Parameters, DomainMapping, OnlyAffine ? default(M) : Matrix, AffineOffset, time);
                         }
                     }

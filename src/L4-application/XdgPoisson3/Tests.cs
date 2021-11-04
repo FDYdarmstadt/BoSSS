@@ -115,7 +115,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             Slope for StencilCondNo-bndyCut-Var0: 0e00             
             */
 
-            ConditionNumberScalingTest.Perform(Controls, plotAndWait:true, title: "ScalingCircle2D");
+            ConditionNumberScalingTest.Perform(Controls, plot:true, title: "ScalingCircle2D");
         }
     }
 }

@@ -1,18 +1,7 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{13585226-5046-494D-947C-B97479566081}</ProjectGuid>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BoSSS.Foundation.Grid</RootNamespace>
-    <AssemblyName>BoSSS.Foundation.Grid</AssemblyName>
-    <FileAlignment>512</FileAlignment>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <UpgradeBackupLocation />
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
@@ -28,174 +17,40 @@
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <DocumentationFile>bin\Release\BoSSS.Foundation.Grid.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Grid1D.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Grid2D.cs" />
-    <Compile Include="Grid3D.cs" />
-    <Compile Include="GridRefinementController.cs" />
-    <Compile Include="OpenFOAMGrid.cs" />
-    <Compile Include="VoronoiMeshing\Boundary.cs" />
-    <Compile Include="VoronoiMeshing\Converter\BoundaryConverter.cs" />
-    <Compile Include="VoronoiMeshing\Converter\BoundaryFace.cs" />
-    <Compile Include="VoronoiMeshing\Converter\EdgePairer.cs" />
-    <Compile Include="VoronoiMeshing\Corner.cs" />
-    <Compile Include="VoronoiMeshing\ILocatable.cs" />
-    <Compile Include="VoronoiMeshing\IMesh.cs" />
-    <Compile Include="VoronoiMeshing\MatlabColorPalette.cs" />
-    <Compile Include="VoronoiMeshing\MatlabPlotter.cs" />
-    <Compile Include="VoronoiMeshing\ICopyable.cs" />
-    <Compile Include="VoronoiMeshing\Converter\IVoronoiNodeCastable.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryEdgeEnumerator.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\CornerCleaner.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\MeshEdgeDivider.cs" />
-    <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverterMap.cs" />
-    <Compile Include="VoronoiMeshing\Converter\PeriodicBoundaryConverter.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\NodeLocation.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicCornerBoundaryAssigner.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicMap.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicMapGenerator.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryCellMerger.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryElementEnumerator.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryRecomposer.cs" />
-    <Compile Include="VoronoiMeshing\BoundaryTransformation.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\CellDetacher.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\CellPairCollection.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\ReverseEnumerator.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\Convolution.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\ConvolutionEnumerator.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\CountingEnumerable.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\Pairr.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\ArrayMethods.cs" />
-    <Compile Include="VoronoiMeshing\MeshElementCloner.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\BoundaryLineEnumerator.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\Divider.cs" />
-    <Compile Include="VoronoiMeshing\BoundaryLine.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\CutterState.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\Intersectioncase.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\ArrayEnumerator.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\ArrayMap.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\CountingEnumerator.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\CyclicInterval.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\Cutter.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\OnEdgeCutter.cs" />
-    <Compile Include="VoronoiMeshing\DataStructures\LinkedListDictionary.cs" />
-    <Compile Include="VoronoiMeshing\IDMesh.cs" />
-    <Compile Include="VoronoiMeshing\InsideCellEnumerator.cs" />
-    <Compile Include="VoronoiMeshing\MeshCell.cs" />
-    <Compile Include="VoronoiMeshing\MeshGenerator.cs" />
-    <Compile Include="VoronoiMeshing\MICHMesher\MICHDelaunayCell.cs" />
-    <Compile Include="VoronoiMeshing\MICHMesher\MICHVertex.cs" />
-    <Compile Include="VoronoiMeshing\MICHMesher\MICMesher.cs" />
-    <Compile Include="VoronoiMeshing\MICHMesher\VariableCell.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\BoundaryNodeMirrorer.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\CellPairCollecter.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\Welder.cs" />
-    <Compile Include="VoronoiMeshing\Transformation.cs" />
-    <Compile Include="VoronoiMeshing\VoronoiMesher.cs" />
-    <Compile Include="VoronoiMeshing\Converter\GridConverter.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\LineIntersection.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\MeshIntersecter.cs" />
-    <Compile Include="VoronoiMeshing\Cutter\MeshMethods.cs" />
-    <Compile Include="VoronoiMeshing\MICHMesher\MIConvexHullMeshGenerator.cs" />
-    <Compile Include="VoronoiMeshing\MeshingAlgorithm.cs" />
-    <Compile Include="VoronoiMeshing\PeriodicBoundaryHandler\PeriodicBoundaryHandler.cs" />
-    <Compile Include="VoronoiMeshing\TrackedVoronoiMesher.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="VoronoiGrid2D.cs" />
-    <Compile Include="VoronoiMeshing\SimpleVoronoiMesher.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
-      <Install>false</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
-      <Visible>False</Visible>
-      <ProductName>.NET Framework 3.5 SP1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-    <BootstrapperPackage Include="Microsoft.Windows.Installer.3.1">
-      <Visible>False</Visible>
-      <ProductName>Windows Installer 3.1</ProductName>
-      <Install>true</Install>
-    </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="log4net, Version=1.2.10.0, Culture=neutral, PublicKeyToken=1b44e1d426115821">
-      <HintPath>..\..\..\libs\log4net-1.2.10\bin\cli\1.0\release\log4net.dll</HintPath>
+    <Reference Include="log4net ">
+      <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
     </Reference>
     <Reference Include="MIConvexHull">
       <HintPath>..\..\..\libs\MIConvexHull\MIConvexHull.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <!--Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" /-->
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
-  <ItemGroup>
-    <Reference Include="System.Core" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj">
-      <Project>{dd9bf776-38ca-4fc9-8f42-5ed700bde7ad}</Project>
-      <Name>MPI.Wrappers</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj">
-      <Project>{6886abb3-ce89-4537-9f2a-25f926d1840b}</Project>
-      <Name>ilPSP.Connectors.Matlab</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj">
-      <Project>{8e6d8f23-623f-4204-b4ab-a088c0cd83aa}</Project>
-      <Name>ilPSP</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj">
-      <Project>{B7D5F7C7-EA9F-4506-AB69-C3CD2AA8C938}</Project>
-      <Name>BoSSS.Platform</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\BoSSS.Foundation\BoSSS.Foundation.csproj">
-      <Project>{17a60fba-20b4-451d-98e1-8d742f368569}</Project>
-      <Name>BoSSS.Foundation</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.Connectors.Matlab\ilPSP.Connectors.Matlab.csproj" />
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj" />
+    <ProjectReference Include="..\BoSSS.Foundation\BoSSS.Foundation.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="MatlabMeshGenerator.cs" />
+    <Compile Remove="UnstructuredTetraGrid.cs" />
   </ItemGroup>
 </Project>

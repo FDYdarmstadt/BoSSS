@@ -374,7 +374,7 @@ namespace BoSSS.Foundation.XDG {
             _result.Scale(-1.0);
         }
 
-        MultidimensionalArray[] m_Evaluate_SpeciesEvalBuffer = new MultidimensionalArray[0];
+        
 
         /// <summary>
         /// Evaluates the cut-cell DG - field;
@@ -404,6 +404,8 @@ namespace BoSSS.Foundation.XDG {
             if (_result.GetLength(1) != _M)
                 throw new ArgumentOutOfRangeException();
 
+            MultidimensionalArray[] m_Evaluate_SpeciesEvalBuffer = new MultidimensionalArray[0];
+
             GenericEval(_j0, _Len, _NodeSet, _result, _ResultCellindexOffset, _ResultPreScale,
                 DGField.EvaluateInternal,
                 ref m_Evaluate_SpeciesEvalBuffer,
@@ -415,6 +417,9 @@ namespace BoSSS.Foundation.XDG {
                 });
         }
 
+        /// <summary>
+        /// <see cref="DGField.EvaluateEdge(int, int, NodeSet, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, int, double)"/>
+        /// </summary>
         public override void EvaluateEdge(int e0, int Len, NodeSet NS, MultidimensionalArray ValueIN, MultidimensionalArray ValueOT, MultidimensionalArray MeanValueIN, MultidimensionalArray MeanValueOT, MultidimensionalArray GradientIN, MultidimensionalArray GradientOT, int ResultIndexOffset, double ResultPreScale) {
             throw new NotImplementedException();
         }
@@ -1364,7 +1369,7 @@ namespace BoSSS.Foundation.XDG {
                 && (m_TrackerVersion - oldTrackerVersion) > 0 && levelSetStatus.m_LevSetRegions_b4Update != null) {
 
                 if((m_TrackerVersion - oldTrackerVersion) > 1) {
-                    string message = $"The update behavior '{BehaveUnder_LevSetMoovement.PreserveMemory}' and '{BehaveUnder_LevSetMoovement.AutoExtrapolate}' do not work if every tracker update is paired with a 'PushStacks()' call.";
+                    string message = $"The update behavior '{BehaveUnder_LevSetMoovement.PreserveMemory}' and '{BehaveUnder_LevSetMoovement.AutoExtrapolate}' do not work if every tracker update is paired with a 'PushStacks()' call (DGfield '" + (this.Identification ?? "no name set") + "').";
                     //Console.WriteLine(message);
                     throw new NotSupportedException(message);
                 }

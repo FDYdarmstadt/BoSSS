@@ -72,7 +72,6 @@ namespace BoSSS.Application.IBM_Solver {
 
             #region Creates grid () and sets BC
             //// Create Grid
-            Console.WriteLine("...generating grid");
             C.GridFunc = delegate {
 
                 // x-direction
@@ -310,7 +309,6 @@ namespace BoSSS.Application.IBM_Solver {
 
             #region Creates grid () and sets BC
             //// Create Grid
-            Console.WriteLine("...generating grid");
             if (channel == 0 || channel == 1) //3D
             {
                 #region grid 3D

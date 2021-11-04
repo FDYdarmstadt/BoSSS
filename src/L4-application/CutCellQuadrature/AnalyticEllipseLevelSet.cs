@@ -25,6 +25,7 @@ using ilPSP;
 using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.LinAlg;
+using BoSSS.Foundation.XDG;
 
 namespace CutCellQuadrature {
 
@@ -298,6 +299,10 @@ namespace CutCellQuadrature {
                     yield return root;
                 }
             }
+        }
+
+        public void CopyFrom(ILevelSet other) {
+            throw new NotImplementedException();
         }
 
         #endregion

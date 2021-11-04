@@ -31,7 +31,7 @@ namespace ilPSP.LinSolvers {
     public static class IMutuableMatrixEx_Extensions {
 
         /// <summary>
-        /// Returns a collection of all occupied columns in a the row <paramref name="RowIndex"/>;
+        /// Returns a collection of all occupied columns in a the row <paramref name="iRow"/>;
         /// </summary>
         /// <returns>
         /// The column indices of non-zero/allocated entries.
@@ -48,6 +48,7 @@ namespace ilPSP.LinSolvers {
         /// Sets all entries in a row to 0
         /// </summary>
         /// <param name="i">row index in global indices</param>
+        /// <param name="M"></param>
         static public void ClearRow(this IMutableMatrixEx M, long i) {
             long[] ColIdx = null;
             double[] Values = null;
@@ -570,9 +571,9 @@ namespace ilPSP.LinSolvers {
         static public void SaveToTextFileSparseDebug(this IMutableMatrixEx M, string path) {
             using (new FuncTrace()) {
                 int rank, size;
-
-                csMPI.Raw.Comm_Rank(M.MPI_Comm, out rank);
-                csMPI.Raw.Comm_Size(M.MPI_Comm, out size);
+                var comm = csMPI.Raw._COMM.WORLD;
+                csMPI.Raw.Comm_Rank(comm, out rank);
+                csMPI.Raw.Comm_Size(comm, out size);
 
                 var entries = M.GetAllEntries();
 
@@ -878,10 +879,7 @@ namespace ilPSP.LinSolvers {
                 //Console.WriteLine("local norm (R=" + M.RowPartitioning.Rank + ") = " + normLoc);
                 //tr.Info("local norm " + normLoc);
 
-                double normGlob = double.NaN;
-                unsafe {
-                    csMPI.Raw.Allreduce((IntPtr)(&normLoc), (IntPtr)(&normGlob), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MAX, csMPI.Raw._COMM.WORLD);
-                }
+                double normGlob = normLoc.MPIMax(M.MPI_Comm);
                 return normGlob;
             }
         }

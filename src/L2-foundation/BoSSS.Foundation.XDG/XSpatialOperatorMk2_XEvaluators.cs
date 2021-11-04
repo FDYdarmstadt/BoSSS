@@ -32,9 +32,6 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 
 using static BoSSS.Foundation.SpatialOperator;
-using System.Runtime.Serialization;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.IO;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -255,6 +252,7 @@ namespace BoSSS.Foundation.XDG {
                     // build matrix, coupling
                     ///////////////////
 
+                    
                     using(new BlockTrace("surface_integration", tr)) {
 #if DEBUG
                         {
@@ -281,12 +279,6 @@ namespace BoSSS.Foundation.XDG {
                                 Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
                                 Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
                             }
-
-                            //IFormatter formatter = new BinaryFormatter();
-                            //using (Stream stream = new FileStream("MyFile.bin", FileMode.Create, FileAccess.Write, FileShare.None)) {
-                            //    formatter.Serialize(stream, m_lsTrk);
-                            //};
-
 
 #endif
 
@@ -322,7 +314,7 @@ namespace BoSSS.Foundation.XDG {
 
                         }
                     }
-
+                   
                     // allow all processes to catch up
                     // -------------------------------
                     if(trx != null) {
@@ -765,8 +757,9 @@ namespace BoSSS.Foundation.XDG {
                                 EdgeQuadratureScheme SurfaceElement_Edge = m_Xowner.SurfaceElement_EdgeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 CellQuadratureScheme SurfaceElement_volume = m_Xowner.SurfaceElement_VolumeQuadraturSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 if (ruleDiagnosis) {
-                                    SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                                    SurfaceElement_volume.ToTextFileCell(GridData, quadOrder, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}.txt");
                                     SurfaceElement_Edge.ToTextFileEdge(GridData, quadOrder, $"surfaceElementOperator_edge_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                                    SurfaceElement_volume.Compile(GridData, 0).SumOfWeightsToTextFileVolume(GridData, $"surfaceElementOperator_volume_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
                                 }
                                 ctorSurfaceElementSpeciesIntegrator(SpeciesId, quadOrder, SurfaceElement_volume, SurfaceElement_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                             }

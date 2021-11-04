@@ -69,9 +69,15 @@ namespace BoSSS.Solution.Control {
 
         /// <summary>
         /// Convergence criterion for nonlinear solver.
+        /// Setting it to exactly zero should enforce the nonlinear solver to iterate until no improvement on the termination criterion
+        /// can be achieved; then, it terminates; this is described in
+        /// Kikker, Kummer, Oberlack:
+        /// A fully coupled high‐order discontinuous {Galerkin} solver for viscoelastic fluid flow,
+        /// IJNMF, No. 6, Vol. 93, 2021, 1736--1758,
+        /// section 3.3.1.
         /// </summary>
         [DataMember]
-        public double ConvergenceCriterion = 1.0e-8;
+        public double ConvergenceCriterion = 0.0;
 
         /// <summary>
         /// under relaxation, if a fixpoint iterator (e.g.Picard) is used.
