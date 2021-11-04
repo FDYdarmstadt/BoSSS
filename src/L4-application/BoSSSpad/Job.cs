@@ -940,7 +940,9 @@ namespace BoSSS.Application.BoSSSpad {
                 if(dep.Session != null) {
                     try {
                         dep.Session.Delete(true);
-                    } 
+                    } catch (Exception e) {
+                        Console.Error.WriteLine($"{e.GetType()} during deployment / session deletion: {e.Message}");
+                    }
 
                 }
 
