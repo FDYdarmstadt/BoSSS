@@ -107,11 +107,54 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         RK_IMEX3 = 203,
 
+        /// <summary>
+        /// Collection of DIRK methods taken from
+        /// "Diagonally Implicit Runge-Kutta Methods for Ordinary Differential Equations. A Review", C. Kennedy (2016)
+        /// all are L-Stable
+        /// </summary>
+        #region DIRK
+
+        /// <summary>
+        /// (Implicit) Diagonally implicit Runge-Kutta, 2-stage 2nd order (<see cref="XdgRKTimestepping"/>) implementation, <see cref="RungeKuttaScheme.SDIRK_22"/>
+        /// </summary>
+        SDIRK_22 = 1022,
+
+        /// <summary>
+        /// (Implicit) Diagonally implicit Runge-Kutta, 3-stage 2nd order, first stage explicit (<see cref="XdgRKTimestepping"/>) implementation, <see cref="RungeKuttaScheme.SDIRK_22"/>
+        /// </summary>
+        ESDIRK_32 = 1132,
+
+        /// <summary>
+        /// (Implicit) Diagonally implicit Runge-Kutta, 3-stage 3rd order (<see cref="XdgRKTimestepping"/>) implementation, <see cref="RungeKuttaScheme.SDIRK_33"/>
+        /// </summary>
+        SDIRK_33 = 1033,
+
+        /// <summary>
+        /// (Implicit) Diagonally implicit Runge-Kutta, 4-stage 3rd order (<see cref="XdgRKTimestepping"/>) implementation, <see cref="RungeKuttaScheme.SDIRK_43"/>
+        /// </summary>
+        SDIRK_43 = 1043,
+
+        /// <summary>
+        /// (Implicit) Diagonally implicit Runge-Kutta, 5-stage 4th order (<see cref="XdgRKTimestepping"/>) implementation, <see cref="RungeKuttaScheme.SDIRK_54"/>
+        /// </summary>
+        SDIRK_54 = 1054,
+
+        #endregion
+
+        /// <summary>
+        /// Adaptive timestep, superpose this with a RK scheme to mark the scheme to be handled adaptive
+        /// </summary>
+        Adaptive = 10000,
 
         /// <summary>
         /// Adaptive timestep 
         /// </summary>
-        Adaptive_3 = 10003
+        Adaptive_2 = 11022,
+
+        /// <summary>
+        /// Adaptive timestep 
+        /// </summary>
+        Adaptive_3 = 11033
     }
 
 
@@ -454,8 +497,23 @@ namespace BoSSS.Solution.XdgTimestepping {
                 rksch = RungeKuttaScheme.ImplicitEuler;
             else if(Scheme == TimeSteppingScheme.RK_CrankNic)
                 rksch = RungeKuttaScheme.CrankNicolson;
-            else if(Scheme == TimeSteppingScheme.RK_IMEX3 || Scheme == TimeSteppingScheme.Adaptive_3)
+            else if (Scheme == TimeSteppingScheme.SDIRK_22)
+                rksch = RungeKuttaScheme.SDIRK_22;
+            else if (Scheme == TimeSteppingScheme.ESDIRK_32)
+                rksch = RungeKuttaScheme.ESDIRK_32;
+            else if (Scheme == TimeSteppingScheme.SDIRK_33)
+                rksch = RungeKuttaScheme.SDIRK_33;
+            else if (Scheme == TimeSteppingScheme.SDIRK_43)
+                rksch = RungeKuttaScheme.SDIRK_43;
+            else if (Scheme == TimeSteppingScheme.SDIRK_54)
+                rksch = RungeKuttaScheme.SDIRK_54;
+            else if(Scheme == TimeSteppingScheme.RK_IMEX3)
                 rksch = RungeKuttaScheme.IMEX3;
+            else if((int)Scheme >= 10000) {
+                // all adaptive schemes should have the same signature as there nonadaptive underlying scheme
+                // shifted by 10000;
+                DecodeScheme((TimeSteppingScheme)((int)Scheme - 10000), out rksch, out bdfOrder);
+            }
             else
                 throw new NotImplementedException();
         }
@@ -839,7 +897,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         bool UseAdaptiveTimestepping() {
-            if(this.Scheme == TimeSteppingScheme.Adaptive_3)
+            if((int)this.Scheme >= 10000)
                 return true;
 
             return false;
@@ -888,7 +946,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             Parameters = this.Operator.InvokeParameterFactory(Fields);
             
             if(m_BDF_Timestepper != null) {
-                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, Parameters, IterationResiduals, LsTrk, _MultigridSequence, abstractOperator);
+                m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, this.Parameters, IterationResiduals, LsTrk, _MultigridSequence, abstractOperator);
             } else if(m_RK_Timestepper != null) {
                 throw new NotImplementedException("Load balancing and adaptive mesh refinement are not supported for Runge-Kutta XDG timestepping.");
             } else {

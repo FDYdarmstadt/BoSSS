@@ -149,7 +149,7 @@ namespace BoSSS.Application.BoSSSpad {
                 0.0,
                 SuperSampling);
 
-            Console.WriteLine(" Data will be written to the following directory:");
+            Console.WriteLine(" Data will be written to the directory: " + plotDirPath);
             return plotDirPath;
         }
     }

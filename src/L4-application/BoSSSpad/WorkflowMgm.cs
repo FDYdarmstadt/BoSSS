@@ -480,9 +480,9 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                     foreach (var s in this.Sessions) {
-                        Console.Write("Session " + s.ID + " ... ");
+                        //Console.Write("Session " + s.ID + " ... ");
                         grids.AddRange(s.GetGrids());
-                        Console.WriteLine(" done.");
+                        //Console.WriteLine(" done.");
                     }
 
                     m_Grids = grids.ToArray();
@@ -587,7 +587,7 @@ namespace BoSSS.Application.BoSSSpad {
         public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
             DateTime start = DateTime.Now;
             while(true) {
-
+                
                 //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
                 //    MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
 

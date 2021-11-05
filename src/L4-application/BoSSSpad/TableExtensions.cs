@@ -710,6 +710,16 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Prints table <paramref name="Tab"/> to the console.
+        /// </summary>
+        public static string TableToString(this DataTable Tab) {
+            using(var stw = new StringWriter()) {
+                WriteCSVToStream(Tab, stw, ' ', true, true, true);
+                return stw.ToString();
+            }
+        }
+
+        /// <summary>
         /// Prints table <paramref name="Tab"/> to a CSV-file.
         /// </summary>
         public static void ToCSVFile(this DataTable Tab,
