@@ -160,6 +160,18 @@ namespace BoSSS.Solution.Gnuplot {
             }
         }
 
+        /// <summary>
+        /// Conversts continuous numbers into line colors; useful, when a Plot is created by a loop.
+        /// </summary>
+        public void SetLineColorFromIndex(int i) {
+            if (i < 0)
+                throw new ArgumentOutOfRangeException();
+
+            var values = Enum.GetValues(typeof(LineColors)).Cast<LineColors>().ToArray();
+            this.LineColor = values[i % values.Length];
+        }
+
+
         [DataMember]
         private DashTypes? dashType;
 
