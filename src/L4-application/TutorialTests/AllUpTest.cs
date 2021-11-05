@@ -63,6 +63,7 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
         [Test]
         static public void Run__MetaJobManager() {
+            //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__MetaJobManager
             NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
             NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
             RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
@@ -351,11 +352,16 @@ namespace BoSSS.Application.TutorialTests {
             foreach (var q in BoSSSshell.ExecutionQueues) {
                 foreach (var allowedPath in q.AllowedDatabasesPaths) {
                     var localBaseDir = new DirectoryInfo(allowedPath.LocalMountPath);
-
-                    var dbDirs = localBaseDir.GetDirectories(Directory, SearchOption.TopDirectoryOnly);
-                    foreach (var db in dbDirs) {
-                        db.Delete(true);
+                    if(localBaseDir.Exists) {
+                        var dbDirs = localBaseDir.GetDirectories(Directory, SearchOption.TopDirectoryOnly);
+                        foreach(var db in dbDirs) {
+                            Console.WriteLine("Deleting database: " + db.FullName);
+                            db.Delete(true);
+                        }
+                    } else {
+                        Console.WriteLine("Warning: missing directory: " + localBaseDir.FullName);
                     }
+
                 }
             }
         }
@@ -369,10 +375,14 @@ namespace BoSSS.Application.TutorialTests {
             foreach (var q in BoSSSshell.ExecutionQueues) {
 
                 var localBaseDir = new DirectoryInfo(q.DeploymentBaseDirectory);
-
-                var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
-                foreach (var d in deplDirs) {
-                    d.Delete(true);
+                if(localBaseDir.Exists) {
+                    var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
+                    foreach(var d in deplDirs) {
+                        Console.WriteLine("Deleting deployment: " + d.FullName);
+                        d.Delete(true);
+                    }
+                } else {
+                    Console.WriteLine("Warning: missing directory: " + localBaseDir.FullName);
                 }
 
             }

@@ -151,13 +151,13 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <seealso cref="AllowedDatabasesPaths"/>
         public bool IsDatabaseAllowed(AppControl ctrl) {
-            //Debugger.Launch();
+ 
             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
                 return true;
             var dbi = ctrl.GetDatabase();
             if(dbi == null)
                 return true;
-
+                    
             // fix any relative path
             string fullDbPath;
             if(!System.IO.Path.IsPathRooted(dbi.Path)) {
