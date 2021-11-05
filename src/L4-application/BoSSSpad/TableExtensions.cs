@@ -453,7 +453,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static T[] GetColumn<T>(this DataTable tab, string ColumnName) {
             T[] R = new T[tab.Rows.Count];
-
+            
             //tab.Columns[ColumnName].
             for (int i = 0; i < R.Length; i++) {
                 object val = tab.Rows[i][ColumnName];
@@ -492,6 +492,7 @@ namespace BoSSS.Application.BoSSSpad {
                             R.SetValue(Convert.ToString(val), i);
                         } else if (typeof(T) == typeof(DateTime)) {
                             R.SetValue(Convert.ToDateTime(val), i);
+                        //} else if (typeof(T).IsEnum) {
                         } else {
                             R[i] = (T)val;
                         }

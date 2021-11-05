@@ -64,6 +64,7 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__MetaJobManager() {
             NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
+            NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
             RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
         }
 
@@ -356,6 +357,24 @@ namespace BoSSS.Application.TutorialTests {
                         db.Delete(true);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Deletes all deployments matchin the search patter <paramref name="Directory"/>
+        /// 
+        /// </summary>
+        public static void DeleteDeployments(string DirectoryWildCard) {
+
+            foreach (var q in BoSSSshell.ExecutionQueues) {
+
+                var localBaseDir = new DirectoryInfo(q.DeploymentBaseDirectory);
+
+                var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
+                foreach (var d in deplDirs) {
+                    d.Delete(true);
+                }
+
             }
         }
 
