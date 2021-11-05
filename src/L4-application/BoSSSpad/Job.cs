@@ -392,7 +392,6 @@ namespace BoSSS.Application.BoSSSpad {
 
             }
 
-
             ctrl.VerifyEx();
             m_ctrl = ctrl;
             m_ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
@@ -939,7 +938,12 @@ namespace BoSSS.Application.BoSSSpad {
         public void DeleteOldDeploymentsAndSessions() {
             foreach(var dep in AllDeployments) {
                 if(dep.Session != null) {
-                    dep.Session.Delete(true);
+                    try {
+                        dep.Session.Delete(true);
+                    } catch (Exception e) {
+                        Console.Error.WriteLine($"{e.GetType()} during deployment / session deletion: {e.Message}");
+                    }
+
                 }
 
                 if(dep.DeploymentDirectory != null && dep.DeploymentDirectory.Exists) {
