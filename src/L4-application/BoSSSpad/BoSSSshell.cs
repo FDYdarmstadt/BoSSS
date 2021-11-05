@@ -120,7 +120,7 @@ namespace BoSSS.Application.BoSSSpad {
             AddObjectFormatter<Job>();
             AddEnumFormatter<Job>();
 
-            AddTableFormatter();
+            //AddTableFormatter();
         }
 
         /// <summary>
@@ -189,6 +189,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void AddObjectFormatter<T>(Func<T, string> optValFormatter = null) {
             Formatter.SetPreferredMimeTypeFor(typeof(T), "text/plain");
+  
             Formatter.Register(
                 type: typeof(T),
                 formatter: (object obj, System.IO.TextWriter writer) => {
