@@ -93,7 +93,7 @@ namespace ZwoLevelSetSolver {
         /// <summary>
         /// Artificial Viscosity Term in displacement transport equations
         /// </summary>
-        static internal double displacementViscosity = 0.0;
+        static internal double displacementViscosity = 0.5;
 
 
         
