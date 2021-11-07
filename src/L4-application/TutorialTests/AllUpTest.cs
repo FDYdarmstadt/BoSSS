@@ -94,6 +94,7 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("ue2Basics/ue2Basics.ipynb")]
         [Test]
         static public void Run__ue2Basics() {
+            //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__ue2Basics
             RunWorksheet("ue2Basics/ue2Basics.ipynb");
         }
 
