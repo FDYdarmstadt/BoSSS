@@ -380,27 +380,73 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public (string DbPath, string MachineFilter)[] AlternateDbPaths {
             get {
-                string p = System.IO.Path.Combine(this.Path, "AlternatePaths.txt");
-                
-                if(!File.Exists(p))
-                    return new ValueTuple<string, string>[0];
-
-                string[] lines = File.ReadAllLines(p);
-
-                var ret = new List<ValueTuple<string, string>>();
-                foreach(var line in lines) {
-                    if(line.StartsWith(";;"))
-                        continue;
-                    string[] parts = line.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                    if(parts.Length >= 2) {
-                        ret.Add((parts[0], parts[1]));
-                    } else if(parts.Length >= 1) {
-                        ret.Add((parts[0], null));
-                    }
-                }
-                
-                return ret.ToArray();
+                return ReadAlternateDbPaths(this.Path);
             }    
         }
+
+        static (string DbPath, string MachineFilter)[] ReadAlternateDbPaths(string dbPath) {
+            if (dbPath == null)
+                throw new ArgumentNullException();
+            string p = System.IO.Path.Combine(dbPath, "AlternatePaths.txt");
+
+            if (!File.Exists(p))
+                return new ValueTuple<string, string>[0];
+
+            string[] lines = File.ReadAllLines(p);
+
+            var ret = new List<ValueTuple<string, string>>();
+            foreach (var line in lines) {
+                if (line.StartsWith(";;"))
+                    continue;
+                string[] parts = line.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 2) {
+                    ret.Add((parts[0], parts[1]));
+                } else if (parts.Length >= 1) {
+                    ret.Add((parts[0], null));
+                }
+            }
+
+            return ret.ToArray();
+        }
+
+        /// <summary>
+        /// Adds a new <see cref="IDatabaseInfo.AlternateDbPaths"/> to the database configuration
+        /// </summary>
+        /// <return>
+        /// - true: the path was added
+        /// - false: the alternate path is already registered for the database and was not added again.
+        /// </return>
+        public static bool AddAlternateDbPaths(string dbPath, string altPath, string machFilter) {
+            if (altPath == null)
+                throw new ArgumentNullException();
+
+            var PathsSoFar = ReadAlternateDbPaths(dbPath);
+            foreach(var tt in PathsSoFar) {
+                if (tt.DbPath == altPath && tt.MachineFilter == machFilter)
+                    return false;
+            }
+
+            string p = System.IO.Path.Combine(dbPath, "AlternatePaths.txt");
+
+            string LeadText = "";
+            if (File.Exists(p))
+                LeadText = File.ReadAllText(p);
+
+            using(var stw = new StreamWriter(p)) {
+                if(LeadText.Length > 0) {
+                    stw.WriteLine(LeadText);
+                }
+
+                if(machFilter == null) {
+                    stw.WriteLine(altPath + ",");
+                } else {
+                    stw.WriteLine(altPath + "," + machFilter);
+                }
+            }
+
+            return true;
+        }
+
+
     }
 }
