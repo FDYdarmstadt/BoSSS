@@ -119,6 +119,8 @@ namespace BoSSS.Application.BoSSSpad {
             AddDictFormatter<string, IEnumerable<ISessionInfo>>(optValFormatter: (SessionEnum => SessionEnum.Count() + " sessions"));
             AddObjectFormatter<Job>();
             AddEnumFormatter<Job>();
+
+            //AddTableFormatter();
         }
 
         /// <summary>
@@ -211,6 +213,20 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                         valString = v != null ? optValFormatter(v) : "NULL";
                     writer.Write(valString);
+                });
+        }
+
+        /// <summary>
+        /// text formatting of data tables
+        /// </summary>
+        public static void AddTableFormatter() {
+            Formatter.SetPreferredMimeTypeFor(typeof(System.Data.DataTable), "text/plain");
+            Formatter.Register(
+                type: typeof(System.Data.DataTable),
+                formatter: (object obj, System.IO.TextWriter writer) => {
+
+                    System.Data.DataTable v = (System.Data.DataTable)obj;
+                    v.WriteCSVToStream(writer, ' ', true, true, true);
                 });
         }
 
