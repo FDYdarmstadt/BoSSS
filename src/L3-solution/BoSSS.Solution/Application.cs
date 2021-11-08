@@ -967,7 +967,6 @@ namespace BoSSS.Solution {
         /// Generates key/value pairs from control objects to identify sessions.
         /// </summary>
         public static void FindKeys(IDictionary<string, object> Keys, AppControl ctrl) {
-
             foreach (var fldOpt in ctrl.FieldOptions) {
                 string KeyName = "DGdegree:" + fldOpt.Key;
                 int FldDeg = fldOpt.Value.Degree;
@@ -1081,7 +1080,8 @@ namespace BoSSS.Solution {
                     || mi.Name == "FieldOptions"
                     || mi.Name == "InitialValues"
                     || mi.Name == "BoundaryValues"
-                    || mi.Name == "InitialValues_Evaluators")) {
+                    || mi.Name == "InitialValues_Evaluators"
+                    || mi.Name == "m_Grid")) {
 
 
                     // these guys are filtered...
