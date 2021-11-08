@@ -1,0 +1,1 @@
+dotnet publish ..\..\..\src\L4-application\BoSSSpad\BoSSSpad.csproj -v q -o .
