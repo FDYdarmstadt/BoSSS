@@ -366,6 +366,8 @@ namespace BoSSS.Application.BoSSSpad {
         private static int RunPapermill(string fileToOpen) {
             string fileToOpen_out = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + "_out.ipynb");
 
+            string htmlResult = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + ".html");
+            string htmlResult_out = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + "_out.html");
 
 
             //psi.RedirectStandardOutput = true;
@@ -461,6 +463,12 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine("Done with notebook");
                 Console.WriteLine("papermill code " + papermill_exit);
                 Console.WriteLine("nbconvert code " + nbconvert_exit);
+
+                if(File.Exists(htmlResult_out)) {
+                    // try to restore the html result with the original name
+                    File.Move(htmlResult_out, htmlResult, true);
+                }
+
                 return papermill_exit;
             
             

@@ -353,9 +353,21 @@ namespace BoSSS.Application.BoSSSpad {
             if(!Path.IsPathRooted(pp.LocalMountPath))
                 throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
 
-            var fullPath = System.IO.Path.Combine(pp.LocalMountPath, dbDir);
+            string fullPath = System.IO.Path.Combine(pp.LocalMountPath, dbDir);
 
-            return InteractiveShell.OpenOrCreateDatabase(fullPath);
+            IDatabaseInfo dbi = InteractiveShell.OpenOrCreateDatabase(fullPath);
+            
+            if(!pp.PathAtRemote.IsEmptyOrWhite()) {
+                string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
+                string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
+                fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
+
+                //todo:  add alternate path 
+                DatabaseInfo.AddAlternateDbPaths(fullPath, fullPathAtRemote, null);
+            }
+
+
+            return dbi;
         }
 
         /// <summary>
