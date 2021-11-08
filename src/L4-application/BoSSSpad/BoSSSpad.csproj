@@ -51,10 +51,13 @@
       <HintPath>..\..\..\libs\microsoft.aspnetcore.html.abstractions\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Html.Abstractions.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DotNet.Interactive">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DotNet.Interactive.Documents">
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.Documents.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DotNet.Interactive.Formatting">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
     </Reference>
     <Reference Include="Mono.CSharp">
       <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>

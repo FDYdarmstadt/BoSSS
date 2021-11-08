@@ -96,6 +96,9 @@ namespace BoSSS.Application.BoSSSpad {
             }
             InitTraceFile();
 
+            Microsoft.DotNet.Interactive.Formatting.Formatter.RecursionLimit = 1;
+            Microsoft.DotNet.Interactive.Formatting.Formatter.ListExpansionLimit = 100;
+
             AddObjectFormatter<SinglePhaseField>();
             AddObjectFormatter<Foundation.XDG.XDGField>();
             AddObjectFormatter<Foundation.XDG.XDGField.SpeciesShadowField>();
@@ -188,7 +191,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Sets Text Formatter for objects of specific type
         /// </summary>
         public static void AddObjectFormatter<T>(Func<T, string> optValFormatter = null) {
-            Formatter.SetPreferredMimeTypeFor(typeof(T), "text/plain");
+            Formatter.SetPreferredMimeTypesFor(typeof(T), "text/plain");
   
             Formatter.Register(
                 type: typeof(T),
@@ -209,7 +212,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// text formatting of data tables
         /// </summary>
         public static void AddTableFormatter() {
-            Formatter.SetPreferredMimeTypeFor(typeof(System.Data.DataTable), "text/plain");
+            Formatter.SetPreferredMimeTypesFor(typeof(System.Data.DataTable), "text/plain");
             Formatter.Register(
                 type: typeof(System.Data.DataTable),
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -225,7 +228,7 @@ namespace BoSSS.Application.BoSSSpad {
         public static void AddDictFormatter<KeyType, ValType>(Func<ValType, string> optKeyFormatter = null, Func<ValType, string> optValFormatter = null) {
             var t = typeof(IDictionary<KeyType, ValType>);
 
-            Formatter.SetPreferredMimeTypeFor(t, "text/plain");
+            Formatter.SetPreferredMimeTypesFor(t, "text/plain");
             Formatter.Register(
                 type: t,
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -259,7 +262,7 @@ namespace BoSSS.Application.BoSSSpad {
         public static void AddEnumFormatter<ValType>(Func<ValType, string> optValFormatter = null) {
             var t = typeof(IEnumerable<ValType>);
 
-            Formatter.SetPreferredMimeTypeFor(t, "text/plain");
+            Formatter.SetPreferredMimeTypesFor(t, "text/plain");
             Formatter.Register(
                 type: t,
                 formatter: (object obj, System.IO.TextWriter writer) => {
