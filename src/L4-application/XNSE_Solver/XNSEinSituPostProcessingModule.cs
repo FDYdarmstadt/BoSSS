@@ -22,7 +22,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// reference to solver application class
         /// </summary>
-        protected new XNSE<T> SolverMainOverride {
+        protected XNSE<T> SolverMainOverride {
             get {
                 return (XNSE<T>) base.SolverMain;
             }

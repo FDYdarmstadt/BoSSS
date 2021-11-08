@@ -164,15 +164,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="Username">
         /// Can be null for the local user.
         /// </param>
-        /// <param name="Password">
-        /// Password for user <paramref name="Username"/>, can be null if the user is the local user.
-        /// </param>
         /// <param name="ComputeNodes">
         /// </param>
         /// <param name="DeployRuntime">
         /// See <see cref="BatchProcessorClient.DeployRuntime"/>.
         /// </param>
-        public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string Password = null, string[] ComputeNodes = null, bool DeployRuntime = true) : base() {
+        public MsHPC2012Client(string DeploymentBaseDirectory, string ServerName, string Username = null, string[] ComputeNodes = null, bool DeployRuntime = true) : base() {
             if(System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
                 throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
@@ -183,7 +180,6 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             this.Username = Username;
-            this.Password = Password;
             this.ComputeNodes = ComputeNodes;
             this.ServerName = ServerName;
 
@@ -205,11 +201,13 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public string Username;
 
+        /*
         /// <summary>
         /// Unsafely stored password
         /// </summary>
         [DataMember]
         public string Password;
+        */
 
         /// <summary>
         /// Active directory computer name of head node
@@ -458,6 +456,11 @@ namespace BoSSS.Application.BoSSSpad {
             return fp;
 
         }
+
+        /// <summary>
+        /// should be removed; no password in public 
+        /// </summary>
+        string Password => null;
 
         string GetLoginArg() {
             if (this.ServerName.IsEmptyOrWhite())
@@ -797,7 +800,8 @@ namespace BoSSS.Application.BoSSSpad {
                     } else {
                         // Timed out.
                         string modArguments = arguments;
-                        modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
+                        if(!this.Password.IsEmptyOrWhite())
+                            modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
                         throw new IOException("timeout waiting for " + filename + " " + modArguments);
                     }
                 }

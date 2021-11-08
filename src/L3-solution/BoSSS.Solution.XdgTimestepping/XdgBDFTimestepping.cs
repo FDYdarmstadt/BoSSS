@@ -737,6 +737,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
 
                 base.CurrentParameters = Parameters != null ? Parameters.ToArray() : new DGField[0];
+
                 base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
 
                 for (int i = 0; i < m_Stack_u.Length; i++) {
@@ -1540,6 +1541,29 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if(Jtot[0] == Jtot[1])
                         throw new ArithmeticException("All cells are cut cells - check your settings!");
                 }
+
+                //{
+                //    var rnd = new Random(1);
+                //    var vec = new CoordinateVector(CurrentStateMapping);
+                //    int L = CurrentStateMapping.LocalLength;
+                //    for(int i = 0; i < L; i++)
+                //        vec[i] = rnd.NextDouble();
+
+
+                //    double[] Affine;
+                //    BoSSS.Foundation.Quadrature.NonLin.Arsch.ShutTheFuckUp = true;
+                //    this.AssembleMatrixCallback(out BlockMsrMatrix System, out Affine, out BlockMsrMatrix MaMa, CurrentStateMapping.Fields.ToArray(), false, out var dummy);
+                //    Debug.Assert(System == null);
+
+                //    base.Residuals.Clear();
+                //    base.Residuals.SetV(Affine, -1.0);
+
+
+                //}
+
+
+
+
                 if(!ComputeOnlyResidual) {
 
                     // ++++++++++++++++++

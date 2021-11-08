@@ -89,10 +89,11 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Cut Cell and Cut Edge metrics before agglomeration
         /// </summary>
-        public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId[] Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
+        public XDGSpaceMetrics GetXDGSpaceMetrics(IEnumerable<SpeciesId> Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
             //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
             //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
             //}
+            var _Spc = Spc.ToArray();
 #if TEST
             MPICollectiveWatchDog.WatchAtRelease();
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -101,13 +102,13 @@ namespace BoSSS.Foundation.XDG {
 
             //throw new NotImplementedException("todo");
             var dict = m_XDGSpaceMetricsHistory[HistoryIndex];
-            var key = Tuple.Create(Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
+            var key = Tuple.Create(_Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
             if(!dict.ContainsKey(key)) {
                 dict.Add(key,
                     new XDGSpaceMetrics(this,
                         GetXQuadFactoryHelper(CutCellsQuadType, HistoryIndex),
                         CutCellsQuadOrder,
-                        Spc,
+                        _Spc,
                         HistoryIndex
                         )
                 );
@@ -121,8 +122,6 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="Spc"></param>
         /// <param name="CutCellsQuadOrder"></param>
-        /// <param name="oldCcm"></param>
-        /// <param name="oldTs__AgglomerationTreshold"></param>
         /// <param name="__AgglomerationTreshold">
         /// Volume fraction, which triggers cell agglomeration;
         /// see <see cref="MultiphaseCellAgglomerator.AgglomerationThreshold"/></param>
@@ -220,7 +219,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// 1 (including) to -<see cref="GetPopulatedLength()"/> (including) 
             /// </summary>
-            public int[] AvailabelIndices {
+            public int[] AvailableIndices {
                 get {
                     var R = new int[GetPopulatedLength() + 1];
                     for(int i = 0; i < R.Length; i++) {

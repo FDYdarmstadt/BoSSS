@@ -6,11 +6,11 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// <summary>
     /// Factory to create a spatial operator.
     /// Usage:
-    /// 1)  Create System by:
-    ///     - Adding Equations: <see cref="AddEquation(BulkEquation)"/> (and variants)
-    ///     - Adding Parameters (Parameters are fields, e.g. spatially dependent viscosity): <see cref="AddParameter(ParameterS)"/>
-    ///     - Adding Coefficients (Coefficients are single numbers, e.g. the Reynolds number): <see cref="AddCoefficient(Coefficient)"/>
-    /// 2)  Create spatial operator by calling GetSpatialOperator 
+    /// 1. Create System by:
+    ///    - Adding Equations: <see cref="AddEquation(BulkEquation)"/> (and variants)
+    ///    - Adding Parameters (Parameters are fields, e.g. spatially dependent viscosity): <see cref="AddParameter(ParameterS)"/>
+    ///    - Adding Coefficients (Coefficients are single numbers, e.g. the Reynolds number): <see cref="AddCoefficient(Coefficient)"/>
+    /// 2. Create spatial operator by calling GetSpatialOperator 
     /// </summary>
     public class OperatorFactory {
         SystemOfEquations eqSystem;
@@ -36,6 +36,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
                         }
                     }
                     if(!bfound)
+                        //Console.Error.WriteLine($"Smells like configuration error: an parameter {OtherPname} is specified by the operator, but none of the updaters seems to care about this parameter.");
                         throw new ArgumentException($"Smells like configuration error: an parameter {OtherPname} is specified by the operator, but none of the updaters seems to care about this parameter.");
                 }
 
@@ -223,6 +224,16 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         void AddEquationComponents(XSpatialOperatorMk2 spatialOperator) {
             foreach(SpatialEquation equation in eqSystem.SpatialEquations) {
                 foreach(IEquationComponent component in equation.Components) {
+                    spatialOperator.EquationComponents[equation.CodomainName].Add(component);
+                }
+            }
+            foreach (SpatialEquation equation in eqSystem.BulkEquations) {
+                foreach (IEquationComponent component in equation.Components) {
+                    spatialOperator.EquationComponents[equation.CodomainName].Add(component);
+                }
+            }
+            foreach (SpatialEquation equation in eqSystem.InterfaceEquations) {
+                foreach (IEquationComponent component in equation.Components) {
                     spatialOperator.EquationComponents[equation.CodomainName].Add(component);
                 }
             }

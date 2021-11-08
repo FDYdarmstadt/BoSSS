@@ -203,6 +203,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new ApplicationException("Pushing the history stacks of the level-set tracker is reserved to the timestepper (during one timestep).");
             }
 
+            if(!this.m_LsTrk.Regions.Time.ApproxEqual(PhysTime + dt))
+                throw new ApplicationException($"Internal algorithm inconsistency: Error in Level-Set tracker time; expecting time {PhysTime + dt}, but most recent tracker time is {this.m_LsTrk.Regions.Time}");
+
+
 
             if (MassMatrixStack != null && MassMatrixStack.Length > 1) {
                 Debug.Assert(base.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative
@@ -461,13 +465,26 @@ namespace BoSSS.Solution.XdgTimestepping {
             double[][] k = new double[m_RKscheme.Stages][];
             bool success = true;
             for (int s = 0; s < m_RKscheme.Stages; s++) {
-                success = success && RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
+                bool stageSuccess = RKstage(phystime, dt, k, s, MassMatrix, u0, s > 0 ? m_RKscheme.c[s - 1] : 0.0);
+                success = success && stageSuccess;
                 k[s] = new double[this.CurrentStateMapping.LocalLength];
                 UpdateChangeRate(phystime + dt * m_RKscheme.c[s], k[s]);
             }
 
+            // use eps embedded method, necessary when time derivative vanishes i.e. in Conti-Eq
+            // works when employing a stiffly accurate method, therefore check here the s.a. condition
+            bool StifflyAccurate = true;
+            StifflyAccurate &= m_RKscheme.c.Last().ApproxEqual(1.0);
+            for (int s = 0; s < m_RKscheme.Stages; s++) {
+                StifflyAccurate &= m_RKscheme.b[s].ApproxEqual(m_RKscheme.a[m_RKscheme.Stages - 1, s]);
+            }
+
             // final stage
-            RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
+            if (StifflyAccurate) {
+                // For stiffly accurate methods, the last intermediate value is already the final value
+            } else {
+                RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
+            }
 
             // ===========================================
             // update level-set (in the case of splitting)
@@ -508,8 +525,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         double m_CurrentPhystime;
 
-        private bool RKstage(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0,
-            double ActualLevSetRelTime) {
+        private bool RKstage(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime) {
 
             // detect whether the stage s is explicit or not: (implicit schemes can have some explicit stages too)
             bool isExplicit = m_RKscheme.a[s, s] == 0;
@@ -668,7 +684,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
 
                 //MoveLevelSetAndRelatedStuff(locCurSt, m_CurrentPhystime, m_CurrentDt, 1.0);
-                if (Math.Abs(m_ImplStParams.m_ActualLevSetRelTime - m_ImplStParams.m_RelTime) > 1.0e-14) {
+                if (!m_ImplStParams.m_ActualLevSetRelTime.ApproxEqual(m_ImplStParams.m_RelTime)) {
                     if (m_ImplStParams.m_IterationCounter <= 0)// only push tracker in the first iter
                         m_LsTrk.PushStacks();
                     MoveLevelSetAndRelatedStuff(locCurSt,
@@ -677,6 +693,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     // note that we need to update the agglomeration
                     updateAgglom = true;
+                } else {
+                    //Console.WriteLine("skipping");
                 }
             }
 
@@ -963,7 +981,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_CurrentState.Acc(1.0, u0);
             }
         }
-
+     
         /// <summary>
         /// Evaluation of only the spatial operator 
         /// </summary>

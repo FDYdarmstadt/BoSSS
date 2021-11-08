@@ -33,6 +33,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Xml;
 using MathNet.Numerics.Interpolation;
 using static BoSSS.Solution.Gnuplot.Plot2Ddata;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Foundation.IO {
 
@@ -163,8 +164,22 @@ namespace BoSSS.Foundation.IO {
         /// <remarks>
         /// Should work on any System.
         /// </remarks>
-        public static void PrintSessionDirectory(this ISessionInfo session) {
-            Console.WriteLine(DatabaseDriver.GetSessionDirectory(session));
+        public static string PrintSessionDirectory(this ISessionInfo session) {
+            string dir = DatabaseDriver.GetSessionDirectory(session);
+            Console.WriteLine(dir);
+            return dir;
+        }
+
+        /// <summary>
+        /// Returns the directory where the files for the selected
+        /// <paramref name="session"/> are stored to the console.
+        /// </summary>
+        /// <param name="session">
+        /// The selected session.
+        /// </param>
+        public static string GetSessionDirectory(this ISessionInfo session) {
+            string dir = DatabaseDriver.GetSessionDirectory(session);
+            return dir;
         }
 
         /// <summary>
@@ -363,6 +378,8 @@ namespace BoSSS.Foundation.IO {
             if (SepChars == null || SepChars.Length <= 0)
                 SepChars = new char[] { '\t', ';' };
 
+            //Debugger.Launch();
+
             var raw = ReadTabulatedTextFileAsStrings(session, TextFile, SepChars);
             Dictionary<string, IList<double>> ret = new Dictionary<string, IList<double>>();
 
@@ -380,6 +397,8 @@ namespace BoSSS.Foundation.IO {
                         throw new ArgumentException("Found not supported data format in table, see table entry '" + s + "'.");
 
                 }).ToArray();
+
+                ret.Add(kv.Key, ColumnDoubles);
             }
 
             return ret;
@@ -553,7 +572,7 @@ namespace BoSSS.Foundation.IO {
             string TextFilePath = TextFils[0];
 
 
-            using (StreamReader reader = new StreamReader(TextFilePath)) {
+            using (StreamReader reader = new StreamReader(new FileStream(TextFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))) {
                 // Read header of table
                 string[] Header = reader.ReadLine().Split(SepChars, StringSplitOptions.RemoveEmptyEntries);
 
@@ -1112,7 +1131,7 @@ namespace BoSSS.Foundation.IO {
         /// given <paramref name="sessions"/> by computing the errors with
         /// respect to the solution on the finest corresponding grid by making
         /// use of
-        /// <see cref="BoSSS.Solution.Statistic.DGFieldComparison.ComputeErrors"/>.
+        /// <see cref="BoSSS.Solution.Statistic.DGFieldComparison.ComputeErrors(IList{IEnumerable{DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]}, NormType)"/>.
         /// The result is then grouped according to the polynomial degree of
         /// field <paramref name="fieldName"/>.
         /// </summary>

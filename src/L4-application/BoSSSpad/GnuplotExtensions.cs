@@ -34,30 +34,21 @@ namespace BoSSS.Application.BoSSSpad {
         
         
         /// <summary>
-        /// Plot to a gif file ('set terminal gif').
+        /// Plot to a gif file (`set terminal png`).
         /// </summary>
         /// <param name="gp"></param>
         /// <param name="xRes">Horizontal resolution in pixels.</param>
         /// <param name="yRes">Vertical resolution in pixels.</param>
         static public Image PlotGIF(this Gnuplot gp, int xRes = 800, int yRes = 600) {
 
-            if(xRes <= 0)
-                throw new ArgumentOutOfRangeException();
-            if(yRes <= 0)
-                throw new ArgumentOutOfRangeException();
-
-            // set terminal
-            gp.Terminal = string.Format("pngcairo size {0},{1}", xRes, yRes);
-
+          
             // set output file
             string OutfileName = Path.GetTempFileName();
-            gp.OutputFile = OutfileName;
-
-            // call gnuplot
-            int exCode = gp.RunAndExit(); // run & close gnuplot
-            if (exCode != 0) {
-                Console.Error.WriteLine("Gnuplot-internal error: exit code " + exCode);
-                return null;
+            
+            try {
+                gp.SaveToGIF(OutfileName, xRes, yRes);
+            } catch (IOException ioe) {
+                Console.Error.WriteLine($"Gnuplot wrapper has thrown {ioe.GetType().Name}: {ioe.Message}");
             }
 
 
@@ -75,30 +66,18 @@ namespace BoSSS.Application.BoSSSpad {
         }//*/
         
         /// <summary>
-        /// Plot to a scalable vector graphics file ('set terminal gif').
+        /// Plot to a scalable vector graphics file (`set terminal svg`).
         /// </summary>
         /// <param name="gp"></param>
         /// <param name="xRes">Horizontal resolution in pixels.</param>
         /// <param name="yRes">Vertical resolution in pixels.</param>
-        static public Microsoft.AspNetCore.Html.HtmlString PlotSVG(this Gnuplot gp, int xRes = 1024, int yRes = 768) {
-            if(xRes <= 0)
-                throw new ArgumentOutOfRangeException();
-            if(yRes <= 0)
-                throw new ArgumentOutOfRangeException();
-
-
-            // set terminal
-            gp.Terminal = string.Format("svg enhanced background rgb 'white' size {0},{1}", xRes, yRes);
-
-            // set output file
+        static public Microsoft.AspNetCore.Html.HtmlString PlotSVG(this Gnuplot gp, int xRes = 800, int yRes = 600) {
             string OutfileName = Path.GetTempFileName();
-            gp.OutputFile = OutfileName;
 
-            // call gnuplot
-            int exCode = gp.RunAndExit(); // run & close gnuplot
-            if (exCode != 0) {
-                Console.Error.WriteLine("Gnuplot-internal error: exit code " + exCode);
-                return null;
+            try {
+                gp.SaveToSVG(OutfileName, xRes, yRes);
+            } catch (IOException ioe) {
+                Console.Error.WriteLine($"Gnuplot wrapper has thrown {ioe.GetType().Name}: {ioe.Message}");
             }
 
             // return image
@@ -109,7 +88,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return new Microsoft.AspNetCore.Html.HtmlString(SVGtext);
                 //return Image.FromFile(OutfileName); // it seems, the image object does not work anymore when the file is deleted
             } else {
-                Console.WriteLine("Gnuplot output file empty or non-existent.");
+                Console.Error.WriteLine("Gnuplot output file empty or non-existent.");
                 return null;
             }
         }
@@ -259,7 +238,7 @@ namespace BoSSS.Application.BoSSSpad {
             return clc;  
         }
 
-        
+        /* moved to L3;
 
         /// <summary>
         /// Single plot window:
@@ -274,6 +253,7 @@ namespace BoSSS.Application.BoSSSpad {
             _2DData.ToGnuplot(gp);
             return gp;
         }
+        
 
         /// <summary>
         /// Multiple plot windows:
@@ -338,5 +318,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             }
         }
+
+        */
     }
 }

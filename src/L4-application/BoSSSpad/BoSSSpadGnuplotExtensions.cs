@@ -69,7 +69,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// the current value of <see cref="PlotMode"/>.
         /// </summary>
         public static object PlotNow(this Gnuplot gp) {
-
+            
             if (PlotMode == PlotNowMode.CairoLatex) {
                 return gp.PlotCairolatex();
             } else if(PlotMode == PlotNowMode.GIF) {
@@ -93,7 +93,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Gnuplot plotting (multiplot), automatic choice of gnuplot driver depending on
+        /// Gnuplot plotting (multi-plot), automatic choice of Gnuplot driver depending on
         /// the current value of <see cref="PlotMode"/>.
         /// </summary>
         public static object PlotNow(this Plot2Ddata[,] _2DData) {

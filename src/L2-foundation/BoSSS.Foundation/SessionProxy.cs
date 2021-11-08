@@ -70,7 +70,7 @@ namespace BoSSS.Foundation.IO {
                         return database.Controller.DBDriver.LoadSession(sessionID, database);
                     } catch(Exception e) {
                         Console.WriteLine(
-                            "Loading session {0} failed with message '{1}'", ID, e.Message);
+                            $"Loading session {ID} failed with message '{e.Message}'");
                         return null;
                     }
                 },
@@ -244,7 +244,12 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public IDictionary<string, object> KeysAndQueries {
             get {
-                return RealSessionInfo.KeysAndQueries;
+                //DateTime st = DateTime.Now;
+                //Console.Write("Accessing KeysAndQueries...");
+                var ret =  RealSessionInfo.KeysAndQueries;
+                //TimeSpan duration = DateTime.Now - st;
+                //Console.WriteLine(" done. (took " + duration + ").");
+                return ret;
             }
         }
 

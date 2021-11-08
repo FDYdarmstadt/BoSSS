@@ -29,6 +29,10 @@ using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Foundation.Quadrature.NonLin {
 
+    //public static class Arsch {
+    //    static public bool ShutTheFuckUp = false;
+    //}
+
     /// <summary>
     /// edge quadrature of nonlinear equation components
     /// </summary>
@@ -79,7 +83,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 eq => ((eq.VolTerms & (TermActivationFlags.UxGradV | TermActivationFlags.GradV | TermActivationFlags.GradUxGradV)) != 0),
                 eq => (eq is IVolumeForm ? new NonlinVolumeFormVectorizer((IVolumeForm)eq) : null));
 
-             Debug.Assert(base.m_DomainFields.Length >= Gamma);
+            Debug.Assert(base.m_DomainFields.Length >= Gamma);
             m_ValueRequired = new bool[base.m_DomainFields.Length];
             m_GradientRequired = new bool[Gamma];
 
@@ -315,6 +319,8 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
         }
 
+        static public bool ShutTheFuck_Up = false;
+
 
         /// <summary>
         /// 
@@ -460,6 +466,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                 //                Equation eq = m_Equations[e];
                 //                Field fld = eq.MyField;
 
+
                 if (m_NonlinSources[e].m_AllComponentsOfMyType.Length > 0) {
                     m_SourceValues[e].Clear();
                     Cleared_m_SourceValues[e] = true;
@@ -526,7 +533,6 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
             }
 
             for(int e = 0; e < NoOfEquations; e++) {
-
                 if(m_NonlinFormGradV[e].m_AllComponentsOfMyType.Length > 0) {
 
                     for(int icomp = 0; icomp < m_NonlinFormGradV[e].m_AllComponentsOfMyType.Length; icomp++) {

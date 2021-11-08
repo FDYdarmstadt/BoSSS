@@ -78,13 +78,13 @@ namespace BoSSS.Solution.NSECommon {
         double[] m_MolarMasses;
 
 
-        /// <summary>
-        /// One-step kinetic model constants for an arrhenius expression A*exp(-Ta/T)*c_f^a*c_o^b
-        /// 1) A
-        /// 2) Ta
-        /// 3) a
-        /// 4)b
-        /// </summary>
+        // <summary>
+        // One-step kinetic model constants for an arrhenius expression A*exp(-Ta/T)*c_f^a*c_o^b
+        // 1) A
+        // 2) Ta
+        // 3) a
+        // 4)b
+        // </summary>
 
 
 
@@ -137,8 +137,9 @@ namespace BoSSS.Solution.NSECommon {
 
 
         //}
+
         /// <summary>
-        /// arrhenius chemical reaction parameters
+        /// Arrhenius chemical reaction parameters
         /// </summary>
         interface ChemicalReaction {
             double ActivationTemperature { get; set; }

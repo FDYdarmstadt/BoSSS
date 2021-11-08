@@ -115,7 +115,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingViscosityJumpTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: "ScalingViscosityJumpTest-p" + deg);
         }
 
 #if !DEBUG
@@ -245,7 +245,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: "ScalingStaticDropletTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: "ScalingStaticDropletTest-p" + deg);
         }
 
 
@@ -273,7 +273,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 LaLa.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: false, title: "ScalingSinglePhaseChannelTest-p" + deg);
+            ConditionNumberScalingTest.Perform(LaLa, plot: false, title: "ScalingSinglePhaseChannelTest-p" + deg);
         }
 #endif      
 
@@ -861,6 +861,37 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XNSESolverTest(Tst, C);
         }
 
+
+        /// <summary>
+        /// <see cref="SphericalHarmonicsTest"/>
+        /// </summary>
+        public static void ShericalHarmonoicsPostprocessingTest() {
+
+            var Tst = new SphericalHarmonicsTest();
+            var C = TstObj2CtrlObj(Tst, 2, 0.1,
+                ViscosityMode.FullySymmetric, 
+                XQuadFactoryHelper.MomentFittingVariants.Saye, 
+                SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+
+            var pp = new Logging.SphericalHarmonicsLogging();
+            C.PostprocessingModules.Add(pp);
+            C.SkipSolveAndEvaluateResidual = true;
+
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+
+            XNSESolverTest(Tst, C);
+
+            double[] SH_modes = pp.LoggedValues.Last();
+            double totErr = Tst.ComputeModeError(SH_modes);
+
+            Console.WriteLine("Total mode error: " + totErr);
+
+            Assert.LessOrEqual(totErr, 0.003, "Large Error on spherical mode decomposition.");
+
+        }
+
+
 #if !DEBUG
         /// <summary>
         /// Tests the combination of AMR and 
@@ -1018,36 +1049,17 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             //hS = hS.Take(hS.Length - 1).ToArray();
 
-            double LogLogRegression(IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
-                double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
-                double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
-
-                double xAvg = xValues.Average();
-                double yAvg = yValues.Average();
-
-                double v1 = 0.0;
-                double v2 = 0.0;
-
-                for (int i = 0; i < yValues.Length; i++) {
-                    v1 += (xValues[i] - xAvg) * (yValues[i] - yAvg);
-                    v2 += Math.Pow(xValues[i] - xAvg, 2);
-                }
-
-                double a = v1 / v2;
-                double b = yAvg - a * xAvg;
-
-                return a;
-            }
+           
 
 
             for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = LogLogRegression(hS, errorS.GetColumn(i));
+                var slope = hS.LogLogRegression(errorS.GetColumn(i));
 
                 Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
             }
 
             for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = LogLogRegression(hS, errorS.GetColumn(i));
+                var slope = hS.LogLogRegression(errorS.GetColumn(i));
                 Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
             }
 
@@ -1068,7 +1080,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.SkipSolveAndEvaluateResidual = false;
                 LaLa.Add(C);
             }
-            ConditionNumberScalingTest.Perform(LaLa, plotAndWait: true, title: Name);
+            ConditionNumberScalingTest.Perform(LaLa, plot: true, title: Name);
 #endif
         }
 

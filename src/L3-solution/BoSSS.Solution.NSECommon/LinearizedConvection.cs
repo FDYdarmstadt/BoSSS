@@ -516,7 +516,7 @@ namespace BoSSS.Solution.NSECommon {
         }
     }
 
-    public class LinearizedConvectionJacobi : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
+    public class LinearizedConvectionJacobi : IVolumeForm, IEdgeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
 
         /// <summary>
         /// Spatial dimension;
@@ -690,7 +690,7 @@ namespace BoSSS.Solution.NSECommon {
                     // ============================
                     double[] Uout = new double[Uin.Length];
                     for(int i = 0; i < m_SpatialDimension; i++) {
-                        Uout[i] = velFunction[inp.EdgeTag, i](inp.X, inp.time);
+                        Uout[i] = velFunction[inp.EdgeTag, i](inp.X, inp.time) * VelocityMultiplier;
                     }
 
                         // Outer values for Scalar and ScalarMean
@@ -998,6 +998,15 @@ namespace BoSSS.Solution.NSECommon {
             return new IEquationComponent[] { DivergenceDerivEdg, DivergenceDerivVol };
         }
 
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if (cs.UserDefinedValues.Keys.Contains("VelocityMultiplier"))
+                VelocityMultiplier = (double)cs.UserDefinedValues["VelocityMultiplier"];
+        }
+
+        /// <summary>
+        /// Multiplier used with every velocity BC
+        /// </summary>
+        double VelocityMultiplier = 1.0;
 
 
         /// <summary>

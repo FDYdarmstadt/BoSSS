@@ -151,13 +151,13 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <seealso cref="AllowedDatabasesPaths"/>
         public bool IsDatabaseAllowed(AppControl ctrl) {
-            //Debugger.Launch();
+ 
             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
                 return true;
             var dbi = ctrl.GetDatabase();
             if(dbi == null)
                 return true;
-
+                    
             // fix any relative path
             string fullDbPath;
             if(!System.IO.Path.IsPathRooted(dbi.Path)) {
@@ -346,16 +346,51 @@ namespace BoSSS.Application.BoSSSpad {
             if(Path.IsPathRooted(dbDir))
                 throw new ArgumentException("Expecting a relative path.");
             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
-                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database.");
+                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
 
             var pp = AllowedDatabasesPaths[0];
 
             if(!Path.IsPathRooted(pp.LocalMountPath))
                 throw new IOException($"Illegal entry for `AllowedDatabasesPaths` for {this.ToString()}: only absolute/rooted paths are allowed, but {pp.LocalMountPath} is not.");
 
-            var fullPath = System.IO.Path.Combine(pp.LocalMountPath, dbDir);
+            string fullPath = System.IO.Path.Combine(pp.LocalMountPath, dbDir);
 
-            return InteractiveShell.OpenOrCreateDatabase(fullPath);
+            IDatabaseInfo dbi = InteractiveShell.OpenOrCreateDatabase(fullPath);
+            
+            if(!pp.PathAtRemote.IsEmptyOrWhite()) {
+                string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
+                string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
+                fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
+
+                //todo:  add alternate path 
+                DatabaseInfo.AddAlternateDbPaths(fullPath, fullPathAtRemote, null);
+            }
+
+
+            return dbi;
+        }
+
+        /// <summary>
+        /// Creates (or opens) a database in a location which is ensured to work with this batch processor
+        /// </summary>
+        public IDatabaseInfo CreateTempDatabase() {
+             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
+
+            string relPath = null;
+            {
+                var rnd = new Random();
+                bool Exists;
+                do {
+                    var pathOffset = AllowedDatabasesPaths[0].LocalMountPath;
+                    var tempDir = rnd.Next().ToString();
+                    var __TempDir = new DirectoryInfo(Path.Combine(pathOffset, tempDir));
+                    Exists = __TempDir.Exists;
+                    relPath = tempDir;
+                } while (Exists == true);
+            }
+                        
+            return CreateOrOpenCompatibleDatabase(relPath);
         }
     }
 

@@ -252,6 +252,17 @@ namespace BoSSS.Foundation.XDG {
             return GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
         }
 
+        /*
+        public double[] Evaluate(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap)
+        {
+            int L = CodomainVarMap.LocalLength;
+            double[] ret = new double[L];
+            var ev = GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap);
+            ev.Evaluate(1.0, 0.0, ret);
+            return ret;
+        }
+        */
+
         /// <summary>
         /// explicit evaluation of the operator
         /// </summary>
@@ -1793,7 +1804,7 @@ namespace BoSSS.Foundation.XDG {
         /// Evaluation of the <see cref="QuadOrderFunction"/>.
         /// </summary>
         public int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis) {
-            /// Compute Quadrature Order
+            // Compute Quadrature Order
             int order;
             int[] DomainDegrees = DomainBasis.Select(f => f.Degree).ToArray();
             int[] CodomainDegrees = CodomainBasis.Select(f => f.Degree).ToArray();

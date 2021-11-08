@@ -127,7 +127,12 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// prescribed prescription of the slip length
         /// </summary>
-        Prescribed = 3
+        Prescribed = 3,
+
+        /// <summary>
+        /// write sliplengh for each cell
+        /// </summary>
+        Everywhere = 4
 
     }
 
@@ -186,10 +191,11 @@ namespace BoSSS.Solution.XNSECommon {
     public enum ViscosityMode {
     
         /// <summary>
-        /// recommended
+        /// 
         /// </summary>
         Standard,
 
+        /*
         /// <summary>
         /// in the special case of \f$ \mu_{\mathfrak{A}} = \mu_{\mathfrak{B}}\f$ ,
         /// this yields a symmetric discretization
@@ -198,7 +204,8 @@ namespace BoSSS.Solution.XNSECommon {
         /// seem to produce crappy results
         /// </remarks>
         ExplicitTransformation,
-
+        */
+        
         /// <summary>
         /// the full viscous stress tensor is discretized in the bulk domain, i.e. 
         /// \f[ 

@@ -136,6 +136,10 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             return (X => 0.0);
         }
 
+        public Func<double[], double> GetQ(string species) {
+            return (X => 0.0);
+        }
+
         public Func<double[], double, double> GetPhi() {
             return (X, t) => zi0 - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0];
         }
