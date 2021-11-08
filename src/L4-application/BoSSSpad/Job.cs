@@ -153,6 +153,8 @@ namespace BoSSS.Application.BoSSSpad {
             if (assiList.Contains(a))
                 return;
             assiList.Add(a);
+            //if(a.FullName.Contains("codeanalysis", StringComparison.InvariantCultureIgnoreCase))
+            //    Console.Write("");
 
             string fileName = Path.GetFileName(a.Location);
             var allMatch = assiList.Where(_a => Path.GetFileName(_a.Location).Equals(fileName)).ToArray();

@@ -131,24 +131,32 @@ namespace BoSSS.Application.BoSSSpad {
         /// seems to be required for JSON serialization in order to resolve classes/assemblies
         /// </summary>
         static void CallRandomStuff() {
-            new BatchProcessorConfig();
-            
-            new BoSSS.Solution.Control.Formula("X => Math.Sin(X[0])");
+            using(var tr = new FuncTrace()) {
+                new BatchProcessorConfig();
 
-            var g = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 4), GenericBlas.Linspace(-1, 1, 4));
-            var u = new SinglePhaseField(new Basis(g, 1), "u");
+                new BoSSS.Solution.Control.Formula("X => Math.Sin(X[0])");
 
-            var mtx = new BlockMsrMatrix(u.Mapping, u.Mapping);
-            mtx.AccEyeSp(2.0);
-            int L = mtx.RowPartitioning.LocalLength;
-            mtx.Solve_Direct(new double[L], new double[L]);
-            mtx.Solve_CG(new double[L], new double[L]);
+                var g = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 4), GenericBlas.Linspace(-1, 1, 4));
+                var u = new SinglePhaseField(new Basis(g, 1), "u");
 
-            using(var gp = new Gnuplot()) {
+                var mtx = new BlockMsrMatrix(u.Mapping, u.Mapping);
+                mtx.AccEyeSp(2.0);
+                int L = mtx.RowPartitioning.LocalLength;
+                mtx.Solve_Direct(new double[L], new double[L]);
+                mtx.Solve_CG(new double[L], new double[L]);
 
+                using(var gp = new Gnuplot()) {
+
+                }
+
+                var ls = new Foundation.XDG.LevelSet(new Basis(g, 2), "phi");
+
+                foreach(var t in BoSSS.Solution.Application.DllEnforcer()) {
+                    tr.Info("Loaded type " + t + " form " + t.Assembly);
+                }
+                //var tt = BoSSS.Solution.Application.DllEnforcer2();
+                //tr.Info("Loaded type " + tt + " form " + tt.Assembly);
             }
-
-            var ls = new Foundation.XDG.LevelSet(new Basis(g, 2), "phi");
         }
 
 
