@@ -31,7 +31,7 @@ namespace BoSSS.Application.XNSEC {
 
     static public partial class FullNSEControlExamples {
 
-        public class PseudoTwoDimensional_TwoPhaseFlow : IXNSECTest {
+        public class PseudoTwoDimensional_TwoPhaseFlow : IXNSECTest, IPrescribedMass  {
             public bool TestImmersedBoundary => false;
 
             /// <summary>
@@ -65,7 +65,7 @@ namespace BoSSS.Application.XNSEC {
             public Func<double[], double, double> GetU(string species, int d) {
                 if (d == 0) {
                     if (species == "A") {
-                        return ((_2D)((x, y) => 4.0)).Convert_xy2X().Convert_X2Xt();
+                        return ((_2D)((x, y) => 4.00)).Convert_xy2X().Convert_X2Xt();
                     } else if (species == "B") {
                         return ((_2D)((x, y) => m_DifferentFluids ? 2.0 : 4.0)).Convert_xy2X().Convert_X2Xt();
                     } else {
@@ -91,7 +91,8 @@ namespace BoSSS.Application.XNSEC {
                 double L = 5;
                 double H = 2;
                 double[] Xnodes = GenericBlas.Linspace(0, L, Resolution + 1);
-                double[] Ynodes = GenericBlas.Linspace(0, H, 4);
+                double[] Ynodes = GenericBlas.Linspace(0, L, Resolution + 1);
+                //double[] Ynodes = GenericBlas.Linspace(0, H, 4);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicY: true);
 
                 grd.EdgeTagNames.Add(1, "velocity_inlet_left");
@@ -151,13 +152,13 @@ namespace BoSSS.Application.XNSEC {
 
             public double mu_A {
                 get {
-                    return 10.0;
+                    return 10.0*1;
                 }
             }
 
             public double mu_B {
                 get {
-                    return 1.0;
+                    return 1.0*1;
                 }
             }
 
@@ -196,6 +197,10 @@ namespace BoSSS.Application.XNSEC {
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
+            }
+
+            public Func<double[], double, double> GetPrescribedMassflux_Evaluator() {
+                return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
             }
 
             public double Sigma {

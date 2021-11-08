@@ -14,24 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.Control;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using BoSSS.Foundation.Grid;
-using BoSSS.Foundation;
-using BoSSS.Solution.Utils;
-using BoSSS.Platform.LinAlg;
-using BoSSS.Platform;
-using BoSSS.Solution.Control;
-using BoSSS.Solution.NSECommon;
-using BoSSS.Foundation.Grid.Classic;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
-
     /// <summary>
-    /// Interface for tests (historical stuff). 
+    /// Interface for tests (historical stuff).
     /// </summary>
     public interface ITest {
 
@@ -110,7 +101,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
     public interface IXNSETest : ITest {
 
-        /// <summary> 
+        /// <summary>
         /// Some external volume force, e.g. gravity.
         /// </summary>
         Func<double[], double> GetF(string species, int d);
@@ -152,6 +143,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         Func<double[], double, double> GetPhi2U(int d);
     }
 
+
+
     public interface IXNSECTest : IXNSETest {
 
         /// <summary>
@@ -159,18 +152,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         Func<double[], double, double> GetTemperature(string species);
 
-
         /// <summary>
         /// Exact solution/Initial value for mass fractions, for species <paramref name="species"/>, component <paramref name="comp"/>.
         /// </summary>
         Func<double[], double, double> GetMassFractions(string species, int comp);
 
-
         /// <summary>
         /// Total number of chemical components involved in the solution
         /// </summary>
         int NumberOfChemicalComponents { get; }
-
 
         /// <summary>
         /// Activate chemical reaction related terms in the energy and species equations
@@ -188,8 +178,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         bool EnableTemperature { get; }
 
         /// <summary>
-        /// Directional vector of gravity 
+        /// Directional vector of gravity
         /// </summary>
         double[] GravityDirection { get; }
+    }
+
+    public interface IPrescribedMass : IXNSECTest {
+        /// <summary>
+        /// only available if no heat equation is solved
+        /// </summary>
+        Func<double[], double, double> GetPrescribedMassflux_Evaluator();
     }
 }

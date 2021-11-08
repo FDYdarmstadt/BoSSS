@@ -187,5 +187,17 @@ namespace BoSSS.Application.XNSEC {
             }
         }
 
+        public static void DeleteOldTextFiles() {
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.txt")) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
+                }
+                Console.WriteLine(";");
+            }
+        }
+
     }
 }

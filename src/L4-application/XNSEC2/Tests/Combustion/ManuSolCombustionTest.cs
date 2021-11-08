@@ -10,16 +10,17 @@ namespace BoSSS.Application.XNSEC {
     static public partial class FullNSEControlExamples {
 
         static public XNSEC_Control NUnitTestManuSol_3() {
-            //var C = ControlManuSolLowMachCombustion(DGp: 1, SizeFactor: 2);
+            //var C = ControlManuSolLowMachCombustion(DGp: 2, SizeFactor: 3);
             //C.DbPath = "c:\\BoSSS_DB";
-            var C = ControlManuSolLowMachCombustion(DGp: 2, SizeFactor:4);
+            var C = ControlManuSolLowMachCombustion(DGp: 2, SizeFactor: 4);
+
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
             C.ReactionRateConstants = new double[] { 1e4, 3, 1, 1 };
             C.HeatRelease = 1;
             C.ImmediatePlotPeriod = 1;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-
+            C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
 
 
             C.VariableOneStepParameters = false;
