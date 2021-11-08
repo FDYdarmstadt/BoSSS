@@ -186,7 +186,19 @@ namespace BoSSS.Application.BoSSSpad {
         /// Sets Text Formatter for objects of specific type
         /// </summary>
         public static void AddObjectFormatter<T>(Func<T, string> optValFormatter = null) {
-            Formatter.SetPreferredMimeTypeFor(typeof(T), "text/plain");
+            Type t = typeof(T);
+
+            try {
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
+            } catch (NullReferenceException) {
+                Console.WriteLine("Trying alternative method");
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
+            }
+
             Formatter.Register(
                 type: typeof(T),
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -208,7 +220,17 @@ namespace BoSSS.Application.BoSSSpad {
         public static void AddDictFormatter<KeyType, ValType>(Func<ValType, string> optKeyFormatter = null, Func<ValType, string> optValFormatter = null) {
             var t = typeof(IDictionary<KeyType, ValType>);
 
-            Formatter.SetPreferredMimeTypeFor(t, "text/plain");
+            try {
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
+            } catch (NullReferenceException) {
+                Console.WriteLine("Trying alternative method");
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
+            }
+
             Formatter.Register(
                 type: t,
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -242,7 +264,17 @@ namespace BoSSS.Application.BoSSSpad {
         public static void AddEnumFormatter<ValType>(Func<ValType, string> optValFormatter = null) {
             var t = typeof(IEnumerable<ValType>);
 
-            Formatter.SetPreferredMimeTypeFor(t, "text/plain");
+            try {
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
+            } catch (NullReferenceException) {
+                Console.WriteLine("Trying alternative method");
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
+            }
+
             Formatter.Register(
                 type: t,
                 formatter: (object obj, System.IO.TextWriter writer) => {
