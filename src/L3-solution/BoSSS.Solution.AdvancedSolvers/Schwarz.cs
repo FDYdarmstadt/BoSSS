@@ -1013,16 +1013,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         Console.WriteLine($"delayed caching activated at block {iPart} on level {m_MgOp.LevelIndex}");
                                     blockSolvers[iPart].Solve(xi, bi);
                                     bool IsDisposed = DisposeSchwarzBlocks(iPart);
-                                stw.Stop();
-
-                                MinBlockSize = Math.Min(MinBlockSize, xi.Length);
-                                MaxBlockSize = Math.Max(MaxBlockSize, xi.Length);
-
-                                double t = stw.Elapsed.TotalSeconds;
-                                mintime = Math.Min(t, mintime);
-                                maxtime = Math.Max(t, maxtime);
-                                totTime += t;
-                                */
                                 }
 
                           

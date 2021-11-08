@@ -1557,8 +1557,7 @@ namespace BoSSS.Solution {
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
                     levelSolver = new DirectSolver() {
-                        WhichSolver = DirectSolver._whichSolver.PARDISO,
-                        SolverVersion = Parallelism.SEQ,
+                        WhichSolver = DirectSolver._whichSolver.PARDISO
                     };
                     //levelSolver = new DirectSolver() {
                     //    WhichSolver = DirectSolver._whichSolver.MUMPS,
