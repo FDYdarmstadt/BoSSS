@@ -173,7 +173,7 @@ namespace BoSSS.Application.XNSEC {
         }
 
         /// <summary>
-        /// Tests a fixed level set in a constant velocity field
+        /// Tests a fixed level set in a constant velocity field for each phase
         /// </summary>
         /// <param name="deg"></param>
         /// <param name="AgglomerationTreshold"></param>
@@ -192,17 +192,45 @@ namespace BoSSS.Application.XNSEC {
             ) {
             BoSSS.Solution.Application.InitMPI();
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
-            int resolution = 5;
+            int resolution = 10;
             var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, false, RightBC_PressureOutlet);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, constantDensity: true, resolution);
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
 
+            XNSECSolverTest(Tst, C);            
+        }
 
-            XNSECSolverTest(Tst, C);
 
-            
+
+        /// <summary>
+        /// Tests a fixed level set in a constant velocity field for each phase
+        /// </summary>
+        /// <param name="deg"></param>
+        /// <param name="AgglomerationTreshold"></param>
+        /// <param name="SolverMode_performsolve"></param>
+        /// <param name="CutCellQuadratureType"></param>
+        /// <param name="stm"></param>
+        [Test]
+        public static void PseudoTwoDimensionalTwoPhaseFlow_ScalingTest(
+            [Values(2)] int deg,
+            [Values(0)] double AgglomerationTreshold,
+            [Values(false, true)] bool SolverMode_performsolve,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
+            [Values(true)] bool differentFluids,
+            [Values(false, true)] bool RightBC_PressureOutlet
+            ) {
+            BoSSS.Solution.Application.InitMPI();
+            ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
+            int resolution = 10;
+            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, false, RightBC_PressureOutlet);
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, constantDensity: true, resolution);
+            C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
+
             ASScalingTest(Tst, new[] { 8, 16, 32, 64 }, vmode, deg, CutCellQuadratureType, stm);
         }
+
+
 
         /// <summary>
         /// Tests a fixed level set in a constant velocity field

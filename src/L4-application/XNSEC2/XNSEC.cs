@@ -463,12 +463,35 @@ namespace BoSSS.Application.XNSEC {
             if (config.TemperatureEquationOK) {
                 opFactory.AddEquation(new LowMachEnergy("A", D, boundaryMap, config, EoS_A, Control.HeatRelease, Control.ReactionRateConstants, Control.MolarMasses, Control.TRef, Control.cpRef, Control.dtFixed, Control.myThermalWallType));
                 opFactory.AddEquation(new LowMachEnergy("B", D, boundaryMap, config, EoS_B, Control.HeatRelease, Control.ReactionRateConstants, Control.MolarMasses, Control.TRef, Control.cpRef, Control.dtFixed, Control.myThermalWallType));
-
+                opFactory.AddEquation(new HeatInterface_LowMach("A", "B", D, boundaryMap, config));
                 if (config.isEvaporation) {
                     //opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
                 } else {
                     opFactory.AddEquation(new HeatInterface_LowMach("A", "B", D, boundaryMap, config));
                 }
+
+
+
+                if (config.isEvaporation) {
+  
+
+                    var MassFluxExt = new MassFluxExtension_Evaporation(config);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, MassFluxExt);
+                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                        opFactory.AddParameter(MassFluxExt);
+                    }
+                }
+
+                opFactory.AddCoefficient(new EvapMicroRegion());
+
+                if (config.prescribedMassflux != null)
+                    opFactory.AddCoefficient(new PrescribedMassFlux(config));
+
+
+
+
+
+
                 opFactory.AddParameter(new dp0dt(EoS_A, Control.Reynolds, Control.Prandtl));
 
                 opFactory.AddParameter(new ThermodynamicPressure(1.0, Control.ThermodynamicPressureMode, EoS_A));
