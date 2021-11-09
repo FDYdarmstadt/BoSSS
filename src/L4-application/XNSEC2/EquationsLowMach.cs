@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation.XDG;
+﻿using BoSSS.Application.XNSFE_Solver;
+using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XheatCommon;
@@ -82,6 +83,23 @@ namespace BoSSS.Solution.XNSECommon {
         public override string SecondSpeciesName => "B";
 
         public override string CodomainName => codomainName;
+    }
+
+
+        /// <summary>
+    /// same as <see cref="InterfaceContinuity_Evaporation"/> but using Newton solver compatible components
+    /// </summary>
+    public class InterfaceContinuity_Evaporation_Newton_LowMach : InterfaceContinuity_Evaporation {
+
+        public InterfaceContinuity_Evaporation_Newton_LowMach(string phaseA,
+            string phaseB,
+            int dimension,
+            XNSFE_OperatorConfiguration config) : base(phaseA, phaseB, dimension, config) {
+        }
+
+        protected override void AddInterfaceContinuity_Evaporation(int D, XNSFE_OperatorConfiguration config) {
+            AddComponent(new DivergenceAtLevelSet_Evaporation_StrongCoupling_LowMach(D, -1, false, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+        }
     }
 
     /// <summary>
