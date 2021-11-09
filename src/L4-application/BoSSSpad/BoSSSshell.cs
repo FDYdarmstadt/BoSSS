@@ -96,6 +96,9 @@ namespace BoSSS.Application.BoSSSpad {
             }
             InitTraceFile();
 
+            Microsoft.DotNet.Interactive.Formatting.Formatter.RecursionLimit = 1;
+            Microsoft.DotNet.Interactive.Formatting.Formatter.ListExpansionLimit = 100;
+
             AddObjectFormatter<SinglePhaseField>();
             AddObjectFormatter<Foundation.XDG.XDGField>();
             AddObjectFormatter<Foundation.XDG.XDGField.SpeciesShadowField>();
@@ -128,24 +131,32 @@ namespace BoSSS.Application.BoSSSpad {
         /// seems to be required for JSON serialization in order to resolve classes/assemblies
         /// </summary>
         static void CallRandomStuff() {
-            new BatchProcessorConfig();
-            
-            new BoSSS.Solution.Control.Formula("X => Math.Sin(X[0])");
+            using(var tr = new FuncTrace()) {
+                new BatchProcessorConfig();
 
-            var g = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 4), GenericBlas.Linspace(-1, 1, 4));
-            var u = new SinglePhaseField(new Basis(g, 1), "u");
+                new BoSSS.Solution.Control.Formula("X => Math.Sin(X[0])");
 
-            var mtx = new BlockMsrMatrix(u.Mapping, u.Mapping);
-            mtx.AccEyeSp(2.0);
-            int L = mtx.RowPartitioning.LocalLength;
-            mtx.Solve_Direct(new double[L], new double[L]);
-            mtx.Solve_CG(new double[L], new double[L]);
+                var g = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 4), GenericBlas.Linspace(-1, 1, 4));
+                var u = new SinglePhaseField(new Basis(g, 1), "u");
 
-            using(var gp = new Gnuplot()) {
+                var mtx = new BlockMsrMatrix(u.Mapping, u.Mapping);
+                mtx.AccEyeSp(2.0);
+                int L = mtx.RowPartitioning.LocalLength;
+                mtx.Solve_Direct(new double[L], new double[L]);
+                mtx.Solve_CG(new double[L], new double[L]);
 
+                using(var gp = new Gnuplot()) {
+
+                }
+
+                var ls = new Foundation.XDG.LevelSet(new Basis(g, 2), "phi");
+
+                foreach(var t in BoSSS.Solution.Application.DllEnforcer()) {
+                    tr.Info("Loaded type " + t + " form " + t.Assembly);
+                }
+                //var tt = BoSSS.Solution.Application.DllEnforcer2();
+                //tr.Info("Loaded type " + tt + " form " + tt.Assembly);
             }
-
-            var ls = new Foundation.XDG.LevelSet(new Basis(g, 2), "phi");
         }
 
 
@@ -188,7 +199,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Sets Text Formatter for objects of specific type
         /// </summary>
         public static void AddObjectFormatter<T>(Func<T, string> optValFormatter = null) {
-            Formatter.SetPreferredMimeTypeFor(typeof(T), "text/plain");
+            Formatter.SetPreferredMimeTypesFor(typeof(T), "text/plain");
   
             Formatter.Register(
                 type: typeof(T),
@@ -209,7 +220,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// text formatting of data tables
         /// </summary>
         public static void AddTableFormatter() {
-            Formatter.SetPreferredMimeTypeFor(typeof(System.Data.DataTable), "text/plain");
+            Formatter.SetPreferredMimeTypesFor(typeof(System.Data.DataTable), "text/plain");
             Formatter.Register(
                 type: typeof(System.Data.DataTable),
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -225,7 +236,7 @@ namespace BoSSS.Application.BoSSSpad {
         public static void AddDictFormatter<KeyType, ValType>(Func<ValType, string> optKeyFormatter = null, Func<ValType, string> optValFormatter = null) {
             var t = typeof(IDictionary<KeyType, ValType>);
 
-            Formatter.SetPreferredMimeTypeFor(t, "text/plain");
+            Formatter.SetPreferredMimeTypesFor(t, "text/plain");
             Formatter.Register(
                 type: t,
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -259,7 +270,7 @@ namespace BoSSS.Application.BoSSSpad {
         public static void AddEnumFormatter<ValType>(Func<ValType, string> optValFormatter = null) {
             var t = typeof(IEnumerable<ValType>);
 
-            Formatter.SetPreferredMimeTypeFor(t, "text/plain");
+            Formatter.SetPreferredMimeTypesFor(t, "text/plain");
             Formatter.Register(
                 type: t,
                 formatter: (object obj, System.IO.TextWriter writer) => {

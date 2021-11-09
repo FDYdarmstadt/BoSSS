@@ -3669,8 +3669,32 @@ namespace BoSSS.Solution {
             return GenericBlas.Linspace(-1, 1, 2);
         }
 
+        /// <summary>
+        /// enforce the compiler to integrate Microsoft.CodeAnalysis.dll etc.
+        /// </summary>
+        public static Type[] DllEnforcer() {
+            using(var tr = new FuncTrace()) {
+                var types = new Type[] {
+                   typeof(Microsoft.CodeAnalysis.Compilation),
+                    typeof(Microsoft.CodeAnalysis.CSharp.CSharpCompilation),
+                    typeof(Microsoft.CodeAnalysis.Scripting.Script),
+                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript)
+                };
 
+                foreach(var t in types) {
+                    tr.Info("Loaded type " + t + " form " + t.Assembly);
+                }
+
+                return types;
+            }
+        }
+
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //public static Microsoft.CodeAnalysis.Compilation DllEnforcer2() {
+        //    return Microsoft.CodeAnalysis.CSharp.CSharpCompilation.C
+        //}
     }
-
 }
 
