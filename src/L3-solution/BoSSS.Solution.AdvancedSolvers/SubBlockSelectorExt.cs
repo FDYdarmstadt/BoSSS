@@ -168,6 +168,15 @@ namespace BoSSS.Solution.AdvancedSolvers
                 Debug.Assert(!m_map.IsInLocalRange(GlobIdx));
             }
         }
+
+        /// <summary>
+        /// true if no elements are selected
+        /// </summary>
+        public bool IsEmpty {
+            get;
+            private set;
+        }
+
         private void SetThisShitUp(BlockMaskBase[] masks) {
             List<long> tmpOffsetList = new List<long>();
             List<int> tmpLengthList = new List<int>();
@@ -178,13 +187,14 @@ namespace BoSSS.Solution.AdvancedSolvers
                 tmpLengthList.AddRange(mask.GetAllSubMatrixCellLength());
                 tmpNi0.AddRange(mask.m_StructuredNi0.ToList());
             }
-            if(tmpOffsetList.Count == 0)
-                throw new ArgumentException("Nothing Selected. Mask is empty");
+            if (tmpOffsetList.Count == 0)
+                IsEmpty = true;
+                //throw new ArgumentException("Nothing Selected. Mask is empty");
             Debug.Assert(tmpOffsetList != null);
             Debug.Assert(tmpLengthList != null);
             Debug.Assert(tmpNi0 != null);
-            Debug.Assert(tmpOffsetList.GroupBy(x => x).Any(g => g.Count() == 1));
-            Debug.Assert(tmpNi0.GroupBy(x => x).Any(g => g.Count() == 1));
+            Debug.Assert(IsEmpty || tmpOffsetList.GroupBy(x => x).Any(g => g.Count() == 1));
+            Debug.Assert(IsEmpty || tmpNi0.GroupBy(x => x).Any(g => g.Count() == 1));
 
             SubMatrixOffsets = tmpOffsetList;
             SubMatrixLen = tmpLengthList;

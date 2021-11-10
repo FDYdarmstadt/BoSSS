@@ -608,7 +608,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         var RHSvec = opAff.CloneAs();
                         RHSvec.ScaleV(-1);
-
+                        
                         if(optRHS != null)
                             RHSvec.AccV(1.0, new CoordinateVector(optRHS));
 
