@@ -879,6 +879,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // e.g. consider a combination of empty external and non empty local mask
             // In case of IBM, selections with no species are also allowed
             if (!emptysel && totNoOfSpeciesInSelection > 0) {
+
+                // `ListNi0.Count` filters some phatological use case, e.g. very coarse meshes
+
                 Debug.Assert(ListNi0.Count <= 0 || ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1)); // test for uniqueness of local index
                 Debug.Assert(ListNi0.Count <= 0 || ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1)); // test for uniqueness of global index
                 Debug.Assert(ListNi0.Count() == NumOfNi0);

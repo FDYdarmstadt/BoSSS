@@ -170,7 +170,8 @@ namespace BoSSS.Solution.AdvancedSolvers
         }
 
         /// <summary>
-        /// true if no elements are selected
+        /// true if no elements are selected;
+        /// Typically some phatological use case, e.g. very coarse meshes
         /// </summary>
         public bool IsEmpty {
             get;
@@ -188,7 +189,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 tmpNi0.AddRange(mask.m_StructuredNi0.ToList());
             }
             if (tmpOffsetList.Count == 0)
-                IsEmpty = true;
+                IsEmpty = true; // typically some phatological use case, e.g. very coarse meshes
                 //throw new ArgumentException("Nothing Selected. Mask is empty");
             Debug.Assert(tmpOffsetList != null);
             Debug.Assert(tmpLengthList != null);
