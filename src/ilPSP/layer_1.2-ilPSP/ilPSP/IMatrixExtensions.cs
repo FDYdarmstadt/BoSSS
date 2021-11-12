@@ -2123,6 +2123,23 @@ namespace ilPSP {
         }
 
 
+        /// <summary>
+        /// least-squares-solve (LAPACK function DGELSY).
+        /// </summary>
+        /// <param name="Mtx">Input, matrix of the least-squares system.</param>
+        /// <param name="b">right hand side</param>
+        /// <param name="RCOND">
+        /// Condition that defines the size of the eigenvalues that are
+        /// considered zero (e.g., to cope with numerical round-off). A
+        /// negative number implies that all non-negative eigenvalues are taken
+        /// into account
+        /// </param>
+        static public double[] LeastSquareSolve<T>(this T Mtx, double[] b, double RCOND = 1.0e-14) where T : IMatrix {
+            double[] x = new double[Mtx.NoOfCols];
+            Mtx.LeastSquareSolve(x, b, RCOND);
+            return x;
+        }
+
 
         /// <summary>
         /// least-squares-solve (LAPACK function DGELSY).

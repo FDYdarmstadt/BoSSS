@@ -47,11 +47,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         Func<double[], double, double> GetPhi();
 
-        ///// <summary>
-        ///// if known the exact solution will be set
-        ///// </summary>
-        //bool setExtSol { get; }
-
         /// <summary>
         /// Time step size.
         /// </summary>
@@ -77,13 +72,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// density of fluid A
         /// </summary>
         double rho_B { get; }
-
-        ///// <summary> interface speed in normal direction at time <paramref name="t"/>. </summary>
-        //BoSSS.Foundation.ScalarFunction GetS(double time);
-
-
-        ///// <summary> some external surface force (usually, only of use for manufactured solutions)</summary>
-        //ScalarFunction GetSF(double time, int d);
 
         /// <summary>
         /// is the interface a material one or is it non-material?

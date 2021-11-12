@@ -211,7 +211,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// Central difference scheme for divergence operator.
     /// </summary>
-    public class Divergence_CentralDifferenceJacobian : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, ISupportsJacobianComponent {
+    public class Divergence_CentralDifferenceJacobian : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
 
         int Component;
         IncompressibleBoundaryCondMap Bcmap;
@@ -287,7 +287,8 @@ namespace BoSSS.Solution.NSECommon {
                     break;
                 case IncompressibleBcType.Velocity_Inlet: {
                         double TemperatureOut = 0.0;
-                        double Uout = VelFunction[inp.EdgeTag](inp.X, inp.time);
+                        double Uout = VelFunction[inp.EdgeTag](inp.X, inp.time) * VelocityMultiplier;                       
+
                         switch (Bcmap.PhysMode) {
                             case PhysicsMode.Incompressible:
                                 res = Uout * inp.Normal[Component];
@@ -447,7 +448,14 @@ namespace BoSSS.Solution.NSECommon {
             var DivergenceDerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
             return new IEquationComponent[] { DivergenceDerivEdg, DivergenceDerivVol };
         }
-
+        /// <summary>
+        /// Multiplier used with every velocity BC
+        /// </summary>
+        double VelocityMultiplier = 1.0;
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if (cs.UserDefinedValues.Keys.Contains("VelocityMultiplier"))
+                VelocityMultiplier = (double)cs.UserDefinedValues["VelocityMultiplier"];
+        }
 
         public virtual IList<string> ArgumentOrdering {
             get {                

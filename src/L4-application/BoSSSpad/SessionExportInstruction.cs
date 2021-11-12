@@ -158,7 +158,7 @@ namespace BoSSS.Application.BoSSSpad {
         public override string YouMust() {
             Console.Write("Starting export process... ");
             PrepareProcess(CreateConfiguration(), PlotDirPath).Start();
-            Console.WriteLine("Data will be written to the following directory:");
+            Console.WriteLine("Data will be written to the directory: " + PlotDirPath);
             return PlotDirPath;
         }
 

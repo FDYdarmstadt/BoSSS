@@ -587,7 +587,27 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
+        public static ZLS_Control SimpleDivergencefree(int p = 2, int kelem = 16, int AMRlvl = 0) {
+        public static ZLS_Control SimpleDivergencefree(int p = 2, int kelem = 16, int AMRlvl = 0) {
+=========
         public static ZLS_Control Test_Convergence(int p = 2, int kelem = 16) {
+>>>>>>>>> Temporary merge branch 2
+        public static ZLS_Control SimpleDivergencefree(int p = 2, int kelem = 16, int AMRlvl = 0) {
+=========
+        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 16) {
+>>>>>>>>> Temporary merge branch 2
+        public static ZLS_Control SimpleDivergencefree(int p = 2, int kelem = 16, int AMRlvl = 0) {
+=========
+        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 16) {
+>>>>>>>>> Temporary merge branch 2
+        public static ZLS_Control SimpleDivergencefree(int p = 2, int kelem = 16, int AMRlvl = 0) {
+=========
+        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 16) {
+>>>>>>>>> Temporary merge branch 2
+        public static ZLS_Control SimpleDivergencefree(int p = 2, int kelem = 16, int AMRlvl = 0) {
+=========
+        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 16) {
+>>>>>>>>> Temporary merge branch 2
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 4;
@@ -748,13 +768,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double dt = 0.01;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 1;
-            C.NoOfTimesteps = 1000000;
-            C.saveperiod = 1;
-
-            #endregion
-
-            return C;
+                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    sum = sum + (Math.Pow(-1, k) * Vvorx(x, 2 * (k + 1)));
         }
         public class VelocityX : IBoundaryAndInitialData {
             int K;
@@ -768,8 +783,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 double sum = 0;
 
                 for (int k = 0; k <= K; k++) {
+<<<<<<<<< Temporary merge branch 1
+                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    sum = sum + (Math.Pow(-1, k) * Vvorx(x, 2 * (k + 1)));
+=========
                     //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
                     sum = sum + (Math.Pow(-1, k) * Vvorx(X, (k + 1)));
+>>>>>>>>> Temporary merge branch 2
                 }
                 return amplitude * sum;
 
@@ -777,13 +797,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             double Vvorx(double[] X, double lamda) {
                 return Math.Sin(Math.PI * X[1] * lamda);
-            }
-
-            public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
-                NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
-            }
-
-        };
+                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
         public class VelocityY : IBoundaryAndInitialData {
             int K;
             double amplitude;
@@ -797,8 +812,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 double sum = 0;
 
                 for (int k = 0; k <= K; k++) {
+<<<<<<<<< Temporary merge branch 1
+                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
+=========
                     //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
                     sum = sum + (Math.Pow(-1, k) * Vvory(X,k + 1));
+>>>>>>>>> Temporary merge branch 2
                 }
                 return amplitude * sum;
 

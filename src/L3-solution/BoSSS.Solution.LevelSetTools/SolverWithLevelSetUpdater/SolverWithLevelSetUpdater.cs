@@ -64,12 +64,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel);
 
 
+
+        /// <summary>
+        /// Instantiation of the spatial operator;
+        /// Can only be called once per gird lifetime (until <see cref=""/>
+        /// </summary>
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
-            
+            // fails on a second call, if the LsUpdater is already configured.
+            // access `base.XOperator`
             XSpatialOperatorMk2 xOperator = GetOperatorInstance(D, LsUpdater);
             return xOperator;
         }
 
+        /// <summary>
+        /// Instantiation of the spatial operator; 
+        /// </summary>
         protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
 
         /// <summary>

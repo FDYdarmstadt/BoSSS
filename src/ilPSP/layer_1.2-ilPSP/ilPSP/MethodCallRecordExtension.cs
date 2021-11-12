@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 
 namespace ilPSP {
     public static class MethodCallRecordExtension {

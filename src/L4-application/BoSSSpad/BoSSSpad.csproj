@@ -109,6 +109,7 @@
     <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj" />
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
     <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj" />
+    <ProjectReference Include="..\XNSEC2\XNSEC.csproj" />
     <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
     <ProjectReference Include="..\XNSFE_Solver\XNSFE_Solver.csproj" />

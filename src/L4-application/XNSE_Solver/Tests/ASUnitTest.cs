@@ -861,6 +861,37 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             XNSESolverTest(Tst, C);
         }
 
+
+        /// <summary>
+        /// <see cref="SphericalHarmonicsTest"/>
+        /// </summary>
+        public static void ShericalHarmonoicsPostprocessingTest() {
+
+            var Tst = new SphericalHarmonicsTest();
+            var C = TstObj2CtrlObj(Tst, 2, 0.1,
+                ViscosityMode.FullySymmetric, 
+                XQuadFactoryHelper.MomentFittingVariants.Saye, 
+                SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+
+            var pp = new Logging.SphericalHarmonicsLogging();
+            C.PostprocessingModules.Add(pp);
+            C.SkipSolveAndEvaluateResidual = true;
+
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
+
+            XNSESolverTest(Tst, C);
+
+            double[] SH_modes = pp.LoggedValues.Last();
+            double totErr = Tst.ComputeModeError(SH_modes);
+
+            Console.WriteLine("Total mode error: " + totErr);
+
+            Assert.LessOrEqual(totErr, 0.003, "Large Error on spherical mode decomposition.");
+
+        }
+
+
 #if !DEBUG
         /// <summary>
         /// Tests the combination of AMR and 

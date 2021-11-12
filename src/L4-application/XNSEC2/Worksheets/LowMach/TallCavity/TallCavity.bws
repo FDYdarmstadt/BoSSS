@@ -1,0 +1,424 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+Databases loaded:
+List of 3 instances of IDatabaseInfo {
+  0: { Session Count = 333; Grid Count = 383; Path = D:\bosss_db }
+  1: { Session Count = 1; Grid Count = 1; Path = d:\bosss_db_Natconv }
+  2: { Session Count = 51; Grid Count = 50; Path = \\hpccluster\hpccluster-scratch\gutierrez\NatConvStudyTEST }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using System.Diagnostics;
+using BoSSS.Solution.NSECommon;
+using static System.Math;
+using BoSSS.Solution.Queries;
+using BoSSS.Application.LowMachCombustionNSE;
+
+//using NSE_SIMPLE.LowMach;
+
+
+
+**************
+==============
+string WFlowName = "TallCavity";
+WorkflowMgm.Init(WFlowName);
+**************
+Project name is set to 'ConvergenceStudyCombustion115211213'.
+
+==============
+//string dbPath = @"\\hpccluster\hpccluster-scratch\gutierrez\bosss_db_ConvergenceStudyMS";
+string dbPath = @"D:\bosss_db_ConvergenceStudyMS";
+//string dbPath= @"E:\gutierrez\NatConv";
+var myDb      = OpenOrCreateDatabase(dbPath);
+**************
+Creating database 'D:\bosss_db_ConvergenceStudyMS'.
+
+==============
+//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\gutierrez\tmp", "hpccluster", ComputeNodes : new[]{"hpccluster"});
+var myBatch = new MiniBatchProcessorClient(@"D:\deploy-Mini");
+**************
+==============
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Mini batch processor is already running.
+
+==============
+Type solver = typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSE);
+var C       = new LowMachCombustionNSEControl();
+**************
+==============
+**************
+==============
+// ==========
+// Parameters
+// ==========
+**************
+==============
+int[] procs    = new int[] {1};
+**************
+==============
+// ===============================
+// Init grids and save to database
+// ===============================
+**************
+==============
+**************
+==============
+//int[] Resolutions= new int[] { 1,2,3,4  };
+int[] Resolutions= new int[] {2};
+IGridInfo[] grids = new IGridInfo[Resolutions.Length];
+
+**************
+==============
+**************
+==============
+for(int cnt = 0; cnt < Resolutions.Length; cnt++) {
+    int  Res = Resolutions[cnt];
+    var _xNodes = GenericBlas.Linspace(0, 1, (int)(Math.Pow(2, Res) + 1));
+    var _yNodes = GenericBlas.Linspace(0, 1, (int)(Math.Pow(2, Res) + 1));
+  
+    // Generate Grid
+    int J           = (_xNodes.Length - 1)*(_yNodes.Length - 1);
+    string GridName = string.Format(WorkflowMgm.CurrentProject + "_J" + J);
+    Console.WriteLine(GridName);
+    grids[cnt] = myDb.Grids.SingleOrDefault(grd => grd.Name == GridName);
+
+if(grids[cnt] == null){
+    Console.WriteLine("Creating grid with " + J + " cells.");
+    GridCommons grd; 
+    grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
+    grd.EdgeTagNames.Add(1, "Pressure_Outlet_left");
+    grd.EdgeTagNames.Add(2, "Pressure_Outlet_bottom");
+    grd.EdgeTagNames.Add(3, "Velocity_Inlet_right");
+    grd.EdgeTagNames.Add(4, "Velocity_Inlet_top");
+    grd.DefineEdgeTags(delegate (double[] _X) {
+                    double x = _X[0];
+                    double y = _X[1];
+                    if(Math.Abs(x - 0) < 1e-8)
+                        return 1;
+                    if(Math.Abs(y - 0) < 1e-8)
+                        return 2;
+                    if(Math.Abs(x - 1) < 1e-8)
+                        return 3;
+                    if(Math.Abs(y - 1) < 1e-8)
+                        return 4;
+                    else throw new ArgumentOutOfRangeException();
+                    });
+                
+    myDb.SaveGrid(ref grd);
+    grids[cnt] = grd;
+} else{
+Console.WriteLine("Found Grid: " + grids[cnt]);
+if(grids[cnt].NumberOfCells != J)
+            throw new Exception("J mismatch");
+        
+        if(grids[cnt].SpatialDimension != 3)
+            throw new Exception("D mismatch");
+        
+}
+    
+}
+
+**************
+ConvergenceStudyCombustion115211213_J16
+Creating grid with 16 cells.
+
+==============
+**************
+==============
+// =====================================
+// setup control object for a solver run
+// =====================================
+**************
+==============
+**************
+==============
+List<LowMachCombustionNSEControl> controls = new List<LowMachCombustionNSEControl>();
+**************
+==============
+// polynomial degrees to test
+//int[] PolyDegS = new int[] {1,2,3,4}; // k should be bigger than 1
+int[] PolyDegS = new int[] {2}; // k should be bigger than 1
+**************
+==============
+**************
+==============
+controls.Clear();
+foreach(int k in PolyDegS){
+int iGrd = 0;    
+foreach(IGridInfo grd in grids) {
+    iGrd ++;
+            var C = new LowMachCombustionNSEControl();
+             controls.Add(C);
+            // Solver configuration
+            // ==============
+            C.savetodb = true;
+            C.SetDatabase(myDb);
+             C.ManufacturedSolutionSwitch = true;
+             C.AnalyticsolutionSwitch     = true;
+             C.physicsMode                = PhysicsMode.Combustion;
+             C.MatParamMode               = MaterialParamsMode.Constant;
+             C.PenaltyViscMomentum        = 3.0;
+             C.PenaltyHeatConduction      = 3.0;
+                 int J  = grd.NumberOfCells;
+             
+             string caseName = string.Format("J{0}_k{1}", J, k);
+             Console.WriteLine("setting up: " + caseName);
+    
+    
+            C.SessionName = "LowMachCombustionManSol"+caseName;
+            C.saveperiod  = 1;
+            C.ProjectName = "2DCombustionConvergenceStudy";
+            C.Tags.Add("param study");
+            C.SetDGdegree(k);
+            C.SetGrid(grd);
+            C.TimesteppingMode                = AppControl._TimesteppingMode.Steady;
+            C.UseFDJ                          = false;
+            C.NonLinearSolver.SolverCode      = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.verbose         = true;
+            C.rhoOne                          = false;
+            C.ChemReactionActive              = true;
+            C.NonLinearSolver.UsePresRefPoint = true;
+              // Set Initial Conditions
+
+
+            
+            string p_init  = "X => Math.Sin(X[0] * X[1])*0.7"; 
+            string u_init  = "X => -Math.Cos(X[0])*0.7";
+            string v_init  = "X => -Math.Cos(X[1])*0.7";
+            string T_init  = " X => Math.Cos(X[0] * X[1])*0.7";
+            string Y0_init = "X => 0.3 * Math.Cos(X[0] * X[1])*0.7";
+            string Y1_init = "X => 0.6 * Math.Cos(X[0] * X[1])*0.7";
+            string Y2_init = "X => 0.1 * Math.Cos(X[0] * X[1])*0.7";
+            string Y3_init = "X => (1.0 - Math.Cos(X[0] * X[1]))*0.7";
+            
+            
+            
+            C.InitialValues.Add(VariableNames.Pressure, new Formula(p_init));
+            C.InitialValues.Add(VariableNames.Velocity_d(0), new Formula(u_init));
+            C.InitialValues.Add(VariableNames.Velocity_d(1), new Formula(v_init));
+            C.InitialValues.Add(VariableNames.Temperature, new Formula(T_init)); // T=0 would cause rho = NaN
+            C.InitialValues.Add(VariableNames.MassFraction0, new Formula(Y0_init));
+            C.InitialValues.Add(VariableNames.MassFraction1, new Formula(Y1_init));
+            C.InitialValues.Add(VariableNames.MassFraction2, new Formula(Y2_init));
+            C.InitialValues.Add(VariableNames.MassFraction3, new Formula(Y3_init));
+            
+            string p_an  = "X => Math.Sin(X[0] * X[1])"; 
+            string u_an  = "X => -Math.Cos(X[0])";
+            string v_an  = "X => -Math.Cos(X[1])";
+            string T_an  = " X => Math.Cos(X[0] * X[1])";
+            string Y0_an = "X => 0.3 * Math.Cos(X[0] * X[1])";
+            string Y1_an = "X => 0.6 * Math.Cos(X[0] * X[1])";
+            string Y2_an = "X => 0.1 * Math.Cos(X[0] * X[1])";
+            string Y3_an = "X => (1.0 - Math.Cos(X[0] * X[1]))";
+            
+
+            // Analytical / manufactured solutions
+            C.InitialValues.Add("p_an", new Formula(p_an));
+            C.InitialValues.Add("u_an",new Formula(u_an));
+            C.InitialValues.Add("v_an",new Formula(v_an));
+            C.InitialValues.Add("T_an", new Formula(T_an));
+            C.InitialValues.Add("Y0_an", new Formula(Y0_an));
+            C.InitialValues.Add("Y1_an", new Formula(Y1_an));
+            C.InitialValues.Add("Y2_an", new Formula(Y2_an));
+
+            // boundary conditions
+            // ===================
+
+            C.AddBoundaryValue("Velocity_Inlet_right", VariableNames.Velocity_d(0), new Formula(u_an));
+            C.AddBoundaryValue("Velocity_Inlet_right", VariableNames.Velocity_d(1), new Formula(v_an));
+            C.AddBoundaryValue("Velocity_Inlet_right", VariableNames.Temperature, new Formula(T_an));
+            C.AddBoundaryValue("Velocity_Inlet_right", VariableNames.MassFraction0, new Formula(Y0_an));
+            C.AddBoundaryValue("Velocity_Inlet_right", VariableNames.MassFraction1, new Formula(Y1_an));
+            C.AddBoundaryValue("Velocity_Inlet_right", VariableNames.MassFraction2, new Formula(Y2_an));
+            C.AddBoundaryValue("Velocity_Inlet_right", VariableNames.MassFraction3, new Formula(Y3_an));
+
+
+            C.AddBoundaryValue("Velocity_Inlet_top", VariableNames.Velocity_d(0), new Formula(u_an));
+            C.AddBoundaryValue("Velocity_Inlet_top", VariableNames.Velocity_d(1) ,new Formula(v_an));
+            C.AddBoundaryValue("Velocity_Inlet_top", VariableNames.Temperature, new Formula(T_an));
+            C.AddBoundaryValue("Velocity_Inlet_top", VariableNames.MassFraction0 ,new Formula(Y0_an));
+            C.AddBoundaryValue("Velocity_Inlet_top", VariableNames.MassFraction1, new Formula(Y1_an));
+            C.AddBoundaryValue("Velocity_Inlet_top", VariableNames.MassFraction2, new Formula(Y2_an));
+            C.AddBoundaryValue("Velocity_Inlet_top", VariableNames.MassFraction3, new Formula(Y3_an));
+
+            C.AddBoundaryValue("Pressure_Outlet_left", VariableNames.Pressure,  new Formula(p_an));
+            C.AddBoundaryValue("Pressure_Outlet_bottom", VariableNames.Pressure,  new Formula(p_an));
+
+}
+}
+**************
+setting up: J16_k2
+
+==============
+ controls[0].physicsMode
+**************
+Combustion
+==============
+**************
+==============
+**************
+==============
+foreach(var ctrl in controls) {
+    Console.WriteLine(" Submitting: " + ctrl.SessionName); 
+    var aJob = new Job(ctrl.SessionName, solver);
+    aJob.SetControlObject(ctrl);
+    aJob.NumberOfMPIProcs         = 1;
+    aJob.Activate(myBatch);
+   // ctrl.RunBatch(myBatch);
+}
+**************
+ Submitting: LowMachCombustionManSolJ16_k2
+Loading session adecc952-b954-4330-9c6d-eb8c929bff58 failed with message 'Could not find file 'D:\bosss_db\sessions\adecc952-b954-4330-9c6d-eb8c929bff58\Session.info'.'
+Job not submitted yet, or no result session is known - starting submission.
+Deploying executables and additional files ...
+Deployment directory: D:\deploy-Mini\LowMachCombustionNSE2020Jan30_11-31-21
+Source directory: D:\BoSSS\public\src\L4-application\BoSSSpad\bin\Debug
+copied 27 files.
+   writing file: control.obj
+deployment finished.
+
+==============
+WorkflowMgm.AllJobs
+**************
+List of 1 instances of KeyValuePair{String,Job} {
+  0: [LowMachCombustionManSolJ16_k2, LowMachCombustionManSolJ16_k2: PendingInExecutionQueue (BoSSS.Application.BoSSSpad.MiniBatchProcessorClient)]
+}
+==============
+WorkflowMgm.AllJobs.Pick(0).Value.Stdout
+**************
+      ___           ___           ___           ___           ___     
+     /\  \         /\  \         /\  \         /\  \         /\  \    
+    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   
+   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  
+  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ 
+ /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\
+ \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/
+  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  
+   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  
+    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   
+     ~~            \/__/         \/__/         \/__/         \/__/    
+                                                                      
+Running with 1 MPI process(es)
+arg #0 override from environment variable 'BOSSS_ARG_0': --control
+arg #1 override from environment variable 'BOSSS_ARG_1': control.obj
+arg #2 override from environment variable 'BOSSS_ARG_2': --prjnmn
+arg #3 override from environment variable 'BOSSS_ARG_3': ConvergenceStudyCombustion115211213
+arg #4 override from environment variable 'BOSSS_ARG_4': --sesnmn
+arg #5 override from environment variable 'BOSSS_ARG_5': LowMachCombustionManSolJ16_k2
+Session ID: 182b66dc-3cf5-47ec-89b9-04736ad6049b, DB path: 'D:\bosss_db_ConvergenceStudyMS'.
+Total number of cells:    16
+Total number of DOFs:     624
+Steady-state solve ...
+linear Solver: classic_pardiso
+nonlinear Solver: Newton
+
+Unhandled Exception: System.NullReferenceException: Object reference not set to an instance of an object.
+   at BoSSS.Solution.NSECommon.MaterialLawCombustion.GetDensity(Double[] phi)
+   at BoSSS.Solution.NSECommon.Divergence_CentralDifferenceJacobian.Flux(CommonParamsVol& inp, Double[] U, Double[] output)
+   at BoSSS.Solution.NSECommon.Divergence_CentralDifferenceJacobian.VolumeForm(CommonParamsVol& cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV)
+   at BoSSS.Foundation.VolumeFormDifferentiator.VolumeForm(CommonParamsVol& cpv, Double[] U, Double[,] GradU, Double V, Double[] GradV)
+   at BoSSS.Foundation.Quadrature.Linear.LinearVolumeFormVectorizer.GetCoeff(Double& TrialVar, Double& TestVar, CommonParamsVol& inp)
+   at BoSSS.Foundation.Quadrature.Linear.LinearVolumeFormVectorizer.BoSSS.Foundation.IVolumeForm_UxV.Form(VolumFormParams& prm, MultidimensionalArray UxV)
+   at BoSSS.Foundation.Quadrature.Linear.LECVolumeQuadrature2`2.<>c__DisplayClass61_0.<EvaluateEx>b__0(IVolumeForm_UxV C, MultidimensionalArray M)
+   at BoSSS.Foundation.Quadrature.Linear.LECVolumeQuadrature2`2.EvalNSumForm[EE](VolumFormParams& vfp, EquationComponentArgMapping`1[] Comps, MultidimensionalArray[][] CompBuffer, MultidimensionalArray[,] SumBuffer, Action`2 evalForm, Boolean affine, Stopwatch[][] watches)
+   at BoSSS.Foundation.Quadrature.Linear.LECVolumeQuadrature2`2.EvaluateEx(Int32 i0, Int32 Length, QuadRule qr, MultidimensionalArray QuadResult)
+   at BoSSS.Foundation.Quadrature.Quadrature`2.Execute()
+   at BoSSS.Foundation.Quadrature.Linear.LECVolumeQuadrature2`2.Execute(ICompositeQuadRule`1 domNrule, UnsetteledCoordinateMapping RowMap, IList`1 ParamsMap, UnsetteledCoordinateMapping ColMap, M Matrix, V Vector, Double time)
+   at BoSSS.Foundation.SpatialOperator.EvaluatorLinear.Internal_ComputeMatrixEx[M,V](M Matrix, V AffineOffset, Boolean OnlyAffine)
+   at BoSSS.Foundation.SpatialOperator.EvaluatorLinear.ComputeMatrix[M,V](M Matrix, V AffineOffset)
+   at BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSE.DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, Double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary`2 AgglomeratedCellLengthScales, Double time)
+   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.AssembleMatrixCallback(BlockMsrMatrix& System, Double[]& Affine, BlockMsrMatrix& PrecondMassMatrix, DGField[] argCurSt, Boolean Linearization)
+   at BoSSS.Solution.AdvancedSolvers.NonlinearSolver.UpdateLinearization(IEnumerable`1 CurrentState)
+   at BoSSS.Solution.AdvancedSolvers.NonlinearSolver.Init[S](CoordinateVector X, S RHS, Double[]& Sol1, Double[]& Res1)
+   at BoSSS.Solution.AdvancedSolvers.Newton.SolverDriver[S](CoordinateVector SolutionVec, S RHS)
+   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment(Int32 increment, Double phystime, Double dt, Boolean ComputeOnlyResidual)
+   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve(Double phystime, Double dt, Boolean ComputeOnlyResidual)
+   at BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSE.RunSolverOneStep(Int32 TimestepInt, Double phystime, Double dt)
+   at BoSSS.Solution.Application`1.RunSolverMode()
+   at BoSSS.Solution.Application`1.AppEntry(Func`1 ApplicationFactory, CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)
+   at BoSSS.Solution.Application`1._Main(String[] args, Boolean noControlFile, Func`1 ApplicationFactory)
+   at BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSE.Main(String[] args)
+
+job aborted:
+[ranks] message
+
+[0] process exited without calling finalize
+
+---- error analysis -----
+
+[0] on PCMIT30
+LowMachCombustionNSE.exe ended prematurely and may have crashed. exit code 0xc0000005
+
+---- error analysis -----
+
+
+
+
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============
+**************
+==============

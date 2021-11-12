@@ -100,12 +100,16 @@ namespace BoSSS.Application.BoSSSpad {
             AddObjectFormatter<Foundation.XDG.XDGField>();
             AddObjectFormatter<Foundation.XDG.XDGField.SpeciesShadowField>();
             AddObjectFormatter<IGridData>();
+            AddObjectFormatter<IGridInfo>();
+            AddObjectFormatter<IGrid>();
 
             AddObjectFormatter<ISessionInfo>();
             AddObjectFormatter<IDatabaseInfo>();
             AddObjectFormatter<ITimestepInfo>();
 
             AddEnumFormatter<IGridInfo>();
+            AddEnumFormatter<IGridData>();
+            AddEnumFormatter<IGrid>();
             AddEnumFormatter<IDatabaseInfo>();
             AddEnumFormatter<ISessionInfo>();
             AddEnumFormatter<ITimestepInfo>();

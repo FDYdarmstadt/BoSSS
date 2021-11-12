@@ -16,6 +16,8 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
+using ilPSP;
+using ilPSP.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections;
@@ -33,7 +35,9 @@ namespace BoSSS.Solution {
         [Serializable]
         public class AMRonBoundary : AMRLevelIndicator {
 
+            
             private byte[] m_EdgeTags;
+            
             public AMRonBoundary(params byte[] EdgeTags) {
                 m_EdgeTags = EdgeTags;
             }
@@ -65,6 +69,18 @@ namespace BoSSS.Solution {
                 }
 
                 return levels;
+            }
+
+            public override bool Equals(object obj) {
+                if (!base.Equals(obj))
+                    return false;
+                if (!m_EdgeTags.SetEquals((obj as AMRonBoundary)?.m_EdgeTags))
+                    return false;
+                return true;
+            }
+
+            public override int GetHashCode() {
+                return base.GetHashCode();
             }
         }
 

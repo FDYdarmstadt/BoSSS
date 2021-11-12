@@ -1192,6 +1192,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="r0"></param>
         /// <param name="m"> mode m = {2, 3, 4} </param>
         /// <param name="aP_index"> disturbance amplitude aP = {0.5, 0.7, 0.9} </param>
         /// <param name="WNLT"> droplet shape according to the third order representation of the WLNT </param>

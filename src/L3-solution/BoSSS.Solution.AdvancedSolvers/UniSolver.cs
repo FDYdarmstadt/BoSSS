@@ -50,8 +50,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     gdat = Solution.GridDat;
 
-                    if(op.TemporalOperator != null)
-                        throw new ArgumentException("Operator contains a temporal component - cannot solve this with a steady-state solver.");
+                    //if(op.TemporalOperator != null)
+                    //    throw new ArgumentException("Operator contains a temporal component - cannot solve this with a steady-state solver.");
 
                     LsTrk = null;
                     foreach(var b in Solution.BasisS) {

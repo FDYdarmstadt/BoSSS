@@ -847,11 +847,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
-            double dt = 0.1; //0.01;
+            double dt = 0.01; //0.01;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 1; // 12500; // (int)(125.0 / dt);
+            C.NoOfTimesteps = 200; // 12500; // (int)(125.0 / dt);
             C.saveperiod = 10;
 
 
