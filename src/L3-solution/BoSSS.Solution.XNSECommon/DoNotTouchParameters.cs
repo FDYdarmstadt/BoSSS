@@ -186,10 +186,11 @@ namespace BoSSS.Solution.XNSECommon {
     public enum ViscosityMode {
     
         /// <summary>
-        /// recommended
+        /// 
         /// </summary>
         Standard,
 
+        /*
         /// <summary>
         /// in the special case of \f$ \mu_{\mathfrak{A}} = \mu_{\mathfrak{B}}\f$ ,
         /// this yields a symmetric discretization
@@ -198,7 +199,8 @@ namespace BoSSS.Solution.XNSECommon {
         /// seem to produce crappy results
         /// </remarks>
         ExplicitTransformation,
-
+        */
+        
         /// <summary>
         /// the full viscous stress tensor is discretized in the bulk domain, i.e. 
         /// \f[ 
@@ -429,6 +431,12 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         [DataMember]
         public double StressPenalty = 1.0;
+
+        /// <summary>
+        /// double cut cell special handling override <see cref="BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride"/>
+        /// </summary>
+        [DataMember]
+        public bool DoubleCutSpecialQuadrature = false;
 
 
         /// <summary>

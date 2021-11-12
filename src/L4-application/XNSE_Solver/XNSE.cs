@@ -1,6 +1,4 @@
-﻿//#define TEST
-
-using BoSSS.Application.XNSE_Solver.LoadBalancing;
+﻿using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
@@ -24,6 +22,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using MPI.Wrappers;
+using System.Threading;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -70,12 +70,10 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
-
-            //InitMPI();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.AMRAndBDFTest(LevelSetHandling.None);
-            //throw new Exception("Remove me");
-
+            /*
+             * should not be required anymore?
+             * Delete
+    
             bool Evap = false;
             // not sure if this works always, idea is to determine on startup which solver should be run.
             // default is XNSE<XNSE_Control>
@@ -111,20 +109,24 @@ namespace BoSSS.Application.XNSE_Solver {
                     return p;
                 });
             } else {
-                //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory_nocache.csv")) {
-                    //Foundation.Quadrature.Quadrature_Bulksize.CHUNK_DATA_LIMIT = 16;
-                    //DateTime hello = DateTime.Now;
-                    XNSE._Main(args, false, delegate () {
-                        var p = new XNSE();
-                        return p;
-                    });
-                    //DateTime fino = DateTime.Now;
-                    //Console.WriteLine("Runtime totalo " + (fino - hello));
+            */
 
-                    //Tmeas.Memtrace.Flush();
-                    //Tmeas.Memtrace.Close();
-                //}
+            //InitMPI();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TranspiratingChannelTest(2, 0.1d, 0.1d, ViscosityMode.Standard, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
+            //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
+            //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
+            //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
+            {
+                XNSE._Main(args, false, delegate () {
+                    var p = new XNSE();
+                    return p;
+                });
+
+                //Tmeas.Memtrace.Flush();
+                //Tmeas.Memtrace.Close();
             }
+
+
 
         }
     }
@@ -133,6 +135,15 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Generic versions which should be used for derivatives 
     /// </summary>
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
+
+        public override void Init(AppControl control) {
+            base.Init(control);
+            var ctrl = (control as XNSE_Control);
+            if(ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count()<=0)
+                ctrl.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            if (ctrl.Rigidbody.IsInitialized())
+                ctrl.Rigidbody.ArrangeAll(ctrl);
+        }
 
         /// <summary>
         /// - 3x the velocity degree if convection is included (quadratic term in convection times test function yields triple order)
@@ -207,6 +218,21 @@ namespace BoSSS.Application.XNSE_Solver {
             return pVel;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        protected int PressureDegree() {
+            int pPres;
+            if(Pressure != null)
+                return Pressure.Basis.Degree;
+            if(this.Control.FieldOptions.TryGetValue(VariableNames.Pressure, out FieldOpts v)) {
+                pPres = v.Degree;
+            } else {
+                throw new Exception("MultigridOperator.ChangeOfBasisConfig: Degree of Pressure not found");
+            }
+            return pPres;
+        }
+
         
 
         private IncompressibleMultiphaseBoundaryCondMap m_boundaryMap;
@@ -253,7 +279,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 for(int d = 0; d < D; d++) {
                     Control.InitialValues_EvaluatorsVec.TryGetValue(VelocityNames[d], out VelFuncs[d]);
                 }
-
 
                 ILevelSetParameter levelSetVelocity = new ExplicitLevelSetVelocity(VariableNames.LevelSetCGidx(1), VelFuncs);
                 return levelSetVelocity;
@@ -342,6 +367,9 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /// <summary>
+        /// Operator/equation assembly
+        /// </summary>
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             OperatorFactory opFactory = new OperatorFactory();
@@ -352,7 +380,7 @@ namespace BoSSS.Application.XNSE_Solver {
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
-            FinalOperatorSettings(XOP);
+            FinalOperatorSettings(XOP, D);
             XOP.Commit();
 
             return XOP;
@@ -362,11 +390,24 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Misc adjustments to the spatial operator before calling <see cref="ISpatialOperator.Commit"/>
         /// </summary>
         /// <param name="XOP"></param>
-        protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP) {
+        protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
             XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
             XOP.LinearizationHint = XOP.IsLinear == true ? LinearizationHint.AdHoc : this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+
+
+            // elementary checks on operator
+            if(XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation) != D)
+                throw new ApplicationException("Operator configuration messed up.");
+            if(XOP.DomainVar.IndexOf(VariableNames.Pressure) != D)
+                throw new ApplicationException("Operator configuration messed up.");
+            for(int d = 0; d < D; d++) {
+                if(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationComponent(d)) != d)
+                    throw new ApplicationException("Operator configuration messed up.");
+                if(XOP.DomainVar.IndexOf(VariableNames.Velocity_d(d)) != d)
+                    throw new ApplicationException("Operator configuration messed up.");
+            }
         }
 
         /// <summary>
@@ -376,7 +417,7 @@ namespace BoSSS.Application.XNSE_Solver {
             int quadOrder = QuadOrder();
             GetBcMap();
 
-            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+            XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
 
             // === momentum equations === //
             for (int d = 0; d < D; ++d) {
@@ -407,7 +448,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // === additional parameters === //
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if (((config.physParams.IncludeConvection && config.isTransport) | (config.thermParams.IncludeConvection )) & this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+            if ((config.physParams.IncludeConvection && config.isTransport) & this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                 opFactory.AddParameter(new Velocity0(D));
                 opFactory.AddParameter(v0Mean);
             }
@@ -470,7 +511,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="config"></param>
         /// <param name="d">Momentum component index</param>
         /// <param name="D">Spatial dimension (2 or 3)</param>
-        virtual protected void DefineMomentumEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int d, int D) {
+        virtual protected void DefineMomentumEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int d, int D) {
 
             // === linearized or parameter free variants, difference only in convective term === //
             if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
@@ -493,7 +534,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <param name="opFactory"></param>
         /// <param name="config"></param>
         /// <param name="D">Spatial dimension (2 or 3)</param>
-        virtual protected void DefineContinuityEquation(OperatorFactory opFactory, XNSFE_OperatorConfiguration config, int D) {
+        virtual protected void DefineContinuityEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int D) {
             opFactory.AddEquation(new Continuity("A", config, D, boundaryMap));
             opFactory.AddEquation(new Continuity("B", config, D, boundaryMap));
             opFactory.AddEquation(new InterfaceContinuity("A", "B", config, D, config.isMatInt));
@@ -504,7 +545,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Override to customize.
         /// </summary>
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
-            XNSFE_OperatorConfiguration config = new XNSFE_OperatorConfiguration(this.Control);
+            XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
+
+            if (this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature) BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
+
             for (int d = 0; d < D; ++d) {
                 // so far only no slip!
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
@@ -516,7 +560,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 // surface tension on IBM
-                if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+                if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine && config.physParams.Sigma != 0.0) {
                     opFactory.AddEquation(new NSEimmersedBoundary_SurfaceTension("A", "B", d, D, 1));
                 }
 
@@ -542,6 +586,7 @@ namespace BoSSS.Application.XNSE_Solver {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using(var f = new FuncTrace()) {
                 dt = GetTimestep();
+                
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                 Console.WriteLine($"Done with time step {TimestepNo}.");

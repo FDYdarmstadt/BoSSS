@@ -208,6 +208,9 @@ namespace BoSSS.Application.BoSSSpad {
                 //isFailed = false;
                 //SubmitCount = 0;
 
+                if(DeployDir == null)
+                    DeployDir = "";
+
                 using (new BlockTrace("FILE_CHECK", tr)) {
                     string exitFile = Path.Combine(DeployDir, "exit.txt");
                     if (File.Exists(exitFile)) {

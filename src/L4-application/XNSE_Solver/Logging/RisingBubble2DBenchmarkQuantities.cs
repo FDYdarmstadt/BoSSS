@@ -15,12 +15,17 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
+    /// <summary>
+    /// Post-processing specific to <see cref="RisingBubble"/>
+    /// </summary>
+    [Serializable]
+    public class RisingBubble2DBenchmarkQuantities : RisingBubble2DBenchmarkQuantities<XNSE_Control> { }
 
     /// <summary>
     /// Post-processing specific to <see cref="RisingBubble"/>
     /// </summary>
     [Serializable]
-    public class RisingBubble2DBenchmarkQuantities : XNSEinSituPostProcessingModule {
+    public class RisingBubble2DBenchmarkQuantities<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
         
         /// <summary>
         /// 
@@ -92,7 +97,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             ).Execute();
 
             // center of mass/geometric center (for incompressible fluid)
-            int D = SolverMain.Grid.SpatialDimension;
+            int D = SolverMainOverride.Grid.SpatialDimension;
             MultidimensionalArray center = MultidimensionalArray.Create(1, D);
             CellQuadrature.GetQuadrature(new int[] { 2 }, LsTrk.GridDat,
                 vqs.Compile(LsTrk.GridDat, order),

@@ -156,10 +156,14 @@ namespace BoSSS.Solution.XheatCommon {
         protected double MassFlux(CommonParams cp, double[,] Grad_uA, double[,] Grad_uB) {
 
             double M = 0.0;
-            for(int d = 0; d < m_D; d++) {
-                M += -(m_kA * Grad_uA[0, d] - m_kB * Grad_uB[0, d]) * cp.Normal[d];
+            if (!MEvapIsPrescribd) {
+                for (int d = 0; d < m_D; d++) {
+                    M += -(m_kA * Grad_uA[0, d] - m_kB * Grad_uB[0, d]) * cp.Normal[d];
+                }
+                M *= 1.0 / m_hvap;
+            } else {
+                M = prescrbMEvap;
             }
-            M *= 1.0 / m_hvap;
             //Console.WriteLine("Massflux: " + M);
             return M;
         }
@@ -171,9 +175,9 @@ namespace BoSSS.Solution.XheatCommon {
 
         public virtual void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
 
-            if (csA.UserDefinedValues.Keys.Contains("prescribedMassflux")) {
+            if (csA.UserDefinedValues.Keys.Contains("PrescribedMassFlux")) {
                 MEvapIsPrescribd = true;
-                prescrbMEvap = (double)csA.UserDefinedValues["prescribedMassflux"];
+                prescrbMEvap = (double)csA.UserDefinedValues["PrescribedMassFlux"];
             }
 
         }

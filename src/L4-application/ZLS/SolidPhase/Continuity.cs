@@ -10,22 +10,35 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver.SolidPhase {
     class Continuity : BulkEquation {
 
+        internal static bool ContinuityInDisplacement = true;
+        internal static bool ContinuityStabilization = false;
+
         string spcName;
 
         public Continuity(string spcName, int D) {
             this.spcName = spcName;
             for(int i = 0; i < D; ++i) {
-                string variableName = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
-                //string variableName = ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[i];
-                AddVariableNames(variableName);
-                var divergence = new Divergence(spcName, variableName, i);
-                AddComponent(divergence);
+
+
+                if(ContinuityInDisplacement) {
+                    string variableName = ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[i];
+                    AddVariableNames(variableName);
+                    var divergence = new Divergence(spcName, variableName, i);
+                    AddComponent(divergence);
+                } else {
+                    string variableName1 = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
+                    AddVariableNames(variableName1);
+                    var divergence1 = new Divergence(spcName, variableName1, i);
+                    AddComponent(divergence1);
+                }
             }
 
-            string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
-            AddVariableNames(pressure);
-            //var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -1);
-            //AddComponent(pressurePenalty);
+            if(ContinuityStabilization) {
+                string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
+                AddVariableNames(pressure);
+                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -1); // Must scale with viscosity, see Die Pietro
+                AddComponent(pressurePenalty);
+            }
         }
 
         public override string SpeciesName => spcName;
@@ -68,7 +81,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double flux = _uA[0] * inp.Normal[d];
             return flux * _vA;
-
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {

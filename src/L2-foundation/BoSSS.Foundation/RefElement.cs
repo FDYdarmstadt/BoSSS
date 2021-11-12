@@ -1006,7 +1006,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// <summary>
         /// collection of all available quadrature rules for this simplex;
         /// </summary>
-        public ICollection<QuadRule> m_QuadRules = new List<QuadRule>();
+        protected ICollection<QuadRule> m_QuadRules = new List<QuadRule>();
 
         /// <summary>
         /// Orthonormal polynomials with respect to the reference element, sorted by degree.

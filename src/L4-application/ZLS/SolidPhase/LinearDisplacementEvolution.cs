@@ -15,7 +15,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
-        public LinearDisplacementEvolution(string speciesName, int d, int D, double artificialViscosity) {
+        public LinearDisplacementEvolution(string speciesName, int d, int D, double artificialViscosity, double edgePenalty) {
             this.speciesName = speciesName;
             this.codomainName = EquationNames.DisplacementEvolutionComponent(d);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
@@ -27,13 +27,16 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
 
-            AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity));
+            if(artificialViscosity > 0)
+                // we should not add the SIP form if it is not intended at all, i.e. if 'artificialViscosity == 0';
+                // since evaluation of SIP forms is quite costly; 
+                AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity));
 
-            var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
+            //var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
+            var source = new MultiPhaseSource(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d], speciesName, -1.0);
+            AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d]);
             AddComponent(source);
-
-            var velocityBoundaryPenalty = new EdgePenaltyForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d]);
-            AddComponent(velocityBoundaryPenalty);
+            
         }
 
         public override string SpeciesName => speciesName;

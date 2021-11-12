@@ -47,7 +47,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             //TestProgram.TestRigidLevelSetProjection();
             //TestProgram.TestParticleParameter();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
-            //TestProgram.TestParticleInShearFlow();
+            //TestProgram.TestParticleInShearFlow_Phoretic();
             //Assert.IsFalse(true, "remove me");
             
             void KatastrophenPlot(DGField[] dGFields) {

@@ -795,6 +795,11 @@ namespace BoSSS.Solution.NSECommon {
         public const string HeatFlux0Z = "HeatFlux0Z";
 
         /// <summary>
+        /// variable name for the volumetric heat source
+        /// </summary>
+        static public string HeatSource = "HeatSource";
+        
+        /// <summary>
         /// variable name for the heat flux vector
         /// </summary>
         static public string[] HeatFlux0Vector(int D) {

@@ -32,14 +32,18 @@ namespace BoSSS.Solution.Gnuplot {
     /// </summary>
     public static class GnuplotExtensions {
         
-        /*
+        
         /// <summary>
-        /// Plot to a gif file ('set terminal gif').
+        /// Executes a pre-configured Gnuplot object and saves the 
+        /// plot to a PNG file (`set terminal png`).
         /// </summary>
-        /// <param name="gp"></param>
+        /// <param name="gp">
+        /// pre-configured Gnuplot; must already contain the data to plot.
+        /// </param>
         /// <param name="xRes">Horizontal resolution in pixels.</param>
         /// <param name="yRes">Vertical resolution in pixels.</param>
-        static public Image PlotGIF(this Gnuplot gp, int xRes = 800, int yRes = 600) {
+        /// <param name="OutfileName">Path/filename for output PNG.</param>
+        static public void SaveToGIF(this Gnuplot gp, string OutfileName, int xRes = 800, int yRes = 600) {
 
             if(xRes <= 0)
                 throw new ArgumentOutOfRangeException();
@@ -50,37 +54,31 @@ namespace BoSSS.Solution.Gnuplot {
             gp.Terminal = string.Format("pngcairo size {0},{1}", xRes, yRes);
 
             // set output file
-            string OutfileName = Path.GetTempFileName();
             gp.OutputFile = OutfileName;
 
             // call gnuplot
             int exCode = gp.RunAndExit(); // run & close gnuplot
             if (exCode != 0) {
-                Console.Error.WriteLine("Gnuplot-internal error: exit code " + exCode);
-                return null;
+                throw new IOException("Gnuplot-internal error: exit code " + exCode);
             }
-
 
             // return image
             var fi = (new FileInfo(OutfileName));
             if (fi.Exists && fi.Length > 0) {
-                byte[] IOMmem = File.ReadAllBytes(OutfileName);
-                File.Delete(OutfileName);
-                return Image.FromStream(new MemoryStream(IOMmem));
-                //return Image.FromFile(OutfileName); // it seems, the image object does not work anymore when the file is deleted
+                
             } else {
-                Console.Error.WriteLine("Gnuplot output file empty or non-existent.");
-                return null;
+                throw new IOException($"Gnuplot output file empty or non-existent.");
             }
-        }*/
-        /*
+        }
+        
         /// <summary>
-        /// Plot to a scalable vector graphics file ('set terminal gif').
+        /// Plot to a scalable vector graphics file (`set terminal svg`).
         /// </summary>
         /// <param name="gp"></param>
         /// <param name="xRes">Horizontal resolution in pixels.</param>
         /// <param name="yRes">Vertical resolution in pixels.</param>
-        static public HtmlString PlotSVG(this Gnuplot gp, int xRes = 800, int yRes = 600) {
+        /// <param name="OutfileName">Path/filename for output SVG.</param>
+        static public void SaveToSVG(this Gnuplot gp, string OutfileName, int xRes = 800, int yRes = 600) {
             if(xRes <= 0)
                 throw new ArgumentOutOfRangeException();
             if(yRes <= 0)
@@ -88,33 +86,27 @@ namespace BoSSS.Solution.Gnuplot {
 
 
             // set terminal
-            gp.Terminal = string.Format("set terminal svg enhanced background rgb 'white' size {0},{1}", xRes, yRes);
+            gp.Terminal = string.Format("svg enhanced background rgb 'white' size {0},{1}", xRes, yRes);
 
             // set output file
-            string OutfileName = Path.GetTempFileName();
             gp.OutputFile = OutfileName;
 
             // call gnuplot
             int exCode = gp.RunAndExit(); // run & close gnuplot
             if (exCode != 0) {
-                Console.Error.WriteLine("Gnuplot-internal error: exit code " + exCode);
-                return null;
+                throw new IOException("Gnuplot-internal error: exit code " + exCode);
             }
 
             // return image
             var fi = (new FileInfo(OutfileName));
             if (fi.Exists && fi.Length > 0) {
-                string SVGtext = File.ReadAllText(OutfileName);
-                File.Delete(OutfileName);
-                return new HtmlString(SVGtext);
-                //return Image.FromFile(OutfileName); // it seems, the image object does not work anymore when the file is deleted
             } else {
-                Console.WriteLine("Gnuplot output file empty or non-existent.");
-                return null;
+                throw new IOException($"Gnuplot output file empty or non-existent.");
             }
         }
-        */
+        
 
+        /*
         /// <summary>
         /// Plotting using Gnuplot with Cairolatex output.
         /// </summary>
@@ -138,7 +130,7 @@ namespace BoSSS.Solution.Gnuplot {
             }
 
         }
-
+        
 
         /// <summary>
         /// Plotting using Gnuplot with Cairolatex output.
@@ -258,7 +250,7 @@ namespace BoSSS.Solution.Gnuplot {
 
             return clc;  
         }
-
+        */
         
 
         /// <summary>
@@ -337,6 +329,46 @@ namespace BoSSS.Solution.Gnuplot {
                 Console.WriteLine("killing gnuplot...");
 
             }
+        }
+
+        /// <summary>
+        /// Writes a 2D multi-plot to Gnuplot and saves the 
+        /// plot to a PNG file ('set terminal png').
+        /// </summary>
+        static public void SaveToGIF(this Plot2Ddata[,] _2DData, string OutfileName, GnuplotPageLayout layout = null) {
+            _2DData.ToGnuplot(layout).SaveToGIF(OutfileName);
+        }
+
+        /// <summary>
+        /// Writes a 2D plot to Gnuplot and saves the 
+        /// plot to a PNG file ('set terminal png').
+        /// </summary>
+        /// <param name="_2DData">data to plot</param>
+        /// <param name="xRes">Horizontal resolution in pixels.</param>
+        /// <param name="yRes">Vertical resolution in pixels.</param>
+        /// <param name="OutfileName">Path/filename for output PNG.</param>
+        static public void SaveToGIF(this Plot2Ddata _2DData, string OutfileName, int xRes = 800, int yRes = 600) {
+            _2DData.ToGnuplot().SaveToGIF(OutfileName, xRes, yRes);
+        }
+
+        /// <summary>
+        /// Writes a 2D multi-plot to Gnuplot and saves the 
+        /// plot to a PNG file ('set terminal svg').
+        /// </summary>
+        static public void SaveToSVG(this Plot2Ddata[,] _2DData, string OutfileName, GnuplotPageLayout layout = null) {
+            _2DData.ToGnuplot(layout).SaveToSVG(OutfileName);
+        }
+
+        /// <summary>
+        /// Writes a 2D plot to Gnuplot and saves the 
+        /// plot to a PNG file ('set terminal svg').
+        /// </summary>
+        /// <param name="_2DData">data to plot</param>
+        /// <param name="xRes">Horizontal resolution in pixels.</param>
+        /// <param name="yRes">Vertical resolution in pixels.</param>
+        /// <param name="OutfileName">Path/filename for output PNG.</param>
+        static public void SaveToSVG(this Plot2Ddata _2DData, string OutfileName, int xRes = 800, int yRes = 600) {
+            _2DData.ToGnuplot().SaveToSVG(OutfileName, xRes, yRes);
         }
     }
 }

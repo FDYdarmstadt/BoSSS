@@ -748,8 +748,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(symmErr / infNorm > 1.0e-8)
                         throw new ArithmeticException(string.Format("LDL_DiagBlock is not supported on unsymmetric matrices (Symm-Err: {0:0.####E-00}, Inf-Norm: {1:0.####E-00}, Quotient {2:0.####E-00}).", symmErr, infNorm, symmErr / infNorm));
                     SymmInv(In_OperatorMatrixBlock, OUT_LeftPC, OUT_rightPC);
-                    //In_OperatorMatrixBlock.SymmetricLDLInversion(OUT_rightPC, null);
-                    //OUT_rightPC.TransposeTo(OUT_LeftPC);
+                                       
                     break;
                 }
 

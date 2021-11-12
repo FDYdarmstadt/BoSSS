@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZwoLevelSetSolver.ContactLine;
 
 namespace ZwoLevelSetSolver.Boundary {
     class FluidSolidContinuity : SurfaceEquation {
@@ -20,9 +21,9 @@ namespace ZwoLevelSetSolver.Boundary {
             //Stress equality
             
             for(int i = 0; i < D; ++i) {
-                string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
+                string velocity = BoSSS.Solution.NSECommon.VariableNames.Velocity_d(i);
                 AddVariableNames(velocity);
-                AddComponent(new BoundaryDivergenceForm( velocity, i, 1, fluidSpecies, solidSpecies));
+                AddComponent(new BoundaryDivergenceVelocityForm( i, 1, fluidSpecies, solidSpecies));
             }
         }
 

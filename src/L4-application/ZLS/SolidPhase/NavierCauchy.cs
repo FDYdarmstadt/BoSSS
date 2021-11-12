@@ -7,6 +7,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
+
+    /// <summary>
+    /// Momentum equation for the Solid /full linearization to be used with <see cref="BoSSS.Solution.Control.NonLinearSolverCode.Newton"/>
+    /// </summary>
     class NavierCauchy : BulkEquation {
 
         string speciesName;
@@ -15,6 +19,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
+        static public double EulerAlamansiPenalty = 1.0;
+
         public NavierCauchy(string speciesName, Solid material, int d, int D) {
             this.speciesName = speciesName;
             this.material = material;
@@ -22,22 +28,35 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Pressure);
-            
-            var convection = new NonLinearConvectionForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), 
-                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),d, material.Density);
-            AddComponent(convection);
 
+            
+            var convection = new NonLinearConvectionForm(SpeciesName, 
+                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 
+                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
+                d, material.Density);
+            AddComponent(convection);
+            
             var pressure = new PressureGradientForm(SpeciesName, d);
             AddComponent(pressure);
+            if(material.Lame2 != 0.0)
+            {
+                var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
+                AddComponent(eulerAlmansi0);
 
-            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
-            AddComponent(eulerAlmansi0);
-
-            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2);
-            AddComponent(eulerAlmansi1);
-
-            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
-            AddComponent(viscosity);
+                var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
+                AddComponent(eulerAlmansi1);
+            }
+            if(material.Viscosity != 0.0)
+            {
+                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
+                AddComponent(viscosity);
+            }
+            
+            string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
+            string gravityOfSpecies = gravity + "#" + SpeciesName;
+            var gravityComponent = new BoSSS.Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
+            AddComponent(gravityComponent);
+            AddParameter(gravityOfSpecies);
         }
 
         public override string SpeciesName => speciesName;

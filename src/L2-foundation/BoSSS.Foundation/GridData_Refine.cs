@@ -260,7 +260,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if(Edge2Cell.GetLength(0) != NoOfEdges)
                     throw new Exception("Edge2Cell to long");
 
-                //exchange cell data between processes
+                // exchange cell data between processes
                 List<(long, Cell[])> cellsOnNeighbourProcess = SerialExchangeCellData(adaptedCells);
                 for(int iEdge = 0; iEdge < NoOfEdges; iEdge++) { // loop over edges in actual grid...
                     int localCellIndex1 = Edge2Cell[iEdge, 0];
@@ -412,7 +412,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if(conCount1 > 0)
                                 continue;
 
-                            byte iEdgeTag = 0;
+                            byte EdgeTag = 0;
                             MultidimensionalArray VtxFace2;
                             {
                                 MultidimensionalArray VtxFace2_L;
@@ -431,7 +431,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     var perTrf = this.Grid.GridData.Edges.GetPeriodicTrafo(iEdge, false);
                                     MultidimensionalArray VtxFace2_Gtmp = VtxFace2_G.CloneAs();
                                     perTrf.Transform(VtxFace2_Gtmp, VtxFace2_G);
-                                    iEdgeTag = this.Grid.GridData.Edges.EdgeTags[iEdge];
+                                    EdgeTag = this.Grid.GridData.Edges.EdgeTags[iEdge];
                                 }
 
                                 bool[] Converged = new bool[VtxFace2_L.NoOfRows];
@@ -439,14 +439,46 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if(Converged.Any(t => t == false))
                                     throw new ArithmeticException("Newton divergence");
                             }
-                            bool bIntersect = EdgeData.FaceIntersect(VtxFace1, VtxFace2,
-                                    Kref1.GetFaceTrafo(iFace1), Kref1.GetInverseFaceTrafo(iFace1),
-                                    VerticesFor_KrefEdge,
-                                    out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
 
+                            bool bIntersect = false;
+                            try {
+                                bIntersect = EdgeData.FaceIntersect(VtxFace1, VtxFace2,
+                                        Kref1.GetFaceTrafo(iFace1), Kref1.GetInverseFaceTrafo(iFace1),
+                                        VerticesFor_KrefEdge,
+                                        out bool conformal1, out bool conformal2, out AffineTrafo newTrafo, out int Edg_idx);
+                            } catch (Exception e) {
+                                var rnd = new Random();
+                                
+                                using (var stw = new System.IO.StreamWriter("AdaptCrash.rank" + MpiRank + ".txt")) {
+                                    stw.WriteLine(e.GetType().Name + ": " + e.Message);
+                                    
+                                    stw.WriteLine("Face1: " + VtxFace1.NoOfRows + " vertices");
+                                    for (int i = 0; i < VtxFace1.NoOfRows; i++) {
+                                        stw.WriteLine("#" + i + ": " + VtxFace1.GetRowPt(i).ToString());
+                                    }
+                                    stw.WriteLine("Face2: " + VtxFace2.NoOfRows + " vertices");
+                                    for (int i = 0; i < VtxFace2.NoOfRows; i++) {
+                                        stw.WriteLine("#" + i + ": " + VtxFace2.GetRowPt(i).ToString());
+                                    }
+                                    stw.WriteLine("Face1 Trafo:");
+                                    stw.WriteLine(Kref1.GetFaceTrafo(iFace1).ToString());
+                                    stw.WriteLine("Face1 Inverse Trafo:");
+                                    stw.WriteLine(Kref1.GetInverseFaceTrafo(iFace1).ToString());
+                                    stw.Flush();
+
+                                    stw.WriteLine("Cell 1:");
+                                    stw.WriteLine(Cl1.ToString());
+                                    stw.WriteLine("Cell 2:");
+                                    stw.WriteLine(Cl2.ToString());
+
+                                    stw.Close();
+                                }
+
+                                throw new AggregateException(e);
+                            }
                             bool periodicInverse = false;
                             for(int j = 0; j < CellFaceTagsWithPeriodicInverse.Count(); j++) {
-                                if(CellFaceTagsWithPeriodicInverse[j].Item1 == localCellIndex1 && CellFaceTagsWithPeriodicInverse[j].Item2 == iEdgeTag) {
+                                if(CellFaceTagsWithPeriodicInverse[j].Item1 == localCellIndex1 && CellFaceTagsWithPeriodicInverse[j].Item2 == EdgeTag) {
                                     periodicInverse = CellFaceTagsWithPeriodicInverse[j].Item3;
                                     break;
                                 }
@@ -458,16 +490,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     ConformalNeighborship = false,
                                     NeighCell_GlobalID = Cl2.GlobalID,
                                     FaceIndex = iFace1,
-                                    EdgeTag = iEdgeTag,
-                                    PeriodicInverse = periodicInverse
+                                    EdgeTag = EdgeTag,
+                                    PeriodicInverse = (EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) && periodicInverse
                                 }, ref Cl1.CellFaceTags);
 
                                 ArrayTools.AddToArray(new CellFaceTag() {
                                     ConformalNeighborship = false,
                                     NeighCell_GlobalID = Cl1.GlobalID,
                                     FaceIndex = iFace2,
-                                    EdgeTag = iEdgeTag,
-                                    PeriodicInverse = !periodicInverse
+                                    EdgeTag = EdgeTag,
+                                    PeriodicInverse = (EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG) && (!periodicInverse)
                                 }, ref Cl2.CellFaceTags);
                             }
                         }

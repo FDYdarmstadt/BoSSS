@@ -16,7 +16,15 @@ namespace ZwoLevelSetSolver {
         [DataMember]
         public int Degree { get; private set; }
 
+        public bool DisplacementExtension = false;
+
+        public double ArtificialViscosity = 0.0;
+
         public ZLS_Control() : base() { }
+
+        public override Type GetSolverType() {
+            return typeof(ZLS);
+        }
 
         public ZLS_Control(int p) {
             UseImmersedBoundary = true;
@@ -26,14 +34,20 @@ namespace ZwoLevelSetSolver {
             SetDGdegree(p);
 
             FieldOptions.Add(VariableNames.DisplacementX, new FieldOpts() {
+                //Degree = p + DisplacementDegOffset,
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
 
             FieldOptions.Add(VariableNames.DisplacementY, new FieldOpts() {
+                //Degree = p + DisplacementDegOffset,
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
         }
+
+        //public static int DisplacementDegOffset = 0;
     }
+
+
 }

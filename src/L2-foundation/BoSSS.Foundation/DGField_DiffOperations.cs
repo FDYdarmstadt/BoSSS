@@ -266,7 +266,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// symbolic derivation, cell-by-cell;<br/>
+        /// broken derivative, cell-by-cell;<br/>
         /// accumulates the derivative of DG field <paramref name="f"/> 
         /// (along the <paramref name="d"/>-th axis) times <paramref name="alpha"/>
         /// to this field, i.e. <br/>
@@ -283,11 +283,12 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <param name="em">
         /// An optional restriction to the domain in which the derivative is
-        /// computed (it may, e.g. be only required in boundary cells, so a
+        /// computed; If null, the computation is carried out in the entire domain.
+        /// 
+        /// (it may, e.g. be only required in boundary cells, so a
         /// computation over the whole domain would be a waste of computational
         /// power. A proper execution mask for this case would be e.g. 
-        /// <see cref="BoSSS.Foundation.Grid.GridData.BoundaryCells"/>.)<br/>
-        /// if null, the computation is carried out in the whole domain
+        /// <see cref="BoSSS.Foundation.Grid.Classic.GridData.BoundaryCells"/>.)
         /// </param>
         /// <remarks>
         /// The derivative is calculated by a cell-by-cell (symbolic)

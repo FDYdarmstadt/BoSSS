@@ -266,10 +266,25 @@ namespace BoSSS.PlotGenerator {
         /// <param name="physTime"></param>
         /// <param name="timestepNo"></param>
         protected void PlotCurrentState(IEnumerable<DGField> fields, double physTime, TimestepNumber timestepNo) {
+
+            if (m_config.PlotShadowFields) {
+                List<DGField> Fields2Plot = new List<DGField>();
+                foreach (var field in fields) {
+                    if (field is XDGField xField) {
+                        foreach (var spc in xField.Basis.Tracker.SpeciesNames) {
+                            Fields2Plot.Add(xField.GetSpeciesShadowField(spc));
+                        }
+                    } else {
+                        Fields2Plot.Add(field);
+                    }
+                }
+                fields = Fields2Plot;
+            }
+
             m_PlotDriver.PlotFields(
-                Path.Combine(m_path, "state_") + timestepNo,
-                physTime,
-                fields);
+            Path.Combine(m_path, "state_") + timestepNo,
+            physTime,
+            fields);
         }
     }
 }

@@ -1488,11 +1488,11 @@ namespace ilPSP.LinSolvers {
         public MatrixEntry[][] m_Entries;
 
         /// <summary>
-        /// returns row number <paramref name="i"/>;
+        /// returns row number <paramref name="_i"/>;
         /// the row contains only valid entries and it is sorted in ascending order
         /// according to column index;
         /// </summary>
-        /// <param name="i">row index in global indices</param>
+        /// <param name="_i">row index in global indices</param>
         /// <returns>
         /// the return value is a reference to an internal data structure, not a copy;
         /// So, modifying the matrix (by operations like <see cref="ClearRow"/>) will also affect the 
@@ -1510,7 +1510,7 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
-        /// sets row number <paramref name="i"/>;
+        /// sets row number <paramref name="_i"/>;
         /// All previous entries in this row are overwritten;
         /// </summary>
         /// <param name="_i"> row index in global indices</param>
@@ -1533,7 +1533,7 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
-        /// sets row number <paramref name="i"/>;
+        /// sets row number <paramref name="_i"/>;
         /// All previous entries in this row are overwritten;
         /// </summary>
         /// <param name="_i"> row index in global indices</param>
@@ -1631,7 +1631,7 @@ namespace ilPSP.LinSolvers {
         /// actually no entry set for the specified column;</param>
         /// <returns>
         /// the 2nd index into the <see cref="m_Entries"/>-field;
-        /// negative value if no entry exists at position <paramref name="i"/>,<paramref name="j"/>;
+        /// negative value if no entry exists at position <paramref name="_i"/>,<paramref name="j"/>;
         /// </returns>
         int GetNewEntries2ndIndex(long _i, long j, bool allocate) {
             int i = m_RowPartitioning.Global2Local(_i);

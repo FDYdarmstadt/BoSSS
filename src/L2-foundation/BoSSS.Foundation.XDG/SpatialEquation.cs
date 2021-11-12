@@ -21,7 +21,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
 
         /// <summary>
         /// Equation components of this equation. All components belong to a single codomain.
-        /// /// </summary>
+        /// </summary>
         public LinkedList<IEquationComponent> Components { get; set; }
 
         /// <summary>
@@ -194,6 +194,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// XDG Equations for bulk phase.
     /// </summary>
     public abstract class BulkEquation : SpatialEquation, ICodomainEquation<BulkEquation> {
+        
         /// <summary>
         /// Name of species for which equation is valid.
         /// </summary>
@@ -317,10 +318,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             foreach (SpatialEquation equation in SpatialEquations) {
                 yield return equation;
             }
-            foreach (SpatialEquation equation in InterfaceEquations) {
+            foreach (SpatialEquation equation in BulkEquations) {
                 yield return equation;
             }
-            foreach (SpatialEquation equation in BulkEquations) {
+            foreach (SpatialEquation equation in InterfaceEquations) {
                 yield return equation;
             }
         }
@@ -340,13 +341,15 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         public string[] DomainVars() {
             LinkedList<string> domainVars = new LinkedList<string>();
             foreach(SpatialEquation equation in AllEquations()) {
-                if(domainVars.Count == 0) {
-                    domainVars.AddRange(equation.VariableNames);
-                } else {
-                    // a real, sorted merging would be nicer, but it is really tricky to implement
-                    foreach(string n in equation.VariableNames) {
-                        if(!domainVars.Contains(n)) {
-                            domainVars.AddLast(n);
+                if(equation.VariableNames != null) {
+                    if(domainVars.Count == 0) {
+                        domainVars.AddRange(equation.VariableNames);
+                    } else {
+                        // a real, sorted merging would be nicer, but it is really tricky to implement
+                        foreach(string n in equation.VariableNames) {
+                            if(!domainVars.Contains(n)) {
+                                domainVars.AddLast(n);
+                            }
                         }
                     }
                 }

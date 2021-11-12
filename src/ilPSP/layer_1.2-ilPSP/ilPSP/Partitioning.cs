@@ -36,9 +36,6 @@ namespace ilPSP {
         /// <param name="localsize">
         /// Number of entries that should be stored in this MPI process.
         /// </param>
-        /// <param name="_BlockSize">
-        /// See <see cref="BlockSize"/>.
-        /// </param>
         public Partitioning(int localsize)
             : this(localsize, MPI.Wrappers.csMPI.Raw._COMM.WORLD) {
         }
@@ -57,9 +54,6 @@ namespace ilPSP {
         /// </param>
         /// <param name="c">
         /// MPI communicator, <see cref="MPI_Comm"/>.
-        /// </param>
-        /// <param name="_BlockSize">
-        /// See <see cref="BlockSize"/>.
         /// </param>
         public Partitioning(int localsize, MPI.Wrappers.MPI_Comm c) {
             if (localsize < 0) {
@@ -249,7 +243,7 @@ namespace ilPSP {
 
         /// <summary>
         /// offsets for each process; size is equal to number of processors plus 1;
-        /// first entry is always 0, last entry is equal to <see cref="m_TotalLength"/>;
+        /// first entry is always 0, last entry is equal to <see cref="TotalLength"/>;
         /// </summary>
         long[] m_i0Offset;
 
@@ -321,7 +315,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// equality, see <see cref="Equals(Partitioning)"/>
+        /// equality, see <see cref="Equals(IPartitioning)"/>
         /// </summary>
         public override bool Equals(object other) {
             return Equals(other as IPartitioning);

@@ -580,9 +580,17 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             internal void DetermineEdgeTrafo() {
-                using (new FuncTrace()) {
+                using (var ft = new FuncTrace()) {
+                    //ft.InfoToConsole = true;
 
+                   
                     m_CellsToEdgesTmp = new List<int>[m_owner.Cells.Count];
+
+                    //double mem1 = ft.GetMemoryMB().MPISum();
+                    //double cch1 = ((double)(Caching.Cache.UsedMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cov1 = ((double)(Caching.Cache.OverheadMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cno1 = Caching.Cache.NoOfUsedBanks.MPISum();
+                    //Console.WriteLine($"Checkpoint 1: mem is {mem1}, in cache {cch1} + {cov1} ({cno1})");
 
 
                     // preparation: helper vars
@@ -603,7 +611,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int skippedEdgesCount = 0;
                     List<int> skippedEdges = new List<int>();
                     for (int e = 0; e < this.m_EdgesTmp.Count; e++) {
-
+                        
                         // cache some vars..
                         // -----------------
                         var Edge = this.m_EdgesTmp[e];
@@ -632,6 +640,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int face1 = Edge.FaceIndex1;
                         int face2 = Edge.FaceIndex2;
 
+                        
 
                         // first face of edge: cell j1, face e1, in local coordinates of cell j1
                         NodeSet V_f1 = Kref1.GetFaceVertices(face1);
@@ -703,7 +712,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     throw new ArithmeticException("Newton divergence");
                             }
                         }
-
+                        
 
                         AffineTrafo newTrafo = null;
 
@@ -791,7 +800,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             cell1_edges.Add(e - skippedEdgesCount);
                             cell2_edges.Add(e - skippedEdgesCount);
                         }
-
+                        
                         {
                             var KrefEdge = this.EdgeRefElements[Edge.EdgeKrefIndex];
                             
@@ -809,11 +818,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                             var V2G = MultidimensionalArray.Create(V1.Lengths);
                             m_owner.TransformLocal2Global(V2, V2G, j2);
 
-                            //var JacDet1 = MultidimensionalArray.Create(1, V1.GetLength(0));
+                            //var JacDet1 = MultidimensionalArray.Create(1, V1.GetLength(0)); JacDet1.ApplyAll(x => x + 1.0);
                             //Kref1.JacobianDetTransformation(V1, JacDet1, 0, K_j1.Type, K_j1.TransformationParams);
                             var JacDet1 = m_owner.JacobianDeterminat.GetValue_Cell(V1, j1, 1);
                            
-                            //var JacDet2 = MultidimensionalArray.Create(1, V1.GetLength(0));
+                            //var JacDet2 = MultidimensionalArray.Create(1, V1.GetLength(0)); JacDet2.ApplyAll(x => x + 1.0);
                             //Kref1.JacobianDetTransformation(V2, JacDet2, 0, K_j2.Type, K_j2.TransformationParams);
                             var JacDet2 = m_owner.JacobianDeterminat.GetValue_Cell(V2, j2, 1);
 
@@ -823,14 +832,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 throw new ArithmeticException("Non-positive Jacobian found in cell " + j2 + ".");
                             
                             var RelScale = Math.Max(Math.Max(V1G.MaxdistBetweenRows(), V2G.MaxdistBetweenRows()), Math.Max(JacDet1.Max(), JacDet2.Max()));
-
+                            RelScale = 1261737681;
                             var Diff = V1G.CloneAs();
                             Diff.Acc(-1.0, V2G);
                             var err = Diff.L2Norm()/RelScale;
                             if (!(err <= 1.0e-8 || Edge.IsPeriodic))
                                 throw new ArithmeticException("Edges do not match geometrically.");
                         }
-
+                        
                         int iKref1 = this.m_owner.Cells.GetRefElementIndex(j1); 
                         int iKref2 = this.m_owner.Cells.GetRefElementIndex(j2); 
 
@@ -847,11 +856,31 @@ namespace BoSSS.Foundation.Grid.Classic {
                             e2cTrafo.Add(Trafo2Pair);
                             Edge.Cell2TrafoIdx = e2cTrafo.Count - 1;
                         }
+                        
 
                         // store
                         // -----
                         this.m_EdgesTmp[e] = Edge;
                     }
+
+                    int NoOfEdges = m_EdgesTmp.Count.MPISum();
+                    ft.Info("NoOf e2c: " + e2cTrafo.Count.MPIMax());
+                    ft.Info("No of edges: " + NoOfEdges);
+                    
+                    //this.m_EdgesTmp = null;
+                    //this.m_CellsToEdgesTmp = null;
+                    //double mem2 = ft.GetMemoryMB().MPISum();
+                    //double cch2 = ((double)(BoSSS.Foundation.Caching.Cache.UsedMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cov2 = ((double)(Caching.Cache.OverheadMem) / (1024.0 * 1024.0)).MPISum();
+                    //double cno2 = Caching.Cache.NoOfUsedBanks.MPISum();
+
+
+                    //double perEdge = (mem2 - mem1) / (NoOfEdges.MPISum());
+                    //Console.WriteLine($"Checkpoint 2: mem is {mem2}, inc is {mem2-mem1}, per proc {(mem2-mem1)/this.m_owner.MpiSize}, per edge {perEdge}");
+                    //Console.WriteLine($"Checkpoint 1: mem is {mem2}, in cache {cch2} + {cov2} ({cno2})");
+                    //csMPI.Raw.mpiFinalize();
+                    //System.Environment.Exit(-99);
+
 
                     if(skippedEdgesCount > 0) {
                         int sk = 1;
@@ -866,9 +895,13 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     }
 
+                    
+
+
+                   
                     // MPI synchronization
                     // ===================
-                    /*
+                    
                     {
                         // We must ensure that `e2cTrafo` is equal on all MPI ranks
 
@@ -877,43 +910,75 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int myRank = m_owner.MpiRank;
                         var All_e2c = e2cTrafo.MPIGatherO(0); // gather all trafos on rank 0...
 
-                        int[][] IdxRemapS = new int[MpiSize][];
-                        int rnk = 1;
-                        foreach(var Lst in All_e2c.Skip(1)) { // ... and unify the lists.
-                            int LL = Lst.Count;
-                            int[] IdxRemap = new int[LL];
-                            for(int l = 0; l < LL; l++) {
-                                var tt = Lst[l];
-                                int newIdx = e2cTrafo.IndexOf(tt, (a, b) => (a.iKref == b.iKref && a.Tr.ApproximateEquals(b.Tr)));
-                                if( newIdx < 0) {
-                                    e2cTrafo.Add(tt);
-                                    newIdx = e2cTrafo.Count - 1;
+                        // unify the lists:
+                        //if(myRank == 1)
+                        //    Debugger.Launch();
+                        int[][] IdxRemapS = null;
+                        if(myRank == 0) {
+                            IdxRemapS = new int[MpiSize][];
+                            int rnk = 1;
+                            foreach(var Lst in All_e2c.Skip(1)) { // ... and unify the lists. (loop over MPI ranks...)
+                                int LL = Lst.Count;
+                                int[] IdxRemap = new int[LL];
+                                for(int l = 0; l < LL; l++) { // loop over e2c-Trafo of rank rnk
+                                    var tt = Lst[l];
+                                    int newIdx = e2cTrafo.IndexOf(tt, (a, b) => (a.iKref == b.iKref && a.Tr.ApproximateEquals(b.Tr)));
+                                    if(newIdx < 0) {
+                                        e2cTrafo.Add(tt);
+                                        newIdx = e2cTrafo.Count - 1;
+                                    }
+                                    IdxRemap[l] = newIdx; // trafo index `l` must be changed into `newIdx`
                                 }
-                                IdxRemap[l] = newIdx;
+                                IdxRemapS[rnk] = IdxRemap;
+                                rnk++;
                             }
-
-                            rnk++;
                         }
-
+                        // distribute affine trafos from rank 0 to all others:
                         var new_e2cTrafo = e2cTrafo.MPIBroadcast(0);
+                        var old_e2cTrafo = e2cTrafo;
                         if(myRank > 0)
                             e2cTrafo = new_e2cTrafo;
 
-                        int[] SendLoad;
-                        if(myRank == 0) {
-                            SendLoad = new int[e2cTrafo.Count * MpiSize];
-                            for(int r = 0; r < MpiSize; r++)
-                                Array.Copy(IdxRemapS[r], 0, SendLoad, r*e2cTrafo.Count, IdxRemapS[r].Length);
-                        } else {
-                            SendLoad = null;
+                        // distribute modified indices for trafos from rank 0 to all others:
+                        int[] myIdxRemapS;
+                        {
+                            int[] SendLoad;
+                            if(myRank == 0) {
+                                SendLoad = new int[e2cTrafo.Count * MpiSize];
+                                for(int r = 1; r < MpiSize; r++)
+                                    Array.Copy(IdxRemapS[r], 0, SendLoad, r * e2cTrafo.Count, IdxRemapS[r].Length);
+                            } else {
+                                SendLoad = null;
+                            }
+                            myIdxRemapS = SendLoad.MPIScatter(new_e2cTrafo.Count, 0);
                         }
-                        int[] myIdxRemapS = SendLoad.MPIScatter(new_e2cTrafo.Count, 0);
 
-                        
+                        // modify the indices for the new `e2cTrafo`-List
+                        if(myRank > 0) {
+                            int EE = m_EdgesTmp.Count;
+                            for(int e = 0; e < EE; e++) {
+                                var Edg = m_EdgesTmp[e];
+
+                                if(!old_e2cTrafo[Edg.Cell1TrafoIdx].Tr.ApproximateEquals(
+                                        e2cTrafo[myIdxRemapS[Edg.Cell1TrafoIdx]].Tr)) {
+                                    throw new ApplicationException("Mismatch in MPI edge-to-cell trafo synchronization.");
+                                }
+                                if(!old_e2cTrafo[Edg.Cell2TrafoIdx].Tr.ApproximateEquals(
+                                        e2cTrafo[myIdxRemapS[Edg.Cell2TrafoIdx]].Tr)) {
+                                    throw new ApplicationException("Mismatch in MPI edge-to-cell trafo synchronization (2).");
+                                }
+
+                                Edg.Cell1TrafoIdx = myIdxRemapS[Edg.Cell1TrafoIdx];
+                                Edg.Cell2TrafoIdx = myIdxRemapS[Edg.Cell2TrafoIdx];
+                                
+
+                                m_EdgesTmp[e] = Edg;
+                            }
+                        }
 
                     }
 
-                    */
+                    //*/
 
                     lock(padlock) {
                         this.e2C_offet = offset_counter;
@@ -1148,83 +1213,22 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // ++++++++++++++++++++++++++++++++
 
 
-                        // For each edge V1-V2 in the first polygon,
-                        //     Let H := Half-plane tangenting V1-V2, with the remaining
-                        //         vertices on the "inside".
-                        //     Let C := New empty polygon.
-                        //     For each edge V3-V4 in the second polygon,
-                        //         Let X := The intersection between V3-V4 and H.
-                        //         If V3 inside H, and V4 is outside H then,
-                        //             Add V3 to C.
-                        //             Add X to C.
-                        //         Else if both V3 and V4 lies outside H then,
-                        //             Skip.
-                        //         Else if V3 outside H, and V4 is inside H then,
-                        //             Add X to C.
-                        //         Else
-                        //             Add V3 to C.
-                        //     Replace the second polygon with C.
-
-
-
                         var first_polygon = CheckFace(VtxEdge1_Loc);
                         var second_polygon = CheckFace(VtxEdge2_Loc);
-                        double ref_area = Math.Min(SpanArea(first_polygon), SpanArea(second_polygon));
+                        double ref_area = Math.Min(SpanArea(first_polygon, "first"), SpanArea(second_polygon, "second"));
 
-                        var intersect = new List<Vector>(second_polygon);
-                        bool _conformal2 = true;
-                        for (int i = 0; i < first_polygon.Count; i++) {
-                            Vector V1 = first_polygon[i];
-                            int ip1 = (i + 1) % first_polygon.Count;
-                            Vector V2 = first_polygon[ip1];
 
-                            var H = AffineManifold.FromPoints(V1, V2);
-                            var Tol_Dist = Math.Max(V1.Abs(), V2.Abs()) * 1e-10;
 
-                            {
-                                int ip2 = (i + 2) % first_polygon.Count;
-                                var Pin = first_polygon[ip2];
-                                if (H.PointDistance(Pin) < 0)
-                                    H.Normal.ScaleInPlace(-1);
-                            }
-
-                            var C = new List<Vector>();
-                            for (int j = 0; j < intersect.Count; j++) {
-                                var V3 = intersect[j];
-                                int jp1 = (j + 1) % intersect.Count;
-                                var V4 = intersect[jp1];
-                                
-                                bool V3_in = H.PointDistance(V3) > (-1*Tol_Dist);
-                                bool V4_in = H.PointDistance(V4) > (-1*Tol_Dist);
-
-                                if (V3_in && !V4_in) {
-                                    C.Add(V3);
-                                    var Hx = AffineManifold.FromPoints(V3, V4);
-                                    var X = AffineManifold.Intersect2D(H, Hx);
-                                    C.Add(X);
-                                    _conformal2 = false;
-                                } else if (!V3_in && !V4_in) {
-                                    // skip
-                                    _conformal2 = false;
-                                } else if (!V3_in && V4_in) {
-                                    var Hx = AffineManifold.FromPoints(V3, V4);
-                                    var X = AffineManifold.Intersect2D(H, Hx);
-                                    C.Add(X);
-                                    _conformal2 = false;
-                                } else {
-                                    C.Add(V3);
-                                }
-                            }
-
-                            intersect = C;
-                        }
-
+                        (List<Vector> intersect, bool _conformal2) = PolygonalIntersect(first_polygon, second_polygon);
 
                         if (second_polygon.Count <= 2) {
                             return false;
                         }
+                        if (intersect.Count <= 2) {
+                            return false;
+                        }
 
-                        double span_area = SpanArea(intersect);
+                        double span_area = SpanArea(intersect, "intersect");
                         if (span_area < ref_area * (1.0e-10)) {
                             return false;
                         }
@@ -1246,7 +1250,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
                                 for (int j = 0; j < N1; j++) {
-                                    if (H.PointDistance(first_polygon[j]) < -1*Tol_Dist) {
+                                    if (H.PointDistance(first_polygon[j]) < -1 * Tol_Dist) {
                                         _conformal1 = false;
                                         break;
                                     }
@@ -1297,22 +1301,124 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
             }
 
-            private static double SpanArea(List<Vector> second_polygon) {
+            /// <summary>
+            /// intersection of two polygons
+            /// </summary>
+            /// <param name="first_polygon"></param>
+            /// <param name="second_polygon"></param>
+            /// <returns>
+            /// - the intersection 
+            /// - a boolean which indicates if the intersection is identical to the <paramref name="second_polygon"/>
+            /// </returns>
+            private static (List<Vector> intersect, bool _conformal2) PolygonalIntersect(List<Vector> first_polygon, List<Vector> second_polygon) {
+
+                //
+                // Polygon intersection algorithm:
+                //
+                // For each edge V1-V2 in the first polygon,
+                //     Let H := Half-plane tangenting V1-V2, with the remaining
+                //         vertices on the "inside".
+                //     Let C := New empty polygon.
+                //     For each edge V3-V4 in the second polygon,
+                //         Let X := The intersection between V3-V4 and H.
+                //         If V3 inside H, and V4 is outside H then,
+                //             Add V3 to C.
+                //             Add X to C.
+                //         Else if both V3 and V4 lies outside H then,
+                //             Skip.
+                //         Else if V3 outside H, and V4 is inside H then,
+                //             Add X to C.
+                //         Else
+                //             Add V3 to C.
+                //     Replace the second polygon with C.
+
+                bool _conformal2 = true;
+
+                List<Vector> intersect = new List<Vector>(second_polygon);
+                for (int i = 0; i < first_polygon.Count; i++) {
+                    Vector V1 = first_polygon[i];
+                    int ip1 = (i + 1) % first_polygon.Count;
+                    Vector V2 = first_polygon[ip1];
+
+                    var H = AffineManifold.FromPoints(V1, V2);
+                    var Tol_Dist = Math.Max(V1.Abs(), V2.Abs()) * 1e-10;
+
+                    {
+                        int ip2 = (i + 2) % first_polygon.Count;
+                        var Pin = first_polygon[ip2];
+                        if (H.PointDistance(Pin) < 0)
+                            H.Normal.ScaleInPlace(-1);
+                    }
+
+                    var C = new List<Vector>();
+                    for (int j = 0; j < intersect.Count; j++) {
+                        var V3 = intersect[j];
+                        int jp1 = (j + 1) % intersect.Count;
+                        var V4 = intersect[jp1];
+
+                        bool V3_in = H.PointDistance(V3) > (-1 * Tol_Dist);
+                        bool V4_in = H.PointDistance(V4) > (-1 * Tol_Dist);
+
+                        if (V3_in && !V4_in) {
+                            C.Add(V3);
+                            var Hx = AffineManifold.FromPoints(V3, V4);
+                            var X = AffineManifold.Intersect2D(H, Hx);
+                            C.Add(X);
+                            _conformal2 = false;
+                        } else if (!V3_in && !V4_in) {
+                            // skip
+                            _conformal2 = false;
+                        } else if (!V3_in && V4_in) {
+                            var Hx = AffineManifold.FromPoints(V3, V4);
+                            var X = AffineManifold.Intersect2D(H, Hx);
+                            C.Add(X);
+                            _conformal2 = false;
+                        } else {
+                            C.Add(V3);
+                        }
+                    }
+
+                    intersect = C;
+                }
+
+                return (intersect, _conformal2);
+            }
+
+            /// <summary>
+            /// Area of the parallelogram spanned by a polygons first and last edge
+            /// </summary>
+            private static double SpanArea(List<Vector> second_polygon, string errorMark) {
+                //try {
                 double span_area;
                 int N2 = second_polygon.Count;
+
+                if (N2 < 2)
+                    throw new ArgumentException($"Empty polygon, only {N2} vertices; ({errorMark}). ");
+
+
                 double sp1x = second_polygon[1][0] - second_polygon[0][0];
                 double sp1y = second_polygon[1][1] - second_polygon[0][1];
                 double sp2x = second_polygon[N2 - 1][0] - second_polygon[0][0];
                 double sp2y = second_polygon[N2 - 1][1] - second_polygon[0][1];
                 span_area = sp1x * sp2y - sp1y * sp2x;
                 return Math.Abs(span_area);
+                //} catch (Exception e) {
+                //    Random rnd = new Random();
+                //    using(var stw = new StreamWriter("SpanAreaChrash." + rnd.Next() + ".txt")) {
+                //        stw.WriteLine("Count " + second_polygon.Count);
+                //        foreach(var v in second_polygon) {
+                //            stw.WriteLine(v.ToString());
+                //        }
+                //        stw.Flush();
+                //        stw.Close();
+                //    }
+                //    throw new AggregateException(e);
+                //}
             }
 
             /// <summary>
-            /// 
+            /// Ensures that that in the 3D case -- i.e. when faces are 2D objects -- that vertices of an edge are in counter-clockwise sequence.  (or maybe clock-wise?)
             /// </summary>
-            /// <param name="VtxEdge1_Loc"></param>
-            /// <returns></returns>
             private static List<Vector> CheckFace(MultidimensionalArray _VtxEdge1_Loc) {
 
                 MultidimensionalArray VtxEdge1_Loc = MultidimensionalArray.Create(_VtxEdge1_Loc.Lengths);
@@ -2509,41 +2615,43 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// sets <see cref="NormalsForAffine"/>.
             /// </summary>
             internal void InitNormals() {
-                int E = this.Count;
-                int D = m_owner.SpatialDimension;
-                var __Normals = MultidimensionalArray.Create(E, D);
+                using(new FuncTrace()) {
+                    int E = this.Count;
+                    int D = m_owner.SpatialDimension;
+                    var __Normals = MultidimensionalArray.Create(E, D);
 
-                var Krefs = this.m_owner.Grid.RefElements;
+                    var Krefs = this.m_owner.Grid.RefElements;
 
-                MultidimensionalArray[,] FaceCenters = new MultidimensionalArray[Krefs.Length, Krefs.Max(Kref => Kref.NoOfFaces)];
+                    MultidimensionalArray[,] FaceCenters = new MultidimensionalArray[Krefs.Length, Krefs.Max(Kref => Kref.NoOfFaces)];
 
-                for (int e = 0; e < E; e++) {
-                    var Normal_e = __Normals.ExtractSubArrayShallow(new int[] { e, 0 }, new int[] { e, D - 1 });
+                    for(int e = 0; e < E; e++) {
+                        var Normal_e = __Normals.ExtractSubArrayShallow(new int[] { e, 0 }, new int[] { e, D - 1 });
 
-                    if (this.IsEdgeAffineLinear(e)) {
+                        if(this.IsEdgeAffineLinear(e)) {
 
-                        int jCell = this.CellIndices[e, 0];
-                        //var Kref = this.m_owner.Cells.GetRefElement(jCell);
-                        int iKref = this.m_owner.Cells.GetRefElementIndex(jCell);
-                        int iFace = this.FaceIndices[e, 0];
+                            int jCell = this.CellIndices[e, 0];
+                            //var Kref = this.m_owner.Cells.GetRefElement(jCell);
+                            int iKref = this.m_owner.Cells.GetRefElementIndex(jCell);
+                            int iFace = this.FaceIndices[e, 0];
 
-                        //this.GetNormals(e, 1, Kref.FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 }), Normal_e.ResizeShallow(1, 1, D));
-                        //todo
+                            //this.GetNormals(e, 1, Kref.FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 }), Normal_e.ResizeShallow(1, 1, D));
+                            //todo
 
-                        //if(FaceCenters[iKref, iFace] == null)
-                        //    FaceCenters[iKref, iFace] = Krefs[iKref].FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 });
-
-
-                        this.GetNormalsForCell(Krefs[iKref].GetFaceCenter(iFace), jCell, iFace, Normal_e);
+                            //if(FaceCenters[iKref, iFace] == null)
+                            //    FaceCenters[iKref, iFace] = Krefs[iKref].FaceCenters.ExtractSubArrayShallow(new int[] { iFace, 0 }, new int[] { iFace, D - 1 });
 
 
-                    } else {
-                        // 
-                        Normal_e.SetAll(double.NaN);
+                            this.GetNormalsForCell(Krefs[iKref].GetFaceCenter(iFace), jCell, iFace, Normal_e);
+
+
+                        } else {
+                            // 
+                            Normal_e.SetAll(double.NaN);
+                        }
                     }
-                }
 
-                this.NormalsForAffine = __Normals;
+                    this.NormalsForAffine = __Normals;
+                }
             }
 
             /// <summary>

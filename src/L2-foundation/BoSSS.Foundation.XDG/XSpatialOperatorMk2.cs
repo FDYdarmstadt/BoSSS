@@ -252,6 +252,17 @@ namespace BoSSS.Foundation.XDG {
             return GetEvaluatorEx(lsTrk, DomainFields, ParameterMap, CodomainVarMap);
         }
 
+        /*
+        public double[] Evaluate(IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap)
+        {
+            int L = CodomainVarMap.LocalLength;
+            double[] ret = new double[L];
+            var ev = GetEvaluatorEx(DomainFields, ParameterMap, CodomainVarMap);
+            ev.Evaluate(1.0, 0.0, ret);
+            return ret;
+        }
+        */
+
         /// <summary>
         /// explicit evaluation of the operator
         /// </summary>

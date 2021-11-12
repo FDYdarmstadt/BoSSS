@@ -132,8 +132,6 @@ namespace ilPSP {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="mcr"></param>
-        /// <returns></returns>
         public static Dictionary<string, Tuple<double, double, int>> GetFuncImbalance(MethodCallRecord[] mcrs) {
             return GetImbalance(mcrs, s => s.TimeExclusive.TotalSeconds);
         }
@@ -141,8 +139,6 @@ namespace ilPSP {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="mcr"></param>
-        /// <returns></returns>
         public static Dictionary<string, Tuple<double, double, int>> GetMPIImbalance(MethodCallRecord[] mcrs) {
             return GetImbalance(mcrs, s => s.ExclusiveBlockingTime.TotalSeconds);
         }
@@ -150,9 +146,6 @@ namespace ilPSP {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="mcr"></param>
-        /// <param name="TimeToCollect"></param>
-        /// <returns></returns>
         private static Dictionary<string, Tuple<double, double, int>> GetImbalance(MethodCallRecord[] mcrs, Func<MethodCallRecord, double> TimeToCollect) {
             var kv = new Dictionary<string, Stats>();
             var methodImblance = new Dictionary<string, Tuple<double, double, int>>();

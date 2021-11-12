@@ -9,13 +9,12 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using ZwoLevelSetSolver.SolidPhase;
-using ZwoLevelSetSolver.ZLSinSituPostProcessing;
 
 namespace ZwoLevelSetSolver.ControlFiles {
     public static class ConvergenceTests {
-        public static ZLS_Control RycroftPaper(int p = 2, int kelem = 16) {
+        public static ZLS_Control RycroftPaper(int p = 2, int kelem = 18) {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 10;
+            C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 4;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
@@ -43,7 +42,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.mu_B = 0.001;
 
             C.PhysicalParameters.IncludeConvection = true;
-            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.Material = false;
 
             C.Material = new ConvergenceTest();
 
@@ -56,8 +55,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double xSize = 2;
             double ySize = 2;
 
-            C.GridFunc = delegate ()
-            {
+            C.GridFunc = delegate () {
 
                 double[] Xnodes = GenericBlas.Linspace(-(xSize / 2), (xSize / 2), kelem + 1);
                 double[] Ynodes = GenericBlas.Linspace(-(ySize / 2), (ySize / 2), kelem + 1);
@@ -84,57 +82,55 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ==============
             #region init
 
-            //Func<double[], double> PhiFunc = (X => -1);
-            ////C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            Func<double[], double> PhiFunc = (X => -1);
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
-            //Func<double[], double> Phi1Func = delegate (double[] X) {
-            //    // only solid
-            //    return 1;
-            //};
+            Func<double[], double> Phi1Func = delegate (double[] X) {
+                // only solid
+                return 1;
+            };
 
-            //Func<Vector, double, double> Vvorx = delegate (Vector X, double lamda) {
-            //    return -Math.Sin(Math.PI * X[1]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
-            //};
+            Func<Vector, double, double> Vvorx = delegate (Vector X, double lamda) {
+                return -Math.Sin(Math.PI * X[1]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+            };
 
-            //Func<Vector, double, double> Vvory = delegate (Vector X, double lamda) {
-            //    return Math.Cos(Math.PI * X[0]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
-            //};
+            Func<Vector, double, double> Vvory = delegate (Vector X, double lamda) {
+                return Math.Cos(Math.PI * X[0]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+            };
 
-            //int K = 0;
+            int K = 0;
 
-            //Func<double[], double> Vx = delegate (double[] X) {
-            //    double sum = 0;
-            //    for (int k = 0; k <= K; k++) {
-            //        Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-            //        sum = sum + (Math.Pow(-1, k) * Vvorx(x, 2 * (k + 1)));
-            //    }
-            //    return sum;
-            //};
+            Func<double[], double> Vx = delegate (double[] X) {
+                double sum = 0;
+                for (int k = 0; k <= K; k++) {
+                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    sum = sum + (Math.Pow(-1, k) * Vvorx(x, 2 * (k + 1)));
+                }
+                return sum;
+            };
 
-            //Func<double[], double> Vy = delegate (double[] X) {
-            //    double sum = 0;
-            //    for (int k = 0; k <= K; k++) {
-            //        Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-            //        sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
-            //    }
-            //    return sum;
-            //};
+            Func<double[], double> Vy = delegate (double[] X) {
+                double sum = 0;
+                for (int k = 0; k <= K; k++) {
+                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
+                }
+                return sum;
+            };
 
 
 
             //C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
-            //C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
-
-
-            int K = 5;
-            C.AddInitialValue("Phi", new Formula("X => -1"));
             C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
+
+
             C.AddInitialValue("VelocityX#A", new VelocityX(K));
             C.AddInitialValue("VelocityX#B", new VelocityX(K));
             C.AddInitialValue("VelocityX#C", new VelocityX(K));
-            C.AddInitialValue("VelocityY#A", new VelocityY(K));
-            C.AddInitialValue("VelocityY#B", new VelocityY(K));
-            C.AddInitialValue("VelocityY#C", new VelocityY(K));
+
+            C.InitialValues_Evaluators.Add("VelocityY#A", Vy);
+            C.InitialValues_Evaluators.Add("VelocityY#B", Vy);
+            C.InitialValues_Evaluators.Add("VelocityY#C", Vy);
             #endregion
 
             // boundary conditions
@@ -174,14 +170,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
 
             C.TimesteppingMode = compMode;
-            double dt = 0.005;
+            double dt = 0.001;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 1;
-            C.NoOfTimesteps = 100000;
+            C.Endtime = 0.5;
+            C.NoOfTimesteps = 1000;
             C.saveperiod = 1;
 
             #endregion
@@ -464,7 +460,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
 
             C.TimesteppingMode = compMode;
-            double dt = 0.0001;
+            double dt = 0.01;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 0.5;
@@ -591,13 +587,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
             return C;
         }
 
-        public static ZLS_Control SimpleDivergencefree(int p = 2, int kelem = 16, int AMRlvl = 0) {
+        public static ZLS_Control Test_Convergence(int p = 2, int kelem = 16) {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 2;
+            C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 4;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
-            C.PostprocessingModules.Add(new ConvergenceTestEngergieLogging());
 
             int D = 2;
 
@@ -637,8 +632,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.rho_B = 1;
-            C.PhysicalParameters.mu_A = 0.001;
-            C.PhysicalParameters.mu_B = 0.001;
+            C.PhysicalParameters.mu_A = 0.1;
+            C.PhysicalParameters.mu_B = 0.1;
 
             double sigma = 1;
             C.PhysicalParameters.Sigma = sigma;
@@ -680,26 +675,19 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // Initial Values
             // ==============
             #region init
-            C.AddInitialValue("Phi", new Formula("X => -1"));
-            C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
 
-            int K = 5;
+            int K = 0;
             VelocityX Vx = new VelocityX(K);
             VelocityY Vy = new VelocityY(K);
-            //C.AddInitialValue("VelocityX#A", Vx);
-            //C.AddInitialValue("VelocityX#B", Vx);
-            //C.AddInitialValue("VelocityX#C", Vx);
-            //C.AddInitialValue("VelocityY#A", Vy);
-            //C.AddInitialValue("VelocityY#B", Vy);
-            //C.AddInitialValue("VelocityY#C", Vy);
-            
-            C.AddInitialValue("VelocityX#A", new Formula("X => 0.05*Math.Sin(Math.PI * X[1])"));
-            C.AddInitialValue("VelocityX#B", new Formula("X => 0.05*Math.Sin(Math.PI * X[1])"));
-            C.AddInitialValue("VelocityX#C", new Formula("X => 0.05*Math.Sin(Math.PI * X[1])"));
-            C.AddInitialValue("VelocityY#A", new Formula("X => -0.05*Math.Sin(Math.PI * X[0])"));
-            C.AddInitialValue("VelocityY#B", new Formula("X => -0.05*Math.Sin(Math.PI * X[0])"));
-            C.AddInitialValue("VelocityY#C", new Formula("X => -0.05*Math.Sin(Math.PI * X[0])"));
-           
+
+            C.AddInitialValue("Phi", new Formula("X => -1"));
+            C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
+            C.AddInitialValue("VelocityX#A", Vx);
+            C.AddInitialValue("VelocityX#B", Vx);
+            C.AddInitialValue("VelocityX#C", Vx);
+            C.AddInitialValue("VelocityY#A", Vy);
+            C.AddInitialValue("VelocityY#B", Vy);
+            C.AddInitialValue("VelocityY#C", Vy);
 
             #endregion
 
@@ -736,7 +724,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            //C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             //C.AdaptiveMeshRefinement = true;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 3 });
@@ -754,13 +742,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
             double dt = 0.01;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 2;
+            C.Endtime = 1;
             C.NoOfTimesteps = 1000000;
             C.saveperiod = 1;
 
@@ -770,24 +758,25 @@ namespace ZwoLevelSetSolver.ControlFiles {
         }
         public class VelocityX : IBoundaryAndInitialData {
             int K;
-
-            public VelocityX(int K) {
+            double amplitude;
+            public VelocityX(int K, double amplitude = 0.1) {
                 this.K = K;
+                this.amplitude = amplitude;
             }
 
             public double Evaluate(double[] X, double t) {
                 double sum = 0;
 
                 for (int k = 0; k <= K; k++) {
-                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                    sum = sum + (Math.Pow(-1, k) * Vvorx(x, 2 * (k + 1)));
+                    //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    sum = sum + (Math.Pow(-1, k) * Vvorx(X, (k + 1)));
                 }
-                return sum;
+                return amplitude * sum;
 
             }
 
             double Vvorx(double[] X, double lamda) {
-                return -Math.Sin(Math.PI * X[1]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+                return Math.Sin(Math.PI * X[1] * lamda);
             }
 
             public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
@@ -797,24 +786,26 @@ namespace ZwoLevelSetSolver.ControlFiles {
         };
         public class VelocityY : IBoundaryAndInitialData {
             int K;
+            double amplitude;
 
-            public VelocityY(int K) {
+            public VelocityY(int K, double amplitude = 0.1) {
                 this.K = K;
+                this.amplitude = amplitude;
             }
 
             public double Evaluate(double[] X, double t) {
                 double sum = 0;
 
                 for (int k = 0; k <= K; k++) {
-                    Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
-                    sum = sum + (Math.Pow(-1, k) * Vvory(x, 2 * (k + 1)));
+                    //Vector x = new Vector(X[0] - (5.0 + 2.0 * k) / 6.0, X[1] - (5.0 + 2.0 * k) / 6.0);
+                    sum = sum + (Math.Pow(-1, k) * Vvory(X,k + 1));
                 }
-                return sum;
+                return amplitude * sum;
 
             }
 
             double Vvory(double[] X, double lamda) {
-                return Math.Cos(Math.PI * X[0]) * Math.Exp(-lamda * (2 - Math.Cos(Math.PI * X[0]) - Math.Cos(Math.PI * X[1])));
+                return Math.Sin(Math.PI * X[0] * lamda);
             }
 
             public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {

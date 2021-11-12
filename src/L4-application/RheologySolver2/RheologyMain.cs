@@ -535,6 +535,9 @@ namespace BoSSS.Application.Rheology {
 
                             this.currentWeissenberg = HomotopyScalar * Control.Weissenberg;
                         });
+                    } else {
+                        if(Control.Weissenberg > 0)
+                            Console.WriteLine($"Warning: Homotopy is turned off -- for current Weissenberg number ({Control.Weissenberg}), the solver might not converge. (Set `RaiseWeissenberg` to ture))");
                     }
 
 

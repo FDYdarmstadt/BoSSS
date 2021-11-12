@@ -220,7 +220,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// 1 (including) to -<see cref="GetPopulatedLength()"/> (including) 
             /// </summary>
-            public int[] AvailabelIndices {
+            public int[] AvailableIndices {
                 get {
                     var R = new int[GetPopulatedLength() + 1];
                     for(int i = 0; i < R.Length; i++) {

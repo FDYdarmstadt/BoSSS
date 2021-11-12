@@ -368,7 +368,8 @@ namespace ilPSP.LinSolvers.MUMPS {
                             break;
                         }
                 }
-                               
+                // MUMPS does not support caching of factorization,
+                // for every call of phase 3, phase 2 has to be called
                 mumps_par.job = 3;
                 MUMPS_csharp.mumps_cs(ref mumps_par);
                 //if (rank != 0)

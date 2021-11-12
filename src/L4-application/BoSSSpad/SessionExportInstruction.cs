@@ -119,6 +119,7 @@ namespace BoSSS.Application.BoSSSpad {
             fsConfig.FieldNames = FieldNames;
             fsConfig.TimeSteps = TimeSteps;
             fsConfig.SuperSampling = SuperSampling;
+            fsConfig.PlotShadowFields = PlotShadowFields;
             fsConfig.ReconstructionType = reconstructionType;
             fsConfig.GhostLevel = GhostLevels;
             fsConfig.NumberOfProcesses = NumberOfProcesses;

@@ -43,6 +43,14 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// <see cref="FieldStateConfiguration"/>. Default is false.
+        /// </summary>
+        public bool PlotShadowFields {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// <see cref="FieldStateConfiguration"/>. Default is none.
         /// </summary>
         public FieldStateConfiguration.GhostLevels GhostLevels {
@@ -211,6 +219,24 @@ namespace BoSSS.Application.BoSSSpad {
         public static T WithSupersampling<T>(this T instruction, int superSampling)
             where T : ExportInstruction {
             instruction.SuperSampling = superSampling;
+            return instruction;
+        }
+
+        /// <summary>
+        /// Activates shadowfield plotting in <paramref name="instruction"/>.
+        /// </summary>
+        /// <typeparam name="T">
+        /// The sub-type of <see cref="ExportInstruction"/> to be used.
+        /// </typeparam>
+        /// <param name="instruction">
+        /// The instruction to be modified
+        /// </param>
+        /// <returns>
+        /// <paramref name="instruction"/>
+        /// </returns>
+        public static T WithShadowFields<T>(this T instruction)
+            where T : ExportInstruction {
+            instruction.PlotShadowFields = true;
             return instruction;
         }
 

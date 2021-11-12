@@ -346,7 +346,7 @@ namespace BoSSS.Application.BoSSSpad {
             if(Path.IsPathRooted(dbDir))
                 throw new ArgumentException("Expecting a relative path.");
             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
-                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database.");
+                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
 
             var pp = AllowedDatabasesPaths[0];
 
@@ -356,6 +356,29 @@ namespace BoSSS.Application.BoSSSpad {
             var fullPath = System.IO.Path.Combine(pp.LocalMountPath, dbDir);
 
             return InteractiveShell.OpenOrCreateDatabase(fullPath);
+        }
+
+        /// <summary>
+        /// Creates (or opens) a database in a location which is ensured to work with this batch processor
+        /// </summary>
+        public IDatabaseInfo CreateTempDatabase() {
+             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+                throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
+
+            string relPath = null;
+            {
+                var rnd = new Random();
+                bool Exists;
+                do {
+                    var pathOffset = AllowedDatabasesPaths[0].LocalMountPath;
+                    var tempDir = rnd.Next().ToString();
+                    var __TempDir = new DirectoryInfo(Path.Combine(pathOffset, tempDir));
+                    Exists = __TempDir.Exists;
+                    relPath = tempDir;
+                } while (Exists == true);
+            }
+                        
+            return CreateOrOpenCompatibleDatabase(relPath);
         }
     }
 

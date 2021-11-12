@@ -12,7 +12,19 @@ using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
 
-    //All boundaries are a Wall for now
+    /// <summary>
+    /// Transport term 
+    /// ```math
+    ///    \textrm{div} ( \rho u \vec{v} )
+    /// ```
+    /// using a local Lax-Friedrichs form; Version to use in combination with <see cref="BoSSS.Solution.Control.NonLinearSolverCode.Newton"/>, see also <see cref="ISpatialOperator.LinearizationHint"/>
+    /// Here $` \vec{v} `$ is a velocity field, 
+    /// $` \rho `$ is a constant density and 
+    /// $` u `$ is a property which should be transported;
+    /// </summary>
+    /// <remarks>
+    /// All boundaries are a impermeable walls for now
+    /// </remarks>
     public class LinearConvectionForm : IVolumeForm, IEdgeForm, ISpeciesFilter {
 
         string speciesName;

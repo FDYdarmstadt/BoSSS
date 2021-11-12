@@ -10,19 +10,21 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.Boundary {
-    class DisplacementPenaltyForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    class DisplacementPenaltyForm : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
         int levelSetIndex;
         string solidSpecies;
         string fluidSpecies;
         string[] variableNames;
         int d;
+        double lame2;
 
-        public DisplacementPenaltyForm(string fluidSpecies, string solidSpecies, int d, int D, int levelSetIndex) {
+        public DisplacementPenaltyForm(string fluidSpecies, string solidSpecies, int d, int D, int levelSetIndex, double lame2) {
             this.levelSetIndex = levelSetIndex;
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
             this.d = d;
-            variableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
+            variableNames = VariableNames.DisplacementVector(D);
+            this.lame2 = lame2;
         }
 
         public int LevelSetIndex => levelSetIndex;
@@ -74,8 +76,13 @@ namespace ZwoLevelSetSolver.Boundary {
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-            double flux = 1 * (_uIN[d] - _uOUT[d]) * (-_vOUT); // * Penalty(inp.jCellIn, inp.jCellOut);
+            double flux = lame2 * Penalty(inp.jCellIn, inp.jCellOut) * (_uIN[d] - _uOUT[d]) * ( -_vOUT);
             return flux;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension){
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
         }
     }
 }
