@@ -17,9 +17,9 @@ namespace ZwoLevelSetSolver {
             BoSSS.Solution.Application.InitMPI();
             BoSSS.Solution.Application.DeleteOldPlotFiles();
 
-            //RunSolver(args);
+            RunSolver(args);
             //ConditionNumberScaling();
-            Tests.SolidOnlyTests.RotationConvergenceTest(2);
+            //Tests.SolidOnlyTests.RotationConvergenceTest(2);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
