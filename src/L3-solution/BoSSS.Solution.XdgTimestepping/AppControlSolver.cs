@@ -22,7 +22,7 @@ namespace BoSSS.Solution.Control {
         /// ctor
         /// </summary>
         public AppControlSolver() {
-            
+            this.NoOfMultigridLevels = 1000000;
         }
 
 
