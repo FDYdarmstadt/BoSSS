@@ -285,13 +285,13 @@ namespace BoSSS.Solution.XNSECommon {
             }
             // gravity & more general volume force
             // ================
-            if(config.isGravity) {
-                string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
-                string gravityOfSpecies = gravity + "#" + SpeciesName;
-                var gravityComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
-                AddComponent(gravityComponent);
-                AddParameter(gravityOfSpecies);
-            }
+            //if(config.isGravity) {
+            //    string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
+            //    string gravityOfSpecies = gravity + "#" + SpeciesName;
+            //    var gravityComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
+            //    AddComponent(gravityComponent);
+            //    AddParameter(gravityOfSpecies);
+            //}
             if(config.isVolForce) {
                 string volforce = BoSSS.Solution.NSECommon.VariableNames.VolumeForceVector(D)[d];
                 string volforceOfSpecies = volforce + "#" + SpeciesName;
@@ -479,15 +479,15 @@ namespace BoSSS.Solution.XNSECommon {
             double penalty = dntParams.PenaltySafety;
 
             //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
-            //var Visc = new ConductivityAtLevelSet_material(dimension, kA, kB, penalty * 1.0, Tsat);
-            //AddComponent(Visc);
+            var Visc = new ConductivityAtLevelSet_material(dimension, kA, kB, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName);
+            AddComponent(Visc);
         }
 
         protected virtual void DefineConvective(int dimension, double capA, double capB, double LFFA, double LFFB, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
+            //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
+            //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
             //AddComponent(new HeatConvectionAtLevelSet_LLF(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat));
-            //AddComponent(new HeatConvectionAtLevelSet_LLF_material(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh));            
+            //AddComponent(new HeatConvectionAtLevelSet_LLF_material(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh));
             //AddComponent(new HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName));
         }
     }

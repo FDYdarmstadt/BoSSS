@@ -148,7 +148,6 @@ namespace BoSSS.Solution.XheatCommon {
             this.m_kB = thermalParameters.k_B;
 
             this.m_hvap = thermalParameters.hVap;
-
             this.NegativeSpecies = phaseA;
             this.PositiveSpecies = phaseB;
         }
@@ -170,7 +169,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public abstract double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
 
-        bool MEvapIsPrescribd = false;
+        public bool MEvapIsPrescribd = false;
         double prescrbMEvap;
 
         public virtual void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
@@ -217,7 +216,6 @@ namespace BoSSS.Solution.XheatCommon {
 
         public virtual TermActivationFlags LevelSetTerms {
             get { return TermActivationFlags.GradUxV; }
-            //get { return TermActivationFlags.AllOn; }
 
         }
     }
@@ -716,8 +714,16 @@ namespace BoSSS.Solution.XheatCommon {
             PosLengthScaleS = csB.CellLengthScales;
         }
 
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                var terms = base.LevelSetTerms | TermActivationFlags.GradUxGradV;
+                if (MEvapIsPrescribd)                    
+                    terms |= TermActivationFlags.V;
+                return terms;
 
-        public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.GradUxGradV;
+            }
+        }
+        //public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.GradUxGradV /*|TermActivationFlags.V*/;
 
     }
 
