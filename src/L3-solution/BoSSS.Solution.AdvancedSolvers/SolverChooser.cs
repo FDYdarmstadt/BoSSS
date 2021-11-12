@@ -1543,10 +1543,15 @@ namespace BoSSS.Solution {
                 // It has to be ensured, that directKickin takes place on all ranks at same level
                 // therefore only global criterion have to be used here !!!
                 useDirect |= (SysSize < DirectKickIn);
+                Console.WriteLine($"1 usedirect = {useDirect}, SysSize: {SysSize}, DirectKickIn: {DirectKickIn}");
                 useDirect |= (double)PrevSize / (double)SysSize < 1.5 && SysSize < 50000; // degenerated MG-Agglomeration, because too few candidates
+                Console.WriteLine($"2 usedirect = {useDirect}, PrevSize: {PrevSize} SysSize: {SysSize}");
                 useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
+                Console.WriteLine($"3 usedirect = {useDirect}, m_lc.NoOfMultigridLevels: {m_lc.NoOfMultigridLevels}");
                 useDirect |= TotalNoOfSchwarzBlocks < MPIsize;
+                Console.WriteLine($"4 usedirect = {useDirect}, TotalNoOfSchwarzBlocks: {TotalNoOfSchwarzBlocks}, MPIsize: {MPIsize}");
                 useDirect |= iLevel == MaxMGDepth - 1; // otherwise error, due to missing coarse solver
+                Console.WriteLine($"5 usedirect = {useDirect}, iLevel: {iLevel}, MaxMGDepth: {MaxMGDepth}");
                 useDirect = useDirect.MPIOr();
 
                 if(useDirect)

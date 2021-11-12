@@ -202,10 +202,11 @@ namespace BoSSS.Solution.Control {
         }
 
         /// <summary>
-        /// Sets the number of Multigrid levels. Multigrid approach is used to get a Preconditioner for Krylov solvers, e.g. GMRES.
+        /// Sets the maximum number of Multigrid levels to be used.
+        /// Multigrid approach is used to get a Preconditioner for Krylov solvers, e.g. GMRES.
         /// </summary>
         [DataMember]
-        public int NoOfMultigridLevels = 1;
+        public int NoOfMultigridLevels = 1000000;
 
         /// <summary>
         /// Sets the mode for the solver to run in
