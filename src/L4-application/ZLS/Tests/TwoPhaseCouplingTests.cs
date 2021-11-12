@@ -22,7 +22,8 @@ namespace ZwoLevelSetSolver.Tests
     [TestFixture]
     public class TwoPhaseCouplingTests
     {
-
+        
+        [Test]
         public static void SolidBallInChannel([Values(2)] int p = 2,
                                     [Values(16)] int res = 16) {
 
@@ -39,6 +40,7 @@ namespace ZwoLevelSetSolver.Tests
             }
         }
 
+        [Test]
         public static void FluidBallInChannel([Values(2)] int p = 2,
                                     [Values(16)] int res = 16) {
             var C = ZwoLevelSetSolver.ControlFiles.HardCodedControl.AcceleratedFluidBallInChannel(p, res);
@@ -54,6 +56,7 @@ namespace ZwoLevelSetSolver.Tests
             }
         }
 
+        [Test]
         public static void ExtensionSolidBallInChannel([Values(2)] int p = 2,
                                     [Values(16)] int res = 16) {
             var C = ZwoLevelSetSolver.ControlFiles.HardCodedControl.AcceleratedBallInChannel(p, res);
