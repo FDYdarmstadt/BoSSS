@@ -55,7 +55,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Ctor.
         /// </summary>
         public XNSE_Control() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
+
             //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
             base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;

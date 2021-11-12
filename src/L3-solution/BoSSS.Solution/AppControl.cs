@@ -103,7 +103,7 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
-        /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
+        /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridSequence"/>.
         /// </summary>
         [DataMember]
         virtual public int NoOfMultigridLevels {
