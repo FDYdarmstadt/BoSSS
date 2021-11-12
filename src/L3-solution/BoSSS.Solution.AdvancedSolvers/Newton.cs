@@ -232,7 +232,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool CheckTermination(ref bool success, double norm_CurRes, double fnorminit, List<double> normHistory, int itc) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = false;
+                tr.InfoToConsole = true;
                 tr.Info($"Checking termination criterion: Iter {itc}, Current residual norm {norm_CurRes}, Initial Residual Norm {fnorminit}");
                 
                  if(ConvCrit > 0) {

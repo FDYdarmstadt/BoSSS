@@ -6,20 +6,20 @@ using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
     public class Solid {
-        public double PoissonsRatio;
+        public double PoissonsRatio = 0;
 
         //In GPA
-        public double ModulusOfElasticity;
+        public double ModulusOfElasticity = 0;
 
-        public double Viscosity;
+        public double Viscosity = 0;
 
         //In g/cc
-        public double Density;
+        public double Density = 0;
 
-        public double Lame1;
+        public double Lame1 = 0;
 
         //Schubmodul
-        public double Lame2;
+        public double Lame2 = 0;
 
     }
 
@@ -50,7 +50,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Density = 3.8;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
-            Viscosity = 1;
+            Viscosity = 0.1;
         }
     }
 
@@ -71,7 +71,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             ModulusOfElasticity = 3;
             Density = 1;
             //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!! remember to unset viscosity!!!!!");
-            Viscosity = 0.001;
+            Viscosity = 1;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
         }
@@ -84,6 +84,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Density = 1;
             Lame1 = 1;
             Lame2 = 1;
+            Viscosity = 1;
         }
     }
 }

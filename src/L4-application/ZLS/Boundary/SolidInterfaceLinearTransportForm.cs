@@ -29,8 +29,7 @@ namespace ZwoLevelSetSolver.Boundary {
             m_FluidSpc = FluidSpc;
             m_rho = rho; 
             this.variableNames = variableNames;
-            parameterNames = BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(m_D).Cat(
-                BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(m_D)); ;
+            parameterNames = ZwoLevelSetSolver.VariableNames.Displacement0Vector(m_D);
         }
 
         public IList<string> ArgumentOrdering {
@@ -67,13 +66,18 @@ namespace ZwoLevelSetSolver.Boundary {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uIn, double[] uOut, double[,] Grad_uIN, double[,] Grad_uOut, double vIn, double vOut, double[] Grad_vIN, double[] Grad_vOUT) {
             double r = 0.0;
-            r += inp.Parameters_OUT[m_d] * (uOut[0] * inp.Normal[0] + uOut[1] * inp.Normal[1]);
-            if(m_D == 3) {
-                r += inp.Parameters_OUT[m_d] * uOut[2] * inp.Normal[2];
-            }
+            Vector VelocityIn = new Vector(inp.Parameters_IN, 0, m_D);
+            Vector VelocityOt = new Vector(inp.Parameters_OUT, 0, m_D);
+            Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
 
-            r *= m_rho;
-            return r * (-vOut);
+            if (VelocityAvg * inp.Normal >= 0)
+            {
+                return m_rho * uIn[m_d] * (VelocityIn * inp.Normal) * (vIn-vOut);
+            }
+            else
+            {
+                return m_rho * uOut[m_d] * (VelocityOt * inp.Normal) * (vIn-vOut);
+            }
         }
 
         /// <summary>

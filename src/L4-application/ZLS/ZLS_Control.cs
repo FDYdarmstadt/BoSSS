@@ -14,6 +14,10 @@ namespace ZwoLevelSetSolver {
 
         public int Degree { get; private set; }
 
+        public bool DisplacementExtension = false;
+
+        public double ArtificialViscosity = 0.0;
+
         public ZLS_Control() : base() { }
 
         public override Type GetSolverType() {

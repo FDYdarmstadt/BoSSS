@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.XNSECommon.Operator;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -34,27 +35,31 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddComponent(convection);
             //Console.WriteLine("##################### Rem: nix convection.");
             
-            
-
             var pressure = new PressureGradientForm(SpeciesName, d);
             AddComponent(pressure);
             
             // laplacian of displacement:
-            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, NavierCauchy.EulerAlamansiPenalty);
-            AddComponent(eulerAlmansi0);
+            if(material.Lame2 != 0.0)
+            {
+                var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, NavierCauchy.EulerAlamansiPenalty);
+                AddComponent(eulerAlmansi0);
+                //eulerAlmansi0.PenaltySafety = 1.0;
 
-            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, NavierCauchy.EulerAlamansiPenalty);
-            AddComponent(eulerAlmansi1);
-            
-            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
-            AddComponent(viscosity);
+                var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, NavierCauchy.EulerAlamansiPenalty);
+                AddComponent(eulerAlmansi1);
+            }
+            if(material.Viscosity != 0)
+            {
+                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
+                AddComponent(viscosity);
+            }
 
             //var velocityBoundaryPenalty = new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 1);
             //AddComponent(velocityBoundaryPenalty);
 
             string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
             string gravityOfSpecies = gravity + "#" + SpeciesName;
-            var gravityComponent = new BoSSS.Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
+            var gravityComponent = new MultiPhaseSource(gravityOfSpecies, speciesName);
             AddComponent(gravityComponent);
             AddParameter(gravityOfSpecies);
         }

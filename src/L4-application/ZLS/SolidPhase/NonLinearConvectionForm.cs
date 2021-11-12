@@ -83,6 +83,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             //return 0.0; // solid wall
 
             Vector VelocityIn = new Vector(_uIN, 0, D);
+            double VariableIn = 0;
 
 // Upwinding:
             if(VelocityIn*inp.Normal >= 0) {
@@ -90,28 +91,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
             } else {
                 return 0.0 * (_vIN); // inflow
             }
-
-            /*
-            double r = 0.0;
-            // 2 * {u_i * u_j} * n_j,
-            // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            //r += _uIN[d] * (_uIN[D+0] * inp.Normal[0] + _uIN[D + 1] * inp.Normal[1]);
-            //if(D == 3) {
-            //    r += _uIN[d] * _uIN[D + 2] * inp.Normal[2];
-            //}
-            r += _uIN[D] + (VelocityIn * inp.Normal);
-
-            // Calculate dissipative part
-            // ==========================
-
-
-            double LambdaIn = LambdaConvection.GetLambda(VelocityIn, inp.Normal);
-            double uJump = _uIN[D];
-            r += LambdaIn * uJump;
-
-            r *= rho;
-            return r * (_vIN);
-            */
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
@@ -133,39 +112,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
             } else {
                 return rho * _uOT[D] * (VelocityOt * inp.Normal) * (_vIN - _vOUT);
             }
-
-            /*
-
-            // 2 * {u_i * u_j} * n_j,
-            // resp. 2 * {rho * u_i * u_j} * n_j for variable density
-            //r += _uIN[d] * (_uIN[D+0] * inp.Normal[0] + _uIN[D + 1] * inp.Normal[1]);
-            //r += _uOUT[d] * (_uOUT[D+0] * inp.Normal[0] + _uOUT[D+1] * inp.Normal[1]);
-            //if(D == 3) {
-            //    r += _uIN[d] * _uIN[D+2] * inp.Normal[2] + _uOUT[d] * _uOUT[D+2] * inp.Normal[2];
-            //}
-            r += _uIN[D] * (VelocityIn * inp.Normal)*0.5;
-            r += _uOT[D] * (VelocityOt * inp.Normal)*0.5;
-
-            // Calculate dissipative part
-            // ==========================
-
-
-            double LambdaIn = LambdaConvection.GetLambda(VelocityIn, inp.Normal);
-            double LambdaOut = LambdaConvection.GetLambda(VelocityOt, inp.Normal);
-            double Lambda = Math.Max(LambdaIn, LambdaOut);
-            //double uJump = _uIN[D + d] - _uOUT[D + d];
-            double uJump = _uIN[D] - _uOT[D];
-            r += Lambda * uJump*0.5;
-
-            r *= rho;
-            return r * (_vIN - _vOUT);
-            */
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
-
-            //Vector Velocity = new Vector(U, 0, this.D);
 
             for(int dim = 0; dim < D; dim++)
                 acc += U[dim] * U[D] * GradV[dim];

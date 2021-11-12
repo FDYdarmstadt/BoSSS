@@ -42,7 +42,7 @@ namespace ZwoLevelSetSolver {
 
             // Displacement-Divergence
             //ZLS_Control.DisplacementDegOffset = 0;
-            ZLS.displacementViscosity = 1.0;
+            
             SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
             SolidPhase.Continuity.ContinuityInDisplacement = true;
             SolidPhase.Continuity.ContinuityStabilization = true; // seems to be required
@@ -61,6 +61,7 @@ namespace ZwoLevelSetSolver {
             //controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 64));
 
             foreach(var c in controlFiles) {
+                c.ArtificialViscosity = 1.0;
                 c.SkipSolveAndEvaluateResidual = true;
                 c.NonLinearSolver.SolverCode = slvCode;
                 if(dt >= 1e10)

@@ -137,30 +137,7 @@ namespace BoSSS.Solution.Statistic {
                                 throw new ArgumentException("unable to compare simulations in different spatial dimensions.");
                         }
 
-                        ////-------------------Evaluate Error ---------------------------------------- 
-                        //var evaluator = new XNSEErrorEvaluator<XNSE_Control>(solver);
-                        //double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
-                        //double[] ErrThresh = Tst.AcceptableL2Error;
-
-                        //if (k == 0) {
-                        //    errorS = MultidimensionalArray.Create(NoOfMeshes, LastErrors.Length);
-                        //    Names = new string[LastErrors.Length];
-                        //    if (ExpectedSlopes.Length != Names.Length)
-                        //        throw new ArgumentOutOfRangeException();
-                        //} else {
-                        //    if (LastErrors.Length != Names.Length)
-                        //        throw new ApplicationException();
-                        //}
-
-                        //if (LastErrors.Length != ErrThresh.Length)
-                        //    throw new ApplicationException();
-                        //for (int i = 0; i < ErrThresh.Length; i++) {
-                        //    Console.WriteLine($"L2 error, '{solver.Operator.DomainVar[i]}': \t{LastErrors[i]}");
-                        //    Names[i] = solver.Operator.DomainVar[i];
-                        //}
-
-                        //errorS.SetRow(k, LastErrors);
-                        //hS[k] = evaluator.GetGrid_h();
+                       
 
                         var solutionAtResolutions = fildNamesAndSlopes.Select(
                             ttt => solver.IOFields.Where(f => f.Identification == ttt.FieldName).Single());

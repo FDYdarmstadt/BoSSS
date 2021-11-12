@@ -35,8 +35,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
             }
 
             var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
+            //var source = new MultiPhaseSource(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d], SpeciesName, -1.0);
+            //AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d]);
             AddComponent(source);
-            
+
             //Console.WriteLine("Displacement evo deakt");
         }
 
@@ -58,13 +60,11 @@ namespace ZwoLevelSetSolver.SolidPhase {
             this.codomainName = EquationNames.DisplacementEvolutionComponent(d);
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
 
-
-            var convection = new LinearConvectionForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], D, 1.0);
+            var convection = new LinearTransportForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 1.0);
             AddComponent(convection);
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
+            AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D));
 
-            var source = new MultiPhaseSource(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d], speciesName, -1.0);
+            var source = new MultiPhaseSource(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d], speciesName, -1.0);
             AddComponent(source);
         }
 

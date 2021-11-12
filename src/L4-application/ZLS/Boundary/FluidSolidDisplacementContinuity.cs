@@ -1,29 +1,27 @@
-﻿using BoSSS.Foundation.XDG;
-using BoSSS.Foundation.XDG.OperatorFactory;
+﻿using BoSSS.Foundation.XDG.OperatorFactory;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ZwoLevelSetSolver.ContactLine;
 
 namespace ZwoLevelSetSolver.Boundary {
-    class FluidSolidContinuity : SurfaceEquation {
+    class FluidSolidDisplacementContinuity : SurfaceEquation {
 
         string fluidSpecies;
         string solidSpecies;
         string codomainName;
 
-        public FluidSolidContinuity(string fluidSpecies, string solidSpecies, int D) {
+        public FluidSolidDisplacementContinuity(string fluidSpecies, string solidSpecies, int D) {
             codomainName = BoSSS.Solution.NSECommon.EquationNames.ContinuityEquation;
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
             //Stress equality
-            
+
             for(int i = 0; i < D; ++i) {
-                string velocity = BoSSS.Solution.NSECommon.VariableNames.Velocity_d(i);
+                string velocity = ZwoLevelSetSolver.VariableNames.DisplacementComponent(i);
                 AddVariableNames(velocity);
-                AddComponent(new BoundaryDivergenceVelocityForm( i, 1, fluidSpecies, solidSpecies));
+                AddComponent(new BoundaryDivergenceDisplacementForm(i, 1, fluidSpecies, solidSpecies));
             }
         }
 
@@ -33,4 +31,5 @@ namespace ZwoLevelSetSolver.Boundary {
 
         public override string CodomainName => codomainName;
     }
+
 }

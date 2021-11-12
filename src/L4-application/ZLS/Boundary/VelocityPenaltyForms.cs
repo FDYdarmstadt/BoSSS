@@ -99,8 +99,10 @@ namespace ZwoLevelSetSolver.Boundary {
             return flux;
         }
 
-        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { this };
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
+        {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
         }
     }
 

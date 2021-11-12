@@ -38,15 +38,19 @@ namespace ZwoLevelSetSolver.SolidPhase {
             
             var pressure = new PressureGradientForm(SpeciesName, d);
             AddComponent(pressure);
+            if(material.Lame2 != 0.0)
+            {
+                var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
+                AddComponent(eulerAlmansi0);
 
-            var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
-            AddComponent(eulerAlmansi0);
-
-            var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
-            AddComponent(eulerAlmansi1);
-            
-            var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
-            AddComponent(viscosity);
+                var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
+                AddComponent(eulerAlmansi1);
+            }
+            if(material.Viscosity != 0.0)
+            {
+                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
+                AddComponent(viscosity);
+            }
             
             string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
             string gravityOfSpecies = gravity + "#" + SpeciesName;

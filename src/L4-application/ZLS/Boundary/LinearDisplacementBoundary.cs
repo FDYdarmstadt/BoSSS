@@ -23,11 +23,10 @@ namespace ZwoLevelSetSolver.Boundary {
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D));
 
-            AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 1, artificialViscosity));
-
-            AddSurfaceComponent(new BoundaryViscosityForm(ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 0.000));
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(
-                ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)).ToArray());
+            if(artificialViscosity != 0.0)
+            {
+                AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 1, artificialViscosity));
+            }
         }
 
         public override string FirstSpeciesName => fluidSpecies;

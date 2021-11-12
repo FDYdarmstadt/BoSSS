@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver.SolidPhase {
 
     //All boundaries are a Wall for now
-    public class LinearTransportForm : IVolumeForm, ISupportsJacobianComponent, IEdgeForm, ISpeciesFilter {
+    public class StokesTransportForm : IVolumeForm, IEdgeForm, ISpeciesFilter {
 
         string speciesName;
 
@@ -27,7 +27,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         int d;
 
-        public LinearTransportForm(string speciesName, string[] variableNames, int d, int D, double rho) {
+        public StokesTransportForm(string speciesName, string[] variableNames, int d, int D, double rho) {
             this.speciesName = speciesName;
             this.variableNames = variableNames;
             this.D = D;
@@ -58,12 +58,15 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             Vector VelocityIn = new Vector(inp.Parameters_IN, 0, D);
 
-            return 0.0 * (_vIN); // inflow
-        }
-
-        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
-        {
-            return new[] { this};
+            // Upwinding:
+            if (VelocityIn * inp.Normal >= 0)
+            {
+                return rho * _uIN[d] * (VelocityIn * inp.Normal) * (_vIN); // outflow
+            }
+            else
+            {
+                return 0.0 * (_vIN); // inflow
+            }
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {

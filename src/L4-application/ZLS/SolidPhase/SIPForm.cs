@@ -165,9 +165,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             for (int i = 0; i < D; i++) {
                 acc1 -= viscosity * _Grad_uIN[d, i] * _vIN  * inp.Normal[i];  // consistency term  
-                acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
+                //acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
             }
-            acc1 += PenaltySafety * (_uIN[d] - dirichlet[d]) * _vIN  * pnlty * viscosity;
+            //acc1 += PenaltySafety * (_uIN[d] - dirichlet[d]) * _vIN  * pnlty * viscosity;
             return acc1;
         }
 
