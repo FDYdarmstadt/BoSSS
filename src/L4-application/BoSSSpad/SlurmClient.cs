@@ -208,8 +208,11 @@ namespace BoSSS.Application.BoSSSpad {
                 //isFailed = false;
                 //SubmitCount = 0;
 
+
                 if(DeployDir == null)
                     DeployDir = "";
+
+                tr.Info("Trying to determine status of SLURM job in " + DeployDir);
 
                 using (new BlockTrace("FILE_CHECK", tr)) {
                     string exitFile = Path.Combine(DeployDir, "exit.txt");
@@ -218,8 +221,10 @@ namespace BoSSS.Application.BoSSSpad {
                         int ExitCode;
                         try {
                             ExitCode = int.Parse(File.ReadAllText(exitFile).Trim());
+                            tr.Info("found `exit.txt`, parsed code is " + ExitCode);
                         } catch (Exception) {
                             ExitCode = int.MinValue;
+                            tr.Info("found `exit.txt`, but unable to parse code: setting exit code to " + ExitCode);
                         }
                         return (ExitCode == 0 ? JobStatus.FinishedSuccessful : JobStatus.FailedOrCanceled, ExitCode);
                     }
@@ -228,10 +233,10 @@ namespace BoSSS.Application.BoSSSpad {
                     if (File.Exists(runningFile)) {
                         // no decicion yet;
                         // e.g. assume that slurm terminated the Job after 24 hours => maybe 'isrunning.txt' is not deleted and 'exit.txt' does not exist
-
+                        tr.Info("found running.txt token");
                     } else {
                         // no 'isrunning.txt'-token and no 'exit.txt' token: job should be pending in queue
-
+                        tr.Info("jobb seems to be pending");
                         return (JobStatus.PendingInExecutionQueue, null);
 
                         //isRunning = false;
@@ -245,40 +250,58 @@ namespace BoSSS.Application.BoSSSpad {
 
                 using (new BlockTrace("SSH_SLURM_CHECK", tr)) {
                     //using (var output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T")) {
-                    string output = SSHConnection.RunCommand("squeue -j " + JobID + " -o %T").stdout;
+
+                    var squeueCmd = "squeue -j " + JobID + " -o %T";
+                    tr.Info("Running command: " + squeueCmd);
+                    var sshCall = SSHConnection.RunCommand(squeueCmd);
+                    tr.Info("stdout: " + sshCall.stdout);
+                    tr.Info("stderr: " + sshCall.stderr);
+
+                    string output = sshCall.stdout;
                     using(var Reader = new StringReader(output)) {
 
                         string line = Reader.ReadLine();
                         while(line != null && !line.Equals("state", StringComparison.InvariantCultureIgnoreCase))
                             line = Reader.ReadLine();
+                        tr.Info("line is " + (line??"Null"));
 
-                        if(line == null || !line.Equals("state", StringComparison.InvariantCultureIgnoreCase))
+                        if(line == null || !line.Equals("state", StringComparison.InvariantCultureIgnoreCase)) {
+                            tr.Info("returning `Unknown` state");
                             return (JobStatus.Unknown, null);
+                        }
 
                         string jobstatus = Reader.ReadLine();
-                        if(jobstatus == null)
+                        tr.Info("jobstatus is `" + (jobstatus??"Null") + "`");
+                        if(jobstatus == null) {
+                            tr.Info("returning `Unknown` state");
                             return (JobStatus.Unknown, null);
+                        }
 
                         switch(jobstatus.ToUpperInvariant()) {
                             case "PENDING":
+                            tr.Info("returning `PendingInExecutionQueue`");
                             return (JobStatus.PendingInExecutionQueue, null);
 
                             case "RUNNING":
                             case "COMPLETING":
+                            tr.Info("returning `InProgress`");
                             return (JobStatus.InProgress, null);
 
                             case "SUSPENDED":
                             case "STOPPED":
                             case "PREEMPTED":
                             case "FAILED":
+                            tr.Info("returning `FailedOrCanceled`");
                             return (JobStatus.FailedOrCanceled, int.MinValue);
 
                             case "":
                             case "COMPLETED":
                             // completed, but 'exit.txt' does not exist, something is shady here
+                            tr.Info("returning `FailedOrCanceled`");
                             return (JobStatus.FailedOrCanceled, -1);
 
                             default:
+                            tr.Info("returning `Unknown`");
                             return (JobStatus.Unknown, null);
                         }
                         //}

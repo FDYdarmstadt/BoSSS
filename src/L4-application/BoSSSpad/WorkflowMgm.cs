@@ -29,6 +29,7 @@ using ilPSP;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
+using ilPSP.Tracing;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -585,42 +586,46 @@ namespace BoSSS.Application.BoSSSpad {
         /// Seconds to wait before checking the jobs status again; should be in the order of seconds, not to overload the IO.
         /// </param>
         public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
-            DateTime start = DateTime.Now;
-            while(true) {
-                
-                //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
-                //    MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
+            using(var tr = new FuncTrace()) {
+                DateTime start = DateTime.Now;
+                while(true) {
 
-                Thread.Sleep((int)PollingIntervallSeconds);
+                    //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
+                    //    MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
 
-                if(TimeOutSeconds > 0) {
-                    double RuntimeSoFar = (DateTime.Now - start).TotalSeconds;
-                    if(RuntimeSoFar > TimeOutSeconds) {
-                        Console.WriteLine("Timeout.");
+                    Thread.Sleep((int)PollingIntervallSeconds);
+
+                    if(TimeOutSeconds > 0) {
+                        double RuntimeSoFar = (DateTime.Now - start).TotalSeconds;
+                        if(RuntimeSoFar > TimeOutSeconds) {
+                            Console.WriteLine("Timeout.");
+                            return;
+                        }
+                    }
+
+                    //Debugger.Launch();
+
+                    bool terminate = true;
+                    foreach(var J in this.AllJobs) {
+                        var s = J.Value.Status;
+                        tr.Info("Testing job: " + J);
+                        if(s != JobStatus.FailedOrCanceled && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation) {
+                            tr.Info("not terminating because of job: " + J);
+                            terminate = false;
+                            break;
+                        }
+                    }
+
+                    if(terminate) {
+                        Console.WriteLine("All jobs finished.");
+                        m_Sessions = null;
                         return;
                     }
-                }
 
-                bool terminate = true;
-                foreach(var J in this.AllJobs) {
-                    var s = J.Value.Status;
-                    if(s!= JobStatus.FailedOrCanceled && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation) {
-                        terminate = false;
-                        break;
-                    }
+                    Thread.Sleep((int)(1000.0 * PollingIntervallSeconds));
                 }
-
-                if (terminate) {
-                    Console.WriteLine("All jobs finished.");
-                    m_Sessions = null;
-                    return;
-                }
-
-                Thread.Sleep((int)(1000.0*PollingIntervallSeconds));
             }
-            
         }
-
         List<Tuple<AppControl, int>> RegisteredControls = new List<Tuple<AppControl, int>>();
 
 

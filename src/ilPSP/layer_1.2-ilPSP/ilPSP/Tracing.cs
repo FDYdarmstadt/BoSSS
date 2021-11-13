@@ -149,14 +149,23 @@ namespace ilPSP.Tracing {
         }
 
         internal static int Pop_MethodCallrecord(long ElapsedTicks, long Memory_increase, long PeakMemory_increase, out MethodCallRecord mcr) {
-            Debug.Assert(InstrumentationSwitch == true);
+            Debug.Assert(InstrumentationSwitch == true, "instrumentationSwitch cannot be false.");
+            //if(InstrumentationSwitch == false) {
+            //    Console.Error.WriteLine("instrumentationSwitch cannot be false.");
+            //    throw new Exception("instrumentationSwitch cannot be false.");
+            //}
 
             Debug.Assert(!object.ReferenceEquals(Current, _Root), "root frame cannot be popped");
+            //if(!object.ReferenceEquals(Current, _Root) == false) {
+            //    Console.Error.WriteLine("root frame cannot be popped");
+            //    throw new Exception("root frame cannot be popped");
+            //}
             Tracer.Current.m_TicksSpentInMethod += ElapsedTicks;
             Tracer.Current.m_TicksSpentinBlocking += GetMPITicks();
             Tracer.Current.m_MemoryIncrease = Math.Max(Tracer.Current.m_MemoryIncrease, Memory_increase);
             Tracer.Current.m_PeakMemoryIncrease = Math.Max(Tracer.Current.m_PeakMemoryIncrease, PeakMemory_increase);
-            Debug.Assert(ElapsedTicks > Tracer.Current.m_TicksSpentinBlocking);
+            //fails for some reason on lichtenberg:
+            //Debug.Assert(ElapsedTicks > Tracer.Current.m_TicksSpentinBlocking, $"ticks are fucked up: elapsed = {ElapsedTicks}, blocking = {Tracer.Current.m_TicksSpentinBlocking}");
             mcr = Tracer.Current;
             Tracer.Current = Tracer.Current.ParrentCall;
             return Tracer.Current.Depth;

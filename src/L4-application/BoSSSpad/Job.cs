@@ -1387,7 +1387,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </param>
         /// <returns></returns>
         public JobStatus GetStatus(bool WriteHints = true) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 //SubmitCount = 0;
                 //DD = null;
                 if(AssignedBatchProc == null)
@@ -1405,9 +1405,10 @@ namespace BoSSS.Application.BoSSSpad {
                 // we have to evaluate the status NOW, and work with this status in order for this method to work correctly.
                 // otherwise, the loophole describes below might happen!
                 (Deployment Depl, JobStatus fixedStatus)[] DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
-
+                tr.Info("Deployments so far (" + DeploymentsSoFar.Length + "): " + DeploymentsSoFar.ToConcatString("", ", ", ";"));
 
                 Deployment[] Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
+                tr.Info("Success: " + Success.Length);
                 if(SessionReqForSuccess) {
                     ISessionInfo[] SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
                     if(SuccessSessions.Length <= 0) {
@@ -1420,6 +1421,7 @@ namespace BoSSS.Application.BoSSSpad {
                     if(SuccessSessions.Length > 0) {
                         if(WriteHints)
                             Console.WriteLine($"Info: Found successful session \"{SuccessSessions.First()}\" -- job is marked as successful, no further action.");
+                        tr.Info($"Info: Found successful session \"{SuccessSessions.First()}\" -- job is marked as successful, no further action.");
                         this.statusCache = JobStatus.FinishedSuccessful;
                         return JobStatus.FinishedSuccessful;
                     }
@@ -1427,6 +1429,7 @@ namespace BoSSS.Application.BoSSSpad {
                     if(Success.Length > 0) {
                         if(WriteHints)
                             Console.WriteLine($"Note: found {Success.Length} successful deployment(s), but job is configured to require a successful result session ('this.SessionReqForSuccess' is true), and none is found. {this.AllSessions.Length} sessions correlated to this job fount in total.");
+                        tr.Info($"Note: found {Success.Length} successful deployment(s), but job is configured to require a successful result session ('this.SessionReqForSuccess' is true), and none is found. {this.AllSessions.Length} sessions correlated to this job fount in total.");
                     }
 
                     if(WriteHints) {
@@ -1440,6 +1443,7 @@ namespace BoSSS.Application.BoSSSpad {
                     if(Success.Length > 0) {
                         if(WriteHints)
                             Console.WriteLine($"Info: Found successful deployment and no result session is expected ('this.SessionReqForSuccess' is false):  job is marked as successful, no further action.");
+                        tr.Info($"Info: Found successful deployment and no result session is expected ('this.SessionReqForSuccess' is false):  job is marked as successful, no further action.");
                         this.statusCache = JobStatus.FinishedSuccessful;
                         return JobStatus.FinishedSuccessful;
                     }
@@ -1451,20 +1455,22 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // If we would not use the status evaluated at the top of this method, the 
                 // potential async loophole could happen: job is still 'PendingInExecutionQueue' here...
-
                 var inprog = DeploymentsSoFar.Where(dep => (dep.fixedStatus == JobStatus.InProgress)).ToArray();
+                tr.Info("inprog length: " + inprog.Length);
                 if(inprog.Length > 0) {
                     if(WriteHints)
                         Console.WriteLine($"Info: Job {inprog[0].Depl.BatchProcessorIdentifierToken} is currently executed on {this.AssignedBatchProc} -- no further action.");
+                    tr.Info($"Info: Job {inprog[0].Depl.BatchProcessorIdentifierToken} is currently executed on {this.AssignedBatchProc} -- no further action.");
                     return JobStatus.InProgress;
                 }
 
                 // ... but moves to 'InProgress' somewhere in between here ...
-
                 var inq = DeploymentsSoFar.Where(dep => (dep.fixedStatus == JobStatus.PendingInExecutionQueue)).ToArray();
+                tr.Info("inq length: " + inq.Length);
                 if(inq.Length > 0) {
                     if(WriteHints)
                         Console.WriteLine($"Info: Job {inq[0].Depl.BatchProcessorIdentifierToken} is currently waiting on {this.AssignedBatchProc} -- no further action.");
+                    tr.Info($"Info: Job {inq[0].Depl.BatchProcessorIdentifierToken} is currently waiting on {this.AssignedBatchProc} -- no further action.");
                     return JobStatus.PendingInExecutionQueue;
                 }
 
@@ -1476,12 +1482,16 @@ namespace BoSSS.Application.BoSSSpad {
                               
                 // if we pass this point, we want to submit to a batch processor,
                 // but only if still allowed.
+                tr.Info("job submit count: " + this.SubmitCount);
                 if(this.SubmitCount >= this.RetryCount) {
                     
                     if(WriteHints) {
                         Console.WriteLine($"Note: Job has reached its maximum number of attempts to run ({this.RetryCount}) -- job is marked as fail, no further action.");
                         Console.WriteLine($"Hint: you might either remove old deployments or increase the 'RetryCount'.");
                     }
+                    tr.Info($"Note: Job has reached its maximum number of attempts to run ({this.RetryCount}) -- job is marked as fail, no further action.");
+                    tr.Info($"Hint: you might either remove old deployments or increase the 'RetryCount'.");
+
                     this.statusCache = JobStatus.FailedOrCanceled;
                     return JobStatus.FailedOrCanceled;
                 }
@@ -1491,6 +1501,9 @@ namespace BoSSS.Application.BoSSSpad {
                         Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
                         Console.WriteLine($"Hint: want to re-activate the job.");
                     }
+                    tr.Info($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
+                    tr.Info($"Hint: want to re-activate the job.");
+
                     this.statusCache = JobStatus.FailedOrCanceled;
                     return JobStatus.FailedOrCanceled;
                 }
@@ -1499,6 +1512,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // what now?
                 // ============
 
+                tr.Info("unable to determine job status - unknown");
                 return JobStatus.Unknown;
             }
         }
