@@ -1650,13 +1650,13 @@ namespace BoSSS.Solution {
             int LocSysSizeZeroLvl = _LocalDOF[0];
             
 
-            for (int iLevel = 0; iLevel < MaxMGDepth; iLevel++) {
-                MaxMGLevel = iLevel;
-                double SizeFraction = (double)LocalDOF4directSolver[iLevel] / (double)SchwarzblockSize(iLevel);
-                int SysSize = _LocalDOF[iLevel].MPISum();
-                Console.WriteLine("DOF on L{0}: {1}",iLevel,SysSize);
-                if (SizeFraction < 1 && iLevel == 0) {
-                    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver[iLevel]}) < Schwarz-Block size ({SchwarzblockSize(iLevel)});");
+            for (int mgLevel = 0; mgLevel < MaxMGDepth; mgLevel++) {
+                MaxMGLevel = mgLevel;
+                double SizeFraction = (double)LocalDOF4directSolver[mgLevel] / (double)SchwarzblockSize(mgLevel);
+                int SysSize = _LocalDOF[mgLevel].MPISum();
+                Console.WriteLine("DOF on L{0}: {1}",mgLevel,SysSize);
+                if (SizeFraction < 1 && mgLevel == 0) {
+                    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver[mgLevel]}) < Schwarz-Block size ({SchwarzblockSize(mgLevel)});");
                     Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
                 }
 
@@ -1664,13 +1664,13 @@ namespace BoSSS.Solution {
                 // It has to be ensured, that directKickin takes place on all ranks at same level
                 // therefore only global criterion have to be used here !!!
                 useDirect |= (SysSize < DirectKickIn);
-                useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
+                useDirect |= mgLevel == m_lc.NoOfMultigridLevels - 1;
                 useDirect = useDirect.MPIOr();
 
                 if(useDirect)
-                    Console.WriteLine("KcycleMultiILU: lv {0}, Direct solver ", iLevel);
+                    Console.WriteLine("KcycleMultiILU: lv {0}, Direct solver ", mgLevel);
                 else
-                    Console.WriteLine("KcycleMultiILU: lv {0}, ", iLevel);
+                    Console.WriteLine("KcycleMultiILU: lv {0}, ", mgLevel);
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
@@ -1689,7 +1689,7 @@ namespace BoSSS.Solution {
                     //};
 
                     var smoother1 = new CellILU() {
-                        ILU_level = iLevel == 0 ? 2 : 0
+                        ILU_level = mgLevel == 0 ? 2 : 0
                     };
 
 
@@ -1699,7 +1699,7 @@ namespace BoSSS.Solution {
                         m_omega = 1,
                     };
 
-                    if (iLevel > 0) {
+                    if (mgLevel > 0) {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
                     } else {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
@@ -1719,14 +1719,14 @@ namespace BoSSS.Solution {
                 }
                 SolverChain.Add(levelSolver);
 
-                if (iLevel > 0) {
+                if (mgLevel > 0) {
 
-                    ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
+                    ((OrthonormalizationMultigrid)(SolverChain[mgLevel - 1])).CoarserLevelSolver = levelSolver;
 
                 }
 
                 if (useDirect) {
-                    Console.WriteLine("INFO: using {0} levels, lowest level DOF is {1}, target size is {2}.", iLevel + 1, SysSize, DirectKickIn);
+                    Console.WriteLine("INFO: using {0} levels, lowest level DOF is {1}, target size is {2}.", mgLevel + 1, SysSize, DirectKickIn);
                     break;
                 }
             }

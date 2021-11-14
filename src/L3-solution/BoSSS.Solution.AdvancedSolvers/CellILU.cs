@@ -448,7 +448,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     ILUp_pattern = MsrMatrix.Multiply(ILUp_pattern, ILU0_pattern);
 
-
+                    /*
                     for(int j = 0; j < J; j++) {
                         for(int i = 0; i < J; i++) {
                             byte lev_ij = lev[i, j];
@@ -460,6 +460,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             lev[i, j] = lev_ij;
                         }
                     }
+                    */
                     tr.Info("done.");
                 }
 
@@ -468,6 +469,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for(int j = 0; j < J; j++) {
 
                     long[] rowPattern = ILUp_pattern.GetOccupiedColumnIndices(j);
+                    /*
                     var checkPattern = new List<long>();
 
                     for(int i = 0; i < J; i++) {
@@ -484,6 +486,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(!rowPattern.SetEquals(checkPattern)) {
                         throw new Exception();
                     }
+                    */
                 }
 
                 m_ILUp_pattern = ILUp_pattern;

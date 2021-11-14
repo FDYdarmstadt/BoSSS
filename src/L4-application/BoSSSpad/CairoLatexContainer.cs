@@ -294,7 +294,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Requires the following programmes to be correctly installed and in the PATH environment variable:
         /// - pdflatex
         /// - pdfcrop (if <paramref name="trimPage"/> is true)
-        /// - pdf2svg https://github.com/dawbarton/pdf2svg
+        /// - pdf2svg https://github.com/dawbarton/pdf2svg (binaries for windows see: https://github.com/jalios/pdf2svg-windows)
         /// </remarks>
         public Microsoft.AspNetCore.Html.HtmlString PreviewSVG(bool trimPage = true) {
             
