@@ -92,9 +92,9 @@ namespace BoSSS.Application.XNSEC {
 
         public int LevelsetPolynomialDegree => 2;
 
-        public double[] AcceptableL2Error => new double[] { 1e-7, 1e-7, 1e-7, 1e-7/*, 1e-7, 1e-7*/ };
+        public double[] AcceptableL2Error => new double[] { 1e-7, 1e-7, 1e-7, 1e-7, 1e-7/*, 1e-7*/ };
 
-        public double[] AcceptableResidual => new double[] { 1e-7, 1e-7, 1e-7, 1e-7/*, 1e-7, 1e-7 */};
+        public double[] AcceptableResidual => new double[] { 1e-7, 1e-7, 1e-7, 1e-7, 1e-7/*, 1e-7 */};
 
         public int NumberOfChemicalComponents => /*2*/1;
 
