@@ -418,8 +418,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 long cell0 = part.FirstBlock;
                 int J = part.LocalNoOfBlocks;
 
-                byte[,] lev = new byte[J, J];
-                lev.SetAll(byte.MaxValue);
+                //byte[,] lev = new byte[J, J];
+                //lev.SetAll(byte.MaxValue);
 
                 // determinte ILU-0 pattern
                 tr.Info("computing ILU(0) pattern...");
@@ -433,7 +433,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     foreach(long j in colBlocks) { // loop over block columns
                         var Blk = Mtx.GetBlock(j, i);
                         if(Blk.L2Norm() > 0) {
-                            lev[i, j] = 0;
+                            //lev[i, j] = 0;
                             ILU0_pattern[i, j] = 1;
                         } else {
                             tr.Info("Mem occupied, but the block is 0");
