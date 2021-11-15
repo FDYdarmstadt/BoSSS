@@ -199,7 +199,7 @@ namespace BoSSS.Solution {
                 switch (m_lc.SolverCode) {
                     case LinearSolverCode.exp_gmres_levelpmg:
                     case LinearSolverCode.exp_gmres_schwarz_pmg:
-                    case LinearSolverCode.exp_softgmres:
+                    //case LinearSolverCode.exp_softgmres:
                         LinIsGmres = true;
                         break;
                     default:
@@ -408,19 +408,20 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.classic_mumps:
                 case LinearSolverCode.classic_pardiso:
                 case LinearSolverCode.classic_cg:
-                case LinearSolverCode.exp_softgmres:
+                //case LinearSolverCode.exp_softgmres:
                 case LinearSolverCode.exp_Kcycle_schwarz:
                 case LinearSolverCode.exp_Kcycle_ILU:
                 case LinearSolverCode.exp_decomposedMG_OrthoScheme:
-                case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
-                case LinearSolverCode.exp_AS:
-                case LinearSolverCode.exp_AS_MG:
+                //case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
+                //case LinearSolverCode.exp_AS:
+                //case LinearSolverCode.exp_AS_MG:
                 case LinearSolverCode.automatic:
                 precond[0] = null;
                 break;
-                case LinearSolverCode.exp_gmres_ILU:
-                precond[0] = new HypreILU();
-                break;
+                //case LinearSolverCode.exp_gmres_ILU:
+                //precond[0] = new HypreILU();
+                //break;
+                /*
                 case LinearSolverCode.exp_gmres_AS_MG:
                 var dirSolver = new DirectSolver() {
                     WhichSolver = DirectSolver._whichSolver.PARDISO,
@@ -434,7 +435,7 @@ namespace BoSSS.Solution {
                 };
                 precond[0] = BareMGSquence(3, dirSolver, Smoother);
                     break;
-
+                */
                 /*
                 case LinearSolverCode.exp_gmres_localPrec:
                     precond[0] = new LocalizedOperatorPrec() {
@@ -443,6 +444,7 @@ namespace BoSSS.Solution {
                     };
                     break;
                 */
+                /*
                 case LinearSolverCode.exp_gmres_AS:
 
                     precond[0] = new Schwarz() {
@@ -480,7 +482,7 @@ namespace BoSSS.Solution {
                         Overlap = 1,
                     };
                     break;
-
+                */
                 case LinearSolverCode.exp_gmres_levelpmg:
                     precond[0] = new LevelPmg() { UseHiOrderSmoothing = true, OrderOfCoarseSystem = m_lc.pMaxOfCoarseSolver, FullSolveOfCutcells = true};
                     SetQuery("XdgCellsToLowBlock", ((LevelPmg)precond[0]).FullSolveOfCutcells ? 1 : 0, true);
@@ -499,6 +501,7 @@ namespace BoSSS.Solution {
                     };
                     break;
 
+                /*
                 case LinearSolverCode.exp_softpcg_jacobi_mg:
 
                     ISolverSmootherTemplate[] _prechain = new ISolverSmootherTemplate[] {
@@ -525,7 +528,8 @@ namespace BoSSS.Solution {
 
                     precond[0] = My_MG_Precond(lc, LocalDOF, MaxMGDepth, _prechain, _postchain, toppre, toppst);
                     break;
-
+            */
+                /*
                 case LinearSolverCode.exp_OrthoS_pMG:
                     precond = new ISolverSmootherTemplate[]{
                         //new LevelPmg() {
@@ -548,7 +552,7 @@ namespace BoSSS.Solution {
                         }
                     };
                     break;
-
+                */
                 case LinearSolverCode.selfmade:
                     Console.WriteLine("INFO: Selfmade Preconditioner is used!");
                     precond[0] = m_precond;
@@ -616,7 +620,7 @@ namespace BoSSS.Solution {
                     WhichSolver = DirectSolver._whichSolver.PARDISO
                 };
                 break;
-
+                /*
                 case LinearSolverCode.exp_AS:
 
                 templinearSolve = new Schwarz() {
@@ -632,7 +636,8 @@ namespace BoSSS.Solution {
                     CoarseLowOrder = m_lc.pMaxOfCoarseSolver
                 };
                 break;
-
+                */
+                /*
                 case LinearSolverCode.exp_AS_MG:
 
                 if(lc.NoOfMultigridLevels < 2)
@@ -646,14 +651,14 @@ namespace BoSSS.Solution {
                     CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
                 };
                 break;
-
+                */
                 case LinearSolverCode.classic_cg:
                 templinearSolve = new MonkeySolver() {
                     WhichSolver = MonkeySolver._whichSolver.CG,
                     LinConfig = lc
                 };
                 break;
-
+                /*
                 case LinearSolverCode.exp_softpcg_schwarz:
                 case LinearSolverCode.exp_softpcg_schwarz_directcoarse:
                 case LinearSolverCode.exp_softpcg_jacobi_mg:
@@ -664,12 +669,13 @@ namespace BoSSS.Solution {
                     Precond = precond[0]
                 };
                 break;
+                */
 
                 case LinearSolverCode.exp_gmres_levelpmg:
                 case LinearSolverCode.exp_gmres_schwarz_pmg:
-                case LinearSolverCode.exp_softgmres:
-                case LinearSolverCode.exp_gmres_AS:
-                case LinearSolverCode.exp_gmres_AS_MG:
+                //case LinearSolverCode.exp_softgmres:
+                //case LinearSolverCode.exp_gmres_AS:
+                //case LinearSolverCode.exp_gmres_AS_MG:
                 templinearSolve = new SoftGMRES() {
                     //m_Tolerance = lc.ConvergenceCriterion,
                     //m_MaxIterations = lc.MaxSolverIterations,
@@ -677,6 +683,7 @@ namespace BoSSS.Solution {
                     Precond = precond[0]
                 };
                 break;
+                /*
                 case LinearSolverCode.exp_gmres_ILU:
                 templinearSolve = new SoftGMRES() {
                     //m_Tolerance = lc.ConvergenceCriterion,
@@ -685,6 +692,7 @@ namespace BoSSS.Solution {
                     Precond = precond[0]
                 };
                 break;
+                */
                 case LinearSolverCode.exp_Kcycle_schwarz: {
                     Func<int, int> SblkSizeFunc = delegate (int iLevel) { return m_lc.TargetBlockSize; };
                     templinearSolve = KcycleMultiSchwarz(MaxMGDepth, LocalDOF, SblkSizeFunc);
@@ -695,11 +703,11 @@ namespace BoSSS.Solution {
                     templinearSolve = KcycleMultiILU(MaxMGDepth, LocalDOF, SblkSizeFunc);
                     break;
                 }
-
+                /*
                 case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
                 templinearSolve = KcycleMultiSchwarz_4Rheology(lc, LocalDOF);
                 break;
-
+                */
                 case LinearSolverCode.exp_decomposedMG_OrthoScheme:
 
                 ISolverSmootherTemplate[] subsmoother = new ISolverSmootherTemplate[]{
@@ -721,8 +729,8 @@ namespace BoSSS.Solution {
                 templinearSolve = MakeOrthoNormMGDecomp(lc, LocalDOF, MaxMGDepth, new SolverSquence() { SolverChain = subsmoother }, new SolverSquence() { SolverChain = topsmoother });
                 break;
 
+                /*
                 case LinearSolverCode.exp_OrthoS_pMG:
-
                 templinearSolve = new OrthonormalizationScheme() {
                     PrecondS = precond,
                     MaxKrylovDim = lc.MaxKrylovDim,
@@ -731,6 +739,8 @@ namespace BoSSS.Solution {
                     Restarted = false
                 };
                 break;
+                */
+
                 case LinearSolverCode.exp_another_Kcycle:
                         templinearSolve = new SoftGMRES() {
                             Precond = expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize),

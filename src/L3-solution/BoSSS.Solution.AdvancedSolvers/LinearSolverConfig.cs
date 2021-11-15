@@ -42,6 +42,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         classic_pardiso = 2,
 
+        /*
         //Schwarz: Domain decomposition (direct Solver)
 
         /// <summary>
@@ -67,6 +68,7 @@ namespace BoSSS.Solution.Control {
         exp_gmres_ILU = 31,
 
         //CG versions
+        */
 
         /// <summary>
         /// Conjugate gradient (from monkey library) without any preconditioning.
@@ -78,17 +80,17 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_Kcycle_schwarz = 41,
 
-        exp_softpcg_jacobi_mg =42,
+        //exp_softpcg_jacobi_mg =42,
 
-        /// <summary>
-        /// Conjugate gradient, with additive Schwarz preconditioner.
-        /// </summary>
-        exp_softpcg_schwarz = 43,
+        ///// <summary>
+        ///// Conjugate gradient, with additive Schwarz preconditioner.
+        ///// </summary>
+        //exp_softpcg_schwarz = 43,
 
-        /// <summary>
-        /// Conjugate gradient, with additive Schwarz preconditioner, including a coarse-grid solver.
-        /// </summary>
-        exp_softpcg_schwarz_directcoarse = 44,
+        ///// <summary>
+        ///// Conjugate gradient, with additive Schwarz preconditioner, including a coarse-grid solver.
+        ///// </summary>
+        //exp_softpcg_schwarz_directcoarse = 44,
 
         /// <summary>
         /// GMRES with p-multigrid on the same mesh level; direct solver is used for 
@@ -102,15 +104,15 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_decomposedMG_OrthoScheme = 50,
 
-        /// <summary>
-        /// Orthonormalization Scheme with p-multigrid preconditioner
-        /// </summary>
-        exp_OrthoS_pMG = 51,
+        ///// <summary>
+        ///// Orthonormalization Scheme with p-multigrid preconditioner
+        ///// </summary>
+        //exp_OrthoS_pMG = 51,
 
-        /// <summary>
-        /// Work-in-progress: experimental stuff for rheology solver
-        /// </summary>
-        exp_Kcycle_schwarz_4Rheology = 52,
+        ///// <summary>
+        ///// Work-in-progress: experimental stuff for rheology solver
+        ///// </summary>
+        //exp_Kcycle_schwarz_4Rheology = 52,
 
         /// <summary>
         /// 
