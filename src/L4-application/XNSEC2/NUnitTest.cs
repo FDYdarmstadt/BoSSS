@@ -396,9 +396,9 @@ namespace BoSSS.Application.XNSEC {
 
         private static void XNSECSolverTest(IXNSECTest Tst, XNSEC_Control C) {
             using (var solver = new XNSEC()) {
-                Console.WriteLine("Warning! - enabled immediate plotting");
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 3;
+                //Console.WriteLine("Warning! - enabled immediate plotting");
+                //C.ImmediatePlotPeriod = 1;
+                //C.SuperSampling = 3;
 
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -526,8 +526,13 @@ namespace BoSSS.Application.XNSEC {
                 }
 
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
-                C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, X => 1.0);
+                C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetTemperature(spc).Convert_Xt2X(0.0));
+
                 C.InitialValues_Evaluators.Add(VariableNames.MassFraction0 + "#" + spc, X => 1.0);
+
+
+
+
             }
             if (tst.TestImmersedBoundary) {
                 for (int d = 0; d < D; d++) {
@@ -594,6 +599,158 @@ namespace BoSSS.Application.XNSEC {
             Assert.AreEqual(C.UseImmersedBoundary, tst.TestImmersedBoundary);
             return C;
         }
+
+
+        private static XNSEC_Control TstObj2CtrlObj(IXNSECTest_Heat tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
+        XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
+        SurfaceStressTensor_IsotropicMode SurfTensionMode,
+        bool constantDensity,
+        int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.classic_pardiso) {
+            XNSEC_Control C = new XNSEC_Control();
+            int D = tst.SpatialDimension;
+            int NoChemSpc = tst.NumberOfChemicalComponents;
+            // database setup
+            // ==============
+
+            C.DbPath = null;
+            C.savetodb = false;
+            C.ProjectName = "XNSEC/" + tst.GetType().Name;
+            C.ProjectDescription = "Test";
+
+            // DG degree
+            // =========
+
+            C.NumberOfChemicalSpecies = tst.NumberOfChemicalComponents;
+            C.SetDGdegree(FlowSolverDegree);
+
+            // grid
+            // ====
+
+            C.GridFunc = () => tst.CreateGrid(GridResolution);
+
+            // boundary conditions
+            // ===================
+
+            foreach (var kv in tst.GetBoundaryConfig()) {
+                C.BoundaryValues.Add(kv);
+            }
+
+            // Physical parameters
+            // ====================
+            C.NumberOfChemicalSpecies = tst.NumberOfChemicalComponents;
+            C.PhysicalParameters.rho_A = tst.rho_A;
+            C.PhysicalParameters.rho_B = tst.rho_B;
+            C.PhysicalParameters.mu_A = tst.mu_A;
+            C.PhysicalParameters.mu_B = tst.mu_B;
+
+
+            C.PhysicalParameters.Sigma = tst.Sigma;
+            C.PhysicalParameters.IncludeConvection = tst.IncludeConvection;
+
+            C.ThermalParameters.rho_A = tst.rho_A;
+            C.ThermalParameters.rho_B = tst.rho_B;
+            C.ThermalParameters.c_A = tst.c_A;
+            C.ThermalParameters.c_B = tst.c_B;
+            C.ThermalParameters.k_A = tst.k_A;
+            C.ThermalParameters.k_B = tst.k_B;
+            C.ThermalParameters.T_sat = tst.T_sat;
+            C.ThermalParameters.IncludeConvection = tst.IncludeConvection;
+
+            C.prescribedMassflux_Evaluator = (tst is IPrescribedMass ? (tst as IPrescribedMass).GetPrescribedMassflux_Evaluator() : null);
+            C.ThermalParameters.hVap = (tst is IPrescribedMass ? 1.0 : tst.h_vap);
+
+            // initial values and exact solution
+            // =================================
+            C.ExactSolutionVelocity = new Dictionary<string, Func<double[], double, double>[]>();
+            C.ExactSolutionPressure = new Dictionary<string, Func<double[], double, double>>();
+            C.ExactSolutionTemperature = new Dictionary<string, Func<double[], double, double>>();
+            C.ExactSolutionMassFractions = new Dictionary<string, Func<double[], double, double>[]>();
+
+            foreach (var spc in new[] { "A", "B" }) {
+                C.ExactSolutionPressure.Add(spc, tst.GetPress(spc));
+                C.ExactSolutionVelocity.Add(spc, D.ForLoop(d => tst.GetU(spc, d)));
+                C.ExactSolutionMassFractions.Add(spc, NoChemSpc.ForLoop(q => tst.GetMassFractions(spc, q)));
+                C.ExactSolutionTemperature.Add(spc, tst.GetTemperature(spc));
+
+
+                for (int d = 0; d < D; d++) {
+                    C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
+                    var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
+                    C.SetGravity(spc, d, Gravity_d);
+                }
+                C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
+                C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetTemperature(spc).Convert_Xt2X(0.0));
+                for(int i = 0; i <  tst.NumberOfChemicalComponents; i++) { 
+                C.InitialValues_Evaluators.Add(VariableNames.MassFraction_n(i) + "#" + spc,  tst.GetMassFractions(spc,i).Convert_Xt2X(0.0));
+                }
+            }
+            if (tst.TestImmersedBoundary) {
+                for (int d = 0; d < D; d++) {
+                    C.InitialValues_Evaluators_TimeDep.Add(VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(1), VariableNames.Velocity_d(d)), tst.GetPhi2U(d));
+                }
+            }
+
+            C.Phi = tst.GetPhi();
+            C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, tst.GetPhi());
+
+            // advanced spatial discretization settings
+            // ========================================
+
+            C.AdvancedDiscretizationOptions.ViscosityMode = vmode;
+            C.AgglomerationThreshold = AgglomerationTreshold;
+            if (D == 3 && SurfTensionMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+                Console.WriteLine($"Reminder: {SurfTensionMode} changed to LaplaceBeltrami_ContactLine for 3D test.");
+                C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            } else {
+                C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfTensionMode;
+            }
+            C.CutCellQuadratureType = CutCellQuadratureType;
+
+            // immersed boundary
+            // =================
+
+            C.UseImmersedBoundary = tst.TestImmersedBoundary;
+            if (C.UseImmersedBoundary) {
+                C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), tst.GetPhi2());
+            }
+
+            // timestepping and solver
+            // =======================
+
+            if (tst.steady) {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+                C.Option_LevelSetEvolution = LevelSetEvolution.None;
+                C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            } else {
+                C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+
+                C.Option_LevelSetEvolution = LevelSetEvolution.Prescribed;
+                C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+                C.NoOfTimesteps = 1;
+                C.dtFixed = tst.dt;
+            }
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.verbose = true;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            //C.LinearSolver.ConvergenceCriterion = 1e-9;
+            //C.NonLinearSolver.MaxSolverIterations = 3;
+            //C.Solver_ConvergenceCriterion = 1e-9;
+
+            C.LinearSolver.SolverCode = solvercode;
+            C.GravityDirection = tst.GravityDirection;
+            C.ChemicalReactionActive = tst.ChemicalReactionTermsActive;
+            C.EnableMassFractions = tst.EnableMassFractions;
+            C.EnableTemperature = tst.EnableTemperature;
+            C.rhoOne = constantDensity;
+            // return
+            // ======
+            Assert.AreEqual(C.UseImmersedBoundary, tst.TestImmersedBoundary);
+            return C;
+        }
+
+
 
         public static void COMBUSTION_TEST() {
             string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
