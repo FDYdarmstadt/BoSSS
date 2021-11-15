@@ -630,7 +630,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var mtxFreeSlv = new MatrixFreeGMRES() { owner = this, HomotopyValue = HomotopyValue };
                 double thresh = norm_CurRes * 1e-5;
                 mtxFreeSlv.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                    return (R_l2 > thresh) && (iter < 100);
+                    return ((R_l2 > thresh) && (iter < 100), R_l2 <= thresh);
                 };
 
                 step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
@@ -653,7 +653,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double thresh = norm_CurRes * 1e-5;
                     Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
                     pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                        return (R_l2 > thresh) && (iter < 100);
+                        return ((R_l2 > thresh) && (iter < 100), R_l2 < thresh);
                     };
                 }
 
@@ -1096,19 +1096,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public int maxKrylovDim = 200;
 
-            public Func<int, double, double, bool> TerminationCriterion { 
+            public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion { 
                 get;
                 set;
             }
 
-            static private bool DefaultTermination(int iter, double R0_l2, double R_l2) {
+            static private (bool bNotTerminate, bool bSuccess) DefaultTermination(int iter, double R0_l2, double R_l2) {
                 if(iter > 100)
-                    return false;
+                    return (false, false); // fail
 
                 if(R_l2 < R0_l2 * 10e-8 + 10e-8)
-                    return false;
+                    return (false, true); // success
 
-                return true;
+                return (true, false); // keep running
             }
 
 
@@ -1116,7 +1116,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double rho0; // residual in first run
 
             bool Termination(double R_l2) {
-                bool ret = TerminationCriterion(this.ThisLevelIterations - ThisRunFirstIter, rho0, R_l2);
+                bool ret = TerminationCriterion(this.ThisLevelIterations - ThisRunFirstIter, rho0, R_l2).bNotTerminate;
                 if(ret)
                     Converged = true;
                 return ret;

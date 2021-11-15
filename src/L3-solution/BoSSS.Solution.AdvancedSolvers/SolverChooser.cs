@@ -745,7 +745,7 @@ namespace BoSSS.Solution {
                         templinearSolve = new SoftGMRES() {
                             Precond = expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize),
                             MaxKrylovDim = 50,
-                            TerminationCriterion = (int iter, double r0, double r) => iter <= 1,
+                            TerminationCriterion = (int iter, double r0, double r) => (iter <= 1, true)
                         };
                     break;
                 case LinearSolverCode.selfmade:
@@ -767,17 +767,18 @@ namespace BoSSS.Solution {
 
             if(templinearSolve is IProgrammableTermination pt) {
                  // delegate to stop linear solver convergence
-                bool LinearConvergence(int iter, double r0_l2, double r_l2) {
+                (bool bNotTerminate, bool bSuccess) LinearConvergence(int iter, double r0_l2, double r_l2) {
                     if (iter <= lc.MinSolverIterations)
-                        return true;
-
-                    if (iter > lc.MaxSolverIterations)
-                        return false;
+                        return (true, false); // keep running
 
                     if (r_l2 < lc.ConvergenceCriterion)
-                        return false; // terminate
+                        return (false, true); // terminate with success
 
-                    return true; // keep running
+                    if (iter > lc.MaxSolverIterations)
+                        return (false, false); // terminate with fail
+
+
+                    return (true, false); // keep running
                 }
                 pt.TerminationCriterion = LinearConvergence;
             }
@@ -1121,7 +1122,7 @@ namespace BoSSS.Solution {
                             tempsolve = new SoftGMRES() {
                                 MaxKrylovDim = lc.MaxKrylovDim,
                                 //m_Tolerance = lc.ConvergenceCriterion,
-                                TerminationCriterion = ((iter, r0_l2, r_l2) => r_l2 > lc.ConvergenceCriterion && iter < lc.MaxSolverIterations),
+                                TerminationCriterion = ((iter, r0_l2, r_l2) => (r_l2 > lc.ConvergenceCriterion && iter < lc.MaxSolverIterations, r_l2 <= lc.ConvergenceCriterion)),
                                 Precond = new Schwarz() {
                                     m_BlockingStrategy = new Schwarz.SimpleBlocking() {
                                         NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
@@ -1294,7 +1295,7 @@ namespace BoSSS.Solution {
                     ISolverSmootherTemplate[] newprechain = new ISolverSmootherTemplate[prechain.Length];
 
                     ClassicMultigrid MgLevel = new ClassicMultigrid() {
-                        TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1) // termination controlled by top level PCG
+                        TerminationCriterion = ((iter, r0_l2, r_l2) => (iter <= 1, true)) // termination controlled by top level PCG
                     };
 
                     ((ISolverWithCallback)MgLevel).IterationCallback += MultigridCallback;
@@ -1376,7 +1377,7 @@ namespace BoSSS.Solution {
                 } else {
 
                     ClassicMultigrid MgLevel = new ClassicMultigrid() {
-                        TerminationCriterion = ((iter, r0_l2, r_l2) => iter <= 1) // termination controlled by top level PCG
+                        TerminationCriterion = ((iter, r0_l2, r_l2) => (iter <= 1, true)) // termination controlled by top level PCG
                     };
 
                     MultigridChain[iLevel] = MgLevel;
@@ -1605,9 +1606,9 @@ namespace BoSSS.Solution {
                     };
 
                     if (iLevel > 0) {
-                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
                     } else {
-                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => (i <= m_lc.MaxSolverIterations && r > r0 * m_lc.ConvergenceCriterion, r <= r0 * m_lc.ConvergenceCriterion);
                     }
 
                     /*
@@ -1710,9 +1711,9 @@ namespace BoSSS.Solution {
                     };
 
                     if (mgLevel > 0) {
-                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
                     } else {
-                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => (i <= m_lc.MaxSolverIterations && r > r0 * m_lc.ConvergenceCriterion, r <= r0 * m_lc.ConvergenceCriterion);
                     }
 
                     /*
@@ -1950,7 +1951,7 @@ namespace BoSSS.Solution {
                     };
 
                     if (iLevel > 0) {
-                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
                     }
 
                     /*

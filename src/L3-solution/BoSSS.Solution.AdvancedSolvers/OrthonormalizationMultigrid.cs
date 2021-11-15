@@ -91,20 +91,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
             TerminationCriterion = DefaultTermination;
         }
 
-        private bool DefaultTermination(int iter, double R0_l2, double R_l2) {
-            if (iter > 100)
-                return false;
+        static private (bool bNotTerminate, bool bSuccess) DefaultTermination(int iter, double R0_l2, double R_l2) {
+            if(iter > 100)
+                return (false, false); // fail
 
-            if (R_l2 < R0_l2 * 10e-8 + 10e-8)
-                return false;
+            if(R_l2 < R0_l2 * 10e-8 + 10e-8)
+                return (false, true); // success
 
-            return true;
+            return (true, false); // keep running
         }
+
 
         /// <summary>
         /// ~
         /// </summary>
-        public Func<int, double, double, bool> TerminationCriterion {
+        public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;
         }
@@ -655,8 +656,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 
                 for(int iIter = 1; true; iIter++) {
-                    if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                        Converged = true;
+                    var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+                    if(!termState.bNotTerminate) {
+                        Converged = termState.bSuccess;
                         break;
                     }
 
@@ -688,11 +690,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
 
                         //SpecAnalysisSample(iIter, X, "ortho1");
-
-                        if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                            Converged = true;
+                        var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+                        if(!termState2.bNotTerminate) {
+                            Converged = termState2.bSuccess;
                             break;
                         }
+                        
                     }
 
                     //PlottyMcPlot(rl, X, Xprev, Corr, B);
@@ -754,10 +757,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     } // end of coarse-solver loop
 
-                    if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                        Converged = true;
+                    var termState3 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+                    if(!termState3.bNotTerminate) {
+                        Converged = termState3.bSuccess;
                         break;
                     }
+
 
 
                     // post-smoother
@@ -787,8 +792,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     } // end of post-smoother loop
 
 
-                    if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                        Converged = true;
+                    var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+                    if(!termState4.bNotTerminate) {
+                        Converged = termState4.bSuccess;
                         break;
                     }
 

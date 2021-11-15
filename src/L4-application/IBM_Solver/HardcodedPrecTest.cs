@@ -518,70 +518,61 @@ namespace BoSSS.Application.IBM_Solver {
                 C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; // Picard GMRES will be executed if a GMRES linsolver is chosen
 
 
-            switch (precNo)
-            {
-                case 0:
-                    {
-                        Prec = null;
-                        break;
-                    }
-                case 3:
-                    {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
-                        C.LinearSolver.TargetBlockSize = 1000;
-                        C.LinearSolver.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
-                        break;
-                    }
-                case 4:
-                    {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
-                        C.LinearSolver.TargetBlockSize = 5000;
-                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
-                        break;
-                    }
-                case 5:
-                    {
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
-                        C.LinearSolver.TargetBlockSize = 10000;
-                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
-                        break;
-                    }
-                case 6:
-                    {
-                        //depth = 2,
-                        //   Depth = ASDepth,  //--> MG bei der Blockzerlegung --> Resultat ergibt die Blöcke zur Berechnung (kleine Blöcke--> schlecht)
-                        C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS_MG;
-                        C.NoOfMultigridLevels = 2;
-                        C.LinearSolver.NoOfMultigridLevels = MGLevels;
-                        break;
-                    }
-                case 8:
-                    {
-                        C.LinearSolver.NoOfMultigridLevels = 5;
-                        Prec = new Schwarz()
-                        {
-                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
-                            {
-                                //noofparts = 5,
-                                NoOfPartsOnCurrentProcess = ASparts,
-                            },
-                            CoarseSolver = new ClassicMultigrid()
-                            {
-                                CoarserLevelSolver = new ClassicMultigrid()
-                                {
-                                    CoarserLevelSolver = new ClassicMultigrid()
-                                    {
-                                        CoarserLevelSolver = new DirectSolver()
-                                        {
-                                            WhichSolver = DirectSolver._whichSolver.MUMPS
-                                        },
+            switch(precNo) {
+                case 0: {
+                    Prec = null;
+                    break;
+                }
+                case 3: {
+                    //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
+                    throw new NotImplementedException("deactivated old solver config.");
+                    //C.LinearSolver.TargetBlockSize = 1000;
+                    //C.LinearSolver.NoOfMultigridLevels = MGLevels;  // 3 // --> grobes MG am Ende nochmal
+                    //break;
+                }
+                case 4: {
+                    throw new NotImplementedException("deactivated old solver config.");
+                    //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
+                    //C.LinearSolver.TargetBlockSize = 5000;
+                    //C.LinearSolver.NoOfMultigridLevels = MGLevels;
+                    //break;
+                }
+                case 5: {
+                    throw new NotImplementedException("deactivated old solver config.");
+                    //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
+                    //C.LinearSolver.TargetBlockSize = 10000;
+                    //C.LinearSolver.NoOfMultigridLevels = MGLevels;
+                    //break;
+                }
+                case 6: {
+                    throw new NotImplementedException("deactivated old solver config.");
+                    ////depth = 2,
+                    ////   Depth = ASDepth,  //--> MG bei der Blockzerlegung --> Resultat ergibt die Blöcke zur Berechnung (kleine Blöcke--> schlecht)
+                    //C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS_MG;
+                    //C.NoOfMultigridLevels = 2;
+                    //C.LinearSolver.NoOfMultigridLevels = MGLevels;
+                    //break;
+                }
+                case 8: {
+                    C.LinearSolver.NoOfMultigridLevels = 5;
+                    Prec = new Schwarz() {
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            //noofparts = 5,
+                            NoOfPartsOnCurrentProcess = ASparts,
+                        },
+                        CoarseSolver = new ClassicMultigrid() {
+                            CoarserLevelSolver = new ClassicMultigrid() {
+                                CoarserLevelSolver = new ClassicMultigrid() {
+                                    CoarserLevelSolver = new DirectSolver() {
+                                        WhichSolver = DirectSolver._whichSolver.MUMPS
                                     },
                                 },
                             },
-                            Overlap = 1
-                        };
-                        break;
-                    }
+                        },
+                        Overlap = 1
+                    };
+                    break;
+                }
                 default:
                 //{
                 //    Prec = new SchurPrecond()

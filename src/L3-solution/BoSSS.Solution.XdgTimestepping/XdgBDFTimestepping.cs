@@ -1623,7 +1623,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                             mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                         }
-
+                        Console.WriteLine("solver success: " + linearSolver.Converged);
                         success = linearSolver.Converged;
 
 

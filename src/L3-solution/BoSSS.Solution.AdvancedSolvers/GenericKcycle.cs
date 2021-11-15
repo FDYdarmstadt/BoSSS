@@ -53,7 +53,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     ThisLevelKrylovMethod = new SoftGMRES() {
                         Precond = this.CoarserLevelSolver,
                         MaxKrylovDim = 10,
-                        TerminationCriterion = (int iter, double r0, double r) => iter <= 1,
+                        TerminationCriterion = (int iter, double r0, double r) => (iter <= 1, true),
                     };
                     ThisLevelKrylovMethod.Init(op.CoarserLevel);
 

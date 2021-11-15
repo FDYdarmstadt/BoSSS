@@ -229,7 +229,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz;//R.solverName = "pcg+schwarz";
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "pcg+schwarz";
             R.LinearSolver.NoOfMultigridLevels = 2;
             R.AgglomerationThreshold = 0.0;
 
@@ -520,14 +520,16 @@ namespace BoSSS.Application.XdgPoisson3 {
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
                     break;
                 case 2:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_softgmres;
-                    break;
+                    throw new NotImplementedException("deactivated old solver config.");
+                    //C.LinearSolver.SolverCode = LinearSolverCode.exp_softgmres;
+                    //break;
                 case 3:
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
                     break;
                 case 4:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
-                    break;
+                    throw new NotImplementedException("deactivated old solver config.");
+                    //C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+                    //break;
                 default:
                     throw new NotImplementedException("guess again");
             }

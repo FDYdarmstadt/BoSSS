@@ -563,7 +563,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// ~
         /// </summary>
-        public Func<int, double, double, bool> TerminationCriterion {
+        public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;
         }

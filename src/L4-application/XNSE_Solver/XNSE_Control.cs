@@ -387,6 +387,12 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool SkipSolveAndEvaluateResidual = false;
 
+        /// <summary>
+        /// Terminates the simulation if the linear or nonlinear solver fails to converge
+        /// </summary>
+        [DataMember]
+        public bool FailOnSolverFail = true;
+
 
         /// <summary>
         /// See <see cref="TimestepperInit"/>
