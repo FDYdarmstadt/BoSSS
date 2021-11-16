@@ -114,12 +114,14 @@ namespace ZwoLevelSetSolver {
             XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
 
             for(int d = 0; d < D; ++d) {
-                opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
-                opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
                 if(this.Control.DisplacementExtension) {
+                    opFactory.AddEquation(new ExtensionNavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
+                    opFactory.AddEquation(new ExtensionNavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
                     opFactory.AddEquation(new ExtensionDisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity));
                     opFactory.AddEquation(new ExtensionDisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity));
                 } else {
+                    opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
+                    opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
                     opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity));
                     opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity));
                 }
