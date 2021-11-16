@@ -775,7 +775,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         // compute correction
                         double[] PostCorr = new double[L];
-                        PostSmoother.Solve(PostCorr, Res); // Vorglättung
+                        PostSmoother.Solve(PostCorr, Res); // Nachglättung
 
                         //orthonormalization and residual minimization
                         AddSol(ref PostCorr);

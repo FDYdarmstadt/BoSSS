@@ -97,6 +97,9 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_gmres_levelpmg = 47,
 
+        /// <summary>
+        /// GMRES with additive Schwarz (<see cref="AdvancedSolvers.Schwarz"/>) as preconditioner
+        /// </summary>
         exp_gmres_schwarz_pmg = 48,
 
         /// <summary>
@@ -115,13 +118,13 @@ namespace BoSSS.Solution.Control {
         //exp_Kcycle_schwarz_4Rheology = 52,
 
         /// <summary>
-        /// 
+        /// Experimental, not for end-user
         /// </summary>
         exp_another_Kcycle = 53,
 
 
         /// <summary>
-        /// a k-cycle, with ILU at each level
+        /// a k-cycle (i.e. a tree of <see cref="AdvancedSolvers.OrthonormalizationMultigrid"/> solvers), with ILU-preconditioner (<see cref="AdvancedSolvers.CellILU"/>) at each level
         /// </summary>
         exp_Kcycle_ILU = 54,
 

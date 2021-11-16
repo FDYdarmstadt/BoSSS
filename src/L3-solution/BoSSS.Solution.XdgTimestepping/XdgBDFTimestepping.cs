@@ -1613,14 +1613,19 @@ namespace BoSSS.Solution.XdgTimestepping {
                         //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
                         //p.PlotInteractive();
 
+
+
                         using(new BlockTrace("Slv Init", tr)) {
                             linearSolver.Init(mgOperator);
+
+                            //(double lambda, double[] V) = mgOperator.OperatorMatrix.MinimalEigen();
+                            //var Scheissi = mgOperator.ProlongateSolToDg(V, "eigenMini");
+                            //m_CurrentAgglomeration.Extrapolate(new CoordinateMapping(Scheissi));
+                            //Tecplot.Tecplot.PlotFields(Scheissi, "EigenScheisse", 0.0, 3);
                         }
 
                         // try to solve the saddle-point system.
                         using(new BlockTrace("Slv Iter", tr)) {
-
-
                             mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                         }
                         Console.WriteLine("solver success: " + linearSolver.Converged);

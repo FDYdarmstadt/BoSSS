@@ -601,7 +601,7 @@ namespace BoSSS.Solution {
             if (MaxMGDepth < 1)
                 throw new ArgumentException("ERROR: At least one multigrid levels is required.");
 
-            switch (lc.SolverCode) {
+            switch(lc.SolverCode) {
                 case LinearSolverCode.automatic:
                 if(m_nc != null) {
                     templinearSolve = AutomaticSolver(lc, LocalDOF, SpaceDim, NoCellsLoc,
@@ -741,13 +741,26 @@ namespace BoSSS.Solution {
                 break;
                 */
 
-                case LinearSolverCode.exp_another_Kcycle:
-                        templinearSolve = new SoftGMRES() {
-                            Precond = expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize),
-                            MaxKrylovDim = 50,
-                            TerminationCriterion = (int iter, double r0, double r) => (iter <= 1, true)
-                        };
+                case LinearSolverCode.exp_another_Kcycle: {
+                    //templinearSolve = new SoftGMRES() {
+                    //    Precond = expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize),
+                    //    MaxKrylovDim = 50,
+                    //    TerminationCriterion = (int iter, double r0, double r) => (iter <= 1, true)
+                    //};
+                    var Pmg = new LevelPmg() { 
+                        UseHiOrderSmoothing = true, 
+                        OrderOfCoarseSystem = m_lc.pMaxOfCoarseSolver, 
+                        FullSolveOfCutcells = true
+                    };
+
+                    templinearSolve = new OrthonormalizationMultigrid() {
+                        PreSmoother = Pmg,
+                        PostSmoother = Pmg
+                    };
+
                     break;
+                }
+
                 case LinearSolverCode.selfmade:
                 Console.WriteLine("INFO: Selfmade LinearSolver is used!");
                 templinearSolve = m_linsolver;
@@ -1700,7 +1713,8 @@ namespace BoSSS.Solution {
                     //};
 
                     var smoother1 = new CellILU() {
-                        ILU_level = mgLevel == 0 ? 2 : 0
+                        ILU_level = mgLevel == 0 ? 1 : 0 // everything above ILU1 seems to be to expensive;
+                        // on lower levels, with a lot of interconnects, we have to stick to ILU0
                     };
 
 
