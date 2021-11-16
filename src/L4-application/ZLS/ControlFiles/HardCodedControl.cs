@@ -1101,7 +1101,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             double xLeft = -3;
             double xRight = 3;
-            double ySize = 2;
+            double ySize = 2.1;
 
             C.GridFunc = delegate () {
 
@@ -1177,12 +1177,31 @@ namespace ZwoLevelSetSolver.ControlFiles {
                     return v0 + R(t) * vmax;
             }
 
+            double RInt(double t) {
+                double integralR(double t) {
+                    return -2.5 * t.Pow(8) + 10 * t.Pow(7) - 14 * t.Pow(6) + 7 * t.Pow(5);
+                }
+                if(t < 1) {
+                    return integralR(t);
+                } else {
+                    return 1 * t + integralR(1);
+                }
+            }
+
+            double integratedInflow(double[] x, double t) {
+                return v0 * t + RInt(t) * vmax;
+            }
+
+            double aa = RInt(1e-2);
 
             C.AddBoundaryValue("freeslip_lower");
             C.AddBoundaryValue("freeslip_upper");
             C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", inflow);
             C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", inflow);
             C.AddBoundaryValue("pressure_outlet_right");
+
+            C.AddBoundaryValue("velocity_inlet_left", "DisplacementX#A", integratedInflow);
+            C.AddBoundaryValue("velocity_inlet_left", "DisplacementX#B", integratedInflow);
 
             #endregion
 

@@ -49,6 +49,8 @@ namespace BoSSS.Solution.XNSECommon {
                 scalarFields.Add(VariableNames.StressXX + "#" + S);
                 scalarFields.Add(VariableNames.StressXY + "#" + S);
                 scalarFields.Add(VariableNames.StressYY + "#" + S);
+                scalarFields.Add("DisplacementX" + "#" + S);
+                scalarFields.Add("DisplacementY" + "#" + S);
             }
 
             scalarFields.Add(VariableNames.LevelSet);
@@ -116,6 +118,8 @@ namespace BoSSS.Solution.XNSECommon {
             base.bndFunction.Add(VariableNames.StressXX, base.bndFunction[VariableNames.StressXX + S0]);
             base.bndFunction.Add(VariableNames.StressXY, base.bndFunction[VariableNames.StressXX + S0]);
             base.bndFunction.Add(VariableNames.StressYY, base.bndFunction[VariableNames.StressXX + S0]);
+            base.bndFunction.Add("DisplacementX", base.bndFunction["DisplacementX" + S0]);
+            base.bndFunction.Add("DisplacementY", base.bndFunction["DisplacementY" + S0]);
         }
     }
 }

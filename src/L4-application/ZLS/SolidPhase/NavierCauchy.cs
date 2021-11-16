@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.XNSECommon;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -21,7 +22,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         static public double EulerAlamansiPenalty = 1.0;
 
-        public NavierCauchy(string speciesName, Solid material, int d, int D) {
+        public NavierCauchy(string speciesName, Solid material, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap) {
             this.speciesName = speciesName;
             this.material = material;
             this.codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);

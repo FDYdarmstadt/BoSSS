@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -37,6 +38,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         int D;
 
+        IncompressibleMultiphaseBoundaryCondMap boundaryMap;
+
 
         /// <summary>
         /// 
@@ -57,8 +60,16 @@ namespace ZwoLevelSetSolver.SolidPhase {
             //this.d = d;
             this.rho = rho;
             this.parameternames = new string[] { };
+        }
 
-
+        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, int d, double rho, IncompressibleMultiphaseBoundaryCondMap boundaryMap) {
+            this.speciesName = speciesName;
+            this.variableNames = velocity.Cat(variableName);
+            this.D = velocity.Length;
+            //this.d = d;
+            this.rho = rho;
+            this.parameternames = new string[] { };
+            this.boundaryMap = boundaryMap;
         }
 
         public TermActivationFlags VolTerms {
@@ -83,13 +94,31 @@ namespace ZwoLevelSetSolver.SolidPhase {
             //return 0.0; // solid wall
 
             Vector VelocityIn = new Vector(_uIN, 0, D);
-            double VariableIn = 0;
-
-// Upwinding:
-            if(VelocityIn*inp.Normal >= 0) {
-                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow
+            if(boundaryMap != null) {
+                IncompressibleBcType edgType = boundaryMap.EdgeTag2Type[inp.EdgeTag];
+                Vector vDirichlet = new Vector(D);
+                for(int i = 0; i< D; ++i) {
+                    vDirichlet[i] = boundaryMap.bndFunction[variableNames[i]][inp.EdgeTag](inp.X, inp.time);
+                }
+                double uDirichlet = boundaryMap.bndFunction[variableNames[D]][inp.EdgeTag](inp.X, inp.time);
+                switch(edgType) {
+                    case IncompressibleBcType.FreeSlip:
+                    case IncompressibleBcType.Wall:
+                        return 0.0;
+                    case IncompressibleBcType.Velocity_Inlet:
+                        return rho * uDirichlet * (vDirichlet * inp.Normal) * (_vIN);
+                    case IncompressibleBcType.Outflow:
+                    case IncompressibleBcType.Pressure_Outlet:
+                        return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow
+                    default:
+                    throw new NotImplementedException();
+                }
             } else {
-                return 0.0 * (_vIN); // inflow
+                if(VelocityIn * inp.Normal >= 0) {
+                    return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow
+                } else {
+                    return 0.0 * (_vIN); // inflow
+                }
             }
         }
 

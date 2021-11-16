@@ -87,12 +87,14 @@ namespace ZwoLevelSetSolver {
         }
 
         void DefineSolidPhase(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
+            IncompressibleMultiphaseBoundaryCondMap boundaryMap = this.boundaryMap;
+
             for(int d = 0; d < D; ++d) {
-                opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D));
-                opFactory.AddEquation(new DisplacementEvolution("C", d, D, 0.0));
+                opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D, boundaryMap));
+                opFactory.AddEquation(new DisplacementEvolution("C", d, D, 0.0, boundaryMap));
                 if (this.Control.DisplacementExtension){
-                    opFactory.AddEquation(new DisplacementEvolution("B", d, D, Control.ArtificialViscosity));
-                    opFactory.AddEquation(new DisplacementEvolution("A", d, D, Control.ArtificialViscosity));
+                    opFactory.AddEquation(new DisplacementEvolution("B", d, D, Control.ArtificialViscosity, boundaryMap));
+                    opFactory.AddEquation(new DisplacementEvolution("A", d, D, Control.ArtificialViscosity, boundaryMap));
                 } else {
                     opFactory.AddEquation(new Dummy("A", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
                     opFactory.AddEquation(new Dummy("B", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
@@ -122,8 +124,8 @@ namespace ZwoLevelSetSolver {
                 } else {
                     opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
                     opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity));
+                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, 0.0));
+                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, 0.0));
                 }
             }
 

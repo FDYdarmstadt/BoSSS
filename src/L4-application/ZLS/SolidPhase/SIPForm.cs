@@ -1,5 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -126,6 +128,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         string species;
         int d;
         string[] variableNames;
+        IncompressibleMultiphaseBoundaryCondMap boundaryMap;
         public double PenaltySafety;
 
         public SIPForm(string species, string[] variables, int d, double viscosity, double __PenaltySafety = 4.0) {
@@ -139,6 +142,18 @@ namespace ZwoLevelSetSolver.SolidPhase {
             this.d = d;
         }
 
+        public SIPForm(string species, string[] variables, int d, double viscosity, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double __PenaltySafety = 4.0) {
+            this.species = species;
+            this.viscosity = viscosity;
+            this.PenaltySafety = __PenaltySafety;
+            if(this.viscosity <= 0.0) {
+                throw new ArgumentException($"Viscosity must be positive, but got a value of {this.viscosity}");
+            }
+            this.variableNames = variables;
+            this.d = d;
+            this.boundaryMap = boundaryMap;
+        }
+
         public TermActivationFlags VolTerms {
             get { return TermActivationFlags.GradUxGradV; }
         }
@@ -148,7 +163,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public IList<string> ParameterOrdering => new string[] { };
 
         public TermActivationFlags BoundaryEdgeTerms {
-            get { return (TermActivationFlags.UxV | TermActivationFlags.GradUxV | TermActivationFlags.UxGradV | TermActivationFlags.V | TermActivationFlags.GradV); }
+            get { return (TermActivationFlags.UxV | TermActivationFlags.V | TermActivationFlags.GradUxV | TermActivationFlags.UxGradV | TermActivationFlags.V | TermActivationFlags.GradV); }
         }
 
         public TermActivationFlags InnerEdgeTerms {
@@ -158,17 +173,57 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public string ValidSpecies => species;
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
-            double acc1 = 0.0;
-            double pnlty = PenaltyIn(inp.jCellIn);
+            
+            if(boundaryMap != null) {
+                IncompressibleBcType edgType = boundaryMap.EdgeTag2Type[inp.EdgeTag];
+                double acc1 = 0.0;
+                double pnlty = PenaltyIn(inp.jCellIn);
+                Vector dirichlet = new Vector(D);
+                for(int i = 0; i < D; ++i) {
+                    dirichlet[i] = boundaryMap.bndFunction[variableNames[i]][inp.EdgeTag](inp.X, inp.time);
+                }
+                switch(edgType) {
+                    case IncompressibleBcType.Wall:
+                    case IncompressibleBcType.Velocity_Inlet:
+                        for(int i = 0; i < D; i++) {
+                            //acc1 -= viscosity * _Grad_uIN[d, i] * _vIN * inp.Normal[i];  // consistency term  
+                            //acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
+                        }
+                        //acc1 += PenaltySafety * pnlty* (_uIN[d] - dirichlet[d]) * _vIN * viscosity;
+                    break;
+                    case IncompressibleBcType.FreeSlip:
+                        for(int i = 0; i < D; i++) {
+                            for(int j = 0; j < D; ++j) {
+                            acc1 -= viscosity * inp.Normal[i]* _Grad_uIN[i, j] * inp.Normal[j] * _vIN * inp.Normal[d];  // consistency term  
+                            acc1 -= viscosity * inp.Normal[d] * _Grad_vIN[j] * inp.Normal[j] * (_uIN[i] - dirichlet[i]) * inp.Normal[i];  // symmetry term
+                            }
+                        acc1 += PenaltySafety * pnlty * (_uIN[i] - dirichlet[i]) * inp.Normal[i] * _vIN * inp.Normal[d];
+                        }
+                    break;
+                    case IncompressibleBcType.Outflow:
+                    case IncompressibleBcType.Pressure_Outlet:
+                        for(int i = 0; i < D; i++) {
+                            //acc1 -= viscosity * _Grad_uIN[d, i] * _vIN * inp.Normal[i];  // consistency term  
+                        }
+                        break;
+                    default:
+                    throw new NotImplementedException();
+                }
+                return acc1;
+                
+            } else {
+                double acc1 = 0.0;
+                double pnlty = PenaltyIn(inp.jCellIn);
 
-            Vector dirichlet = new Vector(D);
+                Vector dirichlet = new Vector(D);
 
-            for (int i = 0; i < D; i++) {
-                acc1 -= viscosity * _Grad_uIN[d, i] * _vIN  * inp.Normal[i];  // consistency term  
-                //acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
+                for(int i = 0; i < D; i++) {
+                    acc1 -= viscosity * _Grad_uIN[d, i] * _vIN * inp.Normal[i];  // consistency term  
+                    acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
+                }
+                acc1 += PenaltySafety * (_uIN[d] - dirichlet[d]) * _vIN * pnlty * viscosity;
+                return acc1;
             }
-            //acc1 += PenaltySafety * (_uIN[d] - dirichlet[d]) * _vIN  * pnlty * viscosity;
-            return acc1;
         }
 
         MultidimensionalArray cj;

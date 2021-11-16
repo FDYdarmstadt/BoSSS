@@ -1,4 +1,5 @@
 ﻿using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.XNSECommon.Operator;
 using ilPSP.Utils;
 using System;
@@ -15,7 +16,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName; 
 
-        public DisplacementEvolution(string speciesName, int d, int D, double artificialViscosity) {
+        public DisplacementEvolution(string speciesName, int d, int D, double artificialViscosity, IncompressibleMultiphaseBoundaryCondMap boundaryMap) {
             this.speciesName = speciesName;
             this.codomainName = EquationNames.DisplacementEvolutionComponent(d);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
@@ -25,13 +26,13 @@ namespace ZwoLevelSetSolver.SolidPhase {
             var convection = new NonLinearConvectionForm(speciesName, 
                 ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), 
-                d, 1.0);
+                d, 1.0, boundaryMap);
             AddComponent(convection);
 
             if(artificialViscosity != 0) {
                 // we should not add the SIP form if it is not intended at all, i.e. if 'artificialViscosity == 0';
                 // since evaluation of SIP forms is quite costly; 
-                AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity));
+                AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity, boundaryMap));
             }
 
             var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
