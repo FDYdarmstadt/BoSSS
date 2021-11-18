@@ -303,9 +303,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Res_f.SetV(B);
                     Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
 
-
+                    /*
                     DGField[] afterLow = this.m_op.ProlongateSolToDg(Cor_f, "Correction");
                     Tecplot.Tecplot.PlotFields(afterLow, "LevelPMG-0", 0.0, 2);
+                    */
                 }
 
 
@@ -329,7 +330,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         long Mapi0 = Map.i0;
                         double[] x_hi = null;
-                        for(int j = 0; j < J; j++) {
+                        for(int j = 0; j < J; j++) { // loop over cells
 
                             if(HighOrderBlocks_LU[j] != null) {
                                 int NpTotHi = HighOrderBlocks_LU[j].NoOfRows;
@@ -363,8 +364,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
                 }
 
+                // combine fine mode correction with low order solution
+                X.ScaleV(0.5);
                 X.AccV(1.0, Cor_f);
-                DGField[] afterHigh = this.m_op.ProlongateSolToDg(Cor_f, "Correction");
+                
+                
+                /*
+                DGField[] afterHigh = this.m_op.ProlongateSolToDg(X, "Correction");
                 Tecplot.Tecplot.PlotFields(afterHigh, "LevelPMG-1", 0.0, 2);
 
 
@@ -382,7 +388,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Console.WriteLine("infinity loop...");
                     lastEll = ell;
                 }
-
+                */
 
                 //IterationCallback?.Invoke(m_Iter, X.ToArray(), Res_f, m_op);
 
