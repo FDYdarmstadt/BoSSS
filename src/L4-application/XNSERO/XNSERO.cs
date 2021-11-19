@@ -152,6 +152,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Provides information about the evolution of the particle (rigid object) level set function to the level-set-updater.
         /// </summary>
         protected override RigidObjectLevelSetEvolver EvolveRigidLevelSet() {
+            Console.WriteLine("here");
             var ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
             for (int i = 0; i < ParticleLevelSet.Length; i++) {
                 ParticleLevelSet[i] = Particles[i].LevelSetFunction;
@@ -333,7 +334,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             else
                 tree.UpdateTree(Particles, dt);
             //tree.PrintTreeStructure();
+            Console.WriteLine("MPICheck");
             Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
+            Console.WriteLine("Solve");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             
             CalculateCollision(Particles, dt);

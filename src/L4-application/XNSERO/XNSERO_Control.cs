@@ -25,7 +25,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             base.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             // Set default values to LevelSet (one could still overwrite those)
-            InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
+            AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
             Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.Prescribed;
             AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
             TimeSteppingScheme = TimeSteppingScheme.BDF2;
