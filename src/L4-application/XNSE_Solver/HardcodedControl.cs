@@ -529,14 +529,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public static XNSE_Control testcube(
             int NoOfTimeSteps = 1,
-            int k = 2,
-            bool IncludeConvection = false,
-            int Res = 15,
-            int SpaceDim = 3,
+            int k = 4,
+            bool IncludeConvection = true,
+            int Res = 20,
+            int SpaceDim = 2,
             bool Steady = false,
             bool useLoadBal = true,
-            bool useAMR = false,
-            Shape Gshape = Shape.Cube
+            bool useAMR = true,
+            Shape Gshape = Shape.Sphere
         ) {
             XNSE_Control C = new XNSE_Control();
 
@@ -592,7 +592,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // basic database options
             // ======================
-            C.savetodb = true;
+            C.savetodb = false;
             var thisOS = System.Environment.OSVersion.Platform;
             var MachineName = System.Environment.MachineName;
             if (MachineName == "PCMIT32")
@@ -613,6 +613,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // DG degrees
             // ==========
             C.SetFieldOptions(k, Math.Max(k, 2));
+            C.SetOptionsResFields(k);
             C.saveperiod = 1;
             //C.TracingNamespaces = "*";
 
@@ -627,34 +628,31 @@ namespace BoSSS.Application.XNSE_Solver {
             // Physical Parameters
             // ===================
             const double rhoA = 1;
-            const double Re = 1000;
-            double muA = 1E-2;
+            const double Re = 100;
+            double muA = 1E-3;
 
-            double partRad = 0.4333;
-            double anglev = Re * muA / rhoA / (2 * partRad);
-            //double anglev = 0;
+            double partRad = 0.3800;
             double d_hyd = 2 * partRad;
+            double anglev = Re * muA / rhoA / d_hyd;
             double VelocityIn = Re * muA / rhoA / d_hyd;
             double[] pos = new double[SpaceDim];
-            double ts = 2 * Math.PI / anglev / (double)NoOfTimeSteps;
-            //double ts = 0.1;
-            double inletdelay = 5 * ts;
+            double ts = Math.PI / anglev / NoOfTimeSteps;
 
             C.PhysicalParameters.IncludeConvection = IncludeConvection;
             C.PhysicalParameters.Material = true;
             C.PhysicalParameters.rho_A = rhoA;
             C.PhysicalParameters.mu_A = muA;
 
-            C.Rigidbody.SetParameters(pos, anglev, partRad, SpaceDim);
+            C.Rigidbody.SetParameters(pos, 0.0, partRad, SpaceDim);
             C.Rigidbody.SpecifyShape(Gshape);
             C.Rigidbody.SetRotationAxis("z");
             C.AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
-            C.UseImmersedBoundary = true;
 
             C.AddInitialValue("Pressure", new Formula(@"X => 0"));
             C.AddBoundaryValue("Pressure_Outlet");
-            //C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}*(double)(t<={inletdelay}?(t/{inletdelay}):1)", true));
-            C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X) => {VelocityIn}"));
+            var DelayedInlet = new Formula($"(X,t) => {VelocityIn}", true);
+            C.AddBoundaryValue("Velocity_inlet", "VelocityX", DelayedInlet);
+            C.AddInitialValue("VelocityX", DelayedInlet);
 
             C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.UseSchurBlockPrec = true;
@@ -669,10 +667,10 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.MaxKrylovDim = 50;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_AS_MG;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.NonLinearSolver.ConvergenceCriterion = 1E-3;
-            C.NonLinearSolver.MaxSolverIterations = 5;
+            //C.NonLinearSolver.ConvergenceCriterion = 1E-8;
+            //C.NonLinearSolver.MaxSolverIterations = 6;
             C.NonLinearSolver.verbose = true;
 
             C.AdaptiveMeshRefinement = useAMR;
@@ -686,7 +684,7 @@ namespace BoSSS.Application.XNSE_Solver {
             double dt = -1;
             if (Steady) {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-                dt = 1000;
+                dt = int.MaxValue;
                 C.NoOfTimesteps = 1;
             } else {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
@@ -825,7 +823,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 15, int SpaceDim = 2, bool useAMR = false, int NoOfTimesteps = 2, bool writeToDB = false, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
+        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 2, bool writeToDB = false, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
             double Re = 1000;
             double particleRad = 0.261;
 
@@ -834,12 +832,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Rigidbody.SpecifyShape(Shape.Cube);
             C.Rigidbody.SetRotationAxis("z");
             C.PhysicalParameters.IncludeConvection = IncludeConv;
-           
-            C.FieldOptions.Add("Residual-MomentumX", new FieldOpts() {
-                Degree = k,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-
+            
             return C;
         }
 

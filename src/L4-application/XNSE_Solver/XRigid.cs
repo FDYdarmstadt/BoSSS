@@ -209,6 +209,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         private void SetPhi(Func<double[], double, double> PhiFunc) {
+            m_ctrl.UseImmersedBoundary = true;
             m_ctrl.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
         }
     }

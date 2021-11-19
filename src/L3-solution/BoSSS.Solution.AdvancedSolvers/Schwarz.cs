@@ -44,6 +44,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class Schwarz : ISolverSmootherTemplate, ISolverWithCallback {
 
+        public Schwarz() {
+            ActivateCachingOfBlockMatrix = (int noiter, int mglvl, int iblock) => true;
+        }
+
         /// <summary>
         /// Abstract base class, template for different strategies 
         /// </summary>
@@ -58,12 +62,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// - inner index: indices within the sub-blocks
             /// - content: local cell indices which form the respective additive-Schwarz block (<see cref="MultigridOperator"/>
             /// </returns>
-            abstract internal IEnumerable<List<int>> GetBlocking(MultigridOperator op);
+            public abstract IEnumerable<List<int>> GetBlocking(MultigridOperator op);
 
             /// <summary>
             /// Number of blocs returned by <see cref="GetBlocking(MultigridOperator)"/>
             /// </summary>
-            internal abstract int GetNoOfBlocks(MultigridOperator op);
+            public abstract int GetNoOfBlocks(MultigridOperator op);
+
         }
 
         /// <summary>
@@ -91,7 +96,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// Returns the multigrid blocking.
             /// </summary>
-            internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
+            public override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
                 AggregationGridData thisLevel = op.Mapping.AggGrid;
 
                 List<AggregationGridData> blockLevelS = new List<AggregationGridData>();
@@ -140,7 +145,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// %
             /// </summary>
-            internal override int GetNoOfBlocks(MultigridOperator op) {
+            public override int GetNoOfBlocks(MultigridOperator op) {
                 return GetBlocking(op).Count();
             }
 
@@ -177,7 +182,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public int NoOfPartsOnCurrentProcess = 4;
 
-            internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
+            public override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
 
                 if (cache != null) {
                     return cache.Select(orgList => new List<int>(orgList)).ToArray();
@@ -281,7 +286,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// %
             /// </summary>
-            internal override int GetNoOfBlocks(MultigridOperator op) {
+            public override int GetNoOfBlocks(MultigridOperator op) {
                 return NoOfPartsOnCurrentProcess;
             }
         }
@@ -298,7 +303,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             public int NoOfPartsPerProcess = 4;
 
-            internal override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
+            public override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
                 var MgMap = op.Mapping;
 
                 //if(!M.RowPartitioning.Equals(MgMap.Partitioning))
@@ -364,7 +369,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return _Blocks;
             }
 
-            internal override int GetNoOfBlocks(MultigridOperator op) {
+            public override int GetNoOfBlocks(MultigridOperator op) {
                 return NoOfPartsPerProcess;
             }
         }
@@ -375,8 +380,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public BlockingStrategy m_BlockingStrategy;
 
         MultigridOperator m_MgOp;
-
-
 
         /// <summary>
         /// Hack the hack, if pressure is equal order ...
@@ -619,19 +622,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         fullBlock = fullMask.GetSubBlockMatrix(op.OperatorMatrix);
                         Debug.Assert(fullBlock.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF);
 
-
-
-
-                        //blockSolvers[iPart] = new MUMPSSolver() {
-                        //    Parallelism = Parallelism.SEQ,
-                        //};
-
-                        // ILU nicht ratsam, viel mehr Iterationen nötig, als mit PARDISO
-                        //blockSolvers[iPart] = new ilPSP.LinSolvers.HYPRE.Euclid() {
-                        //    Level = 4,
-                        //    Comm = csMPI.Raw._COMM.SELF
-                        //};
-
                         BlockMatrices[iPart] = fullBlock; // just used to calculate memory consumption
                         InitializeDirSolver(iPart);
 
@@ -842,9 +832,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 UseDoublePrecision = true,
                 Parallelism = Parallelism.SEQ,
             };
+
             //blockSolvers[iPart] = new MUMPSSolver() {
             //    //CacheFactorization = ActivateCachingOfBlockMatrix(NoIter, m_MgOp.LevelIndex),
             //    Parallelism = Parallelism.SEQ,
+            //};
+
+            ////ILU nicht ratsam, viel mehr Iterationen nötig, als mit PARDISO
+            //blockSolvers[iPart] = new ilPSP.LinSolvers.HYPRE.Euclid() {
+            //    Level = 4,
             //};
 
             Debug.Assert(BlockMatrices[iPart] != null);
@@ -1019,7 +1015,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
  
                             if (iIter < FixedNoOfIterations - 1)
-                                 XExchange.Vector_Ext.ClearEntries();
+                                 if(XExchange.Vector_Ext.Length>0) XExchange.Vector_Ext.ClearEntries();
 
                             var SolScale = this.SolutionScaling;
                             for (int l = 0; l < LocLength; l++) {
@@ -1387,7 +1383,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public long UsedMemory() {
-            long LScaling = this.SolutionScaling.Length * sizeof(double);
+            long LScaling = 0;
+            if (EnableOverlapScaling && Overlap >= 1) LScaling += this.SolutionScaling.Length * sizeof(double);
             long MemoryOfBlocks = UsedMem;
             long MemoryOfFac = 0;
             foreach (var solver in blockSolvers) {

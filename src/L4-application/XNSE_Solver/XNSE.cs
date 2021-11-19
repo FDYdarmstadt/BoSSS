@@ -588,9 +588,11 @@ namespace BoSSS.Application.XNSE_Solver {
                 dt = GetTimestep();
                 
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
-                Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+                bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+                //if (!success) throw new Exception($"Solver did not converge for time step {TimestepNo}");
                 Console.WriteLine($"Done with time step {TimestepNo}.");
                 GC.Collect();
+
                 return dt;
             }
         }

@@ -397,8 +397,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     double NewMxxNorm = Mxx.MPI_L2Norm();
 
-                    if(NewMxxNorm <= 1E-5) {
-                        using (new BlockTrace("re-orthonormalization",ft)) {
+                    if (NewMxxNorm <= 1E-5) {
+                        using (new BlockTrace("re-orthonormalization", ft)) {
                             // a lot of canceling out has occurred.
                             // do another loop, to ensure ortho-normality:
                             //
@@ -769,13 +769,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         VerivyCurrentResidual(X, B, Res, iIter);
 
                         // compute correction
-                        double[] PostCorr = new double[L];
-                        PostSmoother.Solve(PostCorr, Res); // Vorglättung
-
-                        //orthonormalization and residual minimization
-                        AddSol(ref PostCorr);
-                        resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
-
+                        if (PostSmoother != null) {
+                            double[] PostCorr = new double[L];
+                            PostSmoother.Solve(PostCorr, Res);
+                            AddSol(ref PostCorr);
+                            resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
+                        }
 
 #if TEST
                         CatchThisExclamationmark(Res, "Res", pos);
@@ -786,23 +785,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //SpecAnalysisSample(iIter, X, "ortho3_" + g);
                     } // end of post-smoother loop
 
-
-                    if(!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
-                        Converged = true;
-                        break;
-                    }
-
-
                     // iteration callback
                     // ------------------
-
                     this.ThisLevelIterations++;
-
                     IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator);
 
                     SpecAnalysisSample(iIter, X, "_");
 
-
+                    if (!TerminationCriterion(iIter, iter0_resNorm, resNorm)) {
+                        Converged = true;
+                        break;
+                    }
 
                 } // end of solver iterations
 
@@ -935,8 +928,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             long Memory = 0;
             if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
                 Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfSmoother();
-            Memory += PreSmoother.UsedMemory();
-            Memory += PostSmoother.UsedMemory();
+            if(PreSmoother != null) Memory += PreSmoother.UsedMemory();
+            if (PostSmoother != null) Memory += PostSmoother.UsedMemory();
             return Memory;
         }
 
@@ -968,8 +961,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.MxxHistory = null;
             this.Alphas = null;
 
-            this.PreSmoother.Dispose();
-            this.PostSmoother.Dispose();
+            if (PreSmoother != null) this.PreSmoother.Dispose();
+            if (PostSmoother != null) this.PostSmoother.Dispose();
             this.PreSmoother = null;
             this.PostSmoother = null;
             this.CoarserLevelSolver = null;
