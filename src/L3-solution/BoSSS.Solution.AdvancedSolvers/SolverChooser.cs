@@ -1536,16 +1536,16 @@ namespace BoSSS.Solution {
                     Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver[iLevel]}) < Schwarz-Block size ({SchwarzblockSize(iLevel)});");
                     Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
                 }
-                int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Ceiling(SizeFraction));
+                int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Floor(SizeFraction));
                 int TotalNoOfSchwarzBlocks = LocalNoOfSchwarzBlocks.MPISum();
                 SetQuery("GlobalSblocks at Lvl" + iLevel, TotalNoOfSchwarzBlocks, true);
                 SetQuery("SblockSize at Lvl"+ iLevel, SchwarzblockSize(iLevel), true);
 
                 bool useDirect = false;
                 // It has to be ensured, that directKickin takes place on all ranks at same level
-                // therefore only global criterion have to be used here !!!
+                // therefore only global defined criterion have to be used here !!!
                 useDirect |= (SysSize < DirectKickIn);
-                useDirect |= (double)PrevSize / (double)SysSize < 1.5 && SysSize < 50000; // degenerated MG-Agglomeration, because too few candidates
+                //useDirect |= (double)PrevSize / (double)SysSize < 1.5 && SysSize < 50000; // degenerated MG-Agglomeration, because too few candidates
                 useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
                 useDirect |= TotalNoOfSchwarzBlocks < MPIsize;
                 useDirect |= iLevel == MaxMGDepth - 1; // otherwise error, due to missing coarse solver
@@ -1556,24 +1556,42 @@ namespace BoSSS.Solution {
                 else
                     Console.WriteLine("KcycleMultiSchwarz: lv {0}, no of blocks {1} : ", iLevel, TotalNoOfSchwarzBlocks);
 
+                Func<int, int, int, bool> delayedCaching = delegate (int Iter, int MgLevel, int iBlock) {
+                    //return Iter >= ((MaxMGLevel - MgLevel) * 3) * (1);
+                    return true;
+                };
+
+                Func<int, int, int, bool> delayedCaching2 = delegate (int Iter, int MgLevel, int iBlock) {
+                    //return Iter >= MaxMGDepth+1;
+                    return true;
+                };
+
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
                     levelSolver = new DirectSolver() {
                         WhichSolver = DirectSolver._whichSolver.PARDISO,
                         SolverVersion = Parallelism.SEQ,
-                        TestSolution = false
+                        TestSolution = false,
+                        ActivateCaching = delayedCaching2,
                     };
+
+                    //levelSolver = new Schwarz() {
+                    //    FixedNoOfIterations = 1,
+                    //    CoarseSolver = null,
+                    //    m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                    //        NoOfPartsOnCurrentProcess = LocalNoOfSchwarzBlocks,
+                    //    },
+                    //    ActivateCachingOfBlockMatrix = delayedCaching,
+                    //    Overlap = 1, // overlap seems to help; more overlap seems to help more
+                    //    EnableOverlapScaling = true,
+                    //};
+
                     //levelSolver = new DirectSolver() {
                     //    WhichSolver = DirectSolver._whichSolver.MUMPS,
                     //    SolverVersion = Parallelism.SEQ,
                     //    TestSolution = false
                     //};
                 } else {
-
-                    Func<int, int, int, bool> delayedCaching = delegate (int Iter, int MgLevel, int iBlock) {
-                        return Iter >= ((MaxMGLevel - MgLevel) * 3) * (1);
-                        //return false;
-                    };
 
                     var smoother1 = new Schwarz() {
                         FixedNoOfIterations = 1,
