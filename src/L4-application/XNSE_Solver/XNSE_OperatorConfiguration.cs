@@ -40,10 +40,10 @@ namespace BoSSS.Application.XNSE_Solver {
             Gravity = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.GravityX.TrimEnd('X', 'Y', 'Z'))) || control.FieldOptions.Keys.Where(k => k.Contains("Gravity")).Any();
             VolForce = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.VolumeForceX.TrimEnd('X', 'Y', 'Z'))) || control.FieldOptions.Keys.Where(k => k.Contains("VolumeForce")).Any();
             Continuity = true;
-            Viscous = true;
             PressureGradient = true;
             UseImmersedBoundary = control.UseImmersedBoundary;
             Transport = control.PhysicalParameters.IncludeConvection;
+            Viscous = control.PhysicalParameters.IncludeDiffusion;
             CodBlocks = new bool[] { true, true };
             DomBlocks = new bool[] { true, true };
             dntParams = control.AdvancedDiscretizationOptions;
