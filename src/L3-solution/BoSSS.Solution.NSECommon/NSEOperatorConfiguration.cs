@@ -27,9 +27,9 @@ namespace BoSSS.Solution.NSECommon {
     public class NSEOperatorConfiguration {
         //public PhysicalParameters physParams;
 
-        /// <summary>
-        /// advanced operator configuration
-        /// </summary>
+        // <summary>
+        // advanced operator configuration
+        // </summary>
         //public DoNotTouchParameters dntParams;
 
         /// <summary>

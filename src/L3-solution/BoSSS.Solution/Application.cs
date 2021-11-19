@@ -967,7 +967,6 @@ namespace BoSSS.Solution {
         /// Generates key/value pairs from control objects to identify sessions.
         /// </summary>
         public static void FindKeys(IDictionary<string, object> Keys, AppControl ctrl) {
-
             foreach (var fldOpt in ctrl.FieldOptions) {
                 string KeyName = "DGdegree:" + fldOpt.Key;
                 int FldDeg = fldOpt.Value.Degree;
@@ -1081,7 +1080,8 @@ namespace BoSSS.Solution {
                     || mi.Name == "FieldOptions"
                     || mi.Name == "InitialValues"
                     || mi.Name == "BoundaryValues"
-                    || mi.Name == "InitialValues_Evaluators")) {
+                    || mi.Name == "InitialValues_Evaluators"
+                    || mi.Name == "m_Grid")) {
 
 
                     // these guys are filtered...
@@ -3657,8 +3657,32 @@ namespace BoSSS.Solution {
             return GenericBlas.Linspace(-1, 1, 2);
         }
 
+        /// <summary>
+        /// enforce the compiler to integrate Microsoft.CodeAnalysis.dll etc.
+        /// </summary>
+        public static Type[] DllEnforcer() {
+            using(var tr = new FuncTrace()) {
+                var types = new Type[] {
+                   typeof(Microsoft.CodeAnalysis.Compilation),
+                    typeof(Microsoft.CodeAnalysis.CSharp.CSharpCompilation),
+                    typeof(Microsoft.CodeAnalysis.Scripting.Script),
+                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript)
+                };
 
+                foreach(var t in types) {
+                    tr.Info("Loaded type " + t + " form " + t.Assembly);
+                }
+
+                return types;
+            }
+        }
+
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //public static Microsoft.CodeAnalysis.Compilation DllEnforcer2() {
+        //    return Microsoft.CodeAnalysis.CSharp.CSharpCompilation.C
+        //}
     }
-
 }
 

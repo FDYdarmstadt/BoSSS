@@ -202,7 +202,6 @@ namespace BoSSS.Application.XNSFE_Solver {
                 if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
                     opFactory.AddEquation(new InterfaceNSE_Evaporation("A", "B", D, d, extendedConfig));                    
                 } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
-                    NonlinearCouplingEvaporation = true; // When using Newton evaporation coupling is always nonlinear
                     opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, extendedConfig));
                 }                    
             }
@@ -302,7 +301,6 @@ namespace BoSSS.Application.XNSFE_Solver {
             }
         }
 
-        bool NonlinearCouplingEvaporation = false;
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             OperatorFactory opFactory = new OperatorFactory();
@@ -311,10 +309,10 @@ namespace BoSSS.Application.XNSFE_Solver {
 
             //Get Spatial Operator            
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
-
+            var config = new XNSFE_OperatorConfiguration(this.Control);
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || this.Control.ThermalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid || NonlinearCouplingEvaporation); // when using Newton solver the employed coupling between heat and momentum is nonlinear
+            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || this.Control.ThermalParameters.IncludeConvection || (config.isEvaporation & Control.IncludeRecoilPressure) ||Control.NonlinearCouplingSolidFluid); // when using Newton solver the employed coupling between heat and momentum is nonlinear
             XOP.LinearizationHint = XOP.IsLinear == true ? LinearizationHint.AdHoc : this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
 
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
@@ -348,6 +346,119 @@ namespace BoSSS.Application.XNSFE_Solver {
             //SetTimestep();
 
             return base.RunSolverOneStep(TimestepNo, phystime, dt);
+        }
+
+        protected override List<DGField> GetInterfaceVelocity() {
+            int D = this.GridData.SpatialDimension;
+            var cm = this.LsTrk.Regions.GetCutCellMask4LevSet(0);
+            var ThermParam = this.Control.ThermalParameters;
+            var gdat = this.GridData;
+            var Tracker = this.LsTrk;
+
+            VectorField<XDGField> Velocity = new VectorField<XDGField>(D.ForLoop(d => (XDGField)m_RegisteredFields.SingleOrDefault(s => s.Identification == VariableNames.Velocity_d(d))));
+            XDGField Temperature = (XDGField)this.m_RegisteredFields.Where(s => s.Identification == VariableNames.Temperature).SingleOrDefault();
+            var LevelSet = this.m_RegisteredFields.Where(s => s.Identification == VariableNames.LevelSetCG).SingleOrDefault();
+            int p = LevelSet.Basis.Degree;
+
+            Basis b = new Basis(gdat, 2 * p);
+            XDGBasis xb = new XDGBasis(Tracker, 2 * p);
+
+            VectorField<DGField> Normal = new VectorField<DGField>(D.ForLoop(d => m_RegisteredFields.SingleOrDefault(s => s.Identification == VariableNames.NormalVectorComponent(d)))).CloneAs();
+            // this normal is the direct gradient of phi, we normalize first, but only in cut cells!!
+            {
+                Normal.Clear();
+                Normal.Gradient(1.0, LevelSet);
+                SinglePhaseField Normalizer = new SinglePhaseField(b);
+                for (int d = 0; d < D; d++) {
+                    Normalizer.ProjectPow(1.0, Normal[d], 2.0, cm);
+                }
+                var NormalizerTemp = Normalizer.CloneAs();
+                Normalizer.Clear();
+                Normalizer.ProjectPow(1.0, NormalizerTemp, -0.5, cm);
+
+                Normal.ScalePointwise(1.0, Normalizer);
+            }
+
+            // Heat Flux
+            List<XDGField> HeatFlux = new List<XDGField>();
+            for (int d = 0; d < D; d++) {
+                var xField = (XDGField)this.m_RegisteredFields.Where(s => s.Identification == VariableNames.HeatFluxVectorComponent(d)).SingleOrDefault();
+                if (xField == null) {
+                    xField = new XDGField(xb, VariableNames.HeatFluxVectorComponent(d));
+                    this.RegisterField(xField);
+                }
+                HeatFlux.Add(xField);
+            }
+
+            for (int d = 0; d < D; d++) {
+                HeatFlux[d].Clear();
+                HeatFlux[d].Derivative(1.0, Temperature, d);
+                ((XDGField)HeatFlux[d]).GetSpeciesShadowField("A").Scale(-ThermParam.k_A);
+                ((XDGField)HeatFlux[d]).GetSpeciesShadowField("B").Scale(-ThermParam.k_B);
+            }
+
+            // Mass Flux
+            var MassFlux = this.m_RegisteredFields.Where(s => s.Identification == "MassFlux").SingleOrDefault();
+            if (MassFlux == null) {
+                MassFlux = new SinglePhaseField(b, "MassFlux");
+                this.RegisterField(MassFlux);
+            }
+
+            MassFlux.Clear();
+            for (int d = 0; d < D; d++) {
+                MassFlux.ProjectProduct(1.0 / ThermParam.hVap, Normal[d], HeatFlux[d].GetSpeciesShadowField("A"), cm);
+                MassFlux.ProjectProduct(-1.0 / ThermParam.hVap, Normal[d], HeatFlux[d].GetSpeciesShadowField("B"), cm);
+            }
+
+
+            List<XDGField> xInterfaceVelocity = new List<XDGField>(); // = this.m_RegisteredFields.Where(s => s.Identification.Contains("IntefaceVelocityXDG")).ToList();
+            List<DGField> InterfaceVelocity = new List<DGField>(); // = this.m_RegisteredFields.Where(s => s.Identification.Contains("IntefaceVelocityDG")).ToList();
+            for (int d = 0; d < D; d++) {
+                var xField = (XDGField)this.m_RegisteredFields.Where(s => s.Identification == $"IntefaceVelocityXDG_{d}").SingleOrDefault();
+                if (xField == null) {
+                    xField = new XDGField(xb, $"IntefaceVelocityXDG_{d}");
+                    this.RegisterField(xField);
+                }
+                xInterfaceVelocity.Add(xField);
+
+                var Field = (DGField)this.m_RegisteredFields.Where(s => s.Identification == $"IntefaceVelocityDG_{d}").SingleOrDefault();
+                if (Field == null) {
+                    Field = new SinglePhaseField(b, $"IntefaceVelocityDG_{d}");
+                    this.RegisterField(Field);
+                }
+                InterfaceVelocity.Add(Field);
+            }
+            
+            for (int d = 0; d < D; d++) {
+                var xField = xInterfaceVelocity[d];
+                xField.Clear();
+                xField.AccLaidBack(1.0, Velocity[d], cm);
+                xField.GetSpeciesShadowField("A").ProjectProduct(-1.0 / ThermParam.rho_A, MassFlux, Normal[d], cm);
+                xField.GetSpeciesShadowField("B").ProjectProduct(-1.0 / ThermParam.rho_B, MassFlux, Normal[d], cm);
+
+                var Field = InterfaceVelocity[d];
+                Field.Clear();
+                Field.AccLaidBack(ThermParam.rho_A, xField.GetSpeciesShadowField("A"), cm);
+                Field.AccLaidBack(ThermParam.rho_B, xField.GetSpeciesShadowField("B"), cm);
+                Field.Scale(1.0 / (ThermParam.rho_A + ThermParam.rho_B), cm);
+            }
+
+            // Project normal
+            //var NormalInterfaceVelocity = InterfaceVelocity.Select(s => s.CloneAs()).ToArray();
+            //NormalInterfaceVelocity.ForEach(s => s.Clear());
+            //for (int i = 0; i < D; i++) {
+            //    var temp = NormalInterfaceVelocity[i].CloneAs();
+            //    temp.Clear();
+            //    for (int j = 0; j < D; j++) {                    
+            //        temp.ProjectProduct(1.0, Normal[j], InterfaceVelocity[i], cm, true);
+            //    }
+            //    NormalInterfaceVelocity[i].ProjectProduct(1.0, temp, Normal[i], cm, false);
+            //}
+            //for (int i = 0; i < D; i++) {
+            //    InterfaceVelocity[i].Clear();
+            //    InterfaceVelocity[i].Acc(1.0, NormalInterfaceVelocity[i]);
+            //}
+            return InterfaceVelocity;
         }
 
         private void SetTimestep() {
@@ -660,7 +771,81 @@ namespace BoSSS.Application.XNSFE_Solver {
                 }
             }
             Console.WriteLine("Maximum Absolute interface Velocity: {0}", vMax);
+
+            //// Plot Points on Interface           
+            //log = new StreamWriter($"MicroRegion_{timestepNo}.csv");
+            //log.Write("Cell\tNode");
+            //for (int d = 0; d < D; d++) {
+            //    log.Write($"\tx{d}");
+            //}            
+            //log.Write($"\tHeatFlux");
+            //log.Write($"\tWallTemperature");
+            //log.Write("\n");
+            //log.Flush();
+            //{
+            //    cm = Tracker.Regions.GetCutCellMask4LevSet(1).Intersect(Tracker.Regions.GetSpeciesMask("A")).Intersect(Tracker.Regions.GetSpeciesMask("C"));
+            //    CellQuadratureScheme SurfIntegrationA = spaceMetrics.XQuadSchemeHelper.GetLevelSetquadScheme(1, Tracker.GetSpeciesId("A"), cm);
+            //    var rule = SurfIntegrationA.Compile(GridData, this.QuadOrder());
+            //    foreach (var chunkRulePair in rule) {
+            //        foreach (int cell in chunkRulePair.Chunk.Elements) {
+            //            MultidimensionalArray globalVertices = MultidimensionalArray.Create(
+            //                1, chunkRulePair.Rule.NoOfNodes, Grid.SpatialDimension);
+            //            MultidimensionalArray jumpConditions = MultidimensionalArray.Create(
+            //                1, chunkRulePair.Rule.NoOfNodes, 2);
+
+            //            Temperature.Evaluate(cell, 1, chunkRulePair.Rule.Nodes, jumpConditions.ExtractSubArrayShallow(-1, -1, 0));
+            //            HeatFlux[1].Evaluate(cell, 1, chunkRulePair.Rule.Nodes, jumpConditions.ExtractSubArrayShallow(-1, -1, 1));
+
+            //            GridData.TransformLocal2Global(chunkRulePair.Rule.Nodes, cell, 1, globalVertices, 0);
+
+            //            for (int k = 0; k < chunkRulePair.Rule.NoOfNodes; k++) {
+
+            //                log.Write("{0}\t{1}", cell, k);
+            //                for (int d = 0; d < D; d++) {
+            //                    log.Write($"\t{globalVertices[0, k, d]}");
+            //                }
+            //                for (int d = 0; d < 2; d++) {
+            //                    log.Write($"\t{jumpConditions[0, k, d]}");
+            //                }
+            //                log.Write("\n");
+            //                log.Flush();
+
+            //            }
+            //        }
+            //    }
+            //    cm = Tracker.Regions.GetCutCellMask4LevSet(1).Intersect(Tracker.Regions.GetSpeciesMask("B")).Intersect(Tracker.Regions.GetSpeciesMask("C"));
+            //    CellQuadratureScheme SurfIntegrationB = spaceMetrics.XQuadSchemeHelper.GetLevelSetquadScheme(1, Tracker.GetSpeciesId("B"), cm);
+            //    rule = SurfIntegrationB.Compile(GridData, this.QuadOrder());
+            //    foreach (var chunkRulePair in rule) {
+            //        foreach (int cell in chunkRulePair.Chunk.Elements) {
+            //            MultidimensionalArray globalVertices = MultidimensionalArray.Create(
+            //                1, chunkRulePair.Rule.NoOfNodes, Grid.SpatialDimension);
+            //            MultidimensionalArray jumpConditions = MultidimensionalArray.Create(
+            //                1, chunkRulePair.Rule.NoOfNodes, 2);
+
+            //            Temperature.Evaluate(cell, 1, chunkRulePair.Rule.Nodes, jumpConditions.ExtractSubArrayShallow(-1, -1, 0));
+            //            HeatFlux[1].Evaluate(cell, 1, chunkRulePair.Rule.Nodes, jumpConditions.ExtractSubArrayShallow(-1, -1, 1));
+
+            //            GridData.TransformLocal2Global(chunkRulePair.Rule.Nodes, cell, 1, globalVertices, 0);
+
+            //            for (int k = 0; k < chunkRulePair.Rule.NoOfNodes; k++) {
+
+            //                log.Write("{0}\t{1}", cell, k);
+            //                for (int d = 0; d < D; d++) {
+            //                    log.Write($"\t{globalVertices[0, k, d]}");
+            //                }
+            //                for (int d = 0; d < 2; d++) {
+            //                    log.Write($"\t{jumpConditions[0, k, d]}");
+            //                }
+            //                log.Write("\n");
+            //                log.Flush();
+
+            //            }
+            //        }
+            //    }
+            //}
         }
+
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
 
             //Basis b = new Basis(this.GridData, 0);
@@ -757,6 +942,25 @@ namespace BoSSS.Application.XNSFE_Solver {
             base.PlotCurrentState(physTime, timestepNo, superSampling);
         }
 
+        /// <summary>
+        /// automatized analysis of condition number 
+        /// </summary>
+        public override IDictionary<string, double> OperatorAnalysis() {
+
+            int D = this.GridData.SpatialDimension;
+
+            //int[] varGroup_convDiff = Enumerable.Range(0, D).ToArray();
+            //int[] varGroup_Stokes = Enumerable.Range(0, D + 1).ToArray();
+            //int[] varGroup_Temperature = Enumerable.Range(D + 1, 1).ToArray();
+            //int[] varGroup_all = Enumerable.Range(0, D + 2).ToArray();
+            //var res = this.Timestepping.OperatorAnalysis(new[] { varGroup_convDiff, varGroup_Stokes, varGroup_Temperature, varGroup_all });
+
+            int[] varGroup = new int[] { 0, 1, 2, 3};
+            var res = this.Timestepping.OperatorAnalysis(new[] { varGroup });
+
+            return res;
+        }
+
         bool PrintOnlyOnce = true;
         private void PrintConfiguration() {
             if (PrintOnlyOnce) {
@@ -787,69 +991,6 @@ namespace BoSSS.Application.XNSFE_Solver {
 
 
             }
-        }
-        /*
-
-        protected override LevelSetUpdater InstantiateLevelSetUpdater() {
-            int levelSetDegree = Control.FieldOptions["Phi"].Degree;
-            LevelSetUpdater lsUpdater;
-
-           
-            
-            switch(Control.Option_LevelSetEvolution) {
-                case LevelSetEvolution.Fourier: {
-                    if(Control.EnforceLevelSetConservation) {
-                        throw new NotSupportedException("mass conservation correction currently not supported");
-                    }
-                    FourierLevelSet fourrierLevelSet = new FourierLevelSet(Control.FourierLevSetControl, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    fourrierLevelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                    
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, fourrierLevelSet, VariableNames.LevelSetCG);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
-                }
-                case LevelSetEvolution.FastMarching: {
-                    LevelSet levelSet = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSet.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                    var fastMarcher = new FastMarchingEvolver(VariableNames.LevelSetCG, QuadOrder(), levelSet.GridDat.SpatialDimension);
-                    
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet, VariableNames.LevelSetCG);
-                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, fastMarcher);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
-                }
-                case LevelSetEvolution.StokesExtension: {
-
-                    throw new NotImplementedException("todo");
-                }
-                case LevelSetEvolution.SplineLS: {
-                    int nodeCount = 30;
-                    Console.WriteLine("Achtung, Spline node count ist hart gesetzt. Was soll hier hin?");
-                    SplineLevelSet SplineLevelSet = new SplineLevelSet(Control.Phi0Initial, new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG, nodeCount);
-                    var SplineEvolver = new SplineLevelSetEvolver(VariableNames.LevelSetCG, (GridData)SplineLevelSet.GridDat);
-                    
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, SplineLevelSet, VariableNames.LevelSetCG);
-                    lsUpdater.AddEvolver(VariableNames.LevelSetCG, SplineEvolver);
-                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, levelSetVelocity);
-                    break;
-                }
-                case LevelSetEvolution.None: {
-                    LevelSet levelSet1 = new LevelSet(new Basis(GridData, levelSetDegree), VariableNames.LevelSetDG);
-                    levelSet1.ProjectField(Control.InitialValues_Evaluators["Phi"]);
-                    
-                    lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, 1, new string[] { "A", "B" }, levelSet1, VariableNames.LevelSetCG);
-                    break;
-                }
-                default:
-                throw new NotImplementedException();
-            }
-            
-            return lsUpdater;
-        }
-
-        */
-
-
-
+        }     
     }
 }

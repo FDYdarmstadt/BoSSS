@@ -71,7 +71,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// Activation of second level-set.
+        /// Activation of second level-set (fluid/solid boundary)
         /// </summary>
         [DataMember]
         virtual public bool UseImmersedBoundary {
@@ -138,21 +138,15 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// 
+        /// Set Field Options, i.e. the DG degrees
         /// </summary>
-        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveFilteredVelocity =  FieldOpts.SaveToDBOpt.TRUE, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
+        public void SetFieldOptions(int VelDegree, int LevSetDegree, FieldOpts.SaveToDBOpt SaveCurvature = FieldOpts.SaveToDBOpt.TRUE) {
             if(VelDegree < 1)
                 throw new ArgumentOutOfRangeException("Velocity degree must be 1 at minimum.");
             
             FieldOptions.Add("Velocity*", new FieldOpts() {
                 Degree = VelDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            FieldOptions.Add("FilteredVelocity*", new FieldOpts() {
-                SaveToDB = SaveFilteredVelocity
-            });
-            FieldOptions.Add("SurfaceForceDiagnostic*", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.FALSE
             });
             FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
                 Degree = VelDegree - 1,
@@ -172,14 +166,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 Degree = LevSetDegree,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            // the following variable names for the level set will replace the above ones in the new XNSE!
-            //FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
-            //FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
-            //    Degree = LevSetDegree,
-            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            //});
             FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
                 Degree = LevSetDegree*2,
                 SaveToDB = SaveCurvature
@@ -410,6 +396,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public PhysicalParameters PhysicalParameters = new PhysicalParameters() {
             Material = true,
             IncludeConvection = false,
+            IncludeDiffusion = true,
             mu_A = 1.0,
             mu_B = 1.0,
             rho_A = 1.0,
@@ -767,6 +754,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         public override bool Equals(object obj) {
+            //System.Diagnostics.Debugger.Launch();
             if(!base.Equals(obj))
                 return false;
 

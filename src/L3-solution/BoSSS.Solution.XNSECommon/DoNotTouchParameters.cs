@@ -127,7 +127,12 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// prescribed prescription of the slip length
         /// </summary>
-        Prescribed = 3
+        Prescribed = 3,
+
+        /// <summary>
+        /// write sliplengh for each cell
+        /// </summary>
+        Everywhere = 4
 
     }
 
