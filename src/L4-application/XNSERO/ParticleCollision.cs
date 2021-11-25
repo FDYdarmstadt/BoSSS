@@ -258,7 +258,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         private int[][] ClusterCollisionsContainingSameParticles() {
             List<int[]> globalParticleCluster = new List<int[]>();
-            bool[] partOfCollisionCluster = new bool[Particles.Length];
+            bool[] partOfCollisionCluster = new bool[Particles.Length + 4];
             for (int p0 = 0; p0 < Particles.Length; p0++) {
                 if (!partOfCollisionCluster[p0]) {
                     List<int> currentParticleCluster = new List<int> { p0 };

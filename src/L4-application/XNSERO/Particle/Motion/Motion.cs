@@ -701,14 +701,15 @@ namespace BoSSS.Application.XNSERO_Solver {
             int NoOfFluidSpecies = FluidSpecies.Length;
             Vector forcesAndTorque = new Vector(SpatialDim + 1);
             for (int i = 0; i < NoOfFluidSpecies; i++) {
-                forcesAndTorque += hydrodynamicsIntegration.Main(Position[0], cutCells, FluidSpecies[i]); // All procs have to go here otherwise deadlock!
+                forcesAndTorque += hydrodynamicsIntegration.Main(Position[0], cutCells, FluidSpecies[i]);
             }
             Aux.TestArithmeticException(forcesAndTorque, "during calculation of hydrodynamics");
 
-            if (cutCells.IsEmptyOnRank)// no cutCells on this process.
+            if (cutCells.IsEmptyOnRank)
                 returnVec = new Vector(SpatialDim + 1);
-            else
+            else {
                 returnVec = forcesAndTorque;
+            }
             return returnVec;
         }
 

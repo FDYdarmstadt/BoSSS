@@ -39,6 +39,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             this.m_FluidSpc = FluidSpc;
             this.m_UsePhoretic = UsePhoretic;
             this.AllParticles = AllParticles;
+            this.activeStress = AllParticles[0].ActiveStress;//Assuming every particle has the same active stress, which is always the case in the current implementation of XNSERO.
         }
         readonly int m_iLevSet;
         readonly string m_FluidSpc;
@@ -46,6 +47,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         readonly int Component;
         readonly int m_D;
         readonly bool m_UsePhoretic;
+        readonly double activeStress;
 
         /// <summary>
         /// Viskosity in species A
@@ -213,8 +215,12 @@ namespace BoSSS.Application.XNSERO_Solver {
 
 
             Vector uAFict = new Vector(inp.Parameters_IN[0], inp.Parameters_IN[1]);
-            Vector activeStressVector = new Vector(inp.Parameters_IN[2], inp.Parameters_IN[3]);
-            BoundaryConditionType bcType = activeStressVector.Abs() <= 1e-8 ? BoundaryConditionType.passive : BoundaryConditionType.active;
+            //Vector activeStressVector = new Vector(inp.Parameters_IN[2], inp.Parameters_IN[3]);
+            Vector orientationVector = new(inp.Parameters_IN[2], inp.Parameters_IN[3]);
+            Vector orientationNormal = new Vector(-orientationVector[1], orientationVector[0]);
+            Vector activeStressVector = new Vector(orientationNormal * normalVector > 0 ? -activeStress * normalVector[1] : activeStress * normalVector[1], orientationNormal * normalVector > 0 ? (activeStress * normalVector[0]) : -activeStress * normalVector[0]);
+            
+            BoundaryConditionType bcType = (orientationVector * normalVector <= 0) ? BoundaryConditionType.passive : BoundaryConditionType.active;
 
             
             if(m_UsePhoretic) {
@@ -361,8 +367,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             get {
                 return new[] { VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.Velocity_d(0)),
                                VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.Velocity_d(1)),
-                               VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.SurfaceForceComponent(0)),
-                               VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.SurfaceForceComponent(1))
+                               VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.OrientationVectorComponent(0)),
+                               VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.OrientationVectorComponent(1))
                 };
             }
         }

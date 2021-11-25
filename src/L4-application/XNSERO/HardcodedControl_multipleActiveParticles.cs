@@ -105,7 +105,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
-        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength = 20, double noOfParticles = 2) {
+        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength = 10, double noOfParticles = 10) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -121,6 +121,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.PhysicalParameters.mu_B = 1;
             C.PhysicalParameters.IncludeConvection = false;
             C.LS_TrackerWidth = 2;
+            C.TracingNamespaces = "BoSSS.Foundation";
 
             // Particle Properties
             // =============================
@@ -128,11 +129,11 @@ namespace BoSSS.Application.XNSERO_Solver {
             double activeStress = 1e1;
             double nextParticleDistance = particleLength * 3;
             double domainLength = nextParticleDistance * noOfParticles;
-            List<string> boundaryValues = new List<string> {
-                "Wall"
-            };
-            C.SetBoundaries(boundaryValues);
-            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, false);
+            //List<string> boundaryValues = new List<string> {
+            //    "Wall"
+            //};
+            //C.SetBoundaries(boundaryValues);
+            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
             C.minDistanceThreshold = 2 / cellsPerUnitLength;
             C.CoefficientOfRestitution = 0.5;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
@@ -140,12 +141,13 @@ namespace BoSSS.Application.XNSERO_Solver {
             Random angle = new Random();
             int j = 0;
             List<Particle> particles = new List<Particle>();
-            while (-leftCorner + j * nextParticleDistance < domainLength / 2) {
+            while (leftCorner + j * nextParticleDistance < domainLength / 2) {
                 int i = 0;
-                while (-leftCorner + i * nextParticleDistance < domainLength / 2) {
-                    double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
-                    angle2.MPIBroadcast(0);
-                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -leftCorner + i * nextParticleDistance, -leftCorner + j * nextParticleDistance }, angle2, activeStress, new double[] { Math.Cos(angle2), Math.Sin(angle2) }));
+                while (leftCorner + i * nextParticleDistance < domainLength / 2) {
+                    //double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
+                    //angle2//.MPIBroadcast(0);
+                    double angle2 = 90 * (-i + j);
+                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance }, angle2, activeStress));
 
                     i += 1;
                 }
@@ -164,7 +166,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.LinearSolver.pMaxOfCoarseSolver = 1;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-4;
+            //C.NonLinearSolver.ConvergenceCriterion = 1e-4;
 
             return C;
         }

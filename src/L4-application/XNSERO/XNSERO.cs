@@ -152,7 +152,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Provides information about the evolution of the particle (rigid object) level set function to the level-set-updater.
         /// </summary>
         protected override RigidObjectLevelSetEvolver EvolveRigidLevelSet() {
-            Console.WriteLine("here");
             var ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
             for (int i = 0; i < ParticleLevelSet.Length; i++) {
                 ParticleLevelSet[i] = Particles[i].LevelSetFunction;
@@ -212,7 +211,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         protected override void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             using (new FuncTrace()) {
-                XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
+                XNSE_OperatorConfiguration config = new(Control);
+
                 for (int d = 0; d < D; ++d) {
                     opFactory.AddEquation(new Equations.NSEROimmersedBoundary("A", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh, Control.UsePhoreticField, this.Particles));
                     opFactory.AddEquation(new Equations.NSEROimmersedBoundary("B", "C", 1, d, D, boundaryMap, LsTrk, config, config.isMovingMesh, Control.UsePhoreticField, this.Particles));
@@ -221,10 +221,21 @@ namespace BoSSS.Application.XNSERO_Solver {
                 opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D));
                 opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D));
 
-                opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
-                opFactory.AddParameter((ParameterS)GetLevelSetActiveStress(1));
+                //Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.LevelSetCGidx(1));
+                //opFactory.AddParameter(normalsParameter);
 
-                if(Control.UsePhoreticField) {
+                string[] fluidSpecies = CreateSpeciesArray(ContainsSecondFluidSpecies);
+                RigidObjectLevelSetVelocity levelSetVelocity = new(VariableNames.LevelSetCGidx(1), Particles, FluidViscosity, fluidSpecies, Gravity, Control.dtFixed, MaxGridLength);
+                opFactory.AddParameter(levelSetVelocity);
+                //opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
+                //ActiveStress levelSetActiveStress = new(VariableNames.LevelSetCGidx(1), Particles, MaxGridLength);
+                //opFactory.AddParameter(levelSetActiveStress);
+                //lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCGidx(1), levelSetActiveStress);
+                Orientation OrientationVector = new(VariableNames.LevelSetCGidx(1), Particles, MaxGridLength);
+                opFactory.AddParameter(OrientationVector);
+                lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCGidx(1), OrientationVector);
+
+                if (Control.UsePhoreticField) {
                     opFactory.AddEquation(new Equations.ImmersedBoundaryPhoreticField(LsTrk));
                 }
             }
@@ -299,16 +310,16 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-        /// <summary>
-        /// Provides the active stress at the surface of active particles as a parameter field. 
-        /// Active stress is used to define a boundary condition for the velocity gradient.
-        /// </summary>
-        /// <param name="iLevSet"></param>
-        /// <returns></returns>
-        protected virtual ILevelSetParameter GetLevelSetActiveStress(int iLevSet) {
-            ILevelSetParameter levelSetVelocity = new ActiveStress(VariableNames.LevelSetCGidx(iLevSet), Particles, MaxGridLength);
-            return levelSetVelocity;
-        }
+        ///// <summary>
+        ///// Provides the active stress at the surface of active particles as a parameter field. 
+        ///// Active stress is used to define a boundary condition for the velocity gradient.
+        ///// </summary>
+        ///// <param name="iLevSet"></param>
+        ///// <returns></returns>
+        //protected virtual ILevelSetParameter GetLevelSetActiveStress(int iLevSet) {
+        //    ILevelSetParameter levelSetVelocity = new ActiveStress(VariableNames.LevelSetCGidx(iLevSet), Particles, MaxGridLength);
+        //    return levelSetVelocity;
+        //}
 
         RTree tree = new RTree(2, 0.05);
 
@@ -333,10 +344,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 tree.InitializeTree(Particles, dt);
             else
                 tree.UpdateTree(Particles, dt);
-            //tree.PrintTreeStructure();
-            Console.WriteLine("MPICheck");
             Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
-            Console.WriteLine("Solve");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             
             CalculateCollision(Particles, dt);
@@ -362,7 +370,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             CellMask globalCutCells = LsTrk.Regions.GetCutCellMask4LevSet(1);
             foreach (Particle p in Particles) {
                 p.Motion.SaveVelocityOfPreviousTimestep();
-                p.UpdateParticleCutCells(LsTrk, globalCutCells);
                 p.LsTrk = LsTrk;
                 if (p.Motion.UseAddedDamping) {
                     if (initAddedDamping) {

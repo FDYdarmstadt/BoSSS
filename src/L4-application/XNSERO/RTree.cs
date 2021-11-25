@@ -90,7 +90,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="Particles"></param>
         public void UpdateTree(Particle[] Particles, double Timestep) {
-            Console.WriteLine("UpdateTree");
             using (new FuncTrace()) {
                 for (int i = 0; i < Nodes.Count; i++) {
                     if (Nodes[i].ParticleID > -1)

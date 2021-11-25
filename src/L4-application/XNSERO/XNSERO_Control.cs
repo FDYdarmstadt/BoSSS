@@ -173,7 +173,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="cellsPerUnitLength"></param>
         /// <param name="periodicX"></param>
         /// <param name="periodicY"></param>
-        public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
+        public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false, bool periodicParticles = false) {
             SpatialDimension = 2;
             MaxGridLength = 1 / cellsPerUnitLength;
             BoundaryPositionPerDimension = new double[2][];
@@ -185,6 +185,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             BoundaryPositionPerDimension[1] = new double[] { -lengthY / 2, lengthY / 2 };
             BoundaryIsPeriodic[0] = periodicX;
             BoundaryIsPeriodic[1] = periodicY;
+            if (periodicParticles) {
+                BoundaryIsPeriodic[0] = periodicX;
+                BoundaryIsPeriodic[1] = periodicY;
+            }
             if(IsRestart)
                 return;
             if(m_BoundaryValues.IsNullOrEmpty() && !BoundaryIsPeriodic[0] && !BoundaryIsPeriodic[1])

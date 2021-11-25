@@ -21,6 +21,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid;
 using System.Collections;
 using System.Linq;
+using ilPSP.Tracing;
 
 namespace BoSSS.Application.XNSERO_Solver {
 
@@ -170,7 +171,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>   
         public double LevelSetFunction(double[] X, double GridLength) {
             double levelSet = ParticleLevelSetFunction(X, Motion.GetPosition());
-            for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count(); i++) {
+            for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
                 Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
                 if (Motion.IsInsideOfPeriodicDomain(virtualPosition, (GridLength * 2 + GetLengthScales().Max())))
                     levelSet = Math.Max(levelSet, ParticleLevelSetFunction(X, Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition()));
@@ -193,23 +194,16 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <returns></returns>
         public CellMask ParticleCutCells(LevelSetTracker LsTrk, CellMask AllCutCells) {
             BitArray CellArray = AllCutCells.GetBitMask();
-            BitArray ContainArray = new BitArray(CellArray.Length);
+            BitArray ContainArray = new(CellArray.Length);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
             double h = LsTrk.GridDat.Cells.h_maxGlobal;
             for (int i = 0; i < CellArray.Length; i++) {
-                if(CellArray[i])
-                    ContainArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h * 4);
+                if (CellArray[i]) {
+                    ContainArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h);
+                }
             }
-
-            CellMask CutCells = new CellMask(LsTrk.GridDat, ContainArray, MaskType.Logical);
-            //CutCells = CutCells.Intersect(AllCutCells);
+            CellMask CutCells = new(LsTrk.GridDat, ContainArray, MaskType.Logical);
             return CutCells;
-        }
-
-        public CellMask CutCells { get; private set; }
-
-        public void UpdateParticleCutCells(LevelSetTracker LsTrk, CellMask AllCutCells) {
-            CutCells = ParticleCutCells(LsTrk, AllCutCells);
         }
 
         /// <summary>
@@ -221,7 +215,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public bool Contains(Vector Point, double Tolerance = 0) {
             bool contains = ParticleContains(Point, Motion.GetPosition(), Tolerance);
             if (!contains) {
-                for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count(); i++) {
+                for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
                     Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
                     if (Motion.IsInsideOfPeriodicDomain(virtualPosition, Tolerance + GetLengthScales().Max()))
                         contains = ParticleContains(Point, virtualPosition, Tolerance);
@@ -292,17 +286,25 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Calculates the radial vector (SurfacePoint-ParticleReadOnlyPosition)
         /// </summary>
-        /// <param name="SurfacePoint">
+        /// <param name="Point">
         /// </param>
         /// <param name="RadialVector">
         /// </param>
         /// <param name="RadialLength">
         /// </param>
-        internal Vector CalculateRadialVector(Vector SurfacePoint) {
+        internal Vector CalculateRadialVector(Vector Point) {
             Aux = new Auxillary();
-            Vector RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
+            Vector RadialVector = new(Point[0] - Motion.GetPosition(0)[0], Point[1] - Motion.GetPosition(0)[1]);
+            if(RadialVector.L2Norm() > GetLengthScales().Max()) {//Point is in a different virtual domain (Periodic bndy only):
+                for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
+                    Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
+                    Vector tempRadialVector = new Vector(Point[0] - virtualPosition[0], Point[1] - virtualPosition[1]);
+                    if (tempRadialVector.L2Norm() < RadialVector.L2Norm())
+                        RadialVector = new Vector(tempRadialVector);
+                }
+            }
             if (RadialVector.L2Norm() == 0)
-                throw new ArithmeticException("The radial vector has no length. Surface point: " + SurfacePoint + " Position: " + Motion.GetPosition(0));
+                throw new ArithmeticException("The radial vector has no length. Surface point: " + Point + " Position: " + Motion.GetPosition(0));
             Aux.TestArithmeticException(RadialVector, "particle radial vector");
             return RadialVector;
         }

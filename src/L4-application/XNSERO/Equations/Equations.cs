@@ -37,7 +37,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 AddInterfaceNSE(D, d, boundaryMap, LsTrk, config, isMovingMesh, usePhoretic, AllParticles);
                 AddVariableNames(Solution.NSECommon.VariableNames.VelocityVector(D).Cat(Solution.NSECommon.VariableNames.Pressure));
                 AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray());
-                AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), Solution.NSECommon.VariableNames.SurfaceForceVector(D)).ToArray());
+                AddParameter(Solution.NSECommon.VariableNames.AsLevelSetVariable(Solution.NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), Solution.NSECommon.VariableNames.OrientationVector(D)).ToArray());
             }
 
 
