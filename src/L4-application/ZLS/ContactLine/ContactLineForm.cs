@@ -19,7 +19,7 @@ namespace ZwoLevelSetSolver.ContactLine {
 
         public IList<string> ArgumentOrdering {
             get {
-                return NSEVariableNames.VelocityVector(D);
+                return NSEVariableNames.VelocityVector(D).Cat(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
             }
         }
 

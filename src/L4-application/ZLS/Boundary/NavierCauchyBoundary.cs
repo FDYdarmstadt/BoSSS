@@ -25,11 +25,12 @@ namespace ZwoLevelSetSolver.Boundary {
 
             //Stress equality
             AddComponent(new SolidLinearIncompressibleNeoHookeanBoundaryForm(fluidSpecies, solidSpecies, d, 1, viscosity,material.Viscosity, material.Lame2));
+            //AddComponent(new SlipSolidLinearIncompressibleNeoHookeanBoundaryForm(fluidSpecies, solidSpecies, d, 1, viscosity,material.Viscosity, material.Lame2));
 
             
             //Penalty coupling
             AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2));
-            //AddComponent(new DisplacementPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, 0.001));
+            //AddComponent(new NavierSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2, 0.1));
 
             AddComponent(new InnerNonLinearSolidConvectionForm(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), material.Density, d, 1, fluidSpecies, solidSpecies));
@@ -66,7 +67,7 @@ namespace ZwoLevelSetSolver.Boundary {
 
             //Penalty coupling
             AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2));
-            AddComponent(new DisplacementPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, 0.001));
+            AddComponent(new DisplacementPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, material.Lame2));
 
             AddComponent(new InnerNonLinearSolidConvectionForm(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), material.Density, d, 1, fluidSpecies, solidSpecies));

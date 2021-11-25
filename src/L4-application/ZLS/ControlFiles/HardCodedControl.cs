@@ -448,7 +448,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.theta_e = Math.PI / 2.0;
 
             C.PhysicalParameters.IncludeConvection = true;
-            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.Material = false;
 
             #endregion
 
@@ -587,7 +587,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
             double dt = 1e-3;
@@ -859,10 +859,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
         }
 
-        public static ZLS_Control Test_VerticalBeamInChannel(int p = 2, int kelem = 4, int AMRlvl = 0) {
+        public static ZLS_Control Test_VerticalBeamInChannel(int p = 2, int kelem = 5, int AMRlvl = 0) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 2;
+            C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
 
@@ -893,13 +893,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ===================
             #region physics
 
-            C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.rho_B = 1;
+            C.PhysicalParameters.rho_A = 0.1;
+            C.PhysicalParameters.rho_B = 0.1;
             C.PhysicalParameters.mu_A = 0.05;
             C.PhysicalParameters.mu_B = 0.05;
             
             C.PhysicalParameters.IncludeConvection = true;
-            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.Material = false;
 
             C.Material = new Beam();
 
@@ -1036,13 +1036,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             //C.CheckJumpConditions = true;
 
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 1e-2;
+            double dt = 2e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100;
@@ -1466,19 +1466,19 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ===================
             #region physics
 
+
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.rho_B = 1;
-            C.PhysicalParameters.mu_A = 0.05;
-            C.PhysicalParameters.mu_B = 0.05;
+            C.PhysicalParameters.mu_A = 0.5;
+            C.PhysicalParameters.mu_B = 0.5;
 
             C.PhysicalParameters.IncludeConvection = true;
-            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.Material = false;
 
-            C.Material = new Solid() {
-                Density = 3.8,
-                Lame2 = 1,
-                Viscosity = 1
-            };
+            C.Material = new AllOne();
+            C.Material.Viscosity = 0.5;
+            C.Material.Density = 2;
+            C.Material.Lame2 = 1;
 
             #endregion
 
@@ -1532,13 +1532,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double a = 0.1;
             double b = 1.01;
 
-            Func<double[], double> PhiFunc = (X => -1);
-            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            
 
             Func<double[], double> Phi1Func = delegate (double[] X) {
                 return -((X[0]).Pow2() + (X[1] - 1).Pow2()) + 0.3.Pow2();
                 //return -((X[0]).Pow2() + (X[1] - 1).Pow2()).Sqrt() + 0.3;
             };
+            Func<double[], double> PhiFunc = (X => -1);
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
 
@@ -1601,7 +1602,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
             double dt = 1e-2;

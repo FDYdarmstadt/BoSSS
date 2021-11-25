@@ -186,10 +186,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
                     case IncompressibleBcType.Wall:
                     case IncompressibleBcType.Velocity_Inlet:
                         for(int i = 0; i < D; i++) {
-                            //acc1 -= viscosity * _Grad_uIN[d, i] * _vIN * inp.Normal[i];  // consistency term  
-                            //acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
+                            acc1 -= viscosity * _Grad_uIN[d, i] * _vIN * inp.Normal[i];  // consistency term  
+                            acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
                         }
-                        //acc1 += PenaltySafety * pnlty* (_uIN[d] - dirichlet[d]) * _vIN * viscosity;
+                        acc1 += PenaltySafety * pnlty* (_uIN[d] - dirichlet[d]) * _vIN * viscosity;
                     break;
                     case IncompressibleBcType.FreeSlip:
                         for(int i = 0; i < D; i++) {

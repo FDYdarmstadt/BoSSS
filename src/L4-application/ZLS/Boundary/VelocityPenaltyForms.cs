@@ -93,7 +93,7 @@ namespace ZwoLevelSetSolver.Boundary {
 
             double penalty = Math.Max(PenaltyIn(inp.jCellIn), PenaltyOut(inp.jCellOut));
             double flux =  (_uIN[d] - _uOUT[d]) * penalty * ( _vIN - _vOUT) ;
-            flux *= Math.Min(viscosity, lame2);
+            flux *= Math.Max(viscosity, lame2);
             //double flux = (viscosity * (_uIN[d] - _uOUT[d]) * _vIN - lame2 * (_uIN[d] - _uOUT[d]) * _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
             //double flux =  (_uIN[d] - _uOUT[d]) * (_vIN ) * Penalty(inp.jCellIn, inp.jCellOut);
             return flux;
@@ -106,7 +106,7 @@ namespace ZwoLevelSetSolver.Boundary {
         }
     }
 
-    class SlipVelocityPenaltyForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    class SlipVelocityPenaltyForm : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
         int levelSetIndex;
         string solidSpecies;
         string fluidSpecies;
@@ -184,9 +184,14 @@ namespace ZwoLevelSetSolver.Boundary {
             //double flux =  (_uIN[d] - _uOUT[d]) * (_vIN ) * Penalty(inp.jCellIn, inp.jCellOut);
             return flux;
         }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
     }
 
-    class NavierSlipVelocityPenaltyForm : ILevelSetForm, ILevelSetEquationComponentCoefficient {
+    class NavierSlipVelocityPenaltyForm : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
         int levelSetIndex;
         string solidSpecies;
         string fluidSpecies;
@@ -272,6 +277,11 @@ namespace ZwoLevelSetSolver.Boundary {
             //double flux = (viscosity * (_uIN[d] - _uOUT[d]) * _vIN - lame2 * (_uIN[d] - _uOUT[d]) * _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
             //double flux =  (_uIN[d] - _uOUT[d]) * (_vIN ) * Penalty(inp.jCellIn, inp.jCellOut);
             return flux;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
         }
     }
 }

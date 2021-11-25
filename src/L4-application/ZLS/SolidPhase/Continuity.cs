@@ -11,11 +11,11 @@ namespace ZwoLevelSetSolver.SolidPhase {
     class Continuity : BulkEquation {
 
         internal static bool ContinuityInDisplacement = true;
-        internal static bool ContinuityStabilization = false;
+        internal static bool ContinuityStabilization = true;
 
         string spcName;
 
-        public Continuity(string spcName, int D) {
+        public Continuity(string spcName, int D, Solid Material) {
             this.spcName = spcName;
             for(int i = 0; i < D; ++i) {
 
@@ -36,7 +36,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             if(ContinuityStabilization) {
                 string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
                 AddVariableNames(pressure);
-                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -1); // Must scale with viscosity, see Die Pietro
+                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, - Material.Lame2 - Material.Viscosity); // Must scale with viscosity, see Die Pietro
                 AddComponent(pressurePenalty);
             }
         }

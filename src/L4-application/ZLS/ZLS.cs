@@ -91,7 +91,7 @@ namespace ZwoLevelSetSolver {
 
             for(int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D, boundaryMap));
-                opFactory.AddEquation(new DisplacementEvolution("C", d, D, 0.0, boundaryMap));
+                opFactory.AddEquation(new DisplacementEvolution("C", d, D, Control.ArtificialViscosity, boundaryMap));
                 if (this.Control.DisplacementExtension){
                     opFactory.AddEquation(new DisplacementEvolution("B", d, D, Control.ArtificialViscosity, boundaryMap));
                     opFactory.AddEquation(new DisplacementEvolution("A", d, D, Control.ArtificialViscosity, boundaryMap));
@@ -102,8 +102,11 @@ namespace ZwoLevelSetSolver {
 
                 opFactory.AddParameter(Gravity.CreateFrom("C", d, D, Control, Control.Material.Density, Control.GetGravity("C", d)));
             }
-            var continuityEquation = new SolidPhase.Continuity("C", D);
+            var continuityEquation = new SolidPhase.Continuity("C", D, Control.Material);
             opFactory.AddEquation( continuityEquation);
+
+            opFactory.AddEquation(new PressurePenalty("A", -Control.PhysicalParameters.mu_A));
+            opFactory.AddEquation(new PressurePenalty("B", -Control.PhysicalParameters.mu_B));
         }
 
         protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
@@ -124,13 +127,15 @@ namespace ZwoLevelSetSolver {
                 } else {
                     opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
                     opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, 0.0));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, 0.0));
+                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity));
+                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity));
                 }
             }
 
             //opFactory.AddEquation(new FluidSolidDisplacementContinuity("A", "C", D));
             //opFactory.AddEquation(new FluidSolidDisplacementContinuity("B", "C", D));
+            //opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
+            //opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
 
             if(config.dntParams.SST_isotropicMode == BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 for(int d = 0; d < D; ++d) {

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ZwoLevelSetSolver.ContactLine;
+using ZwoLevelSetSolver.SolidPhase;
 
 namespace ZwoLevelSetSolver.Boundary {
     class FluidSolidContinuity : SurfaceEquation {
@@ -25,6 +26,9 @@ namespace ZwoLevelSetSolver.Boundary {
                 AddVariableNames(velocity);
                 AddComponent(new BoundaryDivergenceVelocityForm( i, 1, fluidSpecies, solidSpecies));
             }
+            //if(Continuity.ContinuityStabilization) {
+            //    AddSurfaceComponent(new SurfacePenaltyForm(BoSSS.Solution.NSECommon.VariableNames.Pressure, -1));
+            //}
         }
 
         public override string FirstSpeciesName => fluidSpecies;
