@@ -59,21 +59,27 @@ namespace ZwoLevelSetSolver.Boundary {
 
             //Tension, consistency
             double fluidStress = 0.0;
+            double fluidStressSymmetry = 0.0;
             for(int i = 0; i < D; i++) {
                 fluidStress -= 1 * fluidViscosity * (_Grad_uIN[d, i]) * inp.Normal[i];
+                fluidStressSymmetry -= fluidViscosity * _Grad_vIN[i] * inp.Normal[i];
             }
 
             double solidStress = 0.0;
             double viscousStress = 0.0;
+            double viscousStressSymmetry = 0.0;
+
             for(int i = 0; i < D; i++) {
                 solidStress -= 1 * lame2 * (_Grad_uOUT[D + d, i]) * inp.Normal[i];
                 solidStress -= 1 * lame2 * (_Grad_uOUT[D + i, d]) * inp.Normal[i];
                 viscousStress -= 1 * solidViscosity * (_Grad_uOUT[d, i]) * inp.Normal[i];
+                viscousStressSymmetry -= 1 * solidViscosity * (_Grad_vOUT[i]) * inp.Normal[i];
             }
             //We require: fluidStress + pIn = solidStress + viscousStress + pOut
             //Impose equality by weakly imposing via boundary conditions: solidStress = fluidStress + pIn - viscousStress - pOut
 
-            return (pressure + 0.5 * (viscousStress + fluidStress) + solidStress) * (_vIN - _vOUT);
+            return (pressure + 0.5 * (viscousStress + fluidStress + solidStress)) * (_vIN - _vOUT)
+                + 0.5 * (viscousStressSymmetry + fluidStressSymmetry) * (_uIN[d] - _uOUT[d]); ;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
@@ -179,12 +185,13 @@ namespace ZwoLevelSetSolver.Boundary {
                 viscousStress -= 1 * solidViscosity * (_Grad_uOUT[d, i]) * inp.Normal[i];
                 viscousStressSymmetry -= 1 * solidViscosity * (_Grad_vOUT[i]) * inp.Normal[i];
             }
-            //We require: fluidStress + pIn = solidStress + viscousStress + pOut
-            //Impose equality by weakly imposing via boundary conditions: solidStress = fluidStress + pIn - viscousStress - pOut
+            //We require: fluidStress - pIn = solidStress + viscousStress - pOut
+            //Impose equality by weakly imposing: solidStress = fluidStress - pIn - viscousStress + pOut
 
-            return (pressure + 0.5 * ( viscousStress + fluidStress) + solidStress) * ( _vIN)
-                +  (pressure + 0.5 * (fluidStress + viscousStress) + fluidStress + pIn - viscousStress - pOut) * ( - _vOUT)
-                + (viscousStressSymmetry + fluidStressSymmetry) * (_uIN[d] - _uOUT[d]);
+            //return 0.5 * (pIn + pOut +  fluidStress + viscousStress + solidStress) * (_vIN - _vOUT)
+            //    + 1.0 * (-fluidStress - pIn + viscousStress + solidStress + pOut) * (_vIN + _vOUT);
+            return (0.5 * (pIn + pOut +  fluidStress + viscousStress) + solidStress) * (_vIN - _vOUT)
+                + 0.5 * (-fluidStress + viscousStress + solidStress ) * ( _vOUT);
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

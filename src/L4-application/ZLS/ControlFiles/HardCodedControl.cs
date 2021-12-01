@@ -870,7 +870,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
-            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            string DbPath = @"C:\Databases\ZLS_GummiLippe";
             //_DbPath = @"D:\local\local_Testcase_databases\Testcase_ContactLine";
             //_DbPath = @"D:\local\local_spatialConvStudy\StaticDropletOnPlateConvergence\SDoPConvDB";
 
@@ -878,7 +878,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ======================
             #region db
 
-            C.savetodb = false;
+            C.savetodb = true;
+            C.DbPath = DbPath;
             C.ProjectName = "ZLSTestVerticalBeam";
             //C.ProjectDescription = "Vertical Beam in channel";
 
