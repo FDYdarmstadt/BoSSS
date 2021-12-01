@@ -63,7 +63,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Density = 1;
             Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
-            Viscosity = 0.2;
+            Viscosity = 0.1;
         }
     }
 

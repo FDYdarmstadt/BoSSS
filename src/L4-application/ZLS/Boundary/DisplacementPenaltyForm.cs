@@ -76,7 +76,7 @@ namespace ZwoLevelSetSolver.Boundary {
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-            double flux = lame2 * Penalty(inp.jCellIn, inp.jCellOut) * (_uIN[d] - _uOUT[d]) * ( _vIN -_vOUT);
+            double flux = lame2 * Penalty(inp.jCellIn, inp.jCellOut) * (_uIN[d] - _uOUT[d]) * ( _vIN-_vOUT);
             return flux;
         }
 

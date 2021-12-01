@@ -135,12 +135,16 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Vector VelocityOt = new Vector(_uOT, 0, D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
 
+            double penalty = rho * Math.Abs(VelocityAvg * inp.Normal) * (_uIN[D] - _uOT[D]) * (_vIN - _vOUT);
+            return rho * _uIN[D] * (VelocityAvg * inp.Normal) * (_vIN - _vOUT) + penalty;
             // Upwinding:
+            /*
             if(VelocityAvg*inp.Normal >= 0) {
-                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN - _vOUT);
+                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN - _vOUT) + penalty;
             } else {
-                return rho * _uOT[D] * (VelocityOt * inp.Normal) * (_vIN - _vOUT);
+                return rho * _uOT[D] * (VelocityOt * inp.Normal) * (_vIN - _vOUT) + penalty;
             }
+            */
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {

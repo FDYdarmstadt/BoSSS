@@ -93,7 +93,7 @@ namespace ZwoLevelSetSolver.Boundary {
 
             double penalty = Math.Max(PenaltyIn(inp.jCellIn), PenaltyOut(inp.jCellOut));
             double flux =  (_uIN[d] - _uOUT[d]) * penalty * ( _vIN - _vOUT) ;
-            flux *= Math.Max(viscosity, lame2);
+            flux *= viscosity;
             //double flux = (viscosity * (_uIN[d] - _uOUT[d]) * _vIN - lame2 * (_uIN[d] - _uOUT[d]) * _vOUT) * Penalty(inp.jCellIn, inp.jCellOut);
             //double flux =  (_uIN[d] - _uOUT[d]) * (_vIN ) * Penalty(inp.jCellIn, inp.jCellOut);
             return flux;

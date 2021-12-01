@@ -65,14 +65,18 @@ namespace ZwoLevelSetSolver.Boundary {
         public double InnerEdgeForm(ref CommonParams inp, double[] uIn, double[] uOut, double[,] Grad_uIN, double[,] Grad_uOut, double vIn, double vOut, double[] Grad_vIN, double[] Grad_vOUT) {
             double r = 0.0;
 
-            // 2 * {u_i * u_j} * n_j,
-            // resp. 2 * {rho * u_i * u_j} * n_j for variable density
             r += uIn[0] * ((uOut[1 + 0] + uIn[1 + 0]) * inp.Normal[0] + (uOut[1 + 1] + uIn[1 + 1]) * inp.Normal[1]);
             if(m_D == 3) {
                 r += uIn[0] * (uOut[1 + 2] + uIn[1 + 2]) * inp.Normal[2];
             }
 
+            Vector VelocityIn = new Vector(uIn, 1, m_D);
+            Vector VelocityOt = new Vector(uOut, 1, m_D);
+            Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
+
+            r += (VelocityAvg * inp.Normal) * (uIn[0] - uOut[0]);
             r *= 0.5 * m_rho;
+            
             return r * (vIn);
         }
 

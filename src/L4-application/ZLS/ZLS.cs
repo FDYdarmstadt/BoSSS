@@ -134,12 +134,12 @@ namespace ZwoLevelSetSolver {
 
             //opFactory.AddEquation(new FluidSolidDisplacementContinuity("A", "C", D));
             //opFactory.AddEquation(new FluidSolidDisplacementContinuity("B", "C", D));
-            //opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
-            //opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
+            opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
+            opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
 
             if(config.dntParams.SST_isotropicMode == BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 for(int d = 0; d < D; ++d) {
-                    opFactory.AddEquation(new SlipContactLine(d, D, config.physParams.betaL, config.physParams.theta_e));
+                    //opFactory.AddEquation(new EquilibriumContactLine(d, D, config.physParams.betaL, config.physParams.theta_e));
                 }
                 //ContactLine
                 //=====================

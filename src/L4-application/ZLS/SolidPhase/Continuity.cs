@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver.SolidPhase {
     class Continuity : BulkEquation {
 
-        internal static bool ContinuityInDisplacement = true;
+        internal static bool ContinuityInDisplacement = false;
         internal static bool ContinuityStabilization = true;
 
         string spcName;
@@ -36,7 +36,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             if(ContinuityStabilization) {
                 string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
                 AddVariableNames(pressure);
-                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, - Material.Lame2 - Material.Viscosity); // Must scale with viscosity, see Die Pietro
+                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, - 0.1 * Material.Viscosity); // Must scale with viscosity, see Die Pietro
                 AddComponent(pressurePenalty);
             }
         }

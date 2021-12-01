@@ -958,9 +958,21 @@ namespace ZwoLevelSetSolver.ControlFiles {
             Func<double[], double> PhiFunc = (X => -1);
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
+            /*
             Func<double[], double> Phi1Func = delegate (double[] X) {
                 return - Math.Pow((Math.Pow(Math.Abs(X[0] / a), power) + Math.Pow(Math.Abs(X[1] / b), power)), 1.0 / 1.0) + 1;
                 //return -((X[0]).Pow2() + (X[1] - 0.5).Pow2()).Sqrt() + 0.3;
+            };
+            */
+            Func<double[], double> Phi1Func = delegate (double[] X) {
+                if(X[0] < 0 && X[1] < 0.9) {
+                    //y = 0.11
+                    return -(X[0]).Pow2() + 0.11 * 0.11;
+                }
+                if(X[0] > 0 && X[1] < 0.9) {
+                    return -(X[0]).Pow2() + 0.11 * 0.11;
+                }
+                return -((X[0]).Pow2() + (X[1] - 0.9).Pow2()) + 0.11 * 0.11;
             };
 
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
@@ -1036,13 +1048,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             //C.CheckJumpConditions = true;
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 2e-2;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 100;
