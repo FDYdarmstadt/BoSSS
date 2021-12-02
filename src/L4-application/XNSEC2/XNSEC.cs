@@ -82,7 +82,6 @@ namespace BoSSS.Application.XNSEC {
             //-n 4./ XNSEC.exe - c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.NaturalConvectionSquareCavityTest()"
 
             //System.Threading.Thread.Sleep(10000);
-
             bool MixtureFractionCalculation = false;
 
             try {

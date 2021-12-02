@@ -720,8 +720,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(FreeMeanValue[iFld]) {
                         //double mean = flds[iFld].GetMeanValueTotal(null);
 
-                        if(RefCellLocal >= 0)
+                        if(RefCellLocal >= 0) {
                             MeanValues[iFld] = flds[iFld].GetMeanValue(RefCellLocal);
+
+                        }
 
                         //flds[iFld].AccConstant(-mean);
                     }
