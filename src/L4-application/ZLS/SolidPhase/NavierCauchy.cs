@@ -51,6 +51,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             {
                 var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
                 AddComponent(viscosity);
+                var viscosityT = new SIPTransposeForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
+                AddComponent(viscosityT);
             }
             
             string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];

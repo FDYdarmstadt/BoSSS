@@ -196,8 +196,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region physics
 
             C.PhysicalParameters.IncludeConvection = true;
-            C.PhysicalParameters.Material = true;
-
+            C.PhysicalParameters.Material = false;
+            C.PhysicalParameters.mu_A = 1;
+            C.PhysicalParameters.mu_B = 1;
             C.Material = new ConvergenceTest();
 
             #endregion
@@ -249,6 +250,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AddInitialValue("Phi", new Formula("X => -1"));
             C.AddInitialValue(VariableNames.SolidLevelSetCG, new Formula("X => 1"));
+            C.AddInitialValue("GravityX#A", Vx);
+            C.AddInitialValue("GravityY#A", Vy);
+            C.AddInitialValue("GravityX#B", Vx);
+            C.AddInitialValue("GravityY#B", Vy);
             C.AddInitialValue("GravityX#C", Vx);
             C.AddInitialValue("GravityY#C", Vy);
 

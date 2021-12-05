@@ -422,7 +422,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        int m_IterationCounter = 0;
+        internal int m_IterationCounter = 0;
 
         bool initialized = false;
 

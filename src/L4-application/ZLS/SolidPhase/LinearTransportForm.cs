@@ -33,7 +33,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             this.D = D;
             this.d = d;
             this.rho = rho;
-            this.parameternames = ZwoLevelSetSolver.VariableNames.Displacement0Vector(D);
+            this.parameternames = BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D);
         }
 
         public TermActivationFlags VolTerms {
@@ -73,15 +73,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Vector VelocityOt = new Vector(inp.Parameters_OUT, 0, D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
 
-            // Upwinding:
-            if (VelocityAvg * inp.Normal >= 0)
-            {
-                return rho * _uIN[d] * (VelocityIn * inp.Normal) * (_vIN - _vOUT);
-            }
-            else
-            {
-                return rho * _uOUT[d] * (VelocityOt * inp.Normal) * (_vIN - _vOUT);
-            }
+            return rho * ( 0.5 *  (_uIN[d]+ _uOUT[d]) * (VelocityAvg * inp.Normal) + (_uIN[d] - _uOUT[d]) * Math.Abs(VelocityAvg * inp.Normal)) * (_vIN - _vOUT);
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {

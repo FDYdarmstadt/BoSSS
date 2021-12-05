@@ -30,13 +30,15 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string speciesName;
 
-        double rho;
+        protected double rho;
 
         string[] variableNames;
 
         string[] parameternames;
 
-        int D;
+        protected int D;
+
+        double penaltyScale = 1;
 
         IncompressibleMultiphaseBoundaryCondMap boundaryMap;
 
@@ -62,13 +64,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             this.parameternames = new string[] { };
         }
 
-        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, int d, double rho, IncompressibleMultiphaseBoundaryCondMap boundaryMap) {
-            this.speciesName = speciesName;
-            this.variableNames = velocity.Cat(variableName);
-            this.D = velocity.Length;
-            //this.d = d;
-            this.rho = rho;
-            this.parameternames = new string[] { };
+        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, int d, double rho, IncompressibleMultiphaseBoundaryCondMap boundaryMap) 
+            : this(speciesName, variableName, velocity, d, rho) {
             this.boundaryMap = boundaryMap;
         }
 
@@ -90,7 +87,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public string ValidSpecies => speciesName;
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uA, double _vIN, double[] _Grad_vA) {
+        public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uA, double _vIN, double[] _Grad_vA) {
             //return 0.0; // solid wall
 
             Vector VelocityIn = new Vector(_uIN, 0, D);
@@ -104,7 +101,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 switch(edgType) {
                     case IncompressibleBcType.FreeSlip:
                     case IncompressibleBcType.Wall:
-                        return 0.0;
                     case IncompressibleBcType.Velocity_Inlet:
                         return rho * uDirichlet * (vDirichlet * inp.Normal) * (_vIN);
                     case IncompressibleBcType.Outflow:
@@ -134,17 +130,19 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Vector VelocityIn = new Vector(_uIN, 0, D);
             Vector VelocityOt = new Vector(_uOT, 0, D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
-
+            //*
             double penalty = rho * Math.Abs(VelocityAvg * inp.Normal) * (_uIN[D] - _uOT[D]) * (_vIN - _vOUT);
-            return rho * _uIN[D] * (VelocityAvg * inp.Normal) * (_vIN - _vOUT) + penalty;
+            penalty *= penaltyScale;
+            return rho * 0.5 * (_uIN[D] + _uOT[D]) * (VelocityAvg * inp.Normal) * (_vIN - _vOUT) + penalty;
+            //*/
             // Upwinding:
             /*
             if(VelocityAvg*inp.Normal >= 0) {
-                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN - _vOUT) + penalty;
+                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN - _vOUT);
             } else {
-                return rho * _uOT[D] * (VelocityOt * inp.Normal) * (_vIN - _vOUT) + penalty;
+                return rho * _uOT[D] * (VelocityOt * inp.Normal) * (_vIN - _vOUT);
             }
-            */
+            //*/
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -154,6 +152,36 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 acc += U[dim] * U[D] * GradV[dim];
             acc *= rho;
             return -acc;
+        }
+    }
+
+
+    class SolidNonLinearConvectionForm : NonLinearConvectionForm {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="speciesName"></param>
+        /// <param name="variableName">
+        /// variable name of transport property
+        /// </param>
+        /// <param name="velocity">
+        /// variable names for velocity component.
+        /// </param>
+        /// <param name="d"></param>
+        /// <param name="rho"></param>
+        public SolidNonLinearConvectionForm(string speciesName, string variableName, string[] velocity, int d, double rho)
+            : base(speciesName, variableName, velocity, d, rho) {
+        }
+
+        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uA, double _vIN, double[] _Grad_vA) {
+            //return 0.0; // solid wall
+            Vector VelocityIn = new Vector(_uIN, 0, D);
+            if(VelocityIn * inp.Normal >= 0) {
+                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow
+            } else {
+                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN);
+            }
         }
     }
 }

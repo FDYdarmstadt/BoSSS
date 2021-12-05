@@ -3,6 +3,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
 using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,121 +13,26 @@ using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
 
-    /// <summary>
-    /// Symmetric interior penalty with only penalties
-    /// </summary>
-    class Penalty_ipFlux : BoSSS.Solution.NSECommon.SIPLaplace, ISpeciesFilter {
+    public class NeumannSIPForm :SIPForm {
 
-       public Penalty_ipFlux(double penalty_const, string varName, double visc)
-            : base(penalty_const, varName) //
-        {
-            m_visc = visc;
-            base.m_alpha = 0.0;
+        public NeumannSIPForm(string species, string[] variables, int d, double viscosity, double __PenaltySafety = 4.0) : base(species, variables, d, viscosity, __PenaltySafety) {
         }
 
-     
-        public string ValidSpecies => "C";
-
-        protected override double g_Diri(ref CommonParamsBnd inp) {
-            return 0;
+       
+        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
+            double acc1 = 0.0;
+            return acc1;
         }
-
-        protected override double g_Neum(ref CommonParamsBnd inp) {
-            return 0;
-        }
-
-        double m_visc;
-
-        public override double Nu(double[] x, double[] p, int jCell) {
-            return -m_visc;
-        }
-
-        protected override bool IsDirichlet(ref CommonParamsBnd inp) {
-            return true;
-        }
-
-        /*
-        override public double InnerEdgeForm(ref BoSSS.Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
-            double Acc = 0.0;
-
-            double pnlty = this.GetPenalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
-            double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
-            double nuB = this.Nu(inp.X, inp.Parameters_OUT, inp.jCellOut);
-
-
-            for(int d = 0; d < inp.D; d++) {
-                Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
-                Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
-            }
-            Acc *= this.m_alpha;
-
-            double nuMax = (Math.Abs(nuA) > Math.Abs(nuB)) ? nuA : nuB;
-
-
-            Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * nuMax; // penalty term
-
-
-            //for(int d = 0; d < inp.D; d++) {
-            //    Acc -= 1.0 * (nuA * _Grad_uA[0, d] - nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
-            //    //Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
-            //}
-
-
-
-            return Acc;
-
-        }
-
-        /// <summary>
-        /// Integrand on boundary mesh edges of the SIP
-        /// </summary>
-        override public double BoundaryEdgeForm(ref BoSSS.Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-            double Acc = 0.0;
-
-            double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
-            double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
-
-            if(this.IsDirichlet(ref inp)) {
-                // inhom. Dirichlet b.c.
-                // +++++++++++++++++++++
-
-                double g_D = this.g_Diri(ref inp);
-
-                for(int d = 0; d < inp.D; d++) {
-                    double nd = inp.Normal[d];
-                    Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
-                    Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
-                }
-                Acc *= this.m_alpha;
-
-                Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
-
-            } else {
-
-                double g_N = this.g_Neum(ref inp);
-
-                Acc += nuA * g_N * _vA * this.m_alpha;
-            }
-            return Acc;
-        }
-
-        public override TermActivationFlags BoundaryEdgeTerms => TermActivationFlags.AllOn;
-
-        public override TermActivationFlags InnerEdgeTerms => TermActivationFlags.AllOn;
-        */
     }
-
-
-
 
 
     /// <summary>
     /// Viscosity/energy dissipation in the solid phase
     /// </summary>
     public class SIPForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
-        double viscosity;
+        protected double viscosity;
         string species;
-        int d;
+        protected int d;
         string[] variableNames;
         IncompressibleMultiphaseBoundaryCondMap boundaryMap;
         public double PenaltySafety;
@@ -172,65 +78,25 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public string ValidSpecies => species;
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
-            
-            if(boundaryMap != null) {
-                IncompressibleBcType edgType = boundaryMap.EdgeTag2Type[inp.EdgeTag];
-                double acc1 = 0.0;
-                double pnlty = PenaltyIn(inp.jCellIn);
-                Vector dirichlet = new Vector(D);
-                for(int i = 0; i < D; ++i) {
-                    dirichlet[i] = boundaryMap.bndFunction[variableNames[i]][inp.EdgeTag](inp.X, inp.time);
-                }
-                switch(edgType) {
-                    case IncompressibleBcType.Wall:
-                    case IncompressibleBcType.Velocity_Inlet:
-                        for(int i = 0; i < D; i++) {
-                            acc1 -= viscosity * _Grad_uIN[d, i] * _vIN * inp.Normal[i];  // consistency term  
-                            acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
-                        }
-                        acc1 += PenaltySafety * pnlty* (_uIN[d] - dirichlet[d]) * _vIN * viscosity;
-                    break;
-                    case IncompressibleBcType.FreeSlip:
-                        for(int i = 0; i < D; i++) {
-                            for(int j = 0; j < D; ++j) {
-                            acc1 -= viscosity * inp.Normal[i]* _Grad_uIN[i, j] * inp.Normal[j] * _vIN * inp.Normal[d];  // consistency term  
-                            acc1 -= viscosity * inp.Normal[d] * _Grad_vIN[j] * inp.Normal[j] * (_uIN[i] - dirichlet[i]) * inp.Normal[i];  // symmetry term
-                            }
-                        acc1 += PenaltySafety * pnlty * (_uIN[i] - dirichlet[i]) * inp.Normal[i] * _vIN * inp.Normal[d];
-                        }
-                    break;
-                    case IncompressibleBcType.Outflow:
-                    case IncompressibleBcType.Pressure_Outlet:
-                        for(int i = 0; i < D; i++) {
-                            //acc1 -= viscosity * _Grad_uIN[d, i] * _vIN * inp.Normal[i];  // consistency term  
-                        }
-                        break;
-                    default:
-                    throw new NotImplementedException();
-                }
-                return acc1;
-                
-            } else {
-                double acc1 = 0.0;
-                double pnlty = PenaltyIn(inp.jCellIn);
+        public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
+            double acc1 = 0.0;
+            double pnlty = PenaltyIn(inp.jCellIn);
 
-                Vector dirichlet = new Vector(D);
+            Vector dirichlet = new Vector(D);
 
-                for(int i = 0; i < D; i++) {
-                    acc1 -= viscosity * _Grad_uIN[d, i] * _vIN * inp.Normal[i];  // consistency term  
-                    acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
-                }
-                acc1 += PenaltySafety * (_uIN[d] - dirichlet[d]) * _vIN * pnlty * viscosity;
-                return acc1;
+            for(int i = 0; i < D; i++) {
+                acc1 -= viscosity * _Grad_uIN[d, i] * _vIN * inp.Normal[i];  // consistency term  
+                acc1 -= viscosity * _Grad_vIN[i] * (_uIN[d] - dirichlet[d]) * inp.Normal[i];  // symmetry term
             }
+            acc1 += PenaltySafety * (_uIN[d] - dirichlet[d]) * _vIN * pnlty * viscosity;
+            return acc1;
         }
 
         MultidimensionalArray cj;
 
         double penalty;
 
-        int D;
+        protected int D;
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             double _p = DomainDGdeg.Max();
@@ -243,7 +109,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             //this.cj = ((BoSSS.Foundation.Grid.Classic.GridData)(cs.GrdDat)).Cells.CellLengthScale;
         }
 
-        double PenaltyIn(int jCellIn) {
+        protected double PenaltyIn(int jCellIn) {
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];
             
             Debug.Assert(!double.IsNaN(penaltySizeFactor_A));

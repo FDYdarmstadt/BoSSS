@@ -9,10 +9,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
+
     public class SIPTransposeForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
-        double viscosity;
+        protected double viscosity;
         string species;
-        int d;
+        protected int d;
         string[] variableNames;
         public double PenaltySafety;
         public SIPTransposeForm(string species, string[] variables, int d, double viscosity, double __PenaltySafety = 4.0) {
@@ -41,15 +42,15 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public string ValidSpecies => species;
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
+        public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
             double acc1 = 0.0;
+            Vector dirichlet = new Vector(D);
             for (int i = 0; i < D; i++) {
                 acc1 -=  viscosity * (_Grad_uIN[i, d] ) * (_vIN ) * inp.Normal[i];  // consistency term  
-                acc1 -=  viscosity * (_Grad_vIN[i] ) * (_uIN[i] - 0) * inp.Normal[d];  // symmetry term
+                acc1 -=  viscosity * (_Grad_vIN[i] ) * (_uIN[i] - dirichlet[i]) * inp.Normal[d];  // symmetry term
             }
-
             double pnlty = PenaltyIn(inp.jCellIn);
-            acc1 += PenaltySafety * (_uIN[d] - 0) * (_vIN) * pnlty * viscosity;
+            acc1 += PenaltySafety * (_uIN[d] - dirichlet[d]) * (_vIN) * pnlty * viscosity;
             return acc1;
         }
 
@@ -57,7 +58,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         double penalty;
 
-        int D;
+        protected int D;
 
         public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
             double _p = DomainDGdeg.Max();

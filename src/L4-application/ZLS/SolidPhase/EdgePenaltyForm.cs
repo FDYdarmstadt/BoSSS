@@ -39,8 +39,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             return 0;
-            //return scale * Penalty(inp.jCellIn, -1) * (_uA[0]) * (_vA);
-            //return scale * (_uA[0]) * (_vA);
 
         }
 
@@ -60,8 +58,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
 
         double Penalty(int jCellIn, int jCellOut) {
-            double penaltySizeFactor_A = 1/cj[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1/cj[jCellOut] : 0;
+            double penaltySizeFactor_A = cj[jCellIn];
+            double penaltySizeFactor_B = jCellOut >= 0 ? cj[jCellOut] : 0;
 
             double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
 
@@ -117,9 +115,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double flux = 0;
-            for(int i = 0; i < D; ++i) {
-                flux += _Grad_uA[0,i] * inp.Normal[i] * (_uA[0] - 0);
-            }
+           
             //flux *= scale * Penalty(inp.jCellIn, inp.jCellOut);
             return scale * flux * Penalty(inp.jCellIn, -1);
 

@@ -40,6 +40,7 @@ namespace ZwoLevelSetSolver {
             }
             return pDspl;
         }
+
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
             int D = this.GridData.SpatialDimension;
             int pVel = VelocityDegree();
@@ -105,14 +106,14 @@ namespace ZwoLevelSetSolver {
             var continuityEquation = new SolidPhase.Continuity("C", D, Control.Material);
             opFactory.AddEquation( continuityEquation);
 
-            opFactory.AddEquation(new PressurePenalty("A", -Control.PhysicalParameters.mu_A));
-            opFactory.AddEquation(new PressurePenalty("B", -Control.PhysicalParameters.mu_B));
+            opFactory.AddEquation(new PressurePenalty("A", -1/Control.PhysicalParameters.mu_A));
+            opFactory.AddEquation(new PressurePenalty("B", -1/Control.PhysicalParameters.mu_B));
         }
 
         protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
             base.FinalOperatorSettings(XOP, D);
+            //XOP.FreeMeanValue[NSEVariableNames.Pressure] = true;
             XOP.IsLinear = false;
-
         }
 
         protected override void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
@@ -132,10 +133,14 @@ namespace ZwoLevelSetSolver {
                 }
             }
 
-            //opFactory.AddEquation(new FluidSolidDisplacementContinuity("A", "C", D));
-            //opFactory.AddEquation(new FluidSolidDisplacementContinuity("B", "C", D));
-            //opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
-            //opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
+            if(SolidPhase.Continuity.ContinuityInDisplacement) {
+                opFactory.AddEquation(new FluidSolidDisplacementContinuity("A", "C", D));
+                opFactory.AddEquation(new FluidSolidDisplacementContinuity("B", "C", D));
+            } else {
+                opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
+                opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
+            }
+
 
             if(config.dntParams.SST_isotropicMode == BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 for(int d = 0; d < D; ++d) {
@@ -156,9 +161,12 @@ namespace ZwoLevelSetSolver {
             dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             LastSolverSuccess = Timestepping.Solve(phystime, dt, this.Control.SkipSolveAndEvaluateResidual);
-            this.LsUpdater.Update(this.CurrentState.Fields.ToArray(), phystime, 0.0, 1.0, false);
             Console.WriteLine($"done with time step {TimestepNo}, Solver success? {LastSolverSuccess}");
             Assert.IsTrue(LastSolverSuccess, "Solver did not converge");
+
+            //OperatorAnalysis();
+            //base.TerminationKey = true;
+
             return dt;
         }
 

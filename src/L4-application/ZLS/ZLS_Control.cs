@@ -18,7 +18,7 @@ namespace ZwoLevelSetSolver {
 
         public bool DisplacementExtension = false;
 
-        public double ArtificialViscosity = 0.00;
+        public double ArtificialViscosity = 0.000;
 
         public ZLS_Control() : base() { }
 

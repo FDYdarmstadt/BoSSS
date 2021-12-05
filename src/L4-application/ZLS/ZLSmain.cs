@@ -40,21 +40,6 @@ namespace ZwoLevelSetSolver {
             BoSSS.Solution.Application.DeleteOldPlotFiles();
             List<ZLS_Control> controlFiles = new List<ZLS_Control>();
 
-            // Displacement-Divergence
-            //ZLS_Control.DisplacementDegOffset = 0;
-            
-            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
-            SolidPhase.Continuity.ContinuityInDisplacement = true;
-            SolidPhase.Continuity.ContinuityStabilization = true; // seems to be required
-
-            //// Velocity-Divergence
-            //ZLS_Control.DisplacementDegOffset = 0;
-            //ZLS.displacementViscosity = 0.0;
-            //SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 1.0;
-            //SolidPhase.NavierCauchy.EulerAlamansiPenalty = 0.0;
-            //SolidPhase.Continuity.ContinuityInDisplacement = false;
-            //SolidPhase.Continuity.ContinuityStabilization = false; // does not help
-
             controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 8));
             controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 16));
             controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 32));
@@ -70,8 +55,6 @@ namespace ZwoLevelSetSolver {
                     c.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Transient;
                     c.dtFixed = dt;
                 }
-
-                
             }
             ConditionNumberScalingTest.Perform(controlFiles, true);
         }

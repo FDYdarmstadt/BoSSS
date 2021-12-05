@@ -661,7 +661,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             var Ret = new Dictionary<string, double>();
             //int k = 0;
             foreach(int[] varGroup in VarGroups) {
+                
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
+                //*
                 //if(k == 0)
                 //    ana.PrecondOpMatrix.SaveToTextFileSparse("OpMtx-J" + J + ".txt");
                 //Console.WriteLine("################ remember to deactivate me ^^^^^  ");
@@ -679,15 +681,17 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (plotStencilCondNumViz) {
                     StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
-
+                //*/
                 /*
                 {
                     Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
                     var bla = ana.MinimalEigen();
                     Console.WriteLine("done: " + bla.lambdaMin);
-                    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
-                    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
-                }*/
+                    
+                    var Spurious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
+                    m_CurrentAgglomeration.Extrapolate(new CoordinateMapping(Spurious));
+                    Tecplot.Tecplot.PlotFields(Spurious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
+                }//*/
                 //k++;
             }
 

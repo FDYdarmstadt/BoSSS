@@ -40,8 +40,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             //AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d]);
             AddComponent(source);
 
-            //AddComponent(new EdgePenaltyForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], 1));
-            //AddComponent(new EdgeGradientPenaltyForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], -1));
+            //AddComponent(new EdgePenaltyForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], 10));
+            //AddComponent(new EdgeGradientPenaltyForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], 1));
             //Console.WriteLine("Displacement evo deakt");
         }
 

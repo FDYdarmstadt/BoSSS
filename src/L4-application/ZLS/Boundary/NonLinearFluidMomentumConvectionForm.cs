@@ -74,7 +74,7 @@ namespace ZwoLevelSetSolver.Boundary {
             Vector VelocityOt = new Vector(uOut, 1, m_D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
 
-            r += (VelocityAvg * inp.Normal) * (uIn[0] - uOut[0]);
+            r += Math.Abs((VelocityAvg * inp.Normal)) * (uIn[0] - uOut[0]);
             r *= 0.5 * m_rho;
             
             return r * (vIn);
