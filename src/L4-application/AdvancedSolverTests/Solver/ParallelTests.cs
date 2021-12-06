@@ -69,7 +69,7 @@ namespace AdvancedSolverTests.Solver {
 
         public static bool RunTest() {
 
-            System.Threading.Thread.Sleep(5000);
+            System.Threading.Thread.Sleep(10000);
 
             var solver = new Schwarz() {
                 //m_BlockingStrategy = ,
@@ -79,26 +79,32 @@ namespace AdvancedSolverTests.Solver {
                 EnableOverlapScaling = false
             };
 
+            //var solver = new DirectSolver() {
+            //    WhichSolver = DirectSolver._whichSolver.PARDISO,
+            //};
+
             var MgoPair = Utils.CreateTestMGOperator(XDGusage.all,3,MatrixShape.full_spec,8);
             solver.Init(MgoPair.MGOp);
 
             var op = MgoPair.MGOp;
-            int NoOfBlocks = (solver as Schwarz).m_BlockingStrategy.GetNoOfBlocks(op);
-            var SblockList = (solver as Schwarz).m_BlockingStrategy.GetBlocking(op).ToArray();
-            var grid = op.Mapping.AggGrid;
-            var basis = new Basis(op.BaseGridProblemMapping.GridDat, 0);
-            var MPIranks = new SinglePhaseField(basis, "MPIrank");
-            long L = grid.CellPartitioning.LocalLength;
-            //for (int iCell = 0; iCell < L; iCell++) {
-            //MPIranks.SetMeanValue(iCell, op.Mapping.MpiRank);
+            //int NoOfBlocks = (solver as Schwarz).m_BlockingStrategy.GetNoOfBlocks(op);
+            //var SblockList = (solver as Schwarz).m_BlockingStrategy.GetBlocking(op).ToArray();
+            //var grid = op.Mapping.AggGrid;
+            //var basis = new Basis(op.BaseGridProblemMapping.GridDat, 0);
+            //var MPIranks = new SinglePhaseField(basis, "MPIrank");
+            //long L = grid.CellPartitioning.LocalLength;
+            ////for (int iCell = 0; iCell < L; iCell++) {
+            ////MPIranks.SetMeanValue(iCell, op.Mapping.MpiRank);
+            ////}
+            //for (int iBlock = 0; iBlock < NoOfBlocks; iBlock++) {
+            //    foreach (int iCell in SblockList[iBlock])
+            //        MPIranks.SetMeanValue(iCell, iBlock+op.Mapping.MpiRank);
             //}
-            for (int iBlock = 0; iBlock < NoOfBlocks; iBlock++) {
-                foreach (int iCell in SblockList[iBlock])
-                    MPIranks.SetMeanValue(iCell, iBlock+op.Mapping.MpiRank);
-            }
-            var list = new List<SinglePhaseField>();
-            list.Add(MPIranks);
-            BoSSS.Solution.Tecplot.Tecplot.PlotFields(list, "BLargh.plt", 0.0, 0);
+            //var list = new List<SinglePhaseField>();
+            //list.Add(MPIranks);
+            //BoSSS.Solution.Tecplot.Tecplot.PlotFields(list, "BLargh.plt", 0.0, 0);
+
+
             int size = op.Mapping.MpiSize;
             long totLength = op.Mapping.TotalLength;
             double[] X, B;
@@ -135,7 +141,7 @@ namespace AdvancedSolverTests.Solver {
             X.Clear();
             Console.WriteLine("NormL2:" + B.MPI_L2NormPow2());
             solver.Solve(X, B);
-            Console.WriteLine("NormL2:"+X.MPI_L2NormPow2());
+            Console.WriteLine("NormL2:" + X.MPI_L2NormPow2());
             return true;
         }
     }

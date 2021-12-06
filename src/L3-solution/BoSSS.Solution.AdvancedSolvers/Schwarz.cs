@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+//#define TEST
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -630,8 +632,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
                 ilPSP.Environment.StdoutOnlyOnRank0 = true;
 
-
-
                 // dismisses void selections
                 var tmp1 = BMfullBlocks.ToList();
                 var tmp2 = BlockMatrices.ToList();
@@ -696,6 +696,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                 }
+
+                //var coarseSelector = new SubBlockSelector(m_MgOp.Mapping);
+                //int OrderOfCoarseSystem = 1;
+                //Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
+                //coarseSelector.ModeSelector(lowFilter);
+                //coarseMask = new BlockMask(coarseSelector, ExtRows);
+                //var coarseMatrix = coarseMask.GetSubBlockMatrix(m_MgOp.OperatorMatrix);
+
+                //coarseSolver = new PARDISOSolver() {
+                //    CacheFactorization = ActivateCachingOfBlockMatrix(NoIter, m_MgOp.LevelIndex, 0),
+                //    UseDoublePrecision = true,
+                //    Parallelism = Parallelism.SEQ,
+                //};
+                //coarseSolver.DefineMatrix(coarseMatrix);
             }
         }
 
@@ -718,6 +732,33 @@ namespace BoSSS.Solution.AdvancedSolvers {
             };
             sbs.ModeSelector(Modification);
         }
+
+        private void NonOverlapRestrictionInit() {
+            var _Blocks = this.m_BlockingStrategy.GetBlocking(this.m_MgOp);
+            var BlockCells = _Blocks.Select(list => list.ToArray()).ToArray();
+            int NoOfSchwarzBlocks = BlockCells.Length;
+            var retBMask = new BlockMask[NoOfSchwarzBlocks];
+
+            for (int iBlock=0;iBlock < NoOfSchwarzBlocks; iBlock++) {
+                var selector = new SubBlockSelector(this.m_MgOp.Mapping);
+                selector.CellSelector(BlockCells[iBlock]);
+                retBMask[iBlock] = new BlockMask(selector);
+            }
+            NonOverlapMask = retBMask;
+        }
+
+        private void NonOverlapRestriction<U>(int iBlock, double[] xi, U X)
+            where U : IList<double>
+        {
+            if (NonOverlapMask == null) NonOverlapRestrictionInit();
+            Debug.Assert(NonOverlapMask != null);
+            var tmp = new double[X.ToArray().Length];
+            BMfullBlocks[iBlock].AccSubVec(xi, tmp);
+            var xi_tmp = NonOverlapMask[iBlock].GetSubVec(tmp);
+            NonOverlapMask[iBlock].AccSubVec(xi_tmp, X);
+        }
+
+        private BlockMask[] NonOverlapMask = null;
 
         /// <summary>
         /// scaling of blocks in the overlapping regions (<see cref="EnableOverlapScaling"/>).
@@ -760,12 +801,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         BlockMsrMatrix[] BlockMatrices;
 
-
         /// <summary>
         /// masks for the Schwarz blocks
         /// - index: Schwarz block
         /// </summary>
         BlockMask[] BMfullBlocks;
+
+        //ISparseSolver coarseSolver;
+        //BlockMask coarseMask;
 
         private int m_Overlap = 1;
 
@@ -845,6 +888,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             Debug.Assert(BlockMatrices[iPart] != null);
             blockSolvers[iPart].DefineMatrix(BlockMatrices[iPart]);
+#if TEST
+            BlockMatrices[iPart].SaveToTextFileSparseDebug("Sblock"+iPart);
+#endif
         }
 
         /// <summary>
@@ -937,6 +983,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     IterationCallback?.Invoke(iIter, X.ToArray(), Res.CloneAs(), this.m_MgOp);
 
+
+
                     //using (new BlockTrace("coarse_solve_level" + this.m_MgOp.LevelIndex, tr)) {
                     //    if (CoarseSolver != null) {
                     //        var XC = X.ToArray().CloneAs();
@@ -960,6 +1008,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         ResExchange.TransceiveFinish(0.0);
                     }
 
+                    //if (coarseSolver != null) {
+                    //    int coarseRows = coarseMask.GetNoOfMaskedRows;
+                    //    var bc = coarseMask.GetSubVec(ResExchange.Vector_Ext, Res);
+                    //    var xc = new double[coarseRows];
+                    //    coarseSolver.Solve(xc, bc);
+                    //    coarseMask.AccSubVec(xc, X);
+
+                    //    if (CoarseSolverIsMultiplicative) {
+                    //        Res.SetV(B);
+                    //        this.MtxFull.SpMV(-1.0, X, 1.0, Res);
+                    //    }
+                    //}
 
                     using (new BlockTrace("block_solve_level", tr)) {
 
