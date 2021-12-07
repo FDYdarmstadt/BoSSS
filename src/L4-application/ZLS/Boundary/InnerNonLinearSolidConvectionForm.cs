@@ -152,8 +152,8 @@ namespace ZwoLevelSetSolver.Boundary {
             Vector VelocityOt = new Vector(uOut, 0, D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
 
-            double penalty = m_rho * Math.Abs(VelocityAvg * inp.Normal) * (uIn[D+d] - uOut[D+d]) * (vIn-vOut);
-            return m_rho * uIn[D+d] * (VelocityAvg * inp.Normal) * (vIn - vOut) + penalty;
+            double penalty = m_rho * 0.5 * Math.Abs(VelocityAvg * inp.Normal) * (uIn[D+d] - uOut[D+d]) * (vIn-vOut);
+            return m_rho * 0.5 * (uOut[D + d] + uIn[D+d]) * (VelocityAvg * inp.Normal) * (vIn - vOut) + penalty;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
@@ -220,7 +220,7 @@ namespace ZwoLevelSetSolver.Boundary {
             Vector VelocityOt = new Vector(uOut, 1, m_D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
 
-            double penalty = m_rho * Math.Abs(VelocityAvg * inp.Normal) * (uIn[0] - uOut[0]) * (- vOut);
+            double penalty = 0.5 * m_rho * Math.Abs(VelocityAvg * inp.Normal) * (uIn[0] - uOut[0]) * (- vOut);
             return m_rho * uIn[0] * (VelocityAvg * inp.Normal) * ( - vOut) + penalty;
         }
 

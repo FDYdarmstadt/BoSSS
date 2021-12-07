@@ -10,17 +10,16 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver.SolidPhase {
     class Continuity : BulkEquation {
 
-        internal static bool ContinuityInDisplacement = false;
         internal static bool ContinuityStabilization = true;
 
         string spcName;
 
-        public Continuity(string spcName, int D, Solid Material) {
+        public Continuity(string spcName, int D, Solid Material, bool VelocityContinuity) {
             this.spcName = spcName;
             for(int i = 0; i < D; ++i) {
 
 
-                if(ContinuityInDisplacement) {
+                if(!VelocityContinuity) {
                     string variableName = ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[i];
                     AddVariableNames(variableName);
                     var divergence = new Divergence(spcName, variableName, i);

@@ -23,58 +23,40 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
     }
 
-    class SoftSiliconeRubber : Solid {
-        public SoftSiliconeRubber() {
+    public class IncompressibleViscoElastic : Solid {
+        public IncompressibleViscoElastic(double modulusOfElasticity, double viscosity, double density) {
             PoissonsRatio = 0.5;
-            ModulusOfElasticity = 0.000005;
-            Density = 300;
-            Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
+            ModulusOfElasticity = modulusOfElasticity;
+            Lame1 = 0;
             Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
+            Viscosity = viscosity;
+            Density = density;
         }
     }
 
-    class MediumSiliconeRubber : Solid {
-        public MediumSiliconeRubber() {
-            PoissonsRatio = 0.5;
-            ModulusOfElasticity = 0.9;
-            Density = 0.7;
-            Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
-            Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
-            Viscosity = 1;
+    class SoftSiliconeRubber : IncompressibleViscoElastic {
+        public SoftSiliconeRubber() : base(0.000005, 1, 300) {
         }
     }
 
-    class HardSiliconeRubber : Solid {
-        public HardSiliconeRubber() {
-            PoissonsRatio = 0.5;
-            ModulusOfElasticity = 19;
-            Density = 3.8;
-            Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
-            Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
-            Viscosity = 0.1;
+    class MediumSiliconeRubber : IncompressibleViscoElastic {
+        public MediumSiliconeRubber() : base(0.9, 1, 0.7 ) {
         }
     }
 
-    class Beam : Solid {
-
-        public Beam() {
-            PoissonsRatio = 0.5;
-            ModulusOfElasticity = 30;
-            Density = 1;
-            Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
-            Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
-            Viscosity = 0.1;
+    class HardSiliconeRubber : IncompressibleViscoElastic {
+        public HardSiliconeRubber() : base(19, 1, 3.8) {
         }
     }
 
-    class ConvergenceTest : Solid {
-        public ConvergenceTest() {
-            PoissonsRatio = 0.5;
-            ModulusOfElasticity = 3;
-            Density = 1;
-            Viscosity = 1;
-            Lame1 = ModulusOfElasticity * PoissonsRatio / ((1 + PoissonsRatio) * (1 - PoissonsRatio));
-            Lame2 = 0.5 / (1 + PoissonsRatio) * ModulusOfElasticity;
+    class Beam : IncompressibleViscoElastic {
+        public Beam() : base(30, 0.1, 1) {
+        }
+    }
+
+    class ConvergenceTest : IncompressibleViscoElastic {
+
+        public ConvergenceTest():base(3, 1, 1){
         }
     }
 

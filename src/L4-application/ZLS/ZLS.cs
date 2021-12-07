@@ -103,7 +103,7 @@ namespace ZwoLevelSetSolver {
 
                 opFactory.AddParameter(Gravity.CreateFrom("C", d, D, Control, Control.Material.Density, Control.GetGravity("C", d)));
             }
-            var continuityEquation = new SolidPhase.Continuity("C", D, Control.Material);
+            var continuityEquation = new SolidPhase.Continuity("C", D, Control.Material, Control.VelocityContinuity);
             opFactory.AddEquation( continuityEquation);
 
             opFactory.AddEquation(new PressurePenalty("A", -1/Control.PhysicalParameters.mu_A));
@@ -112,7 +112,7 @@ namespace ZwoLevelSetSolver {
 
         protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
             base.FinalOperatorSettings(XOP, D);
-            //XOP.FreeMeanValue[NSEVariableNames.Pressure] = true;
+            //XOP.FreeMeanValue[NSEVariableNames.Pressure] = false;
             XOP.IsLinear = false;
         }
 
@@ -128,26 +128,24 @@ namespace ZwoLevelSetSolver {
                 } else {
                     opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
                     opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity));
+                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_A, Control.Material));
+                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_B, Control.Material));
                 }
             }
 
-            if(SolidPhase.Continuity.ContinuityInDisplacement) {
-                opFactory.AddEquation(new FluidSolidDisplacementContinuity("A", "C", D));
-                opFactory.AddEquation(new FluidSolidDisplacementContinuity("B", "C", D));
-            } else {
+            if(Control.VelocityContinuity) {
                 opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
                 opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
+            } else {
+                opFactory.AddEquation(new FluidSolidDisplacementContinuity("A", "C", D));
+                opFactory.AddEquation(new FluidSolidDisplacementContinuity("B", "C", D));
             }
 
 
             if(config.dntParams.SST_isotropicMode == BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 for(int d = 0; d < D; ++d) {
-                    //opFactory.AddEquation(new EquilibriumContactLine(d, D, config.physParams.betaL, config.physParams.theta_e));
+                    opFactory.AddEquation(new EquilibriumContactLine(d, D, config.physParams.betaL, config.physParams.theta_e));
                 }
-                //ContactLine
-                //=====================
             }
             var normalsParameter = new BoSSS.Solution.XNSECommon.Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.SolidLevelSetCG);
             opFactory.AddParameter(normalsParameter);
@@ -205,7 +203,7 @@ namespace ZwoLevelSetSolver {
                 varGroup_Diplacement,
                 varGroup_all
             };
-            if(!SolidPhase.Continuity.ContinuityInDisplacement) {
+            if(Control.VelocityContinuity) {
                 varGroup_Stokes.AddToArray(ref groups);
             }
 

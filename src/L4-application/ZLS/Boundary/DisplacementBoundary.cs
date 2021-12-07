@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZwoLevelSetSolver.SolidPhase;
 
 namespace ZwoLevelSetSolver.Boundary {
     
@@ -17,7 +18,7 @@ namespace ZwoLevelSetSolver.Boundary {
         string codomainName;
 
 
-        public DisplacementBoundary(LevelSetTracker LsTrkr, string fluidSpecies, string solidSpecies, int d, int D, double artificialViscosity) {
+        public DisplacementBoundary(LevelSetTracker LsTrkr, string fluidSpecies, string solidSpecies, int d, int D, double artificialViscosity, double fluidViscosity, Solid material) {
             codomainName = ZwoLevelSetSolver.EquationNames.DisplacementEvolutionComponent(d);
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
@@ -30,7 +31,7 @@ namespace ZwoLevelSetSolver.Boundary {
                 solidSpecies));
             if (artificialViscosity != 0.0)
             {
-                AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 1, artificialViscosity));
+                AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, d, D, 1, artificialViscosity, fluidViscosity, material.Viscosity));
             }
         }
 

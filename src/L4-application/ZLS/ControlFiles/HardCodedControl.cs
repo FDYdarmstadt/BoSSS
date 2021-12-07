@@ -573,8 +573,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 3 });
-            C.AMR_startUpSweeps = 2;
+            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 4 });
+            C.AMR_startUpSweeps = 3;
 
             #endregion
 
@@ -927,7 +927,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
                 grd.EdgeTagNames.Add(1, "wall_lower");
-                grd.EdgeTagNames.Add(2, "wall_upper");
+                grd.EdgeTagNames.Add(2, "freeslip_upper");
                 grd.EdgeTagNames.Add(3, "velocity_inlet_left");
                 grd.EdgeTagNames.Add(4, "pressure_outlet_right");
 
@@ -984,14 +984,18 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 }
             }
 
-            double d = 1;
+            double d = 0.3;
+
 
             double G(double y, double t) {
-                return (1.0 - (y / d - 1.0).Pow2());
+                if(y >= d)
+                    return R(t);
+                else
+                    return  (1 - ((y-d) / d) * ((y-d) / d)) * R(t);
             }
 
-            double vmax = 0.05;
 
+            double vmax = 0.05;
             double inflowX(double[] x, double t) {
                 return vmax *  R(t) * G(x[1], t);
             }
@@ -1007,7 +1011,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region BC
 
             C.AddBoundaryValue("wall_lower");
-            C.AddBoundaryValue("wall_upper");
+            C.AddBoundaryValue("freeslip_upper");
             C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", inflowX);
             C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", inflowX);
             //C.AddBoundaryValue("velocity_inlet_left", "VelocityY#A", inflowY);
@@ -1056,11 +1060,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 2e-3;
+            double dt = 2.5e-3;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 100;
-            C.NoOfTimesteps = 1000;
+            C.Endtime = 3;
+            C.NoOfTimesteps = 10000;
             C.saveperiod = 1;
 
             #endregion
@@ -1099,7 +1103,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 Viscosity = 1,
                 Density = 1
             };
-
+            C.VelocityContinuity = false;
             #endregion
 
 
@@ -1212,6 +1216,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
+            C.ArtificialViscosity = 0.0;
 
             // basic database options
             // ======================
@@ -1341,7 +1346,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             //C.CheckJumpConditions = true;
 
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;

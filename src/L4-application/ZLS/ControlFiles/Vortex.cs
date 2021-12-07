@@ -164,6 +164,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
+            C.VelocityContinuity = false;
 
             int D = 2;
 

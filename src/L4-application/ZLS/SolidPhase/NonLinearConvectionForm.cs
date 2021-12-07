@@ -131,7 +131,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Vector VelocityOt = new Vector(_uOT, 0, D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
             //*
-            double penalty = rho * Math.Abs(VelocityAvg * inp.Normal) * (_uIN[D] - _uOT[D]) * (_vIN - _vOUT);
+            double penalty = rho * 0.5 * Math.Abs(VelocityAvg * inp.Normal) * (_uIN[D] - _uOT[D]) * (_vIN - _vOUT);
             penalty *= penaltyScale;
             return rho * 0.5 * (_uIN[D] + _uOT[D]) * (VelocityAvg * inp.Normal) * (_vIN - _vOUT) + penalty;
             //*/
