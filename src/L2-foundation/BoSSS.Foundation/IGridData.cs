@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// see <see cref="Parallelization"/>
+        /// see <see cref="IParallelization"/>
         /// </summary>
         IParallelization iParallel {
             get;

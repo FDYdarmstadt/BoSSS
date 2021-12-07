@@ -124,11 +124,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //double z = X[2];
 
                 double R = X.L2Norm();
-                var (u, v) = Logging.SphericalHarmonicsLogging.GetAngular(X);
+                var (u, v) = SphericalHarmonics.GetAngular(X);
 
                 double r = 0;
                 foreach(var tt in modes)
-                    r += Logging.SphericalHarmonicsLogging.MyRealSpherical(tt.l, tt.m, u, v)*tt.Item3;
+                    r += SphericalHarmonics.MyRealSpherical(tt.l, tt.m, u, v)*tt.Item3;
 
                 return R - r;
             }
