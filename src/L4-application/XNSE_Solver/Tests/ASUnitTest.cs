@@ -865,8 +865,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="SphericalHarmonicsTest"/>
         /// </summary>
-        public static void ShericalHarmonoicsPostprocessingTest() {
-
+        [Test]
+        public static void SphericalHarmonoicsPostprocessingTest() {
+            // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonoicsPostprocessingTest()
             var Tst = new SphericalHarmonicsTest();
             var C = TstObj2CtrlObj(Tst, 2, 0.1,
                 ViscosityMode.FullySymmetric, 
