@@ -905,12 +905,12 @@ namespace BoSSS.Solution.Control {
             /// <summary>
             /// time-dependent/Transient simulation.
             /// </summary>
-            Transient,
+            Transient = 0,
 
             /// <summary>
             /// Steady-State calculation.
             /// </summary>
-            Steady
+            Steady = 1
         }
 
         [DataMember]

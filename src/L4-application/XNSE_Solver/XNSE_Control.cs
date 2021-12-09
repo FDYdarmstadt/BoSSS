@@ -293,12 +293,14 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /* killed by fk:
+         * the following adds a configuration redundancy, which is always a recipe for confusion
         /// <summary>
         /// switches off all plotCurrentState calls
         /// </summary>
         [DataMember]
         public bool switchOffPlotting = false;
-
+        */
 
 
         /// <summary>

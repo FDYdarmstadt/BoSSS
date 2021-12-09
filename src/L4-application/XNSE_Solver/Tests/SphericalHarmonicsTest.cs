@@ -44,7 +44,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public double[] AcceptableResidual => new double[] { 1.0e-8, 1.0e-8, 1.0e-8, 1.0e-8 };
 
         public GridCommons CreateGrid(int Resolution) {
-            double sz = 2;
+            //double sz = 2;
+            double sz = 0.65;
+            
             var nodes = GenericBlas.Linspace(-sz, +sz, 20 * Resolution + 1);
             var grd = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
 
@@ -84,12 +86,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         */
 
         internal (int l, int m, double Ylm)[] modes = new[] {
-            (+0, +0, 2.0),
-            //(+1, -1, -0.1),
-            //(+1, +0, -0.2),
-            //(+1, +1, -0.3),
-            //(+2,  0, 0.4)
+            (+0, +0, 1.0*SphericalHarmonics.Get_Nlm(0,0)),
+            (+1, -1, -0.1*SphericalHarmonics.Get_Nlm(1,-1)),
+            (+1, +0, -0.2*SphericalHarmonics.Get_Nlm(1,0)),
+            (+1, +1, -0.3*SphericalHarmonics.Get_Nlm(1,1)),
+            (+2,  0, 0.4*SphericalHarmonics.Get_Nlm(2,0))
         };
+        
+
+        
+
 
         /// <summary>
         /// Computes the error in given spherical modes against the values set in the test.

@@ -95,9 +95,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-
-
-
         public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
 
@@ -113,7 +110,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         public Func<double[], double, double> GetPhi() {
-            return (X, t) => -1.0;
+            // If one does not use the first level-set (i.e. Phi = 0),
+            // the code should detect this and assume it to be negative (i.e. set species A everywhere).
+            // here, we test this functionality
+            return (X, t) => 0.0; 
         }
 
 
