@@ -47,7 +47,8 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public MassMatrixFactory(XDGSpaceMetrics __XDGSpaceMetrics) {
             XDGSpaceMetrics = __XDGSpaceMetrics;
-            this.MaxBasis = new Basis(XDGSpaceMetrics.GridDat, XDGSpaceMetrics.CutCellQuadOrder / 2);
+            //this.MaxBasis = new Basis(XDGSpaceMetrics.GridDat, XDGSpaceMetrics.CutCellQuadOrder / 2); // bad choice;
+            this.MaxBasis = new Basis(XDGSpaceMetrics.GridDat, 1);
         }
 
         /*
@@ -279,6 +280,8 @@ namespace BoSSS.Foundation.XDG {
 
                 LevelSetTracker.LevelSetRegions regions = null;// XDGSpaceMetrics.LevelSetRegions;
 
+                Console.WriteLine("Requesting Mass Matrix for degrees " + mapping.BasisS.Select(b => b.Degree).ToConcatString("", ", ", ";"));
+
 
                 // compute the Mass-Blocks for the cut cells...
                 // --------------------------------------------
@@ -389,28 +392,31 @@ namespace BoSSS.Foundation.XDG {
         }
 
         private void UpdateBlocks(int _MaxDeg, IEnumerable<SpeciesId> RequestedSpecies) {
-            if (MassBlocks == null)
-                MassBlocks = new Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer>();
+            using (var tr = new FuncTrace()) {
+                if (MassBlocks == null)
+                    MassBlocks = new Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer>();
 
-            // ..., but only once: for the Basis with highest Polynomial Degree
-            if (_MaxDeg > this.MaxBasis.Degree) {
-                MassBlocks.Clear();
-                this.MaxBasis = new Basis(this.MaxBasis.GridDat, _MaxDeg);
-            }
+                // ..., but only once: for the Basis with highest Polynomial Degree
+                if (_MaxDeg > this.MaxBasis.Degree) {
+                    Console.WriteLine("Mass Matrix requested for degree: " + _MaxDeg);
+                    MassBlocks.Clear();
+                    this.MaxBasis = new Basis(this.MaxBasis.GridDat, _MaxDeg);
+                } else {
+                    Console.WriteLine("Mass Matrix for basis of degree: " + this.MaxBasis.Degree);
+                }
+                Basis nonXbasis = this.MaxBasis;
 
-            Basis nonXbasis = this.MaxBasis;
-
-            // compute Blocks
-            {
-                var SpeciesToDo = RequestedSpecies.Except(MassBlocks.Keys);
-                if (SpeciesToDo.Count() > 0) {
-                    // only for species that we haven't done/cached yet
-                    Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer> _MassBlocks;
-                    ComputeMassMatrixBlocks(SpeciesToDo, out _MassBlocks, nonXbasis, this.XDGSpaceMetrics); // m_quadorder, m_LsTrk, this.m_agglomerator, MomentFittingVariant);
-                    this.MassBlocks.AddRange(_MassBlocks);
+                // compute Blocks
+                {
+                    var SpeciesToDo = RequestedSpecies.Except(MassBlocks.Keys);
+                    if (SpeciesToDo.Count() > 0) {
+                        // only for species that we haven't done/cached yet
+                        Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer> _MassBlocks;
+                        ComputeMassMatrixBlocks(SpeciesToDo, out _MassBlocks, nonXbasis, this.XDGSpaceMetrics); // m_quadorder, m_LsTrk, this.m_agglomerator, MomentFittingVariant);
+                        this.MassBlocks.AddRange(_MassBlocks);
+                    }
                 }
             }
-
 
         }
 
@@ -473,6 +479,7 @@ namespace BoSSS.Foundation.XDG {
                 Result = new Dictionary<SpeciesId, MassMatrixBlockContainer>();
                 var schemeHelper = homie.XQuadSchemeHelper;
                 int Nnx = b.Length;
+                Console.WriteLine("Mama order: " + b.Degree + " -> dim = " + b.Length);
 
                 int quadorder = homie.CutCellQuadOrder;
 
