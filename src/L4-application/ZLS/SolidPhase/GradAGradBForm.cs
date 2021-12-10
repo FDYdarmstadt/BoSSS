@@ -16,21 +16,18 @@ namespace ZwoLevelSetSolver.SolidPhase {
     /// <summary>
     /// Viscosity/energy dissipation in the solid phase
     /// </summary>
-    public class NonLinearSIPForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
+    public class GradAGradBForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
         protected double viscosity;
         string species;
         protected int d;
         protected string[] variableNames;
         public double PenaltySafety;
 
-        public NonLinearSIPForm(string species, string[] variables, int d, double viscosity, double __PenaltySafety = 4.0) {
+        public GradAGradBForm(string species, string[] variablesA, string[] variablesB, int d, double viscosity, double __PenaltySafety = 4.0) {
             this.species = species;
             this.viscosity = viscosity;
             this.PenaltySafety = __PenaltySafety;
-            if(this.viscosity <= 0.0) {
-                throw new ArgumentException($"Viscosity must be positive, but got a value of {this.viscosity}");
-            }
-            this.variableNames = variables;
+            this.variableNames = variablesA.Cat(variablesB);
             this.d = d;
         }
 
@@ -44,21 +41,19 @@ namespace ZwoLevelSetSolver.SolidPhase {
             get { return (TermActivationFlags.UxV | TermActivationFlags.V | TermActivationFlags.GradUxV | TermActivationFlags.UxGradV | TermActivationFlags.V | TermActivationFlags.GradV); }
         }
 
-        
-
         public string ValidSpecies => species;
 
         public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
             double acc1 = 0.0;
             for(int i = 0; i < D; i++) {
-                double GradUTGradU = 0;
+                double GradUGradU = 0;
                 for(int j = 0; j < D; ++j) {
-                    GradUTGradU += 0.5 * _Grad_uIN[j, d] * _Grad_uIN[j, i];
+                    GradUGradU += 0.5 * _Grad_uIN[d, j] * _Grad_uIN[D+j, i];
                 }
-                acc1 -= viscosity * GradUTGradU * (_vIN) * inp.Normal[i];  // consistency term  
+                acc1 -= viscosity * GradUGradU * (_vIN) * inp.Normal[i];  // consistency term  
             }
-            double penalty = Math.Max(PenaltyIn(inp.jCellIn), -1);
-            acc1 += (_uIN[d]) * PenaltySafety * penalty * (_vIN) * viscosity;
+            //double penalty = Math.Max(PenaltyIn(inp.jCellIn), -1);
+            //acc1 += (_uIN[d]) * PenaltySafety * penalty * (_vIN) * viscosity;
             return acc1;
         }
 
@@ -112,15 +107,16 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double acc1 = 0.0;
             for(int i = 0; i < D; i++) {
-                double GradUTGradU = 0;
+                double GradUGradU = 0;
                 for(int j = 0; j < D; ++j) {
-                    GradUTGradU += 0.5 * _Grad_uIN[j, d] * _Grad_uIN[j, i];
-                    GradUTGradU += 0.5 * _Grad_uOUT[j, d] * _Grad_uOUT[j, i];
+                    GradUGradU += 0.5 * _Grad_uIN[d, j] * _Grad_uIN[D+j, i];
+                    GradUGradU += 0.5 * _Grad_uOUT[d, j ] * _Grad_uOUT[D+j, i];
                 }
-                acc1 -= viscosity * GradUTGradU * (_vIN - _vOUT) * inp.Normal[i];  // consistency term  
+                acc1 -= viscosity * GradUGradU * (_vIN - _vOUT) * inp.Normal[i];  // consistency term  
             }
-            double penalty = Math.Max(PenaltyIn(inp.jCellIn), PenaltyOut(inp.jCellOut));
-            acc1 += (_uIN[d] - _uOUT[d]) * PenaltySafety * penalty *(_vIN - _vOUT) * viscosity;
+            //double penalty = Math.Max(PenaltyIn(inp.jCellIn), PenaltyOut(inp.jCellOut));
+            //acc1 += (_uIN[d] - _uOUT[d]) * PenaltySafety * penalty *(_vIN - _vOUT) * viscosity;
+            //acc1 += (_uIN[D + d] - _uOUT[D + d]) * PenaltySafety * penalty *(_vIN - _vOUT) * viscosity;
             return acc1;
         }
 
@@ -131,11 +127,11 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for(int i = 0; i < D; ++i) {
-                double GradUTGradU = 0;
+                double GradUGradU = 0;
                 for (int j = 0; j < D; ++j) {
-                    GradUTGradU += GradU[j, d] * GradU[j, i];
+                    GradUGradU += GradU[d, j] * GradU[D+j, i];
                 }
-                acc += GradUTGradU * GradV[i];
+                acc += GradUGradU * GradV[i];
             }
             acc *= viscosity;
             return acc ;

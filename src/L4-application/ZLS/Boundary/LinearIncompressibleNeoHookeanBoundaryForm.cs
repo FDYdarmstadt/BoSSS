@@ -69,13 +69,22 @@ namespace ZwoLevelSetSolver.Boundary {
             for(int i = 0; i < D; i++) {
                 solidStress -= 1 * lame2 * (_Grad_uOUT[D + d, i]) * inp.Normal[i];
                 solidStress -= 1 * lame2 * (_Grad_uOUT[D + i, d]) * inp.Normal[i];
-
-                double GradUTGradU = 0;
+                
+                //*
+                double GradUGradU = 0;
                 for(int j = 0; j < D; ++j) {
-                    GradUTGradU += 1 * _Grad_uOUT[j, d] * _Grad_uOUT[j, i];
+                    GradUGradU += 1 * _Grad_uOUT[D + d, j] * _Grad_uOUT[j, i];
                 }
-                solidStress -= lame2 * GradUTGradU * (_vIN - _vOUT) * inp.Normal[i];  // consistency term  
+                solidStress -= (-1) * GradUGradU * inp.Normal[i];  // consistency term  
+                //*/
 
+                /*
+                double GradUGradUT = 0;
+                for(int j = 0; j < D; ++j) {
+                    GradUGradUT += 1 * _Grad_uOUT[D + d, j] * _Grad_uOUT[D+i, j];
+                }
+                solidStress -= lame2 * GradUGradUT * inp.Normal[i];  // consistency term  
+                //*/
 
                 viscousStress -= 1 * solidViscosity * (_Grad_uOUT[d, i]) * inp.Normal[i];
                 //viscousStress -= 1 * solidViscosity * (_Grad_uOUT[i, d]) * inp.Normal[i];

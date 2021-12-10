@@ -27,13 +27,13 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         int d;
 
-        public LinearTransportForm(string speciesName, string[] variableNames, int d, int D, double rho) {
+        public LinearTransportForm(string speciesName, string[] velocityParameterNames, string[] variableNames, int d, int D, double rho) {
             this.speciesName = speciesName;
             this.variableNames = variableNames;
             this.D = D;
             this.d = d;
             this.rho = rho;
-            this.parameternames = BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D);
+            this.parameternames = velocityParameterNames;
         }
 
         public TermActivationFlags VolTerms {

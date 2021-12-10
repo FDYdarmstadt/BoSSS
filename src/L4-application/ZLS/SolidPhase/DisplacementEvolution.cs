@@ -14,7 +14,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string speciesName;
 
-        string codomainName; 
+        string codomainName;
 
         public DisplacementEvolution(string speciesName, int d, int D, double artificialViscosity, IncompressibleMultiphaseBoundaryCondMap boundaryMap) {
             this.speciesName = speciesName;
@@ -22,10 +22,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
 
-            
-            var convection = new NonLinearConvectionForm(speciesName, 
-                ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], 
-                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), 
+
+            var convection = new NonLinearConvectionForm(speciesName,
+                ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d],
+                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
                 d, 1.0, boundaryMap);
             AddComponent(convection);
 
@@ -43,32 +43,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
             //AddComponent(new EdgePenaltyForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], 10));
             //AddComponent(new EdgeGradientPenaltyForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], 1));
             //Console.WriteLine("Displacement evo deakt");
-        }
-
-        public override string SpeciesName => speciesName;
-
-        public override double MassScale => 1.0;
-
-        public override string CodomainName => codomainName;
-    }
-
-    class ParameterDisplacementEvolution : BulkEquation {
-
-        string speciesName;
-
-        string codomainName;
-
-        public ParameterDisplacementEvolution(string speciesName, int d, int D) {
-            this.speciesName = speciesName;
-            this.codomainName = EquationNames.DisplacementEvolutionComponent(d);
-            AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
-
-            var convection = new LinearTransportForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 1.0);
-            AddComponent(convection);
-            AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D));
-
-            var source = new MultiPhaseSource(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d], speciesName, -1.0);
-            AddComponent(source);
         }
 
         public override string SpeciesName => speciesName;

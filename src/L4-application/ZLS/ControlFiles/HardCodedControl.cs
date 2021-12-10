@@ -871,14 +871,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
-            string DbPath = @"C:\Databases\ZLS_GummiLippe";
+
 
             // basic database options
             // ======================
             #region db
-
-            C.savetodb = true;
-            C.DbPath = DbPath;
+            string DbPath = @"C:\Databases\ZLS_GummiLippe";
+            C.savetodb = false;
+            //C.DbPath = DbPath;
             C.ProjectName = "ZLSTestVerticalBeam";
             //C.ProjectDescription = "Vertical Beam in channel";
 
@@ -1042,8 +1042,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 3 });
-            C.AMR_startUpSweeps = 2;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 2 });
+            C.AMR_startUpSweeps = 1;
 
             #endregion
 
@@ -1060,7 +1060,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 2.5e-3;
+            double dt = 5e-3;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 3;
@@ -1346,7 +1346,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             //C.CheckJumpConditions = true;
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;

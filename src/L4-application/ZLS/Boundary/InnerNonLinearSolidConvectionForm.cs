@@ -221,7 +221,7 @@ namespace ZwoLevelSetSolver.Boundary {
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
 
             double penalty = 0.5 * m_rho * Math.Abs(VelocityAvg * inp.Normal) * (uIn[0] - uOut[0]) * (- vOut);
-            return m_rho * uIn[0] * (VelocityAvg * inp.Normal) * ( - vOut) + penalty;
+            return m_rho * uOut[0] * (VelocityAvg * inp.Normal) * ( - vOut) + penalty;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
