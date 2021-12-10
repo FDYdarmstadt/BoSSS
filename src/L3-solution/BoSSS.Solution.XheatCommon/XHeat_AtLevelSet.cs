@@ -1101,6 +1101,8 @@ namespace BoSSS.Solution.XheatCommon {
 
             double FlxPos = 0.5 * (vOUTxN - Math.Abs(vOUTxN)) * (U_Pos[0] - Tsat);
             FlxPos -= 0.5 * (vOUTxN + Math.Abs(vOUTxN)) * (U_Pos[0] - Tsat);
+
+
             //===========================================================================================================
             //===========================================================================================================
 
@@ -1144,6 +1146,138 @@ namespace BoSSS.Solution.XheatCommon {
             return new IEquationComponent[] { JacobiComp };
         }
     }
+
+
+
+
+    /// <summary>
+    /// Extension for <see cref="HeatConvectionInSpeciesBulk_Hamiltonian_Newton"/> on interface
+    /// Difference with <see cref="HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian"/> are the extra terms comming from the 
+    /// weak formulation of the discretization
+    /// </summary>
+    public class HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian_LowMach : MassFluxAtLevelSet_StrongCoupling, IEquationComponentCoefficient {
+
+        bool movingmesh;
+
+        public HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian_LowMach(int _D, double _capA, double _capB, double _LFFA, double _LFFB, bool _movingmesh, double _Tsat, ThermalParameters thermParams, string phaseA, string phaseB) : base(_D, thermParams, phaseA, phaseB) {
+
+            m_D = _D;
+
+            //MaterialInterface = _MaterialInterface;
+            movingmesh = _movingmesh;
+
+            //DirichletCond = _DiriCond;
+            Tsat = _Tsat;
+
+            capA = _capA;
+            capB = _capB;
+            LFFA = _LFFA;
+            LFFB = _LFFB;
+
+        }
+
+        //bool MaterialInterface;
+        int m_D;
+
+        double capA;
+        double capB;
+        double LFFA;
+        double LFFB;
+
+        //bool DirichletCond;
+        double Tsat;
+
+        void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
+
+            U_NegFict = U_Pos;
+            U_PosFict = U_Neg;
+        }
+
+        /// <summary>
+        /// Scale of the component, used for homotopy
+        /// </summary>
+        double Scale = 1.0;
+
+        public override double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double[] U_NegFict, U_PosFict;
+
+            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
+
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
+            double[] ParamsPosFict, ParamsNegFict;
+            this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
+
+            // Normal velocities
+            double[] VelocityMeanIn = new double[m_D];
+            double[] VelocityMeanOut = new double[m_D];
+            double vINxN = 0.0, vOUTxN = 0.0;
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanIn[d] = U_Neg[1 + d];
+                vINxN += VelocityMeanIn[d] * cp.Normal[d];
+                VelocityMeanOut[d] = U_Pos[1 + d];
+                vOUTxN += VelocityMeanOut[d] * cp.Normal[d];
+            }
+
+    
+
+            //===========================================================================================================
+            //===========================================================================================================
+            // Second variant using Roe-Type Scheme
+            // if VxN < 0 (Inflow) enforce Dirichlet condition, if > 0 (outflow), we still want to enforce saturation temperature?
+            double FlxNeg = 0.5 * (vINxN - Math.Abs(vINxN)) * (Tsat - U_Neg[0]);
+            FlxNeg -= 0.5 * (vINxN + Math.Abs(vINxN)) * (Tsat - U_Neg[0]);
+            FlxNeg += vINxN * U_Neg[0]; // Extra term from weak formulation
+
+            double FlxPos = 0.5 * (vOUTxN - Math.Abs(vOUTxN)) * (U_Pos[0] - Tsat);
+            FlxPos -= 0.5 * (vOUTxN + Math.Abs(vOUTxN)) * (U_Pos[0] - Tsat);
+            FlxPos -= vOUTxN * U_Pos[0];// Extra term from weak formulation         
+
+
+            if (movingmesh)
+                return 0.0;
+            else
+                return Scale * (capA * FlxNeg * v_Neg - capB * FlxPos * v_Pos);
+        }
+
+
+        public override void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            base.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            Scale = cs.HomotopyValue;
+        }
+
+        BitArray evapMicroRegion;
+
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                return base.ArgumentOrdering.Cat(VariableNames.VelocityVector(m_D));
+            }
+        }
+
+
+
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
+    }
+
+
+
+
 
     /// <summary>
     /// 

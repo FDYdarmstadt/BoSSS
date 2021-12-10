@@ -116,12 +116,17 @@ namespace BoSSS.Solution.NSECommon {
 
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Velocity_Inlet:
+                    // inhom. Dirichlet b.c.
+                    // =====================
+                    u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
+                    Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
+                    break;
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
-                // inhom. Dirichlet b.c.
-                // =====================
-                u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
-                Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
-                break;
+                    // inhom. Dirichlet b.c.
+                    // =====================
+                    u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
+                    Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
+                    break;
 
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet:

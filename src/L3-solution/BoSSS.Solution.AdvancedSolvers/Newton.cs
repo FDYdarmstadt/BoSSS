@@ -13,7 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-//#define TEST
 
 using System;
 using System.Collections.Generic;
@@ -720,8 +719,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(FreeMeanValue[iFld]) {
                         //double mean = flds[iFld].GetMeanValueTotal(null);
 
-                        if(RefCellLocal >= 0)
+                        if(RefCellLocal >= 0) {
                             MeanValues[iFld] = flds[iFld].GetMeanValue(RefCellLocal);
+
+                        }
 
                         //flds[iFld].AccConstant(-mean);
                     }

@@ -110,6 +110,15 @@ namespace BoSSS.Solution {
             }
         }
 
+        /// <summary>
+        /// Ugly workaround to set parameter once at runtime
+        /// </summary>
+        /// <param name="_WriteResidualsToConsole"></param>
+        public void SetOnce(bool _WriteResidualsToConsole) {
+            if (!WriteResidualsCalled)
+                WriteResidualsToConsole = _WriteResidualsToConsole;
+        }
+
         bool m_WriteResidualsToConsole = true;
 
         /// <summary>

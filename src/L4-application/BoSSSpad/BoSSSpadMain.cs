@@ -17,7 +17,8 @@ limitations under the License.
 using BoSSS.Application.XNSEC;
 using BoSSS.Foundation.IO;
 using BoSSS.Platform;
-using Microsoft.DotNet.Interactive.Notebook;
+using Microsoft.DotNet.Interactive.Documents;
+using Microsoft.DotNet.Interactive.Documents.Jupyter;
 using MPI.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
@@ -516,14 +517,20 @@ namespace BoSSS.Application.BoSSSpad {
 
         private static void Jupyterfile(string fileToCreate) {
 
-            var cells = new List<NotebookCell>();
+            //var cells = new List<NotebookCell>();
+            var cells = new List<InteractiveDocumentElement>();
             string cmd = GetStartupCode();
-            cells.Add(new NotebookCell("csharp", cmd));
+            cells.Add(new InteractiveDocumentElement("csharp", cmd));
 
-            var docNew = new NotebookDocument(cells.ToArray());
+            //var docNew = new NotebookDocument(cells.ToArray());
+            var docNew = new InteractiveDocument(cells.ToArray());
 
-            var data = NotebookFileFormatHandler.Serialize(fileToCreate, docNew, System.Environment.NewLine);
-            System.IO.File.WriteAllBytes(fileToCreate, data);
+            //var data = NotebookFileFormatHandler.Serialize(fileToCreate, docNew, System.Environment.NewLine);
+            using(var stw = new StreamWriter(fileToCreate)) {
+                Notebook.Write(docNew, System.Environment.NewLine, stw);
+                //System.IO.File.WriteAllBytes(fileToCreate, data);
+                stw.Flush();
+            }
         }
 
         private static string OldFileToJupyter(string fileToOpen) {
@@ -537,7 +544,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             string DestFile = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen)) + ".ipynb";
 
-            var cells = new List<NotebookCell>();
+            var cells = new List<InteractiveDocumentElement>();
             foreach(var entry in doc.CommandAndResult) {
                 string cmd = entry.Command;
                 if(cmd.StartsWith("restart;"))
@@ -546,14 +553,19 @@ namespace BoSSS.Application.BoSSSpad {
                     cmd = cmd.Replace("restart", GetStartupCode());
 
                 //cells.Add(new NotebookCell("C#", cmd));
-                cells.Add(new NotebookCell("csharp", cmd));
+                cells.Add(new InteractiveDocumentElement("csharp", cmd));
             }
 
 
-            var docNew = new NotebookDocument(cells.ToArray());
+            var docNew = new InteractiveDocument(cells.ToArray());
 
-            var data = NotebookFileFormatHandler.Serialize(DestFile, docNew, System.Environment.NewLine);
-            System.IO.File.WriteAllBytes(DestFile, data);
+            //var data = NotebookFileFormatHandler.Serialize(DestFile, docNew, System.Environment.NewLine);
+            //System.IO.File.WriteAllBytes(DestFile, data);
+            using(var stw = new StreamWriter(DestFile)) {
+                Notebook.Write(docNew, System.Environment.NewLine, stw);
+                //System.IO.File.WriteAllBytes(fileToCreate, data);
+                stw.Flush();
+            }
             return DestFile;
         }
 
