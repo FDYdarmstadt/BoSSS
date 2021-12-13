@@ -70,7 +70,7 @@ namespace ZwoLevelSetSolver.Boundary {
                 solidStress -= 1 * lame2 * (_Grad_uOUT[D + d, i]) * inp.Normal[i];
                 solidStress -= 1 * lame2 * (_Grad_uOUT[D + i, d]) * inp.Normal[i];
                 
-                //*
+                /*
                 double GradUGradU = 0;
                 for(int j = 0; j < D; ++j) {
                     GradUGradU += 1 * _Grad_uOUT[D + d, j] * _Grad_uOUT[j, i];

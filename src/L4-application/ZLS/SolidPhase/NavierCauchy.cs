@@ -47,9 +47,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
                 AddComponent(eulerAlmansi1);
 
-                var gradUGradV = new GradAGradBForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D),
-                    BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, -1, EulerAlamansiPenalty);
-                AddComponent(gradUGradV);
+                //var gradUGradV = new GradAGradBForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D),
+                //    BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, -1, EulerAlamansiPenalty);
+                //AddComponent(gradUGradV);
 
                 //var gradUGradUT = new GradAGradBTForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D),
                 //    ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);

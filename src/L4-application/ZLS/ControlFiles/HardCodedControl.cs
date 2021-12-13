@@ -862,7 +862,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
         public static ZLS_Control VerticalBeamInChannel(int p = 2, int kelem = 5, int AMRlvl = 0) {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 1;
+            C.ImmediatePlotPeriod = 10;
             C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
@@ -1058,12 +1058,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.ArtificialViscosity = 0.0001;
 
             C.TimesteppingMode = compMode;
             double dt = 5e-3;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 3;
+            C.Endtime = 30;
             C.NoOfTimesteps = 10000;
             C.saveperiod = 1;
 

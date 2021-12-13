@@ -15,7 +15,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
-        public ParameterDisplacementEvolution(string speciesName, int d, int D) {
+        public ParameterDisplacementEvolution(string speciesName, int d, int D, double artificialViscosity) {
             this.speciesName = speciesName;
             this.codomainName = EquationNames.DisplacementEvolutionComponent(d);
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
@@ -27,6 +27,12 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             var source = new MultiPhaseSource(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d], speciesName, -1.0);
             AddComponent(source);
+
+            if(artificialViscosity != 0) {
+                // we should not add the SIP form if it is not intended at all, i.e. if 'artificialViscosity == 0';
+                // since evaluation of SIP forms is quite costly; 
+                AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity));
+            }
         }
 
         public override string SpeciesName => speciesName;

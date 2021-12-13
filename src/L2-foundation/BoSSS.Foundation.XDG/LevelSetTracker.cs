@@ -788,6 +788,30 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// Find all indices of bordering level sets
+        /// </summary>
+        /// <param name="species">
+        /// name of species
+        /// </param>
+        /// <returns>
+        /// Level Set indices that border species 
+        /// </returns>
+        public int[] GetLevelSetIndicesOfSpecies(string species)
+        {
+            LinkedList<int> levelSetIndices = new LinkedList<int>();
+            for(int i = 0; i < SpeciesTable.Rank; ++i)
+            {
+                var speciesDividedByLevSet = GetSpeciesSeparatedByLevSet(i);
+                if (speciesDividedByLevSet.Contains(species))
+                {
+                    levelSetIndices.AddLast(i);
+                }
+            }
+            return levelSetIndices.ToArray();
+            
+        }
+
+        /// <summary>
         /// see <see cref="GetLevelSetSignCodes(string)"/>
         /// </summary>
         public LevelSetSignCode[] GetLevelSetSignCodes(SpeciesId species) {

@@ -58,5 +58,17 @@ namespace ZwoLevelSetSolver
             else
                 throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
         }
+
+        public static string DisplacementLaplaceX = "DisplacementLaplaceX";
+
+        public static string DisplacementLaplaceY = "DisplacementLaplaceY";
+
+        public static string[] DisplacementLaplaceVector(int D) {
+            if(D == 2)
+                return new string[] { DisplacementLaplaceX, DisplacementLaplaceY };
+            else
+                throw new NotSupportedException("unsupported spatial dimension: D = " + D + ".");
+
+        }
     }
 }
