@@ -149,14 +149,14 @@ namespace ilPSP.Tracing {
         }
 
         internal static int Pop_MethodCallrecord(long ElapsedTicks, long Memory_increase, long PeakMemory_increase, out MethodCallRecord mcr) {
-            Debug.Assert(InstrumentationSwitch == true);
+            Debug.Assert(InstrumentationSwitch == true, "insturmentation switch off!");
 
             Debug.Assert(!object.ReferenceEquals(Current, _Root), "root frame cannot be popped");
             Tracer.Current.m_TicksSpentInMethod += ElapsedTicks;
             Tracer.Current.m_TicksSpentinBlocking += GetMPITicks();
             Tracer.Current.m_MemoryIncrease = Math.Max(Tracer.Current.m_MemoryIncrease, Memory_increase);
             Tracer.Current.m_PeakMemoryIncrease = Math.Max(Tracer.Current.m_PeakMemoryIncrease, PeakMemory_increase);
-            Debug.Assert(ElapsedTicks > Tracer.Current.m_TicksSpentinBlocking);
+            Debug.Assert(ElapsedTicks >= Tracer.Current.m_TicksSpentinBlocking, "more time logged in MPI methods then runtime");
             mcr = Tracer.Current;
             Tracer.Current = Tracer.Current.ParrentCall;
             return Tracer.Current.Depth;

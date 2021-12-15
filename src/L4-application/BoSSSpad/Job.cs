@@ -153,6 +153,8 @@ namespace BoSSS.Application.BoSSSpad {
             if (assiList.Contains(a))
                 return;
             assiList.Add(a);
+            //if(a.FullName.Contains("codeanalysis", StringComparison.InvariantCultureIgnoreCase))
+            //    Console.Write("");
 
             string fileName = Path.GetFileName(a.Location);
             var allMatch = assiList.Where(_a => Path.GetFileName(_a.Location).Equals(fileName)).ToArray();
@@ -285,13 +287,59 @@ namespace BoSSS.Application.BoSSSpad {
             // check the database 
             // ==================
             IDatabaseInfo ctrl_db = m_ctrl.GetDatabase();
+            if(ctrl_db == null) {
+                foreach(var db in BoSSSshell.wmg.AllDatabases) {
+                    m_ctrl.SetDatabase(db);
+                    if(bpc.IsDatabaseAllowed(m_ctrl)) {
+                        Console.WriteLine("Set Database: " + db);
+                        break;
+                    }
+                }
+            }
+
             if(!bpc.IsDatabaseAllowed(m_ctrl)) {
                 throw new IOException($"Database {ctrl_db} is not allowed for {this.ToString()}; You might either use a different database for this computation OR modify the 'AllowedDatabasesPaths' in '~/.BoSSS/etc/BatchProcessorConfig.json'.");
             }
-     
+
+
 
             // check grid & restart info
             // =========================
+
+            // grid function hack:
+            if(m_ctrl.GridFunc != null) {
+                Console.WriteLine("Control object contains grid function. Trying to Serialize the grid...");
+                var dbi = m_ctrl.GetDatabase();
+                if(dbi == null) {
+                    throw new NotSupportedException("If a gird function is specified (instead of a grid id), a database must be specified to save the gird (when using the job manager).");
+                }
+
+                Foundation.Grid.IGrid g = m_ctrl.GridFunc();
+                Guid id = dbi.SaveGrid(ref g);
+
+                m_ctrl.GridFunc = null;
+                m_ctrl.GridGuid = id;
+                Console.WriteLine("Control object modified.");
+
+            } else {
+                if(m_ctrl.GridGuid != Guid.Empty) {
+                    var db = m_ctrl.GetDatabase();
+                    if(db != null) {
+                        if(!db.Grids.Any(gi => gi.ID.Equals(m_ctrl.GridGuid))) {
+                            Console.WriteLine("Grid is not in database yet...");
+                            var grd = m_ctrl.m_Grid;
+                            if(grd != null) {
+
+                                Foundation.Grid.IGrid newInfo = db.SaveGrid(grd, true);
+                                m_ctrl.SetGrid(newInfo);
+                                Console.WriteLine("Grid successfully saved: " + newInfo.ID);
+                            } else {
+                                Console.WriteLine("Unable to save grid - a crash is likely.");
+                            }
+                        }
+                    }
+                }
+            }
 
             if(ctrl_db != null) {
                 if(!m_ctrl.GridGuid.Equals(Guid.Empty)) {
@@ -340,6 +388,11 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.Error.WriteLine($"Warning: no database is set for the job to submit; nothing may be saved.");
             }
 
+            // check
+            // =====
+
+            m_ctrl.VerifyEx();
+
             // finally, serialize the object
             // =============================
             {
@@ -366,8 +419,8 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Specifies the control object for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>)
-        /// set so far.
+        /// Specifies the control object for application startup; overrides any startup arguments (<see cref="CommandLineArguments"/>) set so far.
+        /// The control object might be changed during <see cref="FiddleControlFile(BatchProcessorClient)"/>
         /// </summary>
         public void SetControlObject(BoSSS.Solution.Control.AppControl ctrl) {
             TestActivation();
@@ -375,25 +428,8 @@ namespace BoSSS.Application.BoSSSpad {
             // serialize control object
             // ========================
 
-            // grid function hack:
-            if (ctrl.GridFunc != null) {
-                Console.WriteLine("Control object contains grid function. Trying to Serialize the grid...");
-                var dbi = ctrl.GetDatabase();
-                if (dbi == null) {
-                    throw new NotSupportedException("If a gird function is specified (instead of a grid id), a database must be specified to save the gird (when using the job manager).");
-                }
-
-                Foundation.Grid.IGrid g = ctrl.GridFunc();
-                Guid id = dbi.SaveGrid(ref g);
-
-                ctrl.GridFunc = null;
-                ctrl.GridGuid = id;
-                Console.WriteLine("Control object modified.");
-
-            }
-
-
-            ctrl.VerifyEx();
+            // Verification does not work before we execute `FiddleControlFile`
+            //ctrl.VerifyEx();
             m_ctrl = ctrl;
             m_ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
 
@@ -939,7 +975,12 @@ namespace BoSSS.Application.BoSSSpad {
         public void DeleteOldDeploymentsAndSessions() {
             foreach(var dep in AllDeployments) {
                 if(dep.Session != null) {
-                    dep.Session.Delete(true);
+                    try {
+                        dep.Session.Delete(true);
+                    } catch (Exception e) {
+                        Console.Error.WriteLine($"{e.GetType()} during deployment / session deletion: {e.Message}");
+                    }
+
                 }
 
                 if(dep.DeploymentDirectory != null && dep.DeploymentDirectory.Exists) {
@@ -1139,15 +1180,33 @@ namespace BoSSS.Application.BoSSSpad {
                 return;
             }
 
+            string EscapeKack(string p) {
+                if (p.Contains(' ')) {
+                    // i hate escaping
+                    if (System.IO.Path.DirectorySeparatorChar == '\\') {
+                        // probably windows --> use quotes
+                        p = "\"" + p + "\"";
+                    } else {
+                        // Linux etc.
+                        p = p.Replace(" ", "\\ ");
+                    }
+
+                }
+                return p;
+            }
+
             string StderrFile = AssignedBatchProc.GetStderrFile(ld.BatchProcessorIdentifierToken, ld.DeploymentDirectory.FullName);
             string StdoutFile = AssignedBatchProc.GetStdoutFile(ld.BatchProcessorIdentifierToken, ld.DeploymentDirectory.FullName);
 
             if (StdoutFile != null && StderrFile != null) {
                 ProcessStartInfo psi = new ProcessStartInfo();
-                psi.FileName = typeof(btail.TailMain).Assembly.Location;
+                psi.UseShellExecute = true;
+                psi.WindowStyle = ProcessWindowStyle.Normal;
+                psi.FileName = "dotnet";
+                psi.Arguments = EscapeKack(typeof(btail.TailMain).Assembly.Location);
                 btail.TailMain.SetArgs(psi, StdoutFile, StderrFile);
 
-                Console.WriteLine("Starting console...");
+                Console.WriteLine($"Starting external console ...");
                 Console.WriteLine("(You may close the new window at any time, the job will continue.)");
 
                 Process p = Process.Start(psi);

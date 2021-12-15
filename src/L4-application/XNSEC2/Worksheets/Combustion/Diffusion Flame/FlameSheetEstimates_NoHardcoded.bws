@@ -1,0 +1,477 @@
+restart
+**************
+
+  BoSSSpad C# interpreter
+  _______________________
+
+IOException caught while opening database #0 at 'c:\bosss_db_flamesheet': Could not find or access a database located at 'c:\bosss_db_flamesheet'
+Databases loaded:
+List of 1 instances of IDatabaseInfo {
+  0: { Session Count = 170; Grid Count = 171; Path = c:\BoSSS_DB }
+}
+
+ Console ready for input. Type 'help' for help.
+
+==============
+using System.Diagnostics;
+using BoSSS.Solution.NSECommon;
+using static System.Math;
+using BoSSS.Solution.Queries;
+using BoSSS.Application.LowMachCombustionNSE;
+using BoSSS.Solution.Tecplot;
+using ilPSP.Connectors.Matlab;
+**************
+(5,25): error CS0234: The type or namespace name `LowMachCombustionNSE' does not exist in the namespace `BoSSS.Application'. Are you missing an assembly reference?
+No. of errors|warnings: 1|0.
+
+==============
+string WFlowName = "CoFlowingFlame22";
+WorkflowMgm.Init(WFlowName);
+**************
+Project name is set to 'CoFlowingFlame22'.
+
+==============
+//var myBatch = new MsHPC2012Client(@"\\hpccluster\hpccluster-scratch\gutierrez\tmp", "hpccluster", ComputeNodes : new[]{"hpccluster"});
+var myBatch = new MiniBatchProcessorClient(@"C:\deploy-Mini");
+MiniBatchProcessor.Server.StartIfNotRunning();
+**************
+Starting mini batch processor in external process...
+Started mini batch processor on local machine, process id is 16912.
+True
+==============
+Type solver = typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSE);
+**************
+(1,41): error CS0234: The type or namespace name `LowMachCombustionNSE' does not exist in the namespace `BoSSS.Application'. Are you missing an assembly reference?
+No. of errors|warnings: 1|0.
+
+==============
+// Create a database
+string path     = @"C:\\bosss_db;
+var db          = OpenOrCreateDatabase(path);
+int dummy       = 435212;
+int meshScaling = 10;
+int DGp         = 2;
+**************
+==============
+// Parameters
+// ==============           
+// Problem Definition  
+//===================
+double TemperatureIn = 300;
+double AtmPressure   = 101325;
+var CC               = new ChemicalConstants();
+double densityAirIn  = AtmPressure * CC.PM_Air / (CC.R_gas * TemperatureIn * 1000); // Kg/m3. ok
+double densityFuelIn = AtmPressure * CC.PM_CH4 / (CC.R_gas * TemperatureIn * 1000); // Kg/m3. ok
+double uInFuel       = 1.33 * 0.0254*0.2; // massFuelIn / densityFuelIn; // Avg value, m/s
+double uInAir        = 0.075*0.2; // 0.6162;//  massAirIn / densityAirIn; // Avg value m/s
+double r             = (1.0/6.0)* 0.0254; // Radius inner cylinder, m
+double R             = 1.0 * 0.0254; // Radius outter cylinder, m
+
+// Reference values
+//===================
+// Basic units to be used: Kg, m, s, mol, pa
+double TRef                           = TemperatureIn;// Reference temperature  is the inlet temperature, (K)        
+double pRef                           = AtmPressure; // Pa
+double uRef                           = uInFuel; 
+double LRef                           = r;
+
+var Conc1                             = new double[] { 0.2, 0.232 };
+LowMachCombustionNSEControl C         = new LowMachCombustionNSEControl(DGp, pRef, uRef, TRef, LRef*1, Conc1);
+
+
+C.GravityDirection                    = new double[] { 0.0, 0.0, 0.0 }; //No gravity.
+C.physicsMode                         = PhysicsMode.MixtureFraction;
+C.rhoOne                              = false;
+C.ChemReactionActive                  = true;
+bool restartOK                        = false;
+C.AdaptiveMeshRefinement              = true;
+C.NonLinearSolver.MaxSolverIterations = 20;  
+C.TimesteppingMode                    = AppControl._TimesteppingMode.Steady; 
+C.ImmediatePlotPeriod                 = 1;
+C.MatParamsMode                       = MaterialParamsMode.Sutherland;
+C.ChemReactionActive                  = true;
+C.AMR_startUpSweeps                   = 0;
+C.NoOfTimesteps                       = 3;
+C.PlotNewtonIterations                = false;
+
+
+**************
+Reference time in seconds: 0.6265664160401
+Damköhler number is: 17563114847.4988
+Adimensional activation temperature is: 53
+Reynolds number is 1.95556416041655
+The Maximum temperature reached should be 8.94541219257017
+Cp: 0.945014172934192
+Stoichiometric mixture fraction (z_st): 0.224806201550388
+Flame length should be 9.75904971312629
+
+==============
+// Geometry
+// All lenghts are non.dimensionalized with Lref = fuel inlet radius (0.2 cm)
+double zlength       = 15.0 / 100  ;// meters
+double xmin          = -R / C.LRef;
+double xmax          = +R / C.LRef;
+double ymin          = 0;
+double ymax          = zlength / C.LRef;
+double rAd           = r / C.LRef;
+double leftmidpoint  = (xmin - rAd) / 2;
+double rightmidpoint = (xmax + rAd) / 2;
+**************
+==============
+// Grid declaration
+// ===============
+Func<double[], byte> GridEdgeTagFunc = delegate (double[] X) {
+double x = X[0];
+double y = X[1];
+//Edge tags
+//1: Velocity inlet O_2
+//2: Velocity inlet CH_4
+//3: Pressure outlet
+if (Math.Abs(y - ymin) < 1e-8 && Math.Abs(x - 0.0) < rAd + 1e-8)
+    return 2;
+if ((Math.Abs(y - ymin) < 1e-8 && ((Math.Abs(x - rightmidpoint) < ((xmax - rAd) * 0.5 + rAd) + 1e-8) || Math.Abs(x - leftmidpoint) < Math.Abs((xmin - rAd) * 0.5 + rAd) + 1e-8)))
+    return 1;
+if ((Math.Abs(y - ymax) < 1e-8)) 
+    return 3;
+if ((Math.Abs(x - xmin) < 1e-8) || (Math.Abs(x - xmax) < 1e-8))
+    return 3;
+else return 3; ;
+};
+
+
+**************
+==============
+**************
+==============
+double sf1 = 0.97 * 1;
+double sf2 = 0.95 * 1;
+double sf3 = 0.97 * 1;
+int n1     = (int)2.5 * meshScaling;
+int n2     = (int)1.0 * meshScaling;
+int n3     = (int)2.5 * meshScaling;
+//var xNodes1 = GenericBlas.SinLinSpacing(xmin, -rAd, sf1, n1 + 1);
+//var xNodes2 = GenericBlas.SinLinSpacing(-rAd, rAd, sf2, n2 + 1);
+//var xNodes3 = GenericBlas.SinLinSpacing(rAd, xmax, sf3, n3 + 1);
+
+List<double> xNodes2 = (GenericBlas.SinLinSpacing(-rAd, rAd, sf2, n2 + 1)).ToList(); // nodes corresponding to the fuel inlet
+List<double> xNodes3 = (GenericBlas.SinLinSpacing(rAd, (xmax - rAd) * 2 + rAd, sf3, n1 * 2 + 1).ToList()); // Nodes corresponding to the oxidizer inlet, right part               
+var myXnodes3 = xNodes3.GetSubVector(0, xNodes3.Count / 2 + 1); // Take only "left side" of node array
+var myxNodes1 = myXnodes3.CloneAs();
+myxNodes1.ScaleV(-1.0);
+Array.Reverse(myxNodes1);
+double stretchfactorY = 0.98 * 1;
+
+List<double> list2 = new List<double>();
+list2.AddRange(myxNodes1.Take(n1 + 0).ToList());
+list2.AddRange(xNodes2.Take(n2 + 0).ToList());
+list2.AddRange(myXnodes3.Take(n3 + 1).ToList());
+double[] _xNodes = list2.ToArray();
+
+var _yNodes = GenericBlas.SinLinSpacing(ymin, ymax * 2, stretchfactorY, (2 * meshScaling) * 4 + 1);
+var myYnodes = _yNodes.GetSubVector(0, _yNodes.Length / 2 + 1); // I just want a fine mesh in the bottom part of the grid.
+
+var grd = Grid2D.Cartesian2DGrid(_xNodes, myYnodes, periodicX: false);
+grd.EdgeTagNames.Add(1, "Velocity_Inlet_O2");
+grd.EdgeTagNames.Add(2, "Velocity_Inlet_CH4");
+grd.EdgeTagNames.Add(3, "Pressure_Outlet");
+
+grd.DefineEdgeTags(GridEdgeTagFunc);
+db.SaveGrid(ref grd)
+**************
+Grid Edge Tags changed.
+An equivalent grid (1e59c129-b624-4364-8396-f112fa14d5da) is already present in the database -- the grid will not be saved.
+1e59c129-b624-4364-8396-f112fa14d5da
+==============
+**************
+==============
+C.SetGrid(grd)
+**************
+==============
+**************
+==============
+ 
+**************
+Incomplete statement - missing closing parentheses?.
+
+==============
+static class StaticFormulas {
+public static double Zero(double[] X) {
+    return 0.0;
+}
+
+public static double One(double[] X) {
+    return 1.0;
+}
+}
+
+**************
+==============
+**************
+==============
+var VelocityInFuel = new Formula (  "X => " + (uInFuel/uRef), false ); 
+var VelocityInOxi  = new Formula (  "X => " + (uInAir/uRef), false ); 
+var YCH4_F_IN      = new Formula (  "X => " + (C.YFuelInlet), false ); 
+var YN2_F_IN       = new Formula (  "X => " + (1.0 - C.YFuelInlet ), false ); 
+var YO2_O_IN       = new Formula (  "X => " + (C.YOxInlet), false ); 
+var YN2_O_IN       = new Formula (  "X => " + (1.0 - C.YOxInlet ), false );
+// Set Initial Values
+C.AddInitialValue(VariableNames.Pressure,GetFormulaObject(StaticFormulas.Zero));
+C.AddInitialValue(VariableNames.Velocity_d(0),GetFormulaObject(StaticFormulas.Zero));
+C.AddInitialValue(VariableNames.Velocity_d(1),GetFormulaObject(StaticFormulas.Zero));  
+C.AddInitialValue(VariableNames.Temperature, GetFormulaObject(StaticFormulas.One));
+C.AddInitialValue(VariableNames.MassFraction0,GetFormulaObject(StaticFormulas.Zero));
+C.AddInitialValue(VariableNames.MassFraction1,GetFormulaObject(StaticFormulas.One));
+C.AddInitialValue(VariableNames.MassFraction2,GetFormulaObject(StaticFormulas.Zero));
+C.AddInitialValue(VariableNames.MassFraction3, GetFormulaObject(StaticFormulas.Zero));
+C.AddInitialValue(VariableNames.MassFraction4, GetFormulaObject(StaticFormulas.Zero));  
+C.AddInitialValue(VariableNames.MixtureFraction,GetFormulaObject(StaticFormulas.Zero));  
+
+// Set boundary conditions
+C.BoundaryValues.Clear();
+C.AddBoundaryValue("Pressure_Outlet");
+C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.Velocity_d(0), GetFormulaObject(StaticFormulas.Zero) );
+C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.Velocity_d(1), VelocityInFuel ); 
+C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.Temperature, GetFormulaObject(StaticFormulas.One));  
+C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.MassFraction0, YCH4_F_IN);  
+C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.MassFraction1, GetFormulaObject(StaticFormulas.Zero));
+C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.MassFraction2, GetFormulaObject(StaticFormulas.Zero)); 
+C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.MassFraction3, GetFormulaObject(StaticFormulas.Zero));
+C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.MassFraction4, YN2_F_IN);  
+C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.MixtureFraction, GetFormulaObject(StaticFormulas.One)); 
+
+C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.Velocity_d(0), GetFormulaObject(StaticFormulas.Zero)) ;
+C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.Velocity_d(1),  VelocityInOxi ); 
+C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.Temperature, GetFormulaObject(StaticFormulas.One));  
+C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.MassFraction0, GetFormulaObject(StaticFormulas.Zero)); 
+C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.MassFraction1, YO2_O_IN);
+C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.MassFraction2, GetFormulaObject(StaticFormulas.Zero));
+C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.MassFraction3, GetFormulaObject(StaticFormulas.Zero)); 
+C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.MassFraction4, YN2_O_IN);
+C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.MixtureFraction, GetFormulaObject(StaticFormulas.Zero)); 
+**************
+==============
+// Execute the program with the controlfile.
+Console.WriteLine(" Submitting: " + C.SessionName); 
+var aJob = new Job(C.SessionName+"2sc4"+dummy, solver);
+aJob.SetControlObject(C);
+aJob.NumberOfMPIProcs = 4;
+aJob.Activate(myBatch);
+aJob.ShowOutput() ;
+WorkflowMgm.BlockUntilAllJobsTerminate();
+// ctrl.RunBatch(myBatch);
+
+
+**************
+ Submitting: 
+Loading session b942da69-eb39-4ae5-9b9a-0e4e3c2a165a failed with message 'Could not find file 'c:\bosss_db_flamesheet\sessions\b942da69-eb39-4ae5-9b9a-0e4e3c2a165a\Session.info'.'
+Job not submitted yet, or no result session is known - starting submission.
+
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CoFlowingFlame22-LowMachCombustionNSE2020Jul16_154957
+copied 28 files.
+   written file: control.obj
+deployment finished.
+Starting console...
+(You may close the new window at any time, the job will continue.)
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Loading session b942da69-eb39-4ae5-9b9a-0e4e3c2a165a failed with message 'Could not find file 'c:\bosss_db_flamesheet\sessions\b942da69-eb39-4ae5-9b9a-0e4e3c2a165a\Session.info'.'
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+Mini batch processor is already running.
+All jobs finished.
+
+==============
+databases.Pick(0).Sessions.
+**************
+empty-project-name  empty-session-name* 08/13/2020 16:57:03 5518ab94...
+==============
+LowMachCombustionNSEControl C2 = C;
+**************
+==============
+C2.physicsMode            = PhysicsMode.Combustion;
+C2.AdaptiveMeshRefinement = false;
+var ID                    = databases.Pick(2).Sessions.Pick(0).ID;
+C2.RestartInfo            = new Tuple<Guid, TimestepNumber>(ID, new TimestepNumber(-1));
+**************
+==============
+**************
+==============
+Console.WriteLine(" Submitting: " + C2.SessionName); 
+var aJob2 = new Job(C2.SessionName+"a2312b"+442, solver);
+aJob2.SetControlObject(C2);
+aJob2.NumberOfMPIProcs = 4;
+aJob2.Activate(myBatch); 
+aJob2.ShowOutput();
+WorkflowMgm.BlockUntilAllJobsTerminate();
+**************
+ Submitting: 
+Job is marked as failed by job manager, no database entry is found; performing new deployment and submission.
+
+Deploying executables and additional files ...
+Deployment directory: C:\deploy-Mini\CoFlowingFlame22-LowMachCombustionNSE2020Jul16_155749
+copied 28 files.
+   written file: control.obj
+deployment finished.
+Starting console...
+(You may close the new window at any time, the job will continue.)
+Mini batch processor is already running.
+Mini batch processor is already running.
+All jobs finished.
+
+==============
+aJob2.Stdout
+**************
+      ___           ___           ___           ___           ___     
+     /\  \         /\  \         /\  \         /\  \         /\  \    
+    /::\  \       /::\  \       /::\  \       /::\  \       /::\  \   
+   /:/\:\  \     /:/\:\  \     /:/\ \  \     /:/\ \  \     /:/\ \  \  
+  /::\~\:\__\   /:/  \:\  \   _\:\~\ \  \   _\:\~\ \  \   _\:\~\ \  \ 
+ /:/\:\ \:|__| /:/__/ \:\__\ /\ \:\ \ \__\ /\ \:\ \ \__\ /\ \:\ \ \__\
+ \:\~\:\/:/  / \:\  \ /:/  / \:\ \:\ \/__/ \:\ \:\ \/__/ \:\ \:\ \/__/
+  \:\ \::/  /   \:\  /:/  /   \:\ \:\__\    \:\ \:\__\    \:\ \:\__\  
+   \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /     \:\/:/  /  
+    \::/__/       \::/  /       \::/  /       \::/  /       \::/  /   
+     ~~            \/__/         \/__/         \/__/         \/__/    
+                                                                      
+Running with 4 MPI processes 
+Node: desktop-5la9j1g (ranks 0, 1, 2, 3)
+arg #0 override from environment variable 'BOSSS_ARG_0': --control
+arg #1 override from environment variable 'BOSSS_ARG_1': control.obj
+arg #2 override from environment variable 'BOSSS_ARG_2': --prjnmn
+arg #3 override from environment variable 'BOSSS_ARG_3': CoFlowingFlame22
+arg #4 override from environment variable 'BOSSS_ARG_4': --sesnmn
+arg #5 override from environment variable 'BOSSS_ARG_5': a2312b442
+   at BoSSS.Solution.Application`1.CreateOrLoadGrid()
+   at BoSSS.Solution.Application`1.SetUpEnvironment()
+   at BoSSS.Solution.Application`1.RunSolverMode()
+   at BoSSS.Solution.Application`1.AppEntry(Func`1 ApplicationFactory, CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)
+   at BoSSS.Solution.Application`1._Main(String[] args, Boolean noControlFile, Func`1 ApplicationFactory)
+
+
+==============
+**************
+==============
+**************
+ArgumentException:
+Grid Guid mismatch for restart: 'Control.GridGuid' is set to 1e59c129-b624-4364-8396-f112fa14d5da, but grid for restart-timestep has id d1cd838d-3a46-4914-8903-7dd6e51a56e3.
+==============
+**************
+==============
+**************
+   at BoSSS.Solution.Application`1.CreateOrLoadGrid()
+   at BoSSS.Solution.Application`1.SetUpEnvironment()
+   at BoSSS.Solution.Application`1.RunSolverMode()
+   at BoSSS.Solution.Application`1.AppEntry(Func`1 ApplicationFactory, CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)
+   at BoSSS.Solution.Application`1._Main(String[] args, Boolean noControlFile, Func`1 ApplicationFactory)
+   at BoSSS.Solution.Application`1.CreateOrLoadGrid()
+   at BoSSS.Solution.Application`1.SetUpEnvironment()
+   at BoSSS.Solution.Application`1.RunSolverMode()
+   at BoSSS.Solution.Application`1.AppEntry(Func`1 ApplicationFactory, CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)
+   at BoSSS.Solution.Application`1._Main(String[] args, Boolean noControlFile, Func`1 ApplicationFactory)
+
+
+==============
+**************
+==============
+
+
+
+**************
+==============
+**************
+==============
+duplicateValues.Count()
+**************
+1
+==============
+**************
+==============
+**************
+ArgumentException:
+Grid Guid mismatch for restart: 'Control.GridGuid' is set to 1e59c129-b624-4364-8396-f112fa14d5da, but grid for restart-timestep has id d1cd838d-3a46-4914-8903-7dd6e51a56e3.
+==============
+**************
+==============
+**************
+   at BoSSS.Solution.Application`1.CreateOrLoadGrid()
+   at BoSSS.Solution.Application`1.SetUpEnvironment()
+   at BoSSS.Solution.Application`1.RunSolverMode()
+   at BoSSS.Solution.Application`1.AppEntry(Func`1 ApplicationFactory, CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)
+   at BoSSS.Solution.Application`1._Main(String[] args, Boolean noControlFile, Func`1 ApplicationFactory)
+
+
+==============
+var  A = (new string[]{"_aa", "_ab", "_ac", "_ad", "_cb" }).ToList();
+**************
+==============
+A.Select(x=> )
+**************
+(1,4): error CS1501: No overload for method `Select' takes `1' arguments
+C:\Windows\Microsoft.Net\assembly\GAC_MSIL\System.Core\v4.0_4.0.0.0__b77a5c561934e089\System.Core.dll (Location of the symbol related to previous error)
+No. of errors|warnings: 1|0.
+
+==============
+var dictionary = new Dictionary<string, string>();
+**************
+==============
+**************
+==============
+**************
+job aborted:
+[ranks] message
+
+[0] process exited without calling finalize
+
+[1-3] terminated
+
+---- error analysis -----
+
+[0] on DESKTOP-5LA9J1G
+LowMachCombustionNSE.exe ended prematurely and may have crashed. exit code -1
+
+---- error analysis -----
+
+
+
+==============
+**************
+==============
+**************
+==============

@@ -430,7 +430,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     double theta = (theta_surf - theta_edge) * (180 / Math.PI);
 
                     EvalResult[0, 0, 2 * D] = (theta > 180) ? theta - 180 : theta;
-                    Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2 * D]);
+                    //Console.WriteLine("contact angle = {0}", EvalResult[0, 0, 2 * D]);
 
                 },
                 delegate (int i0, int length, MultidimensionalArray ResultsOfIntegration) {

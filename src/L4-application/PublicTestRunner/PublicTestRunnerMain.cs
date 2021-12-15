@@ -124,6 +124,7 @@ namespace PublicTestRunner {
                 return new Type[] {
                         typeof(BoSSS.Application.XNSERO_Solver.XNSERO),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
+                        typeof(BoSSS.Application.XNSFE_Solver.XNSFE),
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(CNS.Program),
                         typeof(NSE_SIMPLE.SIMPLESolver),
@@ -132,6 +133,7 @@ namespace PublicTestRunner {
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
                         typeof(LTSTests.Program),
+                        typeof(BoSSS.Application.XNSEC.XNSEC),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS)

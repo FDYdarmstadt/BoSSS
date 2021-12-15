@@ -70,7 +70,7 @@ namespace BoSSS.Application.BoSSSpad {
         TimeSpan m_UpdatePeriod = new TimeSpan(0, 5, 0);
 
         /// <summary>
-        /// Data like <see cref="Sessions"/> is cached for performance reasons; after this time span is elapsed, the data is re-read from disk.
+        /// Data like <see cref="Sessions"/>, <see cref="Grids"/> is cached for performance reasons; after this time span is elapsed, the data is re-read from disk.
         /// </summary>
         public TimeSpan UpdatePeriod {
             get {
@@ -199,10 +199,54 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public Func<Job, AppControl, bool> JobAppControlCorrelation;
 
+        /*
+        /// <summary>
+        /// deletes old job deployments and databases
+        /// </summary>
+        public void Reset() {
+            if(CurrentProject.IsEmptyOrWhite()) {
+                Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
+                return;
+            }
+
+            // delete old databases
+            // ====================
+            foreach(var q in BoSSSshell.ExecutionQueues) {
+                //var dirsToDelete = new HashSet<DirectoryInfo>();
+                //bool delete = false;
+                foreach(var allowedPath in q.AllowedDatabasesPaths) {
+                    var localBaseDir = new DirectoryInfo(allowedPath.LocalMountPath);
+
+                    var dbDirs = localBaseDir.GetDirectories(Directory, SearchOption.TopDirectoryOnly);
+                    foreach(var db in dbDirs) {
+                        if(db.Exists) {
+                            Console.WriteLine("Deleting database: " + db.FullName);
+                            db.Delete(true);
+                        }
+                    }
+                }
+            }
+
+            // delete old deployment
+            // =====================
+
+            {
+                var deplDirs = (new DirectoryInfo(q.DeploymentBaseDirectory)).GetDirectories(DeployMents, SearchOption.TopDirectoryOnly);
+                foreach(var d in deplDirs) {
+                    
+
+                    if(d.Exists) {
+                        Console.WriteLine("Deleting deployment dir: " + d.FullName);
+                        d.Delete(true);
+                    }
+                }
+            }
+        }
+        */
        
 
         /// <summary>
-        /// Defines the name of the current project;
+        /// Defines the name of the current project; also creates a default database
         /// </summary>
         public void Init(string ProjectName) {
             if ((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
@@ -210,9 +254,13 @@ namespace BoSSS.Application.BoSSSpad {
             m_CurrentProject = ProjectName;
             Console.WriteLine("Project name is set to '{0}'.", ProjectName);
 
-
             //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
             //    MiniBatchProcessor.Server.StartIfNotRunning();
+            try {
+                DefaultDatabase = BoSSSshell.GetDefaultQueue().CreateOrOpenCompatibleDatabase(ProjectName);
+            } catch (Exception e) {
+                Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
+            }
         }
 
         IDatabaseInfo m_DefaultDatabase;
@@ -232,6 +280,73 @@ namespace BoSSS.Application.BoSSSpad {
                 m_DefaultDatabase = value;
             }
         }
+
+        DateTime m_AllDatabases_CacheTime = DateTime.Now;
+        List<IDatabaseInfo> m_AllDatabases;
+
+
+        /// <summary>
+        /// all databases which match the <see cref="CurrentProject"/> name
+        /// </summary>
+        public IReadOnlyList<IDatabaseInfo> AllDatabases {
+            get {
+
+                if(m_AllDatabases == null || ((DateTime.Now - m_AllDatabases_CacheTime) > UpdatePeriod)) {
+
+                    var allDBs = new List<IDatabaseInfo>();
+
+                    foreach(var q in BoSSSshell.ExecutionQueues) {
+                        int cnt = 0;
+                        foreach(var dbPath in q.AllowedDatabasesPaths) {
+                            IDatabaseInfo dbi = null;
+                            string db_path = Path.Combine(dbPath.LocalMountPath, this.CurrentProject);
+                            if(cnt == 0) {
+                                try {
+                                    dbi = BoSSSshell.OpenOrCreateDatabase(db_path);
+                                } catch(Exception e) {
+                                    Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of database: {e.Message}.");
+                                }
+                            } else {
+                                try {
+                                    dbi = BoSSSshell.OpenDatabase(db_path);
+                                } catch(Exception) {
+                                    dbi = null;
+                                }
+                            }
+                            if(dbi != null)
+                                allDBs.Add(dbi);
+                            cnt++;
+                        }
+                    }
+
+                    if(m_DefaultDatabase != null) {
+                        int DefaultDbMatch = -1;
+                        int cnt = 0;
+                        foreach(var dbi in allDBs) {
+                            if(Object.ReferenceEquals(m_DefaultDatabase, dbi) || dbi.PathMatch(m_DefaultDatabase.Path)) {
+                                DefaultDbMatch = cnt;
+                                break;
+                            }
+                            cnt++;
+                        }
+
+                        if(DefaultDbMatch >= 0) {
+                            allDBs.RemoveAt(DefaultDbMatch);
+                            allDBs.Insert(0, m_DefaultDatabase);
+                        } else {
+                            allDBs.Insert(0, m_DefaultDatabase);
+                        }
+                    }
+
+                    m_AllDatabases_CacheTime = DateTime.Now;
+                    m_AllDatabases = allDBs;
+                }
+                
+                return m_AllDatabases.AsReadOnly();
+            }
+        }
+
+
 
 
 
@@ -397,14 +512,21 @@ namespace BoSSS.Application.BoSSSpad {
                     return new IGridInfo[0];
                 }
 
-                if (m_Grids == null || ((DateTime.Now - m_Sessions_CacheTime) > UpdatePeriod)) {
+                if (m_Grids == null || ((DateTime.Now - m_Grids_CacheTime) > UpdatePeriod)) {
                     HashSet<IGridInfo> grids = new HashSet<IGridInfo>(
                     new ilPSP.FuncEqualityComparer<IGridInfo>((g1, g2) => g1.ID.Equals(g2.ID), g => g.ID.GetHashCode()));
 
+                    foreach(var dbi in this.AllDatabases) {
+                        foreach(var g in dbi.Grids) {
+                            grids.Add(g);
+                        }
+                    }
+
+
                     foreach (var s in this.Sessions) {
-                        Console.Write("Session " + s.ID + " ... ");
+                        //Console.Write("Session " + s.ID + " ... ");
                         grids.AddRange(s.GetGrids());
-                        Console.WriteLine(" done.");
+                        //Console.WriteLine(" done.");
                     }
 
                     m_Grids = grids.ToArray();
@@ -439,8 +561,18 @@ namespace BoSSS.Application.BoSSSpad {
                 r.DefineEdgeTags(EdgeTagFunc);
 
             this.DefaultDatabase.SaveGrid(ref r, force:false);
-
+            m_Grids = null; // trigger re-read;
             return r;
+        }
+
+        /// <summary>
+        /// Saves the grid <paramref name="g"/> in the <see cref="DefaultDatabase"/>;
+        /// see <see cref="IDatabaseInfoExtensions.SaveGrid{TG}(IDatabaseInfo, ref TG, bool)"/>
+        /// </summary>
+        public GridCommons SaveGrid(GridCommons g) {
+            this.DefaultDatabase.SaveGrid(ref g, force: false);
+            m_Grids = null; // trigger re-read;
+            return g;
         }
         
 
@@ -499,7 +631,7 @@ namespace BoSSS.Application.BoSSSpad {
         public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
             DateTime start = DateTime.Now;
             while(true) {
-
+                
                 //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
                 //    MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
 
