@@ -643,11 +643,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var solver = this.Precond;
                 solver.Init(CurrentLin);
-                CurrentLin.OperatorMatrix.SaveToTextFileSparse("newtonMat_numberofCellsX="+ this.CurrentLin.GridData.Grid.NumberOfCells/3 +"_t=01_P=" + this.CurrentLin.Degrees.First() + "_it=" +  itc +".txt");
+                //CurrentLin.OperatorMatrix.SaveToTextFileSparse("newtonMat_numberofCellsX="+ this.CurrentLin.GridData.Grid.NumberOfCells/3 +"_t=01_P=" + this.CurrentLin.Degrees.First() + "_it=" +  itc +".txt");
                 
-                var Eigen = CurrentLin.OperatorMatrix.MinimalEigen();
-                DGField[] EigenVect_DG = CurrentLin.ProlongateSolToDg(Eigen.V, "Eigen-");
-                Tecplot.Tecplot.PlotFields(EigenVect_DG, "EigenSol", Eigen.lambdaMin, 2);
+                //var Eigen = CurrentLin.OperatorMatrix.MinimalEigen();
+                //DGField[] EigenVect_DG = CurrentLin.ProlongateSolToDg(Eigen.V, "Eigen-");
+                //Tecplot.Tecplot.PlotFields(EigenVect_DG, "EigenSol", Eigen.lambdaMin, 2);
 
                 //SubBlockSelector sbs = new SubBlockSelector(CurrentLin.Mapping);
                 //sbs.VariableSelector(0);
