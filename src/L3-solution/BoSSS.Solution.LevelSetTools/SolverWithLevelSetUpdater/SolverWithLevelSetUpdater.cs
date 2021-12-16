@@ -326,7 +326,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         /// <summary>
         /// Corresponding to <see cref="LevelSetEvolution"/> initialization of LevelSetDG
-        /// and projection on continous LevelSetCG
+        /// and projection on continuous LevelSetCG
         /// calls <see cref="LevelSetTracker.UpdateTracker(double, int, bool, int[])">
         /// </summary>
         protected virtual void InitializeLevelSets(LevelSetUpdater lsUpdater, double time) {
@@ -399,6 +399,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 pair.CGLevelSet.AccLaidBack(1.0, pair.DGLevelSet);
 
             }
+
+            LsUpdater.Tracker.UpdateTracker(time); // update the tracker **before** pushing
 
             LsUpdater.Tracker.PushStacks();
 

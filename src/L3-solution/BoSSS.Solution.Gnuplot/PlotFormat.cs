@@ -100,7 +100,7 @@ namespace BoSSS.Solution.Gnuplot {
                 this.PointType = PointTypes.OpenBox;
             if (ContainsRemove(ref FormatString, "^", ref AnySymb))
                 this.PointType = PointTypes.OpenLowerTriangle;
-            if (ContainsRemove(ref FormatString, "^", ref AnySymb))
+            if (ContainsRemove(ref FormatString, "v", ref AnySymb))
                 this.PointType = PointTypes.LowerTriangle;
 
             if(anyLine == true) {

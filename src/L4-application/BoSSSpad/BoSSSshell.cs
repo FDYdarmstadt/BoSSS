@@ -24,7 +24,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.BoSSSpad {
-    
+
     /// <summary>
     /// Standard commands to be used in the Jupyter Notebooks **with a C# - kernel**, of course.
     /// </summary>
@@ -86,7 +86,7 @@ namespace BoSSS.Application.BoSSSpad {
                 string summary = databases.Summary();
                 Console.WriteLine("Databases loaded: ");
                 Console.WriteLine(summary);
-            } catch(Exception e) {
+            } catch (Exception e) {
                 Console.WriteLine();
                 Console.WriteLine(
                     "{0} occurred with message '{1}' while loading the databases.",
@@ -95,6 +95,9 @@ namespace BoSSS.Application.BoSSSpad {
                 InteractiveShell.LastError = e;
             }
             InitTraceFile();
+
+            Microsoft.DotNet.Interactive.Formatting.Formatter.RecursionLimit = 1;
+            Microsoft.DotNet.Interactive.Formatting.Formatter.ListExpansionLimit = 100;
 
             AddObjectFormatter<SinglePhaseField>();
             AddObjectFormatter<Foundation.XDG.XDGField>();
@@ -128,24 +131,32 @@ namespace BoSSS.Application.BoSSSpad {
         /// seems to be required for JSON serialization in order to resolve classes/assemblies
         /// </summary>
         static void CallRandomStuff() {
-            new BatchProcessorConfig();
-            
-            new BoSSS.Solution.Control.Formula("X => Math.Sin(X[0])");
+            using(var tr = new FuncTrace()) {
+                new BatchProcessorConfig();
 
-            var g = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 4), GenericBlas.Linspace(-1, 1, 4));
-            var u = new SinglePhaseField(new Basis(g, 1), "u");
+                new BoSSS.Solution.Control.Formula("X => Math.Sin(X[0])");
 
-            var mtx = new BlockMsrMatrix(u.Mapping, u.Mapping);
-            mtx.AccEyeSp(2.0);
-            int L = mtx.RowPartitioning.LocalLength;
-            mtx.Solve_Direct(new double[L], new double[L]);
-            mtx.Solve_CG(new double[L], new double[L]);
+                var g = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, 4), GenericBlas.Linspace(-1, 1, 4));
+                var u = new SinglePhaseField(new Basis(g, 1), "u");
 
-            using(var gp = new Gnuplot()) {
+                var mtx = new BlockMsrMatrix(u.Mapping, u.Mapping);
+                mtx.AccEyeSp(2.0);
+                int L = mtx.RowPartitioning.LocalLength;
+                mtx.Solve_Direct(new double[L], new double[L]);
+                mtx.Solve_CG(new double[L], new double[L]);
 
+                using(var gp = new Gnuplot()) {
+
+                }
+
+                var ls = new Foundation.XDG.LevelSet(new Basis(g, 2), "phi");
+
+                foreach(var t in BoSSS.Solution.Application.DllEnforcer()) {
+                    tr.Info("Loaded type " + t + " form " + t.Assembly);
+                }
+                //var tt = BoSSS.Solution.Application.DllEnforcer2();
+                //tr.Info("Loaded type " + tt + " form " + tt.Assembly);
             }
-
-            var ls = new Foundation.XDG.LevelSet(new Basis(g, 2), "phi");
         }
 
 
@@ -208,7 +219,7 @@ namespace BoSSS.Application.BoSSSpad {
                     T v = (T)obj;
 
                     string valString;
-                    if(optValFormatter == null)
+                    if (optValFormatter == null)
                         valString = v != null ? v.ToString() : "NULL";
                     else
                         valString = v != null ? optValFormatter(v) : "NULL";
@@ -220,7 +231,20 @@ namespace BoSSS.Application.BoSSSpad {
         /// text formatting of data tables
         /// </summary>
         public static void AddTableFormatter() {
-            Formatter.SetPreferredMimeTypeFor(typeof(System.Data.DataTable), "text/plain");
+
+            var t = typeof(System.Data.DataTable);
+
+            try {
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
+            } catch (NullReferenceException) {
+                Console.WriteLine("Trying alternative method");
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
+            }
+
             Formatter.Register(
                 type: typeof(System.Data.DataTable),
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -254,16 +278,16 @@ namespace BoSSS.Application.BoSSSpad {
 
                     var enu = (IDictionary<KeyType, ValType>)obj;
 
-                    foreach(var kv in enu) {
+                    foreach (var kv in enu) {
 
                         string valString;
-                        if(optValFormatter == null)
+                        if (optValFormatter == null)
                             valString = kv.Value != null ? kv.Value.ToString() : "NULL";
                         else
                             valString = kv.Value != null ? optValFormatter(kv.Value) : "NULL";
 
                         string keyString;
-                        if(optKeyFormatter == null)
+                        if (optKeyFormatter == null)
                             keyString = kv.Key != null ? kv.Key.ToString() : "NULL";
                         else
                             keyString = kv.Key != null ? optKeyFormatter(kv.Value) : "NULL";
@@ -298,9 +322,9 @@ namespace BoSSS.Application.BoSSSpad {
 
                     var enu = (IEnumerable<ValType>)obj;
 
-                    foreach(var v in enu) {
+                    foreach (var v in enu) {
                         string valString;
-                        if(optValFormatter == null)
+                        if (optValFormatter == null)
                             valString = v != null ? v.ToString() : "NULL";
                         else
                             valString = v != null ? optValFormatter(v) : "NULL";
@@ -385,7 +409,7 @@ namespace BoSSS.Application.BoSSSpad {
             m_WorkflowMgm = null;
             executionQueues = null;
         }
-        
+
 
         /// <summary>
         /// Prints Information on an object state.
@@ -396,12 +420,12 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         static void InfoRecursive(object obj, int RecursionDepth, int MaxRecursionDepth) {
-            if(obj == null) {
+            if (obj == null) {
                 Console.WriteLine("Null");
                 return;
             }
 
-            if(RecursionDepth > MaxRecursionDepth) {
+            if (RecursionDepth > MaxRecursionDepth) {
                 Console.WriteLine(" ... no further recursion - max recursion depth reached.");
                 return;
             }
@@ -420,7 +444,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             void WriteSpaces() {
                 //Console.WriteLine();
-                for(int i = 0; i < RecursionDepth; i++)
+                for (int i = 0; i < RecursionDepth; i++)
                     Console.Write(" ");
             }
 
@@ -445,15 +469,15 @@ namespace BoSSS.Application.BoSSSpad {
             foreach (MemberInfo mi in ArrayTools.Cat(PIs, FIs)) {
                 WriteSpaces();
                 Console.Write(mi.Name + ": ");
-                
+
                 object Val;
                 if (mi is PropertyInfo) {
                     PropertyInfo pi = ((PropertyInfo)mi);
-                    if(!pi.CanRead) {
+                    if (!pi.CanRead) {
                         Console.WriteLine("cannot read.");
                         continue;
                     }
-                    if(pi.GetIndexParameters() != null && pi.GetIndexParameters().Length > 0) {
+                    if (pi.GetIndexParameters() != null && pi.GetIndexParameters().Length > 0) {
                         // no support for indexed properties.
                         Console.WriteLine("indexed property - not supported.");
                         continue;
@@ -489,7 +513,7 @@ namespace BoSSS.Application.BoSSSpad {
         static public IList<ISessionInfo> AllSessions {
             get {
                 var ret = new List<ISessionInfo>();
-                foreach(var db in databases) {
+                foreach (var db in databases) {
                     ret.AddRange(db.Sessions);
                 }
                 return ret;
@@ -502,7 +526,7 @@ namespace BoSSS.Application.BoSSSpad {
         static public IList<IGridInfo> AllGrids {
             get {
                 var ret = new List<IGridInfo>();
-                foreach(var db in databases) {
+                foreach (var db in databases) {
                     ret.AddRange(db.Grids);
                 }
                 return ret;
@@ -533,7 +557,7 @@ namespace BoSSS.Application.BoSSSpad {
             string path = GetDefaultDatabaseDir();
             return OpenOrCreateDatabase(path);
         }
-        
+
         /// <summary>
         /// Creates a database in a temporary directory
         /// </summary>
@@ -550,7 +574,7 @@ namespace BoSSS.Application.BoSSSpad {
                     Exists = TempDir.Exists;
                 } while (Exists == true);
             }
-            
+
             string path = TempDir.FullName;
             return OpenOrCreateDatabase(path);
         }
@@ -559,7 +583,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Opens a database at a specific path, resp. creates one if the 
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
-           
+
             return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
         }
 
@@ -716,7 +740,7 @@ namespace BoSSS.Application.BoSSSpad {
             bool logX = false, bool logY = false) {
 
             using (var gp = new Gnuplot()) {
-                
+
 
                 IEnumerable<double>[] Xs = new[] { X1, X2, X3, X4, X5, X6, X7 };
                 IEnumerable<double>[] Ys = new[] { Y1, Y2, Y3, Y4, Y5, Y6, Y7 };
@@ -770,8 +794,8 @@ namespace BoSSS.Application.BoSSSpad {
 
             string SanitizeName(string s) {
                 char[] ot = s.ToCharArray();
-                for(int k = 0; k < ot.Length; k++) {
-                    if(char.IsWhiteSpace(ot[k])) {
+                for (int k = 0; k < ot.Length; k++) {
+                    if (char.IsWhiteSpace(ot[k])) {
                         ot[k] = '_';
                     }
 
@@ -783,7 +807,7 @@ namespace BoSSS.Application.BoSSSpad {
                 return new string(ot);
             }
 
-           
+
 
             var et2Name = grd.EdgeTagNames;
             Console.WriteLine($"Grid containing {et2Name.Count} EdgeTag names: ");
@@ -811,7 +835,7 @@ namespace BoSSS.Application.BoSSSpad {
             byte[] EdgeTags = grd.iGeomEdges.EdgeTags;
 
             i = 0;
-            foreach(var t in et2Name) { // loop over all different edge tag names...
+            foreach (var t in et2Name) { // loop over all different edge tag names...
                 string name = t.Value;
                 byte tag2color = t.Key;
                 string sname = SanitizeName(name);
@@ -824,10 +848,10 @@ namespace BoSSS.Application.BoSSSpad {
                 for (int e = 0; e < EdgeTags.Length; e++) { // loop over edges...
                     byte tag_e = EdgeTags[e];
 
-                    if(tag_e == tag2color) {
+                    if (tag_e == tag2color) {
                         // mar cells next to edge e
 
-                        foreach(int jG in Edge2GeomCell.GetRow(e)) {
+                        foreach (int jG in Edge2GeomCell.GetRow(e)) {
                             if (jG < 0)
                                 continue;
 
@@ -938,7 +962,7 @@ namespace BoSSS.Application.BoSSSpad {
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();
-               
+
             } catch (Exception e) {
                 Console.Error.WriteLine($"{e.GetType().Name} caught while loading batch processor configuration file - using a default configuration. Message: {e.Message}");
 
@@ -957,12 +981,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static BatchProcessorClient GetDefaultQueue() {
             // quick hack 
-            if(ilPSP.Environment.MPIEnv.Hostname.Contains("fdygitrunner", StringComparison.InvariantCultureIgnoreCase))
+            if (ilPSP.Environment.MPIEnv.Hostname.Contains("fdygitrunner", StringComparison.InvariantCultureIgnoreCase))
                 return ExecutionQueues[2];
-            if(ilPSP.Environment.MPIEnv.Hostname.Contains("jenkins-linux", StringComparison.InvariantCultureIgnoreCase))
+            if (ilPSP.Environment.MPIEnv.Hostname.Contains("jenkins-linux", StringComparison.InvariantCultureIgnoreCase))
                 return ExecutionQueues[1];
 
-            
+
             return ExecutionQueues[0];
         }
 
@@ -972,7 +996,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static IReadOnlyList<BatchProcessorClient> ExecutionQueues {
             get {
-                if(executionQueues == null) {
+                if (executionQueues == null) {
                     ReloadExecutionQueues();
                 }
 
@@ -986,7 +1010,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Adds an entry to <see cref="ExecutionQueues"/>.
         /// </summary>
         public static int AddExecutionQueue(BatchProcessorClient bpc) {
-            if(executionQueues == null)
+            if (executionQueues == null)
                 executionQueues = new List<BatchProcessorClient>();
             executionQueues.Add(bpc);
             return executionQueues.Count - 1;

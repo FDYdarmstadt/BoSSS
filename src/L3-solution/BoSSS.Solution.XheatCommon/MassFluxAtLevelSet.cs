@@ -148,7 +148,6 @@ namespace BoSSS.Solution.XheatCommon {
             this.m_kB = thermalParameters.k_B;
 
             this.m_hvap = thermalParameters.hVap;
-
             this.NegativeSpecies = phaseA;
             this.PositiveSpecies = phaseB;
         }
@@ -170,7 +169,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public abstract double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
 
-        bool MEvapIsPrescribd = false;
+        public bool MEvapIsPrescribd = false;
         double prescrbMEvap;
 
         public virtual void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
@@ -217,6 +216,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public virtual TermActivationFlags LevelSetTerms {
             get { return TermActivationFlags.GradUxV; }
+
         }
     }
 
@@ -347,6 +347,79 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
+        /// <summary>
+        /// the penalty flux
+        /// </summary>
+        static double Flux(double UxN_in, double UxN_out) {
+            return 0.5 * (UxN_in - UxN_out);
+        }
+    }
+
+
+    /// <summary>
+    /// velocity jump penalty of the low mach equations for the divergence operator (continuity equation), on the level set 
+    /// </summary>
+    public class DivergenceAtLevelSet_Evaporation_StrongCoupling_LowMach : MassFluxAtLevelSet_StrongCoupling {
+
+        public DivergenceAtLevelSet_Evaporation_StrongCoupling_LowMach(int _D,
+            double vorZeichen, bool RescaleConti, ThermalParameters thermalParameters, string phaseA, string phaseB)
+            : base(_D, thermalParameters, phaseA, phaseB) {
+
+            scaleA = vorZeichen;
+            scaleB = vorZeichen;
+
+            if (RescaleConti) {
+                scaleA /= m_rhoA;
+                scaleB /= m_rhoB;
+            }
+        }
+
+        double scaleA;
+        double scaleB;
+
+
+        public override double InnerEdgeForm(ref CommonParams cp,
+            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            double M = MassFlux(cp, Grad_uA, Grad_uB);
+
+            if (M == 0.0)
+                return 0.0;
+
+            double uAxN = -M * (1 / m_rhoA);
+            double uBxN = -M * (1 / m_rhoB);
+
+            // transform from species B to A: we call this the "A-fictitious" value
+            double uAxN_fict;
+            //uAxN_fict = (1 / rhoA) * (rhoB * uBxN);
+            uAxN_fict = uBxN;
+
+            // transform from species A to B: we call this the "B-fictitious" value
+            double uBxN_fict;
+            //uBxN_fict = (1 / rhoB) * (rhoA * uAxN);
+            uBxN_fict = uAxN;
+
+
+            // compute the fluxes: note that for the continuity equation, we use not a real flux,
+            // but some kind of penalization, therefore the fluxes have opposite signs!
+            double FlxNeg = -Flux(uAxN, uAxN_fict) * -1 * m_rhoA; // flux on A-side
+            double FlxPos = +Flux(uBxN_fict, uBxN) * -1 * m_rhoB;  // flux on B-side
+
+            FlxNeg *= scaleA;
+            FlxPos *= scaleB;
+
+           double Ret = FlxNeg * vA - FlxPos * vB;
+   
+
+            return Ret;
+        }
+
+        public override TermActivationFlags LevelSetTerms {
+            get { return TermActivationFlags.GradUxV | TermActivationFlags.V; }
+            
+
+        }
         /// <summary>
         /// the penalty flux
         /// </summary>
@@ -641,8 +714,16 @@ namespace BoSSS.Solution.XheatCommon {
             PosLengthScaleS = csB.CellLengthScales;
         }
 
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                var terms = base.LevelSetTerms | TermActivationFlags.GradUxGradV;
+                if (MEvapIsPrescribd)                    
+                    terms |= TermActivationFlags.V;
+                return terms;
 
-        public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.GradUxGradV;
+            }
+        }
+        //public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.GradUxGradV /*|TermActivationFlags.V*/;
 
     }
 
