@@ -64,12 +64,21 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         protected abstract void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel);
 
 
+
+        /// <summary>
+        /// Instantiation of the spatial operator;
+        /// Can only be called once per gird lifetime (until <see cref=""/>
+        /// </summary>
         protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
-            
+            // fails on a second call, if the LsUpdater is already configured.
+            // access `base.XOperator`
             XSpatialOperatorMk2 xOperator = GetOperatorInstance(D, LsUpdater);
             return xOperator;
         }
 
+        /// <summary>
+        /// Instantiation of the spatial operator; 
+        /// </summary>
         protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
 
         /// <summary>
@@ -317,7 +326,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         /// <summary>
         /// Corresponding to <see cref="LevelSetEvolution"/> initialization of LevelSetDG
-        /// and projection on continous LevelSetCG
+        /// and projection on continuous LevelSetCG
         /// calls <see cref="LevelSetTracker.UpdateTracker(double, int, bool, int[])">
         /// </summary>
         protected virtual void InitializeLevelSets(LevelSetUpdater lsUpdater, double time) {
@@ -390,6 +399,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 pair.CGLevelSet.AccLaidBack(1.0, pair.DGLevelSet);
 
             }
+
+            LsUpdater.Tracker.UpdateTracker(time); // update the tracker **before** pushing
 
             LsUpdater.Tracker.PushStacks();
 

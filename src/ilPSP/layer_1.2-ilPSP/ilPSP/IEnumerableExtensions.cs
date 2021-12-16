@@ -556,6 +556,12 @@ namespace ilPSP {
         /// True, if all elements in <paramref name="A"/> are also in <paramref name="B"/>.
         /// </summary>
         public static bool IsSubsetOf<T>(this IEnumerable<T> A, IEnumerable<T> B) {
+            if (A == null || A.Count() == 0)
+                return true;
+            if (B == null && (A != null && A.Count() > 0))
+                // B is empty, but A containes something.
+                return false;
+
             T[] Barray = B.ToArray();
 
             foreach (var a in A) {
@@ -732,7 +738,7 @@ namespace ilPSP {
         /// <returns></returns>
         public static string ToConcatString(this System.Collections.IEnumerable ie, string firstSign, string separator, string lastSign) {
             using(var stw = new StringWriter()) {
-                if(!firstSign.IsEmptyOrWhite())
+                if(firstSign != null)
                     stw.Write(firstSign);
                 int L = ie.Count();
                 int cnt = 0;
@@ -745,7 +751,7 @@ namespace ilPSP {
                         stw.Write(separator);
                     cnt++;
                 }
-                if(!lastSign.IsEmptyOrWhite())
+                if(lastSign != null)
                     stw.Write(lastSign);
                 
                 return stw.ToString();

@@ -118,8 +118,6 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     double[] yVals = data[yName];
                     double Slope = xVals.LogLogRegression(yVals);
 
-                
-
                     gp.PlotXY(xVals, yVals, logX: true, logY: true, title:yName, format:(fmt.WithLineColor(Kount).WithPointType(Kount)));
                     gp.SetXLabel(ttt.Item1.ToString());
 
@@ -142,13 +140,13 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         public ConditionNumberScalingTest(string Title) {
             m_title = Title;
 
-            this.ExpectedSlopes = new List<ValueTuple<XAxisDesignation, string, double>>();
+            this.ExpectedSlopes = new List<ValueTuple<XAxisDesignation, string, double, double>>();
 
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "TotCondNo-*", 2.35));
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-*", 0.5));
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerCut-*", 0.5));
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyUncut-*", 0.5));
-            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyCut-*", 0.5));
+            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "TotCondNo-*", 2.4, 1.5));
+            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerUncut-*", 0.5, -0.2));
+            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-innerCut-*", 0.5, -0.2));
+            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyUncut-*", 0.5, -0.2));
+            ExpectedSlopes.Add((XAxisDesignation.Grid_1Dres, "StencilCondNo-bndyCut-*", 0.5, -0.2));
         }
 
 
@@ -242,8 +240,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// - 1st item: name of x-axis
         /// - 2nd item: name of y-axis (wildcards accepted)
         /// - 3rd item expected slope in the log-log-regression
+        /// - 4th item lower bound for expected slope in the log-log-regression
         /// </summary>
-        public IList<ValueTuple<XAxisDesignation, string, double>> ExpectedSlopes;
+        public IList<ValueTuple<XAxisDesignation, string, double, double>> ExpectedSlopes;
 
 
         /// <summary>
@@ -272,7 +271,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                     testData.Add(yName, yVals);
 
-                    string tstPasses = Slope <= ttt.Item3 ? "passed" : $"FAILED (threshold is {ttt.Item3})";
+                    string tstPasses = Slope <= ttt.Item3 ? Slope >= ttt.Item4 ? "passed" : $"FAILED (threshold is {ttt.Item4})" : $"FAILED (threshold is {ttt.Item3})";
                     tw.WriteLine($"    Slope for {yName}: {Slope:0.###e-00} -- {tstPasses}");
                 }
             }
