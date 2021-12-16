@@ -124,15 +124,16 @@ namespace ZwoLevelSetSolver.Boundary {
         string fluidSpecies;
         string[] variableNames;
         int d;
-        double viscosity;
+        double extensionViscosity;
+        double artificialViscosity;
 
-        public ExtensionSolidTensionForm(string fluidSpecies, string solidSpecies, string[] variableNames, int d, int D, int levelSetIndex, double viscosity) {
+        public ExtensionSolidTensionForm(string fluidSpecies, string solidSpecies, string[] variableNames, int d, int D, int levelSetIndex, double extensionViscosity, double artificialViscosity) {
             this.levelSetIndex = levelSetIndex;
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
-
             this.d = d;
-            this.viscosity = viscosity;
+            this.extensionViscosity = extensionViscosity;
+            this.artificialViscosity = artificialViscosity;
             this.variableNames = variableNames;
         }
 
@@ -185,17 +186,18 @@ namespace ZwoLevelSetSolver.Boundary {
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-            double tension = 0;
-
+            double extensionTension = 0;
+            double artificialTension = 0;
             // ((fluidTension + solidTension) * n 
             for(int i = 0; i < D; i++) {
                 // = consistency terms
-                tension -= viscosity * _Grad_uIN[d, i] * inp.Normal[i];
+                extensionTension -= extensionViscosity * _Grad_uIN[d, i] * inp.Normal[i];
+                artificialTension -= artificialViscosity * _Grad_uOUT[d, i] * inp.Normal[i];
             }
-            tension += viscosity * Penalty(inp.jCellIn, inp.jCellOut) * (_uIN[d] - _uOUT[d]); 
-            tension *= 1 * (_vIN);
+            double penalty = 0;
+            penalty += Math.Max(extensionViscosity, artificialViscosity) * Penalty(inp.jCellIn, inp.jCellOut) * (_uIN[d] - _uOUT[d]) * (_vIN); ; 
 
-            return tension;
+            return extensionTension * _vIN - artificialTension * _vOUT + penalty;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

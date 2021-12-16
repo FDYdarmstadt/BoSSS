@@ -13,6 +13,8 @@ namespace ZwoLevelSetSolver {
 
         public static string DisplacementEvolutionZ = "DisplacementEvolutionZ";
 
+        public static string DisplacementContinuity = "DisplacementContinuity";
+
         static public string DisplacementEvolutionComponent(int d) {
             switch(d) {
                 case 0: return DisplacementEvolutionX;

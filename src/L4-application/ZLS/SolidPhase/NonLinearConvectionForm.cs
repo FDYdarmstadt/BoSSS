@@ -101,8 +101,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 switch(edgType) {
                     case IncompressibleBcType.FreeSlip:
                     case IncompressibleBcType.Wall:
-                    case IncompressibleBcType.Velocity_Inlet:
                         return rho * uDirichlet * (vDirichlet * inp.Normal) * (_vIN);
+                    case IncompressibleBcType.Velocity_Inlet:
                     case IncompressibleBcType.Outflow:
                     case IncompressibleBcType.Pressure_Outlet:
                         return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow

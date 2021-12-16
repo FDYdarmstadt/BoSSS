@@ -95,8 +95,8 @@ namespace ZwoLevelSetSolver {
                 opFactory.AddEquation(new DisplacementEvolution("C", d, D, Control.ArtificialViscosity, boundaryMap));
                 //opFactory.AddEquation(new ParameterDisplacementEvolution("C", d, D, Control.ArtificialViscosity));
                 if (this.Control.DisplacementExtension){
-                    opFactory.AddEquation(new DisplacementEvolution("B", d, D, Control.ArtificialViscosity, boundaryMap));
-                    opFactory.AddEquation(new DisplacementEvolution("A", d, D, Control.ArtificialViscosity, boundaryMap));
+                    opFactory.AddEquation(new DisplacementEvolution("B", d, D, Control.ExtensionArtificialViscosity, boundaryMap));
+                    opFactory.AddEquation(new DisplacementEvolution("A", d, D, Control.ExtensionArtificialViscosity, boundaryMap));
                 } else {
                     opFactory.AddEquation(new Dummy("A", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
                     opFactory.AddEquation(new Dummy("B", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
@@ -130,8 +130,8 @@ namespace ZwoLevelSetSolver {
                 if(this.Control.DisplacementExtension) {
                     opFactory.AddEquation(new ExtensionNavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
                     opFactory.AddEquation(new ExtensionNavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
-                    opFactory.AddEquation(new ExtensionDisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity));
-                    opFactory.AddEquation(new ExtensionDisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity));
+                    opFactory.AddEquation(new ExtensionDisplacementBoundary(LsTrk, "A", "C", d, D, Control.ExtensionArtificialViscosity, Control.ArtificialViscosity));
+                    opFactory.AddEquation(new ExtensionDisplacementBoundary(LsTrk, "B", "C", d, D, Control.ExtensionArtificialViscosity, Control.ArtificialViscosity));
                 } else {
                     opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
                     opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));

@@ -862,7 +862,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
         public static ZLS_Control VerticalBeamInChannel(int p = 2, int kelem = 5, int AMRlvl = 0) {
             ZLS_Control C = new ZLS_Control(p);
-            C.ImmediatePlotPeriod = 10;
+            C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
@@ -1054,14 +1054,13 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             //C.CheckJumpConditions = true;
 
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.ArtificialViscosity = 0.0001;
 
             C.TimesteppingMode = compMode;
-            double dt = 5e-3;
+            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 30;
@@ -1305,6 +1304,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AddBoundaryValue("wall_lower", "VelocityX#A", X => vel * (X[0] + 1).Pow2() * (X[0] - 1).Pow2());
             C.AddBoundaryValue("wall_lower", "VelocityX#B", X => vel);
             C.AddBoundaryValue("wall_lower", "VelocityX#C", X => vel);
+
+
+            C.AddBoundaryValue("wall_lower", "DisplacementX#A", (X,t) => t * vel * (X[0] + 1).Pow2() * (X[0] - 1).Pow2());
+
             #endregion
 
             // misc. solver options
@@ -1488,7 +1491,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 if(t < 1) {
                     return integralR(t);
                 } else {
-                    return 1 * t + integralR(1);
+                    return 1 * (t-1) + integralR(1);
                 }
             }
 
@@ -1496,16 +1499,14 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 return v0 * t + RInt(t) * vmax;
             }
 
-            double aa = RInt(1e-2);
-
             C.AddBoundaryValue("freeslip_lower");
             C.AddBoundaryValue("freeslip_upper");
             C.AddBoundaryValue("velocity_inlet_left", "VelocityX#A", inflow);
-            C.AddBoundaryValue("velocity_inlet_left", "VelocityX#B", inflow);
+            C.AddBoundaryValue("velocity_inlet_left", "VelocityY#A", X => 0);
             C.AddBoundaryValue("pressure_outlet_right");
 
-            C.AddBoundaryValue("velocity_inlet_left", "DisplacementX#A", integratedInflow);
-            C.AddBoundaryValue("velocity_inlet_left", "DisplacementX#B", integratedInflow);
+            C.AddBoundaryValue("velocity_inlet_left", "DisplacementX#A", (X,t) => integratedInflow(X, t));
+            C.AddBoundaryValue("velocity_inlet_left", "DisplacementY#A", X => 0.0);
 
             #endregion
 
