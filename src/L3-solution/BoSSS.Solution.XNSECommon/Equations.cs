@@ -426,7 +426,7 @@ namespace BoSSS.Solution.XNSECommon {
                     AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, false));
                     break;
                     case ViscosityMode.FullySymmetric:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d, false));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d));
                     break;
                     case ViscosityMode.Viscoelastic:
                     //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
@@ -440,16 +440,13 @@ namespace BoSSS.Solution.XNSECommon {
                     throw new NotImplementedException();
                 }
             }
-
+            
 
         }
 
         protected virtual void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            if (!isMovingMesh) {
-                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
-                AddComponent(conv);
-            }
-            // when moving mesh, nothing to do here
+            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
+            AddComponent(conv);
         }
     }
 
@@ -471,11 +468,8 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         protected override void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            if (!isMovingMesh) {
-                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
-                AddComponent(conv);
-            }
-            // when moving mesh, nothing to do here
+            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
+            AddComponent(conv);
         }
     }
 
@@ -740,7 +734,6 @@ namespace BoSSS.Solution.XNSECommon {
                             throw new NotImplementedException();
                     }
                 } else {
-                    if (dntParams.GNBC_Localization != NavierSlip_Localization.Everywhere) Console.WriteLine("Careful, sliplength might not be set in correct regions. Consider using 'NavierSlip_Localization.Everywhere'");
                     switch (dntParams.ViscosityMode) {
                         case ViscosityMode.Standard:
                         case ViscosityMode.TransposeTermMissing:

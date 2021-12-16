@@ -141,7 +141,6 @@ namespace BoSSS.Application.XdgPoisson3 {
             return R;
         }
 
-        /*
         /// <summary>
         /// A parameter study over <see cref="Circle(int, int, string, string)"/>.
         /// </summary>
@@ -173,7 +172,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
             return R;
         }
-        */
+
 
         /// <summary>
         /// A piecewise linear solution.
@@ -462,14 +461,20 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// A spherical interface in the 3D domain \f$ (-2, 2)^3 \f$.
         /// </summary>
-        public static XdgPoisson3Control Ball3D(int pDeg, int Res, LinearSolverCode solverCode = LinearSolverCode.classic_pardiso) {
-            //--control "cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Ball3D(2, 5)"
+        public static XdgPoisson3Control Ball3D(int pDeg, int Res, LinearSolverCode solverCode) {
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             R.ProjectName = "XdgPoisson3/Ball3D";
             R.savetodb = false;
 
-            R.SetDGdegree(pDeg);
+            R.FieldOptions.Add("Phi", new FieldOpts() {
+                Degree = 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            R.FieldOptions.Add("u", new FieldOpts() {
+                Degree = pDeg,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
 
             R.GridFunc = delegate () {
                 return Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-2, 2, Res), GenericBlas.Linspace(-2, 2, Res), GenericBlas.Linspace(-2, 2, Res));
@@ -657,8 +662,6 @@ namespace BoSSS.Application.XdgPoisson3 {
 
         }
 
-        /*
-       
         /// <summary>
         /// A parameter study over <see cref="CircleNeum(int)"/>.
         /// </summary>
@@ -689,7 +692,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             }
             return R;
         }
-        */
+
     }
 
 }

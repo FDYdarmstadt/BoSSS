@@ -200,6 +200,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                     }
 
                     goto case IBM_BoundaryType.FreeSlip; // add normal components
+                    break;
                 default:
                     throw new NotImplementedException();
             }

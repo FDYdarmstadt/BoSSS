@@ -2664,7 +2664,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 }
                 case 3: {
 
-                    //*
+                    ///*
                     int degreeR = degree - numEcond;
                     int NoNdsR = ((degreeR + 1) * (degreeR + 1) + (degreeR + 1)) / 2;
                     if (NoNdsR <= 0)

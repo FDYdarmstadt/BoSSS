@@ -471,20 +471,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 UpdateChangeRate(phystime + dt * m_RKscheme.c[s], k[s]);
             }
 
-            // use eps embedded method, necessary when time derivative vanishes i.e. in Conti-Eq
-            // works when employing a stiffly accurate method, therefore check here the s.a. condition
-            bool StifflyAccurate = true;
-            StifflyAccurate &= m_RKscheme.c.Last().ApproxEqual(1.0);
-            for (int s = 0; s < m_RKscheme.Stages; s++) {
-                StifflyAccurate &= m_RKscheme.b[s].ApproxEqual(m_RKscheme.a[m_RKscheme.Stages - 1, s]);
-            }
-
             // final stage
-            if (StifflyAccurate) {
-                // For stiffly accurate methods, the last intermediate value is already the final value
-            } else {
-                RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
-            }
+            RKstageExplicit(phystime, dt, k, m_RKscheme.Stages, MassMatrix, u0, m_RKscheme.c[m_RKscheme.Stages - 1], m_RKscheme.b, 1.0);
 
             // ===========================================
             // update level-set (in the case of splitting)
@@ -981,7 +969,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 m_CurrentState.Acc(1.0, u0);
             }
         }
-     
+
         /// <summary>
         /// Evaluation of only the spatial operator 
         /// </summary>

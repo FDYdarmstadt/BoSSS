@@ -57,7 +57,7 @@ namespace BoSSS.Solution.NSECommon {
             : base() {
             this.rhoOne = rhoOne;
             this.cpOne = cpOne;
-       
+            this.Prandtl = Prandtl;
             this.T_ref = T_ref;
             this.MatParamsMode = MatParamsMode;
             this.ConstantViscosityValue = viscValue;
@@ -82,7 +82,13 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-  
+        /// <summary>
+        /// 
+        /// </summary>
+        public double Prandtl { 
+            get;
+            protected set;
+        }
 
         /// <summary>
         /// 

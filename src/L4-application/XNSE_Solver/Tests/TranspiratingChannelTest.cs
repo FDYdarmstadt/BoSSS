@@ -187,6 +187,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
         }
 
 
@@ -197,7 +198,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
         
-        public bool m_periodic = true;
+        bool m_periodic = true;
 
         public GridCommons CreateGrid(int Resolution) {
             if (Resolution < 1)

@@ -141,7 +141,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         StrangSplitting = 2,
 
         /// <summary>
-        /// Moving Interface: Level-Set is updated once per time-step.
+        /// Level-Set is updated once per time-step.
         /// </summary>
         Coupled_Once = 3,
 
@@ -439,30 +439,48 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }
 
-            // set callback, to fill residual field
-            // ------------------------------------
-            if (Config_SpatialOperatorType == SpatialOperatorType.Nonlinear) {
-                if (nonlinSolver != null) {
-                    nonlinSolver.IterationCallback += this.LogResis;
+            // set callback for diagnostic output
+            // ----------------------------------
+            if (nonlinSolver != null) {
+                nonlinSolver.IterationCallback += this.LogResis;
+                if (linearSolver != null && linearSolver is ISolverWithCallback) {
+                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi;
                 }
             } else {
-                m_ResLogger.SetOnce(false);
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)linearSolver).IterationCallback += this.LogResis;
+                    ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
                 }
             }
-          
+
             return String.Format("nonlinear Solver: {0}, linear Solver: {1}", nls_strg, ls_strg);
         }
 
+
+        
         /// <summary>
-        /// Residual logging
+        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
         /// </summary>
-        /// <param name="iterIndex"></param>
-        /// <param name="currentSol"></param>
-        /// <param name="currentRes"></param>
-        /// <param name="Mgop"></param>
-        private void LogResis (int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
+        public ResidualLogger m_ResLogger;
+
+        /// <summary>
+        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
+        /// 
+        /// Names for the residual of each variable.
+        /// </summary>
+        public string[] m_ResidualNames;
+
+        /// <summary>
+        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
+        /// 
+        /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
+        /// before the L2-norm is computed.
+        /// </summary>
+        public bool m_TransformedResi = true;
+
+        /// <summary>
+        /// Logging of residuals (provisional).
+        /// </summary>
+        virtual protected void LogResis(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
 
             if (m_ResLogger != null) {
                 int NF = this.CurrentStateMapping.Fields.Count;
@@ -479,15 +497,15 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     Mgop.TransformRhsFrom(R, currentRes);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
-
+                   
                     //// plotting during Newton iterations:  
                     //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
                     //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
-
+                                        
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];
-                        if (field is XDGField) {
-                            foreach (var spc in ((XDGBasis)field.Basis).Tracker.SpeciesNames) {
+                        if(field is XDGField) {
+                            foreach(var spc in ((XDGBasis)field.Basis).Tracker.SpeciesNames) {
                                 double L2Res = ((XDGField)field).GetSpeciesShadowField(spc).L2Norm();
                                 m_ResLogger.CustomValue(L2Res, m_ResidualNames[i] + "#" + spc);
                                 totResi += L2Res.Pow2();
@@ -512,7 +530,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         foreach (int idx in VarIdx[i])
                             L2Res += currentRes[idx - Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
-                                                        //                                but this implementation is anyway inefficient....
+                                                       //                                but this implementation is anyway inefficient....
                         totResi += L2Res.Pow2();
 
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
@@ -530,26 +548,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
         
-        /// <summary>
-        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
-        /// </summary>
-        public ResidualLogger m_ResLogger;
-
-        /// <summary>
-        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
-        /// 
-        /// Names for the residual of each variable.
-        /// </summary>
-        public string[] m_ResidualNames;
-
-        /// <summary>
-        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
-        /// 
-        /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
-        /// before the L2-norm is computed.
-        /// </summary>
-        public bool m_TransformedResi = true;
-
         public double m_LastLevelSetResidual;
 
         protected bool LevelSetConvergenceReached() {
@@ -664,7 +662,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             //int k = 0;
             foreach(int[] varGroup in VarGroups) {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
-               
+                //if(k == 0)
+                //    ana.PrecondOpMatrix.SaveToTextFileSparse("OpMtx-J" + J + ".txt");
+                //Console.WriteLine("################ remember to deactivate me ^^^^^  ");
+
 
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();

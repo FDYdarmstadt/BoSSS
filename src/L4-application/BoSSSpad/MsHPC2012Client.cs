@@ -800,8 +800,7 @@ namespace BoSSS.Application.BoSSSpad {
                     } else {
                         // Timed out.
                         string modArguments = arguments;
-                        if(!this.Password.IsEmptyOrWhite())
-                            modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
+                        modArguments = modArguments.Replace(this.Password, "***"); // make sure we don't send the password to stdout or some other log
                         throw new IOException("timeout waiting for " + filename + " " + modArguments);
                     }
                 }

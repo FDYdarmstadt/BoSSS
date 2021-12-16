@@ -67,7 +67,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// Heat release term on energy equation
     /// </summary>
     public class LowMach_HeatSource : ReactionHeatSourceJacobi, ISpeciesFilter {
-        public LowMach_HeatSource(string spcName, double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw_MultipleSpecies EoS, double TRef, double cpRef, bool VariableOneStepParameters) : base(HeatReleaseFactor, ReactionRateConstants, molarmasses, EoS, TRef, cpRef, VariableOneStepParameters) {
+        public LowMach_HeatSource(string spcName, double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw EoS, double TRef, double cpRef, bool VariableOneStepParameters) : base(HeatReleaseFactor, ReactionRateConstants, molarmasses, EoS, TRef, cpRef, VariableOneStepParameters) {
             ValidSpecies = spcName;
         }
 
@@ -83,7 +83,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// Reaction term on mass fraction equation
     /// </summary>
     public class LowMach_MassFractionSource : ReactionSpeciesSourceJacobi, ISpeciesFilter {
-        public LowMach_MassFractionSource(string spcName, double[] ReactionRateConstants, double[] StoichiometricCoefficients, double[] MolarMasses, MaterialLaw_MultipleSpecies EoS, int NumberOfReactants, int SpeciesIndex, double TRef, double cpRef, bool VariableOneStepParameters) : base(ReactionRateConstants, StoichiometricCoefficients, MolarMasses, EoS, NumberOfReactants, SpeciesIndex, TRef, cpRef, VariableOneStepParameters) {
+        public LowMach_MassFractionSource(string spcName, double[] ReactionRateConstants, double[] StoichiometricCoefficients, double[] MolarMasses, MaterialLaw EoS, int NumberOfReactants, int SpeciesIndex, double TRef, double cpRef, bool VariableOneStepParameters) : base(ReactionRateConstants, StoichiometricCoefficients, MolarMasses, EoS, NumberOfReactants, SpeciesIndex, TRef, cpRef, VariableOneStepParameters) {
 
             ValidSpecies = spcName;
         }

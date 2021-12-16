@@ -363,7 +363,7 @@ namespace ilPSP.Utils {
             }
 
             Dictionary<int, T[]> SendDataPackets = new Dictionary<int, T[]>();
-            if (Rank == 0) {
+            if (Rank != 0) {
                 for (int prc = 1; prc < Size; prc++) {
                     T[] vec_prc = vec.GetSubVector((int)p.GetI0Offest(prc), p.GetLocalLength(prc));
                     SendDataPackets.Add(prc, vec_prc);

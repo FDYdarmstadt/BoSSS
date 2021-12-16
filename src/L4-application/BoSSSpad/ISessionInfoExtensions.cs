@@ -164,22 +164,8 @@ namespace BoSSS.Foundation.IO {
         /// <remarks>
         /// Should work on any System.
         /// </remarks>
-        public static string PrintSessionDirectory(this ISessionInfo session) {
-            string dir = DatabaseDriver.GetSessionDirectory(session);
-            Console.WriteLine(dir);
-            return dir;
-        }
-
-        /// <summary>
-        /// Returns the directory where the files for the selected
-        /// <paramref name="session"/> are stored to the console.
-        /// </summary>
-        /// <param name="session">
-        /// The selected session.
-        /// </param>
-        public static string GetSessionDirectory(this ISessionInfo session) {
-            string dir = DatabaseDriver.GetSessionDirectory(session);
-            return dir;
+        public static void PrintSessionDirectory(this ISessionInfo session) {
+            Console.WriteLine(DatabaseDriver.GetSessionDirectory(session));
         }
 
         /// <summary>
@@ -378,8 +364,6 @@ namespace BoSSS.Foundation.IO {
             if (SepChars == null || SepChars.Length <= 0)
                 SepChars = new char[] { '\t', ';' };
 
-            //Debugger.Launch();
-
             var raw = ReadTabulatedTextFileAsStrings(session, TextFile, SepChars);
             Dictionary<string, IList<double>> ret = new Dictionary<string, IList<double>>();
 
@@ -397,8 +381,6 @@ namespace BoSSS.Foundation.IO {
                         throw new ArgumentException("Found not supported data format in table, see table entry '" + s + "'.");
 
                 }).ToArray();
-
-                ret.Add(kv.Key, ColumnDoubles);
             }
 
             return ret;
@@ -572,7 +554,7 @@ namespace BoSSS.Foundation.IO {
             string TextFilePath = TextFils[0];
 
 
-            using (StreamReader reader = new StreamReader(new FileStream(TextFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))) {
+            using (StreamReader reader = new StreamReader(TextFilePath)) {
                 // Read header of table
                 string[] Header = reader.ReadLine().Split(SepChars, StringSplitOptions.RemoveEmptyEntries);
 

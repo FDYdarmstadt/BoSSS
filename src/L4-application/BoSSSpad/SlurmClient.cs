@@ -421,12 +421,10 @@ namespace BoSSS.Application.BoSSSpad {
                 sw.WriteLine(startupstring);
                 sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(myJob, DeploymentDirectory) + "/exit.txt'");
                 sw.WriteLine($"rm '{RunningToken}'");
-                if (this.DotnetRuntime == "mono") {
-                    sw.WriteLine("echo delete mono-crash-dumps, if there are any...");
-                    sw.WriteLine($"rm core.*");
-                    sw.WriteLine($"rm mono_crash.*");
-                    sw.WriteLine($"rm mono_crash.mem.*");
-                }
+                sw.WriteLine("echo delete mono-crash-dumps, if there are any...");
+                sw.WriteLine($"rm core.*");
+                sw.WriteLine($"rm mono_crash.*");
+                sw.WriteLine($"rm mono_crash.mem.*");
             }
 
         }

@@ -69,7 +69,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// the current value of <see cref="PlotMode"/>.
         /// </summary>
         public static object PlotNow(this Gnuplot gp) {
-            
+
             if (PlotMode == PlotNowMode.CairoLatex) {
                 return gp.PlotCairolatex();
             } else if(PlotMode == PlotNowMode.GIF) {

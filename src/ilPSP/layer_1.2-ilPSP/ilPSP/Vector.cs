@@ -1050,34 +1050,6 @@ namespace ilPSP {
             }
         }
 
-        /// <summary>
-        /// extracts a vector from a <see cref="MultidimensionalArray"/> <paramref name="inp"/>;
-        /// </summary>
-        /// <param name="inp">
-        /// input array
-        /// </param>
-        /// <param name="i0">
-        /// first index into <paramref name="inp"/>
-        /// </param>
-        /// <param name="i1">
-        /// second index into <paramref name="inp"/>
-        /// </param>
-        /// <returns>
-        /// A vector with dimension (<see cref="Vector.Dim"/>) equal to 3rd length of <paramref name="inp"/>
-        /// </returns>
-        public static Vector GetRowPt(this MultidimensionalArray inp, int i0, int i1) {
-            switch(inp.GetLength(2)) {
-                case 1:
-                return new Vector(inp[i0, i1, 0]);
-                case 2:
-                return new Vector(inp[i0, i1, 0], inp[i0, i1, 1]);
-                case 3:
-                return new Vector(inp[i0, i1, 0], inp[i0, i1, 1], inp[i0, i1, 2]);
-                default:
-                throw new ArgumentException("2nd length of input is " + inp.GetLength(2) + ", this cannot be a spatial dimension.");
-            }
-        }
-
 
         /// <summary>
         /// Matrix-Vector product
@@ -1099,37 +1071,6 @@ namespace ilPSP {
             return R;
         }
 
-
-        /// <summary>
-        /// sets the (<paramref name="i0"/>,<paramref name="i1"/>)-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
-        /// </summary>
-        /// <param name="inp">
-        /// matrix that should be altered
-        /// </param>
-        /// <param name="i0">
-        /// first index into <paramref name="inp"/>
-        /// </param>
-        /// <param name="i1">
-        /// second index into <paramref name="inp"/>
-        /// </param>
-        /// <param name="row">
-        /// a vector 
-        /// </param>
-        public static void SetRowPt(this MultidimensionalArray inp, int i0, int i1, Vector row) {
-            if (row.Dim != inp.NoOfCols)
-                throw new ArgumentException("Dimension mismatch.");
-
-            switch(row.Dim) {
-                case 1:
-                inp[i0, i1, 0] = row.x; return;
-                case 2:
-                inp[i0, i1, 0] = row.x; inp[i0, i1, 1] = row.y; return;
-                case 3:
-                inp[i0, i1, 0] = row.x; inp[i0, i1, 1] = row.y; inp[i0, i1, 2] = row.z; return;
-                default:
-                throw new NotImplementedException();
-            }
-        }
 
         /// <summary>
         /// sets the <paramref name="RowNo"/>-th row from <paramref name="inp"/> to values provided by <paramref name="row"/>.
@@ -1160,8 +1101,7 @@ namespace ilPSP {
         }
 
 
-
-        /// <summary>
+         /// <summary>
         /// extracts the <paramref name="RowNo"/>-th row from
         /// <paramref name="inp"/>.
         /// </summary>

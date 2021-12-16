@@ -116,17 +116,12 @@ namespace BoSSS.Solution.NSECommon {
 
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Velocity_Inlet:
-                    // inhom. Dirichlet b.c.
-                    // =====================
-                    u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
-                    Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
-                    break;
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
-                    // inhom. Dirichlet b.c.
-                    // =====================
-                    u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
-                    Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
-                    break;
+                // inhom. Dirichlet b.c.
+                // =====================
+                u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
+                Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
+                break;
 
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
@@ -182,7 +177,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         protected override double Diffusivity(double[] U, double[,] GradU, Vector NodeCoordinates) {
             //double Diffusivity = ((MaterialLawLowMach)EoS).GetHeatConductivity(U[0]); // Just a Temperature dependence
-            double Diffusivity = ((MaterialLaw_MultipleSpecies)EoS).GetHeatConductivity(U[0]); // Just a Temperature dependence
+            double Diffusivity = ((MaterialLawMultiSpecies)EoS).GetHeatConductivity(U[0]); // Just a Temperature dependence
 
             Debug.Assert(Diffusivity >= 0.0);
             Diffusivity *= 1 / (m_reynolds * m_Prandtl);

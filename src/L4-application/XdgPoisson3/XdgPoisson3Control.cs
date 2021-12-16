@@ -38,7 +38,6 @@ namespace BoSSS.Application.XdgPoisson3 {
         public XdgPoisson3Control() {
             base.LinearSolver.verbose = true;
             base.NoOfMultigridLevels = 10000;
-            base.AgglomerationThreshold = 0.1;
         }
 
         /// <summary>
@@ -78,34 +77,21 @@ namespace BoSSS.Application.XdgPoisson3 {
         [DataMember]
         public bool SetDefaultDiriBndCnd = false;
 
-
-        /// <summary>
-        /// Hack for Boundary Condition specification
-        /// </summary>
-        [NonSerialized]
+        [DataMember]
         public XLaplaceBCs xLaplaceBCs = new XLaplaceBCs();
 
-        /// <summary>
-        /// 
-        /// </summary>
         [DataMember]
         public XLaplace_Interface.Mode ViscosityMode = XLaplace_Interface.Mode.SIP;
 
-        /// <summary>
-        /// Diffusion coefficient in phase A
-        /// </summary>
         [DataMember]
         public double MU_A;
 
 
-        /// <summary>
-        /// Diffusion coefficient in phase B
-        /// </summary>
         [DataMember]
         public double MU_B;
 
         /// <summary>
-        /// true if exact solution is supported (e.g. for testing and convergence investigation)
+        /// true if exact solution is supported
         /// </summary>
         [DataMember]
         public bool ExcactSolSupported = false;
@@ -121,18 +107,23 @@ namespace BoSSS.Application.XdgPoisson3 {
         [DataMember]
         public MultigridOperator.Mode PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
-        ///// <summary>
-        ///// XDG cell agglomeration threshold
-        ///// </summary>
-        //[DataMember]
-        //public double AgglomerationThreshold = 0.1;
+        /// <summary>
+        /// XDG cell agglomeration threshold
+        /// </summary>
+        [DataMember]
+        public double AgglomerationThreshold = 0.1;
 
         [DataMember]
         public double penalty_multiplyer = 2.0;
 
-
+        ///// <summary>
+        ///// Steady-State (false) or transient solution (true)?
+        ///// </summary>
         //[DataMember]
-        //public int pOff = 2;
+        //public bool timeDependent = false;
+
+        [DataMember]
+        public int pOff = 2;
 
         /// <summary>
         /// Suppresses exception prompt, which disturbes local batch run with MiniBatchprocessor.

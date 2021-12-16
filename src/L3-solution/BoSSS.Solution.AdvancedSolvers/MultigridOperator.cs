@@ -184,8 +184,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int ReferenceCell_local {
             get {
                 int RefCellLocal;
-                if(BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(ReferenceCell))
-                    RefCellLocal = BaseGridProblemMapping.GridDat.CellPartitioning.TransformIndexToLocal(ReferenceCell);
+                if(BaseGridProblemMapping.IsInLocalRange(ReferenceCell))
+                    RefCellLocal = BaseGridProblemMapping.TransformIndexToLocal(ReferenceCell);
                 else
                     RefCellLocal = int.MinValue;
                 return RefCellLocal;

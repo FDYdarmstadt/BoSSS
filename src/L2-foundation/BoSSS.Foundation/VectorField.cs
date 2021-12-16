@@ -338,22 +338,6 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// returns point-wise dot product of two equal dimensional vector fields <paramref name="a"/>*<paramref name="b"/>
-        /// </summary>
-        /// <param name="a">a vector field</param>
-        /// <param name="b">a vector field</param>
-        /// <returns></returns>
-        static public T operator *(VectorField<T> a, VectorField<T> b) {
-            T[] ret_comps = new T[a.Dim];
-            T ret = (T)a.First().Clone();
-            ret.Clear();
-            for (int d = 0; d < ret_comps.Length; d++) {
-                ret.ProjectProduct(1.0, a.m_Components[d], b.m_Components[d]);
-            }
-            return ret;
-        }
-
-        /// <summary>
         /// non-shallow copy 
         /// </summary>
         /// <returns></returns>

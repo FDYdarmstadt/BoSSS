@@ -26,7 +26,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="prmsOK"></param>
         /// <param name="massFractionComponent"></param>
         /// <param name="numOfSpecies"></param>
-        public SIPDiffusionMassFractions(double PenaltyBase, IncompressibleBoundaryCondMap BcMap, MaterialLaw EoS, double Reynolds, double Schmidt, double[] Lewis, int massFractionComponent, int numOfSpecies) : base(PenaltyBase,  false, massFractionComponent + 1) {
+        public SIPDiffusionMassFractions(double PenaltyBase, IncompressibleBoundaryCondMap BcMap, MaterialLaw EoS, double Reynolds, double Schmidt, double[] Lewis, bool prmsOK, int massFractionComponent, int numOfSpecies) : base(PenaltyBase,  prmsOK, massFractionComponent + 1) {
             this.EoS = EoS;
             this.numOfSpecies = numOfSpecies;
             this.BcMap = BcMap;
@@ -60,7 +60,7 @@ namespace BoSSS.Solution.NSECommon {
         double m_schmidt;
 
         /// <summary>
-        /// Components Lewis numbers
+        /// Array of Lewis numbers
         /// </summary>
         double[] m_lewis;
 
@@ -111,7 +111,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <returns></returns>
         protected override double Diffusivity(double[] U, double[,] GradU, Vector NodeCoordinates) {
             //double rhoDAd = ((MaterialLawLowMach)EoS).GetDiffusivity(U[0]);
-            double rhoDAd = ((MaterialLaw_MultipleSpecies)EoS).GetDiffusivity(U[0]);
+            double rhoDAd = ((MaterialLawMultiSpecies)EoS).GetDiffusivity(U[0]);
 
             int massfractionIndex = this.i - 1;
             double Lewis = m_lewis[massfractionIndex];

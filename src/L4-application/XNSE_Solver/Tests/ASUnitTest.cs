@@ -759,14 +759,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void IBMChannelSolverTest(
             [Values(1, 2, 3)] int FlowSolverDegree = 2,
             [Values(0)] double angle = 0.0,
-            [Values(LinearSolverCode.classic_pardiso, LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_gmres_levelpmg)] LinearSolverCode solvercode = LinearSolverCode.classic_pardiso
+            [Values(LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_gmres_levelpmg)] LinearSolverCode solvercode = LinearSolverCode.exp_Kcycle_schwarz
             ) {
             double AgglomerationTreshold = 0.3;
 
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
 
 
-            int GridResolution = 3;
+            int GridResolution = 1;
 
             var Tst = new IBMChannel(30 * Math.PI / 180, true);
 
@@ -774,53 +774,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
 
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 2;
-
-            // set to transient...
-            C.dtFixed = 0.1;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-
-            // and reset to steady-state
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            Assert.IsTrue(C.Option_LevelSetEvolution == LevelSetEvolution.None, "resetting option for 'Option_LevelSetEvolution' for steady-state seems messed up");
-            Assert.IsTrue(C.Option_LevelSetEvolution2 == LevelSetEvolution.None, "resetting option for 'Option_LevelSetEvolution2' for steady-state seems messed up");
-            Assert.IsTrue(C.Timestepper_LevelSetHandling == LevelSetHandling.None, "resetting option for 'Timestepper_LevelSetHandling' for steady-state seems messed up");
-
-            //var Ccomp = AppControl.Deserialize(System.IO.File.ReadAllText("control.obj"));
-
-            XNSESolverTest(Tst, C);
-        }
-
-
-        [Test]
-        public static void IBMChannelSolverTest_Transient(
-            [Values(1, 2, 3)] int FlowSolverDegree = 2,
-            [Values(0)] double angle = 0.0,
-            [Values(LinearSolverCode.classic_pardiso, LinearSolverCode.exp_Kcycle_schwarz, LinearSolverCode.exp_gmres_levelpmg)] LinearSolverCode solvercode = LinearSolverCode.classic_pardiso
-            ) {
-            double AgglomerationTreshold = 0.3;
-
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
-
-
-            int GridResolution = 3;
-
-            var Tst = new IBMChannel(30 * Math.PI / 180, true);
-
-            var C = TstObj2CtrlObj(Tst, FlowSolverDegree, AgglomerationTreshold, ViscosityMode.Standard, SurfTensionMode: SurfaceStressTensor_IsotropicMode.Curvature_Projected, CutCellQuadratureType: CutCellQuadratureType, GridResolution: GridResolution, solvercode: solvercode);
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-11;
-
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 2;
-
-            // set to transient...
-            C.dtFixed = 0.1;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            Assert.IsTrue(C.TimesteppingMode == AppControl._TimesteppingMode.Transient, "'TimesteppingMode' should be 'Transient' automatically when someone sets a small dt.");
-
-            //var Ccomp = AppControl.Deserialize(System.IO.File.ReadAllText("control.obj"));
 
             XNSESolverTest(Tst, C);
         }
@@ -907,38 +860,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
             XNSESolverTest(Tst, C);
         }
-
-
-        /// <summary>
-        /// <see cref="SphericalHarmonicsTest"/>
-        /// </summary>
-        [Test]
-        public static void SphericalHarmonoicsPostprocessingTest() {
-            // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonoicsPostprocessingTest()
-            var Tst = new SphericalHarmonicsTest();
-            var C = TstObj2CtrlObj(Tst, 2, 0.1,
-                ViscosityMode.FullySymmetric, 
-                XQuadFactoryHelper.MomentFittingVariants.Saye, 
-                SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-
-            var pp = new Logging.SphericalHarmonicsLogging();
-            C.PostprocessingModules.Add(pp);
-            C.SkipSolveAndEvaluateResidual = true;
-
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 0;
-
-            XNSESolverTest(Tst, C);
-
-            double[] SH_modes = pp.LoggedValues.Last();
-            double totErr = Tst.ComputeModeError(SH_modes);
-
-            Console.WriteLine("Total mode error: " + totErr);
-
-            Assert.LessOrEqual(totErr, 0.003, "Large Error on spherical mode decomposition.");
-
-        }
-
 
 #if !DEBUG
         /// <summary>

@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Application.BoSSSpad;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 using MPI.Wrappers;
@@ -63,9 +62,6 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("MetaJobManager/MetaJobManager.ipynb")]
         [Test]
         static public void Run__MetaJobManager() {
-            //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__MetaJobManager
-            NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
-            NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
             RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
         }
 
@@ -339,53 +335,6 @@ namespace BoSSS.Application.TutorialTests {
                 Console.WriteLine("already running.");
             
             killBatch = r;
-        }
-
-        /// <summary>
-        /// Deletes a database <paramref name="Directory"/>
-        /// 
-        /// Note: the database must be located beneath the <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
-        /// of the <see "BoSSSshell.GetDefaultQueue"/>.
-        /// </summary>
-        public static void DeleteDatabase(string Directory) {
-
-            foreach (var q in BoSSSshell.ExecutionQueues) {
-                foreach (var allowedPath in q.AllowedDatabasesPaths) {
-                    var localBaseDir = new DirectoryInfo(allowedPath.LocalMountPath);
-                    if(localBaseDir.Exists) {
-                        var dbDirs = localBaseDir.GetDirectories(Directory, SearchOption.TopDirectoryOnly);
-                        foreach(var db in dbDirs) {
-                            Console.WriteLine("Deleting database: " + db.FullName);
-                            db.Delete(true);
-                        }
-                    } else {
-                        Console.WriteLine("Warning: missing directory: " + localBaseDir.FullName);
-                    }
-
-                }
-            }
-        }
-
-        /// <summary>
-        /// Deletes all deployments matchin the search patter <paramref name="Directory"/>
-        /// 
-        /// </summary>
-        public static void DeleteDeployments(string DirectoryWildCard) {
-
-            foreach (var q in BoSSSshell.ExecutionQueues) {
-
-                var localBaseDir = new DirectoryInfo(q.DeploymentBaseDirectory);
-                if(localBaseDir.Exists) {
-                    var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
-                    foreach(var d in deplDirs) {
-                        Console.WriteLine("Deleting deployment: " + d.FullName);
-                        d.Delete(true);
-                    }
-                } else {
-                    Console.WriteLine("Warning: missing directory: " + localBaseDir.FullName);
-                }
-
-            }
         }
 
     }

@@ -109,9 +109,9 @@ namespace BoSSS.Foundation.IO {
             IGrid grid = grd;
             Guid GridGuid;
 
-            if(!force) {
+            if (!force) {
                 GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
-                if(found) {
+                if (found) {
                     Console.WriteLine("An equivalent grid (" + GridGuid + ") is already present in the database -- the grid will not be saved.");
                     grd = ((TG)grid);
                 }

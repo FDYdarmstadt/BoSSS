@@ -894,8 +894,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                             Debug.Assert(elimTrg >= i0_Trg);
                             Debug.Assert(elimTrg < iE_Trg);
 
-                            //if (newPeriodicEliminatedPoints.Keys.Contains(elimSrc))
-                            //    Debugger.Launch();
+                            if (newPeriodicEliminatedPoints.Keys.Contains(elimSrc))
+                                Debugger.Launch();
 
                             newPeriodicEliminatedPoints.Add(elimSrc, elimTrg);
                         }

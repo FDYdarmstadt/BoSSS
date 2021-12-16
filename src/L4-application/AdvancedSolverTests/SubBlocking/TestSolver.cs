@@ -59,6 +59,7 @@ namespace AdvancedSolverTests {
             //base.Control.ImmediatePlotPeriod = 1;
             DeleteOldPlotFiles();
 
+            //base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
             var comm = csMPI.Raw._COMM.WORLD;
             int size;
             csMPI.Raw.Comm_Size(comm,out size);
@@ -92,7 +93,6 @@ namespace AdvancedSolverTests {
 
             m_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, m_Res + 1), GenericBlas.Linspace(-1, 1, m_Res + 1));
             if (size == 4) {
-                //base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Hilbert;
                 base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
                 base.Control.GridPartOptions = "hallo";
                 ((Grid2D)m_grid).AddPredefinedPartitioning("hallo", MakeMyPartioning);

@@ -453,7 +453,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static T[] GetColumn<T>(this DataTable tab, string ColumnName) {
             T[] R = new T[tab.Rows.Count];
-            
+
             //tab.Columns[ColumnName].
             for (int i = 0; i < R.Length; i++) {
                 object val = tab.Rows[i][ColumnName];
@@ -492,7 +492,6 @@ namespace BoSSS.Application.BoSSSpad {
                             R.SetValue(Convert.ToString(val), i);
                         } else if (typeof(T) == typeof(DateTime)) {
                             R.SetValue(Convert.ToDateTime(val), i);
-                        //} else if (typeof(T).IsEnum) {
                         } else {
                             R[i] = (T)val;
                         }
@@ -708,16 +707,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void Print(this DataTable Tab) {
             WriteCSVToStream(Tab, Console.Out, ' ', true, true, true);
-        }
-
-        /// <summary>
-        /// Prints table <paramref name="Tab"/> to the console.
-        /// </summary>
-        public static string TableToString(this DataTable Tab) {
-            using(var stw = new StringWriter()) {
-                WriteCSVToStream(Tab, stw, ' ', true, true, true);
-                return stw.ToString();
-            }
         }
 
         /// <summary>

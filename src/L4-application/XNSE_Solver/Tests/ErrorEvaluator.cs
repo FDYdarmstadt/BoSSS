@@ -107,10 +107,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests
                     string velocity = VariableNames.VelocityVector(D)[d];
                     ConventionalDGField Vel_d = ((XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == velocity)).GetSpeciesShadowField(spc);
 
-                    double LxError = Vel_d.LxError(exactVelocity[spc][d].Vectorize(time), null, scheme.SaveCompile(Vel_d.GridDat, order));
-                    LxError = (LxError > -1e-12 && LxError < 0) ? 0.0 : LxError; // Avoid nans if solution is too close to the analytic one
-                    L2Error_Species[spc][d] = LxError.Sqrt(); 
-
+                    L2Error_Species[spc][d] = Vel_d.L2Error(exactVelocity[spc][d].Vectorize(time), order, scheme);
                     L2Error[d] += L2Error_Species[spc][d].Pow2();
 
                     solver.QueryHandler.ValueQuery("L2err_" + VariableNames.Velocity_d(d) + "#" + spc, L2Error_Species[spc][d], true);

@@ -33,7 +33,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     /// <summary>
     /// Basic test for surface tension and convective terms: a drop
     /// 'moving' in a constant velocity field, i.e.
-    /// $` \vec{u}(t,\vec{x}) = (1,0)^T `$ .
+    /// \f$ \vec{u}(t,\vec{x}) = (1,0)^T\f$ .
     /// </summary>
     class MovingDropletTest : IXNSETest {
 

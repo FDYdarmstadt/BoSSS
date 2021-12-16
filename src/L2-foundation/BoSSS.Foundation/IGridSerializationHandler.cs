@@ -5,15 +5,18 @@ using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Foundation.IO;
 
-namespace BoSSS.Foundation.Grid {
-    public interface IGridSerializationHandler : IVectorDataGrid, IComparableGrid {
+namespace BoSSS.Foundation.Grid
+{
+    public interface IGridSerializationHandler : IVectorDataGrid, IComparableGrid
+    {
         IDatabaseInfo Database {
             get;
             set;
         }
     }
 
-    public interface IVectorDataGrid {
+    public interface IVectorDataGrid
+    {
         Guid[] GetVectorGuids();
         void SetVectorGuids(Guid[] guids);
         object[][] GetVectorData();
@@ -26,7 +29,8 @@ namespace BoSSS.Foundation.Grid {
     /// - basic properties: <see cref="BasePropertiesComparer"/>, which is cheap
     /// - individual cells: <see cref="CellComparer"/>, expensive to run
     /// </summary>
-    public interface IComparableGrid {
+    public interface IComparableGrid
+    {
         /// <summary>
         /// Comparison of all cells
         /// </summary>

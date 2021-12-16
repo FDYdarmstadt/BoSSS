@@ -798,9 +798,8 @@ namespace BoSSS.Foundation.XDG {
         /// Not accurate for cut-cells.
         /// </summary>
         public override double GetMeanValue(int j) {
-             if (j < 0 || j >= Basis.GridDat.iLogicalCells.Count)
-                throw new ArgumentException($"cell index out of range: got {j}, expecting between 0 and {Basis.GridDat.iLogicalCells.Count}, MPI rank {Basis.GridDat.MpiRank}.", "j");
-
+            if (j < 0 || j > this.GridDat.iLogicalCells.Count)
+                throw new ArgumentException("cell index out of range.", "j");
 
             //throw new NotImplementedException();
 

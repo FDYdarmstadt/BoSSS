@@ -70,9 +70,5 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
     interface IXNSFETest : IXNSETest, IXHeatTest {
 
-        /// <summary> 
-        /// Some volumetric heat source.
-        /// </summary>
-        Func<double[], double> GetQ(string species);
     }
 }

@@ -19,7 +19,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
-using ilPSP.Utils;
 using MPI.Wrappers;
 
 namespace ilPSP {

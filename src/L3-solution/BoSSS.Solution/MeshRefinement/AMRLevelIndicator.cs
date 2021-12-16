@@ -20,7 +20,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,7 +32,7 @@ namespace BoSSS.Solution {
     /// </summary>
     [Serializable]
     public abstract class AMRLevelIndicator {
-        [DataMember]
+
         public int maxRefinementLevel = 1;
 
 
@@ -71,7 +70,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// 
         /// </summary>
-        [JsonIgnore]
         protected BoSSS.Foundation.Grid.Classic.GridData GridData {
             get {
                 return (Foundation.Grid.Classic.GridData)(this.SolverMain.GridData);
@@ -105,27 +103,6 @@ namespace BoSSS.Solution {
         /// the array index corresponds to the local cell index    
         /// </returns>
         public abstract int[] DesiredCellChanges();
-
-        /// <summary>
-        /// comparison
-        /// </summary>
-        public override bool Equals(object obj) {
-            var other = obj as AMRLevelIndicator;
-            if (other == null)
-                return false;
-
-            if (this.GetType() != other.GetType())
-                return false;
-
-            return this.maxRefinementLevel == other.maxRefinementLevel;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public override int GetHashCode() {
-            return base.GetHashCode();
-        }
     }
 
 }

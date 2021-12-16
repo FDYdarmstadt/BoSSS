@@ -23,7 +23,7 @@ using BoSSS.Application.XNSE_Solver;
 
 namespace BoSSS.Application.XNSFE_Solver {
 
-    public class LevelSetVelocityEvaporative : LevelSetVelocity {
+    class LevelSetVelocityEvaporative : LevelSetVelocity {
 
         ThermalParameters thermalParameters;
         XNSFE_OperatorConfiguration config;
@@ -197,7 +197,7 @@ namespace BoSSS.Application.XNSFE_Solver {
                     MultidimensionalArray VelA = MultidimensionalArray.Create(Len, K, D);
                     MultidimensionalArray VelB = MultidimensionalArray.Create(Len, K, D);
                     MultidimensionalArray MassFlux = MultidimensionalArray.Create(Len, K);
-                    MultidimensionalArray MassFlux_D = MultidimensionalArray.Create(Len, K, D);
+                    MultidimensionalArray MassFlux_d = MultidimensionalArray.Create(Len, K);
 
                     for (int dd = 0; dd < D; dd++) {
                         ((XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[dd]]).GetSpeciesShadowField("A").Evaluate(j0, Len, NS, VelA.ExtractSubArrayShallow(new int[] { -1, -1, dd }));
@@ -214,10 +214,9 @@ namespace BoSSS.Application.XNSFE_Solver {
 
                         temperature.GetSpeciesShadowField("A").EvaluateGradient(j0, Len, NS, GradTempA_Res);
                         temperature.GetSpeciesShadowField("B").EvaluateGradient(j0, Len, NS, GradTempB_Res);
-                        for (int dd = 0; dd < D; dd++) {
-                            MassFlux_D.ExtractSubArrayShallow(-1, -1, dd).Acc(-thermalParameters.k_A / thermalParameters.hVap, GradTempA_Res.ExtractSubArrayShallow(-1, -1, dd));
-                            MassFlux_D.ExtractSubArrayShallow(-1, -1, dd).Acc(thermalParameters.k_B / thermalParameters.hVap, GradTempB_Res.ExtractSubArrayShallow(-1, -1, dd));
-                        }
+
+                        MassFlux_d.Acc(-thermalParameters.k_A / thermalParameters.hVap, GradTempA_Res.ExtractSubArrayShallow(-1, -1, d));
+                        MassFlux_d.Acc(thermalParameters.k_B / thermalParameters.hVap, GradTempB_Res.ExtractSubArrayShallow(-1, -1, d));
                     }
 
                     var Normals = levelSet.Tracker.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
@@ -225,65 +224,47 @@ namespace BoSSS.Application.XNSFE_Solver {
                     for (int j = 0; j < Len; j++) {
 
                         for (int k = 0; k < K; k++) {
-                            
+                            double uNeg = VelA[j, k, d];
+                            double uPos = VelB[j, k, d];
                             bool useNormal = false;
-                            double[] sNeg = new double[D];
-                            double[] sPos = new double[D];
-                            double[] s = new double[D];
+                            double sNeg, sPos;
 
-                            for (int dd = 0; dd < D; dd++) {
-                                double uNeg = VelA[j, k, dd];
-                                double uPos = VelB[j, k, dd];
-                                if (config.prescribedMassflux != null) {
-                                    MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
-                                    levelSet.Tracker.GridDat.TransformLocal2Global(NS, globCoord, j);
-                                    double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
+                            if (config.prescribedMassflux != null) {
+                                MultidimensionalArray globCoord = MultidimensionalArray.Create(K, D);
+                                levelSet.Tracker.GridDat.TransformLocal2Global(NS, globCoord, j);
+                                double[] globX = new double[] { globCoord[k, 0], globCoord[k, 1] };
 
-                                    sNeg[dd] = uNeg - (1 / rhoA) * config.prescribedMassflux(globX, time) * Normals[j, k, dd];
-                                    sPos[dd] = uPos - (1 / rhoB) * config.prescribedMassflux(globX, time) * Normals[j, k, dd];
+                                sNeg = uNeg - (1 / rhoA) * config.prescribedMassflux(globX, time) * Normals[j, k, d];
+                                sPos = uPos - (1 / rhoB) * config.prescribedMassflux(globX, time) * Normals[j, k, d];
+                            } else {
+                                if (!useNormal) {
+                                    sNeg = uNeg - (1 / rhoA) * MassFlux_d[j, k];
+                                    sPos = uPos - (1 / rhoB) * MassFlux_d[j, k];
                                 } else {
-                                    if (!useNormal) {
-                                        sNeg[dd] = uNeg - (1 / rhoA) * MassFlux_D[j, k, dd];
-                                        sPos[dd] = uPos - (1 / rhoB) * MassFlux_D[j, k, dd];
-                                    } else {
-                                        sNeg[dd] = uNeg - (1 / rhoA) * MassFlux[j, k] * Normals[j, k, dd];
-                                        sPos[dd] = uPos - (1 / rhoB) * MassFlux[j, k] * Normals[j, k, dd];
-                                    }
-                                }
-
-                                switch (this.averagingMode) {
-                                    case (XNSE_Control.InterfaceVelocityAveraging.mean): {
-                                        s[dd] = 0.5 * (sNeg[dd] + sPos[dd]);
-                                        break;
-                                    }
-                                    case (XNSE_Control.InterfaceVelocityAveraging.phaseA): {
-                                        s[dd] = sNeg[dd];
-                                        break;
-                                    }
-                                    case (XNSE_Control.InterfaceVelocityAveraging.phaseB): {
-                                        s[dd] = sPos[dd];
-                                        break;
-                                    }
-                                    case (XNSE_Control.InterfaceVelocityAveraging.density):
-                                    default: {
-                                        s[dd] = (rhoA * sNeg[dd] + rhoB * sPos[dd]) / (rhoA + rhoB);
-                                        break;
-                                    }
+                                    sNeg = uNeg - (1 / rhoA) * MassFlux[j, k] * Normals[j, k, d];
+                                    sPos = uPos - (1 / rhoB) * MassFlux[j, k] * Normals[j, k, d];
                                 }
                             }
 
-                            
-
-                            // project in normal direction
-                            if (false) {
-                                result[j, k] = Normals[j, k, d];
-                                double SxN = 0.0;
-                                for(int dd = 0; dd < D; dd++) {
-                                    SxN += s[dd] * Normals[j, k, dd];
+                            switch (this.averagingMode) {
+                                case (XNSE_Control.InterfaceVelocityAveraging.mean):
+                                {
+                                    result[j, k] = 0.5 * (sNeg + sPos);
+                                    break;
                                 }
-                                result[j, k] *= SxN;
-                            } else {
-                                result[j, k] = s[d];
+                                case (XNSE_Control.InterfaceVelocityAveraging.phaseA): {
+                                    result[j, k] = sNeg;
+                                    break;
+                                }
+                                case (XNSE_Control.InterfaceVelocityAveraging.phaseB): {
+                                    result[j, k] = sPos;
+                                    break;
+                                }
+                                case (XNSE_Control.InterfaceVelocityAveraging.density):
+                                default: {
+                                    result[j, k] = (rhoA * sNeg + rhoB * sPos)/(rhoA + rhoB);
+                                    break;
+                                }
                             }
 
                             //if (rhoA != rhoB) {
@@ -297,7 +278,7 @@ namespace BoSSS.Application.XNSFE_Solver {
                         }
                     }
                 }, (new CellQuadratureScheme(false, levelSet.Tracker.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex))).AddFixedOrderRules(levelSet.Tracker.GridDat, order));
-            }                        
+            }
         }
     }
 

@@ -291,8 +291,7 @@ namespace BoSSS.Solution.LevelSetTools {
         ConstrainedDGFieldMk3 m_projector;
 
         ConstrainedDGFieldMk3 Update(CellMask domain) {
-            bool DomainChanged = m_projector != null ? (!m_projector.domainLimit.Equals(domain)).MPIOr() : false;
-            if (m_projector == null || DomainChanged) {
+            if(m_projector == null || !m_projector.domainLimit.Equals(domain)) {
                 if(m_projector != null)
                     m_projector.Dispose();
                 m_projector = new ConstrainedDGField_Global(m_myBasis, domain);

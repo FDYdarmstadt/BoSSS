@@ -53,23 +53,21 @@ namespace btail {
             var StdErrFileBytes = Encoding.UTF8.GetBytes(StdErrFileName);
             var StderrFileCode = Convert.ToBase64String(StdErrFileBytes);
 
-            psi.Arguments = psi.Arguments + " " + StdOutFileCode + "  " + StderrFileCode;
+            psi.Arguments = StdOutFileCode + "  " + StderrFileCode;
 
         }
 
 
         static void Main(string[] args) {
-
             string StdOutFileCode = args[0];
             var StdOutBytes = Convert.FromBase64String(StdOutFileCode);
             string StdOutFileName = Encoding.UTF8.GetString(StdOutBytes);
-            //string StdOutFileName = args[0];
 
             string StdErrFileCode = args[1];
             var StdErrBytes = Convert.FromBase64String(StdErrFileCode);
             string StdErrFileName = Encoding.UTF8.GetString(StdErrBytes);
-            //string StdErrFileName = args[1];
 
+            
             //string StdOutFileName = System.Environment.GetEnvironmentVariable("TAIL_STDOUT");
             //string StdErrFileName = System.Environment.GetEnvironmentVariable("TAIL_STDERR");
 

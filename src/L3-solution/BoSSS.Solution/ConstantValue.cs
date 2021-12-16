@@ -25,7 +25,6 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// The specified value
         /// </summary>
-        [DataMember]
         public double DaValue {
             get;
             set;
@@ -44,24 +43,5 @@ namespace BoSSS.Solution.Control {
         public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
             output.SetAll(DaValue);
         }
-
-        /// <summary>
-        /// true, if the specified values are approximately equal
-        /// </summary>
-        public override bool Equals(object obj) {
-            var other = obj as ConstantValue;
-            if(other == null)
-                return false;
-
-            return this.DaValue.ApproxEqual(other.DaValue);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public override int GetHashCode() {
-            return (int)(DaValue * 12378.1234);
-        }
-
     }
 }

@@ -180,7 +180,7 @@ namespace BoSSS.Solution.Control {
         /// If iterative solvers are used, the minimum number of iterations.
         /// </summary>
         [DataMember]
-        public int MinSolverIterations = 1;
+        public int MinSolverIterations = 2;
 
         /// <summary>
         /// Convergence criterion for linear solver.

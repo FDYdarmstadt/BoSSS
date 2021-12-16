@@ -57,10 +57,6 @@ namespace BoSSS.Solution.XNSECommon {
                 case NavierSlip_Localization.Prescribed: {
                     throw new NotImplementedException();
                 }
-                case NavierSlip_Localization.Everywhere: {
-                    SlipArea = CellMask.GetFullMask(lstrk.GridDat);
-                    break;
-                }
                 default:
                 throw new ArgumentException();
             }

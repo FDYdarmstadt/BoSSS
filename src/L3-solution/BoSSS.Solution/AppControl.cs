@@ -739,7 +739,6 @@ namespace BoSSS.Solution.Control {
         /// <param name="grd"></param>
         public void SetGrid(IGridInfo grd) {
             this.GridGuid = grd.ID;
-            this.m_Grid = grd as IGrid;
 
             if(grd.Database == null) {
                 Console.WriteLine("Warning: grid seems not to be saved in a database");
@@ -753,14 +752,6 @@ namespace BoSSS.Solution.Control {
 
             }
         }
-
-        /// <summary>
-        /// Hack: an 
-        /// aid for the workflow manager, to save the grid if **not** already stored in the database.
-        /// </summary>
-        [NonSerialized]
-        [JsonIgnore]
-        public IGrid m_Grid;
         
 
         /// <summary>
@@ -905,12 +896,12 @@ namespace BoSSS.Solution.Control {
             /// <summary>
             /// time-dependent/Transient simulation.
             /// </summary>
-            Transient = 0,
+            Transient,
 
             /// <summary>
             /// Steady-State calculation.
             /// </summary>
-            Steady = 1
+            Steady
         }
 
         [DataMember]

@@ -311,14 +311,7 @@ namespace BoSSS.Solution.NSECommon {
             // Useful in case that the Reynolds number changes during a simulation...
             if (cs.UserDefinedValues.Keys.Contains("Reynolds"))
                 m_reynolds = (double)cs.UserDefinedValues["Reynolds"];
-
-            if (cs.UserDefinedValues.Keys.Contains("VelocityMultiplier"))
-                VelocityMultiplier = (double)cs.UserDefinedValues["VelocityMultiplier"];
         }
-        /// <summary>
-        /// 
-        /// </summary>
-        public double VelocityMultiplier = 1.0;
 
         /// <summary>
         /// penalty adapted for spatial dimension and DG-degree
@@ -417,7 +410,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected double g_Diri(double[] X, double time, int EdgeTag, int d) {
             if (this.g_Diri_Override == null) {
-                return this.velFunction[d][EdgeTag](X, time) * VelocityMultiplier;
+                return this.velFunction[d][EdgeTag](X, time); ;
             } else {
                 return g_Diri_Override(d, X);
             }
@@ -435,7 +428,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {
-                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV/* | TermActivationFlags.V | TermActivationFlags.GradV*/);
+                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
             }
         }
 
@@ -886,6 +879,10 @@ namespace BoSSS.Solution.NSECommon {
 
                     // penalty term          
                     double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
+
+
+
+
                     // penalty
                     Acc -= muMax * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
 

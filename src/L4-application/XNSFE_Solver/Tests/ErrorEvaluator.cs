@@ -38,7 +38,12 @@ namespace BoSSS.Application.XNSFE_Solver.Tests
         public double ComputeTemperatureError(IDictionary<string, Func<double[], double, double>> exactTemperature, double time) {
             int D = solver.GridData.SpatialDimension;
 
-            int order = solver.QuadOrder();
+            int order = 0;
+            if (solver.LsTrk.GetCachedOrders().Count > 0) {
+                order = solver.LsTrk.GetCachedOrders().Max();
+            } else {
+                order = 1;
+            }
 
             var SchemeHelper = solver.LsTrk.GetXDGSpaceMetrics(solver.LsTrk.SpeciesIdS.ToArray(), order, 1).XQuadSchemeHelper;
 
@@ -53,7 +58,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests
                 string temperatureName = VariableNames.Temperature;
                 ConventionalDGField temperature = ((XDGField)solver.CurrentStateVector.Mapping.Single(Field => Field.Identification == temperatureName)).GetSpeciesShadowField(spc);
                 var rule = scheme.Compile(solver.GridData, order);
-                
+
                 double IdV = temperature.LxError(exactTemperature[spc].Vectorize(time), (X, a, b) => (a - b).Pow2(), rule);
                 L2Error += IdV;
                 L2Error_Species.Add(spc, L2Error.Sqrt());

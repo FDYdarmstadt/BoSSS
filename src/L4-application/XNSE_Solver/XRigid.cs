@@ -44,7 +44,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
         /// </summary>
         public XRigid() {
-            
         }
 
         public void SetParameters(double[] pos, double anglevelocity, double partRadius, int SpaceDim) {
@@ -209,7 +208,6 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         private void SetPhi(Func<double[], double, double> PhiFunc) {
-            m_ctrl.UseImmersedBoundary = true;
             m_ctrl.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
         }
     }

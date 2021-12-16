@@ -67,14 +67,6 @@ pages:
     - mkdir public
     - copy src/L4-application/PublicTestRunner/bin/Release/net5.0/*.html ./public/
     - cd public    
-    - wget http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage4-ValidationTest-atLichtenberg/lastSuccessfulBuild/artifact/*zip*/archive.zip
-    - unzip archive.zip
-    - cp $(find . -name *.html) .
-    - rm -r -f archive*
-    - wget http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage4-ValidationTest-atFDYcluster/lastSuccessfulBuild/artifact/*zip*/archive.zip
-    - unzip archive.zip
-    - cp $(find . -name *.html) .
-    - rm -r -f archive*
     - python ../doc/Generate-Index-Files-1.0/generate-index.py
     - dir 
   artifacts:

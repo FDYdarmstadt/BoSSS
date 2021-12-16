@@ -565,7 +565,7 @@ namespace BoSSS.Foundation {
         /// <returns>%</returns>
         virtual public double GetMeanValue(int j) {
             if (j < 0 || j >= Basis.GridDat.iLogicalCells.Count)
-                throw new ArgumentException($"cell index out of range: got {j}, expecting between 0 and {Basis.GridDat.iLogicalCells.Count}, MPI rank {Basis.GridDat.MpiRank}.", "j");
+                throw new ArgumentException("cell index out of range.", "j");
 
             int iKref = this.Basis.GridDat.iGeomCells.GetRefElementIndex(j);
             double bv = m_Basis.Polynomials[iKref][0].Coeff[0];

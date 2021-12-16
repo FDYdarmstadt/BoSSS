@@ -157,7 +157,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             // create operator
             // ===============
 
-            if(this.Control.SetDefaultDiriBndCnd || this.Control.xLaplaceBCs == null || this.Control.xLaplaceBCs.g_Diri == null || this.Control.xLaplaceBCs.IsDirichlet == null) {
+            if(this.Control.SetDefaultDiriBndCnd) {
                 this.Control.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
                 this.Control.xLaplaceBCs.IsDirichlet = (inp => true);
             }

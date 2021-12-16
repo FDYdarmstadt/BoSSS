@@ -47,8 +47,6 @@ namespace BoSSS.Application.XNSFE_Solver {
             HeatSource = control.InitialValues_EvaluatorsVec.Keys.Any(name => name.StartsWith(VariableNames.HeatSource)) || control.FieldOptions.Keys.Where(k => k.Contains(VariableNames.HeatSource)).Any();
             solveHeat = control.solveCoupledHeatEquation;
             Evaporation = (control.ThermalParameters.hVap > 0.0);
-            RecoilPressure = Evaporation & control.IncludeRecoilPressure;
-            MaterialAtContactLine = control.MaterialAtContactLine;
             Buoyancy = control.ThermalParameters.alpha_A != 0.0 || control.ThermalParameters.alpha_B != 0.0;
             if(control.prescribedMassflux_Evaluator != null)
                 prescribedMassflux = control.prescribedMassflux_Evaluator;
@@ -119,16 +117,6 @@ namespace BoSSS.Application.XNSFE_Solver {
         public bool Evaporation;
 
         /// <summary>
-        /// include recoil pressure
-        /// </summary>
-        public bool RecoilPressure;
-
-        /// <summary>
-        /// let Massflux vanish at contact line
-        /// </summary>
-        public bool MaterialAtContactLine;
-
-        /// <summary>
         /// include buoyancy, that is Boussinesq approximation
         /// </summary>
         public bool Buoyancy;
@@ -163,12 +151,6 @@ namespace BoSSS.Application.XNSFE_Solver {
         }
         public bool isBuoyancy {
             get { return Buoyancy; }
-        }
-        public bool isRecoilPressure {
-            get { return RecoilPressure; }
-        }
-        public bool isMaterialAtContactLine {
-            get { return MaterialAtContactLine; }
         }
     }
 }

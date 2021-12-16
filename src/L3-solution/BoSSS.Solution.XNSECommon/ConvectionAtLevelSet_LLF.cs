@@ -413,15 +413,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
             PosFlux = new ConvectionInBulk_LLF_Newton(_D, _bcmap, _d, _rhoA, _rhoB, double.NaN, _LFFB, EoS_B, NoOfChemicalSpecies);
 
-            m_EoS_A = EoS_A;
-            m_EoS_B = EoS_B;
+
         }
         int NoOfChemicalSpecies;
         bool MaterialInterface;
         double rhoA;
         double rhoB;
-        MaterialLaw m_EoS_A;
-        MaterialLaw m_EoS_B;
         int m_D;
         int m_d;
         //EquationAndVarMode varMode;
@@ -443,123 +440,46 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
             //}
         }
 
-        //public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-        //    double[] U_NegFict, U_PosFict;
+        public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double[] U_NegFict, U_PosFict;
 
-        //    this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
+            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
 
-        //    double[] ParamsNeg = cp.Parameters_IN;
-        //    double[] ParamsPos = cp.Parameters_OUT;
-        //    double[] ParamsPosFict, ParamsNegFict;
-        //    this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
-        //    //Flux for negativ side
-        //    double FlxNeg;
-        //    {
-        //        //double flx = 0.0;
-        //        //for (int d = m_D - 1; d >= 0; d--)
-        //        //    flx += cp.ParamsNeg[d] * cp.n[d];
-        //        //flx *= U_Neg[0];
-        //        //FlxNeg = flx;
-
-        //        BoSSS.Foundation.CommonParams inp = cp;
-        //        inp.Parameters_OUT = ParamsNegFict;
-
-        //        FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
-        //    }
-        //    // Flux for positive side
-        //    double FlxPos;
-        //    {
-        //        //double flx = 0.0;
-        //        //for (int d = m_D - 1; d >= 0; d--)
-        //        //    flx += cp.ParamsPos[d] * cp.n[d];
-        //        //flx *= U_Pos[0];
-        //        //FlxPos = flx;
-
-        //        BoSSS.Foundation.CommonParams inp = cp;
-        //        inp.Parameters_IN = ParamsPosFict;
-
-        //        FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
-        //    }
-
-        //    if (movingmesh)
-        //        return 0.0;
-        //    else
-        //        return FlxNeg * v_Neg - FlxPos * v_Pos;
-        //}
-
-
-
-        public double InnerEdgeForm(ref CommonParams inp, double[] Uin, double[] Uout, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
-
-
-            double r = 0.0;
-
-            double[] DensityArgumentsIn = Uin.GetSubVector(m_D, (NoOfChemicalSpecies) + 1);
-            double[] DensityArgumentsOut = Uout.GetSubVector(m_D, (NoOfChemicalSpecies) + 1);
-            double rhoIn = m_EoS_A.GetDensity(DensityArgumentsIn);
-            double rhoOut = m_EoS_B.GetDensity(DensityArgumentsOut);
-
-            int idx = m_d;
-
-
-            // Negativ side   
-            double fi;
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
+            double[] ParamsPosFict, ParamsNegFict;
+            this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
+            //Flux for negativ side
+            double FlxNeg;
             {
-                // Central part
-                fi = rhoIn * Uin[idx] * (Uin[0] * inp.Normal[0] + Uin[1] * inp.Normal[1]) + rhoIn * Uout[idx] * (Uout[0] * inp.Normal[0] + Uout[1] * inp.Normal[1]);
 
-                // Dissipative part
-                double[] VelocityMeanIn = new double[m_D];
-                double[] VelocityMeanOut = new double[m_D];
-                for (int d = 0; d < m_D; d++) {
-                    VelocityMeanIn[d] = Uin[d];
-                    VelocityMeanOut[d] = Uout[d];
-                }
 
-                double LambdaIn;
-                double LambdaOut;
-                double[] ScalarMeanIn = Uin.GetSubVector(m_D, (NoOfChemicalSpecies) + 1);
-                double[] ScalarMeanOut = Uout.GetSubVector(m_D, (NoOfChemicalSpecies) + 1);
-                LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, m_EoS_A, true, ScalarMeanIn);
-                LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, m_EoS_A, true, ScalarMeanOut);
-                double Lambda = Math.Max(LambdaIn, LambdaOut)*0.8;
-                double uJump = Uin[idx] - Uout[idx];
-                fi += Lambda * uJump;
-                fi *= 0.5;
+                BoSSS.Foundation.CommonParams inp = cp;
+                inp.Parameters_OUT = ParamsNegFict;
+
+                FlxNeg = this.NegFlux.IEF(ref inp, U_Neg, U_NegFict);
+
+
+
+
+
+            }
+            // Flux for positive side
+            double FlxPos;
+            {
+
+
+                BoSSS.Foundation.CommonParams inp = cp;
+                inp.Parameters_IN = ParamsPosFict;
+
+                FlxPos = this.PosFlux.IEF(ref inp, U_PosFict, U_Pos);
             }
 
-            // positiv side
-            double fo;
-            {
-                // Central part
-                fo = rhoOut * Uin[idx] * (Uin[0] * inp.Normal[0] + Uin[1] * inp.Normal[1]) + rhoOut * Uout[idx] * (Uout[0] * inp.Normal[0] + Uout[1] * inp.Normal[1]);
-
-                // Dissipative part
-                double[] VelocityMeanIn = new double[m_D];
-                double[] VelocityMeanOut = new double[m_D];
-                for (int d = 0; d < m_D; d++) {
-                    VelocityMeanIn[d] = Uin[d];
-                    VelocityMeanOut[d] = Uout[d];
-                }
-
-                double LambdaIn;
-                double LambdaOut;
-                double[] ScalarMeanIn = Uin.GetSubVector(m_D, (NoOfChemicalSpecies) + 1);
-                double[] ScalarMeanOut = Uout.GetSubVector(m_D, (NoOfChemicalSpecies) + 1);
-                LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, inp.Normal, m_EoS_B, true, ScalarMeanIn);
-                LambdaOut = LambdaConvection.GetLambda(VelocityMeanOut, inp.Normal, m_EoS_B, true, ScalarMeanOut);
-                double Lambda = Math.Max(LambdaIn, LambdaOut) * 0.8;
-                double uJump = Uin[idx] - Uout[idx];
-                fo += Lambda * uJump;
-                fo *= 0.5;
-            }
-
-
-
-
-            return (fi * v_Neg - fo * v_Pos);
+            if (movingmesh)
+                return 0.0;
+            else
+                return FlxNeg * v_Neg - FlxPos * v_Pos;
         }
-
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
@@ -599,8 +519,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.AllOn;
-                //return TermActivationFlags.UxV;
+                return TermActivationFlags.UxV;
             }
         }
 

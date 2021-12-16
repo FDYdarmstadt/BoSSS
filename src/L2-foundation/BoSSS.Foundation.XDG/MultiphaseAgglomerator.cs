@@ -180,46 +180,6 @@ namespace BoSSS.Foundation.XDG {
                 }
             }
 
-            /*
-            {
-                var grdDat = this.Tracker.GridDat;
-                int Jup = grdDat.Cells.NoOfLocalUpdatedCells;
-
-                Basis b = new Basis(grdDat, 0);
-                var CellVolumesViz = new List<DGField>();
-                for(int n = 0; n < oldCcm.Length; n++) {
-                    foreach(var pair in oldCcm[n].CutCellVolumes) {
-                        string name = this.Tracker.GetSpeciesName(pair.Key);
-                        MultidimensionalArray vol = pair.Value;
-                        var f = new SinglePhaseField(b, $"Volume#{name}AtIdx{n}");
-                        CellVolumesViz.Add(f);
-
-                        for(int j = 0; j < Jup; j++) {
-                            f.SetMeanValue(j, vol[j]);
-                        }
-
-
-
-                    }
-                 
-                    var maskA = oldCcm[n].XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask("A");
-                    var maskB = oldCcm[n].XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask("B");
-                    var maskC = oldCcm[n].XDGSpaceMetrics.LevelSetRegions.GetSpeciesMask("C");
-
-                    var fa = new SinglePhaseField(b, "mask-A"); fa.AccConstant(1.0, maskA);
-                    var fb = new SinglePhaseField(b, "mask-B"); fb.AccConstant(1.0, maskB);
-                    var fc = new SinglePhaseField(b, "mask-C"); fc.AccConstant(1.0, maskC);
-
-                    CellVolumesViz.Add(fa);
-                    CellVolumesViz.Add(fb);
-                    CellVolumesViz.Add(fc);
-                }
-
-                Katastrophenplot(CellVolumesViz.ToArray());
-
-                throw new Exception();
-            }
-            */
  
             // perform agglomeration
             foreach (var spc in this.SpeciesList) {
@@ -1274,15 +1234,11 @@ namespace BoSSS.Foundation.XDG {
                         if (Katastrophenplot != null)
                             Katastrophenplot(CellVolumesViz.Cat(AgglomCellsViz, FailedViz, LevelSets));
 
-
-                        
                         string message = ("Agglomeration failed - no candidate for agglomeration found");
                         if (ExceptionOnFailedAgglomeration)
                             throw new Exception(message);
                         else
                             Console.WriteLine(message);
-                        
-
 
                     }
 

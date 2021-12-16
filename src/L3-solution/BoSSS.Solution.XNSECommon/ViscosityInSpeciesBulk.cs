@@ -163,9 +163,9 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                                      MaterialLaw EoS,
                                      double Reynolds,
                                      double Prandtl,
-                                     double[] Lewis,
+                                     bool prmsOK,
                                      int massFractionComponent,
-                                     int NoOfComponents) : base(PenaltyBase, BcMap, EoS, Reynolds, Prandtl, Lewis, massFractionComponent, NoOfComponents) {
+                                     int NoOfComponents) : base(PenaltyBase, BcMap, EoS, Reynolds, Prandtl, new double[] { 1.0, 1.0, 1.0, 1.0, 1.0 }, false, massFractionComponent, NoOfComponents) {
             ValidSpecies = spcName;
         }
 

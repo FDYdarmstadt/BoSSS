@@ -848,8 +848,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return ret;
         }
 
+
         /// <summary>
-        /// Turn VarGroup into Names
+        /// 
         /// </summary>
         public string VarNames {
             get {

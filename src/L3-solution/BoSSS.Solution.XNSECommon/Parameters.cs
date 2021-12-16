@@ -180,9 +180,8 @@ namespace BoSSS.Solution.XNSECommon {
     }
 
     /// <summary>
-    /// Cell-wise mean value, required for the for the 
-    /// localized Lax-Friedrichs flux <see cref="XNSECommon.Operator.Convection.ConvectionInBulk_LLF"/>,
-    /// to have a constant Eigenvalue (aka. flow direction) along an edge.
+    /// Cell-wise mean value, required for the for the localized Lax-Friedrichs flux <see cref="XNSECommon.Operator.Convection.ConvectionInBulk_LLF"/>,
+    /// to have a constant Eigenvalue along an edge.
     /// </summary>
     public class Velocity0Mean : ParameterS, ILevelSetParameter {
         protected int D;
