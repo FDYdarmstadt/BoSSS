@@ -257,6 +257,8 @@ namespace BoSSS.Foundation.XDG {
                 // check and init
                 // ==============
 
+                string input = IEnumerableExtensions.ToConcatString(AgglomerationPairs, "", " ", "");
+
                 MPICollectiveWatchDog.Watch();
 
                 this.GridDat = g;
@@ -273,6 +275,7 @@ namespace BoSSS.Foundation.XDG {
                     if (jAggTarget < 0 || jAggTarget >= JE)
                         throw new IndexOutOfRangeException("Agglomeration target is not a valid cell index.");
                 }
+
 
                 List<Tuple<int, int>> AggPairs = new List<Tuple<int, int>>(AgglomerationPairs);
                 AgglomerationPairs = null;
@@ -303,6 +306,7 @@ namespace BoSSS.Foundation.XDG {
                     int jAggSource = AggPair.Item1;
 
                     if (jAggTarget >= J) {
+                        // target cell on different MPI process
                         InterProcessAgglomeration = 1;
 
                         long jGlbTarg = (GidxExt[jAggTarget - J]);
@@ -447,8 +451,19 @@ namespace BoSSS.Foundation.XDG {
                                 BitArray localCycleMask = new BitArray(CycleDetection.ToBoolArray().GetSubVector(0, J));
                                 CellMask localCycle = new CellMask(this.GridDat, localCycleMask);
                                 localCycle.SaveToTextFile("DetectedCycle-" + mpiRank + ".csv");
+
+                                Console.WriteLine("input pairs: " + input);
+                                Console.WriteLine("processed   : " + IEnumerableExtensions.ToConcatString(AggPairs, "", " ", ""));
+
+
+                                BitArray l17_18 = new BitArray(J);
+                                l17_18[17] = true;
+                                l17_18[18] = true;
+                                (new CellMask(this.GridDat, l17_18)).SaveToTextFile("Cell1718.csv");
+
+
                                 // kill it
-                                throw new ArgumentException("Cycle in agglomeration graph.");
+                                throw new ArgumentException("Cycle in agglomeration graph (1).");
                             }
                             CycleDetection[jTarget] = true;
                             int nextPair = Cells2Aggpairs[jTarget];
@@ -511,7 +526,13 @@ namespace BoSSS.Foundation.XDG {
                                 int jAggTrg = CurrentPair.Item2;
 
                                 if (CycleDetection[jAggSrc] == true) {
-                                    throw new ArgumentException("Cycle in agglomeration graph.");
+
+
+                                    Console.WriteLine("intput pairs: " + input);
+                                    Console.WriteLine("processed   : " + IEnumerableExtensions.ToConcatString(AggPairs, "", " ", ""));
+
+
+                                    throw new ArgumentException("Cycle in agglomeration graph (2).");
                                 }
                                 CycleDetection[jAggSrc] = true;
 
