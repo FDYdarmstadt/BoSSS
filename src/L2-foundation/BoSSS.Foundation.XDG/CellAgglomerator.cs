@@ -36,15 +36,10 @@ namespace BoSSS.Foundation.XDG {
     /// Cell agglomeration for a single species;
     /// This class is responsible for applying a given agglomeration graph onto operator matrices and residual vectors,
     /// see <see cref="ManipulateMatrixAndRHS{M, T}"/> and <see cref="ManipulateRHS{T}"/>.
-    /// The agglomeration graph itself is computed by <see cref="MultiphaseCellAgglomerator.FindAgglomeration"/>.
+    /// The agglomeration graph itself is computed by <see cref="AgglomerationAlgorithm"/>.
     /// </summary>
     public class CellAgglomerator {
 
-        ///// <summary>
-        ///// Temporary feature; will be removed in future;
-        ///// Plotting if agglomeration fails.
-        ///// </summary>
-        //public static Action<DGField[]> CellAggKatastrophenplot;
 
         /// <summary>
         /// defines a pair (source and target) of cells affected by agglomeration
@@ -251,7 +246,7 @@ namespace BoSSS.Foundation.XDG {
         ///  - 1st entry: source cell index, i.e. cell which will be removed due to agglomeration; must be in the range of locally updated cells.<br/>
         ///  - 2nd entry: target cell index, i.e. cell which will be enlarged due to agglomeration
         /// </param>
-        public CellAgglomerator(GridData g, IEnumerable<Tuple<int, int>> AgglomerationPairs) {
+        public CellAgglomerator(GridData g, IEnumerable<(int jSource, int jTarget)> AgglomerationPairs) {
             using (new FuncTrace()) {
 
                 // check and init
@@ -277,7 +272,7 @@ namespace BoSSS.Foundation.XDG {
                 }
 
 
-                List<Tuple<int, int>> AggPairs = new List<Tuple<int, int>>(AgglomerationPairs);
+                List<(int jSource, int jTarget)> AggPairs = new List<(int, int)>(AgglomerationPairs);
                 AgglomerationPairs = null;
 
                 // at this point, because jAggSource must be local, the agglomerations are unique over all MPI processors.
@@ -354,7 +349,7 @@ namespace BoSSS.Foundation.XDG {
 
                         int jAggSource = g.Parallel.Global2LocalIdx[jGlbAggSource];
 
-                        AggPairs.Add(new Tuple<int, int>(jAggSource, jAggTarget));
+                        AggPairs.Add((jAggSource, jAggTarget));
                         TargetCellMpiRank.Add(mpiRank);
                         SourceCellMpiRank.Add(rcvMpiRank);
                     }
@@ -494,7 +489,7 @@ namespace BoSSS.Foundation.XDG {
 
                         if (jTarget != AggPairs[iPair].Item2) {
                             // any local agglomeration chain can be skipped.
-                            AggPairs[iPair] = new Tuple<int, int>(jSource, jTarget);
+                            AggPairs[iPair] = (jSource, jTarget);
                         }
                     }
 
@@ -521,7 +516,7 @@ namespace BoSSS.Foundation.XDG {
                             CycleDetection.SetAll(false);
 
                             while (CurrentPairIndex >= 0) { // traverse the agglomeration chain...
-                                Tuple<int, int> CurrentPair = AggPairs[CurrentPairIndex];
+                                var CurrentPair = AggPairs[CurrentPairIndex];
                                 int jAggSrc = CurrentPair.Item1;
                                 int jAggTrg = CurrentPair.Item2;
 

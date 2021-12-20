@@ -615,7 +615,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 Tecplot.Tecplot.PlotFields(allfields, "AgglomerationKatastrophe", 0.0, 3);
             }
-            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            AgglomerationAlgorithm.Katastrophenplot = KatastrophenPlot;
 
             base.Init(control);
         }
