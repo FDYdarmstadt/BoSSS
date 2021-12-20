@@ -131,22 +131,23 @@ namespace BoSSS.Foundation.XDG {
         /// If true, an exception is thrown for 
         /// any cell which should be agglomerated, if no neighbour is found.
         /// </param>
-        /// <param name="NewbornAndDecasedThreshold">
-        /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
-        /// </param>
         /// <param name="CutCellsQuadOrder">
         /// cut-cell quadrature order for the quadrature rule that is used to determine cell volumes;
-        /// this should typically be the same order which is used to evaluate the XDG operator matrix.
         /// </param>
         /// <param name="Spc"></param>
         /// <param name="lsTrk"></param>
+        /// <param name="NewbornAndDecasedThreshold">
+        /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
+        /// this should typically be the same order which is used to evaluate the XDG operator matrix.
+        /// </param>
         internal MultiphaseCellAgglomerator(
             LevelSetTracker lsTrk,
             SpeciesId[] Spc, int CutCellsQuadOrder,
             double __AgglomerationTreshold,
             bool AgglomerateNewborn = false, bool AgglomerateDecased = false, bool ExceptionOnFailedAgglomeration = true,
             double[] oldTs__AgglomerationTreshold = null,
-            double NewbornAndDecasedThreshold = 1.0e-6) {
+            double NewbornAndDecasedThreshold = 1.0e-6
+            ) {
             MPICollectiveWatchDog.Watch();
             if (__AgglomerationTreshold < 0.0 || __AgglomerationTreshold >= 1.0)
                 throw new ArgumentOutOfRangeException();
@@ -242,10 +243,10 @@ namespace BoSSS.Foundation.XDG {
                     oldTs__AgglomerationTreshold,
                     NewbornAndDecasedThreshold);
                 */
+                                
 
                 var aggAlg = new AgglomerationAlgorithm(this.Tracker, spc, CutCellsQuadOrder,
-                    AgglomerationThreshold, oldTs__AgglomerationTreshold,
-                    
+                    AgglomerationThreshold, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold,
                     AgglomerateNewborn, AgglomerateDecased,
                     ExceptionOnFailedAgglomeration
                     );
