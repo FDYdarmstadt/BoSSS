@@ -141,7 +141,7 @@ namespace BoSSS.Foundation.XDG {
 
             using (var tracer = new FuncTrace()) {
                 MPICollectiveWatchDog.Watch();
-                tracer.InfoToConsole = true;
+                //tracer.InfoToConsole = true;
                 tracer.Info("agglom newborn? " + AgglomerateNewborn);
                 tracer.Info("agglom decased? " + AgglomerateDeceased);
                 tracer.Info("AgglomerationThreshold = " + AgglomerationThreshold + ",  NewbornAndDecasedThreshold = " + NewbornAndDecasedThreshold);
@@ -456,11 +456,11 @@ namespace BoSSS.Foundation.XDG {
 
                     int NoOfEdges_4_jCell = Cell2Edge_jCell.Length;
 
-                    bool print = false;
-                    if (jCell == 29 || jCell == 30) {
-                        print = true;
-                        Console.WriteLine("Looking for agglom for cell " + jCell + "#" + Tracker.GetSpeciesName(spId) + " volume is " + CellVolumes[jCell]);
-                    }
+                    //bool print = false;
+                    //if (jCell == 29 || jCell == 30) {
+                    //    print = true;
+                    //    Console.WriteLine("Looking for agglom for cell " + jCell + "#" + Tracker.GetSpeciesName(spId) + " volume is " + CellVolumes[jCell]);
+                    //}
 
 
                     // determine if there is a non-empty edge which connects cell 'jCell'
@@ -512,10 +512,10 @@ namespace BoSSS.Foundation.XDG {
                         Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
 
                         int jCellNeigh = Edge2Cell[iEdge, OtherCell];
-                        if (print) {
-                            Console.WriteLine("  testing with cell " + jCellNeigh);
-                            Console.WriteLine("    connecting edge area: " + EdgeArea_iEdge);
-                        }
+                        //if (print) {
+                        //    Console.WriteLine("  testing with cell " + jCellNeigh);
+                        //    Console.WriteLine("    connecting edge area: " + EdgeArea_iEdge);
+                        //}
                         //jNeigh[e] = jCellNeigh;
                         if (jCellNeigh < 0 || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)) {
                             // boundary edge, no neighbour for agglomeration
@@ -533,8 +533,8 @@ namespace BoSSS.Foundation.XDG {
                         double totVol_neigh = grdDat.Cells.GetCellVolume(jCellNeigh);
                         double frac_neigh = spcVol_neigh / totVol_neigh;
 
-                        if (print)
-                            Console.WriteLine("    neighbour fraction: " + frac_neigh);
+                        //if (print)
+                        //    Console.WriteLine("    neighbour fraction: " + frac_neigh);
 
                         // max?
                         if (frac_neigh > frac_neigh_max) {
@@ -545,8 +545,8 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    if (print)
-                        Console.WriteLine("  selected: " + jCellNeigh_max);
+                    //if (print)
+                    //    Console.WriteLine("  selected: " + jCellNeigh_max);
 
                     if (jCellNeigh_max < 0) {
 
@@ -714,11 +714,11 @@ namespace BoSSS.Foundation.XDG {
 
                     int NoOfEdges_4_jCell = Cell2Edge_jCell.Length;
 
-                    bool print = false;
-                    if (jCell == 29 || jCell == 30) {
-                        print = true;
-                        Console.WriteLine("Looking for agglom for cell " + jCell + "#" + Tracker.GetSpeciesName(spId) + " volume is " + CellVolumes[jCell]);
-                    }
+                    //bool print = false;
+                    //if (jCell == 29 || jCell == 30) {
+                    //    print = true;
+                    //    Console.WriteLine("Looking for agglom for cell " + jCell + "#" + Tracker.GetSpeciesName(spId) + " volume is " + CellVolumes[jCell]);
+                    //}
 
 
                     // determine if there is a non-empty edge which connects cell 'jCell' to some other cell
@@ -746,8 +746,8 @@ namespace BoSSS.Foundation.XDG {
                     // for strange reasons, one might encounter (with Saye rules) 
                     // empty cells with non-empty edges...
                     // (Could be problematic for many reasons, but here we just "filter" those cases)
-                    if (CellVolumes[jCell] <= 0)
-                        NonEmptyEdgeAvailable = false;
+                    //if (CellVolumes[jCell] <= 0)
+                    //    NonEmptyEdgeAvailable = false;
 
 
                     // search for some neighbor cell to agglomerate to:
@@ -773,10 +773,10 @@ namespace BoSSS.Foundation.XDG {
                         Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
 
                         int jCellNeigh = Edge2Cell[iEdge, OtherCell];
-                        if (print) {
-                            Console.WriteLine("  testing with cell " + jCellNeigh);
-                            Console.WriteLine("    connecting edge area: " + EdgeArea_iEdge + " NonEmptyEdgeAvailable ? " + NonEmptyEdgeAvailable);
-                        }
+                        //if (print) {
+                        //    Console.WriteLine("  testing with cell " + jCellNeigh);
+                        //    Console.WriteLine("    connecting edge area: " + EdgeArea_iEdge + " NonEmptyEdgeAvailable ? " + NonEmptyEdgeAvailable);
+                        //}
 
                         // check exclusion criteria for neighbour cells: 
                         if (jCellNeigh < 0 // boundary edge
@@ -788,7 +788,7 @@ namespace BoSSS.Foundation.XDG {
                             // boundary edge, periodic edge, or
                             // no neighbour for agglomeration
 
-                            Console.WriteLine($"    Ignoring: r1? {jCellNeigh < 0}, r2? {EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG}, r3? {(EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)}");
+                            //Console.WriteLine($"    Ignoring: r1? {jCellNeigh < 0}, r2? {EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG}, r3? {(EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)}");
 
 
                             Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
@@ -805,8 +805,8 @@ namespace BoSSS.Foundation.XDG {
                         double totVol_neigh = grdDat.Cells.GetCellVolume(jCellNeigh);
                         double frac_neigh = spcVol_neigh / totVol_neigh;
 
-                        if (print)
-                            Console.WriteLine("    neighbour fraction: " + frac_neigh);
+                        //if (print)
+                        //    Console.WriteLine("    neighbour fraction: " + frac_neigh);
 
                         // max?
                         if (frac_neigh > frac_neigh_max) {
@@ -817,89 +817,9 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    if (print)
-                        Console.WriteLine("  selected: " + jCellNeigh_max);
-                    /*
-                    if (jCellNeigh_max < 0) {
-
-                        //
-                        // no agglomeration target found yet; 
-                        //
-
-                        // 2nd try:
-                        // Note: at this point, i see no reason, why this second try (in below) should have any different result
-                        //       It might be some refactoring artefact - since this algorithm is so critical to many computations,
-                        //       i don't dare to change it right now.
-                        //       Fk, 14dec21
-
-                        for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
-                            int iEdge = Cell2Edge_jCell[e];
-                            int OtherCell, ThisCell;
-                            if (iEdge < 0) {
-                                // cell 'jCell' is the OUT-cell of edge 'iEdge'
-                                OtherCell = 0;
-                                ThisCell = 1;
-                                iEdge *= -1;
-                            } else {
-                                OtherCell = 1;
-                                ThisCell = 0;
-                            }
-                            iEdge--;
-
-                            double EdgeArea_iEdge = edgeArea[iEdge];
-
-                            //_AgglomCellsEdges[iEdge] = true;
-
-                            Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
-
-                            int jCellNeigh = Edge2Cell[iEdge, OtherCell];
-                            //jNeigh[e] = jCellNeigh;
-                            if (jCellNeigh < 0 || EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)) {
-                                // boundary edge, no neighbour for agglomeration
-                                Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell, "sollte aber so sein");
-                                //continue;
-                            }
-                            //passed1[e] = true;
-                            //isAggCandidate[e] = AggCandidates[jCellNeigh];
-                            if (jCellNeigh < 0 || !AggCandidates[jCellNeigh])
-                                // not suitable for agglomeration
-                                continue;
-
-                            // volume fraction of neighbour cell
-                            double spcVol_neigh = CellVolumes[jCellNeigh];
-                            //double totVol_neigh = RefVolumes[grdDat.Cells.GetRefElementIndex(jCellNeigh)]; 
-                            double totVol_neigh = grdDat.Cells.GetCellVolume(jCellNeigh);
-                            double frac_neigh = spcVol_neigh / totVol_neigh;
-
-                            // max?
-                            if (frac_neigh > frac_neigh_max) {
-                                frac_neigh_max = frac_neigh;
-                                e_max = e;
-                                jCellNeigh_max = jCellNeigh;
-                                jEdge_max = iEdge;
-                            }
-                        }
-
-                        if (jCellNeigh_max < 0) {
-                            failCells.Add(jCell);
-                        } else {
-                            //_AccEdgesMask[jEdge_max] = true;
-
-                            int jCellNeighRank;
-                            if (jCellNeigh_max < Jup) {
-                                jCellNeighRank = myMpiRank;
-                            } else {
-                                jCellNeighRank = CellPart.FindProcess(GidxExt[jCellNeigh_max - Jup]);
-                            }
-
-                            AgglomerationPairs.Add(new CellAgglomerator.AgglomerationPair() {
-                                jCellTarget = jCellNeigh_max,
-                                jCellSource = jCell,
-                                OwnerRank4Target = jCellNeighRank,
-                                OwnerRank4Source = myMpiRank
-                            });
-                        }
-                    } else */
+                    //if (print)
+                    //    Console.WriteLine("  selected: " + jCellNeigh_max);
+                                        
                     {
                         //_AccEdgesMask[jEdge_max] = true;
 
