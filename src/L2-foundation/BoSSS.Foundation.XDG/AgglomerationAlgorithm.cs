@@ -211,7 +211,6 @@ namespace BoSSS.Foundation.XDG {
                         if (frac <= alpha) {
                             // cell 'jCell' should be agglomerated to some other cell
                             AgglomCellsBitmask[jCell] = true;
-                            Console.WriteLine("Must agglom cell " + jCell + "#" + Tracker.GetSpeciesName(spId) + " volume frac is " + frac);
                             AgglomCellsList.Add(jCell);
                         }
                     }
@@ -406,6 +405,9 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// 2nd pass of agglomeration algorithm, Identification of agglomeration targets
         /// </summary>
+        /// <remarks>
+        /// Old version, used until Dec. 2021
+        /// </remarks>
         protected virtual void FindAgglomerationTargets(
             List<int> AgglomCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates
             ) {
@@ -664,6 +666,9 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// 2nd pass of agglomeration algorithm, Identification of agglomeration targets
         /// </summary>
+        /// <remarks>
+        /// Revised algorithm, in use since Dec. 2021
+        /// </remarks>
         protected virtual void FindAgglomerationTargets_Mk2(
             List<int> AgglomCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates
             ) {
@@ -714,12 +719,7 @@ namespace BoSSS.Foundation.XDG {
 
                     int NoOfEdges_4_jCell = Cell2Edge_jCell.Length;
 
-                    //bool print = false;
-                    //if (jCell == 29 || jCell == 30) {
-                    //    print = true;
-                    //    Console.WriteLine("Looking for agglom for cell " + jCell + "#" + Tracker.GetSpeciesName(spId) + " volume is " + CellVolumes[jCell]);
-                    //}
-
+                  
 
                     // determine if there is a non-empty edge which connects cell 'jCell' to some other cell
                     bool NonEmptyEdgeAvailable = false;
@@ -746,8 +746,8 @@ namespace BoSSS.Foundation.XDG {
                     // for strange reasons, one might encounter (with Saye rules) 
                     // empty cells with non-empty edges...
                     // (Could be problematic for many reasons, but here we just "filter" those cases)
-                    //if (CellVolumes[jCell] <= 0)
-                    //    NonEmptyEdgeAvailable = false;
+                    if (CellVolumes[jCell] <= 0)
+                        NonEmptyEdgeAvailable = false;
 
 
                     // search for some neighbor cell to agglomerate to:
