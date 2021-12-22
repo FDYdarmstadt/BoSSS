@@ -240,7 +240,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 //C.ImmediatePlotPeriod = 1;
                 //C.SuperSampling = 3;
 
-                MultiphaseCellAgglomerator.Katastrophenplot = delegate (DGField[] plotFields) {
+                AgglomerationAlgorithm.Katastrophenplot = delegate (DGField[] plotFields) {
 
                     List<DGField> allfields = new();
                     allfields.AddRange(plotFields);
