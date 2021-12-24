@@ -683,11 +683,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             string Nodes = "";
             if(this.ComputeNodes != null) {
-                foreach(string node in ComputeNodes) {
-                    if(Nodes.Length > 0)
-                        Nodes = ",";
-                    Nodes += node;
-                }
+                Nodes = ComputeNodes.ToConcatString("", ",", "");
             }
 
 
