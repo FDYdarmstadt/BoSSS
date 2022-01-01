@@ -4,6 +4,7 @@ using BoSSS.Solution.Utils;
 using ilPSP;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -38,8 +39,22 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
 
         double[][] RadialVel;
 
+        /// <summary>
+        /// spatial direction
+        /// </summary>
+        public int VelocityComponent {
+            get {
+                return m_VelocityComponent;
+            }
+            set {
+                if(value < 0 || value >= 3)
+                    throw new ArgumentOutOfRangeException("illegal spatial dimension index (expecting either 0, 1 or 2).");
+                m_VelocityComponent = value;
+            }
+        }
 
-        int VelocityComponent;
+
+        int m_VelocityComponent = 0;
 
         /// <summary>
         /// 
@@ -112,13 +127,16 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
             (int j_11, int j_12) = binarySearch(radius, Radius[i1]);
             (int j_21, int j_22) = binarySearch(radius, Radius[i2]);
 
+            if(j_11 == j_12)
+                Console.Write("");
+
             double polar1 = Interpolate(radius, Radius[i1][j_11], Radius[i1][j_12], PolarVel[i1][j_11], PolarVel[i1][j_12]);
             double polar2 = Interpolate(radius, Radius[i2][j_21], Radius[i2][j_22], PolarVel[i2][j_21], PolarVel[i2][j_22]);
-            double v_theta = Interpolate(theta, Theta[i1], Theta[i2], polar1, polar2);
+            double v_radial = Interpolate(theta, Theta[i1], Theta[i2], polar1, polar2);
 
-            double radial1 = Interpolate(radius, Radius[i1][j_11], Radius[i1][j_12], RadialVel[i1][j_11], PolarVel[i1][j_12]);
-            double radial2 = Interpolate(radius, Radius[i2][j_21], Radius[i2][j_22], RadialVel[i2][j_21], PolarVel[i2][j_22]);
-            double v_radial = Interpolate(theta, Theta[i1], Theta[i2], radial1, radial2);
+            double radial1 = Interpolate(radius, Radius[i1][j_11], Radius[i1][j_12], RadialVel[i1][j_11], RadialVel[i1][j_12]);
+            double radial2 = Interpolate(radius, Radius[i2][j_21], Radius[i2][j_22], RadialVel[i2][j_21], RadialVel[i2][j_22]);
+            double v_theta = Interpolate(theta, Theta[i1], Theta[i2], radial1, radial2);
 
             double Vxy = Math.Cos(theta)*v_radial
                 + Math.Sin(theta)*v_theta;
@@ -128,21 +146,27 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
 
             var Vel = new Vector(Dx * Vxy, Dy * Vxy, Vz);
 
-            return Vel[VelocityComponent];
+            var ret = Vel[VelocityComponent];
+
+            if(ret.IsNaNorInf()) {
+                throw new ArithmeticException();
+            }
+
+            return ret;
         }
 
         /// <summary>
         /// vectorized evaluation
         /// </summary>
-        public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+        public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
             ScalarFunction sF = NonVectorizedScalarFunction.Vectorize(this.Evaluate, time);
             sF(input, output);
         }
 
 
         double Interpolate(double x, double x1, double x2, double y1, double y2) {
-            if(Math.Abs(x2 - x1) < Math.Abs(y2 - y1) * 1e-10)
-                return 0.5 * (y2 - y1);
+            if(Math.Abs(x2 - x1) <= Math.Abs(y2 - y1) * 1e-10)
+                return 0.5 * (y2 + y1);
 
             double k = (y2 - y1) / (x2 - x1);
             double y = k * (x - x1) + y1;

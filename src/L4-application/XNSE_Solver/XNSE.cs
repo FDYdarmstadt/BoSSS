@@ -75,11 +75,40 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
             //InitMPI();
-            //DeleteOldPlotFiles();
+            /*
+            string Path = @"C:\Users\flori\Documents\BoSSS-NET5\public\examples\Oscillating-Droplet";
+            var polVel = IMatrixExtensions.LoadFromTextFile(System.IO.Path.Combine(Path, $"polarVelCase1.txt"));
+            var radVel = IMatrixExtensions.LoadFromTextFile(System.IO.Path.Combine(Path, $"radialVelCase1.txt"));
+
+            double[] radiusS = polVel.GetColumn(0);
+            double[] anglesS = polVel.GetColumn(1);
+            double[] polVelS = polVel.GetColumn(2);
+            double[] radVelS = radVel.GetColumn(2);
+
+            var velX = new SpecificSolutions.PolarAxiallySymmetricInitialValues() { VelocityComponent = 0 };
+            velX.SetData(anglesS, radiusS, polVelS, radVelS);
+            var velZ = new SpecificSolutions.PolarAxiallySymmetricInitialValues() { VelocityComponent = 2 };
+            velZ.SetData(anglesS, radiusS, polVelS, radVelS);
+
+            var vX = velX.Evaluate(new[] { 0.37748, 0.0, 1.1391 }, 0.0);
+            DeleteOldPlotFiles();
+
+            var g = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(0, 2, 100), GenericBlas.Linspace(-2.5, 2.5, 220));
+            var B = new Basis(g, 3);
+
+            var Vx = new SinglePhaseField(B, "VelocityX");
+            var Vz = new SinglePhaseField(B, "VelocityZ");
+
+            Vx.ProjectField(X => velX.Evaluate(new[] { X[0], 0.0, X[1] }, 0.0));
+            Vz.ProjectField(X => velZ.Evaluate(new[] { X[0], 0.0, X[1] }, 0.0));
+
+            Tecplot.PlotFields(new DGField[] { Vx, Vz }, "scheisserei", 0.0, 4);
+
+
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 2, 0.1, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
             ////csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
             //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me"); //*/
+            NUnit.Framework.Assert.IsTrue(false, "remove me"); //*/
 
             //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
             {

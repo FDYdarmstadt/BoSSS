@@ -549,7 +549,7 @@ namespace BoSSS.Solution.Control {
                     var vv = InitialValues[name];
 
                     m_InitialValues_Evaluators.Add(name, new ValueTuple<ScalarFunctionTimeDep, Func<double[], double, double>>(
-                        (MultidimensionalArray X, double time, MultidimensionalArray R) => vv.Evaluate(X, time, R),
+                        (MultidimensionalArray X, double time, MultidimensionalArray R) => vv.EvaluateV(X, time, R),
                         (double[] X, double time) => vv.Evaluate(X, time)));
                 }
             }
