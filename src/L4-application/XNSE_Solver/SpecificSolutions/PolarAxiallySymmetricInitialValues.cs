@@ -127,9 +127,6 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
             (int j_11, int j_12) = binarySearch(radius, Radius[i1]);
             (int j_21, int j_22) = binarySearch(radius, Radius[i2]);
 
-            if(j_11 == j_12)
-                Console.Write("");
-
             double polar1 = Interpolate(radius, Radius[i1][j_11], Radius[i1][j_12], PolarVel[i1][j_11], PolarVel[i1][j_12]);
             double polar2 = Interpolate(radius, Radius[i2][j_21], Radius[i2][j_22], PolarVel[i2][j_21], PolarVel[i2][j_22]);
             double v_radial = Interpolate(theta, Theta[i1], Theta[i2], polar1, polar2);
