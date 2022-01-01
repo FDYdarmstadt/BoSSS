@@ -2,6 +2,8 @@
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Utils;
 using ilPSP;
+using ilPSP.Utils;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -26,6 +28,7 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
         /// <summary>
         /// All angles at which velocity values are provided
         /// </summary>
+        [JsonProperty]
         double[] Theta;
 
         /// <summary>
@@ -33,15 +36,19 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
         /// - 1st index: correlates with <see cref="Theta"/>
         /// - 2nd index: enumeration of radii samples
         /// </summary>
+        [JsonProperty]
         double[][] Radius;
 
+        [JsonProperty]
         double[][] PolarVel;
 
+        [JsonProperty]
         double[][] RadialVel;
 
         /// <summary>
         /// spatial direction
         /// </summary>
+        [JsonIgnore]
         public int VelocityComponent {
             get {
                 return m_VelocityComponent;
@@ -53,7 +60,7 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
             }
         }
 
-
+        [JsonProperty]
         int m_VelocityComponent = 0;
 
         /// <summary>
@@ -220,6 +227,41 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
             }
             //binS_mem = mid;
             return mid;
+        }
+
+        /// <summary>
+        /// equality
+        /// </summary>
+        public override bool Equals(object obj) {
+            var other = obj as PolarAxiallySymmetricInitialValues;
+            if(other == null)
+                return false;
+
+            if(!Theta.ListEquals(other.Theta))
+                return false;
+
+            if(m_VelocityComponent != other.m_VelocityComponent)
+                return false;
+
+            if(!PolarVel.ListEquals(other.PolarVel, (l1, l2) => l1.ListEquals(l2)))
+                return false;
+            if(!RadialVel.ListEquals(other.RadialVel, (l1, l2) => l1.ListEquals(l2)))
+                return false;
+            if(!Radius.ListEquals(other.Radius, (l1, l2) => l1.ListEquals(l2)))
+                return false;
+
+
+            return true;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override int GetHashCode() {
+            if(Theta == null)
+                return 0;
+            else
+                return (int) Math.Round(Theta.L2Norm() * 1e5);
         }
     }
 }
