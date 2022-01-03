@@ -167,7 +167,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 return amplitude * sum * A(r);
             }
 
-            public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+            public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
                 NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
             }
         };
@@ -186,7 +186,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             }
 
-            public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+            public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
                 NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
             }
         }

@@ -77,7 +77,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 2, 0.1, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
-            ////csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
+            //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
             //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
             //NUnit.Framework.Assert.IsTrue(false, "remove me"); //*/
 

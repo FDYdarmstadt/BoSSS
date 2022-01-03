@@ -6,6 +6,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using ilPSP;
+using System.Diagnostics;
 
 namespace BoSSS.Application.BoSSSpad {
     /// <summary>
@@ -209,9 +210,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="ctrl"></param>
         public static void VerifyEx(this AppControl ctrl) {
-
+           
             // call basic verification
             ctrl.Verify();
+
+
 
             // see is legacy-features are used, which don't support serialization.
             if (ctrl.GridFunc != null)
