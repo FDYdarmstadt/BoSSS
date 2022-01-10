@@ -1731,7 +1731,18 @@ namespace BoSSS.Solution {
                 ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
 
                 time = tsi_toLoad.PhysicalTime;
-                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode)) {
+
+                bool MustResetTime = false;
+                if(this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
+                    double dtMin = this.Control.dtMin;
+                    if(dtMin > 0) {
+                        if(time + dtMin == time) { // time is so advanced, that the timestep becomes invisible
+                            MustResetTime = true;
+                        }
+                    }
+                }
+
+                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode) || MustResetTime) {
                     if (Convert.ToInt32(mode) == (int)AppControl._TimesteppingMode.Steady) {
                         Console.WriteLine("Restarting from steady-state, resetting time ...");
                         time = 0.0; // Former simulation is steady-state, this should be restarted with time = 0.0

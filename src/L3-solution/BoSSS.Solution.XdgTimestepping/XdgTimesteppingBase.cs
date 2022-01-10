@@ -141,7 +141,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         StrangSplitting = 2,
 
         /// <summary>
-        /// Level-Set is updated once per time-step.
+        /// Moving Interface: Level-Set is updated once per time-step.
         /// </summary>
         Coupled_Once = 3,
 
@@ -664,10 +664,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             //int k = 0;
             foreach(int[] varGroup in VarGroups) {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
-                //if(k == 0)
-                //    ana.PrecondOpMatrix.SaveToTextFileSparse("OpMtx-J" + J + ".txt");
-                //Console.WriteLine("################ remember to deactivate me ^^^^^  ");
-
+               
 
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
