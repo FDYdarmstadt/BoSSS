@@ -507,7 +507,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 1)
+        public static XdgPoisson3Control TestOrTreat(int solver = 4)
         {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
@@ -526,7 +526,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
                     break;
                 case 4:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
                     break;
                 default:
                     throw new NotImplementedException("guess again");
@@ -537,7 +537,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"D:\Xdg_Poisson_CondNum";
 
-            int Res = 59;
+            int Res = 30;
             int blocksize = 10000;
 
             C.GridFunc = delegate () {
@@ -560,10 +560,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.LinearSolver.TargetBlockSize = blocksize;
             C.SetDGdegree(2);
 
-            C.LinearSolver.NoOfMultigridLevels = 5;
+            C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MaxKrylovDim = 1000;
+            C.LinearSolver.MaxKrylovDim = 50;
             //C.LinearSolver.pMaxOfCoarseSolver = 1;
             //C.LinearSolver.TargetBlockSize = 79;
             C.ExcactSolSupported = false;

@@ -48,23 +48,29 @@ namespace BoSSS.Solution.AdvancedSolvers
                     }
                 }
 
-                    // initiate krylov method
-                    // ======================
-                    ThisLevelKrylovMethod = new SoftGMRES() {
-                        Precond = this.CoarserLevelSolver,
-                        MaxKrylovDim = 10,
-                        TerminationCriterion = (int iter, double r0, double r) => iter <= 1,
-                    };
-                    ThisLevelKrylovMethod.Init(op.CoarserLevel);
+                // initiate krylov method
+                // ======================
+                ThisLevelKrylovMethod = new FlexGMRES() {
+                    PrecondS = new ISolverSmootherTemplate[] { this.CoarserLevelSolver },
+                    MaxKrylovDim = 1,
+                    TerminationCriterion = (int iter, double r0, double r) => iter <= 1,
+                };
+                ThisLevelKrylovMethod.Init(op.CoarserLevel);
 
-                    // init smoother
-                    // =============
-                    if (PreSmoother != null)
-                        PreSmoother.Init(op);
-                    if (PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
-                        PostSmoother.Init(op);
-                }
+                // init smoother
+                // =============
+                if (PreSmoother != null)
+                    PreSmoother.Init(op);
+                if (PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
+                    PostSmoother.Init(op);
             }
+        }
+
+        int MGDepth {
+            get { return m_MGDepth; }
+            set { m_MGDepth = Math.Max(value, m_MGDepth); }
+        }
+        int m_MGDepth = 0;
 
         /// <summary>
         /// computes the residual on this level.
@@ -74,9 +80,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             where V2 : IList<double>
             where V3 : IList<double>
         {
-
-            OpMatrix.SpMV(-1.0, xl, 0.0, rl);
-            rl.AccV(1.0, bl);
+            rl.SetV( bl);
+            OpMatrix.SpMV(-1.0, xl, 1.0, rl);
+            
             return rl.MPI_L2Norm();
         }
 
@@ -94,43 +100,48 @@ namespace BoSSS.Solution.AdvancedSolvers
                 int NN = m_MgOperator.CoarserLevel.Mapping.LocalLength; // RestrictionOperator.RowPartitioning.LocalLength;
                 double[] rl = new double[N];
                 double[] rlp1 = new double[NN];
+                var x1 = new double[N];
+                var x2 = new double[N];
+                var x3 = new double[N];
 
-                double iter0ResidualNorm = bl.MPI_L2Norm();
+                double iter0ResidualNorm = Residual(rl, xl, bl);
                 double iterNorm = iter0ResidualNorm;
 
                 for (int iIter = 0; true; iIter++) {
                     if (!TerminationCriterion(iIter, iter0ResidualNorm, iterNorm))
                         return;
 
-                    if (PreSmoother != null)
-                        PreSmoother.Solve(xl, bl); // Vorglättung
-
-                    iterNorm = Residual(rl, xl, bl); // Residual on this level
-
+                    if (PreSmoother != null) {
+                        PreSmoother.Solve(x1, rl); // Vorglättung
+                        iterNorm = Residual(rl, x1, bl); // Residual on this level
+                    }
 
                     this.m_MgOperator.CoarserLevel.Restrict(rl, rlp1);
 
                     // Berechnung der Grobgitterkorrektur
                     var vlp1 = new double[NN];
 
-                    if (this.CoarserLevelSolver.GetType() == typeof(DirectSolver))
+                    if (m_MGDepth-2<=m_MgOperator.LevelIndex)
                         this.CoarserLevelSolver.Solve(vlp1, rlp1);
                     else
                         ThisLevelKrylovMethod.Solve(vlp1, rlp1);
                     
                     // Prolongation der Grobgitterkorrektur
-                    this.m_MgOperator.CoarserLevel.Prolongate(1.0, xl, 1.0, vlp1);
+                    this.m_MgOperator.CoarserLevel.Prolongate(1.0, x2, 1.0, vlp1);
 
                     // check residual after coarse grid correction
-                    Residual(rl, xl, bl); // Residual on this level
+                    Residual(rl, x2, bl); // Residual on this level
 
                     // Nachglättung
-                    if (PostSmoother != null)
-                        PostSmoother.Solve(xl, bl);
+                    if (PostSmoother != null) {
+                        PostSmoother.Solve(x3, rl);
+                        iterNorm = Residual(rl, x3, bl);
+                    }
+
+                    xl.SumV(0.0, 1.0, x1, 1.0, x2, 1.0, x3);
 
                     // update residual
                     this.IterationCallback?.Invoke(iIter + 1, xl.ToArray(), rl.CloneAs(), this.m_MgOperator);
-                    iterNorm = Residual(rl, xl, bl); // Residual on this level
                     this.ThisLevelIterations++;
                 }
             }

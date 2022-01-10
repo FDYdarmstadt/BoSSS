@@ -31,8 +31,7 @@ set ytics format "$10^{%L}$"
 set ytics font "sans, 16" 
 set y2tics format " " 
 set termoption dashed
-set termoption dashed
-plot "Scaling_2_data_0.csv" title "Kcycle w. add.-Schwarz DG2" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "Scaling_2_data_1.csv" title "Pardiso DG2" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5, "Scaling_2_data_2.csv" title "2h limit" with lines linecolor  "black" dashtype 4 linewidth 2
+plot "Scaling_2_data_0.csv" title "Kcycle w. add.-Schwarz DG2" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "Scaling_2_data_1.csv" title "2h limit" with lines linecolor  "black" dashtype 4 linewidth 2
 set size 0.98,0.49
 set origin 0.01,0.005
 unset lmargin 
@@ -53,7 +52,7 @@ unset x2label
 unset y2label
 unset title 
 unset key
-set key font ",16"inside right Left reverse 
+set key font ",16"inside bottom right Left reverse 
 set xtics format "$10^{%L}$" 
 set xtics offset 0, 0-0.4 font "sans, 18" 
 set xtics font "sans, 16" 
@@ -61,8 +60,7 @@ set x2tics format " "
 set ytics format "$10^{%L}$" 
 set ytics font "sans, 16" 
 set y2tics format " " 
-set termoption dashed
-plot "Scaling_2_data_3.csv" title "Kcycle w. add.-Schwarz DG2" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5, "Scaling_2_data_4.csv" title "Pardiso DG2" with linespoints linecolor  "black" dashtype 3 linewidth 3 pointtype 6 pointsize 0.5
+plot "Scaling_2_data_2.csv" title "Kcycle w. add.-Schwarz DG2" with linespoints linecolor  "black" dashtype 1 linewidth 3 pointtype 9 pointsize 0.5
 
 
 exit

@@ -1,6 +1,4 @@
-﻿
-//#define TEST
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
