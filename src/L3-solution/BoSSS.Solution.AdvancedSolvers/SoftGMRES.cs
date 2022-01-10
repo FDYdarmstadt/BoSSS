@@ -278,7 +278,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                         error2 = Math.Abs(s[i + 1 - 1]);
 
                         // For Residual tracking, do not delete
-
+                        /*
                         y = new double[i];
                         H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { i - 1, i - 1 }).Solve(y, s.GetSubVector(0, i));
                         double[] Xtmp = X.CloneAs();
@@ -289,7 +289,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                         ztmp.SetV(B);
                         Matrix.SpMV(-1.0, Xtmp, 1.0, ztmp);
                         IterationCallback?.Invoke(iter, Xtmp.CloneAs(), ztmp.CloneAs(), this.m_mgop);
-
+                        */
 
                         if (!TerminationCriterion(totIterCounter, iter0_error2, error2)) {
                             // update approximation and exit
