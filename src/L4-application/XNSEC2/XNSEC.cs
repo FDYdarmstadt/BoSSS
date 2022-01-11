@@ -478,7 +478,7 @@ namespace BoSSS.Application.XNSEC {
                 opFactory.AddEquation(new IdentityEquation("A", VariableNames.Temperature, EquationNames.HeatEquation));
                 opFactory.AddEquation(new IdentityEquation("B", VariableNames.Temperature, EquationNames.HeatEquation));
             }
-            opFactory.AddParameter(new ThermodynamicPressure(1.0, Control.ThermodynamicPressureMode, EoS_A));
+            opFactory.AddParameter(new ThermodynamicPressure(Control.InitialMass, Control.ThermodynamicPressureMode, EoS_A));
 
             //================================
             // Mass Fractions equations
