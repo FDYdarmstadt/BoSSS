@@ -254,14 +254,11 @@ namespace BoSSS.Solution.XNSECommon {
             }
 
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.ThermodynamicPressure);
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Rho);
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Mu);
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.cp);
 
-
+      
             // pressure gradient
             // =================
-            if(config.isPressureGradient) {
+            if (config.isPressureGradient) {
                 var pres = new Solution.XNSECommon.Operator.Pressure.PressureInSpeciesBulk(d, boundaryMap, spcName);
                 AddComponent(pres);
             }
@@ -309,6 +306,15 @@ namespace BoSSS.Solution.XNSECommon {
                 var MS_Momentum = new BoSSS.Solution.XNSECommon.LowMach_MomentumManSolution(spcName, Reynolds, Froude, MolarMasses, direction, PhysicsMode.Combustion, rhoOne, null);
                 AddComponent(MS_Momentum);
             }
+
+            if (config.PlotAdditionalParameters) {
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Rho);
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Mu);
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.cp);
+                var conv = new BoSSS.Solution.NSECommon.DummyParameter();
+                AddComponent(conv);
+            }
+
         }
 
         public override string SpeciesName => speciesName;
@@ -566,4 +572,71 @@ namespace BoSSS.Solution.XNSECommon {
         public override double MassScale => 1.0;
         public override string CodomainName => codomainName;
     }
+
+
+
+
+
+    public class MassFractionInterface_Evaporation : SurfaceEquation {
+
+
+        string codomainName;
+        string phaseA, phaseB;
+        public MassFractionInterface_Evaporation(
+            string phaseA,
+            string phaseB,
+            int dimension,
+            int chemicalComponentIndex,
+            XNSFE_OperatorConfiguration config) : base() {
+
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            codomainName = EquationNames.SpeciesMassBalanceName(chemicalComponentIndex);
+            PhysicalParameters physParams = config.getPhysParams;
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double capA = thermParams.rho_A;
+            double LFFA = dntParams.LFFA;
+            double rhoD_A = thermParams.k_A;
+
+            double capB = thermParams.rho_B;
+            double LFFB = dntParams.LFFB;
+            double rhoD_B = thermParams.k_B;
+
+            double InterfaceMassFraction = chemicalComponentIndex == 0 ? 1.0 : 0.0;  //TODO!!!!
+
+            // convective part
+            // ================
+            if (thermParams.IncludeConvection) {
+                AddComponent(new SpeciesConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, InterfaceMassFraction, thermParams, FirstSpeciesName, SecondSpeciesName, chemicalComponentIndex));
+                
+            }
+
+            // viscous operator (laplace)
+            // ==========================
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                double penalty = dntParams.PenaltySafety;
+                var Visc = new MassDifusivityAtLevelSet_withMassflux(dimension, rhoD_A, rhoD_B, penalty, InterfaceMassFraction, chemicalComponentIndex ,config.isMaterialAtContactLine);
+                AddComponent(Visc);
+            } else {
+                throw new NotImplementedException();
+            }
+
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.MassFraction_n(chemicalComponentIndex));
+
+            AddCoefficient("EvapMicroRegion");
+        }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
+
+    }
+
+
 }

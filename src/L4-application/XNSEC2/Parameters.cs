@@ -581,11 +581,12 @@ namespace BoSSS.Application.XNSEC {
         public override DelParameterFactory Factory => HeatCapacityFactory;
         private string paramName;
 
-        private MaterialLaw m_EoS;
-
-        public HeatCapacity(MaterialLaw EoS) {
+        private MaterialLaw m_EoS_A;
+        private MaterialLaw m_EoS_B;
+        public HeatCapacity(MaterialLaw EoS_A, MaterialLaw EoS_B ) {
             paramName = VariableNames.cp;
-            m_EoS = EoS;
+            m_EoS_A = EoS_A;
+            m_EoS_B = EoS_B;
         }
 
         private (string, DGField)[] HeatCapacityFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
@@ -604,9 +605,11 @@ namespace BoSSS.Application.XNSEC {
             var Temperature = (XDGField)DomainVarFields[VariableNames.Temperature];
             cp.Clear();
 
-            string[] species = new string[] { "A"/*, "B" */};
+            string[] species = new string[] { "A", "B" };
 
             foreach(var sp in species) {
+                MaterialLaw EoS = sp == "A" ? m_EoS_A : m_EoS_B;
+
                 cp.GetSpeciesShadowField(sp).ProjectField(1.0,
                    delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
                        int K = result.GetLength(1);
@@ -616,7 +619,7 @@ namespace BoSSS.Application.XNSEC {
                        for(int j = 0; j < Len; j++) {
                            for(int k = 0; k < K; k++) {
                                double Temperature = tempT[j, k];
-                               result[j, k] = m_EoS.GetMixtureHeatCapacity(new double[] { Temperature, 0.0, 0.0, 0.0, 0.0/*, 1.0 */});
+                               result[j, k] = EoS.GetMixtureHeatCapacity(new double[] { Temperature, 0.0, 0.0, 0.0, 0.0/*, 1.0 */});
                            }
                        }
                    }, new Foundation.Quadrature.CellQuadratureScheme(true, null));

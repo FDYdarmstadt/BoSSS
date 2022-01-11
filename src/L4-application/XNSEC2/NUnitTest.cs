@@ -38,7 +38,7 @@ namespace BoSSS.Application.XNSEC {
     /// An all-up NUnit test for the LowMachCombustion application.
     /// </summary>
     [TestFixture]
-    static public partial class NUnitTest {
+    public static partial class NUnitTest {
         //[OneTimeSetUp]
         //public static void SetUp() {
         //    BoSSS.Solution.Application.InitMPI();
@@ -339,8 +339,6 @@ namespace BoSSS.Application.XNSEC {
             }
         }
 
-      
-
         //#if !DEBUG
         /// <summary>
         /// operator condition number scaling, 2D, for p=1 (polynomial order parameter is unwrapped for better parallelism of test execution)
@@ -529,10 +527,6 @@ namespace BoSSS.Application.XNSEC {
                 C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetTemperature(spc).Convert_Xt2X(0.0));
 
                 C.InitialValues_Evaluators.Add(VariableNames.MassFraction0 + "#" + spc, X => 1.0);
-
-
-
-
             }
             if (tst.TestImmersedBoundary) {
                 for (int d = 0; d < D; d++) {
@@ -599,7 +593,6 @@ namespace BoSSS.Application.XNSEC {
             Assert.AreEqual(C.UseImmersedBoundary, tst.TestImmersedBoundary);
             return C;
         }
-
 
         private static XNSEC_Control TstObj2CtrlObj(IXNSECTest_Heat tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
         XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
@@ -643,6 +636,14 @@ namespace BoSSS.Application.XNSEC {
             C.PhysicalParameters.mu_A = tst.mu_A;
             C.PhysicalParameters.mu_B = tst.mu_B;
 
+            //C.PhysicalParametersCombustion.rho_A = tst.rho_A;
+            //C.PhysicalParametersCombustion.rho_B = tst.rho_B;
+            //C.PhysicalParametersCombustion.mu_A = tst.mu_A;
+            //C.PhysicalParametersCombustion.mu_B = tst.mu_B;
+            //C.PhysicalParametersCombustion.Sigma = tst.Sigma;
+            //C.PhysicalParametersCombustion.IncludeConvection = tst.IncludeConvection;
+            //C.PhysicalParametersCombustion.rhoD_A = tst.rhoD_A;
+            //C.PhysicalParametersCombustion.rhoD_B = tst.rhoD_B;
 
             C.PhysicalParameters.Sigma = tst.Sigma;
             C.PhysicalParameters.IncludeConvection = tst.IncludeConvection;
@@ -672,7 +673,6 @@ namespace BoSSS.Application.XNSEC {
                 C.ExactSolutionMassFractions.Add(spc, NoChemSpc.ForLoop(q => tst.GetMassFractions(spc, q)));
                 C.ExactSolutionTemperature.Add(spc, tst.GetTemperature(spc));
 
-
                 for (int d = 0; d < D; d++) {
                     C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(d) + "#" + spc, tst.GetU(spc, d).Convert_Xt2X(0.0));
                     var Gravity_d = tst.GetF(spc, d).Convert_X2Xt();
@@ -680,8 +680,8 @@ namespace BoSSS.Application.XNSEC {
                 }
                 C.InitialValues_Evaluators.Add(VariableNames.Pressure + "#" + spc, tst.GetPress(spc).Convert_Xt2X(0.0));
                 C.InitialValues_Evaluators.Add(VariableNames.Temperature + "#" + spc, tst.GetTemperature(spc).Convert_Xt2X(0.0));
-                for(int i = 0; i <  tst.NumberOfChemicalComponents; i++) { 
-                C.InitialValues_Evaluators.Add(VariableNames.MassFraction_n(i) + "#" + spc,  tst.GetMassFractions(spc,i).Convert_Xt2X(0.0));
+                for (int i = 0; i < tst.NumberOfChemicalComponents; i++) {
+                    C.InitialValues_Evaluators.Add(VariableNames.MassFraction_n(i) + "#" + spc, tst.GetMassFractions(spc, i).Convert_Xt2X(0.0));
                 }
             }
             if (tst.TestImmersedBoundary) {
@@ -749,8 +749,6 @@ namespace BoSSS.Application.XNSEC {
             Assert.AreEqual(C.UseImmersedBoundary, tst.TestImmersedBoundary);
             return C;
         }
-
-
 
         public static void COMBUSTION_TEST() {
             string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");

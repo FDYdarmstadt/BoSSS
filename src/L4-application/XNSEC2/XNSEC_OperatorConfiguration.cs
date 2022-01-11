@@ -45,6 +45,12 @@ namespace BoSSS.Solution.XNSECommon {
 
             this.TemperatureEquationOK = controlfile.EnableTemperature;
             this.MassFractionEquationsOK = controlfile.EnableMassFractions;
+            this.PlotAdditionalParameters = controlfile.PlotAdditionalParameters;
+
+            //this.physParams = controlfile.PhysicalParametersCombustion;
+
+
+
 
             this.VariableReactionRateParameters = controlfile.VariableOneStepParameters;
             if(MassFractionEquationsOK == false && this.NoOfChemicalSpecies != 1)
@@ -64,6 +70,10 @@ namespace BoSSS.Solution.XNSECommon {
             set;
         }
 
+        public bool PlotAdditionalParameters {
+            get;
+            set;
+        }
         public bool timeDerivativeConti_OK {
             get;
             set;

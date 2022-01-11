@@ -3,6 +3,7 @@ using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.XNSECommon;
 using ilPSP.Utils;
 using Newtonsoft.Json;
 using System;
@@ -343,6 +344,13 @@ namespace BoSSS.Application.XNSEC {
         public bool PlotNewtonIterations = false;
 
         /// <summary>
+        ///PlotNewtonIterations
+        /// </summary>
+        [DataMember]
+        public bool PlotAdditionalParameters = false;
+
+
+        /// <summary>
         /// Sensor Variable
         /// </summary>
         [DataMember]
@@ -375,29 +383,7 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public CpCalculationMode HeatCapacityMode = CpCalculationMode.constant;
 
-
-        ///// <summary>
-        ///// Modes for cp calculation        
-        ///// </summary>
-        //public enum CpCalculationMode {
-
-        //    /// <summary>
-        //    /// Use nasa correlation of Nitrogen
-        //    /// Useful for combustion systems where both inflows are diluted in inert.
-        //    /// </summary>
-        //    onlyN2,
-
-        //    /// <summary>
-        //    /// Use nasa correlations for each component
-        //    /// The mixture cp is calculated by asuming an ideal gas, i.e. 
-        //    /// cp_mixture = sum_i(cp,i*Y_i)
-        //    /// </summary>
-        //    mixture,
-
-        //    /// <summary>
-        //    /// Use a constant value 
-        //    /// </summary>
-        //    constant
+ 
 
 
         //}
@@ -408,26 +394,7 @@ namespace BoSSS.Application.XNSEC {
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>[]> ExactSolutionMassFractions;
 
-        ///// <summary>
-        /////
-        ///// </summary>
-        //[DataMember]
-        //public double[] m_HomotopyArray;
-
-        //public double[] HomotopyArray {
-        //    get {
-        //        if(m_HomotopyArray == null && useHomotopie) {
-        //            m_HomotopyArray = GenericBlas.Linspace(0, homotopieAimedValue, NumberOfHomotopyArraySubdivisions);
-        //            var tmpArray = GenericBlas.SinLinSpacing(0, 2 * homotopieAimedValue, 0.8, NumberOfHomotopyArraySubdivisions * 2);
-        //            m_HomotopyArray = tmpArray.GetSubVector(0, NumberOfHomotopyArraySubdivisions);
-        //            m_HomotopyArray[0] = 1.0;
-
-        //            m_HomotopyArray.Clear();
-        //        }
-        //        return m_HomotopyArray;
-        //    }
-        //}
-
+  
 
         [DataMember]
         public double[] FuelInletConcentrations = new double[] { 0.2, 0.0, 0.0, 0.0, 0.8 };
@@ -456,49 +423,37 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public double AdiabaticTemperature { get; set; }
 
+
+
         ///// <summary>
-        ///// The material law function used to compute all material properties, such as density, viscosity, heat conductivity, diffusivity.
-        ///// In the future the mean and partial heat capacity shall be computed in this class too.
+        ///// Viscosity, density and surface tension.
         ///// </summary>
         //[DataMember]
-        //private MaterialLawCombustion m_EoS;
+        //public PhysicalParameters PhysicalParameters = new PhysicalParametersCombustion() {
+        //    Material = true,
+        //    IncludeConvection = false,
+        //    IncludeDiffusion = true,
+        //    mu_A = 1.0,
+        //    mu_B = 1.0,
+        //    rho_A = 1.0,
+        //    rho_B = 1.0,
+        //    Sigma = 0.0,
+        //    rhoD_A = 1.0,
+        //    rhoD_B = 1.0
+
+
+        //};
 
         ///// <summary>
-        ///// The material law. For Lowmach the density is given by rho = p0/T. for Combustion rho = p0/(T*sum_i(Y_i/M_i))
+        ///// Just a cast of <see cref="PhysicalParameters"/>
         ///// </summary>
-        //public MaterialLawCombustion EoS {
+        //public PhysicalParametersCombustion PhysicalParametersCombustion {
         //    get {
-        //        if(m_EoS == null) {
-        //            switch(physicsMode) {
-        //                //case PhysicsMode.Incompressible:
-        //                //    throw new NotImplementedException("Incompressible flows dont need an EoS");
-        //                case PhysicsMode.MixtureFraction:
-
-        //                m_EoS = new MaterialLawMixtureFraction(T_ref_Sutherland, MolarMasses, MatParamsMode, rhoOne, R_gas, HeatRelease, TOxInlet, TFuelInlet, YOxInlet, YFuelInlet, zSt, this.CC);
-        //                break;
-
-        //                case PhysicsMode.Incompressible:
-        //                case PhysicsMode.LowMach:
-        //                throw new NotImplementedException("Wrong physicsmode.");
-        //                break;
-
-        //                case PhysicsMode.Combustion:
-        //                m_EoS = new MaterialLawCombustion(T_ref_Sutherland, MolarMasses, MatParamsMode, rhoOne, cpOne, R_gas, TOxInlet, TFuelInlet, YOxInlet, YFuelInlet, zSt, this.CC, Prandtl);
-        //                break;
-        //            }
-        //        }
-        //        return m_EoS;
-        //    }
-        //    set {
-        //        m_EoS = value;
+        //        return (PhysicalParametersCombustion)PhysicalParameters;
         //    }
         //}
 
-        ///// <summary>
-        ///// Chemical Constants
-        ///// </summary>
-        //[DataMember]
-        //private ChemicalConstants m_ChemConst;
+
 
         public ChemicalConstants CC {
             get; set;

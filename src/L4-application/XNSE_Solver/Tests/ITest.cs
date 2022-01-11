@@ -162,6 +162,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary> heat conductivity fluid B </summary>
         double k_B { get; }
 
+
+        /// <summary> diffusivity factor fluid A </summary>
+        double rhoD_A { get; }
+
+        /// <summary> diffusivity factor fluid B  </summary>
+        double rhoD_B { get; }
+
+
         /// <summary> saturation temperature </summary>
         double T_sat { get; }
 
@@ -217,8 +225,48 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// Directional vector of gravity
         /// </summary>
         double[] GravityDirection { get; }
-
     }
+
+
+    public interface IXNSECTest_MixtureFraction : IXNSETest {
+
+        /// <summary>
+        /// Exact solution/Initial value for Temperature, for species <paramref name="species"/>.
+        /// </summary>
+        Func<double[], double, double> GetTemperature(string species);
+
+        /// <summary>
+        /// Exact solution/Initial value for mass fractions, for species <paramref name="species"/>, component <paramref name="comp"/>.
+        /// </summary>
+        Func<double[], double, double> GetMassFractions(string species, int comp);
+
+        /// <summary>
+        /// Total number of chemical components involved in the solution
+        /// </summary>
+        int NumberOfChemicalComponents { get; }
+
+        /// <summary>
+        /// Activate chemical reaction related terms in the energy and species equations
+        /// </summary>
+        bool ChemicalReactionTermsActive { get; }
+
+        /// <summary>
+        /// Activate MassFraction equations
+        /// </summary>
+        bool EnableMassFractions { get; }
+
+        /// <summary>
+        /// Activate temperature equation
+        /// </summary>
+        bool EnableTemperature { get; }
+
+        /// <summary>
+        /// Directional vector of gravity
+        /// </summary>
+        double[] GravityDirection { get; }
+    }
+
+
 
     public interface IPrescribedMass : IXNSECTest {
         /// <summary>
