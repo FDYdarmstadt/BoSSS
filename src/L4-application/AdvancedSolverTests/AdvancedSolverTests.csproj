@@ -58,4 +58,7 @@
   <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Solver\" />
+  </ItemGroup>
 </Project>

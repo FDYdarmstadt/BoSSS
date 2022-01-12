@@ -1,4 +1,4 @@
-﻿using AdvancedSolverTests.SolverChooser;
+﻿using AdvancedSolverTests;
 using BoSSS.Solution.AdvancedSolvers;
 using System;
 using System.Collections.Generic;
@@ -14,11 +14,12 @@ using MPI.Wrappers;
 using ilPSP.LinSolvers;
 using System.Diagnostics;
 using NUnit.Framework;
+using AdvancedSolverTests.SubBlocking;
 
 namespace AdvancedSolverTests.Solver {
 
     [TestFixture]
-    class addSchwarzTest  {
+    public class addSchwarzTest  {
 
         internal class TestBlockingStrat : Schwarz.BlockingStrategy {
 
@@ -105,7 +106,7 @@ namespace AdvancedSolverTests.Solver {
             return localMatrix;
         }
 
-        public static TestSchwarz InitSchwarzTestSolver(MultigridOperator op, bool overlap) {
+        internal static TestSchwarz InitSchwarzTestSolver(MultigridOperator op, bool overlap) {
             
             var solver = new TestSchwarz() {
                 //m_BlockingStrategy = ,
@@ -142,10 +143,28 @@ namespace AdvancedSolverTests.Solver {
             op.OperatorMatrix.SpMV(1.0, X, 0, B);
         }
 
+        /// <summary>
+        /// Only available for non overlapping blocks.
+        /// To get overlapping blocks is complex and is covered by sub blocking tests anyway.
+        /// </summary>
         [Test]
-        public static void TestSchwarzNonOverlapBlockIsCorrect() {
+        public static void TestBlocksAreCorrect_NonOverlapping() {
+            Test_Blocks_AreCorrect(false);
+        }
+
+        [Test]
+        public static void TestSolutionIsCorrect_NonOverlapping() {
+            Test_Solution_IsCorrect(false);
+        }
+
+        [Test]
+        public static void TestSolutionIsCorrect_Overlapping() {
+            Test_Solution_IsCorrect(true);
+        }
+
+        private static void Test_Blocks_AreCorrect(bool overlapOn) {
             var op = CreateTestMGOperator();
-            var solver = InitSchwarzTestSolver(op, overlap:false);
+            var solver = InitSchwarzTestSolver(op, overlap: overlapOn);
             var Sblocks = solver.GetBlockMatrices();
             var localblock = GetLocalMatrix(op.OperatorMatrix);
             Debug.Assert(Sblocks.Length==1);
@@ -154,17 +173,14 @@ namespace AdvancedSolverTests.Solver {
             Assert.IsTrue(infNorm == 0);
         }
 
-        [Test]
-        public static void TestSchwarzNonOverlapSolutionIsCorrect() {
+        private static void Test_Solution_IsCorrect(bool overlapOn) {
             // Arrange
             var op = CreateTestMGOperator();
-            var solver = InitSchwarzTestSolver(op, overlap: false);
+            var solver = InitSchwarzTestSolver(op, overlap: overlapOn);
             var Sblocks = solver.GetBlockMatrices();
             var localblock = GetLocalMatrix(op.OperatorMatrix);
             double[] X, B;
             CreateRndSolAndRHS(op, out X, out B);
-            Debug.Assert(Sblocks[0].RowPartitioning.LocalLength == localblock.RowPartitioning.LocalLength);
-            Debug.Assert(Sblocks[0].RowPartitioning.LocalLength == X.Length);
             double[] Xcheck = X;
             X = new double[X.Length];
 
@@ -177,12 +193,13 @@ namespace AdvancedSolverTests.Solver {
             Assert.IsTrue(norm < 1E-14);
         }
 
+
+
         public static bool RunTest() {
 
-            //System.Threading.Thread.Sleep(10000);
+            System.Threading.Thread.Sleep(10000);
 
-            TestSchwarzNonOverlapBlockIsCorrect();
-            TestSchwarzNonOverlapSolutionIsCorrect();
+            TestSolutionIsCorrect_Overlapping();
 
             return true;
         }
