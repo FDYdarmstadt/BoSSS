@@ -347,7 +347,7 @@ namespace BoSSS.Application.XNSEC {
         ///PlotNewtonIterations
         /// </summary>
         [DataMember]
-        public bool PlotAdditionalParameters = false;
+        public bool PlotAdditionalParameters = true;
 
 
         /// <summary>
