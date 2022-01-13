@@ -253,10 +253,12 @@ namespace BoSSS.Application.XNSEC {
                 double ThermPressureCalculated = thermoPressure.GetMeanValueTotal(null);
 
                 Console.WriteLine("The calculated thermodynamic pressure is  " + ThermPressureCalculated + " (and the reference value is " + p0Reference + ")");
-
-                if (Math.Abs(ThermPressureCalculated - p0Reference) > 1e-2)
+                Console.WriteLine("aaaaaaaaaaaa"+Math.Abs(ThermPressureCalculated - p0Reference));
+                if (Math.Abs(ThermPressureCalculated - p0Reference) > 1e-2) { 
                     throw new Exception("Error on calculation of the thermodynamic pressure. End value is not the correct one");
+                    Console.WriteLine("BLAAAAAABLAAAAAABLAAAAAABLAAAAAA");
 
+                }
                 Console.WriteLine("The test passed! ");
             }
         }

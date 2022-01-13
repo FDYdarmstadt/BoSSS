@@ -27,9 +27,9 @@ namespace BoSSS.Application.XNSEC {
         // Main file
         //===========
         private static void Main(string[] args) {
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //DeleteOldTextFiles();
+            InitMPI();
+            DeleteOldPlotFiles();
+            DeleteOldTextFiles();
             //NUnitTest.COMBUSTION_TEST();
             //NUnitTest.COMBUSTION_CoFlowFlame_TEST();
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
@@ -41,12 +41,12 @@ namespace BoSSS.Application.XNSEC {
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //NUnitTest.IncompressibleSteadyPoiseuilleFlowTest();
-            //NUnitTest.CavityNaturalConvection();
+            NUnitTest.CavityNaturalConvection();
 
             //NUnitTest.LowMachSteadyCouetteWithTemperatureGradientTest(); //
 
             //NUnitTest.ManufacturedSolutionLowMachCombustionTest(); //
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
+            NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //NUnitTest.IncompressibleUnsteadyTaylorVortexTest(); //
 
