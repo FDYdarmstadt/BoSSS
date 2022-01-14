@@ -20,7 +20,12 @@ namespace BoSSS.Solution.NSECommon {
             /// <summary>
             /// homogen Neumann value for T
             /// </summary>
-            Adiabatic
+            Adiabatic,
+
+            /// <summary>
+            /// homogen Neumann value for T
+            /// </summary>
+            NonHomogenNeumann
         }
 
         private ThermalWallType myWallType;
@@ -99,20 +104,25 @@ namespace BoSSS.Solution.NSECommon {
 
             switch (edgType) {
                 case IncompressibleBcType.Wall:
-                switch (myWallType) {
-                    case ThermalWallType.Adiabatic:
-                    Acc = 0.0;
-                    break;
+                    switch (myWallType) {
+                        case ThermalWallType.Adiabatic:
+                            Acc = 0.0;
+                            break;
 
-                    case ThermalWallType.fixedTemperature:
-                    u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
-                    Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
-                    break;
-                }
+                        case ThermalWallType.NonHomogenNeumann:
+                            double u_N = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
+                            Acc = u_N;
+                            break;
 
-                //u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
-                //Acc = -1 * base.BoundaryEdgeFormDirichlet(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
-                break;
+                        case ThermalWallType.fixedTemperature:
+                            u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
+                            Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
+                            break;
+                    }
+
+                    //u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
+                    //Acc = -1 * base.BoundaryEdgeFormDirichlet(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
+                    break;
 
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Velocity_Inlet:
@@ -121,6 +131,7 @@ namespace BoSSS.Solution.NSECommon {
                     u_D = BcMap.bndFunction[varname][inp.EdgeTag](inp.X, inp.time);
                     Acc = -1 * BoundaryEdgeFormDirichlet2(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, u_D);
                     break;
+
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
                     // inhom. Dirichlet b.c.
                     // =====================
@@ -131,16 +142,15 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Outflow:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.NoSlipNeumann:
-                Acc = base.BoundaryEdgeFormNeumann();
-                break;
+                    Acc = base.BoundaryEdgeFormNeumann();
+                    break;
 
                 default:
-                throw new NotSupportedException();
+                    throw new NotSupportedException();
             }
 
             return -Acc;
         }
-
 
         /// <summary>
         ///   The BoundaryEdgeForm for Dirichlet b.c. with value u_D
@@ -154,12 +164,10 @@ namespace BoSSS.Solution.NSECommon {
             double DiffusivityA = Diffusivity(difusivityArguments_IN, _Grad_uA, inp.X);
             Debug.Assert(!double.IsNaN(DiffusivityA));
             Debug.Assert(!double.IsInfinity(DiffusivityA));
-            double DiffusivityB = Diffusivity(new double[] { u_D}, _Grad_uA, inp.X);
+            double DiffusivityB = Diffusivity(new double[] { u_D }, _Grad_uA, inp.X);
 
-
-            // penalty term          
-            double  DiffusivityMax = (Math.Abs(DiffusivityA) > Math.Abs(DiffusivityB)) ? DiffusivityA : DiffusivityB;
-
+            // penalty term
+            double DiffusivityMax = (Math.Abs(DiffusivityA) > Math.Abs(DiffusivityB)) ? DiffusivityA : DiffusivityB;
 
             // inhom. Dirichlet b.c.
             // =====================
@@ -171,9 +179,6 @@ namespace BoSSS.Solution.NSECommon {
             Acc -= DiffusivityMax * (_uA[i] - u_D) * (_vA - 0) * pnlty;
             return -Acc;
         }
-
-
-
 
         /// <summary>
         /// For the
