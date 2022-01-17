@@ -100,6 +100,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             Components.AddLast(component);
         }
 
+        /// <summary>
+        /// Combine with other equation of same Codomain
+        /// </summary>
+        /// <param name="other"></param>
         public void Combine(SpatialEquation other) {
             if(other.CodomainName != this.CodomainName) {
                 throw new Exception("Can only add eqations of same codomain name");
@@ -114,7 +118,12 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             Components.AddRange(other.Components);
         }
 
-        public bool EqualCodomain(SpatialEquation other) {
+        /// <summary>
+        /// Are codomains the same?
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool HasEqualCodomain(SpatialEquation other) {
             return CodomainName == other.CodomainName;
         }
     }
@@ -173,6 +182,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             ContactLineComponents.AddLast(surfaceComponent);
         }
 
+        /// <summary>
+        /// Combine with other equation of same Codomain
+        /// </summary>
+        /// <param name="other"></param>
         public void Combine(SurfaceEquation other) {
             if(other.FirstSpeciesName != FirstSpeciesName || other.SecondSpeciesName != SecondSpeciesName) {
                 throw new Exception("Species Names do not match");
@@ -182,7 +195,12 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             ContactLineComponents.AddRange(other.ContactLineComponents);
         }
 
-        public bool EqualCodomain(SurfaceEquation other) {
+        /// <summary>
+        /// Are codomains the same?
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool HasEqualCodomain(SurfaceEquation other) {
             bool isEqual = CodomainName == other.CodomainName;
             isEqual &= (FirstSpeciesName == other.FirstSpeciesName);
             isEqual &= (SecondSpeciesName == other.SecondSpeciesName);
@@ -226,6 +244,10 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             GhostComponents.AddLast(ghostComponent);
         }
 
+        /// <summary>
+        /// Combine with other equation of same Codomain
+        /// </summary>
+        /// <param name="other"></param>
         public void Combine(BulkEquation other) {
             if (other.SpeciesName != SpeciesName || other.MassScale != MassScale) {
                 throw new Exception("species name or mass scale do not match");
@@ -234,7 +256,12 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             GhostComponents.AddRange(other.GhostComponents);
         }
 
-        public bool EqualCodomain(BulkEquation other) {
+        /// <summary>
+        /// Are codomains the same?
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool HasEqualCodomain(BulkEquation other) {
             bool isEqual = CodomainName == other.CodomainName;
             isEqual &= (SpeciesName == other.SpeciesName);
             return isEqual;
@@ -245,7 +272,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     interface ICodomainEquation<T> {
         void Combine(T other);
 
-        bool EqualCodomain(T other);
+        bool HasEqualCodomain(T other);
     }
 
     /// <summary>
@@ -269,7 +296,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             LinkedListNode<T> node = equations.First;
             while(node != null) {
                 T q = node.Value;
-                if(q.EqualCodomain(equation)) {
+                if(q.HasEqualCodomain(equation)) {
                     T combo = Combine(equation, q);
                     node.Value = combo;
                     return;
