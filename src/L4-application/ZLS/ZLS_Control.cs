@@ -24,16 +24,19 @@ namespace ZwoLevelSetSolver {
 
         public bool VelocityContinuity = true;
 
-        public ZLS_Control() : base() { }
+        public ZLS_Control() {
+            NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            UseImmersedBoundary = true;
+            Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
+            Option_LevelSetEvolution2 = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
+        }
 
         public override Type GetSolverType() {
             return typeof(ZLS);
         }
 
-        public ZLS_Control(int p) {
-            UseImmersedBoundary = true;
-            Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
-            Option_LevelSetEvolution2 = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
+        public ZLS_Control(int p) : this() {
+            
             Degree = p;
             SetDGdegree(p);
 

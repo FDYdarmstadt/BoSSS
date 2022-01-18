@@ -111,10 +111,11 @@ namespace ZwoLevelSetSolver {
             opFactory.AddEquation(new PressurePenalty("B", -1/Control.PhysicalParameters.mu_B));
 
             //lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, new DisplacementLaplace(D));
-
+            /*
             var velocity = new DisplacementVelocity(D);
             opFactory.AddParameter(velocity);
             lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, velocity);
+            */
         }
 
         protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {

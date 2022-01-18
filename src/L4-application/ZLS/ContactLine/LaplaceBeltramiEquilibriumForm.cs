@@ -28,7 +28,7 @@ namespace ZwoLevelSetSolver.ContactLine {
             // isotropic surface tension terms
             Flx_InCell -= m_sigma * Tangente_IN[d];
 
-            return Flx_InCell * V;
+            return -Flx_InCell * V;
         }
     }
 

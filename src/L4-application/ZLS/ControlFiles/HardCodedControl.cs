@@ -419,7 +419,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ======================
             #region db
 
-            C.savetodb = false;
+            C.savetodb = true;
             C.ProjectName = "XNSE/Droplet";
             //C.ProjectDescription = "Static droplet on plate";
 
@@ -450,6 +450,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = false;
+
+            C.Material = new HardSiliconeRubber();
 
             #endregion
 
@@ -585,10 +587,10 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             //C.CheckJumpConditions = true;
 
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            
 
             C.TimesteppingMode = compMode;
             double dt = 1e-3;
