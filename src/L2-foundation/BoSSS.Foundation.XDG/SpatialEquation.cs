@@ -11,7 +11,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// A spatial equation is an equation for one codomain. 
     /// Implement this class, if you have a single phase equation. 
     /// </summary>
-    public abstract class SpatialEquation : ICodomainEquation<SpatialEquation> {
+    public abstract class SpatialEquation {
         /// <summary>
         /// Empty spatial equation.
         /// </summary>
@@ -28,6 +28,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
         /// Single codomain name of this equation. A codomain a name for the row in a system of equations.
         /// </summary>
         public abstract string CodomainName { get; }
+
 
         /// <summary>
         /// All names of variables in equation. Must match variables of components.
@@ -100,7 +101,11 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             Components.AddLast(component);
         }
 
-        public void Combine(SpatialEquation other) {
+        /// <summary>
+        /// Combine with other equation of same Codomain
+        /// </summary>
+        /// <param name="other"></param>
+        public virtual void Combine(SpatialEquation other) {
             if(other.CodomainName != this.CodomainName) {
                 throw new Exception("Can only add eqations of same codomain name");
             }
@@ -114,8 +119,15 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             Components.AddRange(other.Components);
         }
 
-        public bool EqualCodomain(SpatialEquation other) {
-            return CodomainName == other.CodomainName;
+        /// <summary>
+        /// Are codomains the same?
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public virtual bool HasEqualCodomain(SpatialEquation other) {
+            bool isEqual = CodomainName == other.CodomainName;
+            
+            return isEqual;
         }
     }
 
@@ -123,7 +135,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// XDG Equations on a surface. 
     /// Surface is between to species.
     /// </summary>
-    public abstract class SurfaceEquation : SpatialEquation, ICodomainEquation<SurfaceEquation>{
+    public abstract class SurfaceEquation : SpatialEquation{
         /// <summary>
         /// Empty surface equation.
         /// </summary>
@@ -173,19 +185,34 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             ContactLineComponents.AddLast(surfaceComponent);
         }
 
-        public void Combine(SurfaceEquation other) {
-            if(other.FirstSpeciesName != FirstSpeciesName || other.SecondSpeciesName != SecondSpeciesName) {
-                throw new Exception("Species Names do not match");
+        /// <summary>
+        /// Combine with other equation of same Codomain
+        /// </summary>
+        /// <param name="other"></param>
+        public override void Combine(SpatialEquation other) {
+            if(other is SurfaceEquation otherSurface && HasEqualCodomain(otherSurface))
+            {
+                base.Combine(otherSurface);
+                SurfaceComponents.AddRange(otherSurface.SurfaceComponents);
+                ContactLineComponents.AddRange(otherSurface.ContactLineComponents);
             }
-            base.Combine(other);
-            SurfaceComponents.AddRange(other.SurfaceComponents);
-            ContactLineComponents.AddRange(other.ContactLineComponents);
+            else{
+                throw new Exception("Equation Types do not match");
+            }
         }
 
-        public bool EqualCodomain(SurfaceEquation other) {
-            bool isEqual = CodomainName == other.CodomainName;
-            isEqual &= (FirstSpeciesName == other.FirstSpeciesName);
-            isEqual &= (SecondSpeciesName == other.SecondSpeciesName);
+        /// <summary>
+        /// Are codomains the same?
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public override bool HasEqualCodomain(SpatialEquation other) {
+            bool isEqual = base.HasEqualCodomain(other);
+            if(other is SurfaceEquation otherSurface)
+            {
+                isEqual &= (FirstSpeciesName == otherSurface.FirstSpeciesName);
+                isEqual &= (SecondSpeciesName == otherSurface.SecondSpeciesName);
+            }
             return isEqual;
         }
     }
@@ -193,7 +220,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
     /// <summary>
     /// XDG Equations for bulk phase.
     /// </summary>
-    public abstract class BulkEquation : SpatialEquation, ICodomainEquation<BulkEquation> {
+    public abstract class BulkEquation : SpatialEquation {
         
         /// <summary>
         /// Name of species for which equation is valid.
@@ -226,33 +253,43 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             GhostComponents.AddLast(ghostComponent);
         }
 
-        public void Combine(BulkEquation other) {
-            if (other.SpeciesName != SpeciesName || other.MassScale != MassScale) {
-                throw new Exception("species name or mass scale do not match");
-            };
-            base.Combine(other);
-            GhostComponents.AddRange(other.GhostComponents);
+        /// <summary>
+        /// Combine with other equation of same Codomain
+        /// </summary>
+        /// <param name="other"></param>
+        public override void Combine(SpatialEquation other) {
+            if (other is BulkEquation otherBulk && HasEqualCodomain(other))
+            {
+                base.Combine(otherBulk);
+                GhostComponents.AddRange(otherBulk.GhostComponents);
+            }
+            else
+            {
+                throw new Exception("Equation Types do not match");
+            }
         }
 
-        public bool EqualCodomain(BulkEquation other) {
-            bool isEqual = CodomainName == other.CodomainName;
-            isEqual &= (SpeciesName == other.SpeciesName);
+        /// <summary>
+        /// Are codomains the same?
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public override bool HasEqualCodomain(SpatialEquation other) {
+            bool isEqual = base.HasEqualCodomain(other);
+            if(other is BulkEquation otherBulk)
+            {
+                isEqual &= MassScale == otherBulk.MassScale;
+                isEqual &= (SpeciesName == otherBulk.SpeciesName);
+            }
             return isEqual;
         }
-    }
-
-
-    interface ICodomainEquation<T> {
-        void Combine(T other);
-
-        bool EqualCodomain(T other);
     }
 
     /// <summary>
     /// List of Equations. There is only one equation for each codomain species pair.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    class EquationList<T> : IEnumerable<T> where T : ICodomainEquation<T> {
+    class EquationList<T> : IEnumerable<T> where T : SpatialEquation {
         LinkedList<T> equations;
 
         public EquationList() {
@@ -269,7 +306,7 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             LinkedListNode<T> node = equations.First;
             while(node != null) {
                 T q = node.Value;
-                if(q.EqualCodomain(equation)) {
+                if(q.HasEqualCodomain(equation)) {
                     T combo = Combine(equation, q);
                     node.Value = combo;
                     return;
@@ -407,6 +444,12 @@ namespace BoSSS.Foundation.XDG.OperatorFactory {
             return species.ToArray();
         }
 
+        /// <summary>
+        /// Entries of mass matrix on diagonal.
+        /// </summary>
+        /// <returns>
+        /// For each species a tuple: (species name, array of scale for each codomain).
+        /// </returns>
         public (string, double[])[] MassDiagonal() {
             StringArrayDictionary<StringArrayDictionary<double>> diag = new StringArrayDictionary<StringArrayDictionary<double>>(Species());
             foreach(BulkEquation equation in BulkEquations) {
