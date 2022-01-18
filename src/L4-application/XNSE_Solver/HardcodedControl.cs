@@ -630,7 +630,7 @@ namespace BoSSS.Application.XNSE_Solver {
             double d_hyd = 2 * partRad;
             double VelocityIn = Re * muA / rhoA / d_hyd;
             double[] pos = new double[SpaceDim];
-            double ts = 2 * Math.PI / anglev;
+            double ts = 2 * Math.PI / anglev / 100;
             double inletdelay = 5 * ts;
 
             C.PhysicalParameters.IncludeConvection = IncludeConvection;
