@@ -1301,7 +1301,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// override of parameter in <see cref="Activate(BatchProcessorClient, bool)"/> for testing purpose.
+        /// triggers <see cref="DeleteOldDeploymentsAndSessions"/>
         /// </summary>
         public static bool UndocumentedSuperHack = false;
 

@@ -96,7 +96,6 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__ue2Basics() {
             //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__ue2Basics
-            Debugger.Launch();
             RunWorksheet("ue2Basics/ue2Basics.ipynb");
         }
 

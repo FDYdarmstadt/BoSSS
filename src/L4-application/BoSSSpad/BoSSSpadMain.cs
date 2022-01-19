@@ -364,6 +364,13 @@ namespace BoSSS.Application.BoSSSpad {
         }
         */
 
+        static bool UseAnacondaPython() {
+            if(System.Environment.MachineName.Contains("hpcluster3", StringComparison.InvariantCultureIgnoreCase))
+                return false;
+
+            return System.OperatingSystem.IsWindows();
+        }
+
         private static int RunPapermill(string fileToOpen) {
             string fileToOpen_out = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + "_out.ipynb");
 
@@ -385,7 +392,7 @@ namespace BoSSS.Application.BoSSSpad {
                 Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
 
                 int papermill_exit, nbconvert_exit;
-                if (System.OperatingSystem.IsWindows()) {
+                if (UseAnacondaPython()) {
                     
 
 

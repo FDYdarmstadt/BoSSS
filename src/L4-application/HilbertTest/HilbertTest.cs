@@ -40,6 +40,9 @@ using System.Diagnostics;
 
 namespace HilbertTest {
 
+    /// <summary>
+    /// 
+    /// </summary>
     [TestFixture]
     public class HilbertTest : TestProgram<CNSControl> {
 
@@ -128,6 +131,7 @@ namespace HilbertTest {
         [NUnitFileToCopyHack("HilbertTest/Tests.zip")]
         [Test]
         static public void TestingdirectHilbertEven() {
+            //--test=HilbertTest.HilbertTest.TestingdirectHilbertEven
             //string dbPath = @"D:\Weber\BoSSS\test_db";
             string dbPath = @"Tests.zip";
             //TestCase: 4x4 grid, AV=false, dgdegree=0, Timestepping=RK1

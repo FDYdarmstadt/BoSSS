@@ -117,7 +117,6 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
-                        typeof(BoSSS.Application.TutorialTests.AllUpTest), 
                         typeof(MPITest.Program)
                     };
             }
@@ -139,6 +138,7 @@ namespace PublicTestRunner {
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
                         typeof(LTSTests.Program),
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest), 
                         typeof(BoSSS.Application.XNSEC.XNSEC),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
