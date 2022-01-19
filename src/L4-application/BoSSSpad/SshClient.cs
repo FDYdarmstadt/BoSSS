@@ -5,9 +5,13 @@ using System.Threading.Tasks;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
+using ilPSP.Tracing;
 
 namespace BoSSS.Application.BoSSSpad {
 
+    /// <summary>
+    /// internal wrapper around ssh/slurm commands
+    /// </summary>
     class SshClient {
         /// <summary>
         /// ctor
@@ -97,52 +101,50 @@ namespace BoSSS.Application.BoSSSpad {
             get { return TestConnection(); }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        internal string SubmitJob(string remotepath, out string _stdout, out string _stderr) {
+            using(var tr = new FuncTrace()) {
+                Connect();
+                string sbatchCmd = "sbatch " + remotepath + "/batch.sh";
+                var (resultString, err) = RunCommand(sbatchCmd);
+                _stdout = resultString;
+                _stderr = err;
 
-        public string SubmitJob(string remotepath) {
-
-            Connect();
-            string sbatchCmd = "sbatch " + remotepath + "/batch.sh";
-            var (resultString, err) = RunCommand(sbatchCmd);
-
-            String SearchString = "Submitted batch job ";
-            String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
-                .ToString() // convert to string
-                .Replace(SearchString, ""); // remove SearchString, leaving only the Job ID
-            Console.WriteLine(jobId);
-            return jobId;
+                String SearchString = "Submitted batch job ";
+                String jobId = Regex.Match(resultString, SearchString + "[0-9]*") // look for SearchString followed by a number (the Job ID)
+                    .ToString() // convert to string
+                    .Replace(SearchString, ""); // remove SearchString, leaving only the Job ID
+                return jobId;
+            }
         }
 
         public (string stdout, string stderr) RunCommand(string command, bool verbose = false) {
-            if(verbose)
-                Console.WriteLine("Starting test shell...");
-            m_cmd.Start();
-            if(verbose)
-                Console.WriteLine("started.");
+            using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = verbose;
+                tr.Info("Starting test shell...");
+                m_cmd.Start();
+                tr.Info("started.");
 
-            string sshCmd = "ssh " + m_usrname + "@" + m_srvrname + " -oStrictHostKeyChecking=no \"" + command + "\"";
-            if(verbose)
-                Console.WriteLine("Command: " + sshCmd);
-            m_cmd.StandardInput.WriteLine(sshCmd);
-            if(verbose)
-                Console.WriteLine("command written; Waiting for completion...");
-            //m_cmd.StandardInput.WriteLine(command);
-            m_cmd.StandardInput.Flush();
-            m_cmd.StandardInput.Close();
-            m_cmd.WaitForExit();
-            if(verbose)
-                Console.WriteLine("external shell terminated; exit code is " + m_cmd.ExitCode);
-            string std, err;
-            ReadLines(out std, out err);
-            if(verbose) {
-                Console.WriteLine("stdout received:");
-                Console.WriteLine(std);
-                Console.WriteLine("----- (end of stdout)");
-                Console.WriteLine("stderr received:");
-                Console.WriteLine(err);
-                Console.WriteLine("----- (end of stderr)");
+                string sshCmd = "ssh " + m_usrname + "@" + m_srvrname + " -oStrictHostKeyChecking=no \"" + command + "\"";
+                tr.Info("Command: " + sshCmd);
+                m_cmd.StandardInput.WriteLine(sshCmd);
+                tr.Info("command written; Waiting for completion...");
+                //m_cmd.StandardInput.WriteLine(command);
+                m_cmd.StandardInput.Flush();
+                m_cmd.StandardInput.Close();
+                m_cmd.WaitForExit();
+                tr.Info("external shell terminated; exit code is " + m_cmd.ExitCode);
+                string std, err;
+                ReadLines(out std, out err);
+                tr.Info("stdout received: " + std + "----- (end of stdout)");
+                if(err.Length > 0)
+                    tr.Error("stderr received: " + err + "----- (end of stderr)");
+                
+
+                return (std, err);
             }
-
-            return (std, err);
         }
 
 

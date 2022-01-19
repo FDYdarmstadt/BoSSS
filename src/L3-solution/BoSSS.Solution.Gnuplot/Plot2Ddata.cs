@@ -1262,7 +1262,7 @@ namespace BoSSS.Solution.Gnuplot {
                         System.Console.WriteLine("legend position and legend alignment is set. Choose only one of them! Ignoring alignment ...");
 
                     if (this.LegendPosition != null) {
-                        command+=String.Format("at {1:0.####e-00},{2:0.####e-00} vertical maxrows {0} ", this.dataGroups.Length, this.LegendPosition[0], this.LegendPosition[1]);
+                        command += String.Format("at {1:0.####e-00},{2:0.####e-00} vertical maxrows {0} ", this.dataGroups.Length, this.LegendPosition[0], this.LegendPosition[1]);
                     } else if (this.LegendAlignment != null) {
                         Dictionary<string, string> alignments = new Dictionary<string, string>();
                         alignments.Add("r", "right");
@@ -1292,6 +1292,7 @@ namespace BoSSS.Solution.Gnuplot {
                     } else {
                         //throw new ArgumentNullException("no alignment or position chosen");
                     }
+
                     if (this.LegendHorizontal == true)
                         command += "horizontal ";
 
