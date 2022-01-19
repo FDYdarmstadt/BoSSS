@@ -689,7 +689,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control testcube2() {
+        public static XNSE_Control testcube_ArtithmeticError() {
             XNSE_Control C = new XNSE_Control();
 
             int NoOfTimeSteps = 10;
