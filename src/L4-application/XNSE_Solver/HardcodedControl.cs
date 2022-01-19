@@ -531,7 +531,7 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSE_Control C = new XNSE_Control();
 
             int NoOfTimeSteps = 10;
-            int k = 4;
+            int k = 3;
             bool IncludeConvection = true;
             int Res = 15;
             int SpaceDim = 3;
@@ -630,7 +630,7 @@ namespace BoSSS.Application.XNSE_Solver {
             double d_hyd = 2 * partRad;
             double VelocityIn = Re * muA / rhoA / d_hyd;
             double[] pos = new double[SpaceDim];
-            double ts = 2 * Math.PI / anglev / 100;
+            double ts = 2 * Math.PI / anglev / 10;
             double inletdelay = 5 * ts;
 
             C.PhysicalParameters.IncludeConvection = IncludeConvection;
@@ -684,7 +684,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 dt = ts;
                 C.NoOfTimesteps = NoOfTimeSteps;
             }
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF4;
             C.dtFixed = dt;
             return C;
         }
@@ -693,19 +693,19 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSE_Control C = new XNSE_Control();
 
             int NoOfTimeSteps = 10;
-            int k = 4;
-            bool IncludeConvection = false;
-            int Res = 40;
-            int SpaceDim = 2;
-            bool Steady = true;
+            int k = 3;
+            bool IncludeConvection = true;
+            int Res = 15;
+            int SpaceDim = 3;
+            bool Steady = false;
             bool useLoadBal = true;
-            bool useAMR = true;
-            var Gshape = Shape.Sphere;
+            bool useAMR = false;
+            var Gshape = Shape.Cube;
 
             C.GridFunc = delegate {
 
-                int xMin = -2, yMin = -1, zMin = -1;
-                int xMax = 4, yMax = 1, zMax = 1;
+                int xMin = -1, yMin = -1, zMin = -1;
+                int xMax = 1, yMax = 1, zMax = 1;
                 int Stretch =  (xMax - xMin) / (yMax - yMin) * Res;
 
                 // x-direction
