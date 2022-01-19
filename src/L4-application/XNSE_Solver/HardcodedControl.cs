@@ -646,6 +646,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddInitialValue("Pressure", new Formula(@"X => 0"));
             C.AddBoundaryValue("Pressure_Outlet");
             C.AddBoundaryValue("Velocity_inlet", "VelocityX", new Formula($"(X,t) => {VelocityIn}*(double)(t<={inletdelay}?(t/{inletdelay}):1)", true));
+            C.AddInitialValue("VelocityX", new Formula($"(X,t) => {VelocityIn}"));
 
             C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.UseSchurBlockPrec = true;
