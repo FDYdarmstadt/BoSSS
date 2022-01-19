@@ -78,6 +78,12 @@ namespace PublicTestRunner {
         /// Root for data searches
         /// </summary>
         DirectoryInfo GetRepositoryBaseDir();
+
+        /// <summary>
+        /// If true, the managed assemblies are not copied for every job; there is only a single copy to reduce IO load.
+        /// Uses the <see cref="Job.EntryAssemblyRedirection"/> - hack;
+        /// </summary>
+        bool CopyManagedAssembliesCentraly { get; } 
     }
 
     /// <summary>
@@ -111,6 +117,7 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest), 
                         typeof(MPITest.Program)
                     };
             }
@@ -128,7 +135,6 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(CNS.Program),
                         typeof(NSE_SIMPLE.SIMPLESolver),
-                        typeof(BoSSS.Application.TutorialTests.AllUpTest), // temp. deact for .NET 5
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
@@ -199,6 +205,8 @@ namespace PublicTestRunner {
 
             return repoRoot;
         }
+
+        virtual public bool CopyManagedAssembliesCentraly => true;
     }
 
     /// <summary>
@@ -249,98 +257,11 @@ namespace PublicTestRunner {
         }
 
 
-        static void GetAllDependentAssembliesRecursive(Assembly a, HashSet<Assembly> assiList, string SearchPath) {
-            if(assiList.Contains(a))
-                return;
-            assiList.Add(a);
-            //if(a.FullName.Contains("codeanalysis", StringComparison.InvariantCultureIgnoreCase))
-            //    Console.Write("");
+        
 
-            string fileName = Path.GetFileName(a.Location);
-            var allMatch = assiList.Where(_a => Path.GetFileName(_a.Location).Equals(fileName)).ToArray();
-            if(allMatch.Length > 1) {
-                throw new ApplicationException("internal error in assembly collection.");
-            }
+        
 
-
-            foreach(AssemblyName b in a.GetReferencedAssemblies()) {
-                Assembly na;
-                try {
-                    na = Assembly.Load(b);
-                } catch(FileNotFoundException) {
-                    string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
-                    if(AssiFiles.Length != 1) {
-                        //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
-                        Console.WriteLine("Skipping: " + b.Name);
-                        continue;
-                    }
-                    na = Assembly.LoadFile(AssiFiles[0]);
-
-                }
-
-                GetAllDependentAssembliesRecursive(na, assiList, SearchPath);
-            }
-        }
-
-        static string[] GetManagedFileList(IEnumerable<Assembly> AllDependentAssemblies, string MainAssemblyDir) {
-            List<string> files = new List<string>();
-
-            foreach(var a in AllDependentAssemblies) {
-                // new rule for .NET5: if the file is located in the same directory as the entry assembly, it should be deployed;
-                // (in Jupyter, sometimes assemblies from some cache are used, therefore we cannot use the assembly location as a criterion)
-                string DelpoyAss = Path.Combine(MainAssemblyDir, Path.GetFileName(a.Location));
-
-                if(File.Exists(DelpoyAss)) {
-                    files.Add(DelpoyAss);
-
-                    string a_config = Path.Combine(MainAssemblyDir, DelpoyAss + ".config");
-                    string a_runtimeconfig_json = Path.Combine(MainAssemblyDir, Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json");
-
-                    foreach(var a_acc in new[] { a_config, a_runtimeconfig_json }) {
-                        if(File.Exists(a_acc)) {
-                            files.Add(a_acc);
-                        }
-                    }
-                } else {
-                    //Console.WriteLine("SKIPPING: " + DelpoyAss + " --- " + MainAssemblyDir);
-                }
-            }
-
-            return files.ToArray();
-        }
-
-        static void CopyManaged(DirectoryInfo Destination) {
-            var entryAssembly = TestTypeProvider.GetType().Assembly;
-            var assiList = new HashSet<Assembly>();
-
-            string MainAssemblyDir = Path.GetDirectoryName(entryAssembly.Location);
-            GetAllDependentAssembliesRecursive(entryAssembly, assiList, Path.GetDirectoryName(entryAssembly.Location));
-
-            string[] files = GetManagedFileList(assiList, MainAssemblyDir);
-
-            foreach(var f in files) {
-                File.Copy(f, Path.Combine(Destination.FullName, Path.GetFileName(f)));
-            }
-
-            // copy "runtimes" directory from .NET core/.NET5
-            string runtimes_Src = Path.Combine(MainAssemblyDir, "runtimes");
-            string runtimes_Dst = Path.Combine(Destination.FullName, "runtimes");
-            if(Directory.Exists(runtimes_Src)) {
-                CopyFilesRecursively(runtimes_Src, runtimes_Dst);
-            }
-        }
-
-        static void CopyFilesRecursively(string sourcePath, string targetPath) {
-            //Now Create all of the directories
-            foreach(string dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories)) {
-                Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
-            }
-
-            //Copy all the files & Replaces any files with the same name
-            foreach(string newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)) {
-                File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
-            }
-        }
+        
 
         //static bool IsReleaseOnlyAssembly
 
@@ -787,13 +708,15 @@ namespace PublicTestRunner {
 
                 // deployment of assemblies
                 string RelManagedPath;
-                {
+                if(TestTypeProvider.CopyManagedAssembliesCentraly) {
                     string mngdir = RunnerPrefix +DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
                     DirectoryInfo ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
                     ManagedOverride.Create();
-                    CopyManaged(ManagedOverride);
+                    TestTypeProvider.GetType().Assembly.DeployAt(ManagedOverride);
 
                     RelManagedPath = "../" + mngdir + "/" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
+                } else {
+                    RelManagedPath = null;
                 }
 
 

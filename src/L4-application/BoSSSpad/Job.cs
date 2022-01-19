@@ -1317,10 +1317,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// resp. every time the worksheet is restarted.
         /// </remarks>
         /// <param name="bpc"></param>
-        /// <param name="DeleteOldDeploymentsAndSessions">
-        /// Override job persistence: traces of old jobs will be deleted.
-        /// </param>
-        public void Activate(BatchProcessorClient bpc, bool DeleteOldDeploymentsAndSessions = false) {
+        public void Activate(BatchProcessorClient bpc) {
             using (var tr = new FuncTrace()) {
                 // ============================================
                 // ensure that this method is only called once.
@@ -1329,7 +1326,7 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new NotSupportedException("Job can only be activated once.");
                 AssignedBatchProc = bpc;
                 //Debugger.Launch();
-                if(DeleteOldDeploymentsAndSessions || UndocumentedSuperHack)
+                if(UndocumentedSuperHack)
                     this.DeleteOldDeploymentsAndSessions();
 
 
