@@ -217,7 +217,10 @@ namespace PublicTestRunner {
         static bool ignore_tests_w_deps = false;
 
 
-        static Assembly[] GetAllAssemblies() {
+        /// <summary>
+        /// finds all assemblies which potentially contain tests.
+        /// </summary>
+        static Assembly[] GetAllAssembliesForTests() {
             using(new FuncTrace()) {
                 var R = new HashSet<Assembly>();
 
@@ -242,6 +245,100 @@ namespace PublicTestRunner {
                 }
 
                 return R.ToArray();
+            }
+        }
+
+
+        static void GetAllDependentAssembliesRecursive(Assembly a, HashSet<Assembly> assiList, string SearchPath) {
+            if(assiList.Contains(a))
+                return;
+            assiList.Add(a);
+            //if(a.FullName.Contains("codeanalysis", StringComparison.InvariantCultureIgnoreCase))
+            //    Console.Write("");
+
+            string fileName = Path.GetFileName(a.Location);
+            var allMatch = assiList.Where(_a => Path.GetFileName(_a.Location).Equals(fileName)).ToArray();
+            if(allMatch.Length > 1) {
+                throw new ApplicationException("internal error in assembly collection.");
+            }
+
+
+            foreach(AssemblyName b in a.GetReferencedAssemblies()) {
+                Assembly na;
+                try {
+                    na = Assembly.Load(b);
+                } catch(FileNotFoundException) {
+                    string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
+                    if(AssiFiles.Length != 1) {
+                        //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
+                        Console.WriteLine("Skipping: " + b.Name);
+                        continue;
+                    }
+                    na = Assembly.LoadFile(AssiFiles[0]);
+
+                }
+
+                GetAllDependentAssembliesRecursive(na, assiList, SearchPath);
+            }
+        }
+
+        static string[] GetManagedFileList(IEnumerable<Assembly> AllDependentAssemblies, string MainAssemblyDir) {
+            List<string> files = new List<string>();
+
+            foreach(var a in AllDependentAssemblies) {
+                // new rule for .NET5: if the file is located in the same directory as the entry assembly, it should be deployed;
+                // (in Jupyter, sometimes assemblies from some cache are used, therefore we cannot use the assembly location as a criterion)
+                string DelpoyAss = Path.Combine(MainAssemblyDir, Path.GetFileName(a.Location));
+
+                if(File.Exists(DelpoyAss)) {
+                    files.Add(DelpoyAss);
+
+                    string a_config = Path.Combine(MainAssemblyDir, DelpoyAss + ".config");
+                    string a_runtimeconfig_json = Path.Combine(MainAssemblyDir, Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json");
+
+                    foreach(var a_acc in new[] { a_config, a_runtimeconfig_json }) {
+                        if(File.Exists(a_acc)) {
+                            files.Add(a_acc);
+                        }
+                    }
+                } else {
+                    //Console.WriteLine("SKIPPING: " + DelpoyAss + " --- " + MainAssemblyDir);
+                }
+            }
+
+            return files.ToArray();
+        }
+
+        static void CopyManaged(DirectoryInfo Destination) {
+            var entryAssembly = TestTypeProvider.GetType().Assembly;
+            var assiList = new HashSet<Assembly>();
+
+            string MainAssemblyDir = Path.GetDirectoryName(entryAssembly.Location);
+            GetAllDependentAssembliesRecursive(entryAssembly, assiList, Path.GetDirectoryName(entryAssembly.Location));
+
+            string[] files = GetManagedFileList(assiList, MainAssemblyDir);
+
+            foreach(var f in files) {
+                File.Copy(f, Path.Combine(Destination.FullName, Path.GetFileName(f)));
+            }
+
+            // copy "runtimes" directory from .NET core/.NET5
+            string runtimes_Src = Path.Combine(MainAssemblyDir, "runtimes");
+            string runtimes_Dst = Path.Combine(Destination.FullName, "runtimes");
+            if(Directory.Exists(runtimes_Src)) {
+                CopyFilesRecursively(runtimes_Src, runtimes_Dst);
+            }
+        }
+
+        static void CopyFilesRecursively(string sourcePath, string targetPath) {
+            //Now Create all of the directories
+            foreach(string dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories)) {
+                Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
+            }
+
+            //Copy all the files & Replaces any files with the same name
+            foreach(string newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories)) {
+                File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
             }
         }
 
@@ -433,6 +530,10 @@ namespace PublicTestRunner {
             }
         }
 
+
+        /// <summary>
+        /// Decides whether an assembly <paramref name="a"/> matches the filter (wildcard <paramref name="AssemblyFilter"/>) specified by the user
+        /// </summary>
         static bool FilterAssembly(Assembly a, string AssemblyFilter) {
             if (AssemblyFilter.IsEmptyOrWhite())
                 return true;
@@ -461,7 +562,7 @@ namespace PublicTestRunner {
            
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
                 {
-                    var assln = GetAllAssemblies();
+                    var assln = GetAllAssembliesForTests();
                     if(assln != null) {
                         foreach(var a in assln) {
                             if(FilterAssembly(a, null)) {
@@ -674,6 +775,7 @@ namespace PublicTestRunner {
 
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
+                // deployment of native libraries
                 DirectoryInfo NativeOverride;
                 if(!bpc.DeployRuntime) {
                     NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_amd64"));
@@ -683,12 +785,24 @@ namespace PublicTestRunner {
                     NativeOverride = null;
                 }
 
+                // deployment of assemblies
+                string RelManagedPath;
+                {
+                    string mngdir = RunnerPrefix +DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
+                    DirectoryInfo ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
+                    ManagedOverride.Create();
+                    CopyManaged(ManagedOverride);
+
+                    RelManagedPath = "../" + mngdir + "/" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
+                }
+
+
                 // collection for all tests:
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
                 
                 // Find all serial tests:
                 {
-                    var assln = GetAllAssemblies();
+                    var assln = GetAllAssembliesForTests();
                     if(assln != null) {
                         foreach(var a in assln) {
                             if(FilterAssembly(a, AssemblyFilter)) {
@@ -768,7 +882,7 @@ namespace PublicTestRunner {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                            var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, cnt);
+                            var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, RelManagedPath, cnt);
                             if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
@@ -1073,6 +1187,7 @@ namespace PublicTestRunner {
             string prefix,
             int NoOfMpiProcs,
             DirectoryInfo nativeOverride,
+            string TestRunnerRelPath,
             int cnt) {
             using (new FuncTrace()) {
 
@@ -1117,6 +1232,8 @@ namespace PublicTestRunner {
                     j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride.FullName);
                 }
                 j.NumberOfMPIProcs = NoOfMpiProcs;
+                if(TestRunnerRelPath != null)
+                    j.EntryAssemblyRedirection = TestRunnerRelPath;
                 j.Activate(bpc);
                 return (j, resultFile, TestName);
             }
@@ -1171,7 +1288,7 @@ namespace PublicTestRunner {
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
 
             using(var ftr = new FuncTrace()) {
-                Assembly[] assln = GetAllAssemblies();
+                Assembly[] assln = GetAllAssembliesForTests();
 
                 if(MpiSize != 1) {
                     // this seems some parallel run

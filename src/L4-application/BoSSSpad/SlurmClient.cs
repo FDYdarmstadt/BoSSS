@@ -366,7 +366,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (MonoDebug) { 
                     str.Write("-v --debug "); 
                 }
-                str.Write(jobpath_unix + "/" + Path.GetFileName(myJob.EntryAssembly.Location));
+                str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
                 str.Write(" ");
                 str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
                 str.Write(" ");
