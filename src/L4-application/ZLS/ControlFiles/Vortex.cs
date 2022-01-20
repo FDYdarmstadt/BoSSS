@@ -11,7 +11,7 @@ using ZwoLevelSetSolver.SolidPhase;
 
 namespace ZwoLevelSetSolver.ControlFiles {
     public static class Vortex {
-        public static ZLS_Control UnsteadyVortex(int p = 3, int kelem = 16) {
+        public static ZLS_Control UnsteadyVortex(int p = 2, int kelem = 16) {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
@@ -147,8 +147,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             double dt = 5e-2;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
 

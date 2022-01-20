@@ -56,7 +56,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
     class ConvergenceTest : IncompressibleViscoElastic {
 
-        public ConvergenceTest():base(3, 1, 1){
+        public ConvergenceTest():base(3, 0.1, 1){
         }
     }
 
