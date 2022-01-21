@@ -57,6 +57,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return LsUpdater.Tracker;
         }
 
+        protected abstract void InitializeLevelSets(double t, LevelSetUpdater levelSetUpdater);
+
+        protected override void SetInitial(double t)
+        {
+            base.SetInitial(t); // base implementation does not considers the DG/CG pair.
+            this.InitializeLevelSets(t, LsUpdater);
+        }
+
         public override ISlaveTimeIntegrator GetLevelSetUpdater() {
             if (this.LsUpdater == null)
                 throw new ApplicationException();
