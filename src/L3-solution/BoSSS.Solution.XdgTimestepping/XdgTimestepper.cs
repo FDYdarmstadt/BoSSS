@@ -590,7 +590,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new NotImplementedException();
             }
 
-            public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
+            public double Update(IList<string> variableNames, DGField[] CurrentVariableState, IList<string> parameterNames, DGField[] CurrentParameterState,
+                double time, double dt, double UnderRelax, bool incremental) {
                 m_owner.LsTrk.UpdateTracker(time + dt, incremental: true);
                 return 0.0;
             }

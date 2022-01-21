@@ -15,8 +15,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Routine to update the topmost time-slab.
         /// </summary>
-        /// <param name="CurrentState">
+        /// /// <param name="variableNames">
+        /// names of variables of most recent solution state <paramref name="CurrentVariableState"/>.
+        /// </param>
+        /// <param name="CurrentVariableState">
         /// most recent solution state of the master timestepper.
+        /// </param>
+        /// /// /// <param name="parameterNames">
+        /// names of variables of most recent parameter state <paramref name="CurrentParameterState"/>.
+        /// </param>
+        /// /// <param name="CurrentParameterState">
+        /// most recent parameter state of the master timestepper.
         /// </param>
         /// <param name="time">
         /// Actual simulation time for the known value;
@@ -29,7 +38,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <returns>
         /// Some kind of residual in order to check convergence in a fully coupled simulation
         /// </returns>
-        double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental);
+        double Update(IList<string> variableNames, DGField[] CurrentVariableState,
+            IList<string> parameterNames, DGField[] CurrentParameterState, double time, double dt, double UnderRelax, bool incremental);
 
         /// <summary>
         /// Accepts the current state and pushes a clone onto the stack
@@ -41,9 +51,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// discards the most recent solution and resets to the previous solution
         /// </summary>
         void Pop();
-
-
-
 
     }
 }

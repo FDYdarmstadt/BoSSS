@@ -2034,6 +2034,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
 
+
+
         /// <summary>
         /// Performs:
         ///  - level-set evolution
@@ -2070,8 +2072,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new ApplicationException($"Before Level-Set update, mismatch in time between tracker (Regions.Time = {m_LsTrk.Regions.Time}) and physical time ({PhysTime}).");
 
 
-
-            m_LastLevelSetResidual = this.UpdateLevelset().Update(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
+            
+            m_LastLevelSetResidual = this.UpdateLevelset().Update(this.AbstractOperator.DomainVar, locCurSt,
+                this.AbstractOperator.ParameterVar, CurrentParameters, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
 
 
             int newVersion = m_LsTrk.VersionCnt;

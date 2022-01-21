@@ -206,14 +206,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 case 1:
                 lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth,
                     (string[])this.SpeciesTable,
-                    this.GetLsUpdaterInputFields,
                     DGlevelSets[0], lsNames[0].ContLs, Control.LSContiProjectionMethod);
                 break;
 
                 case 2:
                 lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth,
                     (string[,])this.SpeciesTable,
-                    this.GetLsUpdaterInputFields,
                     DGlevelSets[0], lsNames[0].ContLs, DGlevelSets[1], lsNames[1].ContLs, Control.LSContiProjectionMethod);
                 break;
 
@@ -448,57 +446,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.InitializeLevelSets(LsUpdater, t);
         }
 
-        /*
-        /// <summary>
-        /// - Matches <see cref="DelUpdateLevelset"/>, used by the <see cref="ApplicationWithSolver{T}.Timestepping"/> to advance the interfaces
-        /// - Uses the <see cref="LsUpdater"/>
-        /// </summary>
-        public double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental) {
-            using(var tr = new FuncTrace()) {
-                var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
-                for(int iVar = 0; iVar < domainFields.Length; iVar++) {
-                    DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
-                }
-
-                var parameterFields = Timestepping.Parameters;
-
-                var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
-                for(int iVar = 0; iVar < parameterFields.Count(); iVar++) {
-                    ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
-                }
-                double residual = LsUpdater.UpdateLevelSets(DomainVarsDict, ParameterVarsDict, time, dt, UnderRelax, incremental);
-                tr.Info("Residual of level-set update: " + residual);
-                return 0.0;
-            }
-        }
-        */
-
-
-        (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) GetLsUpdaterInputFields(DGField[] domainFields) {
-            var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
-            for(int iVar = 0; iVar < domainFields.Length; iVar++) {
-                if(!domainFields[iVar].GridDat.IsAlive())
-                    throw new ApplicationException("Trying to work on field with invalidated grid object.");
-                if(!object.ReferenceEquals(domainFields[iVar].GridDat, this.GridData))
-                    throw new ApplicationException("Grid data object mismatch");
-                DomainVarsDict.Add(Operator.DomainVar[iVar], domainFields[iVar]);
-            }
-
-            var parameterFields = Timestepping.Parameters;
-
-            var ParameterVarsDict = new Dictionary<string, DGField>(parameterFields.Count());
-            for(int iVar = 0; iVar < parameterFields.Count(); iVar++) {
-                if(!parameterFields[iVar].GridDat.IsAlive())
-                    throw new ApplicationException("Trying to work on field with invalidated grid object.");
-                if(!object.ReferenceEquals(parameterFields[iVar].GridDat, this.GridData))
-                    throw new ApplicationException("Grid data object mismatch");
-
-                ParameterVarsDict.Add(Operator.ParameterVar[iVar], parameterFields[iVar]);
-            }
-            return (DomainVarsDict, ParameterVarsDict);
-        }
-
-
         public override ISlaveTimeIntegrator GetLevelSetUpdater() {
             if(this.LsUpdater == null)
                 throw new ApplicationException();
@@ -551,11 +498,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             if (L == null) {
                 var pair1 = LsUpdater.LevelSets.First().Value;
                 var oldCoords1 = pair1.DGLevelSet.CoordinateVector.ToArray();
-                this.LsUpdater.Update(this.CurrentState.Fields.ToArray(), restartTime, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
+                this.LsUpdater.Update(Operator.DomainVar, this.CurrentState.Fields.ToArray(), Operator.ParameterVar, this.Timestepping.Parameters.ToArray(),
+                    restartTime, 0.0, 1.0, false); // enforces the continuity projection upon the initial level set
                 double dist1 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
                 if (dist1 != 0)
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
-                this.LsUpdater.Update(this.CurrentState.Fields.ToArray(), restartTime, 0.0, 1.0, false); // und doppelt hält besser ;)
+                this.LsUpdater.Update(Operator.DomainVar, this.CurrentState.Fields.ToArray(), Operator.ParameterVar, this.Timestepping.Parameters.ToArray(),
+                    0, 0.0, 1.0, false); // und doppelt hält besser ;)
                 double dist2 = pair1.DGLevelSet.CoordinateVector.L2Distance(oldCoords1);
                 if (dist2 != 0)
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");

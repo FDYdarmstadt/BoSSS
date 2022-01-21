@@ -193,7 +193,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             // level-set evolution
             int oldPushCount = m_LsTrk.PushCount;
             int oldVersion = m_LsTrk.VersionCnt;
-            m_LastLevelSetResidual = this.UpdateLevelset().Update(locCurSt, this.m_LsTrk.Regions.Time, evo_dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
+            m_LastLevelSetResidual = this.UpdateLevelset().Update(this.AbstractOperator.DomainVar, locCurSt, 
+                this.AbstractOperator.ParameterVar, CurrentParameters, this.m_LsTrk.Regions.Time, evo_dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
             int newVersion = m_LsTrk.VersionCnt;
             int newPushCount = m_LsTrk.PushCount;
 
