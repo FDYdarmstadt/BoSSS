@@ -460,7 +460,17 @@ namespace PublicTestRunner {
                 return true;
             string[] sFilters = AssemblyFilter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var filter in sFilters) {
-                if (filter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)))
+                string modFilter;
+                bool expect = false;
+                if(filter.StartsWith("!")) {
+                    modFilter = filter.Substring(1);
+                    expect = false;
+                } else {
+                    modFilter = filter;
+                    expect = true;
+                }
+
+                if (modFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == expect)
                     return true;
             }
             return false;

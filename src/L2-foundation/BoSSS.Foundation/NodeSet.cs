@@ -30,6 +30,11 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// Extends the functionality of the <see cref="MultidimensionalArray"/>-class to support caching.
+    /// A node set are coordinates in the reference system of a cell; it is always a 2D-array, i.e. a matrix.
+    /// - 1st index/rows: point
+    /// - 2nd index/columns: spatial direction, i.e. x, y, z components of the respective point
+    /// A node set is always bound to a specific reference cell <see cref="RefElement"/> 
+    /// (<see cref="Line.Instance"/>, <see cref="Square.Instance"/>, <see cref="Triangle.Instance"/>, <see cref="Cube.Instance"/>, <see cref="Tetra.Instance"/>).
     /// </summary>
     public class NodeSet : MultidimensionalArray {
 

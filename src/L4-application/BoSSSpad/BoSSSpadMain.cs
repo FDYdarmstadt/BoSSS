@@ -365,7 +365,7 @@ namespace BoSSS.Application.BoSSSpad {
         */
 
         static bool UseAnacondaPython() {
-            if(System.Environment.MachineName.Contains("hpcluster3", StringComparison.InvariantCultureIgnoreCase))
+            if(System.Environment.MachineName.Contains("hpccluster", StringComparison.InvariantCultureIgnoreCase))
                 return false;
 
             return System.OperatingSystem.IsWindows();

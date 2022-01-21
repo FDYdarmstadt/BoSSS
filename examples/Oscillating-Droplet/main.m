@@ -12,25 +12,28 @@ z = zeros(I,1);
 Vx = zeros(I,1);
 Vz = zeros(I,1);
 
-
+thetaErr = 0;
 for i = 1:I
     theta = tS(i);
     rdius = rS(i);
     
     %vr = -abs(polVel(i,3));
-    vr = polVel(i,3);
-    vt = radVel(i,3);
+    vr = radVel(i,3);
+    vt = polVel(i,3);
         
     x(i) = sin(theta)*rdius;
     z(i) = cos(theta)*rdius;
     theta_rec(i) = atan2(x(i),z(i));
     
-    %theta - theta_rec(i)
+    thetaErr = thetaErr + abs(theta - theta_rec(i));
     
-    Vx(i) = cos(theta)*vr;
-    Vx(i) = Vx(i) + sin(theta)*vt;
-    Vz(i) = sin(theta)*vr;
-    Vz(i) = Vz(i) - cos(theta)*vt;
+    % what I think:
+    %Vx(i) = sin(theta)*vr + cos(theta)*vt;
+    %Vz(i) = -cos(theta)*vr + sin(theta)*vt ;
+    
+    % dino zrnic
+    Vx(i) = vr*sin(theta) + vt*cos(theta);
+    Vz(i) = vr*cos(theta) - vt*sin(theta);
 end
 
 
