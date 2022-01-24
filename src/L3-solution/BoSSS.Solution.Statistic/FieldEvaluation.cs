@@ -56,6 +56,9 @@ namespace BoSSS.Solution.Statistic {
             get { return CellLoc.GridBB; }
         }
 
+        /// <summary>
+        /// index of containing cell
+        /// </summary>
         public int CellIndexOf(Vector Point)
         {
             var gdat = CellLoc.GrdDat;
