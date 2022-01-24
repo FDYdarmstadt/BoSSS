@@ -56,6 +56,27 @@ namespace BoSSS.Solution.Statistic {
             get { return CellLoc.GridBB; }
         }
 
+        public int CellIndexOf(Vector Point)
+        {
+            var gdat = CellLoc.GrdDat;
+            int D = gdat.SpatialDimension;
+            if (Point.Dim != D)
+            {
+                throw new ArgumentException("Spatial dimension mismatch.");
+            }
+
+            MultidimensionalArray _Point = MultidimensionalArray.Create(1, Point.Dim);
+            _Point.SetRowPt(0, Point);
+            int[] cellIdx = new int[1];
+            CellLoc.LocalizePointsWithinGrid(_Point, cellIdx, out int NoOfUnassi);
+            if (NoOfUnassi > 0)
+            {
+                throw new ArithmeticException("unable to locate point " + Point);
+            }
+            int j = cellIdx[0];
+            return j;
+        }
+
 
         /// <summary>
         /// Evaluation at a singe point
