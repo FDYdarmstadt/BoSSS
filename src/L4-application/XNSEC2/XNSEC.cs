@@ -277,8 +277,13 @@ namespace BoSSS.Application.XNSEC {
             //    m_thermBoundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, SpeciesList.ToArray());
             //}
 
+
+
+
             return boundaryMap;
         }
+
+
 
         protected virtual void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             int quadOrder = QuadOrder();
@@ -623,14 +628,15 @@ namespace BoSSS.Application.XNSEC {
                         double AimedValue = Control.Reynolds;
 
                         //Linear
-                        double slope = (AimedValue - StartingValue) / (1 - 0);
-                        double val = slope * (HomotopyScalar - 0) + StartingValue;
-                        this.CurrentHomotopyValue = val;
+                        //double slope = (AimedValue - StartingValue) / (1 - 0);
+                        //double val = slope * (HomotopyScalar - 0) + StartingValue;
+                        //this.CurrentHomotopyValue = val;
 
                         ////Exponential
-                        //double slope = (Math.Log10(AimedValue) - Math.Log10(StartingValue)) / (1 - 0);
-                        //double reExponent = slope * (HomotopyScalar - 0) + Math.Log10(StartingValue);
-                        //this.CurrentHomotopyValue = Math.Pow(10, reExponent);
+                        Console.WriteLine("Updating the homotopy value using a Exponential function ");
+                        double slope = (Math.Log10(AimedValue) - Math.Log10(StartingValue)) / (1 - 0);
+                        double reExponent = slope * (HomotopyScalar - 0) + Math.Log10(StartingValue);
+                        this.CurrentHomotopyValue = Math.Pow(10, reExponent);
 
                         Console.WriteLine("HomotopyScalar:" + HomotopyScalar);
                         Console.WriteLine("HomotopyValue:" + CurrentHomotopyValue);
