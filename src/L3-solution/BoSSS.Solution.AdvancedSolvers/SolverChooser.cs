@@ -329,7 +329,8 @@ namespace BoSSS.Solution {
                             ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,
                             Precond = linsolver,
                             ConvCrit = nc.ConvergenceCriterion,
-                            constant_newton_it = nc.constantNewtonIterations
+                            constant_newton_it = nc.constantNewtonIterations,
+                            HomotopyStepLongFail = nc.HomotopyStepLongFail,
                         };
                     }
                     break;
