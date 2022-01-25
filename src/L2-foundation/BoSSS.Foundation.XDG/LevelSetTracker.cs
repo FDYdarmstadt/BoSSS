@@ -1478,7 +1478,7 @@ namespace BoSSS.Foundation.XDG {
                 // check whether they are in Near - region of the previous state;
                 foreach(int j in newCut.ItemEnum) {
                     int old_dist = LevelSetTracker.DecodeLevelSetDist(oldCode[j], LevSetIdx);
-                if (Math.Abs(old_dist) > 1) {
+                    if (Math.Abs(old_dist) > 1) {
                         fail_count++;
                         msk[j] = true;
                     }
@@ -2329,7 +2329,6 @@ namespace BoSSS.Foundation.XDG {
                 // You have won a free flight, from the roof of the mechanical engineering building! 
                 // Congratulations!
                 //
-
 
                 if (throwCFL) {
                     LevelSetCFLException exception = new LevelSetCFLException(fail);
