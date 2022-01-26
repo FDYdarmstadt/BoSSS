@@ -138,6 +138,23 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return (bla.lambdaMin, Vret);
         }
 
+        public (double lambdaMax, double[] V) MaximalEigen() {
+            var Mtx = this.m_OpMtx;
+            int L = Mtx.RowPartitioning.LocalLength;
+
+            // extract sub-matrix
+            var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            FullSel.VariableSelector(this.VarGroup);
+            var mask = new BlockMask(FullSel);
+            var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
+
+            var bla = Part.MaximalEigen();
+
+            double[] Vret = new double[L];
+            mask.AccSubVec(bla.V, Vret);
+
+            return (bla.lambdaMax, Vret);
+        }
 
         /// <summary>
         /// fully analyses the matrix with
@@ -154,7 +171,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             Console.WriteLine("Doing symmetry test");
             bool[] Symmetry_Write = Symmetry();
             Console.WriteLine("Doing eigenvalues test");
-            double[] Eigenval_Write = Eigenval();
+            var Eigenval_Write = Eigenval();
 
             Console.WriteLine("");
             Console.WriteLine("==================================================================");
@@ -168,8 +185,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             Console.WriteLine("is positive definite: {0}", Symmetry_Write[1]);
             Console.WriteLine("==================================================================");
             Console.WriteLine("Eigenvalues:");
-            Console.WriteLine("maximal eigenvalue: {0}", Eigenval_Write[0]);
-            Console.WriteLine("minimal eigenvalue: {0}", Eigenval_Write[1]);
+            Console.WriteLine("maximal eigenvalue: {0}", Eigenval_Write.maxEigen);
+            Console.WriteLine("minimal eigenvalue: {0}", Eigenval_Write.minEigen);
 
             rankAnalysis(m_OpMtx, localRHS);
 
@@ -252,7 +269,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
         /// <summary>
         /// returns the condition number of the full matrix using MUMPS;
-        /// Note: 
+        /// From manual it is unclear in which norm the cond num is calculated
+        /// results from parallel and single execution differ!
         /// </summary>
         public double CondNumMUMPS() {
             using(new FuncTrace()) {
@@ -652,6 +670,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             
         }
 
+        public double Cond2Matlab() {
+            var Mtx = this.m_OpMtx;
+            return Mtx.cond();
+        }
 
         /// <summary>
         /// Test if the matrix is symmetric positive definite
@@ -709,7 +731,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// returns the maximum and minimum eigenvalues of the matrix
         /// </summary>
         /// <returns>Array myeigs =[MaximumEig, MinimumEig]</returns>
-        public double[] Eigenval() {
+        public (double maxEigen, double minEigen) Eigenval() {
+            
+            var Mtx = m_OpMtx;
 
             double[] eigenvalues = new double[2];
             MultidimensionalArray eigs = MultidimensionalArray.Create(1, 2);
@@ -723,7 +747,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 // if Octave should be used instead of Matlab....
                 //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
 
-                bmc.PutSparseMatrix(m_OpMtx, "FullMatrix");
+                bmc.PutSparseMatrix(Mtx, "FullMatrix");
                 bmc.PutVector(DepVars_subvec, "DepVars_subvec");
                 bmc.Cmd("output = zeros(2,1)");
                 bmc.Cmd("output(1) = eigs(FullMatrix(DepVars_subvec,DepVars_subvec),1,'lm');");
@@ -732,10 +756,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 bmc.Execute(false);
             }
 
-            double[] myeigs = new double[] { output[0, 0], output[1, 0] };
             Debug.Assert(output[0, 0].MPIEquals(), "value does not match on procs");
             Debug.Assert(output[1, 0].MPIEquals(), "value does not match on procs");
-            return myeigs;
+            return (output[0, 0], output[1, 0]);
         }
 
 
@@ -887,9 +910,22 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 // global condition numbers
                 // ========================
+                var stpw = new Stopwatch();
+                stpw.Start();
                 //double CondNo = this.CondNumMUMPS();
                 double CondNo = this.CondNumMatlab(); // matlab seems to be more reliable
+                //double CondNo = this.Cond2Matlab();
                 Ret.Add("TotCondNo-" + VarNames, CondNo);
+                stpw.Stop();
+                Console.WriteLine(stpw.Elapsed.TotalSeconds);
+
+                //var pair = this.Eigenval();
+                //Ret.Add("maxEigenvalue", pair.maxEigen);
+                //Ret.Add("minEigenvalue", pair.minEigen);
+                //var mineig = this.MinimalEigen();
+                //var maxeig = this.MaximalEigen();
+                //Ret.Add("lambdaMin", mineig.lambdaMin);
+                //Ret.Add("lambdaMax", maxeig.lambdaMax);
 
                 // block-wise condition numbers
                 // ============================
