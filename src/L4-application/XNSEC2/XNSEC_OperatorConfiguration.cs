@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Application.XNSE_Solver;
 using BoSSS.Application.XNSEC;
 using BoSSS.Application.XNSFE_Solver;
 using ilPSP;
@@ -49,11 +48,8 @@ namespace BoSSS.Solution.XNSECommon {
 
             //this.physParams = controlfile.PhysicalParametersCombustion;
 
-
-
-
             this.VariableReactionRateParameters = controlfile.VariableOneStepParameters;
-            if(MassFractionEquationsOK == false && this.NoOfChemicalSpecies != 1)
+            if (MassFractionEquationsOK == false && this.NoOfChemicalSpecies != 1)
                 throw new Exception("Invalid configuration. ");
         }
 
@@ -74,6 +70,7 @@ namespace BoSSS.Solution.XNSECommon {
             get;
             set;
         }
+
         public bool timeDerivativeConti_OK {
             get;
             set;
@@ -83,6 +80,7 @@ namespace BoSSS.Solution.XNSECommon {
             get;
             set;
         }
+
         /// <summary>
         /// If set to false, the temperature field will be set to 1.0 everywhere
         /// </summary>
@@ -90,9 +88,10 @@ namespace BoSSS.Solution.XNSECommon {
             get;
             set;
         }
+
         /// <summary>
         /// If set to false, the mass fraction field 0 will be set equal to one.
-        /// Note that 
+        /// Note that
         /// </summary>
         public bool MassFractionEquationsOK {
             get;
@@ -102,10 +101,12 @@ namespace BoSSS.Solution.XNSECommon {
         public bool manSolSource_OK { get; set; }
 
         public bool isSteady { get; set; }
+
         public double[] Lewis {
             get;
             private set;
         }
+
         public double Reynolds {
             get;
             private set;

@@ -277,13 +277,8 @@ namespace BoSSS.Application.XNSEC {
             //    m_thermBoundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, SpeciesList.ToArray());
             //}
 
-
-
-
             return boundaryMap;
         }
-
-
 
         protected virtual void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             int quadOrder = QuadOrder();
@@ -435,8 +430,8 @@ namespace BoSSS.Application.XNSEC {
         }
 
         protected virtual void DefineContinuityEquation(OperatorFactory opFactory, XNSEC_OperatorConfiguration config, int D, LevelSetUpdater lsUpdater) {
-            opFactory.AddEquation(new LowMachContinuity(D, "A", config, boundaryMap, EoS_A, Control.dtFixed));
-            opFactory.AddEquation(new LowMachContinuity(D, "B", config, boundaryMap, EoS_B, Control.dtFixed));
+            opFactory.AddEquation(new LowMachContinuity(D, "A", config, boundaryMap, EoS_A, Control.dtFixed, Control.ManufacturedSolution_Continuity));
+            opFactory.AddEquation(new LowMachContinuity(D, "B", config, boundaryMap, EoS_B, Control.dtFixed, Control.ManufacturedSolution_Continuity));
             opFactory.AddEquation(new InterfaceContinuityLowMach(config, D, LsTrk, config.isMatInt));
 
             //=== evaporation extension === //
@@ -450,8 +445,9 @@ namespace BoSSS.Application.XNSEC {
         }
 
         protected virtual void DefineMomentumEquations(OperatorFactory opFactory, XNSEC_OperatorConfiguration config, int d, int D, LevelSetUpdater lsUpdater) {
-            opFactory.AddEquation(new LowMachNavierStokes("A", d, D, boundaryMap, config, EoS_A));
-            opFactory.AddEquation(new LowMachNavierStokes("B", d, D, boundaryMap, config, EoS_B));
+            Func<double[], double, double> ManSol = d == 0 ? Control.ManufacturedSolution_MomentumX : Control.ManufacturedSolution_MomentumY;
+            opFactory.AddEquation(new LowMachMomentumEquations("A", d, D, boundaryMap, config, EoS_A, ManSol));
+            opFactory.AddEquation(new LowMachMomentumEquations("B", d, D, boundaryMap, config, EoS_B, ManSol));
             opFactory.AddEquation(new NSEInterface_LowMach("A", "B", d, D, boundaryMap, config, EoS_A, EoS_B, config.isMovingMesh));
             // opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, LsTrk, config)); // Maybe later...
 
@@ -470,8 +466,8 @@ namespace BoSSS.Application.XNSEC {
             //================================
 
             if (config.TemperatureEquationOK) {
-                opFactory.AddEquation(new LowMachEnergy("A", D, boundaryMap, config, EoS_A, Control.HeatRelease, Control.ReactionRateConstants, Control.MolarMasses, Control.TRef, Control.cpRef, Control.dtFixed, Control.myThermalWallType));
-                opFactory.AddEquation(new LowMachEnergy("B", D, boundaryMap, config, EoS_B, Control.HeatRelease, Control.ReactionRateConstants, Control.MolarMasses, Control.TRef, Control.cpRef, Control.dtFixed, Control.myThermalWallType));
+                opFactory.AddEquation(new LowMachEnergy("A", D, boundaryMap, config, EoS_A, Control.HeatRelease, Control.ReactionRateConstants, Control.MolarMasses, Control.TRef, Control.cpRef, Control.dtFixed, Control.myThermalWallType, Control.ManufacturedSolution_Energy));
+                opFactory.AddEquation(new LowMachEnergy("B", D, boundaryMap, config, EoS_B, Control.HeatRelease, Control.ReactionRateConstants, Control.MolarMasses, Control.TRef, Control.cpRef, Control.dtFixed, Control.myThermalWallType, Control.ManufacturedSolution_Energy));
                 if (config.isEvaporation) {
                     opFactory.AddEquation(new HeatInterface_Evaporation_Newton_LowMach("A", "B", D, m_thermBoundaryMap, config));
                 } else {
@@ -492,8 +488,9 @@ namespace BoSSS.Application.XNSEC {
             for (int s = 0; s < config.NoOfChemicalSpecies; s++) {
                 if (config.MassFractionEquationsOK) {
                     int chemicalSpeciesCounter = s;
-                    opFactory.AddEquation(new LowMachMassFraction("A", D, boundaryMap, config, EoS_A, chemicalSpeciesCounter, Control.ReactionRateConstants, Control.StoichiometricCoefficients, Control.MolarMasses));
-                    opFactory.AddEquation(new LowMachMassFraction("B", D, boundaryMap, config, EoS_B, chemicalSpeciesCounter, Control.ReactionRateConstants, Control.StoichiometricCoefficients, Control.MolarMasses));
+
+                    opFactory.AddEquation(new LowMachMassFraction("A", D, boundaryMap, config, EoS_A, chemicalSpeciesCounter, Control.ReactionRateConstants, Control.StoichiometricCoefficients, Control.MolarMasses, Control));
+                    opFactory.AddEquation(new LowMachMassFraction("B", D, boundaryMap, config, EoS_B, chemicalSpeciesCounter, Control.ReactionRateConstants, Control.StoichiometricCoefficients, Control.MolarMasses, Control));
                     if (Control.ChemicalReactionActive) {
                         opFactory.AddParameter(new ReactionRate(EoS_A));
                     }

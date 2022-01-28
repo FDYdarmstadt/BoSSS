@@ -94,6 +94,20 @@ namespace BoSSS.Solution.XNSECommon {
         }
     }
 
+    /// <summary>
+    /// Manufactured solution 
+    /// </summary>
+    public class LowMach_ManSolution : RHSManuSource, ISpeciesFilter {
+        public LowMach_ManSolution(string spcName, Func<double[], double, double> _sourceFunc ) : base(_sourceFunc) {
+            ValidSpecies = spcName;
+        }
+
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+    }
+
 
     /// <summary>
     /// Manufactured solution 

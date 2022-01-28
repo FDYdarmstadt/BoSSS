@@ -1,9 +1,7 @@
-﻿using BoSSS.Application.XNSE_Solver;
-using BoSSS.Application.XNSFE_Solver;
+﻿using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.XNSECommon;
 using ilPSP.Utils;
 using Newtonsoft.Json;
 using System;
@@ -17,12 +15,11 @@ namespace BoSSS.Application.XNSEC {
     [DataContract]
     [Serializable]
     public class XNSEC_MF_Control : XNSEC_Control {
+
         public override Type GetSolverType() {
             return typeof(XNSEC_MixtureFraction);
         }
     }
-
-
 
     /// <summary>
     /// Base control file
@@ -37,7 +34,6 @@ namespace BoSSS.Application.XNSEC {
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
         }
-
 
         public XNSEC_Control(int dgDeg, double _pRef, double _uRef, double _TRef, bool useAdimensional, double _LRef = 0.0, double[] FuelYs = null, double[] OxidizerYs = null, double epsilon = 5, bool analyticalSolutionOK = false) {
             this.CC = new ChemicalConstants();
@@ -82,26 +78,22 @@ namespace BoSSS.Application.XNSEC {
             this.MWRef = MLC.getAvgMW(MWs, OxidizerYs);
             this.rhoRef = pRef * MWRef / (8.314 * TRef * 1000); // Kg/m3. ok ;
             this.T_ref_Sutherland = 273;
-            this.cpRef = 1.4;// ThermoProperties.Calculate_Cp_Mixture(new double[] { 0.23, 0.77 }, new string[] { "O2", "N2" }, 300); //  
+            this.cpRef = 1.4;// ThermoProperties.Calculate_Cp_Mixture(new double[] { 0.23, 0.77 }, new string[] { "O2", "N2" }, 300); //
             Console.WriteLine("Cpref set to: " + this.cpRef);
-            this.muRef = MLC.getViscosityDim(273) ;//revisar!! antes estaba en 300... pero supongo que si sutherland law ocupa 273 debo poner eso tambien en 273 para mantenerme consistente
+            this.muRef = MLC.getViscosityDim(273);//revisar!! antes estaba en 300... pero supongo que si sutherland law ocupa 273 debo poner eso tambien en 273 para mantenerme consistente
 
-
-  
             this.B = CC.PreExponentialFactor;
             this.DRef = MLC.get_LambdaCp_Term(TRef) / rhoRef; // lambda/cp = rho Di
 
             this.uRef = _uRef > 0 ? _uRef : Math.Pow(DRef * epsilon, 0.5); // Reference velocity
             this.LRef = _LRef > 0 ? _LRef : DRef / uRef; // reference length
 
-     
-
             double Ta; // Activation temperature, K
             double heatRelease; //Mass heat release, KJ/kg
 
             Ta = CC.Ta;
 
-            heatRelease = this.CC.HeatReleaseMass ;
+            heatRelease = this.CC.HeatReleaseMass;
 
             double heatRelease_Ref = (TRef * cpRef);
 
@@ -123,11 +115,10 @@ namespace BoSSS.Application.XNSEC {
             double g = 9.8; // m/s2
             this.Froude = Math.Sqrt(uRef * uRef / (this.LRef * g));
 
-
             double Ta_adim = Ta / (TRef);
             this.ReactionRateConstants = new double[] { this.Damk, Ta_adim, 1.0, 1.0 };
 
-            if(!useAdimensional) { // Set up for a run with dimensional variables
+            if (!useAdimensional) { // Set up for a run with dimensional variables
                 this.pRef = _pRef; // reference pressure
                 this.TRef = 1;// reference temperature
                 this.MWRef = MLC.getAvgMW(MWs, OxidizerYs);
@@ -180,31 +171,27 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         /// <param name="DGp">Degree for velocity; pressure  will be one order lower.</param>
         public override void SetDGdegree(int DGp) {
-            if(DGp < 1)
+            if (DGp < 1)
                 throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
 
             base.FieldOptions.Clear();
             base.SetDGdegree(DGp);
 
-            
-
             FieldOptions.Add(VariableNames.ThermodynamicPressure, new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             var bla = this.EnableTemperature ? DGp : 0;
-            FieldOptions[VariableNames.Temperature] = new FieldOpts() { Degree = this.EnableTemperature? DGp:1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE };
-            for(int i = 0; i < this.NumberOfChemicalSpecies; i++) {
+            FieldOptions[VariableNames.Temperature] = new FieldOpts() { Degree = this.EnableTemperature ? DGp : 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE };
+            for (int i = 0; i < this.NumberOfChemicalSpecies; i++) {
                 FieldOptions.Add(VariableNames.MassFraction_n(i), new FieldOpts() { Degree = this.EnableTemperature ? DGp : 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             }
 
-            
             FieldOptions.Add(VariableNames.MixtureFraction, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             FieldOptions.Add(VariableNames.Rho, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             FieldOptions.Add("kReact", new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             FieldOptions.Add(VariableNames.cp, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
-
         }
 
         public void SetSaveOptions(string dataBasePath = null, int savePeriod = 1) {
-            if(dataBasePath != null) {
+            if (dataBasePath != null) {
                 savetodb = true;
                 DbPath = dataBasePath;
                 saveperiod = savePeriod;
@@ -213,7 +200,7 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public void SetTimeSteppingOptions(double dt, double endtime) {
-            if(dt <= 0) {
+            if (dt <= 0) {
                 this.TimesteppingMode = _TimesteppingMode.Steady;
             } else {
                 this.TimesteppingMode = _TimesteppingMode.Transient;
@@ -225,7 +212,7 @@ namespace BoSSS.Application.XNSEC {
 
         public void SetAdaptiveMeshRefinement(int amrLevel, int pseudoTimeStepsNo, int _AMR_startUpSweeps = -1) {
             NoOfTimesteps = pseudoTimeStepsNo;
-            if(amrLevel == 0) {
+            if (amrLevel == 0) {
                 return;
             }
             AdaptiveMeshRefinement = amrLevel > 1 ? true : false;
@@ -235,19 +222,13 @@ namespace BoSSS.Application.XNSEC {
             Console.WriteLine("No of start up sweeps " + AMR_startUpSweeps);
         }
 
-
-
-
-
-
-
         /// <summary>
         /// DELETE!!
         ///  i added this in order to be able to use  SetEqualityBasedSessionJobControlCorrelation with the HPC cluster
         ///  SetNameBasedSessionJobControlCorrelation doesnt work..
         /// </summary>
         [DataMember]
-        public int dummycounter = 1; 
+        public int dummycounter = 1;
 
         // Solver configuration
         //---------------------
@@ -292,7 +273,6 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         [DataMember]
         public double[] GravityDirection = { 0.0, 1.0, 0.0 };
-
 
         /// <summary>
         ///
@@ -349,7 +329,6 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public bool PlotAdditionalParameters = true;
 
-
         /// <summary>
         /// Sensor Variable
         /// </summary>
@@ -362,9 +341,7 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         [DataMember]
         public double[] PressureReferencePoint;
- 
 
-  
         /// <summary>
         /// Desired BDFOrder for the timesteper
         /// </summary>
@@ -383,9 +360,6 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public CpCalculationMode HeatCapacityMode = CpCalculationMode.constant;
 
- 
-
-
         //}
         /// <summary>
         /// Exact solution for Mass Fractions, for each species (either A or B).
@@ -393,8 +367,6 @@ namespace BoSSS.Application.XNSEC {
         [NonSerialized]
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>[]> ExactSolutionMassFractions;
-
-  
 
         [DataMember]
         public double[] FuelInletConcentrations = new double[] { 0.2, 0.0, 0.0, 0.0, 0.8 };
@@ -423,8 +395,6 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public double AdiabaticTemperature { get; set; }
 
-
-
         ///// <summary>
         ///// Viscosity, density and surface tension.
         ///// </summary>
@@ -441,7 +411,6 @@ namespace BoSSS.Application.XNSEC {
         //    rhoD_A = 1.0,
         //    rhoD_B = 1.0
 
-
         //};
 
         ///// <summary>
@@ -453,12 +422,9 @@ namespace BoSSS.Application.XNSEC {
         //    }
         //}
 
-
-
         public ChemicalConstants CC {
             get; set;
         } = new ChemicalConstants();
-
 
         /// <summary>
         /// Sets rho equal to one, i.e. there is no dependency of mom-i equations and energy. Just for debugging purposes
@@ -602,7 +568,6 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public bool UseSelfMadeTemporalOperator = true;
 
-
         /// <summary>
         /// Minimal and maximal values allowed for each variable
         /// </summary>
@@ -610,8 +575,6 @@ namespace BoSSS.Application.XNSEC {
         //[JsonIgnore]
         [DataMember]
         public Dictionary<string, Tuple<double, double>> VariableBounds = null;
-
-
 
         /// <summary>
         /// Reynolds homotopy values
@@ -622,8 +585,6 @@ namespace BoSSS.Application.XNSEC {
 
         [DataMember]
         public string NameFieldForSensor;
-
-
 
         /// <summary>
         /// Homotopy approach (None/manual/automatic)
@@ -643,24 +604,23 @@ namespace BoSSS.Application.XNSEC {
         public enum HomotopyVariableEnum {
             None = 0,
             Reynolds = 1,
-           VelocityInletMultiplier = 2,
-           HeatOfCombustion = 3,
+            VelocityInletMultiplier = 2,
+            HeatOfCombustion = 3,
         }
 
         [DataMember]
         public HomotopyVariableEnum m_HomotopyVariable;
-
 
         public HomotopyVariableEnum HomotopyVariable {
             get {
                 return m_HomotopyVariable;
             }
             set {
-                if(value == HomotopyVariableEnum.Reynolds)
+                if (value == HomotopyVariableEnum.Reynolds)
                     homotopieVariableName = HomotopieVariableNames.Reynolds;
-                else if(value == HomotopyVariableEnum.VelocityInletMultiplier)
+                else if (value == HomotopyVariableEnum.VelocityInletMultiplier)
                     homotopieVariableName = HomotopieVariableNames.VelocityMultiplier;
-                else if(value == HomotopyVariableEnum.HeatOfCombustion)
+                else if (value == HomotopyVariableEnum.HeatOfCombustion)
                     homotopieVariableName = HomotopieVariableNames.HeatOfReaction;
                 else
                     throw new Exception("Wrong homotopyvariable");
@@ -668,7 +628,7 @@ namespace BoSSS.Application.XNSEC {
                 m_HomotopyVariable = value;
             }
         }
-       
+
         // Physical Parameters
         //--------------------
 
@@ -684,17 +644,12 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public double Reynolds = 1.0;
 
-
         /// <summary>
         /// Starting value used within the homotopy algorithm.
         /// Should be a value which makes the problem "easy" to solve.
         /// </summary>
         [DataMember]
         public double StartingHomotopyValue = 1.0;
-
-
-        
-
 
         /// <summary>
         /// Rayleigh number. For the case of cavity natural convection Ra = Re*Re
@@ -870,6 +825,69 @@ namespace BoSSS.Application.XNSEC {
         public Func<double[], double> AnalyticY4 = null;
 
         /// <summary>
+        /// Manufactured solution Momentum X
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> ManufacturedSolution_MomentumX = null;
+
+        /// <summary>
+        /// Manufactured solution Momentum X
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> ManufacturedSolution_MomentumY = null;
+
+        /// <summary>
+        /// Manufactured solution Momentum X
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> ManufacturedSolution_MomentumZ = null;
+
+        /// <summary>
+        /// Manufactured solution continuity
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> ManufacturedSolution_Continuity = null;
+
+        /// <summary>
+        /// Manufactured solution Energy
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> ManufacturedSolution_Energy = null;
+
+        /// <summary>
+        /// Manufactured solution Species0
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> ManufacturedSolution_Species0 = null;
+
+        /// <summary>
+        /// Manufactured solution Species1
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> ManufacturedSolution_Species1 = null;
+
+        /// <summary>
+        /// Manufactured solution Species2
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> ManufacturedSolution_Species2 = null;
+
+        /// <summary>
+        /// Manufactured solution Species3
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public Func<double[], double, double> ManufacturedSolution_Species3 = null;
+
+        /// <summary>
         /// Number of time steps stored in ScalarFieldHistory
         /// </summary>
         [DataMember]
@@ -940,13 +958,10 @@ namespace BoSSS.Application.XNSEC {
             /// </summary>
             public const string VelocityMultiplier = "VelocityMultiplier";
 
-
             /// <summary>
-            /// 
+            ///
             /// </summary>
             public const string HeatOfReaction = "HeatOfReaction";
-
-
         }
 
         /// <summary>
@@ -1045,6 +1060,7 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         [DataMember]
         public double smoothingFactor = 10;
+
         /// <summary>
         /// HeatReleaseFactor per kilogram of fuel (The sum M_alpha cp_alpha v_alpha for alpha = 1 to ns accounting for the enthalphy of reaction).
         /// Note that for rich flames the heat release is smaller than the enthalpy of reaction.
@@ -1052,7 +1068,7 @@ namespace BoSSS.Application.XNSEC {
         [DataMember]
         public double HeatRelease {
             get {
-                if(m_HeatRelease == -1 && physicsMode == PhysicsMode.Combustion) {
+                if (m_HeatRelease == -1 && physicsMode == PhysicsMode.Combustion) {
                     Console.WriteLine("Warning!! Heat release should be set by the user for combustion applications. Setting it automatically to zero");
                     m_HeatRelease = 0.0;
                 }
