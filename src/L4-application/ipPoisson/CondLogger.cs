@@ -15,7 +15,6 @@ namespace BoSSS.Application.SipPoisson {
     /// Logs condition number of every timestep.
     /// Caution! Activating this will have a severe impact on performance!
     /// </summary>
-    [Serializable]
     public class CondLogger<T> : InSituPostProcessingModule where T : SipControl, new() {
 
         protected override void WriteHeader(TextWriter textWriter) {

@@ -382,6 +382,16 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             
         }
 
+        public double CondLAPACK() {
+            var Mtx = m_OpMtx.ToFullMatrixOnProc0();
+            double res = double.NaN;
+            if (this.m_OpMtx.RowPartitioning.MpiRank == 0) {
+                res=Mtx.Cond('I');
+            }
+            return res;
+        }
+
+
         /// <summary>
         /// Creates a new <see cref="MultigridOperator"/>, where all variables in <see cref="VarGroup"/> are preconditioned according to <paramref name="altMode"/>.
         /// (All Variables **not** in <see cref="VarGroup"/> are not preconditioned, i.e. the option <see cref="MultigridOperator.Mode.Eye"/> is chosen.
@@ -915,6 +925,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 //double CondNo = this.CondNumMUMPS();
                 double CondNo = this.CondNumMatlab(); // matlab seems to be more reliable
                 //double CondNo = this.Cond2Matlab();
+                //double CondNo = this.CondLAPACK();
                 Ret.Add("TotCondNo-" + VarNames, CondNo);
                 stpw.Stop();
                 Console.WriteLine(stpw.Elapsed.TotalSeconds);
