@@ -75,6 +75,7 @@ pages:
 #    - unzip archive.zip
 #    - cp $(find . -name *.html) .
 #    - rm -r -f archive*
+    - bash ../downloadValidationTests.sh
     - python ../doc/Generate-Index-Files-1.0/generate-index.py
     - dir 
   artifacts:
