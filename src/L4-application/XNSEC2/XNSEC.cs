@@ -760,6 +760,11 @@ namespace BoSSS.Application.XNSEC {
             bool SolverSuccess = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
             var overallstop = DateTime.Now;
             var overallduration = overallstop - overallstart;
+
+            //int D = this.Grid.SpatialDimension;
+            //double dtCFL = this.GridData.ComputeCFLTime(this.CurrentStateVector.Fields.Take(D), double.MaxValue);
+            //Console.WriteLine("CFL time is " + dtCFL);
+
             Console.WriteLine("Duration of this timestep: " + overallduration);
             Console.WriteLine($"done with time step {TimestepNo}");
 
