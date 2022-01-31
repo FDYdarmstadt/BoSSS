@@ -88,6 +88,11 @@ namespace BoSSS.Solution.LevelSetTools {
         /// Spline Level Set
         /// </summary>
         SplineLS,
+
+        /// <summary>
+        /// LevelSet updated by user defined external ILevelSetEvolver
+        /// </summary>
+        External,
                 
         /// <summary>
         /// An extension velocity computed from a Stokes equation; 
