@@ -52,6 +52,12 @@ namespace BoSSS.Solution.XheatCommon {
         [DataMember]
         public double rho_B;
 
+        /// <summary>
+        /// density of solid C
+        /// </summary>
+        [DataMember]
+        public double rho_C;
+
 
         /// <summary>
         /// heat capacity of fluid A
@@ -65,6 +71,12 @@ namespace BoSSS.Solution.XheatCommon {
         [DataMember]
         public double c_B;
 
+        /// <summary>
+        /// heat capacity of solid C
+        /// </summary>
+        [DataMember]
+        public double c_C;
+
 
         /// <summary>
         /// thermal conductivity of fluid A
@@ -77,6 +89,26 @@ namespace BoSSS.Solution.XheatCommon {
         /// </summary>
         [DataMember]
         public double k_B;
+
+        /// <summary>
+        /// thermal conductivity of solid C
+        /// </summary>
+        [DataMember]
+        public double k_C;
+
+        /// <summary>
+        /// thermal expansion coefficient of fluid A
+        /// used in Boussionesq approximation of buoyancy
+        /// </summary>
+        [DataMember]
+        public double alpha_A = 0.0;
+
+        /// <summary>
+        /// thermal expansion coefficient of fluid B
+        /// used in Boussionesq approximation of buoyancy
+        /// </summary>
+        [DataMember]
+        public double alpha_B = 0.0;
 
         /// <summary>
         /// enthalpy of vaporization, a.k.a. (latent) heat of vaporization. It Is always positive (heat is absorbed by the substance).
@@ -136,10 +168,18 @@ namespace BoSSS.Solution.XheatCommon {
             var cl = new ThermalParameters();
             cl.rho_A = this.rho_A;
             cl.rho_B = this.rho_B;
+            cl.rho_C = this.rho_C;
+
             cl.c_A = this.c_A;
             cl.c_B = this.c_B;
+            cl.c_C = this.c_C;
+
             cl.k_A = this.k_A;
             cl.k_B = this.k_B;
+            cl.k_C = this.k_C;
+
+            cl.alpha_A = this.alpha_A;
+            cl.alpha_B = this.alpha_B;
             cl.hVap = this.hVap;
             cl.T_sat = this.T_sat;
             cl.p_sat = this.p_sat;
@@ -162,10 +202,15 @@ namespace BoSSS.Solution.XheatCommon {
             return
                 cl.rho_A == this.rho_A &&
             cl.rho_B == this.rho_B &&
+            cl.rho_C == this.rho_C &&
             cl.c_A == this.c_A &&
             cl.c_B == this.c_B &&
+            cl.c_C == this.c_C &&
             cl.k_A == this.k_A &&
             cl.k_B == this.k_B &&
+            cl.k_C == this.k_C &&
+            cl.alpha_A == this.alpha_A &&
+            cl.alpha_B == this.alpha_B &&
             cl.hVap == this.hVap &&
             cl.T_sat == this.T_sat &&
             cl.p_sat == this.p_sat &&

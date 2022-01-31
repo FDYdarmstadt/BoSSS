@@ -307,58 +307,60 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="session">The session to be deleted.</param>
         public void DeleteSession(ISessionInfo session) {
-            //FileManager fileManager = GetFileManager();
+            using(var tr = new FuncTrace()) {
+                //FileManager fileManager = GetFileManager();
 
-            // Lists of file and directory paths marked for deletion.
-            // The delete operation will be executed at the very end, in
-            // order to avoid reading from files that have already been removed.
-            List<string> filesToDelete = new List<string>();
-            IList<string> dirsToDelete = new List<string>();
+                // Lists of file and directory paths marked for deletion.
+                // The delete operation will be executed at the very end, in
+                // order to avoid reading from files that have already been removed.
+                List<string> filesToDelete = new List<string>();
+                IList<string> dirsToDelete = new List<string>();
 
-            // Sessions subdirectory
-            string sessionsSubDir = Path.Combine(session.Database.Path,
-                StandardFsDriver.SessionsDir, session.ID.ToString());
-            dirsToDelete.Add(sessionsSubDir);
+                // Sessions subdirectory
+                string sessionsSubDir = Path.Combine(session.Database.Path,
+                    StandardFsDriver.SessionsDir, session.ID.ToString());
+                dirsToDelete.Add(sessionsSubDir);
 
-            // try/catch block to delete a session with missing time-step log
-            // (that happens when a session crashes before writing it's first timestep)
-            try {
-                // Timesteps
-                foreach (string timestepFile in GetTimestepFiles(session)) {
-                    filesToDelete.Add(timestepFile);
-                }
-
-                // Data subdirectory: distance data vectors
-                foreach (ITimestepInfo tmstp in GetTimestepInfos(session)) {
-                    List<string> storageVectorFiles = Utils.GetPathsFromGuid(
-                        tmstp.StorageID,
-                        Path.Combine(session.Database.Path, StandardFsDriver.DistVectorDataDir))
-                        .ToList();
-                    filesToDelete.AddRange(storageVectorFiles);
-                }
-#if DEBUG
-            } catch (FileNotFoundException fnf) {
-                if (fnf.Message.Contains("TimestepLog.txt")) {
-                    Console.WriteLine("No timestep log file found. Ignoring timestep files.");
-                }
-            }
-#else
-            } catch (FileNotFoundException) {
-                //Swallow
-            }
-#endif
-
-            // Delete all the files marked for deletion
-            foreach (string file in filesToDelete) {
+                // try/catch block to delete a session with missing time-step log
+                // (that happens when a session crashes before writing it's first timestep)
                 try {
-                    File.Delete(file);
-                } catch (FileNotFoundException) {
+                    // Timesteps
+                    foreach(string timestepFile in GetTimestepFiles(session)) {
+                        filesToDelete.Add(timestepFile);
+                    }
+
+                    // Data subdirectory: distance data vectors
+                    foreach(ITimestepInfo tmstp in GetTimestepInfos(session)) {
+                        List<string> storageVectorFiles = Utils.GetPathsFromGuid(
+                            tmstp.StorageID,
+                            Path.Combine(session.Database.Path, StandardFsDriver.DistVectorDataDir))
+                            .ToList();
+                        filesToDelete.AddRange(storageVectorFiles);
+                    }
+//#if DEBUG
+                } catch(Exception e) {
+                    tr.Error($"During Deletion of session (1): {e.GetType()}: {e.Message}");
                 }
-            }
-            foreach (string dir in dirsToDelete) {
-                try {
-                    Directory.Delete(dir, true);
-                } catch (FileNotFoundException) {
+//#else
+//            } catch (FileNotFoundException) {
+//                //Swallow
+//            }
+//#endif
+
+                // Delete all the files marked for deletion
+                foreach(string file in filesToDelete) {
+                    try {
+                        File.Delete(file);
+                    } catch(Exception e) {
+                        tr.Error($"During Deletion of session, trying to delete file {file}: {e.GetType()}: {e.Message}");
+                    }
+                }
+                foreach(string dir in dirsToDelete) {
+                    try {
+                        Directory.Delete(dir, true);
+                    } catch(Exception e) {
+                        tr.Error($"During Deletion of session, trying to delete directory {dir}: {e.GetType()}: {e.Message}");
+                    }
                 }
             }
         }

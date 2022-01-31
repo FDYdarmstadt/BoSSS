@@ -99,7 +99,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
             int iKref = this.GridDat.Cells.GetRefElementIndex(jCell);
 
             int NN = NeighCells.Length;
-            var NeighCellsK = new Tuple<int, int, int>[NN];
+            var NeighCellsK = new (int, int, int)[NN];
             int NNK = 0;
             for(int nn = 0; nn < NN; nn++) {
                 if(AcceptedMask[NeighCells[nn].Item1] == true) {

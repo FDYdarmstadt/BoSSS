@@ -57,7 +57,7 @@ namespace BoSSS.Solution.XNSECommon {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
             this.d = d;
             this.D = D;
-            if(D != 2 && D != 3)
+            if (D != 2 && D != 3)
                 throw new ArgumentOutOfRangeException("only supported for 2D and 3D");
             if(d < 0 || d >= D)
                 throw new ArgumentOutOfRangeException();
@@ -426,7 +426,7 @@ namespace BoSSS.Solution.XNSECommon {
                     AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, false));
                     break;
                     case ViscosityMode.FullySymmetric:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d, false));
                     break;
                     case ViscosityMode.Viscoelastic:
                     //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
@@ -440,13 +440,16 @@ namespace BoSSS.Solution.XNSECommon {
                     throw new NotImplementedException();
                 }
             }
-            
+
 
         }
 
         protected virtual void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
-            AddComponent(conv);
+            if (!isMovingMesh) {
+                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh);
+                AddComponent(conv);
+            }
+            // when moving mesh, nothing to do here
         }
     }
 
@@ -468,8 +471,11 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         protected override void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
-            AddComponent(conv);
+            if (!isMovingMesh) {
+                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton(d, dimension, rhoA, rhoB, LFFA, LFFB, material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName);
+                AddComponent(conv);
+            }
+            // when moving mesh, nothing to do here
         }
     }
 
@@ -537,8 +543,13 @@ namespace BoSSS.Solution.XNSECommon {
                       || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint
                       || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean
                       || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.Curvature_Fourier) {
-                    AddComponent(new CurvatureBasedSurfaceTension(d, D, sigma));
+                    AddComponent(new CurvatureBasedSurfaceTension(d, D, sigma));                    
                     AddParameter(BoSSS.Solution.NSECommon.VariableNames.Curvature);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d]);
+
+                    // == Implementation with SurfaceElementOperator
+                    //AddSurfaceComponent(new CurvatureBasedSurfaceTension_SurfaceOperator(d, D, sigma));
+                    //AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d]);
                 } else {
                     throw new NotImplementedException("Not implemented.");
                 }
@@ -704,28 +715,56 @@ namespace BoSSS.Solution.XNSECommon {
             if (config.isViscous && (mu != 0.0)) {
 
                 double penalty = dntParams.PenaltySafety;
-                switch(dntParams.ViscosityMode) {
-                    case ViscosityMode.Standard:
-                    case ViscosityMode.TransposeTermMissing:
-                    AddComponent(new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
-                    break;
+                if (dntParams.IBM_BoundaryType == IBM_BoundaryType.NoSlip) {
+                    switch (dntParams.ViscosityMode) {
+                        case ViscosityMode.Standard:
+                        case ViscosityMode.TransposeTermMissing:
+                            AddComponent(new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
+                            break;
 
-                    case ViscosityMode.FullySymmetric:
-                    //throw new NotImplementedException("todo");
-                    AddComponent(new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB_FullySymmetric(d, D, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
-                    break;
+                        case ViscosityMode.FullySymmetric:
+                            //throw new NotImplementedException("todo");
+                            AddComponent(new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB_FullySymmetric(d, D, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
+                            break;
 
-                    case ViscosityMode.Viscoelastic:
-                    //double reynoldsA = physParams.reynolds_A;
-                    //double reynoldsB = physParams.reynolds_B;
-                    //double betaA = ((PhysicalParametersRheology)physParams).beta_a;
-                    //double betaB = ((PhysicalParametersRheology)physParams).beta_b;
-                    //double[] penalty1 = dntParams.Penalty1;
-                    //double penalty2 = dntParams.Penalty2;
-                    throw new NotImplementedException("todo");
+                        case ViscosityMode.Viscoelastic:
+                            //double reynoldsA = physParams.reynolds_A;
+                            //double reynoldsB = physParams.reynolds_B;
+                            //double betaA = ((PhysicalParametersRheology)physParams).beta_a;
+                            //double betaB = ((PhysicalParametersRheology)physParams).beta_b;
+                            //double[] penalty1 = dntParams.Penalty1;
+                            //double penalty2 = dntParams.Penalty2;
+                            throw new NotImplementedException("todo");
 
-                    default:
-                    throw new NotImplementedException();
+                        default:
+                            throw new NotImplementedException();
+                    }
+                } else {
+                    if (dntParams.GNBC_Localization != NavierSlip_Localization.Everywhere) Console.WriteLine("Careful, sliplength might not be set in correct regions. Consider using 'NavierSlip_Localization.Everywhere'");
+                    switch (dntParams.ViscosityMode) {
+                        case ViscosityMode.Standard:
+                        case ViscosityMode.TransposeTermMissing:
+                            AddComponent(new BoSSS.Solution.XNSECommon.Operator.Viscosity.ViscosityAtIB_GradU(d, D, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true, dntParams.IBM_BoundaryType));
+                            break;
+
+                        case ViscosityMode.FullySymmetric:
+                            //throw new NotImplementedException("todo");
+                            AddComponent(new BoSSS.Solution.XNSECommon.Operator.Viscosity.ViscosityAtIB_GradU(d, D, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true, dntParams.IBM_BoundaryType));
+                            AddComponent(new BoSSS.Solution.XNSECommon.Operator.Viscosity.ViscosityAtIB_GradU_Transpose(d, D, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true, dntParams.IBM_BoundaryType));
+                            break;
+
+                        case ViscosityMode.Viscoelastic:
+                            //double reynoldsA = physParams.reynolds_A;
+                            //double reynoldsB = physParams.reynolds_B;
+                            //double betaA = ((PhysicalParametersRheology)physParams).beta_a;
+                            //double betaB = ((PhysicalParametersRheology)physParams).beta_b;
+                            //double[] penalty1 = dntParams.Penalty1;
+                            //double penalty2 = dntParams.Penalty2;
+                            throw new NotImplementedException("todo");
+
+                        default:
+                            throw new NotImplementedException();
+                    }
                 }
             }
            
@@ -800,9 +839,7 @@ namespace BoSSS.Solution.XNSECommon {
                 throw new NotImplementedException("Something missing here.");
             }
         }
-    }
-
-
+    }    
 
     /// <summary>
     /// Continuity equation for the incompressible case, (fluid/solid) immersed boundary
@@ -844,5 +881,58 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
         public override string CodomainName => codomainName;
+    }
+
+    /// <summary>
+    /// Extension for Laplace Beltrami of surface tension formulation to work on IBM
+    /// </summary>
+    public class NSEimmersedBoundary_SurfaceTension : SurfaceEquation {
+        string codomainName;
+
+        string phaseA, phaseB;
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
+
+        public NSEimmersedBoundary_SurfaceTension(string phaseA, string phaseB, int d, int D, int iLevSet) {
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+            codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
+            AddContactLineComponent(new SurfaceTension_LaplaceBeltrami_Contactline(d, D, iLevSet));
+
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)
+                .Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), NSECommon.VariableNames.NormalVector(D)))
+                .Cat(BoSSS.Solution.NSECommon.VariableNames.MaxSigma));
+        }
+    }
+
+    /// <summary>
+    /// Contactline Handling on IBM
+    /// </summary>
+    public class NSEimmersedBoundary_GNBC : SurfaceEquation {
+        string codomainName;
+
+        string phaseA, phaseB;
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
+
+        public NSEimmersedBoundary_GNBC(string phaseA, string phaseB, int d, int D, PhysicalParameters physParams, int iLevSet) {
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            double theta_e = physParams.theta_e;
+            double sigma = physParams.Sigma;
+
+            codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
+            AddContactLineComponent(new SurfaceTension_GNBC_Contactline(d, D, theta_e, sigma, iLevSet));
+
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)
+                .Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), NSECommon.VariableNames.NormalVector(D))));
+        }
     }
 }

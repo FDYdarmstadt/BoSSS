@@ -1,5 +1,6 @@
 ﻿using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
@@ -140,7 +141,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         /// <param name="sbs">sub block selection defined by dev</param>
         /// <param name="ExtRows">external rows collected from other MPI-processes on this proc</param>
-        public BlockMask(SubBlockSelector sbs, BlockMsrMatrix ExtRows=null) {
+        public BlockMask(SubBlockSelector sbs, BlockMsrMatrix ExtRows = null) {
             m_map = sbs.GetMapping;
             m_ExtRows = ExtRows;
             m_includeExternalCells = (ExtRows != null) && m_map.MpiSize > 1;
@@ -411,11 +412,11 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Get SubMatrix corresponding to this <see cref="BlockMask"/>.
         /// With the ignore flags, coupling blocks can be left out (e.g. blocks containing level-set).
-        /// If <paramref name="ignoreCellCoupling"/> is set true, only diagonal blocks are concidered.
+        /// If <paramref name="ignoreCellCoupling"/> is set true, only diagonal blocks are considered.
         /// Probably slower than <see cref="GetSubBlockMatrix(BlockMsrMatrix)"/>.
         /// </summary>
         /// <remarks>
-        /// If you are using <see cref="ignoreSpecCoupling"/>, you may dismiss coupling with other cells.
+        /// If you are using <paramref name="ignoreCellCoupling"/>, you may dismiss coupling with other cells.
         /// By comparison to variables, whose ordering is fixed in the mapping, this does not hold for species.
         /// E.g. iSpc=0 is not corresponding to the same species within every cell
         /// </remarks>
@@ -689,7 +690,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// returns the subvector
         /// corresponding to <see cref="BlockMask"/>.
-        /// Entries of subvector are taken from the local (<paramref name="locFullVector"/>)
+        /// Entries of subvector are taken from the local (<paramref name="locfullVector"/>)
         /// and external (<paramref name="extFullVector"/>) part of the unmasked vector.
         /// </summary>
         /// <param name="extFullVector">input, external part of unmasked vector</param>
@@ -719,29 +720,30 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="M">matrix distributed according to <paramref name="map"/></param>
         /// <returns></returns>
         public static BlockMsrMatrix GetAllExternalRows(MultigridMapping map, BlockMsrMatrix M) {
-            
-            var extcells = map.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + map.LocalNoOfBlocks);
+            using(new FuncTrace()) {
+                var extcells = map.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + map.LocalNoOfBlocks);
 
-            var SBS = new SubBlockSelector(map);
-            SBS.CellSelector(extcells, false);
-            var AllExtMask = new BlockMaskExt(SBS, 0);
+                var SBS = new SubBlockSelector(map);
+                SBS.CellSelector(extcells, false);
+                var AllExtMask = new BlockMaskExt(SBS, 0);
 
-            var ExternalRows_BlockI0 = AllExtMask.GetAllSubMatrixCellOffsets();
-            var ExternalRows_BlockN = AllExtMask.GetAllSubMatrixCellLength();
-            var ExternalRowsIndices = AllExtMask.m_GlobalMask;
+                var ExternalRows_BlockI0 = AllExtMask.GetAllSubMatrixCellOffsets();
+                var ExternalRows_BlockN = AllExtMask.GetAllSubMatrixCellLength();
+                var ExternalRowsIndices = AllExtMask.m_GlobalMask;
 
-            BlockPartitioning PermRow = new BlockPartitioning(ExternalRowsIndices.Count, ExternalRows_BlockI0, ExternalRows_BlockN, M.MPI_Comm, i0isLocal: true);
+                BlockPartitioning PermRow = new BlockPartitioning(ExternalRowsIndices.Count, ExternalRows_BlockI0, ExternalRows_BlockN, M.MPI_Comm, i0isLocal: true);
 
-            BlockMsrMatrix Perm = new BlockMsrMatrix(PermRow, M._RowPartitioning);
-            for (int iRow = 0; iRow < ExternalRowsIndices.Count; iRow++) {
-                Debug.Assert(M._RowPartitioning.IsInLocalRange(ExternalRowsIndices[iRow]) == false);
-                Perm[iRow + PermRow.i0, ExternalRowsIndices[iRow]] = 1;
-            }
+                BlockMsrMatrix Perm = new BlockMsrMatrix(PermRow, M._RowPartitioning);
+                for(int iRow = 0; iRow < ExternalRowsIndices.Count; iRow++) {
+                    Debug.Assert(M._RowPartitioning.IsInLocalRange(ExternalRowsIndices[iRow]) == false);
+                    Perm[iRow + PermRow.i0, ExternalRowsIndices[iRow]] = 1;
+                }
 
 #if TEST
-            Perm.SaveToTextFileSparseDebug("Perm");
+                Perm.SaveToTextFileSparseDebug("Perm");
 #endif
-            return BlockMsrMatrix.Multiply(Perm, M);
+                return BlockMsrMatrix.Multiply(Perm, M);
+            }
         }
 
         /// <summary>

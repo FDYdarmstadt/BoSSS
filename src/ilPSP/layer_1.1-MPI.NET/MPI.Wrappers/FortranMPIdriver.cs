@@ -107,8 +107,8 @@ namespace MPI.Wrappers {
             PlatformID[] p = new PlatformID[7];
             p[0] = PlatformID.Win32NT;
             p[1] = PlatformID.Unix;
-			p[2] = PlatformID.Unix;
-			p[3] = PlatformID.Unix;
+            p[2] = PlatformID.Unix;
+            p[3] = PlatformID.Unix;
             p[4] = PlatformID.Unix;
             p[5] = PlatformID.Unix;
             p[6] = PlatformID.MacOSX;
@@ -144,8 +144,23 @@ namespace MPI.Wrappers {
         /// </summary>
         internal FortranMPIdriver()
             : base(
-				new string[] { "msmpi.dll", "libmpi_f77.so", "libfmpich.so", "libmpi_mpifh.so", "libmpifort.so", "openmpi/libmpi_mpifh.so", "/usr/local/opt/open-mpi/lib/libmpi_mpifh.dylib" },
-                new string[7][][],
+				new string[] { "msmpi.dll", 
+                    "libmpi_f77.so", 
+                    "libfmpich.so", // 2: Linux: MPICH
+                    "libmpi_mpifh.so", // 3: Linux: OpenMPI
+                    "libmpifort.so", 
+                    "openmpi/libmpi_mpifh.so", 
+                    "/usr/local/opt/open-mpi/lib/libmpi_mpifh.dylib" // 6: MacOS 
+                },
+                new string[7][][] {
+                    null,
+                    null,
+                    new string[1][] { new string[] { "libBoSSSnative_mpi.so" } }, // fixes some load error that occurs with OpenMPI 2.0 and 3.0; for 4.0 it is not required but it does no harm; seems to correctly load `libopen-rte` and `libopen-pal`, which must be loaded before dynloading the mpi library (?)
+                    null,
+                    null,
+                    null,
+                    null
+                },
 				new GetNameMangling[] { Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, Utils.DynLibLoader.Identity, MacOsMangling  },
                 //new PlatformID[] {PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix },
                 Helper(),
@@ -412,13 +427,34 @@ namespace MPI.Wrappers {
         _MPI_WAITANY MPI_WAITANY;
 #pragma warning restore 649
 
+
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="count"></param>
-        /// <param name="array_of_requests"></param>
-        /// <param name="index"></param>
-        /// <param name="status"></param>
+        public void Wait(ref MPI_Request request, out MPI_Status status) {
+            using (new MPITracer()) {
+                int ierr;
+
+                // note: since the status is passed by reference/pointer, 
+                // some larger buffer does not do any harm 
+                // (if our internal MPI_Status structure is larger than the one actually defined by the MPI-implementation)
+
+                MPI_WAIT(ref request, out status, out ierr);
+                MPIException.CheckReturnCode(ierr);
+                FixMPIStatus(ref status);
+            }
+        }
+
+#pragma warning disable 649
+        delegate void _MPI_WAIT([In, Out] ref MPI_Request request, [Out] out MPI_Status stat, out int ierr);
+        _MPI_WAIT MPI_WAIT;
+#pragma warning restore 649
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
         public void Waitany(int count, MPI_Request[] array_of_requests, out int index, out MPI_Status status) {
             using (new MPITracer()) {
                 int ierr;
@@ -444,7 +480,6 @@ namespace MPI.Wrappers {
         /// <summary>
         /// this method deals with different sizes of MPI_Status in BoSSS and the actual MPI implementation.
         /// </summary>
-        /// <param name="array_of_statii"></param>
         void FixMPI_Status(MPI_Status[] array_of_statii) {
             unsafe {
                 fixed (MPI_Status* pStatii = array_of_statii) {
@@ -480,13 +515,44 @@ namespace MPI.Wrappers {
             }
         }
 
+        /// <summary>
+        /// this method deals with different sizes of MPI_Status in BoSSS and the actual MPI implementation.
+        /// </summary>
+        private void FixMPIStatus(ref MPI_Status st) {
+            unsafe {
+                Debug.Assert(sizeof(MPI_Status) <= 6 * sizeof(int), "implement higher schas");
+                int NativeSize = this.MPI_Status_Size;
+                if (NativeSize <= 5)
+                    st.i6 = 0;
+                else
+                    return;
+
+                if (NativeSize <= 4)
+                    st.i5 = 0;
+                else
+                    return;
+
+                if (NativeSize <= 3)
+                    st.i4 = 0;
+                else
+                    return;
+
+                if (NativeSize <= 2)
+                    st.i3 = 0;
+                else
+                    return;
+
+                if (NativeSize <= 1)
+                    st.i2 = 0;
+                else
+                    return;
+            }
+        }
+
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="count"></param>
-        /// <param name="array_of_requests"></param>
-        /// <param name="array_of_statii"></param>
         public void Waitall(int count, MPI_Request[] array_of_requests, MPI_Status[] array_of_statii) {
             using (new MPITracer()) {
                 int ierr;
@@ -834,36 +900,7 @@ namespace MPI.Wrappers {
             }
         }
 
-        private void FixMPIStatus(ref MPI_Status st) {
-            unsafe {
-                Debug.Assert(sizeof(MPI_Status) <= 6 * sizeof(int), "implement higher schas");
-                int NativeSize = this.MPI_Status_Size;
-                if (NativeSize <= 5)
-                    st.i6 = 0;
-                else
-                    return;
-
-                if (NativeSize <= 4)
-                    st.i5 = 0;
-                else
-                    return;
-
-                if (NativeSize <= 3)
-                    st.i4 = 0;
-                else
-                    return;
-
-                if (NativeSize <= 2)
-                    st.i3 = 0;
-                else
-                    return;
-
-                if (NativeSize <= 1)
-                    st.i2 = 0;
-                else
-                    return;
-            }
-        }
+        
 
 #pragma warning disable 649
         delegate void _MPI_GET_COUNT(ref MPI_Status status, ref MPI_Datatype datatype, out int count, out int ierr);

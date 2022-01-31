@@ -34,12 +34,17 @@ using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Application.CDG_ProjectionTest {
 
-
+    /// <summary>
+    /// Tests for <see cref="BoSSS.Foundation.ConstrainedDGprojection.ConstrainedDGFieldMk3"/>
+    /// </summary>
     public class CDGprojectionMain : BoSSS.Solution.Application {
 
         static void Main(string[] args) {
 
             //BoSSS.Solution.Application.InitMPI();
+            //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(2, 3, 2, 8, true, ProjectionStrategy.patchwiseOnly);
+            //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(1, 3, 2, 4, false, ProjectionStrategy.patchwiseOnly);
+            //BoSSS.Application.CDG_ProjectionTest.AllUpTest.AllUp(0, 2, 2, 2, true, ProjectionStrategy.globalOnly);
             //var AUT = new BoSSS.Application.CDG_ProjectionTest.AllUpTest();
             //AUT.AllUp(4, 3, 4, 2, false, ProjectionStrategy.globalOnly);
             ////AUT.AllUp_Cube(3, 4, 4, true);
@@ -59,7 +64,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         internal bool projectOnSameBasis = false;   // if false projection on a DG basis with degree + 1
         internal int projectionCase = 5;
 
-        internal ProjectionStrategy projectStrategy = ProjectionStrategy.globalOnly;
+        internal ProjectionStrategy projectStrategy = ProjectionStrategy.patchwiseOnly;
 
 
         protected override int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
@@ -163,17 +168,17 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         SinglePhaseField origin;
         SinglePhaseField result;
 
-        ConstrainedDGField cdgField;   
 
+        Basis cdgBasis;
 
         protected override void CreateFields() {
 
             Basis dgBasis = new Basis(this.GridData, degree);
             int cdgDegree = projectOnSameBasis ? degree : degree + 1;
-            Basis cdgBasis = new Basis(this.GridData, cdgDegree);
+            cdgBasis = new Basis(this.GridData, cdgDegree);
 
             origin = new SinglePhaseField(dgBasis, "origin");
-            cdgField = new ConstrainedDGField(cdgBasis);
+            
             result = new SinglePhaseField(cdgBasis, "result");
 
         }
@@ -438,10 +443,13 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
 
             // project and check cdgField
-            var returnFields = cdgField.ProjectDGField(origin, domain);
-            if (!returnFields.IsNullOrEmpty())
-                Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
-            cdgField.AccToDGField(1.0, result, domain);
+            using(var cdgField = ConstrainedDGFieldMk3.Factory(cdgBasis, domain, this.projectStrategy)) {
+                //var returnFields = cdgField.ProjectDGField(origin, domain);
+                cdgField.ProjectDGField(origin);
+                //if (!returnFields.IsNullOrEmpty())
+                //    Tecplot.PlotFields(returnFields, "CDGproj_patchField", 0.0, 3);
+                cdgField.AccToDGField(1.0, result, domain);
+            }
 
             var errField = origin.CloneAs();
             errField.AccLaidBack(-1.0, result, domain);
@@ -451,7 +459,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
             bool checkL2err = (gridResolution > 4 && degree > 2) ? (L2err < 1.0e-2) : true;
             Console.WriteLine("========================");
-            if (checkL2err && L2jump < 1.0e-9) {
+            if (checkL2err && L2jump < 1.0e-8) {
                 Console.WriteLine("// projection PASSED //");
                 _passed = true;
             } else {

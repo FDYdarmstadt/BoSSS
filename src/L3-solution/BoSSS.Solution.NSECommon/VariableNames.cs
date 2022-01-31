@@ -639,6 +639,16 @@ namespace BoSSS.Solution.NSECommon {
 
 
         /// <summary>
+        /// variable name for density
+        /// </summary>
+        public const string Mu = "Viscosity";
+
+        /// <summary>
+        /// variable name for the mixture heat capacity
+        /// </summary>
+        public const string cp = "MixtureHeatCapacity";
+
+        /// <summary>
         /// variable name for temperature
         /// </summary>
         public const string Temperature = "Temperature";
@@ -794,6 +804,11 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         public const string HeatFlux0Z = "HeatFlux0Z";
 
+        /// <summary>
+        /// variable name for the volumetric heat source
+        /// </summary>
+        static public string HeatSource = "HeatSource";
+        
         /// <summary>
         /// variable name for the heat flux vector
         /// </summary>

@@ -1,4 +1,6 @@
 ﻿using BoSSS.Solution.XdgTimestepping;
+using ilPSP;
+using ilPSP.Utils;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -75,8 +77,10 @@ namespace BoSSS.Solution.Control {
             }
             set {
                 base.TimesteppingMode = value;
-                if(value == _TimesteppingMode.Steady)
+                if(value == _TimesteppingMode.Steady) {
                     TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+                    
+                }
             }
         }
 
@@ -88,6 +92,14 @@ namespace BoSSS.Solution.Control {
         public override int GetHashCode() {
             return base.GetHashCode();
         }
+
+        
+        /// <summary>
+        /// List of active AMR level indicators 
+        /// </summary>
+        [DataMember]
+        public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
+
 
         /// <summary>
         /// 
@@ -121,9 +133,23 @@ namespace BoSSS.Solution.Control {
             if(other.TimeSteppingScheme != this.TimeSteppingScheme)
                 return false;
 
+            if(other.MultiStepInit != this.MultiStepInit)
+                return false;
+
+            if(other.LevelSet_ConvergenceCriterion != this.LevelSet_ConvergenceCriterion)
+                return false;
+
+            if (!IEnumerableExtensions.SetEquals(this.activeAMRlevelIndicators, other.activeAMRlevelIndicators))
+                return false;
+
 
             return true;
         }
 
+        /// <summary>
+        /// The termination criterion for fully coupled/implicit level-set evolution.
+        /// </summary>
+        [DataMember]
+        public double LevelSet_ConvergenceCriterion = 1.0e-6;
     }
 }

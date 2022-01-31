@@ -366,8 +366,10 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(!double.IsInfinity(m_penalty));
 
             double µ = penaltySizeFactor * m_penalty * m_penalty_base;
-            if(µ.IsNaNorInf())
-                throw new ArithmeticException("Inf/NaN in penalty computation.");
+            if (µ.IsNaNorInf()) {
+                string errStr = ($"Inf/NaN in penalty comp: {µ}; (m_penalty = {m_penalty}, m_penalty_base = {m_penalty_base}, jCellIn = {jCellIn}, jCellOut = {jCellOut}, cj_in = {cj[jCellIn]}, cj_out = {(jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0)}, penaltySizeFactor_A = {penaltySizeFactor_A}, penaltySizeFactor_B = {penaltySizeFactor_B})");
+                throw new ArithmeticException(errStr);
+            }
             return µ;
         }
 

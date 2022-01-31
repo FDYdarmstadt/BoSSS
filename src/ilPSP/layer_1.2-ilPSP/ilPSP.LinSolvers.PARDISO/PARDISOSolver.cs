@@ -30,9 +30,10 @@ namespace ilPSP.LinSolvers.PARDISO {
     /// a direct solver using the PARDISO library from the Intel MKL
     /// </summary>
     /// <remarks>
-    /// <b>IMPORTANT: Licensing issues:</b><br/>
+    /// **IMPORTANT: Licensing issues:**
     /// PARDISO does not ship with free license, neither source nor 
-    /// binaries compiled from it can be shipped with this software;<br/>
+    /// binaries compiled from it can be shipped with this software;
+    /// 
     /// PARDISO is ether distributed with the INTEL MKL library, or it may be downloaded
     /// from http://www.pardiso-project.org/;
     /// </remarks>
@@ -166,6 +167,18 @@ namespace ilPSP.LinSolvers.PARDISO {
         Version m_Version = Version.MKL;
 
         string m_LicenseCode = "";
+        int m_OrgMatrixLength = -1;
+
+        private int OrgLength {
+            get {
+                if (m_OrgMatrix != null) {
+                    m_OrgMatrixLength = m_OrgMatrix.RowPartitioning.LocalLength;
+                }
+                if (m_OrgMatrixLength == -1 && m_OrgMatrix == null)
+                    throw new Exception("Input Matrix deleted!");
+                return m_OrgMatrixLength;
+            }
+        }
 
         /// <summary>
         /// PARDISO license code; if this is set, a file called 'pardiso.lic' will be 
@@ -295,12 +308,16 @@ namespace ilPSP.LinSolvers.PARDISO {
             //
             using (var tr = new FuncTrace()) {
 
+                
+
                 // check input arguments
                 // =====================
 
-                if (x.Count != m_OrgMatrix.RowPartitioning.LocalLength)
+                int LOrg = OrgLength;
+
+                if (x.Count != LOrg)
                     throw new ArgumentException("length of x must be equal to matrix size.");
-                if (rhs.Count != m_OrgMatrix.RowPartitioning.LocalLength)
+                if (rhs.Count != LOrg)
                     throw new ArgumentException("length of rhs must be equal to matrix size.");
                 if (Math.Abs(Scale) <= double.Epsilon)
                     throw new ArgumentException("scale to small.");
@@ -317,7 +334,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                 if (rhs.GetType() == typeof(double[]))
                     _rhs = (double[])((ICloneable)rhs).Clone();
                 else {
-                    int L = m_OrgMatrix.RowPartitioning.LocalLength;
+                    int L = LOrg;
                     _rhs = new double[L];
                     for (int i = 0; i < L; i++) _rhs[i] = rhs[i];
                 }
@@ -328,30 +345,25 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                 IMutableMatrixEx Mtx;
                 bool throwAwayMtx;
-                if (d != null || Scale != 1.0)
-                {
+                if(d != null || Scale != 1.0) {
                     MsrMatrix _Mtx = new MsrMatrix(m_OrgMatrix);
                     Mtx = _Mtx;
-                    if ( Scale != 1.0)
-                    {
+                    if(Scale != 1.0) {
                         // not very efficient, but _I_dont_care_ !
                         _Mtx.Scale(Scale);
                     }
-                    if(d != null)
-                    {
+                    if(d != null) {
                         int dLen = d.Count, L = _Mtx.RowPartitioning.LocalLength, i0 = (int)(_Mtx.RowPartitioning.i0);
-                        if ((L % dLen) != 0)
+                        if((L % dLen) != 0)
                             throw new ApplicationException("wrong length of 'd'.");
 
-                        for (int l = 0; l < L; l++)
-                        {
+                        for(int l = 0; l < L; l++) {
                             _Mtx[i0 + l, i0 + l] += d[l % dLen];
                         }
                     }
                     throwAwayMtx = true;
-                }
-                else { 
-                    throwAwayMtx  = false;
+                } else {
+                    throwAwayMtx = false;
                     Mtx = m_OrgMatrix;
                 }
 
@@ -391,7 +403,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                     // write back / return
                     if(x.GetType() != typeof(double[])) {
-                        int NN = m_OrgMatrix.RowPartitioning.LocalLength;
+                        int NN = LOrg;
                         for(int i = 0; i < NN; i++)
                             x[i] = _x[i];
                     }
@@ -443,6 +455,24 @@ namespace ilPSP.LinSolvers.PARDISO {
                     m_PardInt.msglvl = 1;
                 else
                     m_PardInt.msglvl = 0;
+            }
+        }
+
+        /// <summary>
+        /// Activates pivoting strategy for highly indefinite symmetric matrices.
+        /// Applies 1x1 and 2x2 Bunch-Kaufman pivoting during factorization.
+        /// </summary>
+        public bool SymmIndefPivot {
+            get {
+                return (m_PardInt.m_parm[20] == 3);
+            }
+            set {
+                if (value) {
+                    m_PardInt.m_parm[20] = 3; // pivoting for symm indefenite matrices}
+                    //m_PardInt.m_parm[9] = 8;
+                    m_PardInt.m_parm[10] = 1;
+                    m_PardInt.m_parm[12] = 1;
+                }
             }
         }
 
@@ -635,8 +665,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                     int[] jaClone = m_PardisoMatrix.ja.CloneAs();
 #endif
                    
-                    unsafe
-                    {
+                    unsafe {
                         fixed (double* px = _x, pb = _b, dparam = m_PardInt.m_dparam) {
                             fixed (int* ia = m_PardisoMatrix.ia, ja = m_PardisoMatrix.ja, iparm = m_PardInt.m_parm, __pt = m_PardInt.m_pt) {
                                 int n = m_PardisoMatrix.n;
@@ -668,7 +697,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     b = pb;
                                     x = px;
                                 } else {
-                                  
+
                                     b = (double*)Marshal.AllocHGlobal(n * sizeof(float));
                                     x = (double*)Marshal.AllocHGlobal(n * sizeof(float));
 
@@ -714,8 +743,7 @@ namespace ilPSP.LinSolvers.PARDISO {
 
                                     }
 
-                                    using (new BlockTrace("PARDISOINIT", tr))
-                                    {
+                                    using (new BlockTrace("PARDISOINIT", tr)) {
                                         wrapper.PARDISOINIT(pt, &mtype, iparm, dparam);
                                     }
 
@@ -736,10 +764,9 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     /* ..  Reordering and Symbolic Factorization.  This step also allocates */
                                     /*     all memory that is necessary for the factorization.              */
                                     /* -------------------------------------------------------------------- */
-                                    using (new BlockTrace("PARDISO_phase11", tr))
-                                    {
+                                    using (new BlockTrace("PARDISO_phase11", tr)) {
                                         phase = 11;
-                                        iparm[59] = 0; // in-core (1 == out-of-core)
+                                        iparm[59] = 0; // in-core (1 == out-of-core)                            
 
                                         //Console.Write("calling pardiso, phase 11... ");
                                         Phase_11.Start();
@@ -747,10 +774,12 @@ namespace ilPSP.LinSolvers.PARDISO {
                                                           &n, a, ia, ja, &idum, &nrhs,
                                                           iparm, &msglvl, &ddum, &ddum, &error, dparam);
                                         Phase_11.Stop();
+                                        SetMemoryConsumption();
                                         //Console.WriteLine("11: IPARAM(22) = {0}, IPARAM(23) = {1}", iparm[21], iparm[22]);
                                     }
                                     if (error != 0) {
                                         PARDISODispose();
+                                        SendErrorToOtherRanks(error);
                                         Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                         return false;
                                     }
@@ -761,8 +790,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     /* -------------------------------------------------------------------- */
                                     /* ..  Numerical factorization.                                         */
                                     /* -------------------------------------------------------------------- */
-                                    using (new BlockTrace("PARDISO_phase22", tr))
-                                    {
+                                    using (new BlockTrace("PARDISO_phase22", tr)) {
                                         phase = 22;
 
                                         Phase_22.Start();
@@ -775,6 +803,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                     if (error != 0) {
                                         // some error occured: release mem, dispose objects...
                                         PARDISODispose();
+                                        SendErrorToOtherRanks(error);
                                         Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                         //InitAndSolve.Stop();
                                         return false;
@@ -786,11 +815,10 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 /* -------------------------------------------------------------------- */
                                 phase = 33;
 
-                                iparm[7] = 0;       /* Max numbers of iterative refinement steps, 0 == auto */
+                                iparm[7] = 0;       /* Max numbers of iterative refinement steps, 0 == 2 steps */
 
                                 //m_foo.mkl_serv_mkl_set_num_threads(num_procs);
-                                using (new BlockTrace("PARDISO_phase33", tr))
-                                {
+                                using (new BlockTrace("PARDISO_phase33", tr)) {
                                     Phase_33.Start();
                                     wrapper.PARDISO(pt, &maxfct, &mnum, &mtype, &phase,
                                                       &n, a, ia, ja, &idum, &nrhs,
@@ -800,6 +828,7 @@ namespace ilPSP.LinSolvers.PARDISO {
                                 if (error != 0) {
                                     // some error occurred: release mem, dispose objects...
                                     PARDISODispose();
+                                    SendErrorToOtherRanks(error);
                                     Console.Error.WriteLine("PARDISO ERROR: " + wrapper.PARDISOerror2string(error));
                                     //InitAndSolve.Stop();
                                     return false;
@@ -824,6 +853,8 @@ namespace ilPSP.LinSolvers.PARDISO {
                         }
                     }
 
+
+
 #if DEBUG
                     //if(UseDoublePrecision)
                     //    Debug.Assert(ArrayTools.ListEquals<double>(a_DClone, m_PardisoMatrix.a_D), "PARDISO changed the matrix.");
@@ -846,7 +877,23 @@ namespace ilPSP.LinSolvers.PARDISO {
                     Debug.Assert(ArrayTools.ListEquals<int>(iaClone, m_PardisoMatrix.ia), "PARDISO changed the matrix.");
                     Debug.Assert(ArrayTools.ListEquals<int>(jaClone, m_PardisoMatrix.ja), "PARDISO changed the matrix.");
 #endif
-
+                    SendErrorToOtherRanks(0); // Everything is fine
+                } else {
+                    /*
+                     procs != 0 are waiting for the error code
+                     if error != 0 an error is thrown on all ranks of MPI_Comm (error code is distributed by rank0)
+                     see SendErrorToOtherRanks
+                     This makes pardiso exceptions catchable
+                    */
+                    int[] error = new int[] { -1 };
+                    unsafe {
+                        fixed (int* Buffer = error) {
+                            MPI_Status status;
+                            MPI.Wrappers.csMPI.Raw.Recv((IntPtr)Buffer, 1, csMPI.Raw._DATATYPE.INT, 0, 112, MpiComm, out status);
+                        }
+                    }
+                    if (error[0] != 0)
+                        wrapper.PARDISOerror2string(error[0]);
                 }
 
 
@@ -856,7 +903,47 @@ namespace ilPSP.LinSolvers.PARDISO {
             }
         }
 
+        // Broadcasts the error code over MPI_Comm.
+        // Receive is at the end of PardisoInitAndSolver
+        private void SendErrorToOtherRanks(int error) {
+            csMPI.Raw.Comm_Size(MpiComm, out int size);
+            for (int iProc = 1; iProc < size; iProc++) {
+                int[] buffer = new int[] { error };
+                unsafe {
+                    fixed (int* Buffer = buffer) {
+                        csMPI.Raw.Send((IntPtr)Buffer, 1, csMPI.Raw._DATATYPE.INT, iProc, 112, MpiComm);
+                    }
+                }
+            }
+        }
+
         int m_MpiRank = -1;
+
+        int m_PeakmemoryFac = -1;
+        int m_PeakmemorySol = -1;
+        int m_PermanentMemoryFac = -1;
+
+        void SetMemoryConsumption() {
+            m_PeakmemoryFac = Math.Max(m_PardInt.m_parm[14], m_PeakmemoryFac);
+            m_PermanentMemoryFac = Math.Max(m_PardInt.m_parm[15], m_PermanentMemoryFac);
+            m_PeakmemorySol = Math.Max(m_PardInt.m_parm[16], m_PeakmemorySol);
+        }
+
+        /// <summary>
+        /// Used memory for factorization in bates
+        /// </summary>
+        /// <returns></returns>
+        public long UsedMemory() {
+            return m_PermanentMemoryFac*1024;
+        }
+
+        /// <summary>
+        /// Returns the Peak Memory in MB
+        /// </summary>
+        /// <returns></returns>
+        public int PeakMemory() {
+            return Convert.ToInt32(Math.Max(m_PeakmemoryFac, m_PeakmemorySol + m_PermanentMemoryFac)/1024);
+        }
 
         /// <summary>
         /// disposal of things cached by Pardiso
@@ -907,7 +994,6 @@ namespace ilPSP.LinSolvers.PARDISO {
                 Array.Clear(m_PardInt.m_parm, 0, m_PardInt.m_parm.Length);
                 Array.Clear(m_PardInt.m_pt, 0, m_PardInt.m_pt.Length);
             }
-
             m_PardisoMatrix.Dispose();
             m_PardisoMatrix = null;
             m_PardInt.m_PardisoInitialized = false;
@@ -945,7 +1031,6 @@ namespace ilPSP.LinSolvers.PARDISO {
             if (m_PardInt.m_PardisoInitialized)
                 PARDISODispose();
             m_OrgMatrix = null;
-            
         }
 
         #endregion

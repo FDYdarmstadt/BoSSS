@@ -30,11 +30,12 @@ using ilPSP;
 using System.Diagnostics;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools;
-using BoSSS.Application.XNSE_Solver.Legacy;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
+using BoSSS.Application.XNSE_Solver.LoadBalancing;
+using System.Collections.Generic;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -43,7 +44,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// non-trivial cases.
     /// </summary>
     [TestFixture]
-    public static class XNSE_Solver_MPItest {
+    public class XNSE_Solver_MPItest {
 
         [Test]
         static public void ParallelRisingDroplet() {
@@ -59,27 +60,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [Test]
         static public void RotCube_GetSpeciesIDError() {
             // Tritt nur mit 4 cores auf !!!
-            
-            /*
-             * Unhandled Exception: System.NullReferenceException: Object reference not set to an instance of an object.
-   at BoSSS.Foundation.XDG.LevelSetTracker.GetSpeciesId(String species) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker.cs:line 571
-   at BoSSS.Foundation.XDG.LinearLevelSetFormVectorizer..ctor(ILevelSetForm _OrgComponent, LevelSetTracker _lsTrk) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\LinearLevelSetFormVectorizer.cs:line 53
-   at BoSSS.Foundation.XDG.LECQuadratureLevelSet`2.<>c__DisplayClass18_0.<.ctor>b__1(IEquationComponent eq) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\LECQuadratureLevelSet.cs:line 204
-   at BoSSS.Foundation.Quadrature.FluxQuadCommon.EquationComponentArgMapping`1..ctor(ISpatialOperator DiffOp, String CoDomVarName, IList`1 _fieldList, IList`1 _fieldList2, Func`2 F, Func`2 vectorizer) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\EquationComponentArgMapping.cs:line 122
-   at BoSSS.Foundation.Quadrature.FluxQuadCommon.EquationComponentArgMapping`1.GetArgMapping(ISpatialOperator op, Boolean CatParams, Func`2 F, Func`2 vectorizer) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\EquationComponentArgMapping.cs:line 64
-   at BoSSS.Foundation.XDG.LECQuadratureLevelSet`2..ctor(IGridData context, XSpatialOperatorMk2 DiffOp, M Matrix, V OffsetVec, UnsetteledCoordinateMapping RowMap, IList`1 ParamsMap, UnsetteledCoordinateMapping ColMap, LevelSetTracker lsTrk, Int32 _iLevSet, Int32 TrackerHistoryIndex, Tuple`2 SpeciesPair, ICompositeQuadRule`1 domAndRule) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\LECQuadratureLevelSet.cs:line 202
-   at BoSSS.Foundation.XDG.XSpatialOperatorMk2.XEvaluatorLinear.ComputeMatrix_Internal[M,V](M Matrix, V AffineOffset, Boolean OnlyAffine, Double alpha) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\XSpatialOperatorMk2_XEvaluators.cs:line 286
-   at BoSSS.Foundation.XDG.XSpatialOperatorMk2.XEvaluatorLinear.ComputeMatrix[M,V](M Matrix, V AffineOffset, Double alpha) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\XSpatialOperatorMk2_XEvaluators.cs:line 149
-   at BoSSS.Solution.XdgTimestepping.XdgTimestepping.ComputeOperatorMatrix(BlockMsrMatrix OpMtx, Double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary`2 AgglomeratedCellLengthScales, Double time, Int32 LsTrkHistoryIndex) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\XdgTimestepper.cs:line 526
-   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.AssembleMatrixCallback(BlockMsrMatrix& System, Double[]& Affine, BlockMsrMatrix& PrecondMassMatrix, DGField[] argCurSt, Boolean Linearization, ISpatialOperator& abstractOperator) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\XdgBDFTimestepping.cs:line 1087
-   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve_Increment(Int32 increment, Double phystime, Double dt, Boolean ComputeOnlyResidual) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\XdgBDFTimestepping.cs:line 1503
-   at BoSSS.Solution.XdgTimestepping.XdgBDFTimestepping.Solve(Double phystime, Double dt, Boolean ComputeOnlyResidual) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\XdgBDFTimestepping.cs:line 1320
-   at BoSSS.Solution.XdgTimestepping.XdgTimestepping.Solve(Double phystime, Double dt, Boolean SkipSolveAndEvaluateResidual) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XdgTimestepping\XdgTimestepper.cs:line 726
-   at BoSSS.Application.XNSE_Solver.XNSE`1.RunSolverOneStep(Int32 TimestepNo, Double phystime, Double dt) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver\XNSE.cs:line 447
-   at BoSSS.Solution.Application`1.RunSolverMode() in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution\Application.cs:line 2127
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_QuadratureError() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 62
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 96
-             */
+            // Fixed: Bei AMR wird LevelsetTracker "genullt", dieser wurde bis dato noch vollständig an die Flüsse übergeben
             var C = Rotating_Cube(4,30,2,true);
 
             using (var solver = new XNSE()) {
@@ -88,39 +69,13 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        //[Test]
+        [Test]
         static public void RotCube_OrderNotSupportedInHMF() {
-            // Passiert unabhängig von der Anzahl der Prozessoren
-            // partially HMF was executed for surface integration, instead Saye was selected
-            // Saye raises the order internally, higher order is not supported in HMF
-            /*
-             Unhandled Exception: System.NotSupportedException: Divergence-free basis for reference element 'BoSSS.Foundation.Grid.RefElements.Square' is not specified for degree 18, max. supported degree is 16.
-   at BoSSS.Foundation.XDG.Quadrature.HMF.DivergenceFreeBasis.GetPolynomials(RefElement simplex, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\DivergenceFreeBasis.cs:line 112
-   at BoSSS.Foundation.XDG.Quadrature.HMF.DivergenceFreeBasis.GetPolynomials(GridData g, RefElement element, Int32 p) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\DivergenceFreeBasis.cs:line 78
-   at BoSSS.Foundation.XDG.Quadrature.HMF.DivergenceFreeFaceBasis..ctor(GridData gridData, RefElement VolKref, Int32 degree, Int32 localEdge) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\DivergenceFreeFaceBasis.cs:line 32
-   at BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetEdgeSurfaceQuadRuleFactory.SwitchOrder(Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\LevelSetEdgeSurfaceQuadRuleFactory.cs:line 146
-   at BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetEdgeSurfaceQuadRuleFactory.GetQuadRuleSet(ExecutionMask mask, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\LevelSetEdgeSurfaceQuadRuleFactory.cs:line 93
-   at BoSSS.Foundation.Quadrature.CompositeQuadRule`1.Create[TDomain](IQuadRuleFactory`1 ruleFactory, Int32 order, TDomain domain) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\CompositeQuadRule.cs:line 255
-   at BoSSS.Foundation.Quadrature.QuadratureScheme`2.Compile(IGridData gridData, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\QuadratureScheme.cs:line 318
-   at BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetEdgeVolumeQuadRuleFactory.LambdaLevelSetSurfaceQuadrature..ctor(LevelSetEdgeVolumeQuadRuleFactory owner, IQuadRuleFactory`1 surfaceRuleFactory, Int32 maxLambdaDegree, CellMask mask) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\LevelSetEdgeVolumeQuadRuleFactory.cs:line 890
-   at BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetEdgeVolumeQuadRuleFactory.GetOptimizedRules(CellMask mask, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\LevelSetEdgeVolumeQuadRuleFactory.cs:line 315
-   at BoSSS.Foundation.XDG.Quadrature.HMF.LevelSetEdgeVolumeQuadRuleFactory.GetQuadRuleSet(ExecutionMask mask, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\LevelSetEdgeVolumeQuadRuleFactory.cs:line 244
-   at BoSSS.Foundation.Quadrature.EdgeRuleFromCellBoundaryFactory.GetQuadRuleSet(ExecutionMask mask, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\EdgeRuleFromCellBoundaryFactory.cs:line 183
-   at BoSSS.Foundation.XDG.XQuadFactoryHelper.ComplementaryRuleFactory.GetQuadRuleSet(ExecutionMask mask, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\Quadrature\XQuadFactoryHelper.cs:line 604
-   at BoSSS.Foundation.Quadrature.CompositeQuadRule`1.Create[TDomain](IQuadRuleFactory`1 ruleFactory, Int32 order, TDomain domain) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\CompositeQuadRule.cs:line 255
-   at BoSSS.Foundation.Quadrature.QuadratureScheme`2.Compile(IGridData gridData, Int32 order) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\QuadratureScheme.cs:line 318
-   at BoSSS.Foundation.XDG.CutCellMetrics.ComputeNonAgglomeratedMetrics() in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\CutCellMetrics.cs:line 197
-   at BoSSS.Foundation.XDG.XDGSpaceMetrics..ctor(LevelSetTracker lsTrk, XQuadFactoryHelper qfHelper, Int32 __quadorder, SpeciesId[] speciesIds, Int32 HistoyIndex) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\XDGSpaceMetrics.cs:line 52
-   at BoSSS.Foundation.XDG.LevelSetTracker.GetXDGSpaceMetrics(SpeciesId[] Spc, Int32 CutCellsQuadOrder, Int32 HistoryIndex) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation.XDG\LevelSetTracker_b.cs:line 100
-   at BoSSS.Solution.XNSECommon.Velocity0Mean.LevelSetParameterUpdate(DualLevelSet levelSet, Double time, IReadOnlyDictionary`2 DomainVarFields, IReadOnlyDictionary`2 ParameterVarFields) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.XNSECommon\Parameters.cs:line 231
-   at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.SingleLevelSetUpdater.UpdateParameters(IReadOnlyDictionary`2 DomainVarFields, IReadOnlyDictionary`2 ParameterVarFields, Double time) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.LevelSetTools\SolverWithLevelSetUpdater\LevelSetUpdater.cs:line 243
-   at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.UpdateParameters(IReadOnlyDictionary`2 DomainVarFields, IReadOnlyDictionary`2 ParameterVarFields, Double time) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.LevelSetTools\SolverWithLevelSetUpdater\LevelSetUpdater.cs:line 575
-   at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.InitializeParameters(IReadOnlyDictionary`2 DomainVarFields, IReadOnlyDictionary`2 ParameterVarFields, Double time) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.LevelSetTools\SolverWithLevelSetUpdater\LevelSetUpdater.cs:line 519
-   at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1.CreateEquationsAndSolvers(GridUpdateDataVaultBase L) in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution.LevelSetTools\SolverWithLevelSetUpdater\SolverWithLevelSetUpdater.cs:line 498
-   at BoSSS.Solution.Application`1.RunSolverMode() in B:\BoSSS-gitlab\public\src\L3-solution\BoSSS.Solution\Application.cs:line 2063
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_HMFonLineSegment() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 95
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 131
-             */
+            // in 3D partially HMF was executed for surface integration, although Saye was selected 
+            // For Saye the order is raised internally, to get same accuracy as with HMF
+            // This higher order may not be supported by HMF
+            // Fixed: in 3D now Saye is used everywhere
+
             var C = Rotating_Cube(4, 10, 3, false);
 
             using (var solver = new XNSE()) {
@@ -129,13 +84,21 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
-        //[Test]
-        static public void RotCube_CG_ProjectionOutOfMemoryException() {
-            /*
-            T.b.d.
-             */
-            var C = Rotating_Cube(3, 100, 3, false);
+        [Test]
+        public static void BadInitiallyDistributionTest(
+            [Values(true,false)] bool useAMR) {
+            var C = Rotating_Cube(k: 1, Res: 10, SpaceDim: 3, useAMR, useLoadBal: true , UsePredefPartitioning: true);
+            //Debugger.Launch();
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
 
+        [Test]
+        public static void SayeBug() {
+            // fallback method (which was not implemented at this point), would have been triggered in Saye quadrature
+            var C = Rotating_Cube(1, 20, 3, true, false);
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -143,141 +106,35 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         //[Test]
-        static public void Rotating_Cube_compare4to1() {
-            /*
-            Unhandled Exception:
-System.ArgumentException: DG degree seems different
-   at BoSSS.Foundation.TestingIO.OverwriteDGField(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 550
-   at BoSSS.Foundation.TestingIO.AbsError(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 254
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Rotating_Cube_compare4to1() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 168
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 206
-System.ArgumentException: DG degree seems different
-   at BoSSS.Foundation.TestingIO.OverwriteDGField(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 550
-   at BoSSS.Foundation.TestingIO.AbsError(ConventionalDGField f) in B:\BoSSS-gitlab\public\src\L2-foundation\BoSSS.Foundation\TestingIO.cs:line 254
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Rotating_Cube_compare4to1() in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 168
-   at BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.Main(String[] args) in B:\BoSSS-gitlab\public\src\L4-application\XNSE_Solver_MPItest\XNSE_Solver_MPItest.cs:line 206
-             */
-            var C = Rotating_Cube(3, 20, 2, false);
-            string bla = "IOTest_ofVelocity";
+        //public static void PardisoFailsInProjection() {
+        //    // 4 cores
+        //    var C = Rotating_Sphere(1, 10, 3, false, false, false);
+        //    using (var solver = new XNSE()) {
+        //        solver.Init(C);
+        //        solver.RunSolverMode();
+        //    }
+        //}
 
-            using (var solver = new XNSE()) {
-               
-
-                solver.Init(C);
-                solver.RunSolverMode();
-
-                var grid = solver.GridData;
-                var testIO = new TestingIO(grid, bla, 1);
-                LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
-                LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
-
-                var projCheck = new TestingIO(solver.GridData, $"{bla}.csv", 1);
-                projCheck.AddDGField(PhiDG);
-                projCheck.AddDGField(PhiCG);
-                projCheck.DoIOnow();
-
-                Assert.Less(projCheck.AbsError(PhiDG), 1.0e-15, "Mismatch in projected PhiDG between single-core and parallel run.");
-                Assert.Less(projCheck.AbsError(PhiCG), 1.0e-15, "Mismatch in projected PhiCG between single-core and parallel run.");
-            }
-        }
-
-        static public void Rotating_Cube_dswaperror_in_CG_in_ConstrainedDG() {
-            //tritt ab 8 cores auf
-            /*
-            at ilPSP.Utils.BLAS.DSWAP(System.Int32 & N, System.Double[] DX, System.Int32 & INCX, System.Double[] DY, System.Int32 & INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at ilPSP.Utils.BLAS.dswap(System.Int32 N, System.Double[] DX, System.Int32 INCX, System.Double[] DY, System.Int32 INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at ilPSP.Utils.GenericBlas.dswap[U, V](System.Int32 N, U DX, System.Int32 INCX, V DY, System.Int32 INCY)[0x00033] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at BoSSS.Foundation.myCG.Solve[Vec1, Vec2](Vec1 _x, Vec2 _R)[0x0004e] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField_geometric(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x00608] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x0000c] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Solution.LevelSetTools.ContinuityProjectionCDG.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain)[0x0000e] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.ContinuityProjection.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain, BoSSS.Foundation.Grid.CellMask PosMask, System.Boolean setFarFieldConstant)[0x00000] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.EnforceContinuity()[0x00047] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.UpdateLevelSet(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.UpdateLevelSets(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].UpdateLevelset(BoSSS.Foundation.DGField[] domainFields, System.Double time, System.Double dt, System.Double UnderRelax, System.Boolean incremental)[0x00084] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].CreateEquationsAndSolvers(BoSSS.Solution.GridUpdateDataVaultBase L)[0x00136] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.Application`1[T].RunSolverMode()[0x002c2] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at BoSSS.Solution.Application`1[T].AppEntry(System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)[0x00126] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at BoSSS.Solution.Application`1[T]._Main(System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory)[0x0019c] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at ilPSP.Utils.BLAS.DSWAP(System.Int32 & N, System.Double[] DX, System.Int32 & INCX, System.Double[] DY, System.Int32 & INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at ilPSP.Utils.BLAS.dswap(System.Int32 N, System.Double[] DX, System.Int32 INCX, System.Double[] DY, System.Int32 INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at ilPSP.Utils.GenericBlas.dswap[U, V](System.Int32 N, U DX, System.Int32 INCX, V DY, System.Int32 INCY)[0x00033] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at BoSSS.Foundation.myCG.Solve[Vec1, Vec2](Vec1 _x, Vec2 _R)[0x0004e] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField_geometric(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x00608] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x0000c] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Solution.LevelSetTools.ContinuityProjectionCDG.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain)[0x0000e] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.ContinuityProjection.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain, BoSSS.Foundation.Grid.CellMask PosMask, System.Boolean setFarFieldConstant)[0x00000] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.EnforceContinuity()[0x00047] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.UpdateLevelSet(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.UpdateLevelSets(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].UpdateLevelset(BoSSS.Foundation.DGField[] domainFields, System.Double time, System.Double dt, System.Double UnderRelax, System.Boolean incremental)[0x00084] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].CreateEquationsAndSolvers(BoSSS.Solution.GridUpdateDataVaultBase L)[0x00136] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.Application`1[T].RunSolverMode()[0x002c2] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at BoSSS.Solution.Application`1[T].AppEntry(System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)[0x00126] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at BoSSS.Solution.Application`1[T]._Main(System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory)[0x0019c] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at ilPSP.Utils.BLAS.DSWAP(System.Int32 & N, System.Double[] DX, System.Int32 & INCX, System.Double[] DY, System.Int32 & INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at ilPSP.Utils.BLAS.dswap(System.Int32 N, System.Double[] DX, System.Int32 INCX, System.Double[] DY, System.Int32 INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at ilPSP.Utils.GenericBlas.dswap[U, V](System.Int32 N, U DX, System.Int32 INCX, V DY, System.Int32 INCY)[0x00033] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at BoSSS.Foundation.myCG.Solve[Vec1, Vec2](Vec1 _x, Vec2 _R)[0x0004e] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField_geometric(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x00608] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x0000c] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Solution.LevelSetTools.ContinuityProjectionCDG.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain)[0x0000e] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.ContinuityProjection.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain, BoSSS.Foundation.Grid.CellMask PosMask, System.Boolean setFarFieldConstant)[0x00000] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.EnforceContinuity()[0x00047] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.UpdateLevelSet(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.UpdateLevelSets(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].UpdateLevelset(BoSSS.Foundation.DGField[] domainFields, System.Double time, System.Double dt, System.Double UnderRelax, System.Boolean incremental)[0x00084] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].CreateEquationsAndSolvers(BoSSS.Solution.GridUpdateDataVaultBase L)[0x00136] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.Application`1[T].RunSolverMode()[0x002c2] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at BoSSS.Solution.Application`1[T].AppEntry(System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)[0x00126] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at BoSSS.Solution.Application`1[T]._Main(System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory)[0x0019c] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at ilPSP.Utils.BLAS.DSWAP(System.Int32 & N, System.Double[] DX, System.Int32 & INCX, System.Double[] DY, System.Int32 & INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at ilPSP.Utils.BLAS.dswap(System.Int32 N, System.Double[] DX, System.Int32 INCX, System.Double[] DY, System.Int32 INCY)[0x00000] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at ilPSP.Utils.GenericBlas.dswap[U, V](System.Int32 N, U DX, System.Int32 INCX, V DY, System.Int32 INCY)[0x00033] in < 703f584d80dd4e49a9411258cbe2bc25 >:0
-  at BoSSS.Foundation.myCG.Solve[Vec1, Vec2](Vec1 _x, Vec2 _R)[0x0004e] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField_geometric(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x00608] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Foundation.ConstrainedDGField.ProjectDGField(BoSSS.Foundation.ConventionalDGField DGField, BoSSS.Foundation.Grid.CellMask mask)[0x0000c] in < 21918ad3e97d4dabb622fee35c80c6eb >:0
-  at BoSSS.Solution.LevelSetTools.ContinuityProjectionCDG.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain)[0x0000e] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.ContinuityProjection.MakeContinuous(BoSSS.Foundation.SinglePhaseField DGLevelSet, BoSSS.Foundation.SinglePhaseField LevelSet, BoSSS.Foundation.Grid.CellMask Domain, BoSSS.Foundation.Grid.CellMask PosMask, System.Boolean setFarFieldConstant)[0x00000] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.EnforceContinuity()[0x00047] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater + SingleLevelSetUpdater.UpdateLevelSet(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.LevelSetUpdater.UpdateLevelSets(System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] DomainVarFields, System.Collections.Generic.IReadOnlyDictionary`2[TKey, TValue] ParameterVarFields, System.Double time, System.Double dt, System.Double underRelax, System.Boolean incremental)[0x0003c] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].UpdateLevelset(BoSSS.Foundation.DGField[] domainFields, System.Double time, System.Double dt, System.Double UnderRelax, System.Boolean incremental)[0x00084] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.SolverWithLevelSetUpdater`1[T].CreateEquationsAndSolvers(BoSSS.Solution.GridUpdateDataVaultBase L)[0x00136] in < 588e4ab025a34bcc9d2f99849f5692f0 >:0
-  at BoSSS.Solution.Application`1[T].RunSolverMode()[0x002c2] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at BoSSS.Solution.Application`1[T].AppEntry(System.Func`1[TResult] ApplicationFactory, BoSSS.Solution.CommandLineOptions opt, T ctrlV2, T[] ctrlV2_ParameterStudy)[0x00126] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-  at BoSSS.Solution.Application`1[T]._Main(System.String[] args, System.Boolean noControlFile, System.Func`1[TResult] ApplicationFactory)[0x0019c] in < 0653aecb125e4ecb8c82ab4226db864f >:0
-
-
-========================================
-========================================
-MPI rank 5: IndexOutOfRangeException :
-Index was outside the bounds of the array.
-========================================
-========================================
-*/
-            var C = Rotating_Cube(3, 25, 3, false);
-
+        [Test]
+        public static void emptyMaskInSchwarz() {
+            // This test simulates bad initial distribution of void cells over ranks
+            // which would lead to an error within Schwarz solver
+            // because of voidcells Schwarzblocks would be empty
+            // Remedy: force repartitioning at startup and fallback in schwarz if only some blocks are empty ...
+            var C = PartlyCoverdDomain(2, 50, 2, false, true, false);
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.TargetBlockSize = 1000;
+            C.GridPartType = GridPartType.clusterHilbert;
+            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            C.DynamicLoadBalancing_On = true;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0;
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
             }
-        }
-
-        public static void LoadbalancingAndAMR_Activated() {
-            // 3 cores
-            var C = Rotating_Cube(2, 10, 3, true,true);
-
-            using (var solver = new XNSE()) {
-                solver.Init(C);
-                solver.RunSolverMode();
-            }
-        }
-
-        public static void RotatingSphereWithAMR() {
-            // 8 cores
-            var C = Rotating_Sphere(2,20,30,true,false);
         }
 
         /// <summary>
@@ -308,11 +165,11 @@ Index was outside the bounds of the array.
             return;
             */
 
+        
+
             BoSSS.Solution.Application.InitMPI();
-            //ParallelRisingDroplet();
-            RotCube_OrderNotSupportedInHMF();
-            //RotCube_CG_ProjectionOutOfMemoryException();
-            //Rotating_Cube_compare4to1();
+            //BadInitiallyDistributionTest();
+            emptyMaskInSchwarz();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -630,49 +487,39 @@ Index was outside the bounds of the array.
 
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false) {
-            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Cube);
+        public static XNSE_Control PartlyCoverdDomain(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
+            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Parted, UsePredefPartitioning);
         }
 
-        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false) {
-            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Sphere);
+        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
+            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Cube, UsePredefPartitioning);
+        }
+
+        public static XNSE_Control Rotating_Sphere(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
+            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Sphere, UsePredefPartitioning);
         }
 
         enum Geometry {
             Cube = 0,
             Sphere = 1,
+            Parted = 2
         }
 
-        private static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, bool useLoadBal, Geometry Gshape) {
-            XNSE_Control C = new XNSE_Control();
-            // basic database options
-            // ======================
+        public static Func<IGrid> GridFuncFactory(int SpaceDim, int Res, bool UsePredefPartitioning) {
+            double xMin = -1, yMin = -1, zMin = -1;
+            double xMax = 1, yMax = 1, zMax = 1;
 
-            C.savetodb = false;
-            C.ProjectName = "XNSE/IBM_test";
-            C.ProjectDescription = "rotating cube";
-            C.Tags.Add("rotating");
-            C.Tags.Add("level set");
-            C.Tags.Add(String.Format("{0}D",SpaceDim));
+            // Predefined Partitioning
+            Func<double[], int> MakeDebugPart = delegate (double[] X) {
+                double x = X[0];
+                double range = xMax - xMin;
+                double interval = range * 0.9 / (ilPSP.Environment.MPIEnv.MPI_Size-1); // last rank gets only a 10% stripe of the domain
+                return (int)((x - xMin) / interval);
+            };
 
-            // DG degrees
-            // ==========
-
-            C.SetFieldOptions(k, Math.Max(6, k * 2));
-            C.GridPartType = GridPartType.Hilbert;
-            C.SessionName = "XNSE_rotcube_test";
-            C.saveperiod = 1;
-
-
-            // grid and boundary conditions
-            // ============================
-
-            //// Create Grid
-            Console.WriteLine("...generating grid");
-            C.GridFunc = delegate {
-
-                double xMin = -1, yMin = -1, zMin = -1;
-                double xMax = 1, yMax = 1, zMax = 1;
+            // The Grid Function
+            return delegate {
+                
                 var _xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
                 var _yNodes = GenericBlas.Linspace(yMin, yMax, Res + 1);
                 var _zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
@@ -688,29 +535,17 @@ Index was outside the bounds of the array.
                     default:
                     throw new ArgumentOutOfRangeException();
                 }
-
+                if(UsePredefPartitioning) grd.AddPredefinedPartitioning("testgrid", MakeDebugPart);
                 grd.EdgeTagNames.Add(2, "Wall");
                 grd.DefineEdgeTags(delegate (double[] _X) {
                     return 2;
                 });
                 return grd;
-
             };
+        }
 
-            // Physical Parameters
-            // ===================
-            const double rhoA = 1;
-            const double muA = 1;
-
-            C.PhysicalParameters.IncludeConvection = false;
-            C.PhysicalParameters.Material = true;
-            C.PhysicalParameters.rho_A = rhoA;
-            C.PhysicalParameters.mu_A = muA;
-            double anglev = 10;
-            double[] pos = new double[SpaceDim];
-            double particleRad = 0.26;
-
-            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+        private static Func<double[], double, double> GenPhiFunc(double anglev, Geometry Gshape, int SpaceDim, double particleRad, double[] pos) {
+            return delegate (double[] X, double t) {
                 double angle = -(anglev * t) % (2 * Math.PI);
                 switch (Gshape) {
                     case Geometry.Cube:
@@ -735,10 +570,61 @@ Index was outside the bounds of the array.
                         default:
                         throw new NotImplementedException("Dimension not supported");
                     }
+                    case Geometry.Parted:
+                        return -X[0] + 0.7;
                     default:
                     throw new NotImplementedException("Shape unknown");
                 }
             };
+        }
+
+        private static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, bool useLoadBal, Geometry Gshape, bool UsePredefPartitioning) {
+            XNSE_Control C = new XNSE_Control();
+            // basic database options
+            // ======================
+
+            C.savetodb = false;
+            //C.DbPath = @"D:\trash_db";
+            C.ProjectName = "XNSE/IBM_test";
+            C.ProjectDescription = "rotating cube";
+            C.Tags.Add("rotating");
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D",SpaceDim));
+
+            // DG degrees
+            // ==========
+
+            C.SetFieldOptions(k, Math.Max(2, k * 2));
+            if (UsePredefPartitioning) {
+                C.GridPartType = GridPartType.Predefined;
+                C.GridPartOptions = "testgrid";
+            } else 
+                C.GridPartType = GridPartType.clusterHilbert;
+
+            C.SessionName = "XNSE_rotcube_test";
+            C.saveperiod = 1;
+
+
+            // grid and boundary conditions
+            // ============================
+
+            //// Create Grid
+            C.GridFunc = GridFuncFactory(SpaceDim, Res, UsePredefPartitioning);
+
+            // Physical Parameters
+            // ===================
+            const double rhoA = 1;
+            const double muA = 1;
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+            double anglev = 10;
+            double[] pos = new double[SpaceDim];
+            double particleRad = 0.261;
+
+            var PhiFunc = GenPhiFunc(anglev, Gshape, SpaceDim,particleRad,pos);
 
             Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
 
@@ -815,6 +701,7 @@ Index was outside the bounds of the array.
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
             C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0;
 
             // Timestepping
             // ============
@@ -829,9 +716,16 @@ Index was outside the bounds of the array.
             return C;
         }
 
+        public Func<double[], double, double> GetPhi() {
+            throw new NotImplementedException();
+        }
 
+        public GridCommons CreateGrid(int Resolution) {
+            throw new NotImplementedException();
+        }
 
-
-
+        public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
+            throw new NotImplementedException();
+        }
     }
 }

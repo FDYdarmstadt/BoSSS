@@ -90,6 +90,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 if(value == _TimesteppingMode.Steady) {
                     Option_LevelSetEvolution = LevelSetEvolution.None;
                     Option_LevelSetEvolution2 = LevelSetEvolution.None;
+                    Timestepper_LevelSetHandling = LevelSetHandling.None;
                 }
                 base.TimesteppingMode = value;
             }
@@ -128,6 +129,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public int LS_TrackerWidth = 1;
 
+        /// <summary>
+        /// Reinitilization period for Fastmarching
+        /// </summary>
+        [DataMember]
+        public int FastMarchingReInitPeriod = 0;
+
+        /// <summary>
+        /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the level-set
+        /// </summary>
+        [DataMember]
+        public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
     }
 

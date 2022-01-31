@@ -130,6 +130,16 @@ namespace BoSSS.Solution.Gnuplot {
                 this.Values = new double[0];
             }
 
+            /// <summary>
+            /// Empty constructor for deserialization only.
+            /// </summary>
+            private XYvalues() {
+
+                this.Name = null;
+                this.Abscissas = new double[0];
+                this.Values = new double[0];
+            }
+
             #region ICloneable Members
 
             /// <summary>
@@ -350,10 +360,22 @@ namespace BoSSS.Solution.Gnuplot {
         public string Title = null;
 
         /// <summary>
+        /// Set font of title of the plot.
+        /// </summary>
+        [DataMember]
+        public double TitleFont = 0.0;
+
+        /// <summary>
         /// Fontsize for the Labels.
         /// </summary>
         [DataMember]
         public double LabelFont = 16.0;
+
+        /// <summary>
+        /// Fontsize for the Labels title.
+        /// </summary>
+        [DataMember]
+        public double LabelTitleFont = 0.0;
 
         /// <summary>
         /// Turn the legend (the key, in gnuplot terms) on or off.
@@ -386,6 +408,13 @@ namespace BoSSS.Solution.Gnuplot {
         /// </summary>
         [DataMember]
         public double[] LegendPosition = null;
+
+        /// <summary>
+        /// If specified, the maximum number of rows Gnuplot should use in the legend (aka. key).
+        /// After this number of rows is exceeded, a new column should be started.
+        /// </summary>
+        [DataMember]
+        public int? Legend_maxrows = null;
 
         /// <summary>
         /// Swaps entries of legend
@@ -438,6 +467,37 @@ namespace BoSSS.Solution.Gnuplot {
         /// </summary>
         public double? bmargin = null;
 
+        /// <summary>
+        /// Modify Format, so all lines look distinct
+        /// </summary>
+        public void ModFormat() {
+            (DashTypes dash, PointTypes point, LineColors color) RawFormat = ((DashTypes)1, (PointTypes)1, (LineColors)7);
+            var dashesCount = Enum.GetNames(typeof(DashTypes)).Length;
+            var pointsCount = Enum.GetNames(typeof(PointTypes)).Length;
+            var colorsCount = Enum.GetNames(typeof(LineColors)).Length;
+            foreach (var g in dataGroups) {
+                var name = g.Name;
+
+                // modify format
+                ModDashType(name, RawFormat.dash);
+                ModPointType(name, RawFormat.point);
+                ModLineColor(name, RawFormat.color);
+
+                // cycle formats
+                RawFormat.point++;
+                if((int)RawFormat.point > pointsCount) {
+                    RawFormat.point = (PointTypes)1;
+                    RawFormat.dash++;
+                    if ((int)RawFormat.dash > dashesCount) {
+                        RawFormat.dash = (DashTypes)1;
+                        RawFormat.color--;
+                        if ((int)RawFormat.color < 1) {
+                            RawFormat.color = (LineColors)colorsCount;
+                        }
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Modification the dash type (<see cref="PlotFormat.DashType"/>).
@@ -674,6 +734,11 @@ namespace BoSSS.Solution.Gnuplot {
             Plot2Ddata result = new Plot2Ddata(mergedGroups.ToArray());
             result.LogX = this.LogX;
             result.LogY = this.LogY;
+            result.ShowLegend = this.ShowLegend || other.ShowLegend;
+            result.ShowXtics = this.ShowXtics || other.ShowXtics;
+            result.ShowYtics = this.ShowYtics || other.ShowYtics;
+            result.ShowX2tics = this.ShowX2tics || other.ShowX2tics;
+            result.ShowY2tics = this.ShowY2tics || other.ShowY2tics;
             return result;
         }
 
@@ -1185,18 +1250,26 @@ namespace BoSSS.Solution.Gnuplot {
                 gp.SetX2Label(this.X2label);
                 gp.SetY2Label(this.Y2label);
 
+                if (this.LabelTitleFont != 0.0) {
+                    gp.Cmd($"set xlabel font ',{this.LabelTitleFont}'");
+                    gp.Cmd($"set ylabel font ',{this.LabelTitleFont}'");
+                }
+
                 gp.SetTitle(this.Title);
 
+                if(this.TitleFont != 0.0) {
+                    gp.Cmd($"set title font ',{this.TitleFont}'");
+                }
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
-                    string command= $"set key font \",{this.LegendFont}\"";
+                    string command= $"set key font \",{this.LegendFont}\" ";
 
                     if ((this.LegendPosition != null) & (this.LegendAlignment != null))
-                        System.Console.WriteLine("legend position and legend alignment is set. Choose only one of them! Ignoring alignment ...");
+                        System.Console.Error.WriteLine("legend position and legend alignment is set. Choose only one of them! Ignoring alignment ...");
 
                     if (this.LegendPosition != null) {
-                        command+=String.Format("at {1:0.####e-00},{2:0.####e-00} vertical maxrows {0} ", this.dataGroups.Length, this.LegendPosition[0], this.LegendPosition[1]);
+                        command += String.Format("at {1:0.####e-00},{2:0.####e-00} vertical maxrows {0} ", this.Legend_maxrows != null ? this.Legend_maxrows.Value : this.dataGroups.Length, this.LegendPosition[0], this.LegendPosition[1]);
                     } else if (this.LegendAlignment != null) {
                         Dictionary<string, string> alignments = new Dictionary<string, string>();
                         alignments.Add("r", "right");
@@ -1223,9 +1296,16 @@ namespace BoSSS.Solution.Gnuplot {
                                 if (LegendAlignment[i] == kvp.Key)
                                     command += kvp.Value + " ";
                             }
+                        if(this.Legend_maxrows != null)
+                            command += $" maxrows {this.Legend_maxrows.Value} ";
+
                     } else {
                         //throw new ArgumentNullException("no alignment or position chosen");
+
+                        if(this.Legend_maxrows != null)
+                            command += $" maxrows {this.Legend_maxrows.Value} ";
                     }
+
                     if (this.LegendHorizontal == true)
                         command += "horizontal ";
 

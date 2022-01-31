@@ -60,6 +60,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public override IList<string> ParameterNames => parameters;
 
+        // nothing to do
+        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => null;
+
         IList<string> ILevelSetParameter.ParameterNames {
             get {
                 return new[] { BoSSS.Solution.NSECommon.VariableNames.Curvature };

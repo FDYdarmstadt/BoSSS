@@ -52,7 +52,6 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
-using BoSSS.Application.XNSE_Solver.Legacy;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -573,26 +572,27 @@ namespace BoSSS.Application.XNSE_Solver {
                         }
 
                     case LevelSetEvolution.ScalarConvection: {
-                            var LSM = new LevelSetMover(EvoVelocity,
-                                this.ExtensionVelocity,
-                                this.LsTrk,
-                                XVelocityProjection.CutCellVelocityProjectiontype.L2_plain,
-                                this.DGLevSet,
-                                this.BcMap);
+                        //var LSM = new LevelSetMover(EvoVelocity,
+                        //    this.ExtensionVelocity,
+                        //    this.LsTrk,
+                        //    XVelocityProjection.CutCellVelocityProjectiontype.L2_plain,
+                        //    this.DGLevSet,
+                        //    this.BcMap);
 
-                            int check1 = this.ExtensionVelocity.PushCount;
-                            int check2 = this.DGLevSet.PushCount;
+                        //int check1 = this.ExtensionVelocity.PushCount;
+                        //int check2 = this.DGLevSet.PushCount;
 
-                            this.DGLevSet[1].Clear();
-                            this.DGLevSet[1].Acc(1.0, DGLevSet_old);
-                            LSM.Advect(dt);
+                        //this.DGLevSet[1].Clear();
+                        //this.DGLevSet[1].Acc(1.0, DGLevSet_old);
+                        //LSM.Advect(dt);
 
-                            if (check1 != this.ExtensionVelocity.PushCount)
-                                throw new ApplicationException();
-                            if (check2 != this.DGLevSet.PushCount)
-                                throw new ApplicationException();
+                        //if (check1 != this.ExtensionVelocity.PushCount)
+                        //    throw new ApplicationException();
+                        //if (check2 != this.DGLevSet.PushCount)
+                        //    throw new ApplicationException();
 
-                            break;
+                        //break;
+                        throw new ApplicationException("Depecrated, disabled with removal of legacy XNSE");
                         }
                     case LevelSetEvolution.ExtensionVelocity: {
 

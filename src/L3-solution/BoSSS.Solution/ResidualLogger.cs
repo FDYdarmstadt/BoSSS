@@ -46,6 +46,7 @@ namespace BoSSS.Solution {
         Guid SessionGuid;
 
         Dictionary<string, double> m_Residuals = new Dictionary<string, double>();
+        string[] m_Species = new string[0];
 
         /// <summary>
         /// Ctor.
@@ -107,6 +108,15 @@ namespace BoSSS.Solution {
                     throw new ApplicationException("The residual " + KeyToCheck + " has been calculated earlier in this iteration."
                         + " Every residual can be calculated only once per iteration!");
             }
+        }
+
+        /// <summary>
+        /// Ugly workaround to set parameter once at runtime
+        /// </summary>
+        /// <param name="_WriteResidualsToConsole"></param>
+        public void SetOnce(bool _WriteResidualsToConsole) {
+            if (!WriteResidualsCalled)
+                WriteResidualsToConsole = _WriteResidualsToConsole;
         }
 
         bool m_WriteResidualsToConsole = true;
@@ -466,14 +476,46 @@ namespace BoSSS.Solution {
                 WriteResiduals(WriteTimeStepNo, this.m_LogResiduals);
         }
 
+        Dictionary<string, double[]> m_xResiduals = new Dictionary<string, double[]>();
         void WriteHeader(bool WriteTimeStepNo, TextWriter sw) {
             if (m_MPIrank == 0) {
-                sw.Write("#Line,");
+                sw.Write("{0,6},","#Line");
                 if (WriteTimeStepNo)
-                    sw.Write("#Time,");
-                sw.Write("#Iter");
+                    sw.Write("{0,6},", "#Time");
+                sw.Write("{0,6}", "#Iter");
+
+                // check for XDGFields
+                List<string> species = new List<string>();
                 foreach (var key in m_Residuals.Keys) {
-                    sw.Write("\t " + key);
+                    string[] ResSpc = key.Split('#');
+                    var res = ResSpc.First();
+                    var spc = ResSpc.Last();
+                    if (res != spc && !species.Contains(spc)) {
+                        species.Add(spc);
+                    }
+                }
+                m_Species = species.ToArray();
+                if (m_Species.Length != 0) {
+                    sw.Write("{0,6}", " #Spc");                    
+                }
+                sw.Write("\t");
+
+                if (m_Species.Length != 0) {
+                    int I = m_Species.Length;
+                    foreach (var pair in m_Residuals) {
+                        string[] ResSpc = pair.Key.Split('#');
+                        var key = ResSpc.First();
+                        if (!m_xResiduals.ContainsKey(key)) {
+                            m_xResiduals[key] = new double[I];
+                        }
+                    }
+                    foreach (var key in m_xResiduals.Keys) {
+                        sw.Write("{0,-20}", key);
+                    }
+                } else {
+                    foreach (var key in m_Residuals.Keys) {
+                        sw.Write("{0,-20}", key);
+                    }
                 }
                 sw.WriteLine();
                 sw.Flush();
@@ -481,18 +523,46 @@ namespace BoSSS.Solution {
         }
 
         void WriteResiduals(bool WriteTimeStepNo, TextWriter sw) {
-            if (m_MPIrank == 0) {
-                sw.Write(m_LineCounter);
-                sw.Write(",");
-                if (WriteTimeStepNo)
-                    sw.Write(m_TimeStep + ",");
-                sw.Write(m_IterationCounter);
+            if (m_MPIrank == 0) {                
+                if (m_Species.Length != 0) {
+                    int I = m_Species.Length;
+                    foreach (var pair in m_Residuals) {
+                        string[] ResSpc = pair.Key.Split('#');
+                        var key = ResSpc.First();
+                        var spc = ResSpc.Last();
+                        int i = key != spc ? Array.IndexOf(m_Species, spc) : 0;
+                        m_xResiduals[key][i] = pair.Value;
+                    }
+                    for(int i = 0; i < I; i++) {
+                        if (i == 0) {
+                            sw.Write("{0,6},", m_LineCounter);
+                            if (WriteTimeStepNo)
+                                sw.Write("{0,6},", m_TimeStep);
+                            sw.Write("{0,6}", m_IterationCounter);
+                        } else {
+                            sw.Write("{0,20}", "");
+                        }
+                        sw.Write("{0,6}", m_Species[i]);
+                        sw.Write("\t");
 
-                foreach (var value in m_Residuals.Values) {
-                    sw.Write("\t " + value.ToString("E", NumberFormatInfo.InvariantInfo));
+                        foreach (var value in m_xResiduals.Values) {
+                            sw.Write("{0,-20}", value[i].ToString("E", NumberFormatInfo.InvariantInfo));
+                        }
+                        sw.WriteLine();
+                        sw.Flush();
+                    }
+                } else {
+                    sw.Write("{0,6},", m_LineCounter);
+                    if (WriteTimeStepNo)
+                        sw.Write("{0,6},", m_TimeStep);
+                    sw.Write("{0,6}", m_IterationCounter);
+                    sw.Write("\t");
+                    foreach (var value in m_Residuals.Values) {
+                        sw.Write("{0,-20}", value.ToString("E", NumberFormatInfo.InvariantInfo));
+                    }
+                    sw.WriteLine();
+                    sw.Flush();
                 }
-                sw.WriteLine();
-                sw.Flush();
             }
         }
 

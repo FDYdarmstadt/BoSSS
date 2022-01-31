@@ -25,17 +25,106 @@ namespace BoSSS.Application.CDG_ProjectionTest {
     /// Unit test for the continuous L2-projection
     /// </summary>
     [TestFixture]
-   public class AllUpTest {
+    static public class AllUpTest {
 
-
+        /// <summary>
+        /// case 1, 2, 3
+        /// </summary>
         [Test]
-        public void AllUp(
+        static public void AllUp_globalOnly(
+#if DEBUG
+            [Values(0, 1, 2)] int caseNo,
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#else
+            [Values(0, 1, 2)] int caseNo,
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#endif
+            ) {
+            AllUp(caseNo, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.globalOnly);
+        }
+
+        /// <summary>
+        /// case 1
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case1(
+#if DEBUG
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#else
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#endif
+            ) {
+            AllUp(1, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+        }
+
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2(
+#if DEBUG
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#else
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#endif
+            ) {
+            AllUp(2, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+        }
+
+        /// <summary>
+        /// case 3
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case3(
+#if DEBUG
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#else
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#endif
+            ) {
+            AllUp(3, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+        }
+        
+        static public void AllUp(
+#if DEBUG
+            [Values(0, 1, 2)] int caseNo,
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+#else
             [Values(0, 1, 2)] int caseNo,
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+#endif
             ) {
 
             CDGprojectionMain p = null;
@@ -57,14 +146,26 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             Assert.IsTrue(p.passed);
         }
 
+        /// <summary>
+        /// LegendrePolynomial: case 3, 4, 5
+        /// </summary>
         [Test]
-        public void AllUp_LegendrePolynomial(
+        static public void AllUp_LegendrePolynomial(
+#if DEBUG
+            [Values(3, 4, 5)] int caseNo,
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+#else
             [Values(3, 4, 5)] int caseNo,
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(4, 8)] int gridResolution,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+#endif
             ) {
 
             CDGprojectionMain p = null;
@@ -85,13 +186,25 @@ namespace BoSSS.Application.CDG_ProjectionTest {
             Assert.IsTrue(p.passed);
         }
 
+        /// <summary>
+        /// Cube: case 6
+        /// </summary>
         [Test]
-        public void AllUp_Cube(
+        static public void AllUp_Cube(
+#if DEBUG
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis,
+            [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+
+#else
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
             [Values(true, false)] bool projectOnSameBasis,
             [Values(ProjectionStrategy.globalOnly, ProjectionStrategy.patchwiseOnly)] ProjectionStrategy projectStrategy
+#endif
             ) {
 
             CDGprojectionMain p = null;

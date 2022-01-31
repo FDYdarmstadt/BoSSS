@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Platform;
 using BoSSS.PlotGenerator;
+using ilPSP.Tracing;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -38,6 +39,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// <see cref="FieldStateConfiguration"/>. Default is zero.
         /// </summary>
         public int SuperSampling {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// <see cref="FieldStateConfiguration"/>. Default is false.
+        /// </summary>
+        public bool PlotShadowFields {
             get;
             set;
         }
@@ -105,54 +114,62 @@ namespace BoSSS.Application.BoSSSpad {
         /// Path where the output should be placed
         /// </param>
         protected Process PrepareProcess(FieldStateConfiguration config, string outputPath) {
-            if (Directory.Exists(outputPath) == false) {
-                Directory.CreateDirectory(outputPath);
-            }
-            string plotConfigPath = Path.Combine(outputPath, "plotConfig.xml");
-            FieldStateConfiguration.Serialize(plotConfigPath, config);
-
-            //Debugger.Launch();
-
-            // we are expecting 'BoSSS.PlotGen.dll' to be in the same dir as BoSSSpad binary
-            Assembly a = typeof(BoSSSpadMain).Assembly;
-            string plotGenPath = Path.Combine(
-                System.IO.Path.GetDirectoryName(a.Location),
-                "BoSSS.PlotGenerator.dll");
-
-            if (!File.Exists(plotGenPath)) {
-                throw new Exception(plotGenPath + " could not be found.");
-            }
-
-            string EscapeKack(string p) {
-                if(plotGenPath.Contains(' ')) {
-                    // i hate escaping
-                    if(System.IO.Path.DirectorySeparatorChar == '\\') {
-                        // probably windows --> use quotes
-                        p = "\"" + p + "\"";
-                    } else {
-                        // Linux etc.
-                        p = p.Replace(" ", "\\ ");
-                    }
-
+            using(var tr = new FuncTrace()) {
+                if(Directory.Exists(outputPath) == false) {
+                    Directory.CreateDirectory(outputPath);
                 }
-                return p;
+                string plotConfigPath = Path.Combine(outputPath, "plotConfig.xml");
+                tr.Info("plotConfigPath = " + plotConfigPath);
+                FieldStateConfiguration.Serialize(plotConfigPath, config);
+
+
+                //Debugger.Launch();
+
+                // we are expecting 'BoSSS.PlotGen.dll' to be in the same dir as BoSSSpad binary
+                Assembly a = typeof(BoSSS.PlotGenerator.PlotApplication).Assembly;
+                string plotGenPath = a.Location;
+                tr.Info("Plot Generator assembly: " + plotGenPath);
+
+                if(!File.Exists(plotGenPath)) {
+                    throw new Exception(plotGenPath + " could not be found.");
+                }
+
+                string EscapeKack(string p) {
+                    if(plotGenPath.Contains(' ')) {
+                        // i hate escaping
+                        if(System.IO.Path.DirectorySeparatorChar == '\\') {
+                            // probably windows --> use quotes
+                            p = "\"" + p + "\"";
+                        } else {
+                            // Linux etc.
+                            p = p.Replace(" ", "\\ ");
+                        }
+
+                    }
+                    return p;
+                }
+
+
+                Process plotProcess = new Process();
+                plotProcess.StartInfo.UseShellExecute = true;
+                plotProcess.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
+                plotProcess.StartInfo.WorkingDirectory = outputPath; // quick fix: Tecplot creates temp files, working dir needs to be writeable
+                if(config.NumberOfProcesses == 1) {
+                    plotProcess.StartInfo.FileName = "dotnet";
+                    plotProcess.StartInfo.Arguments = EscapeKack(plotGenPath) + " ";
+                } else {
+                    plotProcess.StartInfo.FileName = MPI_EXECUTABLE;
+                    plotProcess.StartInfo.Arguments =
+                        $" -n {config.NumberOfProcesses} dotnet {EscapeKack(plotGenPath)} ";
+                }
+                plotProcess.StartInfo.Arguments += "\"" + EscapeKack(plotConfigPath) + "\"";
+
+                tr.Info("Plot process file: " + plotProcess.StartInfo.FileName);
+                tr.Info("Plot process args: " + plotProcess.StartInfo.Arguments);
+
+
+                return plotProcess;
             }
-
-
-            Process plotProcess = new Process();
-            plotProcess.StartInfo.WindowStyle = ProcessWindowStyle.Minimized;
-            plotProcess.StartInfo.WorkingDirectory = outputPath; // quick fix: Tecplot creates temp files, working dir needs to be writeable
-            if (config.NumberOfProcesses == 1) {
-                plotProcess.StartInfo.FileName = "dotnet";
-                plotProcess.StartInfo.Arguments = EscapeKack(plotGenPath) + " ";
-            } else {
-                plotProcess.StartInfo.FileName = MPI_EXECUTABLE;
-                plotProcess.StartInfo.Arguments = 
-                    $" -n {config.NumberOfProcesses} dotnet {EscapeKack(plotGenPath)} ";
-            }
-            plotProcess.StartInfo.Arguments += "\"" + EscapeKack(plotConfigPath) + "\"";
-
-            return plotProcess;
         }
 
         /// <summary>
@@ -211,6 +228,24 @@ namespace BoSSS.Application.BoSSSpad {
         public static T WithSupersampling<T>(this T instruction, int superSampling)
             where T : ExportInstruction {
             instruction.SuperSampling = superSampling;
+            return instruction;
+        }
+
+        /// <summary>
+        /// Activates shadowfield plotting in <paramref name="instruction"/>.
+        /// </summary>
+        /// <typeparam name="T">
+        /// The sub-type of <see cref="ExportInstruction"/> to be used.
+        /// </typeparam>
+        /// <param name="instruction">
+        /// The instruction to be modified
+        /// </param>
+        /// <returns>
+        /// <paramref name="instruction"/>
+        /// </returns>
+        public static T WithShadowFields<T>(this T instruction)
+            where T : ExportInstruction {
+            instruction.PlotShadowFields = true;
             return instruction;
         }
 

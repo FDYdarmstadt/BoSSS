@@ -2004,7 +2004,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
             //C.LogPeriod = 10;
-            C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 10, mode = EvaporationLogging.Mode.LineInterface });
+            //C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 10, mode = EvaporationLogging.Mode.LineInterface });
 
             C.ContinueOnIoError = false;
 
@@ -2472,7 +2472,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
             //C.LogPeriod = 10;
-            C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 10, mode = EvaporationLogging.Mode.LineInterface });
+            //C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 10, mode = EvaporationLogging.Mode.LineInterface });
 
             C.ContinueOnIoError = false;
 
@@ -2749,7 +2749,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.LogValues = XNSE_Control.LoggingValues.EvaporationL;
             //C.LogPeriod = 10;
-            C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 10, mode = EvaporationLogging.Mode.LineInterface });
+            //C.PostprocessingModules.Add(new EvaporationLogging() { LogPeriod = 10, mode = EvaporationLogging.Mode.LineInterface });
 
             C.ContinueOnIoError = false;
 
@@ -3600,7 +3600,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectName = "XNSE/DropVaporization";
 
             //C.LogValues = XNSE_Control.LoggingValues.EvaporationC;
-            C.PostprocessingModules.Add(new EvaporationLogging() { mode = EvaporationLogging.Mode.CircleInterface });
+            //C.PostprocessingModules.Add(new EvaporationLogging() { mode = EvaporationLogging.Mode.CircleInterface });
             C.ContinueOnIoError = false;
 
             #endregion

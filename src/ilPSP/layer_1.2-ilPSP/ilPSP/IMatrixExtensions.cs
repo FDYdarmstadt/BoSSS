@@ -115,7 +115,7 @@ namespace ilPSP {
         /// <summary>
         /// reads a matrix from a text file;
         /// </summary>
-        /// <param name="txt">Text reade on the stream to load from.</param>
+        /// <param name="txt">Text read on the stream to load from.</param>
         /// <param name="M">pre-allocated matrix to store the loaded data</param>
         static public void LoadFromStream(this IMatrix M, TextReader txt) {
             NumberFormatInfo nfi = NumberFormatInfo.InvariantInfo;
@@ -844,10 +844,12 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// General matrix/matrix multiplication:
-        /// Based on Level 3 Blas routine dgemm
-        /// <paramref name="M"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="M"/>;
-        /// define wether Matrix A or B should be used as transpose by setting <paramref name="transA"/> and <paramref name="transB"/>
+        /// General matrix/matrix multiplication, 
+        /// based on Level 3 Blas routine `dgemm`:
+        /// 
+        /// <paramref name="C"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="C"/>;
+        /// 
+        /// Matrix A or B should be used as transpose by setting <paramref name="transA"/> and <paramref name="transB"/>
         /// </summary>
         static public void DGEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 C, double alpha, Matrix2 A, Matrix3 B, double beta, bool transA = false, bool transB = false) 
             where Matrix1 : IMatrix
@@ -1821,7 +1823,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Calculates the inverse of this matrix and stores the result in <paramref name="target"/>.
+        /// Calculates the inverse of this matrix and returns it without modifying the <paramref name="source"/>.
         /// </summary>
         /// <param name="source">the original matrix</param>
         static public MultidimensionalArray InvertTo<M1>(this M1 source)
@@ -1842,7 +1844,6 @@ namespace ilPSP {
         /// Calculates the inverse of this matrix and stores it in-place.
         /// </summary>
         /// <param name="Mtx"></param>
-        /// <param name="target">the return value</param>
         static public void InvertInPlace<M1>(this M1 Mtx)
             where M1 : IMatrix {
             int m_NoOfCols = Mtx.NoOfCols, m_NoOfRows = Mtx.NoOfRows;
@@ -2121,6 +2122,23 @@ namespace ilPSP {
             }
         }
 
+
+        /// <summary>
+        /// least-squares-solve (LAPACK function DGELSY).
+        /// </summary>
+        /// <param name="Mtx">Input, matrix of the least-squares system.</param>
+        /// <param name="b">right hand side</param>
+        /// <param name="RCOND">
+        /// Condition that defines the size of the eigenvalues that are
+        /// considered zero (e.g., to cope with numerical round-off). A
+        /// negative number implies that all non-negative eigenvalues are taken
+        /// into account
+        /// </param>
+        static public double[] LeastSquareSolve<T>(this T Mtx, double[] b, double RCOND = 1.0e-14) where T : IMatrix {
+            double[] x = new double[Mtx.NoOfCols];
+            Mtx.LeastSquareSolve(x, b, RCOND);
+            return x;
+        }
 
 
         /// <summary>
@@ -2460,6 +2478,9 @@ namespace ilPSP {
                         throw new ArgumentException("Illegal Matrix Norm Specifier.");
 
                     LAPACK.F77_LAPACK.DGETRF(ref N, ref N, A, ref LDA, IPIV, out INFO);
+                    if(INFO > 0)
+                        return double.PositiveInfinity;
+
                     if(INFO != 0)
                         throw new ArithmeticException("LAPACK DGETRF info is " + INFO);
                     
@@ -2653,7 +2674,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// Alternative for <see cref="GetSolutionSpace{T}(T)"> using Lapack routine dgesvd
+        /// Alternative for <see cref="GetSolutionSpace{T}(T)"/> using Lapack routine dgesvd
         /// Converts an implicit subspace representation (given as the solution of a singular matrix <paramref name="Mtx"/>)
         /// into an explicit representation.
         /// </summary>

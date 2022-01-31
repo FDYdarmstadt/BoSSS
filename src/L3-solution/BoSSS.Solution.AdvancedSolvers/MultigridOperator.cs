@@ -51,44 +51,39 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             return lsTrk;
         }
+        /*
+         * the following code does not scale, since it works on global data!
+         * (only activate it if you are sure what you are doing!)
 
         static private long[][] GetGlobalCellNeigbourship(UnsetteledCoordinateMapping map) {
             var GlobalNumberOfCells = map.GridDat.CellPartitioning.TotalLength;
             long[] externalCellsGlobalIndices = map.GridDat.iParallel.GlobalIndicesExternalCells;
-            long[][] globalCellNeigbourship = new long[GlobalNumberOfCells][];
             int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            long[][] globalCellNeigbourship = new long[J][];
+
             for (long j = 0; j < J; j++) {
-                long globalIndex = j + map.GridDat.CellPartitioning.i0;
                 // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
-                Tuple<int, int, int>[] cellNeighbours = map.GridDat.GetCellNeighboursViaEdges((int)j);
-                globalCellNeigbourship[globalIndex] = new long[cellNeighbours.Length];
+                var cellNeighbours = map.GridDat.GetCellNeighboursViaEdges((int)j);
+                globalCellNeigbourship[j] = new long[cellNeighbours.Length];
                 for (int i = 0; i < cellNeighbours.Length; i++) {
-                    globalCellNeigbourship[globalIndex][i] = cellNeighbours[i].Item1;
+                    globalCellNeigbourship[j][i] = cellNeighbours[i].Item1;
                 }
 
                 // translate local neighbour index into global index
-                for (int i = 0; i < globalCellNeigbourship[globalIndex].Length; i++) {
-                    if (globalCellNeigbourship[globalIndex][i] < J)
-                        globalCellNeigbourship[globalIndex][i] = globalCellNeigbourship[globalIndex][i] + map.GridDat.CellPartitioning.i0;
+                for (int i = 0; i < globalCellNeigbourship[j].Length; i++) {
+                    if (globalCellNeigbourship[j][i] < J)
+                        globalCellNeigbourship[j][i] = globalCellNeigbourship[j][i] + map.GridDat.CellPartitioning.i0;
                     else
-                        globalCellNeigbourship[globalIndex][i] = (int)externalCellsGlobalIndices[globalCellNeigbourship[globalIndex][i] - J];
+                        globalCellNeigbourship[j][i] = (int)externalCellsGlobalIndices[globalCellNeigbourship[j][i] - J];
                 }
             }
 
-            for (int globalIndex = 0; globalIndex < GlobalNumberOfCells; globalIndex++) {
-                int processID = !globalCellNeigbourship[globalIndex].IsNullOrEmpty() ? map.GridDat.MpiRank : 0;
-                processID = processID.MPIMax();
-                globalCellNeigbourship[globalIndex] = globalCellNeigbourship[globalIndex].MPIBroadcast(processID);
-            }
-
-            return globalCellNeigbourship;
+            return globalCellNeigbourship.MPI_AllGaterv();
         }
 
         /// <summary>
         /// Returns the cutcells + neighbours on a global level.
         /// </summary>
-        /// <param name="globalCellNeighbourship">
-        /// </param>
         static private BitArray GetGlobalNearBand(BitArray levelSetCells, UnsetteledCoordinateMapping map) {
             long[][] globalCellNeighbourship = GetGlobalCellNeigbourship(map);
             BitArray globalCutCells = new BitArray(checked((int)map.GridDat.CellPartitioning.TotalLength));
@@ -103,16 +98,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            for (int j = 0; j < globalCutCells.Length; j++) {
-                globalCutCells[j] = globalCutCells[j].MPIOr();
-            }
+            //for (int j = 0; j < globalCutCells.Length; j++) {
+            //    globalCutCells[j] = globalCutCells[j].MPIOr();
+            //}
+            globalCutCells.MPIOr();
             return globalCutCells;
         }
+        */
 
         int FindPhaseDGCoordinate(UnsetteledCoordinateMapping map, int iVar, int jCell, AggregationGridBasis[] bases) {
             LevelSetTracker lsTrk = GetTracker(map);
             var basis = bases[iVar];
-            if(lsTrk != null) {
+            if(lsTrk != null) {                
                 int N = basis.GetLength(jCell, map.BasisS[iVar].Degree);
                 return basis.N_Murks(jCell, 0, N);
             } else {
@@ -121,48 +118,91 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         static long FindReferencePointCell(UnsetteledCoordinateMapping map, AggregationGridBasis[] bases) {
-            int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            using(new FuncTrace()) {
+                int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
-            LevelSetTracker lsTrk = GetTracker(map);
-            BitArray Cells2avoid;
-            int neighborSearchDepth = 4;
-            int jFound = -1;
-            bool foundACell = false;
-            //Debugger.Launch();
-            while (!foundACell && neighborSearchDepth >= 0) {
-                if (lsTrk != null) {
-                    Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(1, neighborSearchDepth)).GetBitMask();
-                    for (int i = 0; i < neighborSearchDepth - 2; i++) {
-                        if (neighborSearchDepth - 2 > 0)
-                            Cells2avoid = GetGlobalNearBand(Cells2avoid.CloneAs(), map);
+                LevelSetTracker lsTrk = GetTracker(map);
+                BitArray Cells2avoid;
+                int neighborSearchDepth = 4;
+                int jFound = -1;
+                bool foundACell = false;
+                //Debugger.Launch();
+                while(!foundACell && neighborSearchDepth >= 0) {
+                    if(lsTrk != null) {
+                        Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(1, neighborSearchDepth)).GetBitMask();
+                        
+                        //for(int i = 0; i < neighborSearchDepth - 2; i++) {
+                        //    if(neighborSearchDepth - 2 > 0)
+                        //        Cells2avoid = GetGlobalNearBand(Cells2avoid.CloneAs(), map);
+                        //}
+                    } else {
+                        Cells2avoid = null;
                     }
-                } else {
-                    Cells2avoid = null;
-                }
-                for (int j = 0; j < J; j++) {
-                    if (bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
-                        jFound = j;
-                        break;
+                    for(int j = 0; j < J; j++) {
+                        // ratio for selecting the reference point:
+                        // We are searching for a cell where exactly one species is present;
+                        // we want to be outside of cut cells and also away from the near-band
+
+                        if(bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
+                            // cell is suitable for the reference point 
+                            jFound = j;
+                            break;
+                        }
                     }
+                    foundACell = jFound.MPIMax() >= 0;
+                    neighborSearchDepth -= 1;
                 }
-                foundACell = jFound.MPIMax() >= 0;
-                neighborSearchDepth -= 1;
+
+
+                jFound += (int)map.GridDat.CellPartitioning.i0;
+
+                long jFoundGlob = jFound.MPIMax();
+                if(jFoundGlob < 0)
+                    throw new ApplicationException("unable to find reference cell.");
+                return jFoundGlob;
             }
-            
-
-            jFound += (int)map.GridDat.CellPartitioning.i0;
-
-            long jFoundGlob = jFound.MPIMax();
-            if(jFoundGlob < 0)
-                throw new ApplicationException("unable to find reference cell.");
-            return jFoundGlob;
         }
 
         /// <summary>
-        /// global index
-        /// cell in which the reference point is located
+        /// (MPI) global index of cell in which the reference point is located
         /// </summary>
         long m_ReferenceCell;
+
+        /// <summary>
+        /// (MPI) global index of cell in which the reference point for floating/free-mean-value solutions (<see cref="ISpatialOperator.FreeMeanValue"/>) is located
+        /// </summary>
+        public long ReferenceCell {
+            get {
+                return m_ReferenceCell;
+            }
+        }
+
+        /// <summary>
+        /// - on owner process: <see cref="ReferenceCell"/> in local coordinates
+        /// - negative otherwise
+        /// </summary>
+        public int ReferenceCell_local {
+            get {
+                int RefCellLocal;
+                if(BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(ReferenceCell))
+                    RefCellLocal = BaseGridProblemMapping.GridDat.CellPartitioning.TransformIndexToLocal(ReferenceCell);
+                else
+                    RefCellLocal = int.MinValue;
+                return RefCellLocal;
+            }
+        }
+
+
+
+
+        //public int ReferenceCell {
+        //    get {
+        //        var part = BaseGridProblemMapping.GridDat.CellPartitioning;
+        //        if(part.IsInLocalRange()
+
+        //    }
+
+        //}
 
         /// <summary>
         /// Global Indices into <see cref="BaseGridProblemMapping"/>
@@ -170,46 +210,62 @@ namespace BoSSS.Solution.AdvancedSolvers {
         long[] m_ReferenceIndices;
 
         void DefineReferenceIndices() {
-            UnsetteledCoordinateMapping map = this.BaseGridProblemMapping;
-            AggregationGridBasis[] bases = this.Mapping.AggBasis;
+            using(new FuncTrace()) {
+                UnsetteledCoordinateMapping map = this.BaseGridProblemMapping;
+                AggregationGridBasis[] bases = this.Mapping.AggBasis;
 
 
-            if (map.BasisS.Count != bases.Length)
-                throw new ArgumentException();
-            if(bases.Length != FreeMeanValue.Length)
-                throw new ArgumentException(); 
+                if(map.BasisS.Count != bases.Length)
+                    throw new ArgumentException();
+                if(bases.Length != FreeMeanValue.Length)
+                    throw new ArgumentException();
 
-            if(FreeMeanValue.Any(b => b) == false) {
-                // none of the solution variables contains a "free mean value"
-                // => no need to do anything further
-                return;
-            }
-            var asd = bases[0].DGBasis;
-            int L = bases.Length;
-            m_ReferenceCell = FindReferencePointCell(map, bases);
-            bool onthisProc = BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(m_ReferenceCell);
-
-            if(onthisProc) {
-                int jRefLoc = BaseGridProblemMapping.GridDat.CellPartitioning.TransformIndexToLocal(m_ReferenceCell);
-
-
-                m_ReferenceIndices = new long[L];
-                for(int iVar = 0; iVar < L; iVar++) {
-                    if(FreeMeanValue[iVar]) {
-                        int kCoord = FindPhaseDGCoordinate(map, iVar, jRefLoc, bases);
-                        m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, jRefLoc, kCoord);
-                    } else {
-                        m_ReferenceIndices[iVar] = int.MinValue;
-                    }
+                if(FreeMeanValue.Any(b => b) == false) {
+                    // none of the solution variables contains a "free mean value"
+                    // => no need to do anything further
+                    return;
                 }
-            } else {
-                m_ReferenceIndices = null;
+                var asd = bases[0].DGBasis;
+                int L = bases.Length;
+                m_ReferenceCell = FindReferencePointCell(map, bases);
+                bool onthisProc = BaseGridProblemMapping.GridDat.CellPartitioning.IsInLocalRange(m_ReferenceCell);
+
+                if(onthisProc) {
+                    int jRefLoc = BaseGridProblemMapping.GridDat.CellPartitioning.TransformIndexToLocal(m_ReferenceCell);
+
+
+                    m_ReferenceIndices = new long[L];
+                    for(int iVar = 0; iVar < L; iVar++) {
+                        if(FreeMeanValue[iVar]) {
+                            int kCoord = FindPhaseDGCoordinate(map, iVar, jRefLoc, bases);
+#if Debug
+                        {
+                            var lsTrk = GetTracker(map);
+                            string spc = "0";
+                            if (lsTrk != null) {
+                                foreach (var s in lsTrk.SpeciesIdS) {
+                                    spc = lsTrk.GetSpeciesName(s);
+                                    if (lsTrk.Regions.IsSpeciesPresentInCell(s, jRefLoc))
+                                        break;
+                                }
+                            }                            
+                            Console.WriteLine("Setting reference point for variable#{0}, to phase {1} in cell {2}", iVar, spc, m_ReferenceCell);
+                        }
+#endif
+
+                            m_ReferenceIndices[iVar] = BaseGridProblemMapping.GlobalUniqueCoordinateIndex(iVar, jRefLoc, kCoord);
+                        } else {
+                            m_ReferenceIndices[iVar] = int.MinValue;
+                        }
+                    }
+                } else {
+                    m_ReferenceIndices = null;
+                }
+
+
+                int originRank = BaseGridProblemMapping.GridDat.CellPartitioning.FindProcess(m_ReferenceCell); // on this rank, the 'm_ReferenceIndices' are defined
+                m_ReferenceIndices = m_ReferenceIndices.MPIBroadcast(originRank);
             }
-
-
-            int originRank = BaseGridProblemMapping.GridDat.CellPartitioning.FindProcess(m_ReferenceCell); // on this rank, the 'm_ReferenceIndices' are defined
-            m_ReferenceIndices = m_ReferenceIndices.MPIBroadcast(originRank);
-
         }
 
 
@@ -323,13 +379,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-        /// <summary>
-        /// DG coordinate mapping on the original grid/mesh.
-        /// </summary>
-        public UnsetteledCoordinateMapping BaseGridProblemMapping {
-            get;
-            private set;
-        }
+       
 
 
         bool[] m_FreeMeanValue;
@@ -373,50 +423,52 @@ namespace BoSSS.Solution.AdvancedSolvers {
             IEnumerable<ChangeOfBasisConfig[]> cobc, bool[] FreeMeanValue)
             : this(null, basisSeq, _ProblemMapping, cobc) //
         {
-            if (!OperatorMatrix.RowPartitioning.EqualsPartition(_ProblemMapping))
-                throw new ArgumentException("Row partitioning mismatch.");
-            if (!OperatorMatrix.ColPartition.EqualsPartition(_ProblemMapping))
-                throw new ArgumentException("Column partitioning mismatch.");
-
-            if(FreeMeanValue == null) {
-                FreeMeanValue = new bool[_ProblemMapping.BasisS.Count];
-            } else {
-                if(FreeMeanValue.Length != _ProblemMapping.BasisS.Count)
-                    throw new ArgumentException();
-            }
-            m_FreeMeanValue = FreeMeanValue.CloneAs();
-
-            if (MassMatrix != null) {
-                if (!MassMatrix.RowPartitioning.Equals(_ProblemMapping))
+            using(new FuncTrace()) {
+                if(!OperatorMatrix.RowPartitioning.EqualsPartition(_ProblemMapping))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if (!MassMatrix.ColPartition.Equals(_ProblemMapping))
+                if(!OperatorMatrix.ColPartition.EqualsPartition(_ProblemMapping))
                     throw new ArgumentException("Column partitioning mismatch.");
-            }
-            
-            DefineReferenceIndices();
 
-            if (this.LevelIndex == 0) {
-
-                var bkup = SetPressureReferencePointMTX(OperatorMatrix);
-
-                if (this.IndexIntoProblemMapping_Local == null) {
-                    this.m_RawOperatorMatrix = OperatorMatrix;
-
-                    if (MassMatrix != null)
-                        this.m_RawMassMatrix = MassMatrix;  //is BlockMsrMatrix) ? ((BlockMsrMatrix)MassMatrix) : MassMatrix.ToMsrMatrix();
-                    else
-                        this.m_RawMassMatrix = null;
+                if(FreeMeanValue == null) {
+                    FreeMeanValue = new bool[_ProblemMapping.BasisS.Count];
                 } else {
-                    this.m_RawOperatorMatrix = new BlockMsrMatrix(this.Mapping, this.Mapping);
-                    
-                    OperatorMatrix.WriteSubMatrixTo(this.m_RawOperatorMatrix, this.IndexIntoProblemMapping_Global, default(long[]), this.IndexIntoProblemMapping_Global, default(long[]));
+                    if(FreeMeanValue.Length != _ProblemMapping.BasisS.Count)
+                        throw new ArgumentException();
+                }
+                m_FreeMeanValue = FreeMeanValue.CloneAs();
 
-                    if (MassMatrix != null) {
-                        this.m_RawMassMatrix = new BlockMsrMatrix(this.Mapping, this.Mapping);
-                        BlockMsrMatrix MMR = MassMatrix;
-                        MMR.WriteSubMatrixTo(this.m_RawMassMatrix, this.IndexIntoProblemMapping_Global, default(long[]), this.IndexIntoProblemMapping_Global, default(long[]));
+                if(MassMatrix != null) {
+                    if(!MassMatrix.RowPartitioning.Equals(_ProblemMapping))
+                        throw new ArgumentException("Row partitioning mismatch.");
+                    if(!MassMatrix.ColPartition.Equals(_ProblemMapping))
+                        throw new ArgumentException("Column partitioning mismatch.");
+                }
+
+                DefineReferenceIndices();
+
+                if(this.LevelIndex == 0) {
+
+                    var bkup = SetPressureReferencePointMTX(OperatorMatrix);
+
+                    if(this.IndexIntoProblemMapping_Local == null) {
+                        this.m_RawOperatorMatrix = OperatorMatrix;
+
+                        if(MassMatrix != null)
+                            this.m_RawMassMatrix = MassMatrix;  //is BlockMsrMatrix) ? ((BlockMsrMatrix)MassMatrix) : MassMatrix.ToMsrMatrix();
+                        else
+                            this.m_RawMassMatrix = null;
                     } else {
-                        this.m_RawMassMatrix = null;
+                        this.m_RawOperatorMatrix = new BlockMsrMatrix(this.Mapping, this.Mapping);
+
+                        OperatorMatrix.WriteSubMatrixTo(this.m_RawOperatorMatrix, this.IndexIntoProblemMapping_Global, default(long[]), this.IndexIntoProblemMapping_Global, default(long[]));
+
+                        if(MassMatrix != null) {
+                            this.m_RawMassMatrix = new BlockMsrMatrix(this.Mapping, this.Mapping);
+                            BlockMsrMatrix MMR = MassMatrix;
+                            MMR.WriteSubMatrixTo(this.m_RawMassMatrix, this.IndexIntoProblemMapping_Global, default(long[]), this.IndexIntoProblemMapping_Global, default(long[]));
+                        } else {
+                            this.m_RawMassMatrix = null;
+                        }
                     }
                 }
             }
@@ -546,7 +598,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 #if DEBUG
                         for(long iRow = this.m_OperatorMatrix.RowPartitioning.i0; iRow < this.m_OperatorMatrix.RowPartitioning.iE; iRow++) {
-                            Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
+                            //Debug.Assert(this.m_OperatorMatrix.GetNoOfNonZerosPerRow(iRow) > 0);
                         }
 #endif
                     }
@@ -709,91 +761,92 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         private MultigridOperator(MultigridOperator __FinerLevel, IEnumerable<AggregationGridBasis[]> basisES, UnsetteledCoordinateMapping _pm, IEnumerable<ChangeOfBasisConfig[]> cobc) {
-            if (basisES.Count() <= 0) {
-                throw new ArgumentException("At least one multigrid level is required.");
-            }
-            
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            this.BaseGridProblemMapping = _pm;
-            if (cobc.Count() < 1)
-                throw new ArgumentException();
-            this.m_Config = cobc.First();
-            this.FinerLevel = __FinerLevel;
-            
-            this.Mapping = new MultigridMapping(_pm, basisES.First(), this.Degrees);
+            using(new FuncTrace("MultigridOperator-internalCtor")) {
+                if(basisES.Count() <= 0) {
+                    throw new ArgumentException("At least one multigrid level is required.");
+                }
 
-            if (this.Mapping.LocalLength > this.BaseGridProblemMapping.LocalLength)
-                throw new ApplicationException("Something wrong.");
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                this.BaseGridProblemMapping = _pm;
+                if(cobc.Count() < 1)
+                    throw new ArgumentException();
+                this.m_Config = cobc.First();
+                this.FinerLevel = __FinerLevel;
+
+                this.Mapping = new MultigridMapping(_pm, basisES.First(), this.Degrees);
+
+                if(this.Mapping.LocalLength > this.BaseGridProblemMapping.LocalLength)
+                    throw new ApplicationException("Something wrong.");
 
 
-            if (basisES.Count() > 1) {
-                this.CoarserLevel = new MultigridOperator(this, basisES.Skip(1), _pm, cobc.Count() > 1 ? cobc.Skip(1) : cobc);
-            }
+                if(basisES.Count() > 1) {
+                    this.CoarserLevel = new MultigridOperator(this, basisES.Skip(1), _pm, cobc.Count() > 1 ? cobc.Skip(1) : cobc);
+                }
 
-            if (this.LevelIndex == 0 && this.Mapping.AggBasis.Any(agb => agb.ReqModeIndexTrafo)) {
-                int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                if (J != BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells)
-                    throw new Exception("No of local cells wrong");
-                Debug.Assert(J == this.BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
-                IndexIntoProblemMapping_Local = new int[this.Mapping.LocalLength];
+                if(this.LevelIndex == 0 && this.Mapping.AggBasis.Any(agb => agb.ReqModeIndexTrafo)) {
+                    int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                    if(J != BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells)
+                        throw new Exception("No of local cells wrong");
+                    Debug.Assert(J == this.BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
+                    IndexIntoProblemMapping_Local = new int[this.Mapping.LocalLength];
 #if DEBUG
                 IndexIntoProblemMapping_Local.SetAll(-23456);
 #endif
 
-                AggregationGridBasis[] AgBss = this.Mapping.AggBasis;
-                int[] Degrees = this.Mapping.DgDegree;
-                int NoFlds = Degrees.Length;
+                    AggregationGridBasis[] AgBss = this.Mapping.AggBasis;
+                    int[] Degrees = this.Mapping.DgDegree;
+                    int NoFlds = Degrees.Length;
 
-                for (int j = 0; j < J; j++) { // loop over cells
+                    for(int j = 0; j < J; j++) { // loop over cells
 
-                    for (int iFld = 0; iFld < NoFlds; iFld++) {
-                        int N = AgBss[iFld].GetLength(j, Degrees[iFld]); // By using the length of the aggregate grid mapping,
-                        //                                            we exclude XDG agglomerated cells.
+                        for(int iFld = 0; iFld < NoFlds; iFld++) {
+                            int N = AgBss[iFld].GetLength(j, Degrees[iFld]); // By using the length of the aggregate grid mapping,
+                                                                             //                                            we exclude XDG agglomerated cells.
 
-                        if (N > 0) {
-                            int k0 = this.Mapping.ProblemMapping.LocalUniqueCoordinateIndex(iFld, j, 0);
-                            int i0 = this.Mapping.LocalUniqueIndex(iFld, j, 0);
-                            for (int n = 0; n < N; n++) {
-                                //X[i0 + n] = INOUT_X[k0 + n];
-                                //B[i0 + n] = IN_RHS[k0 + n];
+                            if(N > 0) {
+                                int k0 = this.Mapping.ProblemMapping.LocalUniqueCoordinateIndex(iFld, j, 0);
+                                int i0 = this.Mapping.LocalUniqueIndex(iFld, j, 0);
+                                for(int n = 0; n < N; n++) {
+                                    //X[i0 + n] = INOUT_X[k0 + n];
+                                    //B[i0 + n] = IN_RHS[k0 + n];
 
-                                int n_trf = AgBss[iFld].N_Murks(j, n, N);
-                                Debug.Assert(n_trf >= 0);
+                                    int n_trf = AgBss[iFld].N_Murks(j, n, N);
+                                    Debug.Assert(n_trf >= 0);
 #if DEBUG
                                 Debug.Assert(IndexIntoProblemMapping_Local[i0 + n] < 0);
 
 #endif
-                                IndexIntoProblemMapping_Local[i0 + n] = k0 + n_trf;
-                                //Debug.Assert(i0 + n == 0 || IndexIntoProblemMapping_Local[i0 + n] > IndexIntoProblemMapping_Local[i0 + n - 1]);
-                                Debug.Assert(IndexIntoProblemMapping_Local[i0 + n] >= 0);
-                                Debug.Assert(IndexIntoProblemMapping_Local[i0 + n] < this.Mapping.ProblemMapping.LocalLength);
+                                    IndexIntoProblemMapping_Local[i0 + n] = k0 + n_trf;
+                                    //Debug.Assert(i0 + n == 0 || IndexIntoProblemMapping_Local[i0 + n] > IndexIntoProblemMapping_Local[i0 + n - 1]);
+                                    Debug.Assert(IndexIntoProblemMapping_Local[i0 + n] >= 0);
+                                    Debug.Assert(IndexIntoProblemMapping_Local[i0 + n] < this.Mapping.ProblemMapping.LocalLength);
+                                }
+                            } else {
+                                // should be a cell without any species.
+
+                                Debug.Assert(this.Mapping.AggBasis.Where(b => !(b is XdgAggregationBasis)).Count() == 0, "all must be XDG");
+                                Debug.Assert(this.Mapping.AggBasis.Where(b => ((XdgAggregationBasis)b).GetNoOfSpecies(j) != 0).Count() == 0, "no species in any cell allowed");
+
+                                //Debug.Assert();
                             }
-                        } else {
-                            // should be a cell without any species.
-
-                            Debug.Assert(this.Mapping.AggBasis.Where(b => !(b is XdgAggregationBasis)).Count() == 0, "all must be XDG");
-                            Debug.Assert(this.Mapping.AggBasis.Where(b => ((XdgAggregationBasis)b).GetNoOfSpecies(j) != 0).Count() == 0, "no species in any cell allowed");
-
-                            //Debug.Assert();
                         }
                     }
-                }
 
 #if DEBUG
                 Debug.Assert(IndexIntoProblemMapping_Local.Any(i => i < 0) == false);
 #endif
 
-                if (this.Mapping.ProblemMapping.MpiSize == 1) {
-                    this.IndexIntoProblemMapping_Global = this.IndexIntoProblemMapping_Local.Select(i => (long)i).ToArray();
-                } else {
-                    this.IndexIntoProblemMapping_Global = this.IndexIntoProblemMapping_Local.Select(i => (long)i).ToArray();
-                    long i0Proc = this.Mapping.ProblemMapping.i0;
-                    int L = this.IndexIntoProblemMapping_Global.Length;
-                    for (int i = 0; i < L; i++) {
-                        this.IndexIntoProblemMapping_Global[i] += i0Proc;
+                    if(this.Mapping.ProblemMapping.MpiSize == 1) {
+                        this.IndexIntoProblemMapping_Global = this.IndexIntoProblemMapping_Local.Select(i => (long)i).ToArray();
+                    } else {
+                        this.IndexIntoProblemMapping_Global = this.IndexIntoProblemMapping_Local.Select(i => (long)i).ToArray();
+                        long i0Proc = this.Mapping.ProblemMapping.i0;
+                        int L = this.IndexIntoProblemMapping_Global.Length;
+                        for(int i = 0; i < L; i++) {
+                            this.IndexIntoProblemMapping_Global[i] += i0Proc;
+                        }
                     }
                 }
-            }
 #if DEBUG
             if (IndexIntoProblemMapping_Local != null) {
                 long i0 = this.Mapping.ProblemMapping.i0;
@@ -809,15 +862,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 #endif
+            }
         }
-
         /// <summary>
         /// DG coordinate mapping which corresponds to this mesh level, resp. operator matrix (<see cref="OperatorMatrix"/>, <see cref="MassMatrix"/>).
         /// </summary>
         public MultigridMapping Mapping {
             get;
+            //private set;
+        }
+
+        /// <summary>
+        /// DG coordinate mapping on the original grid/mesh.
+        /// </summary>
+        public UnsetteledCoordinateMapping BaseGridProblemMapping {
+            get;
             private set;
         }
+
 
         /// <summary>
         /// Grid/mesh on which this operator is defined.
@@ -970,10 +1032,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// 
+        /// Uses the linear solver <paramref name="solver"/> to solve the system; this includes:
+        /// - transformation of the <paramref name="IN_RHS"/> into the multigrid space, 
+        /// - solving in the multigrid space
+        /// - transformation of the solution back to the <see cref="BaseGridProblemMapping"/>, <paramref name="INOUT_X"/> as an output.
         /// </summary>
         /// <param name="solver"></param>
         /// <param name="INOUT_X">
+        /// - in output: an optional guess for the solution
         /// - on exit: (hopefully) the solution to the linear problem
         /// </param>
         /// <param name="IN_RHS">
@@ -984,38 +1050,120 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         public void UseSolver<T1, T2>(ISolverSmootherTemplate solver, T1 INOUT_X, T2 IN_RHS, bool UseGuess = true)
             where T1 : IList<double>
-            where T2 : IList<double> 
+            where T2 : IList<double>  //
         {
-            if(this.LevelIndex != 0)
-                throw new NotSupportedException("Not Inteded to be called on any multi-grid level but the finest one.");
+            using(new FuncTrace()) {
+                if(this.LevelIndex != 0)
+                    throw new NotSupportedException("Not Inteded to be called on any multi-grid level but the finest one.");
 
-            int I = this.Mapping.ProblemMapping.LocalLength;
-            if(INOUT_X.Count != I)
-                throw new ArgumentException("Vector length mismatch.", "INOUT_X");
-            if(IN_RHS.Count != I)
-                throw new ArgumentException("Vector length mismatch.", "IN_RHS");
+                int I = this.Mapping.ProblemMapping.LocalLength;
+                if(INOUT_X.Count != I)
+                    throw new ArgumentException("Vector length mismatch.", "INOUT_X");
+                if(IN_RHS.Count != I)
+                    throw new ArgumentException("Vector length mismatch.", "IN_RHS");
 
-            if(this.FinerLevel != null)
-                throw new NotSupportedException("This method may only be called on the top level.");
+                if(this.FinerLevel != null)
+                    throw new NotSupportedException("This method may only be called on the top level.");
 
-            //if(this.Mapping.AggGrid.NoOfAggregateCells != this.Mapping.ProblemMapping.GridDat.Cells.NoOfCells)
-            //    throw new ArgumentException();
-            //int J = this.Mapping.AggGrid.NoOfAggregateCells;
-            
-            
-            int L = this.Mapping.LocalLength;
-            double[] X = new double[L];
-            double[] B = new double[L];
-            this.TransformRhsInto(IN_RHS, B, true);
-            if(UseGuess)
-                this.TransformSolInto(INOUT_X, X);
+                //if(this.Mapping.AggGrid.NoOfAggregateCells != this.Mapping.ProblemMapping.GridDat.Cells.NoOfCells)
+                //    throw new ArgumentException();
+                //int J = this.Mapping.AggGrid.NoOfAggregateCells;
 
-            solver.ResetStat();
-            solver.Solve(X, B);
 
-            this.TransformSolFrom(INOUT_X, X);
+                int L = this.Mapping.LocalLength;
+                double[] X = new double[L];
+                double[] B = new double[L];
+                this.TransformRhsInto(IN_RHS, B, true);
+                if(UseGuess)
+                    this.TransformSolInto(INOUT_X, X);
+
+                solver.ResetStat();
+                solver.Solve(X, B);
+
+                this.TransformSolFrom(INOUT_X, X);
+            }
         }
 
+        /// <summary>
+        /// Computes the residual for a given solution approximation
+        /// </summary>
+        /// <param name="IN_X">
+        /// an approximate solution
+        /// </param>
+        /// <param name="IN_RHS">
+        /// right-hand-side of the linear problem
+        /// </param>
+        /// <param name="OUT_Resi">
+        /// On output, 
+        /// </param>
+        public void ComputeResidual<T1, T2, T3>(T3 OUT_Resi, T1 IN_X, T2 IN_RHS)
+            where T1 : IList<double>
+            where T2 : IList<double>
+            where T3 : IList<double> //
+        {
+            using(new FuncTrace()) {
+                if(this.LevelIndex != 0)
+                    throw new NotSupportedException("Not Inteded to be called on any multi-grid level but the finest one.");
+
+                int I = this.Mapping.ProblemMapping.LocalLength;
+                if(IN_X.Count != I)
+                    throw new ArgumentException("Vector length mismatch.", "INOUT_X");
+                if(IN_RHS.Count != I)
+                    throw new ArgumentException("Vector length mismatch.", "IN_RHS");
+                 if(OUT_Resi.Count != I)
+                    throw new ArgumentException("Vector length mismatch.", "OUT_Resi");
+               
+                if(this.FinerLevel != null)
+                    throw new NotSupportedException("This method may only be called on the top level.");
+
+                //if(this.Mapping.AggGrid.NoOfAggregateCells != this.Mapping.ProblemMapping.GridDat.Cells.NoOfCells)
+                //    throw new ArgumentException();
+                //int J = this.Mapping.AggGrid.NoOfAggregateCells;
+
+
+                int L = this.Mapping.LocalLength;
+                double[] X = new double[L];
+                double[] B = new double[L];
+                this.TransformRhsInto(IN_RHS, B, true);
+                this.TransformSolInto(IN_X, X);
+
+                double[] Resi = new double[L];
+                Resi.SetV(B);
+                this.OperatorMatrix.SpMV(-1.0, X, 1.0, Resi);
+
+                this.TransformRhsFrom(OUT_Resi, Resi);
+            }
+        }
+
+        /// <summary>
+        /// Computes the residual for a given solution approximation
+        /// </summary>
+        /// <param name="IN_X">
+        /// an approximate solution
+        /// </param>
+        /// <param name="IN_RHS">
+        /// right-hand-side of the linear problem
+        /// </param>
+        /// <param name="OUT_Resi">
+        /// On output, 
+        /// </param>
+        public double[] ComputeResidual<T1, T2>(T1 IN_X, T2 IN_RHS)
+            where T1 : IList<double>
+            where T2 : IList<double>//
+        {
+            double[] Resi = new double[BaseGridProblemMapping.LocalLength];
+            ComputeResidual(Resi, IN_X, IN_RHS);
+            return Resi;
+        }
+
+
+
+        /// <summary>
+        /// Transforms a solution from the <see cref="BaseGridProblemMapping"/> into this levels <see cref="Mapping"/>,
+        /// i.e. application of the inverse of right-side preconditioner <see cref="RightChangeOfBasis_Inverse"/>.
+        /// </summary>
+        /// <param name="u_IN">input, length according to <see cref="BaseGridProblemMapping"/></param>
+        /// <param name="v_OUT">output, length according to <see cref="Mapping"/></param>
         public void TransformSolInto<T1, T2>(T1 u_IN, T2 v_OUT)
             where T1 : IList<double>
             where T2 : IList<double> 
@@ -1039,9 +1187,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
+        /// <summary>
+        /// Transforms a right-hand-side from the <see cref="BaseGridProblemMapping"/> into this levels <see cref="Mapping"/>,
+        /// i.e. application of the left-side preconditioner <see cref="LeftChangeOfBasis"/>.
+        /// </summary>
+        /// <param name="u_IN">input, length according to <see cref="BaseGridProblemMapping"/></param>
+        /// <param name="v_OUT">output, length according to <see cref="Mapping"/></param>
+        /// <param name="ApplyRef">
+        /// apply additional modification due to free-mean-value fixing (aka. pressure reference point), <see cref="FreeMeanValue"/>
+        /// </param>
         public void TransformRhsInto<T1, T2>(T1 u_IN, T2 v_OUT, bool ApplyRef)
             where T1 : IList<double>
-            where T2 : IList<double> 
+            where T2 : IList<double> //
         {
             if(this.FinerLevel != null)
                 throw new NotSupportedException("Only supported on finest level.");

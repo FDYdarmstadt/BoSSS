@@ -15,7 +15,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="CairoLatexContainer.cs" />
-    <Compile Remove="GnuplotExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">

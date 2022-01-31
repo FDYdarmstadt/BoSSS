@@ -1192,6 +1192,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <summary>
         /// 
         /// </summary>
+        /// <param name="r0"></param>
         /// <param name="m"> mode m = {2, 3, 4} </param>
         /// <param name="aP_index"> disturbance amplitude aP = {0.5, 0.7, 0.9} </param>
         /// <param name="WNLT"> droplet shape according to the third order representation of the WLNT </param>
@@ -1360,14 +1361,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
 
-        public static XNSE_Control OscillatingDroplet_Kummer(int p = 2, int kelem = 27) {
-            // --control cs:BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.Droplet.OscillatingDroplet_Kummer()
-            
+        public static XNSE_Control OscillatingDroplet_Kummer(int p = 2, int kelem = 21, int method = 0, double mu_scl = 1.0, double tScale = 1.0) {
+            // cs:BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.Droplet.OscillatingDroplet_Kummer()
+
             XNSE_Control C = new XNSE_Control();
+
+            bool hysing = true;
+            bool kummer = false;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
 
-            string _DbPath = null; // @"D:\local\local_Testcase_databases\Testcase_OscillatingDroplet";
+            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
+            //_DbPath = @"\\dc1\userspace\yotov\bosss-db";
+            //string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
+            //string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
+            //string _DbPath = @"D:\local\local_Testcase_databases\Testcase_OscillatingDroplet";
+            string _DbPath = null;
 
             // basic database options
             // ======================
@@ -1376,12 +1385,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.DbPath = _DbPath;
             C.savetodb = C.DbPath != null;
             C.ProjectName = "OscillatingDroplet";
-            C.SessionName = "OD_AirWater_Kummer";
-            
+            if (hysing) {
+                C.SessionName = "OD_meshStudy_Hysing2_mesh" + kelem + "_rerun";
+            } else {
+                C.SessionName = "OD_AirWater_";
+            }
+
             C.ContinueOnIoError = false;
             //C.LogValues = XNSE_Control.LoggingValues.Dropletlike;
             //C.LogPeriod = 10;
-            C.PostprocessingModules.Add(new Dropletlike());
+            C.PostprocessingModules.Add(new Dropletlike() { LogPeriod = 4 });
+
             #endregion
 
 
@@ -1389,16 +1403,44 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==========
             C.SetDGdegree(p);
 
+
             // Physical Parameters
             // ===================
             #region physics
 
-            // Water (A) -- Air (B)  
-            C.PhysicalParameters.rho_A = 1e3; // kg/meter^3 
-            C.PhysicalParameters.rho_B = 1.2; // kg/meter^3 
-            C.PhysicalParameters.mu_A = 1e-3; // Pa*sec, dynamic Viscosity
-            C.PhysicalParameters.mu_B = 17.1e-6; // Pa*sec, dynamic Viscosity
-            C.PhysicalParameters.Sigma = 72.75e-3; // Newton/meter == Joule/meter^2 
+            if (hysing) {
+                double rho = 1e4;
+                double mu = 1.0;
+                double sigma = 0.1;
+
+                C.Tags.Add("Hysing");
+                C.Tags.Add("La = 500");
+                C.PhysicalParameters.rho_A = rho;
+                C.PhysicalParameters.rho_B = rho;
+                C.PhysicalParameters.mu_A = mu;
+                C.PhysicalParameters.mu_B = mu;
+                C.PhysicalParameters.Sigma = sigma;
+
+            }
+
+            if (kummer) {
+
+                C.PhysicalParameters.rho_A = 1;
+                C.PhysicalParameters.rho_B = 1;
+                C.PhysicalParameters.mu_A = 0.5;
+                C.PhysicalParameters.mu_B = 0.05;
+                C.PhysicalParameters.Sigma = 0.1;
+            }
+
+            if (!hysing) {
+                // Air - Water: 
+                C.PhysicalParameters.rho_A = 1e3;
+                C.PhysicalParameters.rho_B = 1.2;
+                C.PhysicalParameters.mu_A = 1e-3 * mu_scl;
+                C.PhysicalParameters.mu_B = 17.1e-6 * mu_scl;
+                C.PhysicalParameters.Sigma = 72.75e-3;
+            }
+
 
             C.PhysicalParameters.IncludeConvection = true;
             C.PhysicalParameters.Material = true;
@@ -1409,18 +1451,29 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ===============
             #region grid
 
-            double L = 9e-2; // 
+            double Lscale = hysing ? 1.0 : 0.01;
+            double L = 1.0 * Lscale;
             //double xSize = 1.0;
             //double ySize = 1.0;
 
             C.GridFunc = delegate () {
-                double[] Xnodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
-                double[] Ynodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 1);
+                double[] Xnodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 0);
+                double[] Ynodes = GenericBlas.Linspace(-(L / 2.0), (L / 2.0), kelem + 0);
                 var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes);
 
-                
+                grd.EdgeTagNames.Add(1, "wall");
+
                 grd.DefineEdgeTags(delegate (double[] X) {
-                    return "wall";
+                    byte et = 0;
+                    if (Math.Abs(X[1] + (L / 2.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[1] - (L / 2.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] + (L / 2.0)) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[0] - (L / 2.0)) <= 1.0e-8)
+                        et = 1;
+                    return et;
                 });
 
                 return grd;
@@ -1433,24 +1486,41 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==============
             #region init
 
+            double r = 0.25 * Lscale;
 
-            double a = 0.9185e-2;
-            double b = 0.7515e-2;
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()).Sqrt() - r);         // signed distance
+            //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()) - r.Pow2());         // quadratic
+
+            double a = r;
+            double b = r;
+            if (hysing) {
+                a = 1.25 * r;
+                b = 0.8 * r;
+            } else {
+                a = 1.1 * r;
+                b = 0.91 * r;
+            }
             Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() / a.Pow2() + (X[1] - 0.0).Pow2() / b.Pow2()) - 1);          // ellipse                     
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
+            
+            //// restart
+            //var database = new DatabaseInfo(_DbPath);
+            //Guid restartID = new Guid("c95b2833-288e-4014-ba08-affa65a2398e");
+            //C.RestartInfo = new Tuple<Guid, Foundation.IO.TimestepNumber>(restartID, null);
 
             #endregion
-            
-            C.AdaptiveMeshRefinement = false;
-            /*
-            C.activeAMRlevelIndicators.Add(
-                new AMRonNarrowband() {
-                    maxRefinementLevel = 3
-                });
-            C.AMR_startUpSweeps = 2;
-            */
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            C.AddBoundaryValue("wall");
+
+            #endregion
+
 
             // misc. solver options
             // ====================
@@ -1458,11 +1528,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.solveKineticEnergyEquation = false;
 
-            C.ComputeEnergyProperties = true;
-            C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
-                Degree = 2 * p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            //C.ComputeEnergyProperties = true;
+            //C.FieldOptions.Add("KineticEnergy", new FieldOpts() {
+            //    Degree = 2 * p,
+            //    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            //});
 
             C.CheckJumpConditions = false;
             C.CheckInterfaceProps = false;
@@ -1475,21 +1545,42 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             //C.EnforceLevelSetConservation = true;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+
+            C.LinearSolver.NoOfMultigridLevels = 1;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MaxSolverIterations = 50;
+            //C.Solver_MaxIterations = 80;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            //C.Solver_ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
-            
-            //C.SetLevelSetMethod(method, FourierCntrl);
-            //C.SessionName = "OscillatingDroplet_setup3_muScl"+mu_scl+"_methodStudy_k2_" + C.methodTagLS;
+
+            //if (!hysing) {
+            //    C.AdaptiveMeshRefinement = true;
+            //    C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //    C.BaseRefinementLevel = 3;
+            //    C.AMR_startUpSweeps = 4;
+            //    C.RefinementLevel = 1;
+            //}
+
+            //C.AdaptiveMeshRefinement = true;
+            //C.RefineStrategy = XNSE_Control.RefinementStrategy.constantInterface;
+            //C.BaseRefinementLevel = 2;
+            //C.AMR_startUpSweeps = 2;
+            //C.SessionName = C.SessionName + "_AMR1";
 
             C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
-            C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
+
+            //C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
             //C.PhysicalParameters.mu_I = 1.0;
             //C.PhysicalParameters.lambda_I = 2.0;
             //C.SessionName = C.SessionName + "_curvature";
-
-            C.AdvancedDiscretizationOptions.SetSurfaceTensionMaxValue = false;
+            //C.AdvancedDiscretizationOptions.SetSurfaceTensionMaxValue = false;
+            //C.AdvancedDiscretizationOptions.STFstabilization = DoNotTouchParameters.SurfaceTensionForceStabilization.surfaceDeformationRateLocal;
 
             #endregion
 
@@ -1499,27 +1590,27 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region time
 
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.Adaptive_3;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
             C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
-            //C.LSunderrelax = 0.5;
-            //C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+
 
             C.TimesteppingMode = compMode;
-            //C.CompMode = AppControl._CompMode.Transient; 
-
-            double dt = 0.0005;
+            
+            double dt = (hysing) ? 0.5 : 1.5e-5 * tScale;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.Endtime = 1.5;
-            C.NoOfTimesteps = 3; // (int)(1.5 / dt);
+            C.Endtime = (hysing) ? 1000 : 0.15;
+            C.NoOfTimesteps = (hysing) ? 2000 : (int)(0.15 / dt);
             C.saveperiod = 10;
-           
+
             #endregion
+
 
             return C;
         }
+
 
 
 

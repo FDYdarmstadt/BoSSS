@@ -128,7 +128,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                     // compute L2-errors
                     //DGFieldComparison.ComputeErrors(Fields_L2emb, tsiS, out double[] hS_L2emb, out var DOFs_L2emb, out var ERRs_L2emb, out var tsiIdS_L2emb);
-                    DGFieldComparison.ComputeErrorsTemporal(Fields_L2emb, tsiS, out double[] hS_L2emb, out var DOFs_L2emb, out var ERRs_L2emb, out var tsiIdS_L2emb);
+                    DGFieldComparisonEmbedded.ComputeErrorsTemporal(Fields_L2emb, tsiS, out double[] hS_L2emb, out var DOFs_L2emb, out var ERRs_L2emb, out var tsiIdS_L2emb);
 
 
                     // record errors

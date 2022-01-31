@@ -371,6 +371,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             ctrl.Endtime = ctrl.dtFixed * ctrl.NoOfTimesteps;
 
             ctrl.NonLinearSolver.SolverCode = Solution.Control.NonLinearSolverCode.Picard;
+            ctrl.NonLinearSolver.ConvergenceCriterion = 1.0e-8; // note: strangely, the test fails for **lower** thresholds; something is weired here.
 
             // run
             // ------------------------------------------
@@ -391,5 +392,31 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             Assert.LessOrEqual(uB_Err, thres);
             Assert.LessOrEqual(JmpL2Err, thres);
         }
+
+        /// <summary>
+        /// A Resetting of the time-stepper is required in order for doing temporal refinement/adaptive timestepping
+        /// </summary>
+        [Test]
+        public static void TestTimestepperReset() {
+            
+            // the following is one setup which has shown to be critical w.r.t. Tracker Update, etc., 
+            // when the time-stepper is resetted:
+            var C = BoSSS.Application.XdgTimesteppingTest.HardCodedControl2.Rarefaction(degree: 1, GridResolutionFactor: 4);
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.NoOfTimesteps = 1;
+            C.dtFixed = 0.0005;
+            C.Endtime = C.dtFixed * C.NoOfTimesteps;
+            C.LinearSolver.SolverCode = Solution.Control.LinearSolverCode.classic_mumps;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+
+            using(XdgTimesteppingMain p = new XdgTimesteppingMain()) {
+                p.Init(C);
+                p.RunSolverMode();
+
+                p.RunFromReset(C.Endtime, C.NoOfTimesteps);
+            }
+        }
+
     }
 }

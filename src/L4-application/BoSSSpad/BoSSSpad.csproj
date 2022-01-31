@@ -41,17 +41,38 @@
     <Compile Remove="WorksheetEntry.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="CommandLine">
+      <HintPath>..\..\..\libs\libcmdline-1.8-stable-bin\libcmdline\bin\Release\CommandLine.dll</HintPath>
+    </Reference>
     <Reference Include="MathNet.Numerics">
       <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNetCore.Html.Abstractions">
       <HintPath>..\..\..\libs\microsoft.aspnetcore.html.abstractions\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Html.Abstractions.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CodeAnalysis">
+      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Common.3.9.0\lib\netstandard2.0\Microsoft.CodeAnalysis.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp">
+      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.3.9.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.CSharp.Scripting">
+      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.Scripting.3.9.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.CodeAnalysis.Scripting">
+      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Scripting.Common.3.9.0\lib\netstandard2.0\Microsoft.CodeAnalysis.Scripting.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.DotNet.Interactive">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DotNet.Interactive.CSharp">
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.DotNet.Interactive.Documents">
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.Documents.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DotNet.Interactive.Formatting">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.225503\tools\net5.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
     </Reference>
     <Reference Include="Mono.CSharp">
       <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
@@ -104,8 +125,11 @@
     <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj" />
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
     <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj" />
+    <ProjectReference Include="..\XNSEC2\XNSEC.csproj" />
     <ProjectReference Include="..\XNSERO\XNSERO_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
+    <ProjectReference Include="..\XNSFE_Solver\XNSFE_Solver.csproj" />
+    <ProjectReference Include="..\ZLS\ZLS.csproj" />
   </ItemGroup>
   <PropertyGroup>
     <PreBuildEvent>git describe --long &gt; "$(ProjectDir)\version.txt"

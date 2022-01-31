@@ -44,6 +44,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Threading;
 using System.Xml;
 
 namespace BoSSS.Solution {
@@ -555,7 +556,7 @@ namespace BoSSS.Solution {
                 Console.Error.WriteLine("========================================");
                 Console.Error.WriteLine();
                 Console.Error.Flush();
-                System.Environment.Exit(-1);
+                //System.Environment.Exit(-1);
             }
 #endif
         }
@@ -786,7 +787,6 @@ namespace BoSSS.Solution {
         /// </summary>
         public static void FinalizeMPI() {
             MPI.Wrappers.csMPI.Raw.mpiFinalize();
-
         }
 
         /// <summary>
@@ -967,7 +967,6 @@ namespace BoSSS.Solution {
         /// Generates key/value pairs from control objects to identify sessions.
         /// </summary>
         public static void FindKeys(IDictionary<string, object> Keys, AppControl ctrl) {
-
             foreach (var fldOpt in ctrl.FieldOptions) {
                 string KeyName = "DGdegree:" + fldOpt.Key;
                 int FldDeg = fldOpt.Value.Degree;
@@ -1081,7 +1080,8 @@ namespace BoSSS.Solution {
                     || mi.Name == "FieldOptions"
                     || mi.Name == "InitialValues"
                     || mi.Name == "BoundaryValues"
-                    || mi.Name == "InitialValues_Evaluators")) {
+                    || mi.Name == "InitialValues_Evaluators"
+                    || mi.Name == "m_Grid")) {
 
 
                     // these guys are filtered...
@@ -1193,13 +1193,10 @@ namespace BoSSS.Solution {
                 if (Grid == null) {
                     throw new ApplicationException("No grid loaded through CreateOrLoadGrid");
                 }
+                // access the GridData object here, to enforce its creation:
+                ht.Info("loaded grid with " + this.GridData.CellPartitioning.TotalLength + " cells");
 
 
-                //// Make sure grid guid is accessible even if the user has some
-                //// custom handling of the grid loading
-                //if (m_control != null && !passiveIo && m_control.confBase.Grid.Equals(Guid.Empty)) {
-                //    this.Control.confBase.Grid = Grid.GridGuid;
-                //}
 
                 bool DoDbLogging = !passiveIo
                     && this.Control != null
@@ -1323,7 +1320,9 @@ namespace BoSSS.Solution {
                         this, GridData, this.Control.FieldOptions, this.Control.CutCellQuadratureType, this.m_IOFields, this.m_RegisteredFields);
                 }
                 CreateTracker();
-                CreateFields(); // full user control                
+                using(new BlockTrace("CreateFieldsBlock", ht)) {
+                    CreateFields(); // full user control
+                }
 
 
 
@@ -1489,6 +1488,9 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
+
+                
+
 
                 if (this.Control != null) {
                     if (this.Control.GridFunc != null && this.Control.GridGuid != Guid.Empty)
@@ -1706,22 +1708,13 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// Loads all fields in <see cref="m_IOFields"/> from the database
-        /// using the given <paramref name="sessionToLoad"/> at time-step
-        /// <paramref name="timestep"/>
+        /// using the given <see cref="AppControl.RestartInfo"/> (<see cref="Control"/>)
         /// </summary>
-        /// <param name="sessionToLoad">
-        /// The GUID of the session to be loaded
-        /// </param>
-        /// <param name="timestep">
-        /// The time-step within the session to be loaded. If negative, the
-        /// latest available time-step will be taken.
-        /// </param>
         /// <param name="time">
         /// On exit, contains the physical time represented by the time-step
         /// </param>
         /// <returns>
-        /// Returns the actual time-step loaded (which may not be known in
-        /// advance if <paramref name="timestep"/> is negative)
+        /// Returns the actual time-step number of the loaded time-step
         /// </returns>
         protected virtual TimestepNumber RestartFromDatabase(out double time) {
             using (var tr = new FuncTrace()) {
@@ -1729,6 +1722,7 @@ namespace BoSSS.Solution {
                 // obtain session timesteps:
                 var sessionToLoad = this.Control.RestartInfo.Item1;
                 ISessionInfo session = m_Database.Controller.GetSessionInfo(sessionToLoad);
+
                 var all_ts = session.Timesteps;
 
                 // find timestep to load
@@ -1737,6 +1731,23 @@ namespace BoSSS.Solution {
                 ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
 
                 time = tsi_toLoad.PhysicalTime;
+
+                bool MustResetTime = false;
+                if(this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
+                    double dtMin = this.Control.dtMin;
+                    if(dtMin > 0) {
+                        if(time + dtMin == time) { // time is so advanced, that the timestep becomes invisible
+                            MustResetTime = true;
+                        }
+                    }
+                }
+
+                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode) || MustResetTime) {
+                    if (Convert.ToInt32(mode) == (int)AppControl._TimesteppingMode.Steady) {
+                        Console.WriteLine("Restarting from steady-state, resetting time ...");
+                        time = 0.0; // Former simulation is steady-state, this should be restarted with time = 0.0
+                    }
+                }
 
                 if (tsi_toLoad is BoSSS.Foundation.IO.TimestepProxy tp) {
                     var tsiI = tp.GetInternal() as TimestepInfo;
@@ -2078,8 +2089,11 @@ namespace BoSSS.Solution {
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
-                    if (LsTrk != null)
+                    if(LsTrk != null) {
+                        if(LsTrk.Regions.Time != physTime)
+                            LsTrk.UpdateTracker(physTime);
                         LsTrk.PushStacks();
+                    }
                 }
 
                 // =========================================================
@@ -2096,7 +2110,7 @@ namespace BoSSS.Solution {
 
                 // load balancing and adaptive mesh refinement
                 if (this.Control.AdaptiveMeshRefinement) {
-
+                    
                     // unprocessed initial value IO
                     if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                         PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
@@ -2129,9 +2143,10 @@ namespace BoSSS.Solution {
                 // resp. 'LoadRestart(..)'!!!
                 // ================================================================================
 
-                //if (this.Control.RestartInfo == null) {
-                { 
+                if (this.Control.RestartInfo == null) {
                     CreateEquationsAndSolvers(null);
+                }
+                {
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -2201,6 +2216,14 @@ namespace BoSSS.Solution {
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
                         physTime += dt;
+
+
+                        if(LsTrk != null) {
+                            if(LsTrk.Regions.Time != physTime) {
+                                // correct the level-set tracker time if some solver did not correctly updated it.
+                                LsTrk.UpdateTracker(physTime);
+                            }
+                        }
 
 
                         foreach (var l in PostprocessingModules) {
@@ -2334,10 +2357,14 @@ namespace BoSSS.Solution {
         /// <param name="fixedPermutation"></param>
         /// <returns></returns>
         virtual protected bool MpiRedistributeAndMeshAdaptOnInit(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
+            double tmp = this.Control.DynamicLoadBalancing_ImbalanceThreshold;
+            bool IsRestarted = this.Control.RestartInfo != null;
+            bool IsInit = !IsRestarted;
 
-            DoMeshAdaption(TimeStepNo, physTime, true);
-            DoLoadbalancing(TimeStepNo, physTime, fixedPartition, fixedPermutation, true);
-
+            this.Control.DynamicLoadBalancing_ImbalanceThreshold = 0.0; // ensures that there is a redistribution at startup, idependant of threshold
+            DoMeshAdaption(TimeStepNo, physTime, IsInit);
+            DoLoadbalancing(TimeStepNo, physTime, fixedPartition, fixedPermutation, IsInit);
+            this.Control.DynamicLoadBalancing_ImbalanceThreshold = tmp;
             //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
             //PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
 
@@ -2374,7 +2401,7 @@ namespace BoSSS.Solution {
                     BackupDataOnInit(oldGridData, this.LsTrk, loadbal, out tau);
                     //BackupData(oldGridData, this.LsTrk, loadbal, out tau);
                 else
-                    BackupData(oldGridData, this.LsTrk, loadbal, out tau);
+                    BackupData(oldGridData, this.LsTrk, physTime, loadbal, out tau);
 
                 // create new grid
                 // ===============
@@ -2459,24 +2486,7 @@ namespace BoSSS.Solution {
                 //}
 
                 //// skip this for init
-                if (IsInit) {
-                    if (this.Control.RestartInfo == null)
-                        SetInitial(physTime);
-                } else {
-                    // set dg coordinates
-                    foreach (var f in m_RegisteredFields) {
-                        if (f is XDGField) {
-                            XDGBasis xb = ((XDGField)f).Basis;
-                            if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
-                                throw new ApplicationException();
-                        }
-                        loadbal.RestoreDGField(f);
-                    }
-
-
-                    // re-create solvers, blablabla
-                    CreateEquationsAndSolvers(loadbal);
-                }
+                ReCreateEquationAndSolvers(IsInit, loadbal, physTime);
                 return true;
             }
         }
@@ -2490,9 +2500,6 @@ namespace BoSSS.Solution {
                 this.AdaptMesh(TimeStepNo, out var newGrid, out var old2newGridCorr);
                 if (newGrid == null)
                     return false;
-
-                if(this.Control.RestartInfo != null)
-                    IsInit = false; 
 
                 using (new BlockTrace("process mesh Adaption", tr)) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2515,7 +2522,7 @@ namespace BoSSS.Solution {
                         BackupDataOnInit(oldGridData, this.LsTrk, remshDat, out tau);
                         //BackupData(oldGridData, this.LsTrk, remshDat, out tau);
                     else
-                        BackupData(oldGridData, this.LsTrk, remshDat, out tau);
+                        BackupData(oldGridData, this.LsTrk, physTime, remshDat, out tau);
                     
                     // save new grid to database
                     // ==========================
@@ -2587,29 +2594,19 @@ namespace BoSSS.Solution {
                     }
                     CreateFields(); // full user control   
                                     //PostRestart(physTime, TimeStepNo);
+                    if(this.LsTrk != null) {
+                        if(this.LsTrk.Regions.Time != physTime)
+                            this.LsTrk.UpdateTracker(physTime);
+                    }
 
                     if (plotAdaption)
                         PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
                     
-                    if(IsInit) {
-                        if (this.Control.RestartInfo == null)
-                            SetInitial(physTime);
-                        else
-                            PostRestart(physTime, TimeStepNo);
-                    } else {
-                        //set dg coordinates
-                        foreach (var f in m_RegisteredFields) {
-                            if (f is XDGField) {
-                                XDGBasis xb = ((XDGField)f).Basis;
-                                if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
-                                    throw new ApplicationException();
-                            }
-                            remshDat.RestoreDGField(f);
-                        }
+                    if (IsInit && this.Control.RestartInfo != null)
+                        PostRestart(physTime, TimeStepNo);
 
-                        // re-create solvers, etc.
-                        CreateEquationsAndSolvers(remshDat);
-                    }
+                    ReCreateEquationAndSolvers(IsInit, remshDat, physTime);
+                    
 
                 }
                 return true;
@@ -2617,9 +2614,27 @@ namespace BoSSS.Solution {
         }
 
 
+        private void ReCreateEquationAndSolvers(bool IsInit, GridUpdateDataVaultBase GDataVault, double physTime) {
+            if (IsInit) {
+                if (this.Control.RestartInfo == null)
+                    SetInitial(physTime);
+            } else {
+                //set dg coordinates
+                foreach (var f in m_RegisteredFields) {
+                    if (f is XDGField) {
+                        XDGBasis xb = ((XDGField)f).Basis;
+                        if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                            throw new ApplicationException();
+                    }
+                    GDataVault.RestoreDGField(f);
+                }
 
+                // re-create solvers, etc.
+                CreateEquationsAndSolvers(GDataVault);
+            }
+        }
 
-        private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk,
+        private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk, double physTime,
             GridUpdateDataVaultBase loadbal, out Permutation tau) {
             if(oldLsTrk != null && !object.ReferenceEquals(oldGridData, oldLsTrk.GridDat))
                 throw new ApplicationException();
@@ -2632,7 +2647,7 @@ namespace BoSSS.Solution {
 
             // backup level-set tracker 
             if (this.LsTrk != null) {
-                loadbal.BackupTracker();
+                loadbal.BackupTracker(physTime);
             }
 
             // backup DG Fields
@@ -2660,11 +2675,8 @@ namespace BoSSS.Solution {
 
             // backup level-set tracker 
             if (this.LsTrk != null) {
-                loadbal.BackupTracker();
+                loadbal.BackupTracker(0.0);
             }
-
-            // backup user data
-            this.DataBackupBeforeBalancing(loadbal);
         }
 
 
@@ -2865,6 +2877,7 @@ namespace BoSSS.Solution {
                 try {
                     using (Stream stream = this.DatabaseDriver.GetNewLogStream(this.CurrentSessionInfo, "profiling_summary")) {
                         using (StreamWriter stw = new StreamWriter(stream)) {
+                            WriteProfilingHeader(stw);
                             WriteProfilingReport(stw, R);
                             stw.Flush();
                             stream.Flush();
@@ -2877,6 +2890,35 @@ namespace BoSSS.Solution {
 
             }
         }
+
+        private void WriteProfilingHeader(StreamWriter stw ) {
+            stw.WriteLine($"Date       : {DateTime.Now}");
+            stw.WriteLine($"Computer   : {ilPSP.Environment.MPIEnv.Hostname} ");
+            stw.WriteLine($"User Name  : {System.Environment.UserName}");
+            stw.WriteLine($"MPI rank   : {this.MPIRank}");
+            stw.WriteLine($"MPI size   : {this.MPISize}");
+
+            void TryWrite(string s, Func<object> o) {
+                try {
+                    stw.WriteLine(s + o());
+                } catch(Exception e) {
+                    stw.WriteLine(s + $"{e.GetType().Name}, {e.Message}");
+                }
+
+            }
+
+            TryWrite("Number of cells (last mesh)      : ", () => this.Grid.NumberOfCells);
+            TryWrite("Number of local cells (last mesh): ", () => this.Grid.CellPartitioning.LocalLength);
+            if(m_RegisteredFields != null) {
+                foreach(var f in m_RegisteredFields) {
+                    //                                         :
+                    TryWrite("    Field: ", () => $"{f.Identification}, degree {f.Basis.Degree}, XDG: {f.Basis is XDGBasis}");
+                }
+            }
+
+            Console.WriteLine();
+        }
+
 
         /// <summary>
         /// Runs this application in parameter study mode which means that it
@@ -3263,6 +3305,11 @@ namespace BoSSS.Solution {
 
             PostRestart(Time, TimestepNo);
 
+            if(this.LsTrk != null) {
+                if(this.LsTrk.Regions.Time != Time)
+                    this.LsTrk.UpdateTracker(Time);
+            }
+
             System.GC.Collect();
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -3340,11 +3387,11 @@ namespace BoSSS.Solution {
         /// <summary>
         /// returns the size of the fixed timestep (<see cref="AppControl.dtFixed"/>); if a variable timestep is set, this method throws an exception.
         /// </summary>
-        public double GetFixedTimestep() {
+        virtual public double GetTimestep() {
             if (this.Control != null) {
                 return this.Control.dtFixed;
             } else {
-                throw new ApplicationException(
+                throw new NotSupportedException(
                     "Cannot get time-step from control object, since there is no control object specified.");
             }
         }
@@ -3368,10 +3415,34 @@ namespace BoSSS.Solution {
 
             wrt.WriteLine();
             wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
+            wrt.WriteLine("(sum over all calling parents)");
             wrt.WriteLine("=========================================================");
 
             MethodCallRecordExtension.GetMostExpensiveCalls(wrt, R);
 
+            wrt.WriteLine();
+            wrt.WriteLine("Most expensive calls and blocks (sort by exclusive time):");
+            wrt.WriteLine("(distinction by parent call)");
+            wrt.WriteLine("=========================================================");
+
+            MethodCallRecordExtension.GetMostExpensiveCallsDetails(wrt, R);
+            
+            wrt.WriteLine();
+            wrt.WriteLine("Most memory consuming calls and blocks (sort by exclusive allocation size):");
+            wrt.WriteLine("(sum over all calling parents)");
+            wrt.WriteLine("===========================================================================");
+
+            MethodCallRecordExtension.GetMostMemoryConsumingCalls(wrt, R);
+
+            wrt.WriteLine();
+            wrt.WriteLine("Most memory consuming calls and blocks (sort by exclusive allocation size):");
+            wrt.WriteLine("(distinction by parent call)");
+            wrt.WriteLine("==========================================================================");
+
+            MethodCallRecordExtension.GetMostMemoryConsumingCallsDetails(wrt, R);
+            
+
+            /*
             wrt.WriteLine();
             wrt.WriteLine("Details on nonlinear operator evaluation:");
             wrt.WriteLine("=========================================");
@@ -3561,6 +3632,7 @@ namespace BoSSS.Solution {
                     wrt.WriteLine(e.StackTrace);
                 }
             }
+            */
         }
 
         /// <summary>
@@ -3596,8 +3668,32 @@ namespace BoSSS.Solution {
             return GenericBlas.Linspace(-1, 1, 2);
         }
 
+        /// <summary>
+        /// enforce the compiler to integrate Microsoft.CodeAnalysis.dll etc.
+        /// </summary>
+        public static Type[] DllEnforcer() {
+            using(var tr = new FuncTrace()) {
+                var types = new Type[] {
+                   typeof(Microsoft.CodeAnalysis.Compilation),
+                    typeof(Microsoft.CodeAnalysis.CSharp.CSharpCompilation),
+                    typeof(Microsoft.CodeAnalysis.Scripting.Script),
+                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript)
+                };
 
+                foreach(var t in types) {
+                    tr.Info("Loaded type " + t + " form " + t.Assembly);
+                }
+
+                return types;
+            }
+        }
+
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //public static Microsoft.CodeAnalysis.Compilation DllEnforcer2() {
+        //    return Microsoft.CodeAnalysis.CSharp.CSharpCompilation.C
+        //}
     }
-
 }
 

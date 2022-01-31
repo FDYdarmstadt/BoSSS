@@ -22,15 +22,11 @@ using BoSSS.Solution.Queries;
 using ilPSP;
 using System.Linq;
 using System.Reflection;
-using BoSSS.Platform;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using System.IO;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
 using System.Runtime.Serialization;
-using MPI.Wrappers;
-using System.Diagnostics;
 using BoSSS.Foundation;
 using System.Collections;
 using BoSSS.Solution.Utils;
@@ -553,7 +549,7 @@ namespace BoSSS.Solution.Control {
                     var vv = InitialValues[name];
 
                     m_InitialValues_Evaluators.Add(name, new ValueTuple<ScalarFunctionTimeDep, Func<double[], double, double>>(
-                        (MultidimensionalArray X, double time, MultidimensionalArray R) => vv.Evaluate(X, time, R),
+                        (MultidimensionalArray X, double time, MultidimensionalArray R) => vv.EvaluateV(X, time, R),
                         (double[] X, double time) => vv.Evaluate(X, time)));
                 }
             }
@@ -743,6 +739,7 @@ namespace BoSSS.Solution.Control {
         /// <param name="grd"></param>
         public void SetGrid(IGridInfo grd) {
             this.GridGuid = grd.ID;
+            this.m_Grid = grd as IGrid;
 
             if(grd.Database == null) {
                 Console.WriteLine("Warning: grid seems not to be saved in a database");
@@ -756,6 +753,14 @@ namespace BoSSS.Solution.Control {
 
             }
         }
+
+        /// <summary>
+        /// Hack: an 
+        /// aid for the workflow manager, to save the grid if **not** already stored in the database.
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IGrid m_Grid;
         
 
         /// <summary>
@@ -853,7 +858,8 @@ namespace BoSSS.Solution.Control {
         public double dtMax = -1;
 
         /// <summary>
-        /// Sets/Gets a fixed time-step size.
+        /// Sets/Gets a fixed time-step size;
+        /// Values greater than 1e100 are deemed to be steady-state
         /// </summary>
         [JsonIgnore]  
         public double dtFixed {
@@ -864,8 +870,19 @@ namespace BoSSS.Solution.Control {
                 return dtMin;
             }
             set {
-                dtMin = value;
-                dtMax = value;
+                if(value < 0)
+                    throw new ArgumentOutOfRangeException();
+
+                if(value > 1e100) {
+                    m_TimesteppingMode = _TimesteppingMode.Steady;
+                    dtMax = double.MaxValue / 1e4;
+                    dtMin = double.MaxValue / 1e4;
+                } else {
+                    m_TimesteppingMode = _TimesteppingMode.Transient;
+
+                    dtMin = value;
+                    dtMax = value;
+                }
             }
         }
 
@@ -888,12 +905,12 @@ namespace BoSSS.Solution.Control {
             /// <summary>
             /// time-dependent/Transient simulation.
             /// </summary>
-            Transient,
+            Transient = 0,
 
             /// <summary>
             /// Steady-State calculation.
             /// </summary>
-            Steady
+            Steady = 1
         }
 
         [DataMember]
@@ -1053,11 +1070,6 @@ namespace BoSSS.Solution.Control {
         public int AMR_startUpSweeps = 1;
 
 
-        /// <summary>
-        /// List of active AMR level indicators 
-        /// </summary>
-        [DataMember]
-        public List<AMRLevelIndicator> activeAMRlevelIndicators = new List<AMRLevelIndicator>();
 
 
         /// <summary>

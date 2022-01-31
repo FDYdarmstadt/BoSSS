@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using ilPSP;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace BoSSS.Foundation.Caching {
 
@@ -28,7 +29,7 @@ namespace BoSSS.Foundation.Caching {
     /// </summary>
     public enum CacheStrategy {
         /// <summary>
-        /// Cache object with lowest number of accesses will be discadred first.
+        /// Cache object with lowest number of accesses will be discarded first.
         /// </summary>
         DiscardLeastFrequentlyUsed,
 
@@ -41,9 +42,49 @@ namespace BoSSS.Foundation.Caching {
     
     /// <summary>
     /// Cache for almost everything. All kinds of cache-logic objects
-    /// may place their numerical results here and can have temy back, if they are not thrown away.
+    /// may place their numerical results here and can have them back, if they are not thrown away.
     /// </summary>
     public static class Cache {
+
+        /// <summary>
+        /// Basic checks on the correctness of the data structure.
+        /// </summary>
+        public static void Verify(out long ArraySize, out long LLsize ) {
+
+            ArraySize = 0;
+            for(int i = 0; i < Banks.Count; i++) {
+                var b = Banks[i];
+                if(b != null) { 
+                    ArraySize += b.MemSize;
+                    if(b.iBank != i)
+                        throw new ApplicationException();
+                }
+            }
+
+            int NoOfBanks = 0;
+            LLsize = 0;
+            var bank = Head.next;
+            while(bank.next != null) {
+                LLsize += bank.MemSize;
+
+                if(!object.ReferenceEquals(bank.next.prev, bank))
+                    throw new ApplicationException();
+                
+                if(!object.ReferenceEquals(bank, Banks[bank.iBank]))
+                    throw new ApplicationException();
+
+                bank = bank.next;
+
+                NoOfBanks++;
+            }
+
+            if(!object.ReferenceEquals(bank, Tail))
+                throw new ApplicationException();
+
+            if(NoOfBanks != Banks.Count)
+                throw new ApplicationException($"Number of banks in List is {NoOfBanks}, but bank-array has {Banks.Count} entries.");
+        }
+
 
         
         /// <summary>
@@ -75,9 +116,32 @@ namespace BoSSS.Foundation.Caching {
         }
 
         static Cache() {
-            MaxMem = 128*1024*1024; // a few megs
+            MaxMem = 12*1024*1024; // a few megs
             m_Strategy = CacheStrategy.DiscardLeastRecentyUsed;
             ResetCache();
+        }
+
+        /// <summary>
+        /// Total memory in cache, in bytes
+        /// </summary>
+        static public long UsedMem {
+            get {
+                long sum = 0;
+                foreach(var bank in Banks) {
+                    if(bank != null)
+                        sum += bank.MemSize;
+                }
+                return sum;
+            }
+        }
+
+        /// <summary>
+        /// Some estimation for the total overhead.
+        /// </summary>
+        static public long OverheadMem {
+            get {
+                return Banks.Count * CacheBank.AssumedSize + emptyBanks.Count * sizeof(int);
+            }
         }
 
         /// <summary>
@@ -219,6 +283,9 @@ namespace BoSSS.Foundation.Caching {
 
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public static ulong ReCacheItem(MultidimensionalArray Item, int HonestItemSizeInBytes, ulong Reference) {
             return CacheItem(Item, HonestItemSizeInBytes); 
         }
@@ -229,6 +296,9 @@ namespace BoSSS.Foundation.Caching {
         static int CurrentSize;
         static int m_NoOfUsedBanks;
 
+        /// <summary>
+        /// No of items currently in cache
+        /// </summary>
         public static int NoOfUsedBanks {
             get {
                 return m_NoOfUsedBanks;
@@ -365,7 +435,8 @@ namespace BoSSS.Foundation.Caching {
             return cb.iBank;
         }
         
-        class CacheBank {
+        [StructLayout(LayoutKind.Sequential)]
+        sealed class CacheBank {
             public uint Reference; // reference by which the cache-logic identifies that some stored item is still theirs
             public int iBank;      // bank index, constant for object lifetime
 
@@ -378,6 +449,13 @@ namespace BoSSS.Foundation.Caching {
             public int MemSize; // size of the payload
 
             internal int UseCount; // how often the item was accessed
+
+
+            public static int AssumedSize {
+                get {
+                    return ( sizeof(int)*4 + IntPtr.Size * 3 + IntPtr.Size*2);
+                }
+            }
         }
 
 

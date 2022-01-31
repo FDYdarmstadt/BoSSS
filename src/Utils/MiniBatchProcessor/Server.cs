@@ -136,7 +136,9 @@ namespace MiniBatchProcessor {
             if(RunExternal) {
                 Console.WriteLine("Starting mini batch processor in external process...");
 
-                ProcessStartInfo psi = new ProcessStartInfo();
+                ProcessStartInfo psi = new ProcessStartInfo() { 
+                    UseShellExecute = true // default value changed from .net framework to .net, set this true, so an external window is opened
+                };
                 psi.FileName = "dotnet";
                 psi.Arguments = typeof(Server).Assembly.Location;
 
@@ -492,7 +494,8 @@ namespace MiniBatchProcessor {
             // infinity loop
             // =============
 
-            int AvailableProcs = Math.Min(Environment.ProcessorCount, config.MaxProcessors);
+            //int AvailableProcs = Math.Max(1, Math.Min(Environment.ProcessorCount, config.MaxProcessors));
+            int AvailableProcs = Math.Max(1, config.MaxProcessors);
             bool ExclusiveUse = false;
 
             var Running = new List<Tuple<Thread, ProcessThread>>();

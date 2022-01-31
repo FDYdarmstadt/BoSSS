@@ -148,7 +148,6 @@ namespace BoSSS.Solution.XheatCommon {
             this.m_kB = thermalParameters.k_B;
 
             this.m_hvap = thermalParameters.hVap;
-
             this.NegativeSpecies = phaseA;
             this.PositiveSpecies = phaseB;
         }
@@ -156,24 +155,28 @@ namespace BoSSS.Solution.XheatCommon {
         protected double MassFlux(CommonParams cp, double[,] Grad_uA, double[,] Grad_uB) {
 
             double M = 0.0;
-            for(int d = 0; d < m_D; d++) {
-                M += -(m_kA * Grad_uA[0, d] - m_kB * Grad_uB[0, d]) * cp.Normal[d];
+            if (!MEvapIsPrescribd) {
+                for (int d = 0; d < m_D; d++) {
+                    M += -(m_kA * Grad_uA[0, d] - m_kB * Grad_uB[0, d]) * cp.Normal[d];
+                }
+                M *= 1.0 / m_hvap;
+            } else {
+                M = prescrbMEvap;
             }
-            M *= 1.0 / m_hvap;
             //Console.WriteLine("Massflux: " + M);
             return M;
         }
 
         public abstract double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB);
 
-        bool MEvapIsPrescribd = false;
+        public bool MEvapIsPrescribd = false;
         double prescrbMEvap;
 
         public virtual void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
 
-            if (csA.UserDefinedValues.Keys.Contains("prescribedMassflux")) {
+            if (csA.UserDefinedValues.Keys.Contains("PrescribedMassFlux")) {
                 MEvapIsPrescribd = true;
-                prescrbMEvap = (double)csA.UserDefinedValues["prescribedMassflux"];
+                prescrbMEvap = (double)csA.UserDefinedValues["PrescribedMassFlux"];
             }
 
         }
@@ -213,6 +216,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public virtual TermActivationFlags LevelSetTerms {
             get { return TermActivationFlags.GradUxV; }
+
         }
     }
 
@@ -343,6 +347,79 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
 
+        /// <summary>
+        /// the penalty flux
+        /// </summary>
+        static double Flux(double UxN_in, double UxN_out) {
+            return 0.5 * (UxN_in - UxN_out);
+        }
+    }
+
+
+    /// <summary>
+    /// velocity jump penalty of the low mach equations for the divergence operator (continuity equation), on the level set 
+    /// </summary>
+    public class DivergenceAtLevelSet_Evaporation_StrongCoupling_LowMach : MassFluxAtLevelSet_StrongCoupling {
+
+        public DivergenceAtLevelSet_Evaporation_StrongCoupling_LowMach(int _D,
+            double vorZeichen, bool RescaleConti, ThermalParameters thermalParameters, string phaseA, string phaseB)
+            : base(_D, thermalParameters, phaseA, phaseB) {
+
+            scaleA = vorZeichen;
+            scaleB = vorZeichen;
+
+            if (RescaleConti) {
+                scaleA /= m_rhoA;
+                scaleB /= m_rhoB;
+            }
+        }
+
+        double scaleA;
+        double scaleB;
+
+
+        public override double InnerEdgeForm(ref CommonParams cp,
+            double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            double M = MassFlux(cp, Grad_uA, Grad_uB);
+
+            if (M == 0.0)
+                return 0.0;
+
+            double uAxN = -M * (1 / m_rhoA);
+            double uBxN = -M * (1 / m_rhoB);
+
+            // transform from species B to A: we call this the "A-fictitious" value
+            double uAxN_fict;
+            //uAxN_fict = (1 / rhoA) * (rhoB * uBxN);
+            uAxN_fict = uBxN;
+
+            // transform from species A to B: we call this the "B-fictitious" value
+            double uBxN_fict;
+            //uBxN_fict = (1 / rhoB) * (rhoA * uAxN);
+            uBxN_fict = uAxN;
+
+
+            // compute the fluxes: note that for the continuity equation, we use not a real flux,
+            // but some kind of penalization, therefore the fluxes have opposite signs!
+            double FlxNeg = -Flux(uAxN, uAxN_fict) * -1 * m_rhoA; // flux on A-side
+            double FlxPos = +Flux(uBxN_fict, uBxN) * -1 * m_rhoB;  // flux on B-side
+
+            FlxNeg *= scaleA;
+            FlxPos *= scaleB;
+
+           double Ret = FlxNeg * vA - FlxPos * vB;
+   
+
+            return Ret;
+        }
+
+        public override TermActivationFlags LevelSetTerms {
+            get { return TermActivationFlags.GradUxV | TermActivationFlags.V; }
+            
+
+        }
         /// <summary>
         /// the penalty flux
         /// </summary>
@@ -637,8 +714,16 @@ namespace BoSSS.Solution.XheatCommon {
             PosLengthScaleS = csB.CellLengthScales;
         }
 
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                var terms = base.LevelSetTerms | TermActivationFlags.GradUxGradV;
+                if (MEvapIsPrescribd)                    
+                    terms |= TermActivationFlags.V;
+                return terms;
 
-        public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.GradUxGradV;
+            }
+        }
+        //public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.GradUxGradV /*|TermActivationFlags.V*/;
 
     }
 
@@ -777,54 +862,37 @@ namespace BoSSS.Solution.XheatCommon {
             if (M == 0.0)
                 return 0.0;
 
-            double massFlux = M.Pow2() * ((1 / m_rhoA) - (1 / m_rhoB)) * Normal[m_d];
-
-            double FlxNeg = -0.5 * massFlux;
-            double FlxPos = +0.5 * massFlux;
-
-            Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
-            Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
-
-            double Ret = FlxNeg * vA - FlxPos * vB;
+            double massFlux = 0.0;
 
             // moving-mesh-contribution
             // ========================
+            double Ret = 0.0;
+            double FlxNeg = 0.0;
+            double FlxPos = 0.0;
 
             if (movingMesh) {
-                double s = ComputeInterfaceNormalVelocity(ref cp, uA, uB, Grad_uA, Grad_uB);
-                Console.WriteLine("interface normal velocity = {0}", s);
-                double movingFlux;
-                if (M < 0) { // select DOWN-wind! (sign of M is equal to relative interface velocity (-s + u * n))
-                    Console.WriteLine($"Velocity OUT: {cp.Parameters_OUT[1 + m_d]}");
-                    movingFlux = (-s) * m_rhoB * uB[1 + m_d]; // uB[0];
-                } else {
-                    Console.WriteLine($"Velocity IN: {cp.Parameters_IN[1 + m_d]}");
-                    movingFlux = (-s) * m_rhoA * uA[1 + m_d]; // uA[0];
-                }
-                Console.WriteLine($"{Ret}   |   {movingFlux}");
-                Ret -= movingFlux * Normal[m_d] * 0.5 * (vA + vB);
+                massFlux = M * 0.5 * (uA[1 + m_d]+ uB[1 + m_d]);
+
+                FlxNeg = massFlux;
+                FlxPos = massFlux;
+
+                Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
+                Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
+
+                Ret = FlxNeg * vA - FlxPos * vB;
+            } else {
+                massFlux = M.Pow2() * ((1 / m_rhoA) - (1 / m_rhoB)) * Normal[m_d];
+
+                FlxNeg = -0.5 * massFlux;
+                FlxPos = +0.5 * massFlux;
+
+                Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
+                Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
+
+                Ret = FlxNeg * vA - FlxPos * vB;
             }
 
             return Ret;
-        }
-
-        private double ComputeInterfaceNormalVelocity(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB) {
-
-            double M = MassFlux(cp, Grad_uA, Grad_uB);
-
-            double sNeg = 0.0;
-            for (int d = 0; d < m_D; d++)
-                sNeg += (uA[1 + d]) * cp.Normal[d];
-            sNeg -= (M / m_rhoA);
-
-            double sPos = 0.0;
-            for (int d = 0; d < m_D; d++)
-                sPos += (uB[1 + d]) * cp.Normal[d];
-            sPos -= (M / m_rhoB);
-
-            double s = (m_rhoA * sNeg + m_rhoB * sPos) / (m_rhoA + m_rhoB);     // density averaged, corresponding to the mean evo velocity 
-
-            return s;
         }
 
         public override TermActivationFlags LevelSetTerms { 
@@ -840,6 +908,84 @@ namespace BoSSS.Solution.XheatCommon {
             var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
             return new IEquationComponent[] { JacobiComp };
         }
+    }
+
+    /// <summary>
+    /// Interfaceflux Extension for jump conditions in Heatequation with Massflux
+    /// </summary>
+    public class HeatFluxAtLevelSet_Evaporation_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
+
+
+        protected double m_cA;
+        protected double m_cB;
+        protected double m_Tsat;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="_d">spatial direction</param>
+        /// <param name="_D">spatial dimension</param>
+        /// <param name="LsTrk"></param>
+        /// <param name="physicalParameters"></param>
+        /// <param name="_movingMesh"></param>
+        public HeatFluxAtLevelSet_Evaporation_StrongCoupling(int _D, ThermalParameters thermalParameters, bool _movingMesh, string phaseA, string phaseB)
+            : base(_D, thermalParameters, phaseA, phaseB) {
+
+            this.m_cA = thermalParameters.c_A;
+            this.m_cB = thermalParameters.c_B;
+            this.m_Tsat = thermalParameters.T_sat;
+            this.movingMesh = _movingMesh;
+            if (m_d >= m_D)
+                throw new ArgumentOutOfRangeException();
+        }
+
+        bool movingMesh;
+        int m_d;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            double[] Normal = cp.Normal;
+
+            double M = MassFlux(cp, Grad_uA, Grad_uB);
+
+            if (M == 0.0)
+                return 0.0;
+
+            double massFlux = 0.0;
+
+            // moving-mesh-contribution
+            // ========================
+            double Ret = 0.0;
+            double FlxNeg = 0.0;
+            double FlxPos = 0.0;
+
+            if (movingMesh) {
+                massFlux = M * m_Tsat;
+
+                FlxNeg = massFlux;
+                FlxPos = massFlux;
+
+                Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
+                Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
+
+                Ret = FlxNeg * vA * m_cA - FlxPos * vB * m_cB;
+            } else { 
+                Ret = 0.0;
+            }
+
+            return Ret;
+        }
+
+        public override TermActivationFlags LevelSetTerms {
+            get {                
+                return base.LevelSetTerms;
+            }
+        }
+
+        public override IList<string> ArgumentOrdering => base.ArgumentOrdering;
     }
 
     /// <summary>

@@ -33,6 +33,7 @@
     <ProjectReference Include="..\ALTSTests\ALTSTests.csproj" />
     <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj" />
     <ProjectReference Include="..\CDG_ProjectionTest\CDG_ProjectionTest.csproj" />
+    <ProjectReference Include="..\CDG_Projection_MPI\CDG_Projection_MPI.csproj" />
     <ProjectReference Include="..\CNS\CNS.csproj" />
     <ProjectReference Include="..\CNS_MPITests\CNS_MPITests.csproj" />
     <ProjectReference Include="..\CutCellQuadrature\CutCellQuadrature.csproj" />
@@ -63,6 +64,7 @@
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
     <ProjectReference Include="..\XNSE_Solver_LargeMPItest\XNSE_Solver_LargeMPItest.csproj" />
     <ProjectReference Include="..\XNSE_Solver_MPItest\XNSE_Solver_MPItest.csproj" />
+    <ProjectReference Include="..\ZLS\ZLS.csproj" />
     <ProjectReference Include="..\ZwoLsTest\ZwoLsTest.csproj" />
   </ItemGroup>
 </Project>

@@ -67,9 +67,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Convergence criterion for nonlinear iteration
+        /// Convergence criterion for nonlinear iteration;
+        /// Setting it to exactly zero should enforce the nonlinear solver to iterate until no improvement on the termination criterion
+        /// can be achieved; then, it terminates; this is described in
+        /// Kikker, Kummer, Oberlack:
+        /// A fully coupled high‐order discontinuous {Galerkin} solver for viscoelastic fluid flow,
+        /// IJNMF, No. 6, Vol. 93, 2021, 1736--1758,
+        /// section 3.3.1.
         /// </summary>
-        public double ConvCrit = 1e-6;
+        public double ConvCrit {
+            get {
+                return m_ConvCrit;
+            }
+            set {
+                m_ConvCrit = value;
+            }
+        }
+
+        double m_ConvCrit = 0.0;
 
         /// <summary>
         /// Maximum number of step-length iterations
@@ -94,7 +109,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Options for (approximate) solution to the linearizes system
+        /// Options for (approximate) solution to the linearized system
         /// </summary>
         public ApproxInvJacobianOptions ApproxJac = ApproxInvJacobianOptions.ExternalSolver;
 
@@ -215,68 +230,121 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         bool CheckTermination(ref bool success, double norm_CurRes, double fnorminit, List<double> normHistory, int itc) {
-            bool terminateLoop = false;
+            using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = false;
+                tr.Info($"Checking termination criterion: Iter {itc}, Current residual norm {norm_CurRes}, Initial Residual Norm {fnorminit}");
+                
+                 if(ConvCrit > 0) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // **if** the convergence criterion is set by the user, we should aim for it
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-            double LastAverageNormReduction() {
-                const int N = 3; // look at latest 3 residuals
-                if(N < 1)
-                    throw new ArgumentException();
-
-                if(normHistory.Count - N < 0)
-                    return 1e100; // ignore if we have not at least 'N'  residuals so far.
-
-                int i0 = normHistory.Count - N;
-
-                // take the (minimum) skyline to be immune against residual oscillations...
-                double[] NormHistorySkyline = new double[normHistory.Count];
-                NormHistorySkyline[0] = normHistory[0];
-                for(int i = 1; i < normHistory.Count; i++) {
-                    NormHistorySkyline[i] = Math.Min(NormHistorySkyline[i - 1], normHistory[i]);
-                }
+                    tr.Info("NEWTON: going for convergence criterion " + ConvCrit);
 
 
-                double Avg = 0;
-                double Count = 0;
-                for(int i = i0; i < normHistory.Count - 1; i++) { // look at the last 'N' residual norms...
-                    double ResNormReductionFactor = NormHistorySkyline[i] / Math.Max(NormHistorySkyline[i+1], double.Epsilon);
-                    if(ResNormReductionFactor < 1)
-                        ResNormReductionFactor = 1; // should never happen anyway due to skylining...
-                    Count = Count + 1;
-                    Avg = Avg + ResNormReductionFactor;
-                }
-                return Avg / Count;
-            }
-          
-            if(itc >= MinIter) {
-                // only terminate if we reached the minimum number of iterations
-
-                if(norm_CurRes <= ConvCrit * fnorminit + ConvCrit) {
-                    // reached convergence criterion
-
-                    double ALNR = LastAverageNormReduction();
-                    //Console.Write($"Want to terminate {ALNR}, {norm_CurRes} ...");
-
-                    // continue until the solver stalls
-                    if(ALNR <= 1.5) {
-                        //Console.WriteLine("no sufficient further progress");
-                        success = true;
-                        terminateLoop = true;
-                    } else {
-                        //Console.WriteLine("but continue as long as we make progress");
-                        //success = true;
-                        //terminateLoop = true;
+                    if(itc < MinIter) {
+                        tr.Info("below minimal number of iterations");
+                        return false;
                     }
-                }
 
-                if(itc >= MaxIter) {
-                    // run out of iterations
-                    terminateLoop = true;
+                    if(norm_CurRes <= ConvCrit * fnorminit + ConvCrit) {
+                        success = true;
+                        tr.Info("Newton iterations SUCCESS!");
+                        return true;
+                    }
+
+                    if(itc >= MaxIter) {
+                        // run out of iterations
+                        return true;
+                    }
+
+                    return false;
+                } else {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // ... otherwise, we do the best we can and iterate until no further improvement can be made
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    tr.Info($"NEWTON: trying to converge as far as possible (ConvCrit is {ConvCrit})");
+                    bool terminateLoop = false;
+
+
+
+                    //
+                    // See:
+                    // Kikker, Kummer, Oberlack:
+                    // A fully coupled high‐order discontinuous {Galerkin} solver for viscoelastic fluid flow,
+                    // IJNMF, No. 6, Vol. 93, 2021, 1736--1758,
+                    // section 3.3.1
+                    //
+
+                    const double _MinConvCrit = 1e-6;
+
+                    double LastAverageNormReduction() {
+                        const int N = 3; // look at latest 3 residuals
+                        if(N < 1)
+                            throw new ArgumentException();
+
+                        if(normHistory.Count - N < 0)
+                            return 1e100; // ignore if we have not at least 'N'  residuals so far.
+
+                        int i0 = normHistory.Count - N;
+
+                        // take the (minimum) skyline to be immune against residual oscillations...
+                        double[] NormHistorySkyline = new double[normHistory.Count];
+                        NormHistorySkyline[0] = normHistory[0];
+                        for(int i = 1; i < normHistory.Count; i++) {
+                            NormHistorySkyline[i] = Math.Min(NormHistorySkyline[i - 1], normHistory[i]);
+                        }
+
+
+                        double Avg = 0;
+                        double Count = 0;
+                        for(int i = i0; i < normHistory.Count - 1; i++) { // look at the last 'N' residual norms...
+                            double ResNormReductionFactor = NormHistorySkyline[i] / Math.Max(NormHistorySkyline[i + 1], double.Epsilon);
+                            if(ResNormReductionFactor < 1)
+                                ResNormReductionFactor = 1; // should never happen anyway due to skylining...
+                            Count = Count + 1;
+                            Avg = Avg + ResNormReductionFactor;
+                        }
+                        return Avg / Count;
+                    }
+
+                    if(itc >= MinIter) {
+                        // only terminate if we reached the minimum number of iterations
+                        if(norm_CurRes <= _MinConvCrit * fnorminit + _MinConvCrit) {
+                            // reached minimum convergence criterion
+
+                            double ALNR = LastAverageNormReduction();
+                            tr.Info($"minimal build-in convergence criterion reached ({_MinConvCrit * fnorminit + _MinConvCrit}), LastAverageNormReduction is {ALNR}, {norm_CurRes} ...");
+#if TEST
+                            ALNR = 0;
+#endif
+                            // continue until the solver stalls
+                            if(ALNR <= 1.5) {
+                                tr.Info("... no sufficient further progress - terminating.");
+                                success = true;
+                                terminateLoop = true;
+                            } else {
+                                tr.Info("... but continue as long as we make progress;");
+                                //success = true;
+                                //terminateLoop = true;
+                            }
+                        } else {
+                            tr.Info($"minimal build-in convergence criterion NOT reached (current residual is {norm_CurRes}, limit is {_MinConvCrit * fnorminit + _MinConvCrit}) yet.");
+                        }
+
+                        if(itc >= MaxIter) {
+                            // run out of iterations
+                            tr.Info($"Maximum number of iterations reached ({MaxIter}) - terminating.");
+                            terminateLoop = true;
+                        }
+                    } else {
+                        tr.Info($"**NOT** terminating now, minimal number of iterations (iteration {itc}, minimum is {MinIter}) not reached yet; CurRes = {norm_CurRes}, threshold is {_MinConvCrit * fnorminit + _MinConvCrit}, initial norm was {fnorminit}");
+                    }
+
+                    return terminateLoop;
                 }
-            } else {
-                //Console.WriteLine("not terminating now");
             }
-
-            return terminateLoop;
         }
         
      
@@ -286,6 +354,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public bool HomotopyNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
 
             using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = false;
                 // Initialization
                 // =============
 
@@ -311,7 +380,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 OnIterationCallback(0, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
                 double fnorminit = norm_CurRes;
                 List<double> normHistory = new List<double>();
-                normHistory.Add(norm_CurRes);
+                if(HomotopyParameter >= 1.0)
+                    normHistory.Add(norm_CurRes);
 
                 // Homotopy Solution extrapolation
                 // ===============================
@@ -392,7 +462,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 using(new BlockTrace("Slv Iter", tr)) {
 
                     bool ResidualCrit(double fac = 1.0) {
-                        return norm_CurRes <= ConvCrit * fnorminit * fac + ConvCrit * fac;
+                        double __ConvCrit = 1.0e-6;
+                        double thresh = __ConvCrit * fnorminit * fac + __ConvCrit * fac;
+                        bool ret = norm_CurRes <= thresh;
+                        tr.Info($"Pre-final convergence in Homotopy loop: {ret} (threshold = {thresh}, cur Res = {norm_CurRes}, init Res = {fnorminit}, ConvCrit = {ConvCrit}, fac = {fac})");
+                        return ret;
                     }
 
 
@@ -410,7 +484,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         } else {
                             if(IterCounter >= MinIter) {
                                 if(IterCounter >= MaxIter) {
-                                    Console.WriteLine($"Failed Newton: maximum number of iterations {MaxIter} exceeded.");
+                                    tr.Error($"Failed Newton: maximum number of iterations {MaxIter} exceeded.");
                                     break;
                                 }
                             }
@@ -420,18 +494,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         bool GoodForHomoIncrease = ResidualCrit(HomotopyStepAcceptedFactor) && HomotopyParameter < 1.0;
                         bool BadHomo = (HomoStepCounter >= HomotopyStepLongFail
-                                        || TrustRegionDelta < 5e-6
+                                        //|| TrustRegionDelta < 5e-6 // Don't use this! It may cause a wrong/unintended fail -- and reduction of homotopy parameter -- at the end of the iteration, when we are almost converged.
                         ) && (AcceptedHomoSolutions.Count > 0);
 
                         if (TrustRegionDelta < 5e-6) {
-                            Console.WriteLine("Homotopy decrease because of low trust region");
+                            tr.Info("Homotopy decrease because of low trust region");
                         }
 
                         if(!GoodForHomoIncrease && BadHomo) {
                             allowedIncrease *= StepWidthReductionFactor;
                             
                             if(allowedIncrease < 1) {
-                                Console.WriteLine($"Failed Newton: unable to raise Homotopy parameter without loosing convergence.");
+                                tr.Error($"Failed Newton: unable to raise Homotopy parameter without loosing convergence.");
                                 break;
                             }
 
@@ -466,7 +540,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             double targetResNorm = norm_CurRes * allowedIncrease;
 
-                            Console.WriteLine($"Trying to raise homotopy value (target residual is {targetResNorm}) ...");
+                            tr.Info($"Trying to raise homotopy value (target residual is {targetResNorm}) ...");
 
                             int i;
                             int LastN = -1;
@@ -511,7 +585,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     break;
                             }
 
-                            Console.WriteLine($"   raised to {HomotopyParameter}, (new residual {norm_CurRes}, tried {i+1} times, used {LastN}-th order extrapolation.");
+                            tr.Info($"Raised to {HomotopyParameter}, (new residual {norm_CurRes}, tried {i+1} times, used {LastN}-th order extrapolation.");
 
                             if(HomoStepCounter < HomotopyStepShortFail)
                                 allowedIncrease *= StepWidthIncreaseFactor;
@@ -524,7 +598,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         IterCounter++;
                         HomoStepCounter++;
                         NewtonStep(SolutionVec, IterCounter, CurSol, CurRes, HomotopyParameter, ref norm_CurRes, ref TrustRegionDelta);
-                        normHistory.Add(norm_CurRes);
+                        if(HomotopyParameter >= 1.0)
+                            normHistory.Add(norm_CurRes);
                     }
                 }
 
@@ -541,7 +616,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // --------------------------
 
             double[] step = new double[CurSol.Length];
-                
 
             // How should the inverse of the Jacobian be approximated?
             if(ApproxJac == ApproxInvJacobianOptions.MatrixFreeGMRES) {
@@ -560,8 +634,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
                 step.ScaleV(-1);
-
-
+                
             } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
                 // +++++++++++++++++++++++++++++
                 // Option: use 'external' solver
@@ -583,9 +656,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     };
                 }
 
+                //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
+                //Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
                 solver.Solve(step, CurRes);
                 step.ScaleV(-1);
-
             } else {
                 throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
             }
@@ -598,6 +672,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } else {
                 OldSolClone = null;
             }
+
+            //var DgOldSol = CurrentLin.ProlongateSolToDg(CurSol, "OldSol_");
+            //var DgStep = CurrentLin.ProlongateSolToDg(step, "Step_");
+            //DGField pressure = SolutionVec.Mapping.Fields[2];
+            //Console.WriteLine("Mean value before correction: " + pressure.GetMeanValue(CurrentLin.ReferenceCell_local));
 
             switch(Globalization) {
                 case GlobalizationOption.Dogleg:
@@ -621,25 +700,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 base.AbstractOperator.SolverSafeguard(oldSol, newSol);
             }
 
-
-
             // fix the pressure
             // ----------------
             if(CurrentLin.FreeMeanValue.Any()) {
+                if(itc == 0 || itc % 5 == 0) // execute this expensive test not to often.
+                    base.TestFreeMeanValue(SolutionVec, HomotopyValue);
 
                 DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
                 bool[] FreeMeanValue = CurrentLin.FreeMeanValue;
                 if(flds.Length != FreeMeanValue.Length)
                     throw new ApplicationException();
 
+                int RefCellLocal = CurrentLin.ReferenceCell_local;
+
+                double[] MeanValues = new double[flds.Length];
                 for(int iFld = 0; iFld < flds.Length; iFld++) {
+
                     if(FreeMeanValue[iFld]) {
-                        double mean = flds[iFld].GetMeanValueTotal(null);
-                        flds[iFld].AccConstant(-mean);
+                        //double mean = flds[iFld].GetMeanValueTotal(null);
+
+                        if(RefCellLocal >= 0) {
+                            MeanValues[iFld] = flds[iFld].GetMeanValue(RefCellLocal);
+
+                        }
+
+                        //flds[iFld].AccConstant(-mean);
+                    }
+                }
+                MeanValues = MeanValues.MPISum();
+                for(int iFld = 0; iFld < flds.Length; iFld++) {
+
+                    if(FreeMeanValue[iFld]) {
+                        //Console.WriteLine("Mean value before correction: " + flds[iFld].GetMeanValue(RefCellLocal));
+                        flds[iFld].AccConstant(-MeanValues[iFld]);
+                        //Console.WriteLine("Mean value after correction: " + flds[iFld].GetMeanValue(RefCellLocal));
                     }
                 }
             }
-
+            
 
 
             // update linearization
@@ -654,9 +752,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
+            //// plotting during Newton iterations:  
+            //var DgSolution = CurrentLin.ProlongateSolToDg(CurSol, "Sol_");
+            //Tecplot.Tecplot.PlotFields(DgSolution.Cat(DgOldSol, DgStep, dgREs), "DuringNewton-" + itc, itc, 3);
+
             // residual evaluation & callback
             // ------------------------------
-            EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue);
+            EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue, true);
             norm_CurRes = CurRes.MPI_L2Norm();
 
 
@@ -1423,6 +1525,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             public object Clone() {
+                throw new NotImplementedException();
+            }
+
+            public void Dispose() {
+                throw new NotImplementedException();
+            }
+
+            public long UsedMemory() {
                 throw new NotImplementedException();
             }
         }

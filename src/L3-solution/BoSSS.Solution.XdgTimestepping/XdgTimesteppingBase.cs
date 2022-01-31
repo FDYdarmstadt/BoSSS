@@ -33,7 +33,7 @@ using ilPSP.Tracing;
 namespace BoSSS.Solution.XdgTimestepping {
 
     /// <summary>
-    /// Callback-template for level-set updates.
+    /// Callback-template for spatial operator linearization or evaluation.
     /// </summary>
     /// <param name="OpMtx">
     /// Output for the linear part; the operator matrix must be stored in the valeu that is passes to the function, i.e. the caller allocates memory;
@@ -45,7 +45,11 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="Mapping">
     /// Corresponds with row and columns of <paramref name="OpMtx"/>, resp. with <paramref name="OpAffine"/>.
     /// </param>
-    /// <param name="CurrentState"></param>
+    /// <param name="CurrentState">
+    /// Current solution, resp. linearization point;
+    /// For linear problems the output matrix and vector must be (per definition) independent of the linearization point,
+    /// otherwise the problem is nonlinear (see also <see cref="ISpatialOperator.IsLinear"/>).
+    /// </param>
     /// <param name="AgglomeratedCellLengthScales">
     /// Length scale *of agglomerated grid* for each cell, e.g. to set penalty parameters. 
     /// </param>
@@ -58,7 +62,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// </param>
     public delegate void DelComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex);
         
-   
+   /*
     /// <summary>
     /// Callback-template for level-set updates.
     /// </summary>
@@ -79,11 +83,13 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// (see <see cref="LevelSetHandling.Coupled_Iterative"/>, <see cref="XdgTimesteppingBase.Config_LevelSetConvergenceCriterion"/>)
     /// </returns>
     public delegate double DelUpdateLevelset(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental);
+    
 
     /// <summary>
     /// Callback-template for pushing the level-set in case of increment timestepping
     /// </summary>
     public delegate void DelPushLevelSetRelatedStuff();
+    */
 
     /// <summary>
     /// Controls the updating of the mass-matrix, resp. the temporal operator.
@@ -135,7 +141,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         StrangSplitting = 2,
 
         /// <summary>
-        /// Level-Set is updated once per time-step.
+        /// Moving Interface: Level-Set is updated once per time-step.
         /// </summary>
         Coupled_Once = 3,
 
@@ -240,7 +246,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// Callback routine to update the operator matrix.
+        /// Callback routine:
+        /// - either update operator linearization matrix 
+        /// - or evaluate the operator in the current linearization point
+        /// In both cases, only the spatial component (i.e. no temporal derivatives) are linearized/evaluated.
         /// </summary>
         public DelComputeOperatorMatrix ComputeOperatorMatrix {
             get;
@@ -272,7 +281,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         if(TemporalOperator is ConstantXTemporalOperator cxt) {
                             cxt.SetTrackerHack(this.m_LsTrk);
                         }
-
+                        
                         var builder = TemporalOperator.GetMassMatrixBuilder(CurrentStateMapping, CurrentParameters, this.Residuals.Mapping);
                         builder.time = time;
 
@@ -288,7 +297,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Callback routine to update the level set.
         /// </summary>
-        public DelUpdateLevelset UpdateLevelset {
+        public Func<ISlaveTimeIntegrator> UpdateLevelset {
             get;
             protected set;
         }
@@ -424,27 +433,102 @@ namespace BoSSS.Solution.XdgTimestepping {
             string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
             string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);
 
-            if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)&&(nonlinSolver.Equals(typeof(FixpointIterator)))) {
-                ((FixpointIterator)nonlinSolver).CoupledIteration_Converged = LevelSetConvergenceReached;
+            if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)) {
+                if(nonlinSolver is FixpointIterator fixPoint) {
+                    fixPoint.CoupledIteration_Converged = LevelSetConvergenceReached;
+                }
             }
 
-            // set callback for diagnostic output
-            // ----------------------------------
-            if (nonlinSolver != null) {
-                nonlinSolver.IterationCallback += this.LogResis;
-                if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi;
+            // set callback, to fill residual field
+            // ------------------------------------
+            if (Config_SpatialOperatorType == SpatialOperatorType.Nonlinear) {
+                if (nonlinSolver != null) {
+                    nonlinSolver.IterationCallback += this.LogResis;
                 }
             } else {
+                m_ResLogger.SetOnce(false);
                 if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
+                    ((ISolverWithCallback)linearSolver).IterationCallback += this.LogResis;
                 }
             }
-
+          
             return String.Format("nonlinear Solver: {0}, linear Solver: {1}", nls_strg, ls_strg);
         }
 
+        /// <summary>
+        /// Residual logging
+        /// </summary>
+        /// <param name="iterIndex"></param>
+        /// <param name="currentSol"></param>
+        /// <param name="currentRes"></param>
+        /// <param name="Mgop"></param>
+        private void LogResis (int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
 
+            if (m_ResLogger != null) {
+                int NF = this.CurrentStateMapping.Fields.Count;
+                m_ResLogger.IterationCounter = iterIndex;
+
+                double totResi = 0.0;
+                if (m_TransformedResi) {
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // transform current solution and residual back to the DG domain
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    var R = this.Residuals;
+                    R.Clear();
+
+                    Mgop.TransformRhsFrom(R, currentRes);
+                    this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
+
+                    //// plotting during Newton iterations:  
+                    //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
+                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
+
+                    for (int i = 0; i < NF; i++) {
+                        var field = R.Mapping.Fields[i];
+                        if (field is XDGField) {
+                            foreach (var spc in ((XDGBasis)field.Basis).Tracker.SpeciesNames) {
+                                double L2Res = ((XDGField)field).GetSpeciesShadowField(spc).L2Norm();
+                                m_ResLogger.CustomValue(L2Res, m_ResidualNames[i] + "#" + spc);
+                                totResi += L2Res.Pow2();
+                            }
+                        } else {
+                            double L2Res = field.L2Norm();
+                            m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+                            totResi += L2Res.Pow2();
+                        }
+                    }
+                } else {
+
+                    // +++++++++++++++++++++++
+                    // un-transformed residual
+                    // +++++++++++++++++++++++
+
+                    var VarIdx = NF.ForLoop(i => Mgop.Mapping.GetSubvectorIndices(i));
+
+                    for (int i = 0; i < VarIdx.Length; i++) {
+                        double L2Res = 0.0;
+
+                        foreach (int idx in VarIdx[i])
+                            L2Res += currentRes[idx - Mgop.Mapping.i0].Pow2();
+                        L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
+                                                        //                                but this implementation is anyway inefficient....
+                        totResi += L2Res.Pow2();
+
+                        m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
+                    }
+                }
+                totResi = totResi.Sqrt();
+                m_ResLogger.CustomValue(totResi, "Total");
+
+
+                if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                    m_ResLogger.CustomValue(m_LastLevelSetResidual, "LevelSet");
+                }
+
+                m_ResLogger.NextIteration(true);
+            }
+        }
         
         /// <summary>
         /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
@@ -466,75 +550,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         public bool m_TransformedResi = true;
 
-        /// <summary>
-        /// Logging of residuals (provisional).
-        /// </summary>
-        virtual protected void LogResis(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
-
-            if (m_ResLogger != null) {
-                int NF = this.CurrentStateMapping.Fields.Count;
-                m_ResLogger.IterationCounter = iterIndex;
-
-                double totResi = 0.0;
-                if (m_TransformedResi) {
-                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    // transform current solution and residual back to the DG domain
-                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                    var R = this.Residuals;
-                    R.Clear();
-
-                    Mgop.TransformRhsFrom(R, currentRes);
-                    //Mgop.TransformSolFrom(X, currentSol);
-                    //this.m_Agglomerator.Extrapolate(X, X.Mapping);
-                    this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
-
-                    /*
-                    CoordinateVector Solution = new CoordinateVector(this.Residuals.Fields.Select(delegate (DGField f) {
-                        DGField r = f.CloneAs();
-                        r.Identification = "Sol_" + r.Identification;
-                        return r;
-                    }));
-                    Mgop.TransformSolFrom(Solution, currentSol);
-                    Tecplot.Tecplot.PlotFields(Solution.Fields.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 3);
-                    */
-                    
-                    for (int i = 0; i < NF; i++) {
-                        double L2Res = R.Mapping.Fields[i].L2Norm();
-                        m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
-                        totResi += L2Res.Pow2();
-                    }
-                } else {
-
-                    // +++++++++++++++++++++++
-                    // un-transformed residual
-                    // +++++++++++++++++++++++
-
-                    var VarIdx = NF.ForLoop(i => Mgop.Mapping.GetSubvectorIndices(i));
-
-                    for (int i = 0; i < VarIdx.Length; i++) {
-                        double L2Res = 0.0;
-
-                        foreach (int idx in VarIdx[i])
-                            L2Res += currentRes[idx - Mgop.Mapping.i0].Pow2();
-                        L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
-                                                       //                                but this implementation is anyway inefficient....
-                        totResi += L2Res.Pow2();
-
-                        m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
-                    }
-                }
-                totResi = totResi.Sqrt();
-                m_ResLogger.CustomValue(totResi, "Total");
-
-                if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
-                    m_ResLogger.CustomValue(m_LastLevelSetResidual, "LevelSet");
-                }
-
-                m_ResLogger.NextIteration(true);
-            }
-        }
-        
         public double m_LastLevelSetResidual;
 
         protected bool LevelSetConvergenceReached() {
@@ -627,21 +642,30 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected BlockMsrMatrix m_PrecondMassMatrix;
 
+        
+
         /// <summary>
-        /// Returns a collection of local and global condition numbers in order to assess the operators stability
+        /// Returns a collection of local and global condition numbers in order to assess the operators stability,
+        /// <see cref="IApplication.OperatorAnalysis"/>.
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumV = false) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
 
+            long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
             
             if(VarGroups == null) {
                 int NoOfVar = this.CurrentStateMapping.Fields.Count;
                 VarGroups = new int[][] { NoOfVar.ForLoop(i => i) };
             }
 
+            var StencilCondNoVizS = new List<DGField>();
+
             var Ret = new Dictionary<string, double>();
+            //int k = 0;
             foreach(int[] varGroup in VarGroups) {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
+               
+
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
                 
@@ -651,15 +675,23 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
                 }
 
-                if (plotStencilCondNumV) {
-                    var fullStencil = ana.StencilCondNumbersV();
-                    ana.VarGroup = new int[] { 0, 1 };
-                    var sipStencil = ana.StencilCondNumbersV();
-                    Tecplot.Tecplot.PlotFields(new DGField[] { fullStencil, sipStencil, (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCond", 0.0, 1);
-                    //ana.VarGroup = new int[] { 2 };
-                    //Tecplot.Tecplot.PlotFields(new DGField[] { ana.StencilCondNumbersV(), (LevelSet)m_LsTrk.LevelSetHistories[0].Current }, "stencilCn_varGroup2", 0.0, 1);
+                if (plotStencilCondNumViz) {
+                    StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
 
+                /*
+                {
+                    Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
+                    var bla = ana.MinimalEigen();
+                    Console.WriteLine("done: " + bla.lambdaMin);
+                    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
+                    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
+                }*/
+                //k++;
+            }
+
+            if(StencilCondNoVizS.Count > 0) {
+                Tecplot.Tecplot.PlotFields(ArrayTools.Cat(StencilCondNoVizS, (LevelSet)m_LsTrk.LevelSetHistories[0].Current), "stencilCond", 0.0, 1);
             }
 
             return Ret;
@@ -669,5 +701,25 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// The time associated with the current solution (<see cref="CurrentState"/>)
         /// </summary>
         public abstract double GetSimulationTime();
+
+
+
+        /// <summary>
+        /// Perform temporal integration
+        /// </summary>
+        /// <param name="phystime">
+        /// Physical time for the initial value.
+        /// </param>
+        /// <param name="dt">
+        /// Time-step size, must be the same value for each call in the lifetime of this object.
+        /// </param>
+        /// <param name="ComputeOnlyResidual">
+        /// If true, no solution is performed; only the residual of the actual solution is computed.
+        /// </param>
+        /// <returns>
+        /// - true: solver algorithm successfully converged
+        /// - false: something went wrong
+        /// </returns>
+        abstract public bool Solve(double phystime, double dt);
     }
 }

@@ -169,36 +169,39 @@ namespace ilPSP.Utils {
         static public double drnm2<TX>(int N, TX x, int incx, MPI_Comm comm) where TX : IList<double> {
             double locRes = 0;
 
-            double[] dx = x as double[];
-            if (dx != null) {
-                // double[] - implementation
-                locRes = BLAS.dnrm2(N, dx, incx);
-                locRes = locRes * locRes;
-            } else {
-                ISparseVector<double> spx = x as ISparseVector<double>;
+            if(N > 0) {
+                // in MPI parallel mode, some vector might be actually of zero size on a certain processor
 
-                if (spx != null) {
-                    // sparse implementation
-
-                    foreach (var entry in spx.SparseStruct) {
-                        int m = entry.Key % incx;
-                        if (m != 0)
-                            // entry is skipped by x-increment
-                            continue;
-
-                        double xi = entry.Value;
-                        locRes += xi * xi;
-                    }
+                double[] dx = x as double[];
+                if(dx != null) {
+                    // double[] - implementation
+                    locRes = BLAS.dnrm2(N, dx, incx);
+                    locRes = locRes * locRes;
                 } else {
-                    // default implementation
-                    for (int n = 0; n < N; n++) {
-                        double xi = x[n * incx];
-                        locRes += xi * xi;
+                    ISparseVector<double> spx = x as ISparseVector<double>;
+
+                    if(spx != null) {
+                        // sparse implementation
+
+                        foreach(var entry in spx.SparseStruct) {
+                            int m = entry.Key % incx;
+                            if(m != 0)
+                                // entry is skipped by x-increment
+                                continue;
+
+                            double xi = entry.Value;
+                            locRes += xi * xi;
+                        }
+                    } else {
+                        // default implementation
+                        for(int n = 0; n < N; n++) {
+                            double xi = x[n * incx];
+                            locRes += xi * xi;
+                        }
                     }
                 }
-            }
 
-            
+            }
 
             double globRes = double.NaN;
             unsafe {
@@ -293,6 +296,15 @@ namespace ilPSP.Utils {
     /// some utility BLAS-style functions
     /// </summary>
     public static class GenericBlas {
+
+        /// <summary>
+        /// <see cref="BLAS.MachineEps"/>
+        /// </summary>
+        static double MachineEps {
+            get {
+                return BLAS.MachineEps;
+            }    
+        }
 
         
         /// <summary>
@@ -596,6 +608,23 @@ namespace ilPSP.Utils {
             }
         }
 
+
+        /// <summary>
+        /// Fills an vector with random entries
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="seed">if negative, a time-dependent sees is used; otherwise, the seed value for the <see cref="Random"/> instance.</param>
+        static public void FillRandom<T>(this T a, int seed = -1) where T : IList<double> {
+            Random rnd = seed >= 0 ? new Random(seed) : new Random();
+            int L = a.Count;
+            
+            // default:
+            for (int i = 0; i < L; i++) {
+                a[i] = rnd.NextDouble();
+            }
+        }
+
+
         /// <summary>
         /// clear all entries.
         /// </summary>
@@ -851,7 +880,7 @@ namespace ilPSP.Utils {
                     acc[checked((int)(acc_index[i] + acc_index_shift))] += alpha*b[checked((int)(b_index[i] + b_index_shift))];
                 }
 
-            } else if( acc_index != null && b_index == null) {
+            } else if(acc_index != null && b_index == null) {
 
                 int N = acc_index.Count;
                 for (int i = 0; i < N; i++) {
@@ -1126,7 +1155,7 @@ namespace ilPSP.Utils {
     static public class BLAS {
 
         /// <summary>
-        /// the machine double accuracy;
+        /// the machine double accuracy: the smallest x, so that 1 + x > 1
         /// </summary>
         public static double MachineEps {
             get {

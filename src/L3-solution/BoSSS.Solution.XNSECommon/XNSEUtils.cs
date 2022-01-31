@@ -227,6 +227,7 @@ namespace BoSSS.Solution.XNSECommon {
                     UB[d].Evaluate(j0, Len, NS, uBRes.ExtractSubArrayShallow(d, -1, -1));
                 }
 
+             
                 if (OnlyNormalComponent) {
                     var Normals = LsTrk.DataHistories[0].Current.GetLevelSetNormals(NS, j0, Len);
 

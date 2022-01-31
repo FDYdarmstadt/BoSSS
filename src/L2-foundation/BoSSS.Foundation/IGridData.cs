@@ -61,6 +61,11 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
+        /// returns true, until <see cref="IGrid.InvalidateGridData"/> has been called
+        /// </summary>
+        bool IsAlive();
+
+        /// <summary>
         /// This is a mapping from each used <em>EdgeTag</em>, (see <see cref="IGeometricalEdgeData.EdgeTags"/>) to a string that
         /// provides a name and additional information about the EdgeTag. The
         /// intention for this member is to provide both, a name (e.g.
@@ -104,7 +109,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// see <see cref="Parallelization"/>
+        /// see <see cref="IParallelization"/>
         /// </summary>
         IParallelization iParallel {
             get;

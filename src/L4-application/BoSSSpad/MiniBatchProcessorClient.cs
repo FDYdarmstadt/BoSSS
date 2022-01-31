@@ -181,6 +181,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// See <see cref="BatchProcessorClient.Submit"/>. 
         /// </summary>
         public override (string id, object optJobObj) Submit(Job myJob, string DeploymentDirectory) {
+            var started = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: true);
+            if(started) {
+                Console.WriteLine("Warning: MiniBatchProcessor server was not running, started by job activation; it might be beneficial to start `MiniBatchProcessor.dll` externally, for the future.");
+            }
+
+
             string FullName = GetFullJobName(myJob);
             //var AllProblems = FilterJobData(myJob);
             //if (AllProblems.Length > 0) {
@@ -192,7 +198,7 @@ namespace BoSSS.Application.BoSSSpad {
                 NoOfProcs = myJob.NumberOfMPIProcs,
                 ExeDir = DeploymentDirectory,
                 exefile = base.DotnetRuntime,
-                 Arguments = ArrayTools.Cat(new[] { Path.GetFileName(myJob.EntryAssembly.Location) }, myJob.CommandLineArguments),
+                 Arguments = ArrayTools.Cat(new[] { myJob.EntryAssemblyName }, myJob.CommandLineArguments),
                 EnvVars = myJob.EnvironmentVars.Select(kv => new Tuple<string, string>(kv.Key, kv.Value)).ToArray(),
                 UseComputeNodesExclusive = myJob.UseComputeNodesExclusive
             };

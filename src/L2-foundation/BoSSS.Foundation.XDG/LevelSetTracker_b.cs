@@ -85,12 +85,22 @@ namespace BoSSS.Foundation.XDG {
             return hs;
         }
 
+        /// <summary>
+        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// </summary>
+        public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
+            return GetXDGSpaceMetrics(new SpeciesId[] { Spc }, CutCellsQuadOrder, HistoryIndex);
+        }
 
 
-        public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId[] Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
+        /// <summary>
+        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// </summary>
+        public XDGSpaceMetrics GetXDGSpaceMetrics(IEnumerable<SpeciesId> Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
             //if(!m_QuadFactoryHelpers.ContainsKey(variant)) {
             //    m_QuadFactoryHelpers[variant] = new XQuadFactoryHelper(this, variant);
             //}
+            var _Spc = Spc.ToArray();
 #if TEST
             MPICollectiveWatchDog.WatchAtRelease();
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -99,13 +109,13 @@ namespace BoSSS.Foundation.XDG {
 
             //throw new NotImplementedException("todo");
             var dict = m_XDGSpaceMetricsHistory[HistoryIndex];
-            var key = Tuple.Create(Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
-            if(!dict.ContainsKey(key)) {
+            var key = Tuple.Create(_Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
+            if (!dict.ContainsKey(key)) {
                 dict.Add(key,
                     new XDGSpaceMetrics(this,
                         GetXQuadFactoryHelper(CutCellsQuadType, HistoryIndex),
                         CutCellsQuadOrder,
-                        Spc,
+                        _Spc,
                         HistoryIndex
                         )
                 );
@@ -117,15 +127,18 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="Spc"></param>
-        /// <param name="CutCellsQuadOrder"></param>
-        /// <param name="oldCcm"></param>
-        /// <param name="oldTs__AgglomerationTreshold"></param>
+        /// <param name="Spc">all species, for which agglomeration should be performed</param>
+        /// <param name="CutCellsQuadOrder">
+        /// cut-cell quadrature order for the quadrature rule that is used to determine cell volumes;
+        /// this should typically be the same order which is used to evaluate the XDG operator matrix.
+        /// </param>
         /// <param name="__AgglomerationTreshold">
         /// Volume fraction, which triggers cell agglomeration;
         /// see <see cref="MultiphaseCellAgglomerator.AgglomerationThreshold"/></param>
         /// <param name="oldTs__AgglomerationTreshold">
-        /// Agglomeration thresholds for   _previous_ timesteps, correlates with <paramref name="oldCcm"/>.
+        /// Agglomeration thresholds for   _previous_ timesteps.
+        /// The number of entries in this array determines how many previous timesteps are considered
+        /// (<see cref="LevelSetTracker.HistoryLength"/>).
         /// </param>
         /// <param name="AgglomerateNewborn">
         /// 'Newborn' cut-cells 
@@ -139,7 +152,7 @@ namespace BoSSS.Foundation.XDG {
         /// any cell which should be agglomerated, if no neighbour is found.
         /// </param>
         /// <param name="NewbornAndDecasedThreshold">
-        /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewbornAndDeceased"/>;
+        /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
         /// </param>        
         /// <returns></returns>
         public MultiphaseCellAgglomerator GetAgglomerator(
@@ -218,7 +231,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// 1 (including) to -<see cref="GetPopulatedLength()"/> (including) 
             /// </summary>
-            public int[] AvailabelIndices {
+            public int[] AvailableIndices {
                 get {
                     var R = new int[GetPopulatedLength() + 1];
                     for(int i = 0; i < R.Length; i++) {
@@ -240,6 +253,20 @@ namespace BoSSS.Foundation.XDG {
             public int GetPopulatedLength() {
                 return History.Count;
             }
+
+            /// <summary>
+            /// indexes of all available times, i.e. all valid indexes to access <see cref="this[int]"/>
+            /// </summary>
+            public int[] PopulatedIndices {
+                get {
+                    int[] ret = new int[GetPopulatedLength() + 1];
+                    for(int i = 0; i < ret.Length; i++)
+                        ret[i] = 1 - i;
+                    return ret;
+                }
+            }
+
+
 
             /// <summary>
             /// Sontainer for previous states.
@@ -278,6 +305,17 @@ namespace BoSSS.Foundation.XDG {
                 }
                 m_Current = Replicator1(m_Current);
                 m_PushCount++;
+            }
+
+            internal T Pop(Func<T, T, T> Replacor1) {
+                T ret = m_Current;
+                m_Current = Replacor1(m_Current, History[0]);
+                for(int i = 0; i <= History.Count - 2; i++) {
+                    History[i] = History[i + 1];
+                }
+                History.RemoveAt(History.Count - 1);
+                m_PushCount--;
+                return ret;
             }
 
 

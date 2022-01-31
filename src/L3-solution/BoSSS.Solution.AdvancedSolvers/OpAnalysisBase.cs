@@ -15,6 +15,7 @@ using System.Diagnostics;
 using BoSSS.Solution.AdvancedSolvers;
 using NUnit.Framework;
 using ilPSP.Tracing;
+using System.IO;
 
 namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
@@ -33,6 +34,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
         }
 
+       
+
 
         /// <summary>
         /// Constructor for XDG solvers
@@ -47,42 +50,55 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             m_LsTrk = LsTrk;
 
             m_OpMtx = Mtx.CloneAs();
+            m_Mass = _mass?.CloneAs();
             localRHS = RHS.CloneAs();
 
             // create the Dummy XDG aggregation basis
             var baseGrid = Mapping.GridDat;
             var mgSeq = Foundation.Grid.Aggregation.CoarseningAlgorithms.CreateSequence(baseGrid, 1);
-            AggregationGridBasis[][] XAggB = AggregationGridBasis.CreateSequence(mgSeq, Mapping.BasisS);
+            m_XAggB = AggregationGridBasis.CreateSequence(mgSeq, Mapping.BasisS);
 
             //
-            XAggB.UpdateXdgAggregationBasis(CurrentAgglomeration);
+            m_XAggB.UpdateXdgAggregationBasis(CurrentAgglomeration);
 
             // create multigrid operator
-            m_MultigridOp = new MultigridOperator(XAggB, Mapping,
+            m_MultigridOp = new MultigridOperator(m_XAggB, Mapping,
                 m_OpMtx,
-                _mass,
+                m_Mass,
                 OpConfig,
                 abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray());
         }
 
+        AggregationGridBasis[][] m_XAggB;
 
         LevelSetTracker m_LsTrk;
 
         UnsetteledCoordinateMapping m_map;
         int[] _VarGroup;
         
-        BlockMsrMatrix m_OpMtx;
+        BlockMsrMatrix m_Mass;
+        
+        BlockMsrMatrix m_OpMtx; // un-treated operator matrix
         double[] localRHS;
         
         MultigridOperator m_MultigridOp;
+
+        /// <summary>
+        /// Les operaeur
+        /// </summary>
+        public MultigridOperator MultigridOp {
+            get {
+                return m_MultigridOp;
+            }
+        }
 
 
         /// <summary>
         /// user-defined indices of depended variables, if not the full matrix should be analyzed, e.g. 0 = u_x, 1=u_y, 2=u_z, 3=p ...
         /// </summary>
-        public int[] VarGroup{
+        public int[] VarGroup {
             get{
-                return _VarGroup;
+                return _VarGroup.CloneAs();
             }
             set{
                 _VarGroup = value;
@@ -99,6 +115,27 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Computes the minimal Eigenvalue and related Eigenvector using PARDISO
+        /// </summary>
+        public (double lambdaMin, double[] V) MinimalEigen() {
+            var Mtx = this.PrecondOpMatrix;
+            int L = Mtx.RowPartitioning.LocalLength;
+
+            // extract sub-matrix
+            var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            FullSel.VariableSelector(this.VarGroup);
+            var mask = new BlockMask(FullSel);
+            var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
+
+            var bla = Part.MinimalEigen();
+
+            double[] Vret = new double[L];
+            mask.AccSubVec(bla.V, Vret);
+
+            return (bla.lambdaMin, Vret);
         }
 
 
@@ -149,7 +186,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// </summary>
         /// <param name="OpMatrix"></param>
         /// <param name="RHS"></param>
-        public void rankAnalysis(BlockMsrMatrix OpMatrix, double[] RHS){
+        public void rankAnalysis(BlockMsrMatrix OpMatrix, double[] RHS) {
 
             int RHSlen = this.localRHS.Length;
             Debug.Assert(RHSlen == m_OpMtx.RowPartitioning.LocalLength);
@@ -157,7 +194,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             MultidimensionalArray outputArray = MultidimensionalArray.Create(2, 1); // The two rank values
 
             //At this point OpMatrix and RHS are local, they are collected within bmc on proc rank==0
-            using (var bmc = new BatchmodeConnector()){
+            using(var bmc = new BatchmodeConnector()) {
                 bmc.PutSparseMatrix(OpMatrix, "OpMatrix");
                 bmc.PutVector(RHS, "RHS");
                 bmc.Cmd("output = zeros(2,1)"); // First value is rank(OpMatrix), second the rank of the augmented matrix = rank([Matrix|RHS])
@@ -184,32 +221,23 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             //Output
             {
                 Console.WriteLine("Results of rank analysis:");
-                if (rnkAugmentedMtx > rnkMtx)
-                {
+                if(rnkAugmentedMtx > rnkMtx) {
                     //throw new Exception("The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!"); 
                     Console.WriteLine("======================================================");
                     Console.WriteLine("WARNING!!!!!!! The rank of the augmented matrix shouldn't be greater than the one of the original matrix!!");
                     Console.WriteLine("This means that the system does not have a solution!");
                 }
 
-                if (rnkAugmentedMtx == rnkMtx)
-                {
+                if(rnkAugmentedMtx == rnkMtx) {
                     Console.WriteLine("The system has at least a solution");
                 }
 
                 //RHS and OpMatrix will be collected in Bmc, so total length has to be considered for RHS: RHS.length will lead to errors in parallel execution
-                if (rnkMtx < RHSlen)
-                {
+                if(rnkMtx < RHSlen) {
                     Console.WriteLine("The rank of the matrix is smaller than the number of variables. There are {0} free parameters", (RHS.Length - rnkMtx));
-                }
-
-                else if (rnkMtx == RHSlen)
-                {
+                } else if(rnkMtx == RHSlen) {
                     Console.WriteLine("The system has a unique solution :) ");
-                }
-
-                else
-                {
+                } else {
                     throw new Exception("what? should not happen");
                 }
 
@@ -301,7 +329,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             double[] Inner_0Vars = (new BlockMask(InnerSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
 
             MultidimensionalArray output = MultidimensionalArray.Create(2, 1);
-            string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
+            //string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
 
             using(BatchmodeConnector bmc = new BatchmodeConnector()) {
 
@@ -336,6 +364,221 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             
         }
 
+        /// <summary>
+        /// Creates a new <see cref="MultigridOperator"/>, where all variables in <see cref="VarGroup"/> are preconditioned according to <paramref name="altMode"/>.
+        /// (All Variables **not** in <see cref="VarGroup"/> are not preconditioned, i.e. the option <see cref="MultigridOperator.Mode.Eye"/> is chosen.
+        /// </summary>
+        MultigridOperator GetAlternativeMgOp(MultigridOperator.Mode altMode) {
+            
+            // Determine the operator configuration for the alternative operator
+            // =================================================================
+
+            MultigridOperator.ChangeOfBasisConfig[][] AlternativeOpConfig = new MultigridOperator.ChangeOfBasisConfig[1][];
+            {
+                int NoOfVars = m_MultigridOp.Mapping.NoOfVariables;
+
+                bool[] VarGroupMarker = new bool[NoOfVars];
+                this.VarGroup.ForEach((int iVar) => VarGroupMarker[iVar] = true);
+                int NoOfOtherVariables = NoOfVars - this.VarGroup.Length;
+                if(NoOfOtherVariables < 0)
+                    throw new ApplicationException();
+
+                AlternativeOpConfig[0] = new MultigridOperator.ChangeOfBasisConfig[1 + NoOfOtherVariables];
+
+                int GetDegree(int iVar) {
+                    foreach(var conf in this.m_MultigridOp.Config) {
+                        int L = conf.VarIndex.Length;
+                        for(int l = 0; l < L; l++) {
+                            if(conf.VarIndex[l] == iVar)
+                                return conf.DegreeS[iVar];
+                        }
+                    }
+                    throw new ArgumentException($"unable to find variable {iVar} in original operators change-of-basis configuration");
+                }
+
+                // set the alternative mode for the vairable group which should be analyzed
+                AlternativeOpConfig[0][0] = new MultigridOperator.ChangeOfBasisConfig() {
+                    VarIndex = this.VarGroup.CloneAs(),
+                    DegreeS = this.VarGroup.Select(iVar => GetDegree(iVar)).ToArray(),
+                    mode = altMode
+                };
+
+                // set "Eye" for all other variables
+                int cnt = 0;
+                for(int iVar = 0; iVar < NoOfVars; iVar++) {
+                    if(VarGroupMarker[iVar] == false) {
+                        AlternativeOpConfig[0][cnt] = new MultigridOperator.ChangeOfBasisConfig() {
+                            VarIndex = new int[] { iVar },
+                            DegreeS = new int[] { GetDegree(iVar) },
+                            mode = MultigridOperator.Mode.Eye
+                        };
+                        cnt++;
+
+                    }
+                }
+                if(cnt != NoOfOtherVariables)
+                    throw new ApplicationException("error in algorithm");
+            }
+
+            // create the alternative operator
+            // ===============================
+
+            return new MultigridOperator(m_XAggB, m_MultigridOp.BaseGridProblemMapping,
+                m_OpMtx.CloneAs(),
+                m_Mass,
+                AlternativeOpConfig,
+                m_MultigridOp.FreeMeanValue.CloneAs());
+
+        }
+
+
+        //public static BlockMsrMatrix DbeMatrix;
+        //public static BlockMsrMatrix LidMatrix;
+
+
+
+        public double MatrixStabilityTest() {
+
+            // setup original and alternative operator
+            // =======================================
+            var OpOrg = m_MultigridOp;
+            var OpAlt = GetAlternativeMgOp(MultigridOperator.Mode.LeftInverse_DiagBlock);
+
+            // setup of RHS
+            // ============
+            double[] RhsOrgMap, RhsAltMap;
+            int Lbase, Lmap;
+            {
+                Lbase = OpOrg.BaseGridProblemMapping.LocalLength;
+                double[] RandomRhs = new double[Lbase];
+                RandomRhs.FillRandom();
+
+                if(OpOrg.Mapping.LocalLength != OpAlt.Mapping.LocalLength)
+                    throw new ApplicationException("Error in algorithm.");
+                Lmap = OpOrg.Mapping.LocalLength;
+
+
+                RhsOrgMap = new double[Lmap];
+                OpOrg.TransformRhsInto(RandomRhs, RhsOrgMap, true);
+
+                RhsAltMap = new double[Lmap];
+                OpAlt.TransformRhsInto(RandomRhs, RhsAltMap, true);
+            }
+
+
+            // setup Matrices
+            // ==============
+            var MtxOrg = OpOrg.OperatorMatrix;
+            var MtxAlt = OpAlt.OperatorMatrix;
+
+            /*
+            {
+                var Diff2 = DbeMatrix.CloneAs();
+                Diff2.Acc(-1.0, MtxOrg);
+                double diffDbeNorm = Diff2.InfNorm();
+                Console.WriteLine("Dbe diff = " + diffDbeNorm);
+            }
+
+            {
+                var Diff1 = LidMatrix.CloneAs();
+                Diff1.Acc(-1.0, MtxAlt);
+                double diffLidNorm = Diff1.InfNorm();
+                Console.WriteLine("Lid diff = " + diffLidNorm);
+            }
+            */
+            //var diff = MtxAlt.CloneAs();
+            //diff.Acc(-1.0, MtxOrg);
+            //double r2123 = diff.InfNorm();
+            //Console.WriteLine("Difference: " + r2123);
+
+
+            // extract blocks corresponding to 'VarGroup'
+            // ==========================================
+
+            var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            FullSel.VariableSelector(this.VarGroup);
+            var mask = new BlockMask(FullSel);
+            long[] GidxS = mask.GlobalIndices;
+
+            var MtxOrg_Block = MtxOrg.GetSubMatrix(GidxS, GidxS);
+            var MtxAlt_Block = MtxAlt.GetSubMatrix(GidxS, GidxS);
+
+            int LBlock = MtxAlt_Block._RowPartitioning.LocalLength;
+            long i0 = MtxOrg._RowPartitioning.i0;
+
+            double[] RhsOrgMap_Block = new double[LBlock], RhsAltMap_Block = new double[LBlock];
+            RhsOrgMap_Block.AccVi64(1.0, RhsOrgMap, acc_index: default(long[]), b_index: GidxS, b_index_shift: -i0);
+            RhsAltMap_Block.AccVi64(1.0, RhsAltMap, acc_index: default(long[]), b_index: GidxS, b_index_shift: -i0);
+
+            /*
+            {
+                var Diff2 = DbeMatrix.CloneAs();
+                Diff2.Acc(-1.0, MtxOrg_Block);
+                double diffDbeNorm = Diff2.InfNorm();
+                Console.WriteLine("Dbe diff = " + diffDbeNorm);
+            }
+
+            {
+                var Diff1 = LidMatrix.CloneAs();
+                Diff1.Acc(-1.0, MtxAlt_Block);
+                double diffLidNorm = Diff1.InfNorm();
+                Console.WriteLine("Lid diff = " + diffLidNorm);
+            }
+            */
+
+            // solve original and alternative system
+            // =====================================
+
+            double[] Xorg_Block, Xalt_Block;
+            {
+                Xorg_Block = new double[LBlock];
+                MtxOrg_Block.Solve_Direct(Xorg_Block, RhsOrgMap_Block);
+                MtxOrg_Block.SaveToTextFileSparse("OrgBlock.txt");
+                //DbeMatrix.Solve_Direct(Xorg_Block, RhsOrgMap_Block);
+
+                Xalt_Block = new double[LBlock];
+                MtxAlt_Block.Solve_Direct(Xalt_Block, RhsAltMap_Block);
+                MtxAlt_Block.SaveToTextFileSparse("AltBlock.txt");
+                //LidMatrix.Solve_Direct(Xalt_Block, RhsAltMap_Block);
+            }
+
+            // transform back int order to compare
+            // ===================================
+            double[] XorgMap = new double[Lmap], Xorg = new double[Lbase];
+            XorgMap.AccVi64(1.0, Xorg_Block, acc_index: GidxS, b_index: default(long[]), acc_index_shift: -i0);
+            OpOrg.TransformSolFrom(Xorg, XorgMap);
+
+
+            double[] XaltMap = new double[Lmap], Xalt = new double[Lbase];
+            XaltMap.AccVi64(1.0, Xalt_Block, acc_index: GidxS, b_index: default(long[]), acc_index_shift: -i0);
+            OpAlt.TransformSolFrom(Xalt, XaltMap);
+
+            // finally, compare!
+            // =================
+
+            double Ref = Math.Max(Xorg.MPI_L2Norm(), Xalt.MPI_L2Norm());
+            double dist = Xorg.MPI_L2Dist(Xalt);
+            double DisturbanceMeasure =  dist / Ref;
+            Console.WriteLine("Matrix stability test disturbance measure: " + dist);
+
+            if(DisturbanceMeasure > 1.0e-8) {
+                Console.Error.WriteLine("!!!!!!!!!!!! Probably unstable discretization !!!!!!!!!!");
+            }
+
+            return DisturbanceMeasure;
+        }
+
+        /// <summary>
+        /// The operator matrix after compactification (i.e. elimination of un-used DOFs),
+        /// application of reference points (<see cref="ISpatialOperator.FreeMeanValue"/>),
+        /// and block-preconditioning.
+        /// </summary>
+        public BlockMsrMatrix PrecondOpMatrix {
+            get {
+                return m_MultigridOp.OperatorMatrix.CloneAs();
+            }
+        }
+
 
         /// <summary>
         /// returns the condition number of the full matrix
@@ -350,7 +593,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             var Mtx = m_MultigridOp.OperatorMatrix;
 
-
+            //bool Comparison = this.VarGroup.SetEquals(new int[] { 1 });
 
 
             // Blocks and selectors 
@@ -360,28 +603,36 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
             FullSel.VariableSelector(this.VarGroup);
 
-            
+            //long J = grd.CellPartitioning.TotalLength;
+
             // Matlab
             // ======
 
             double[] Full_0Vars = (new BlockMask(FullSel)).GlobalIndices.Select(i => i + 1.0).ToArray();
             
-            MultidimensionalArray output = MultidimensionalArray.Create(2, 1);
-            string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
+            MultidimensionalArray output = MultidimensionalArray.Create(4, 1);
+            //string[] names = new string[] { "Full_0Vars", "Inner_0Vars" };
 
             using(BatchmodeConnector bmc = new BatchmodeConnector()) {
-
-                // if Octave should be used instead of Matlab....
-                // BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
+                //if(Comparison) {
+                //    string compPath = $"Mtx_ipPoisson-J{J}.txt";
+                //    File.Copy(compPath, Path.Combine(bmc.WorkingDirectory.FullName, "comp.txt"), false);
+                //}
 
                 bmc.PutSparseMatrix(Mtx, "FullMatrix");
 
                 bmc.PutVector(Full_0Vars, "Full_0Vars");
 
-                bmc.Cmd("output = ones(2,1);");
+                bmc.Cmd("output = ones(4,1);");
+
 
                 bmc.Cmd("output(1) = condest(FullMatrix(Full_0Vars,Full_0Vars));");
-               
+
+                //if(Comparison) {
+                //    bmc.Cmd("compMtx = ReadMsr('comp.txt');");
+                //    bmc.Cmd("output(2) = norm(compMtx - FullMatrix(Full_0Vars,Full_0Vars), inf);");
+                //    bmc.Cmd("output(3) = condest(compMtx);");
+                //}
 
                 bmc.GetMatrix(output, "output");
                 bmc.Execute(false);
@@ -390,8 +641,11 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 Debug.Assert(condestFull.MPIEquals(), "value does not match on procs");
                 
 
-                Console.WriteLine($"MATLAB condition number: {condestFull:0.###e-00}");
-
+                Console.WriteLine($"MATLAB condition number vars {VarNames}: {condestFull:0.###e-00}");
+                //if(Comparison) {
+                //    Console.WriteLine($"MATLAB condition number check matrix vars {VarNames}: {output[2, 0]:0.###e-00}");
+                //    Console.WriteLine($"MATLAB matrix check {VarNames}: {output[1, 0]:0.###e-00}");
+                //}
                 
                 return condestFull;
             }
@@ -403,7 +657,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// Test if the matrix is symmetric positive definite
         /// </summary>
         /// <returns>bool array res=[symmetry, positive definit]</returns>
-        public bool[] Symmetry(){
+        public bool[] Symmetry() {
 
             bool[] res = new bool[2];
 
@@ -425,7 +679,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             // symmetry test by calculation of symmetry deviation
             bool sym = false;
             double SymmDev = m_OpMtx.SymmetryDeviation();
-            if (SymmDev < 1e-5)
+            if(SymmDev < 1e-5)
                 sym = true;
 
             res[0] = sym;
@@ -436,10 +690,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             bool posDef = true;
             // only proc 0 gets info so the following is executed exclusively on rank 0
-            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+            if(ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
                 try {
                     FullyPopulatedMatrix.Cholesky();
-                } catch (ArithmeticException) {
+                } catch(ArithmeticException) {
                     posDef = false;
                 }
             }
@@ -455,7 +709,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// returns the maximum and minimum eigenvalues of the matrix
         /// </summary>
         /// <returns>Array myeigs =[MaximumEig, MinimumEig]</returns>
-        public double[] Eigenval(){
+        public double[] Eigenval() {
 
             double[] eigenvalues = new double[2];
             MultidimensionalArray eigs = MultidimensionalArray.Create(1, 2);
@@ -464,7 +718,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             int[] DepVars = this.VarGroup;
             double[] DepVars_subvec = this.m_map.GetSubvectorIndices(true, DepVars).Select(i => i + 1.0).ToArray();
 
-            using (BatchmodeConnector bmc = new BatchmodeConnector()){
+            using(BatchmodeConnector bmc = new BatchmodeConnector()) {
 
                 // if Octave should be used instead of Matlab....
                 //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
@@ -475,7 +729,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 bmc.Cmd("output(1) = eigs(FullMatrix(DepVars_subvec,DepVars_subvec),1,'lm');");
                 bmc.Cmd("output(2) = eigs(FullMatrix(DepVars_subvec,DepVars_subvec),1,'sm');");
                 bmc.GetMatrix(output, "output");
-                bmc.Execute(false);     
+                bmc.Execute(false);
             }
 
             double[] myeigs = new double[] { output[0, 0], output[1, 0] };
@@ -594,12 +848,14 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return ret;
         }
 
-
-        string VarNames {
+        /// <summary>
+        /// Turn VarGroup into Names
+        /// </summary>
+        public string VarNames {
             get {
                 int[] vgs = this.VarGroup;
                 if(vgs.Length <= 1) {
-                    return "Var0";
+                    return "Var" + vgs[0];
                 } else {
                     Array.Sort(vgs);
 
@@ -622,6 +878,12 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 var Ret = new Dictionary<string, double>();
 
                 var grd = m_map.GridDat;
+
+                // matrix stability
+                // ================
+
+                //double Stab = MatrixStabilityTest();
+                //Ret.Add("MatrixStabilityMeasure-" + VarNames, Stab);
 
                 // global condition numbers
                 // ========================
