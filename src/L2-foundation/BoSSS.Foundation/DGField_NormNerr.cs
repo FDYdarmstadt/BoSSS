@@ -875,6 +875,7 @@ namespace BoSSS.Foundation {
                     }
                 }
 
+             
                 double accglob = double.NaN;
                 unsafe {
                     csMPI.Raw.Allreduce((IntPtr)(&acc), (IntPtr)(&accglob), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.SUM, csMPI.Raw._COMM.WORLD);

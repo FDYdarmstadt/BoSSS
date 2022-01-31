@@ -66,6 +66,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 default: throw new IndexOutOfRangeException();
             }    
         }
+                
 
         /// <summary>
         /// setting [<see cref="Option_LevelSetEvolution"/>, <see cref="Option_LevelSetEvolution2"/>][<paramref name="iLs"/>]
@@ -88,6 +89,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             }
             set {
                 if(value == _TimesteppingMode.Steady) {
+                    Timestepper_LevelSetHandling = LevelSetHandling.None;
                     Option_LevelSetEvolution = LevelSetEvolution.None;
                     Option_LevelSetEvolution2 = LevelSetEvolution.None;
                     Timestepper_LevelSetHandling = LevelSetHandling.None;
@@ -140,6 +142,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         [DataMember]
         public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
 
     }
 

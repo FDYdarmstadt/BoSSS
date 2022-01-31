@@ -42,12 +42,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class DirectSolver : ISolverSmootherTemplate, ISolverWithCallback {
 
+        // parallelism should be auto-determined based on the matrix-MPI-communicator
 
-        /// <summary>
-        /// Set the type of Parallelism to be used for the linear Solver.
-        /// You may define a comma separated list out of the following: "SEQ","MPI","OMP"
-        /// </summary>
-        public Parallelism SolverVersion = Parallelism.SEQ;
+        ///// <summary>
+        ///// Set the type of Parallelism to be used for the linear Solver.
+        ///// </summary>
+        //public Parallelism SolverVersion = Parallelism.SEQ;
 
         /// <summary>
         /// Switch between PARDISO and MUMPS.
@@ -183,6 +183,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         ISparseSolver GetSolver(IMutableMatrixEx Mtx) {
             ISparseSolver solver;
+
+            bool RunSerial = Mtx.MPI_Comm == csMPI.Raw._COMM.SELF;
+            
             
             switch(WhichSolver) {
                 case _whichSolver.PARDISO:
@@ -194,13 +197,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 solver = new PARDISOSolver() {
                     CacheFactorization = CachingOn,
                     UseDoublePrecision = true,
-                    Parallelism = this.SolverVersion
+                    Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.OMP
                 };
                 break;
 
                 case _whichSolver.MUMPS:
                 solver = new MUMPSSolver() {
-                    Parallelism = this.SolverVersion
+                    Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.MPI
                 };
                 break;
 

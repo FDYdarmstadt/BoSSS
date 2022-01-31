@@ -202,10 +202,12 @@ namespace BoSSS.Solution.Control {
         }
 
         /// <summary>
-        /// Sets the number of Multigrid levels. Multigrid approach is used to get a Preconditioner for Krylov solvers, e.g. GMRES.
+        /// Sets the **maximum** number of Multigrid levels to be used.
+        /// The numbers of levels which are actually used is probably much less, and detemeined via <see cref="TargetBlockSize"/>.
+        /// Multigrid approach is used to get a Preconditioner for Krylov solvers, e.g. GMRES.
         /// </summary>
         [DataMember]
-        public int NoOfMultigridLevels = 1;
+        public int NoOfMultigridLevels = 1000000;
 
         /// <summary>
         /// Sets the mode for the solver to run in
@@ -231,6 +233,10 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// If any blocking is used (Schwarz, block Jacobi), a target for the block size.
         /// Tests show that the ideal block size may be around 10000, but this may depend on computer, DG polynomial order, etc.
+        /// 
+        /// This also determines the actual number of multigrid levels used in dependence of the problem size;
+        /// As soon as the number of DOF's on a certain multigrid level fall below this threshold, a direct 
+        /// solver is used and no further multigrid levels are allocated.
         /// </summary>
         [DataMember]
         [BoSSS.Solution.Control.ExclusiveLowerBound(99.0)]

@@ -28,12 +28,12 @@ for i = 1:I
     thetaErr = thetaErr + abs(theta - theta_rec(i));
     
     % what I think:
-    %Vx(i) = sin(theta)*vr + cos(theta)*vt;
-    %Vz(i) = -cos(theta)*vr + sin(theta)*vt ;
+    Vx(i) = sin(theta)*vr + cos(theta)*vt;
+    Vz(i) = -cos(theta)*vr + sin(theta)*vt ;
     
     % dino zrnic
-    Vx(i) = vr*sin(theta) + vt*cos(theta);
-    Vz(i) = vr*cos(theta) - vt*sin(theta);
+    %Vx(i) = vr*sin(theta) + vt*cos(theta);
+    %Vz(i) = vr*cos(theta) - vt*sin(theta);
 end
 
 
