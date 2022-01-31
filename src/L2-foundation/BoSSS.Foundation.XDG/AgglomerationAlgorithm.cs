@@ -784,9 +784,9 @@ namespace BoSSS.Foundation.XDG {
                             || (EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable) // edge is empty and there might be another non-empty candidate
                             ) {
                             // +++++++++++++++++++++++++++++++++++++++++++++
-                            // Neighbour is ruled out:
+                            // Neighbor is ruled out:
                             // boundary edge, periodic edge, or
-                            // no neighbour for agglomeration
+                            // no neighbor for agglomeration
 
                             //Console.WriteLine($"    Ignoring: r1? {jCellNeigh < 0}, r2? {EdgeTags[iEdge] >= GridCommons.FIRST_PERIODIC_BC_TAG}, r3? {(EdgeArea_iEdge <= EmptyEdgeTreshold && NonEmptyEdgeAvailable)}");
 
@@ -817,10 +817,11 @@ namespace BoSSS.Foundation.XDG {
                         }
                     }
 
-                    //if (print)
-                    //    Console.WriteLine("  selected: " + jCellNeigh_max);
                                         
                     {
+                        if(jCellNeigh_max < 0)
+                            throw new Exception("unable to do agglomeration");
+
                         //_AccEdgesMask[jEdge_max] = true;
 
                         int jCellNeighRank;

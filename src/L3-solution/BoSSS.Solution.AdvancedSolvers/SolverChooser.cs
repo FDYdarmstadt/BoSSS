@@ -645,8 +645,7 @@ namespace BoSSS.Solution {
                     EnableOverlapScaling = true,
                 };
                 var coarsesolver = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.PARDISO,
-                    SolverVersion = Parallelism.SEQ,
+                    WhichSolver = DirectSolver._whichSolver.PARDISO
                 };
                 templinearSolve = ClassicMGwithSmoother(MaxMGDepth-1, coarsesolver, smoother);
 
