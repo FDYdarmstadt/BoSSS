@@ -133,7 +133,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         /// <summary>
         /// The evolution velocity for the <paramref name="iLevSet"/>-th level-set;
-        /// - can be null, if the level-set should not be moved
+        /// - can be null, if the level-set evolver does not need a velocity, e.g. immersed boundary that should not be moved
         /// - The <see cref="ILevelSetParameter.ParameterNames"/> must comply with the following convention:
         ///   <see cref="VariableNames.AsLevelSetVariable"/>( s , <see cref="VariableNames.VelocityVector"/> ),
         ///   where s is the first item of <see cref="LevelSetNames"/>
@@ -441,8 +441,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         protected virtual ILevelSetEvolver GetExternalEvolver(string levelSetName) { throw new NotImplementedException(); }
 
-        protected virtual LevelSet SetExternalLevelSet(Basis Basis, string Name)
-        {
+        protected virtual LevelSet SetExternalLevelSet(Basis Basis, string Name){
             throw new NotImplementedException();
         }
 
