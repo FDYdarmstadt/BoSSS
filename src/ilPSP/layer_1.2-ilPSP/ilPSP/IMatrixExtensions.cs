@@ -115,7 +115,7 @@ namespace ilPSP {
         /// <summary>
         /// reads a matrix from a text file;
         /// </summary>
-        /// <param name="txt">Text reade on the stream to load from.</param>
+        /// <param name="txt">Text read on the stream to load from.</param>
         /// <param name="M">pre-allocated matrix to store the loaded data</param>
         static public void LoadFromStream(this IMatrix M, TextReader txt) {
             NumberFormatInfo nfi = NumberFormatInfo.InvariantInfo;

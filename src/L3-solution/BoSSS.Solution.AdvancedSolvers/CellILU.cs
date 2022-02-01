@@ -465,7 +465,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 Occupied = 0;
-                bool[,] ret = new bool[J, J];
+                //bool[,] ret = new bool[J, J];
                 for(int j = 0; j < J; j++) {
 
                     long[] rowPattern = ILUp_pattern.GetOccupiedColumnIndices(j);

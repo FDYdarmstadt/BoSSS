@@ -371,11 +371,48 @@ namespace BoSSS.Application.XNSFE_Solver {
                 double capB = thermParams.rho_B * thermParams.c_B;
                 double LFFB = dntParams.LFFB;
                 double kB = thermParams.k_B;
-                //AddComponent(new HeatConvectionAtLevelSet_LLF_withMassflux_StrongCoupling(dimension, LsTrk, capA, capB, LFFA, LFFB, config.isMovingMesh, Tsat, thermParams));
-                AddComponent(new HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, Tsat, thermParams, FirstSpeciesName, SecondSpeciesName));                
+               // AddComponent(new HeatConvectionAtLevelSet_LLF_withMassflux_StrongCoupling(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, Tsat, thermParams, FirstSpeciesName, SecondSpeciesName));
+                AddComponent(new HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, Tsat, thermParams, FirstSpeciesName, SecondSpeciesName));
             }
         }
     }
+
+
+
+
+    /// <summary>
+    /// same as <see cref="HeatInterface_Evaporation"/> but using Newton solver compatible components
+    /// </summary>
+    public class HeatInterface_Evaporation_Newton_LowMach : HeatInterface_Evaporation {
+        public HeatInterface_Evaporation_Newton_LowMach(
+            string phaseA,
+            string phaseB,
+            int dimension,
+            ThermalMultiphaseBoundaryCondMap boundaryMap,
+            XNSFE_OperatorConfiguration config) : base(phaseA, phaseB, dimension, boundaryMap, config) {
+        }
+
+        protected override void DefineConvective(int dimension, double Tsat, XNSFE_OperatorConfiguration config) {
+            if (config.isMovingMesh) {
+                AddComponent(new HeatFluxAtLevelSet_Evaporation_StrongCoupling(dimension, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+            } else {
+                ThermalParameters thermParams = config.getThermParams;
+                DoNotTouchParameters dntParams = config.getDntParams;
+
+                // set species arguments
+                double capA = thermParams.rho_A * thermParams.c_A;
+                double LFFA = dntParams.LFFA;
+                double kA = thermParams.k_A;
+
+                double capB = thermParams.rho_B * thermParams.c_B;
+                double LFFB = dntParams.LFFB;
+                double kB = thermParams.k_B;
+                // AddComponent(new HeatConvectionAtLevelSet_LLF_withMassflux_StrongCoupling(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, Tsat, thermParams, FirstSpeciesName, SecondSpeciesName));
+                AddComponent(new HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian_LowMach(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, Tsat, thermParams, FirstSpeciesName, SecondSpeciesName));
+            }
+        }
+    }
+
 
     class NavierStokesBuoyancy : SpatialEquation {
 

@@ -65,7 +65,7 @@ namespace BoSSS.Application.XNSE_Solver {
             base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
-            base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
+            base.NonLinearSolver.ConvergenceCriterion = 0.0; //Solver_ConvergenceCriterion: solve as accurate as possible. Don't change this, Grüße von FK!
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //NonLinearSolver
             base.TimesteppingMode = AppControl._TimesteppingMode.Steady;
         }
@@ -85,6 +85,31 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public XRigid Rigidbody = new XRigid();
+
+        /// <summary>
+        /// Sets Field options for residual fields,
+        /// residual fields are now written to database.
+        /// </summary>
+        /// <param name="ctrl"></param>
+        /// <param name="k">Velocity Degree</param>
+        public void SetOptionsResFields (int k) {
+            this.FieldOptions.Add("Residual-MomentumX", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            this.FieldOptions.Add("Residual-MomentumY", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            this.FieldOptions.Add("Residual-MomentumZ", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            this.FieldOptions.Add("Residual-ContiEq", new FieldOpts() {
+                Degree = k - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+        }
 
         public void SetMaximalRefinementLevel(int maxLvl) {
             this.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = maxLvl });
@@ -268,12 +293,14 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /* killed by fk:
+         * the following adds a configuration redundancy, which is always a recipe for confusion
         /// <summary>
         /// switches off all plotCurrentState calls
         /// </summary>
         [DataMember]
         public bool switchOffPlotting = false;
-
+        */
 
 
         /// <summary>

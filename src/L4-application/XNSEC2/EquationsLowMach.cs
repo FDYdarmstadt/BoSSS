@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation.XDG;
+﻿using BoSSS.Application.XNSFE_Solver;
+using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XheatCommon;
@@ -82,6 +83,23 @@ namespace BoSSS.Solution.XNSECommon {
         public override string SecondSpeciesName => "B";
 
         public override string CodomainName => codomainName;
+    }
+
+
+        /// <summary>
+    /// same as <see cref="InterfaceContinuity_Evaporation"/> but using Newton solver compatible components
+    /// </summary>
+    public class InterfaceContinuity_Evaporation_Newton_LowMach : InterfaceContinuity_Evaporation {
+
+        public InterfaceContinuity_Evaporation_Newton_LowMach(string phaseA,
+            string phaseB,
+            int dimension,
+            XNSFE_OperatorConfiguration config) : base(phaseA, phaseB, dimension, config) {
+        }
+
+        protected override void AddInterfaceContinuity_Evaporation(int D, XNSFE_OperatorConfiguration config) {
+            AddComponent(new DivergenceAtLevelSet_Evaporation_StrongCoupling_LowMach(D, -1, false, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+        }
     }
 
     /// <summary>
@@ -267,14 +285,14 @@ namespace BoSSS.Solution.XNSECommon {
             }
             // gravity & more general volume force
             // ================
-            if(config.isGravity) {
+            if (config.isGravity) {
                 string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];
                 string gravityOfSpecies = gravity + "#" + SpeciesName;
                 var gravityComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(gravityOfSpecies, speciesName);
                 AddComponent(gravityComponent);
                 AddParameter(gravityOfSpecies);
             }
-            if(config.isVolForce) {
+            if (config.isVolForce) {
                 string volforce = BoSSS.Solution.NSECommon.VariableNames.VolumeForceVector(D)[d];
                 string volforceOfSpecies = volforce + "#" + SpeciesName;
                 var volforceComponent = new Solution.XNSECommon.Operator.MultiPhaseSource(volforceOfSpecies, speciesName);
@@ -461,15 +479,15 @@ namespace BoSSS.Solution.XNSECommon {
             double penalty = dntParams.PenaltySafety;
 
             //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
-            //var Visc = new ConductivityAtLevelSet_material(dimension, kA, kB, penalty * 1.0, Tsat);
-            //AddComponent(Visc);
+            var Visc = new ConductivityAtLevelSet_material(dimension, kA, kB, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName);
+            AddComponent(Visc);
         }
 
         protected virtual void DefineConvective(int dimension, double capA, double capB, double LFFA, double LFFB, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
+            //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
+            //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(dimension));
             //AddComponent(new HeatConvectionAtLevelSet_LLF(dimension, LsTrk, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh, Tsat));
-            //AddComponent(new HeatConvectionAtLevelSet_LLF_material(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh));            
+            //AddComponent(new HeatConvectionAtLevelSet_LLF_material(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh));
             //AddComponent(new HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName));
         }
     }

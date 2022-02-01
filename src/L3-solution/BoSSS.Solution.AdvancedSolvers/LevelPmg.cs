@@ -310,8 +310,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-
-
                 if(UseHiOrderSmoothing && AnyHighOrderTerms) {
                     // solver high-order 
 

@@ -352,9 +352,9 @@ namespace BoSSS.Application.BoSSSpad {
                 // load users .bashrc with all dependencies
                 buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" }, DeploymentDirectory);
 
-                string jobId = SSHConnection.SubmitJob(DeploymentDirectoryAtRemote(myJob, DeploymentDirectory));
+                string jobId = SSHConnection.SubmitJob(DeploymentDirectoryAtRemote(myJob, DeploymentDirectory), out var _stdout, out var _stderr);
                 if(jobId.IsEmptyOrWhite())
-                    throw new ApplicationException("missing job id return value from slurm command.");
+                    throw new IOException("missing job id return value from slurm command; stderr from slurm: " + _stderr + "<<<<<<<; stdout from slurm: " + _stdout + "<<<<<<<;");
 
                 return (jobId, null);
             }
@@ -389,7 +389,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (MonoDebug) { 
                     str.Write("-v --debug "); 
                 }
-                str.Write(jobpath_unix + "/" + Path.GetFileName(myJob.EntryAssembly.Location));
+                str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
                 str.Write(" ");
                 str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
                 str.Write(" ");

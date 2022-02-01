@@ -1731,7 +1731,18 @@ namespace BoSSS.Solution {
                 ITimestepInfo tsi_toLoad = all_ts.Single(t => t.ID.Equals(tsi_toLoad_ID));
 
                 time = tsi_toLoad.PhysicalTime;
-                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode)) {
+
+                bool MustResetTime = false;
+                if(this.Control.TimesteppingMode == AppControl._TimesteppingMode.Transient) {
+                    double dtMin = this.Control.dtMin;
+                    if(dtMin > 0) {
+                        if(time + dtMin == time) { // time is so advanced, that the timestep becomes invisible
+                            MustResetTime = true;
+                        }
+                    }
+                }
+
+                if (session.KeysAndQueries.TryGetValue("TimesteppingMode", out object mode) || MustResetTime) {
                     if (Convert.ToInt32(mode) == (int)AppControl._TimesteppingMode.Steady) {
                         Console.WriteLine("Restarting from steady-state, resetting time ...");
                         time = 0.0; // Former simulation is steady-state, this should be restarted with time = 0.0
@@ -2133,8 +2144,9 @@ namespace BoSSS.Solution {
                 // ================================================================================
 
                 if (this.Control.RestartInfo == null) {
-                    //{ 
                     CreateEquationsAndSolvers(null);
+                }
+                {
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -2346,9 +2358,12 @@ namespace BoSSS.Solution {
         /// <returns></returns>
         virtual protected bool MpiRedistributeAndMeshAdaptOnInit(int TimeStepNo, double physTime, int[] fixedPartition = null, Permutation fixedPermutation = null) {
             double tmp = this.Control.DynamicLoadBalancing_ImbalanceThreshold;
+            bool IsRestarted = this.Control.RestartInfo != null;
+            bool IsInit = !IsRestarted;
+
             this.Control.DynamicLoadBalancing_ImbalanceThreshold = 0.0; // ensures that there is a redistribution at startup, idependant of threshold
-            DoMeshAdaption(TimeStepNo, physTime, true);
-            DoLoadbalancing(TimeStepNo, physTime, fixedPartition, fixedPermutation, true);
+            DoMeshAdaption(TimeStepNo, physTime, IsInit);
+            DoLoadbalancing(TimeStepNo, physTime, fixedPartition, fixedPermutation, IsInit);
             this.Control.DynamicLoadBalancing_ImbalanceThreshold = tmp;
             //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true);
             //PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
@@ -2471,24 +2486,7 @@ namespace BoSSS.Solution {
                 //}
 
                 //// skip this for init
-                if (IsInit) {
-                    if (this.Control.RestartInfo == null)
-                        SetInitial(physTime);
-                } else {
-                    // set dg coordinates
-                    foreach (var f in m_RegisteredFields) {
-                        if (f is XDGField) {
-                            XDGBasis xb = ((XDGField)f).Basis;
-                            if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
-                                throw new ApplicationException();
-                        }
-                        loadbal.RestoreDGField(f);
-                    }
-
-
-                    // re-create solvers, blablabla
-                    CreateEquationsAndSolvers(loadbal);
-                }
+                ReCreateEquationAndSolvers(IsInit, loadbal, physTime);
                 return true;
             }
         }
@@ -2502,9 +2500,6 @@ namespace BoSSS.Solution {
                 this.AdaptMesh(TimeStepNo, out var newGrid, out var old2newGridCorr);
                 if (newGrid == null)
                     return false;
-
-                if(this.Control.RestartInfo != null)
-                    IsInit = false; 
 
                 using (new BlockTrace("process mesh Adaption", tr)) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -2607,25 +2602,11 @@ namespace BoSSS.Solution {
                     if (plotAdaption)
                         PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 11 }), 2);
                     
-                    if(IsInit) {
-                        if (this.Control.RestartInfo == null)
-                            SetInitial(physTime);
-                        else
-                            PostRestart(physTime, TimeStepNo);
-                    } else {
-                        //set dg coordinates
-                        foreach (var f in m_RegisteredFields) {
-                            if (f is XDGField) {
-                                XDGBasis xb = ((XDGField)f).Basis;
-                                if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
-                                    throw new ApplicationException();
-                            }
-                            remshDat.RestoreDGField(f);
-                        }
+                    if (IsInit && this.Control.RestartInfo != null)
+                        PostRestart(physTime, TimeStepNo);
 
-                        // re-create solvers, etc.
-                        CreateEquationsAndSolvers(remshDat);
-                    }
+                    ReCreateEquationAndSolvers(IsInit, remshDat, physTime);
+                    
 
                 }
                 return true;
@@ -2633,7 +2614,25 @@ namespace BoSSS.Solution {
         }
 
 
+        private void ReCreateEquationAndSolvers(bool IsInit, GridUpdateDataVaultBase GDataVault, double physTime) {
+            if (IsInit) {
+                if (this.Control.RestartInfo == null)
+                    SetInitial(physTime);
+            } else {
+                //set dg coordinates
+                foreach (var f in m_RegisteredFields) {
+                    if (f is XDGField) {
+                        XDGBasis xb = ((XDGField)f).Basis;
+                        if (!object.ReferenceEquals(xb.Tracker, this.LsTrk))
+                            throw new ApplicationException();
+                    }
+                    GDataVault.RestoreDGField(f);
+                }
 
+                // re-create solvers, etc.
+                CreateEquationsAndSolvers(GDataVault);
+            }
+        }
 
         private void BackupData(GridData oldGridData, LevelSetTracker oldLsTrk, double physTime,
             GridUpdateDataVaultBase loadbal, out Permutation tau) {

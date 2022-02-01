@@ -77,8 +77,10 @@ namespace BoSSS.Solution.Control {
             }
             set {
                 base.TimesteppingMode = value;
-                if(value == _TimesteppingMode.Steady)
+                if(value == _TimesteppingMode.Steady) {
                     TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+                    
+                }
             }
         }
 

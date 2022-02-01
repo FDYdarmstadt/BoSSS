@@ -92,6 +92,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     Timestepper_LevelSetHandling = LevelSetHandling.None;
                     Option_LevelSetEvolution = LevelSetEvolution.None;
                     Option_LevelSetEvolution2 = LevelSetEvolution.None;
+                    Timestepper_LevelSetHandling = LevelSetHandling.None;
                 }
                 base.TimesteppingMode = value;
             }

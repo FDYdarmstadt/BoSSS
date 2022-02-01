@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
+using BoSSS.Solution.Queries;
 using ilPSP.Utils;
 using System;
 using static System.Math;
@@ -20,7 +21,6 @@ namespace BoSSS.Application.XNSEC {
             C.rhoOne = true;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
-
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.DbPath = null;// @"C:\Databases\BoSSS_DB";
             C.savetodb = false;
@@ -46,13 +46,13 @@ namespace BoSSS.Application.XNSEC {
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.physicsMode = PhysicsMode.Combustion;
-            C.Endtime = 0.01;
-            C.dtFixed = 0.001;
+            C.Endtime = 1e-1 * 10;
+            C.dtFixed = 1e-1;
             C.NumberOfChemicalSpecies = 1;
             C.SetDGdegree(DGp);
             C.GravityDirection = new double[] { 0.0, 0.0, 0.0 };
 
-            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.IncludeConvection = true;
 
             C.EnableTemperature = false; // T=1
             C.EnableMassFractions = false; // Y_0 = 1
@@ -67,7 +67,7 @@ namespace BoSSS.Application.XNSEC {
             // Parameters
             // ==============
             C.AnalyticsolutionSwitch = true;
-            C.Reynolds = 100.0;
+            C.Reynolds = 10.0;
             C.Prandtl = 1.0;
             C.Schmidt = 1.0;
             C.PenaltyViscMomentum = 1.0;
@@ -136,6 +136,22 @@ namespace BoSSS.Application.XNSEC {
             C.InitialValues_Evaluators.Add(VariableNames.Pressure, X => -0.25 * (Cos(2.0 * PI * X[0]) + Cos(2.0 * PI * X[1])));
             C.InitialValues_Evaluators.Add(VariableNames.Temperature, X => 1.0);
             C.InitialValues_Evaluators.Add(VariableNames.MassFraction0, X => 1.0);
+
+            int queryQuadOrder = 20;
+            C.Queries.Add(
+                "SolL2err_u",
+                QueryLibrary.L2Error(VariableNames.VelocityX, C.AnalyticVelocityX, queryQuadOrder));
+            C.Queries.Add(
+                "SolL2err_v",
+                QueryLibrary.L2Error(VariableNames.VelocityY, C.AnalyticVelocityY, queryQuadOrder));
+            C.Queries.Add(
+                "SolL2err_p",
+                QueryLibrary.L2ErrorNoMean(VariableNames.Pressure, C.AnalyticPressure, queryQuadOrder));
+            C.Queries.Add(
+                "SolL2err_T",
+                QueryLibrary.L2Error(VariableNames.Temperature, C.AnalyticTemperature, queryQuadOrder));
+
+
             return C;
         }
     }

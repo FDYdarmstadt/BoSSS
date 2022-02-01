@@ -342,7 +342,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         List<(double,double,int)> Alphas = new List<(double,double,int)>();
 
-
         void AddSol(ref double[] X) {
             using(var ft = new FuncTrace()) {
 
@@ -381,13 +380,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     NormMxx = FillXwithRandom(X, Mxx);
                 }
 
-
-                Mxx.ScaleV(1.0 / NormMxx); // scale Mxx to norm 1, should allow better stability when compared to the Krylov vectors who have all norm 1;
+                // scale Mxx to norm 1, should allow better stability when compared to the Krylov vectors who have all norm 1;
+                Mxx.ScaleV(1.0 / NormMxx);
                 X.ScaleV(1.0 / NormMxx);
 
+                for (int jj = 0; jj < 10; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
 
-                for(int jj = 0; jj < 20; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
-                    for(int i = 0; i < KrylovDim; i++) {
+                    for (int i = 0; i < KrylovDim; i++) {
                         Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
                         double beta = BLAS.ddot(L, Mxx, 1, MxxHistory[i], 1).MPISum();
                         BLAS.daxpy(L, -beta, SolHistory[i], 1, X, 1);
@@ -399,42 +398,43 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     double NewMxxNorm = Mxx.MPI_L2Norm();
 
+                    if (NewMxxNorm <= 1E-5) {
+                        using (new BlockTrace("re-orthonormalization", ft)) {
+                            // a lot of canceling out has occurred.
+                            // do another loop, to ensure ortho-normality:
+                            //
+                            // Mxx and X lost more than 5 Magnitudes, so we might have lost a couple of digits of accuracy
 
-                    if(NewMxxNorm <= 1E-5) {
-                        // a lot of canceling out has occurred.
-                        // do another loop, to ensure ortho-normality:
-                        //
-                        // Mxx and X lost more than 5 Magnitudes, so we might have lost a couple of digits of accuracy
-                        
-                        // Note: although |Mxx| might be small, |X| can be quite large (and probably random).
-                        // To ensure stability, we must start over with a re-scaled X!
-                        // We have to re-scale what is remaining of X:
-                        double Xnorm = X.MPI_L2Norm();
+                            // Note: although |Mxx| might be small, |X| can be quite large (and probably random).
+                            // To ensure stability, we must start over with a re-scaled X!
+                            // We have to re-scale what is remaining of X:
+                            double Xnorm = X.MPI_L2Norm();
+                            Console.WriteLine("severe cancellation may have occurred, attempting re-orthonormalization");
+                            ft.Info("severe cancellation may have occurred, norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + ")");
 
-                        ft.Info("severe cancellation may have occurred, norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + ")");
-                        
-                        if(Xnorm < 1e-200) {
-                            // prohibits div by 0, if we got zero solution  
-                            NormMxx = FillXwithRandom(X, Mxx);
-                        } else {
-                            X.ScaleV(1.0 / Xnorm);
-                            Mxx.ClearEntries();
-                            OpMatrix.SpMV(1.0, X, 0.0, Mxx);
-                            NormMxx = Mxx.MPI_L2Norm();
-
-                            if(NormMxx == 0) 
-                                // solution is really strange: try with a random vector.
+                            if (Xnorm < 1e-200) {
+                                // prohibits div by 0, if we got zero solution  
                                 NormMxx = FillXwithRandom(X, Mxx);
+                            } else {
+                                X.ScaleV(1.0 / Xnorm);
+                                Mxx.ClearEntries();
+                                OpMatrix.SpMV(1.0, X, 0.0, Mxx);
+                                NormMxx = Mxx.MPI_L2Norm();
+
+                                if (NormMxx == 0)
+                                    // solution is really strange: try with a random vector.
+                                    NormMxx = FillXwithRandom(X, Mxx);
+                            }
+
+                            double gamma = 1 / NewMxxNorm;
+                            BLAS.dscal(L, gamma, Mxx, 1);
+                            BLAS.dscal(L, gamma, X, 1);
                         }
-
-                        double gamma = 1 / NewMxxNorm;
-                        BLAS.dscal(L, gamma, Mxx, 1);
-                        BLAS.dscal(L, gamma, X, 1);
-
                     } else {
                         double gamma = 1 / NewMxxNorm;
                         BLAS.dscal(L, gamma, Mxx, 1);
                         BLAS.dscal(L, gamma, X, 1);
+                        break;
                     }
                 }
 
@@ -773,14 +773,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         
                         VerivyCurrentResidual(X, B, Res, iIter);
 
-                        // compute correction
-                        double[] PostCorr = new double[L];
-                        PostSmoother.Solve(PostCorr, Res); // Nachglättung
-
-                        //orthonormalization and residual minimization
-                        AddSol(ref PostCorr);
-                        resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
-
+                        
+                        if (PostSmoother != null) {
+                            double[] PostCorr = new double[L];
+                            PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
+                            AddSol(ref PostCorr); //orthonormalization and residual minimization
+                            resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
+                        }
 
 #if TEST
                         CatchThisExclamationmark(Res, "Res", pos);
@@ -791,24 +790,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //SpecAnalysisSample(iIter, X, "ortho3_" + g);
                     } // end of post-smoother loop
 
+                    // iteration callback
+                    // ------------------
+                    this.ThisLevelIterations++;
+                    IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator);
+
+                    SpecAnalysisSample(iIter, X, "_");
 
                     var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if(!termState4.bNotTerminate) {
                         Converged = termState4.bSuccess;
                         break;
                     }
-
-
-                    // iteration callback
-                    // ------------------
-
-                    this.ThisLevelIterations++;
-
-                    IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator);
-
-                    SpecAnalysisSample(iIter, X, "_");
-
-
 
                 } // end of solver iterations
 
@@ -941,8 +934,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             long Memory = 0;
             if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
                 Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfSmoother();
-            Memory += PreSmoother.UsedMemory();
-            Memory += PostSmoother.UsedMemory();
+            if(PreSmoother != null) Memory += PreSmoother.UsedMemory();
+            if (PostSmoother != null) Memory += PostSmoother.UsedMemory();
             return Memory;
         }
 
@@ -974,8 +967,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.MxxHistory = null;
             this.Alphas = null;
 
-            this.PreSmoother.Dispose();
-            this.PostSmoother.Dispose();
+            if (PreSmoother != null) this.PreSmoother.Dispose();
+            if (PostSmoother != null) this.PostSmoother.Dispose();
             this.PreSmoother = null;
             this.PostSmoother = null;
             this.CoarserLevelSolver = null;

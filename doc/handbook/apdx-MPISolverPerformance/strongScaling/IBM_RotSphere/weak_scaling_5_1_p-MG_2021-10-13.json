@@ -1,0 +1,2917 @@
+{
+  "$type": "System.Tuple`2[[System.String[], System.Private.CoreLib],[System.Array[], System.Private.CoreLib]], System.Private.CoreLib",
+  "Item1": {
+    "$type": "System.String[], System.Private.CoreLib",
+    "$values": [
+      "ProjectName",
+      "SessionName",
+      "DGdegree:Velocity*",
+      "DGdegree:FilteredVelocity*",
+      "DGdegree:SurfaceForceDiagnostic*",
+      "DGdegree:Pressure",
+      "DGdegree:PhiDG",
+      "DGdegree:Phi",
+      "DGdegree:Phi2DG",
+      "DGdegree:Phi2",
+      "DGdegree:Curvature",
+      "Bndtype:Pressure_Outlet",
+      "Bndtype:Velocity_inlet",
+      "UseImmersedBoundary",
+      "TimesteppingMode",
+      "Timestepper_LevelSetHandling",
+      "NoOfMultigridLevels",
+      "GeneratedFromCode",
+      "ControlFileText_Index",
+      "InitialValues_EvaluatorsVec[0].Key",
+      "InitialValues_EvaluatorsVec[1].Key",
+      "InitialValues_EvaluatorsVec[2].Key",
+      "InitialValues_EvaluatorsVec[3].Key",
+      "InitialValues_EvaluatorsVec[4].Key",
+      "InitialValues_EvaluatorsVec[5].Key",
+      "InitialValues_Evaluators_TimeDep[0].Key",
+      "InitialValues_Evaluators_TimeDep[1].Key",
+      "InitialValues_Evaluators_TimeDep[2].Key",
+      "InitialValues_Evaluators_TimeDep[3].Key",
+      "InitialValues_Evaluators_TimeDep[4].Key",
+      "InitialValues_Evaluators_TimeDep[5].Key",
+      "dtFixed",
+      "UseSchurBlockPrec",
+      "switchOffPlotting",
+      "RefineStrategy",
+      "BaseRefinementLevel",
+      "RefinementLevel",
+      "RefineNavierSlipBoundary",
+      "ClearVelocitiesOnRestart",
+      "ReInitOnRestart",
+      "adaptiveReInit",
+      "InitSignedDistance",
+      "AdvancedDiscretizationOptions.ViscosityMode",
+      "AdvancedDiscretizationOptions.LFFA",
+      "AdvancedDiscretizationOptions.LFFB",
+      "AdvancedDiscretizationOptions.PenaltySafety",
+      "AdvancedDiscretizationOptions.SurfStressTensor",
+      "AdvancedDiscretizationOptions.STFstabilization",
+      "AdvancedDiscretizationOptions.SetSurfaceTensionMaxValue",
+      "AdvancedDiscretizationOptions.freeSurfaceFlow",
+      "AdvancedDiscretizationOptions.SST_isotropicMode",
+      "AdvancedDiscretizationOptions.CurvatureNeeded",
+      "AdvancedDiscretizationOptions.FilterConfiguration.UseWholeField",
+      "AdvancedDiscretizationOptions.FilterConfiguration.gradOpt",
+      "AdvancedDiscretizationOptions.FilterConfiguration.hessOpt",
+      "AdvancedDiscretizationOptions.FilterConfiguration.useFiltLevSetGrad",
+      "AdvancedDiscretizationOptions.FilterConfiguration.useFiltLevSetHess",
+      "AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles",
+      "AdvancedDiscretizationOptions.FilterConfiguration.LevelSetSource",
+      "AdvancedDiscretizationOptions.FilterConfiguration.PatchRecoveryDomWidth",
+      "AdvancedDiscretizationOptions.FilterConfiguration.NoOfPatchRecoverySweeps",
+      "AdvancedDiscretizationOptions.FilterConfiguration.CurvatureLimiting",
+      "AdvancedDiscretizationOptions.GNBC_Localization",
+      "AdvancedDiscretizationOptions.GNBC_SlipLength",
+      "AdvancedDiscretizationOptions.IBM_BoundaryType",
+      "AdvancedDiscretizationOptions.ObjectiveParam",
+      "AdvancedDiscretizationOptions.alpha",
+      "AdvancedDiscretizationOptions.Penalty1[0]",
+      "AdvancedDiscretizationOptions.Penalty1[1]",
+      "AdvancedDiscretizationOptions.Penalty2",
+      "AdvancedDiscretizationOptions.PresPenalty1[0]",
+      "AdvancedDiscretizationOptions.PresPenalty1[1]",
+      "AdvancedDiscretizationOptions.PresPenalty2",
+      "AdvancedDiscretizationOptions.StressPenalty",
+      "AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature",
+      "PhysicalParameters.IncludeConvection",
+      "PhysicalParameters.rho_A",
+      "PhysicalParameters.rho_B",
+      "PhysicalParameters.mu_A",
+      "PhysicalParameters.mu_B",
+      "PhysicalParameters.reynolds_B",
+      "PhysicalParameters.reynolds_A",
+      "PhysicalParameters.Sigma",
+      "PhysicalParameters.pFree",
+      "PhysicalParameters.mu_I",
+      "PhysicalParameters.lambda_I",
+      "PhysicalParameters.lambdaI_tilde",
+      "PhysicalParameters.betaS_A",
+      "PhysicalParameters.betaS_B",
+      "PhysicalParameters.betaL",
+      "PhysicalParameters.theta_e",
+      "PhysicalParameters.sliplength",
+      "PhysicalParameters.Material",
+      "PhysicalParameters.useArtificialSurfaceForce",
+      "SkipSolveAndEvaluateResidual",
+      "Timestepper_BDFinit",
+      "LevelSet_ConvergenceCriterion",
+      "VelocityBlockPrecondMode",
+      "PressureBlockPrecondMode",
+      "EnforceLevelSetConservation",
+      "solveKineticEnergyEquation",
+      "equalTimesteppingForKineticEnergy",
+      "kinEViscousDiscretization",
+      "kinEPressureDiscretization",
+      "withDissipativePressure",
+      "KineticEnergyeBlockPrecondMode",
+      "ComputeEnergyProperties",
+      "CheckJumpConditions",
+      "CheckInterfaceProps",
+      "RegisterUtilitiesToIOFields",
+      "InterVelocAverage",
+      "ReInitControl.ConvergenceCriterion",
+      "ReInitControl.MaxIt",
+      "ReInitControl.Potential",
+      "ReInitControl.FastMarchingPrecond",
+      "ReInitControl.underrelaxation",
+      "ReInitControl.Upwinding",
+      "ReInitControl.PenaltyMultiplierFlux",
+      "ReInitControl.PenaltyMultiplierInterface",
+      "ReInitControl.PrintIterations",
+      "EllipticExtVelAlgoControl.FluxVariant",
+      "EllipticExtVelAlgoControl.subGridRestriction",
+      "EllipticExtVelAlgoControl.PenaltyMultiplierFlux",
+      "EllipticExtVelAlgoControl.PenaltyMultiplierInterface",
+      "EllipticExtVelAlgoControl.IsotropicViscosity",
+      "fullReInit",
+      "solveCoupledHeatEquation",
+      "useSolutionParamUpdate",
+      "conductMode",
+      "ThermalParameters.IncludeConvection",
+      "ThermalParameters.rho_A",
+      "ThermalParameters.rho_B",
+      "ThermalParameters.rho_C",
+      "ThermalParameters.c_A",
+      "ThermalParameters.c_B",
+      "ThermalParameters.c_C",
+      "ThermalParameters.k_A",
+      "ThermalParameters.k_B",
+      "ThermalParameters.k_C",
+      "ThermalParameters.alpha_A",
+      "ThermalParameters.alpha_B",
+      "ThermalParameters.hVap",
+      "ThermalParameters.T_sat",
+      "ThermalParameters.p_sat",
+      "ThermalParameters.fc",
+      "ThermalParameters.Rc",
+      "ThermalParameters.pc",
+      "NonlinearCouplingSolidFluid",
+      "DynamicLoadbalancing_ClassifierType",
+      "LSunderrelax",
+      "Option_LevelSetEvolution",
+      "Option_LevelSetEvolution2",
+      "FastMarchingPenaltyTerms",
+      "LS_TrackerWidth",
+      "FastMarchingReInitPeriod",
+      "LSContiProjectionMethod",
+      "LinearSolver.verbose",
+      "LinearSolver.SolverCode",
+      "LinearSolver.MaxKrylovDim",
+      "LinearSolver.MaxSolverIterations",
+      "LinearSolver.MinSolverIterations",
+      "LinearSolver.ConvergenceCriterion",
+      "LinearSolver.NoOfMultigridLevels",
+      "LinearSolver.SolverMode",
+      "LinearSolver.exp_localPrec_muA",
+      "LinearSolver.exp_localPrec_Min_dt",
+      "LinearSolver.TargetBlockSize",
+      "LinearSolver.pMaxOfCoarseSolver",
+      "LinearSolver.UsePMGonly",
+      "NonLinearSolver.verbose",
+      "NonLinearSolver.MaxSolverIterations",
+      "NonLinearSolver.MinSolverIterations",
+      "NonLinearSolver.ConvergenceCriterion",
+      "NonLinearSolver.UnderRelax",
+      "NonLinearSolver.SolverCode",
+      "NonLinearSolver.constantNewtonIterations",
+      "NonLinearSolver.Globalization",
+      "AgglomerationThreshold",
+      "MultiStepInit",
+      "TimeSteppingScheme",
+      "GridPartType",
+      "NoOfTimesteps",
+      "staticTimestep",
+      "Endtime",
+      "saveperiod",
+      "rollingSaves",
+      "dtMin",
+      "dtMax",
+      "ImmediatePlotPeriod",
+      "SuperSampling",
+      "savetodb",
+      "AlternateDbPaths[0].Item1",
+      "AlternateDbPaths[0].Item2",
+      "AlternateDbPaths[1].Item1",
+      "AlternateDbPaths[1].Item2",
+      "AlternateDbPaths[2].Item1",
+      "logFileDirectory",
+      "Paramstudy_ContinueOnError",
+      "DynamicLoadBalancing_RedistributeAtStartup",
+      "DynamicLoadBalancing_Period",
+      "DynamicLoadBalancing_ImbalanceThreshold",
+      "DynamicLoadBalancing_On",
+      "AdaptiveMeshRefinement",
+      "AMR_startUpSweeps",
+      "CutCellQuadratureType",
+      "ContinueOnIoError",
+      "BurstSave",
+      "Grid:NoOfCells",
+      "Grid:SpatialDimension",
+      "Grid:hMax",
+      "Grid:hMin",
+      "RegularTerminated",
+      "LSolverIter",
+      "NLSolverIter",
+      "TotalRuntime",
+      "MatrixAssembly_time",
+      "AggregationBaseInit_time",
+      "DataIO_time",
+      "CGProjection_time",
+      "SayeCompile_time",
+      "StandardCompile_time",
+      "AMR_time",
+      "LoadBal_time",
+      "NoOfCores",
+      "NoOfNodes",
+      "SolverInit_time",
+      "SolverRun_time",
+      "MGDepth",
+      "DOF",
+      "OrthonormalizationMultigrid.AddSol",
+      "Schwarz.Solve",
+      "OrthonormalizationMultigrid.MinimizeResidual",
+      "OrthonormalizationMultigrid.Residual",
+      "OrthonormalizationMultigrid.Solve",
+      "overlap_scaling",
+      "block_solve_level",
+      "caching",
+      "nocaching",
+      "OrthonormalizationMultigrid.VerivyCurrentResidual",
+      "Restriction",
+      "Prolongation",
+      "DirectSolver.Solve"
+    ]
+  },
+  "Item2": {
+    "$type": "System.Array[], System.Private.CoreLib",
+    "$values": [
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "weak_scaling_5_1_p-MG",
+          "weak_scaling_5_1_p-MG",
+          "weak_scaling_5_1_p-MG",
+          "weak_scaling_5_1_p-MG",
+          "weak_scaling_5_1_p-MG",
+          "weak_scaling_5_1_p-MG"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "J21952_k4_t1_Stokes_c256_Re50_mue_1",
+          "J10648_k4_t1_Stokes_c128_Re50_mue_1",
+          "J5832_k4_t1_Stokes_c64_Re50_mue_1",
+          "J2744_k4_t1_Stokes_c32_Re50_mue_1",
+          "J1331_k4_t1_Stokes_c16_Re50_mue_1",
+          "J729_k4_t1_Stokes_c8_Re50_mue_1"
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          8,
+          8,
+          8,
+          8,
+          8,
+          8
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "auto:Pressure_Outlet",
+          "auto:Pressure_Outlet",
+          "auto:Pressure_Outlet",
+          "auto:Pressure_Outlet",
+          "auto:Pressure_Outlet",
+          "auto:Pressure_Outlet"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "auto:Velocity_inlet",
+          "auto:Velocity_inlet",
+          "auto:Velocity_inlet",
+          "auto:Velocity_inlet",
+          "auto:Velocity_inlet",
+          "auto:Velocity_inlet"
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "Phi",
+          "Phi",
+          "Phi",
+          "Phi",
+          "Phi",
+          "Phi"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "Pressure",
+          "Pressure",
+          "Pressure",
+          "Pressure",
+          "Pressure",
+          "Pressure"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "Phi2",
+          "Phi2",
+          "Phi2",
+          "Phi2",
+          "Phi2",
+          "Phi2"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "VelocityX@Phi2",
+          "VelocityX@Phi2",
+          "VelocityX@Phi2",
+          "VelocityX@Phi2",
+          "VelocityX@Phi2",
+          "VelocityX@Phi2"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "VelocityY@Phi2",
+          "VelocityY@Phi2",
+          "VelocityY@Phi2",
+          "VelocityY@Phi2",
+          "VelocityY@Phi2",
+          "VelocityY@Phi2"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "VelocityZ@Phi2",
+          "VelocityZ@Phi2",
+          "VelocityZ@Phi2",
+          "VelocityZ@Phi2",
+          "VelocityZ@Phi2",
+          "VelocityZ@Phi2"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "Phi",
+          "Phi",
+          "Phi",
+          "Phi",
+          "Phi",
+          "Phi"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "Pressure",
+          "Pressure",
+          "Pressure",
+          "Pressure",
+          "Pressure",
+          "Pressure"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "Phi2",
+          "Phi2",
+          "Phi2",
+          "Phi2",
+          "Phi2",
+          "Phi2"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "VelocityX@Phi2",
+          "VelocityX@Phi2",
+          "VelocityX@Phi2",
+          "VelocityX@Phi2",
+          "VelocityX@Phi2",
+          "VelocityX@Phi2"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "VelocityY@Phi2",
+          "VelocityY@Phi2",
+          "VelocityY@Phi2",
+          "VelocityY@Phi2",
+          "VelocityY@Phi2",
+          "VelocityY@Phi2"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "VelocityZ@Phi2",
+          "VelocityZ@Phi2",
+          "VelocityZ@Phi2",
+          "VelocityZ@Phi2",
+          "VelocityZ@Phi2",
+          "VelocityZ@Phi2"
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8,
+          0.8
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.5707963267948966,
+          1.5707963267948966,
+          1.5707963267948966,
+          1.5707963267948966,
+          1.5707963267948966,
+          1.5707963267948966
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          7,
+          7,
+          7,
+          7,
+          7,
+          7
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          6,
+          6,
+          6,
+          6,
+          6,
+          6
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          41,
+          41,
+          41,
+          41,
+          41,
+          41
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          50,
+          50,
+          50,
+          50,
+          50,
+          50
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          500,
+          500,
+          500,
+          500,
+          500,
+          500
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1000,
+          1000,
+          1000,
+          1000,
+          1000,
+          1000
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          10,
+          10,
+          10,
+          10,
+          10,
+          10
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06,
+          1E-06
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          2,
+          2,
+          2,
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.7976931348623157E+308,
+          1.7976931348623157E+308,
+          1.7976931348623157E+308,
+          1.7976931348623157E+308,
+          1.7976931348623157E+308,
+          1.7976931348623157E+308
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0,
+          1000.0
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "W:\\work\\scratch\\jw52xeqa\\DB_rotSphere_CoreScaling",
+          "W:\\work\\scratch\\jw52xeqa\\DB_rotSphere_CoreScaling",
+          "W:\\work\\scratch\\jw52xeqa\\DB_rotSphere_CoreScaling",
+          "W:\\work\\scratch\\jw52xeqa\\DB_rotSphere_CoreScaling",
+          "W:\\work\\scratch\\jw52xeqa\\DB_rotSphere_CoreScaling",
+          "W:\\work\\scratch\\jw52xeqa\\DB_rotSphere_CoreScaling"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "/work/scratch/jw52xeqa\\DB_rotSphere_CoreScaling",
+          "/work/scratch/jw52xeqa\\DB_rotSphere_CoreScaling",
+          "/work/scratch/jw52xeqa\\DB_rotSphere_CoreScaling",
+          "/work/scratch/jw52xeqa\\DB_rotSphere_CoreScaling",
+          "/work/scratch/jw52xeqa\\DB_rotSphere_CoreScaling",
+          "/work/scratch/jw52xeqa\\DB_rotSphere_CoreScaling"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          "/work/scratch/jw52xeqa/DB_rotSphere_CoreScaling",
+          "/work/scratch/jw52xeqa/DB_rotSphere_CoreScaling",
+          "/work/scratch/jw52xeqa/DB_rotSphere_CoreScaling",
+          "/work/scratch/jw52xeqa/DB_rotSphere_CoreScaling",
+          "/work/scratch/jw52xeqa/DB_rotSphere_CoreScaling",
+          "/work/scratch/jw52xeqa/DB_rotSphere_CoreScaling"
+        ]
+      },
+      {
+        "$type": "System.String[], System.Private.CoreLib",
+        "$values": [
+          ".",
+          ".",
+          ".",
+          ".",
+          ".",
+          "."
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1,
+          0.1
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          false,
+          false,
+          false,
+          false,
+          false,
+          false
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          5,
+          5,
+          5,
+          5,
+          5,
+          5
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          21952,
+          10648,
+          5832,
+          2744,
+          1331,
+          729
+        ]
+      },
+      {
+        "$type": "System.Int64[], System.Private.CoreLib",
+        "$values": [
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.23690177073967164,
+          0.3015113445777643,
+          0.368513865595045,
+          0.47380354147934317,
+          0.6030226891555276,
+          0.7370277311900892
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0714285714285714,
+          0.09090909090909083,
+          0.11111111111111094,
+          0.1428571428571428,
+          0.18181818181818166,
+          0.2222222222222221
+        ]
+      },
+      {
+        "$type": "System.Boolean[], System.Private.CoreLib",
+        "$values": [
+          true,
+          true,
+          true,
+          true,
+          true,
+          true
+        ]
+      },
+      {
+        "$type": "System.Int32[], System.Private.CoreLib",
+        "$values": [
+          500,
+          500,
+          500,
+          500,
+          500,
+          500
+        ]
+      },
+      {
+        "$type": "System.Object[], System.Private.CoreLib",
+        "$values": [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          608.480027,
+          486.0111244,
+          399.226488,
+          360.2507322,
+          311.8759196,
+          245.8182472
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          20.5615375,
+          20.7856503,
+          14.5738161,
+          20.7005761,
+          15.029103,
+          15.7696501
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0510451,
+          0.0427603,
+          0.0077039,
+          0.0566157,
+          0.0058864,
+          0.0056341
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          6.2086007,
+          3.4010404999999997,
+          2.3976901,
+          1.6281225,
+          1.265787,
+          1.0060924999999998
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          2.2433018000000002,
+          2.5566969,
+          1.3979932,
+          2.4137559,
+          2.9780477,
+          3.7953965
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0029736999999999997,
+          0.0029534,
+          0.005037,
+          0.003053,
+          0.0029119000000000003,
+          0.0026077999999999995
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.000985,
+          0.0017739,
+          0.0009823,
+          0.0009679,
+          0.0009707,
+          0.0008928
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          2.0078752,
+          1.9865803,
+          1.4068328,
+          1.2931253,
+          1.1300729,
+          1.0165167
+        ]
+      },
+      {
+        "$type": "System.Int32[], System.Private.CoreLib",
+        "$values": [
+          256,
+          128,
+          64,
+          32,
+          16,
+          8
+        ]
+      },
+      {
+        "$type": "System.Int32[], System.Private.CoreLib",
+        "$values": [
+          16,
+          8,
+          4,
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          12.240011,
+          9.4722928,
+          8.1793449,
+          7.7864046,
+          5.5147533,
+          5.3864713
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          554.9867072,
+          436.4508254,
+          362.9171344,
+          316.0613724,
+          277.4283169,
+          209.6343439
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0,
+          4.0
+        ]
+      },
+      {
+        "$type": "System.Int32[], System.Private.CoreLib",
+        "$values": [
+          2744000,
+          1331000,
+          729000,
+          343000,
+          166375,
+          91125
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          239.9596939,
+          200.5471969,
+          154.3749257,
+          128.2644799,
+          113.3492316,
+          81.693606
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          216.3181406,
+          201.7103796,
+          187.1363796,
+          174.3822494,
+          155.3092704,
+          119.21775919999999
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          1.8022403,
+          1.6038914,
+          1.0815162,
+          0.8769227,
+          0.7775163,
+          0.5425241000000001
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          10.902628700000001,
+          9.431485499999999,
+          7.0768483,
+          6.4156113,
+          5.289712399999999,
+          4.0847564
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          950.7472448,
+          671.6713932,
+          519.6559089,
+          425.3281077,
+          369.9071401,
+          274.65919909999997
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          51.1145609,
+          45.5391497,
+          37.698668,
+          35.1944169,
+          22.2460183,
+          20.5055881
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          133.1515802,
+          129.85944750000002,
+          132.4677583,
+          121.33047140000001,
+          115.5653745,
+          87.9748368
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          128.7564239,
+          125.7288759,
+          127.8232158,
+          117.5463148,
+          112.12580390000001,
+          85.2283712
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          3.1320643000000006,
+          2.7415226,
+          2.2101629000000003,
+          2.2044224,
+          1.7256275,
+          1.3636162
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          3.3786274,
+          2.988566,
+          2.2239438,
+          1.7485374999999999,
+          1.7048519,
+          1.2680307
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          2.3689698000000003,
+          2.3058786000000002,
+          1.8886420999999998,
+          1.6331164999999999,
+          1.5717202,
+          1.2367411000000001
+        ]
+      },
+      {
+        "$type": "System.Double[], System.Private.CoreLib",
+        "$values": [
+          117.2538342,
+          49.0156742,
+          22.7790642,
+          9.0230644,
+          3.6007343,
+          1.5189218
+        ]
+      }
+    ]
+  }
+}

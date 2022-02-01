@@ -198,7 +198,7 @@ namespace BoSSS.Application.BoSSSpad {
                 NoOfProcs = myJob.NumberOfMPIProcs,
                 ExeDir = DeploymentDirectory,
                 exefile = base.DotnetRuntime,
-                Arguments = ArrayTools.Cat(new[] { Path.GetFileName(myJob.EntryAssembly.Location) }, myJob.CommandLineArguments),
+                Arguments = ArrayTools.Cat(new[] { myJob.EntryAssemblyName }, myJob.CommandLineArguments),
                 EnvVars = myJob.EnvironmentVars.Select(kv => new Tuple<string, string>(kv.Key, kv.Value)).ToArray(),
                 UseComputeNodesExclusive = myJob.UseComputeNodesExclusive
             };

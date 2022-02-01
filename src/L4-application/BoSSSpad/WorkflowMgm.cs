@@ -200,6 +200,50 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public Func<Job, AppControl, bool> JobAppControlCorrelation;
 
+        /*
+        /// <summary>
+        /// deletes old job deployments and databases
+        /// </summary>
+        public void Reset() {
+            if(CurrentProject.IsEmptyOrWhite()) {
+                Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
+                return;
+            }
+
+            // delete old databases
+            // ====================
+            foreach(var q in BoSSSshell.ExecutionQueues) {
+                //var dirsToDelete = new HashSet<DirectoryInfo>();
+                //bool delete = false;
+                foreach(var allowedPath in q.AllowedDatabasesPaths) {
+                    var localBaseDir = new DirectoryInfo(allowedPath.LocalMountPath);
+
+                    var dbDirs = localBaseDir.GetDirectories(Directory, SearchOption.TopDirectoryOnly);
+                    foreach(var db in dbDirs) {
+                        if(db.Exists) {
+                            Console.WriteLine("Deleting database: " + db.FullName);
+                            db.Delete(true);
+                        }
+                    }
+                }
+            }
+
+            // delete old deployment
+            // =====================
+
+            {
+                var deplDirs = (new DirectoryInfo(q.DeploymentBaseDirectory)).GetDirectories(DeployMents, SearchOption.TopDirectoryOnly);
+                foreach(var d in deplDirs) {
+                    
+
+                    if(d.Exists) {
+                        Console.WriteLine("Deleting deployment dir: " + d.FullName);
+                        d.Delete(true);
+                    }
+                }
+            }
+        }
+        */
        
 
         /// <summary>
@@ -527,7 +571,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// see <see cref="IDatabaseInfoExtensions.SaveGrid{TG}(IDatabaseInfo, ref TG, bool)"/>
         /// </summary>
         public GridCommons SaveGrid(GridCommons g) {
-            this.DefaultDatabase.SaveGrid(ref g, force:false);
+            this.DefaultDatabase.SaveGrid(ref g, force: false);
             m_Grids = null; // trigger re-read;
             return g;
         }

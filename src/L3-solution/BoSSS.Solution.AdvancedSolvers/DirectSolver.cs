@@ -189,8 +189,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             
             switch(WhichSolver) {
                 case _whichSolver.PARDISO:
+                bool CachingOn = false;
+                if (ActivateCaching != null) {
+                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, m_MultigridOp.LevelIndex, 0);
+                }
+                
                 solver = new PARDISOSolver() {
-                    CacheFactorization = true,
+                    CacheFactorization = CachingOn,
                     UseDoublePrecision = true,
                     Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.OMP
                 };
@@ -329,6 +334,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         int m_ThisLevelIterations;
 
         bool m_TestSolution = true;
+
+        public Func<int, int, int, bool> ActivateCaching {
+            private get;
+            set;
+        }
 
         /// <summary>
         /// If set to true, the solution returned by the direct solver is tested by computing the residual norm.
