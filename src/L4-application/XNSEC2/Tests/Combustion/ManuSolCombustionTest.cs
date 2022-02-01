@@ -12,8 +12,7 @@ namespace BoSSS.Application.XNSEC {
         public static XNSEC_Control NUnitTestManuSol_3() {
             //var C = ControlManuSolLowMachCombustion(DGp: 2, SizeFactor: 3);
             //C.DbPath = "c:\\BoSSS_DB";
-            var C = ControlManuSolLowMachCombustion(DGp: 2, SizeFactor: 4);
-            //var C = ControlManuSolLowMachCombustion(DGp: 1, SizeFactor: 3);
+            var C = ControlManuSolLowMachCombustion(DGp: 2, SizeFactor: 3);
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
@@ -25,7 +24,7 @@ namespace BoSSS.Application.XNSEC {
 
             C.VariableOneStepParameters = false;
             C.NumberOfChemicalSpecies = 4; // number of chemical species, without inert
-            //C.ImmediatePlotPeriod = 1;
+            C.ImmediatePlotPeriod = 1;
 
             //C.myThermalWallType = SIPDiffusionTemperature.ThermalWallType.fixedTemperature;
 

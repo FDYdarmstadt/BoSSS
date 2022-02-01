@@ -109,47 +109,47 @@ namespace BoSSS.Solution.XNSECommon {
     }
 
 
-    /// <summary>
-    /// Manufactured solution 
-    /// </summary>
-    public class LowMach_ContiManSolution : RHSManuSourceDivKonti, ISpeciesFilter {
-        public LowMach_ContiManSolution(string spcName, double Reynolds, double[] MolarMasses, PhysicsMode physicsMode, bool rhoOne, Func<double[], double, double> _sourceFunc = null) : base(Reynolds, MolarMasses, physicsMode, rhoOne, _sourceFunc) {
-            ValidSpecies = spcName;
-        }
+    ///// <summary>
+    ///// Manufactured solution 
+    ///// </summary>
+    //public class LowMach_ContiManSolution : RHSManuSourceDivKonti, ISpeciesFilter {
+    //    public LowMach_ContiManSolution(string spcName, double Reynolds, double[] MolarMasses, PhysicsMode physicsMode, bool rhoOne, Func<double[], double, double> _sourceFunc = null) : base(Reynolds, MolarMasses, physicsMode, rhoOne, _sourceFunc) {
+    //        ValidSpecies = spcName;
+    //    }
 
-        public string ValidSpecies {
-            get;
-            private set;
-        }
-    }
-    /// <summary>
-    /// Manufactured solution 
-    /// </summary>
-    public class LowMach_MomentumManSolution : RHSManuSourceNS, ISpeciesFilter {
-        public LowMach_MomentumManSolution(string spcName, double Reynolds, double Froude, double[] MolarMasses, string direction, PhysicsMode physMode, bool rhoOne, Func<double[], double, double> _SourceTerm) : base(Reynolds, Froude, MolarMasses, direction, physMode, rhoOne, _SourceTerm) {
-            ValidSpecies = spcName;
-        }
+    //    public string ValidSpecies {
+    //        get;
+    //        private set;
+    //    }
+    //}
+    ///// <summary>
+    ///// Manufactured solution 
+    ///// </summary>
+    //public class LowMach_MomentumManSolution : RHSManuSourceNS, ISpeciesFilter {
+    //    public LowMach_MomentumManSolution(string spcName, double Reynolds, double Froude, double[] MolarMasses, string direction, PhysicsMode physMode, bool rhoOne, Func<double[], double, double> _SourceTerm) : base(Reynolds, Froude, MolarMasses, direction, physMode, rhoOne, _SourceTerm) {
+    //        ValidSpecies = spcName;
+    //    }
 
-        public string ValidSpecies {
-            get;
-            private set;
-        }
+    //    public string ValidSpecies {
+    //        get;
+    //        private set;
+    //    }
 
-    }
-    /// <summary>
-    /// Manufactured solution 
-    /// </summary>
-    public class LowMach_ScalarManSolution : RHSManuSourceTransportEq, ISpeciesFilter {
-        public LowMach_ScalarManSolution(string spcName, double HeatRelease, double Reynolds, double Prandtl, double Schmidt, double[] StoichiometricCoefficients, double[] ReactionRateConstants, double[] MolarMasses, MaterialLaw EoS, string EqType, PhysicsMode physicsMode, int SpeciesIndex = -1, bool chemReactionOK = true, bool rhoOne = false) : base(HeatRelease, Reynolds, Prandtl, Schmidt, StoichiometricCoefficients, ReactionRateConstants, MolarMasses, EoS, EqType, physicsMode, SpeciesIndex, chemReactionOK, rhoOne) {
+    //}
+    ///// <summary>
+    ///// Manufactured solution 
+    ///// </summary>
+    //public class LowMach_ScalarManSolution : RHSManuSourceTransportEq, ISpeciesFilter {
+    //    public LowMach_ScalarManSolution(string spcName, double HeatRelease, double Reynolds, double Prandtl, double Schmidt, double[] StoichiometricCoefficients, double[] ReactionRateConstants, double[] MolarMasses, MaterialLaw EoS, string EqType, PhysicsMode physicsMode, int SpeciesIndex = -1, bool chemReactionOK = true, bool rhoOne = false) : base(HeatRelease, Reynolds, Prandtl, Schmidt, StoichiometricCoefficients, ReactionRateConstants, MolarMasses, EoS, EqType, physicsMode, SpeciesIndex, chemReactionOK, rhoOne) {
 
-            ValidSpecies = spcName;
-        }
+    //        ValidSpecies = spcName;
+    //    }
 
-        public string ValidSpecies {
-            get;
-            private set;
-        }
-    }
+    //    public string ValidSpecies {
+    //        get;
+    //        private set;
+    //    }
+    //}
 
 
 
