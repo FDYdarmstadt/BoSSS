@@ -33,7 +33,7 @@ namespace AdvancedSolverTests.SubBlocking
         public long[] Global_IList_LocalCells;
     }
 
-    class MgoSolverPair : IDisposable {
+    public class MgoSolverPair : IDisposable {
 
         public MgoSolverPair(SubBlockTestSolver2Var solver) {
             MGOp = solver.MGOp;
@@ -81,7 +81,7 @@ namespace AdvancedSolverTests.SubBlocking
     }
 
 
-    internal static class Utils
+    public static class Utils
     {
         
         public static MgoSolverPair CreateTestMGOperator(XDGusage UseXdg = XDGusage.none, int DGOrder = 2, MatrixShape MShape = MatrixShape.full, int Resolution = 4) {

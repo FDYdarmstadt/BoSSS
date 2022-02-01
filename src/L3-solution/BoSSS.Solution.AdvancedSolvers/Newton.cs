@@ -1215,8 +1215,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // Termination of entry
                     //if(rho < GMRESConvCrit)
-                    if(Termination(rho))
-                        return SolutionVec.ToArray();
+                    if (Termination(rho))
+                        return currentX.ToArray();
 
                     V[0].SetV(r, alpha: (1.0 / rho));
                     double beta = rho;

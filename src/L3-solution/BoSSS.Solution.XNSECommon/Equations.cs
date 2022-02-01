@@ -294,6 +294,8 @@ namespace BoSSS.Solution.XNSECommon {
                 AddComponent(src);
                 var flx = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, rhoSpc, -1, false);
                 AddComponent(flx);
+                //AddComponent(new PressureStabilizationInBulk(-1.0, 1 / physParams.mu_A, 1 / physParams.mu_B, spcName));
+                //AddComponent(new ArtificalPressure(4.0,BcMap,0.0625));//.125
             }
         }
 
@@ -329,6 +331,7 @@ namespace BoSSS.Solution.XNSECommon {
             // set components
             var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSet(D, rhoA, rhoB, isMaterialInterface, -1, false);
             AddComponent(divPen);
+            //AddComponent(new PressureStabilizationAtLevelSet(1.0, physParams.reynolds_A, physParams.reynolds_B));
         }
 
         public override string FirstSpeciesName => phaseA;
