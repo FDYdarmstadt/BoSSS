@@ -135,11 +135,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public int FastMarchingReInitPeriod = 0;
 
         /// <summary>
-        /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the level-set
+        /// Controls the behavior of the <see cref="ContinuityProjection"/> of the first level-set, i.e. the algorithm which enforces continuity of the level-set
         /// </summary>
         [DataMember]
         public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
+        /// <summary>
+        /// Controls the behavior of the <see cref="ContinuityProjection"/> of the second level-set, i.e. the algorithm which enforces continuity of the level-set
+        /// </summary>
+        [DataMember]
+        public ContinuityProjectionOption LSContiProjectionMethod2 = ContinuityProjectionOption.ConstrainedDG;
     }
 
 

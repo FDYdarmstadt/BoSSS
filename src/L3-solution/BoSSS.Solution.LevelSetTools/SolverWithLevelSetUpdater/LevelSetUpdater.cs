@@ -363,16 +363,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
             int __NearRegionWidth, string[,] _SpeciesTable,
-            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1,
-            ContinuityProjectionOption continuityMode) {
+            LevelSet dgLevelSet0, string interfaceName0, ContinuityProjectionOption continuityMode0, 
+            LevelSet dgLevelSet1, string interfaceName1, ContinuityProjectionOption continuityMode1) {
 
             LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1 };
             string[] interfaceNames = new string[] { interfaceName0, interfaceName1 };
+            ContinuityProjectionOption[] options = new ContinuityProjectionOption[] { continuityMode0, continuityMode1};
 
             LevelSet[] cgLevelSets = new LevelSet[2];
 
             for (int i = 0; i < 2; ++i) {
-                cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
+                cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, options[i]);
                 cgLevelSets[i].Identification = interfaceNames[i];
                 cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
@@ -387,7 +388,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     DGLevelSet = dgLevelSets[i],
                     Tracker = Tracker,
                 };
-                SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, continuityMode);
+                SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, options[i]);
                 lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
             }
 
@@ -399,15 +400,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
             int __NearRegionWidth, string[,,] _SpeciesTable, 
-            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2,
-            ContinuityProjectionOption continuityMode) {
-            
+            LevelSet dgLevelSet0, string interfaceName0, ContinuityProjectionOption continuityMode0,
+            LevelSet dgLevelSet1, string interfaceName1, ContinuityProjectionOption continuityMode1,
+            LevelSet dgLevelSet2, string interfaceName2, ContinuityProjectionOption continuityMode2) {
+
+
             LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1, dgLevelSet2 };
             LevelSet[] cgLevelSets = new LevelSet[dgLevelSets.Length];
             string[] interfaceNames = new string[] { interfaceName0, interfaceName1, interfaceName2 };
+            ContinuityProjectionOption[] options = new ContinuityProjectionOption[] { continuityMode0, continuityMode1, continuityMode2 };
 
-            for(int i = 0; i < dgLevelSets.Length; ++i) {
-                cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
+            for (int i = 0; i < dgLevelSets.Length; ++i) {
+                cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, options[i]);
                 cgLevelSets[i].Identification = interfaceNames[i];
                 cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
@@ -422,7 +426,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     DGLevelSet = dgLevelSets[i],
                     Tracker = Tracker,
                 };
-                SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, continuityMode);
+                SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, options[i]);
                 lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
             }
         }
@@ -432,15 +436,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public LevelSetUpdater(GridData backgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType,
             int __NearRegionWidth, string[,,,] _SpeciesTable,
-            LevelSet dgLevelSet0, string interfaceName0, LevelSet dgLevelSet1, string interfaceName1, LevelSet dgLevelSet2, string interfaceName2, LevelSet dgLevelSet3, string interfaceName3,
-            ContinuityProjectionOption continuityMode) {
+            LevelSet dgLevelSet0, string interfaceName0, ContinuityProjectionOption continuityMode0,
+            LevelSet dgLevelSet1, string interfaceName1, ContinuityProjectionOption continuityMode1,
+            LevelSet dgLevelSet2, string interfaceName2, ContinuityProjectionOption continuityMode2,
+            LevelSet dgLevelSet3, string interfaceName3, ContinuityProjectionOption continuityMode3) {
             
             LevelSet[] dgLevelSets = new LevelSet[] { dgLevelSet0, dgLevelSet1, dgLevelSet2, dgLevelSet3 };
             LevelSet[] cgLevelSets = new LevelSet[dgLevelSets.Length];
             string[] interfaceNames = new string[] { interfaceName0, interfaceName1, interfaceName2, interfaceName3 };
+            ContinuityProjectionOption[] options = new ContinuityProjectionOption[] { continuityMode0, continuityMode1, continuityMode2, continuityMode3 };
 
-            for(int i = 0; i < dgLevelSets.Length; ++i) {
-                cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, continuityMode);
+            for (int i = 0; i < dgLevelSets.Length; ++i) {
+                cgLevelSets[i] = ContinuityProjection.CreateField(dgLevelSets[i], backgroundGrid, options[i]);
                 cgLevelSets[i].Identification = interfaceNames[i];
                 cgLevelSets[i].AccLaidBack(1.0, dgLevelSets[i]);
             }
@@ -455,7 +462,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     DGLevelSet = dgLevelSets[i],
                     Tracker = Tracker,
                 };
-                SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, continuityMode);
+                SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(dualLevelSet, backgroundGrid, options[i]);
                 lsUpdaters.Add(dualLevelSet.Identification, singleUpdater);
             }
         }

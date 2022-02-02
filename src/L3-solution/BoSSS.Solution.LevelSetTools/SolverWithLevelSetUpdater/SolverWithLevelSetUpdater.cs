@@ -214,7 +214,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 case 2:
                     lsUpdater = new LevelSetUpdater((GridData)GridData, Control.CutCellQuadratureType, Control.LS_TrackerWidth,
                         (string[,])this.SpeciesTable,
-                        DGlevelSets[0], lsNames[0].ContLs, DGlevelSets[1], lsNames[1].ContLs, Control.LSContiProjectionMethod);
+                        DGlevelSets[0], lsNames[0].ContLs, Control.LSContiProjectionMethod, 
+                        DGlevelSets[1], lsNames[1].ContLs, Control.LSContiProjectionMethod2);
                     break;
 
                 default:
@@ -390,6 +391,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         break;
                     }
                     case LevelSetEvolution.RigidObject:
+                    case LevelSetEvolution.External:
                         break;
                     default:
                         throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
