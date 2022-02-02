@@ -200,10 +200,12 @@ namespace BoSSS.Solution {
                     case LinearSolverCode.exp_gmres_levelpmg:
                     case LinearSolverCode.exp_gmres_schwarz_pmg:
                     case LinearSolverCode.exp_softgmres:
-                        LinIsGmres = true;
-                        break;
+                    case LinearSolverCode.exp_gmres_AS:
+                    case LinearSolverCode.exp_gmres_AS_MG:
+                    LinIsGmres = true;
+                    break;
                     default:
-                        break;
+                    break;
                 }
 
                 return m_nc.SolverCode == NonLinearSolverCode.Newton && LinIsGmres;
@@ -301,7 +303,7 @@ namespace BoSSS.Solution {
                 //Newton uses MUMPS as linearsolver by default
                 case NonLinearSolverCode.Newton:
 
-                    if (linsolver.GetType() == typeof(SoftGMRES)) {
+                    if (IsNewtonGmresType) {
                         nonlinSolver = new Newton(
                         ts_AssembleMatrixCallback,
                         ts_MultigridBasis,
@@ -430,12 +432,17 @@ namespace BoSSS.Solution {
                     m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                         NoOfPartsOnCurrentProcess = NoOfBlocks,
                     },
-                    CoarseSolver = null,
-                    Overlap = 1
+                    Overlap = 1,
+                    EnableOverlapScaling = false,
+                    
                 };
                 precond[0] = ClassicMGwithSmoother(3, dirSolver, Smoother);
+                (precond[0] as ClassicMultigrid).TerminationCriterion = (iIter, r0, ri) => iIter <= 10;
+                break;
+                case LinearSolverCode.exp_gmres_kcycle_Schwarz:
+                    Func<int, int> BlockSize = (int iLevel) => 10000;
+                    precond[0] = KcycleMultiSchwarz(MaxMGDepth,LocalDOF,BlockSize);
                     break;
-
                 /*
                 case LinearSolverCode.exp_gmres_localPrec:
                     precond[0] = new LocalizedOperatorPrec() {
@@ -450,28 +457,28 @@ namespace BoSSS.Solution {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsOnCurrentProcess = NoOfBlocks,
                         },
-                        Overlap = 1
+                        Overlap = 1,
+                        EnableOverlapScaling = true,
+                        //TwoGrid = new Schwarz.LowOrderCoarseSolver() { isMultiplicative = false }
                     };
                     break;
 
                 case LinearSolverCode.exp_softpcg_schwarz:
 
                     precond[0] = new Schwarz() {
-                        FixedNoOfIterations = 1,
-                        CoarseSolver = null,
-                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy {
-                            NoOfPartsOnCurrentProcess = NoOfBlocks
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            NoOfPartsOnCurrentProcess = NoOfBlocks,
                         },
-                        Overlap = 1
+                        Overlap = 1,
+                        EnableOverlapScaling = true,
+                        //TwoGrid = new Schwarz.LowOrderCoarseSolver() { isMultiplicative = false }
                     };
-                    break;
+                break;
 
                 case LinearSolverCode.exp_softpcg_schwarz_directcoarse:
 
                     precond[0] = new Schwarz() {
-                        CoarseSolver = new DirectSolver() {
-                            WhichSolver = DirectSolver._whichSolver.MUMPS
-                        },
+                        CoarseSolver = new Schwarz.ClassicMG(),
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsOnCurrentProcess = NoOfBlocks
                         },
@@ -489,7 +496,6 @@ namespace BoSSS.Solution {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsOnCurrentProcess = NoOfBlocks
                         },
-                        CoarseSolver = null,
                         Overlap = 1,
                         EnableOverlapScaling = false,
                         UsePMGinBlocks = true,
@@ -533,7 +539,6 @@ namespace BoSSS.Solution {
 
                         new Schwarz() {
                             FixedNoOfIterations = 1,
-                            CoarseSolver = null,
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 //NoOfPartsPerProcess = LocalNoOfSchwarzBlocks
                                 NoOfPartsOnCurrentProcess = 4
@@ -621,7 +626,6 @@ namespace BoSSS.Solution {
 
                 templinearSolve = new Schwarz() {
                     FixedNoOfIterations = m_lc.MaxSolverIterations,
-                    CoarseSolver = null,
                     m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                         NoOfPartsOnCurrentProcess = NoOfBlocks,
                     },
@@ -640,7 +644,6 @@ namespace BoSSS.Solution {
 
                 var smoother = new Schwarz() {
                     FixedNoOfIterations = m_lc.MaxSolverIterations,
-                    CoarseSolver = null,
                     m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                         NoOfPartsOnCurrentProcess = NoOfBlocks,
                     },
@@ -678,6 +681,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_softgmres:
                 case LinearSolverCode.exp_gmres_AS:
                 case LinearSolverCode.exp_gmres_AS_MG:
+                case LinearSolverCode.exp_gmres_kcycle_Schwarz:
                 templinearSolve = new SoftGMRES() {
                     //m_Tolerance = lc.ConvergenceCriterion,
                     //m_MaxIterations = lc.MaxSolverIterations,
@@ -740,8 +744,8 @@ namespace BoSSS.Solution {
                 };
                 break;
                 case LinearSolverCode.exp_another_Kcycle:
-                        templinearSolve = new SoftGMRES() {
-                            Precond = expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize),
+                        templinearSolve = new FlexGMRES() {
+                            PrecondS = new ISolverSmootherTemplate[] { expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize) },
                             MaxKrylovDim = 50,
                             TerminationCriterion = (int iter, double r0, double r) => iter <= 1,
                         };
@@ -1071,7 +1075,8 @@ namespace BoSSS.Solution {
 
         #region special configs
         /// <summary>
-        /// Automatic choice of linear solver depending on problem size, immersed boundary, polynomial degree, etc. In addition the nonlinearsolver config is considered as well.
+        /// Obsolete. Has to be revisited ...
+        /// 
         /// </summary>
         private ISolverSmootherTemplate AutomaticSolver( LinearSolverConfig lc, int[] LDOF, int Dim, int NoCellsLoc, ISolverSmootherTemplate[] PreCond) {
 
@@ -1126,7 +1131,6 @@ namespace BoSSS.Solution {
                                         NoOfPartsPerProcess = (int)Math.Ceiling(dofsLoc / 6500.0),
                                     },
                                     Overlap = 1,
-                                    CoarseSolver = DetermineMGSquence(lc.NoOfMultigridLevels - 2, lc)
                                 },
                             };
                         } else {
@@ -1152,20 +1156,6 @@ namespace BoSSS.Solution {
 
         }
 
-        /// <summary>
-        /// Determines a solver sequence depending on MGlevels
-        /// </summary>
-        private ISolverSmootherTemplate DetermineMGSquence(int MGlevels, LinearSolverConfig lc) {
-            ISolverSmootherTemplate solver;
-            if (MGlevels > 0) {
-                solver = new ClassicMultigrid() { CoarserLevelSolver = DetermineMGSquence(MGlevels - 1, lc) };
-            } else {
-                solver = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.MUMPS,
-                };
-            }
-            return solver;
-        }
 
         /// <summary>
         /// experimental. Is connected to Decomposed MG OrthoScheme. Can be deleted if not used anymore ...
@@ -1180,7 +1170,7 @@ namespace BoSSS.Solution {
             if (MGlevels > 0)
             {
                 solver = new ClassicMultigrid() {                  
-                    CoarserLevelSolver = ClassicMGwithSmoother(MGlevels - 1, coarseSolver, smoother),
+                    CoarserLevelSolver = ClassicMGwithSmoother(--MGlevels, coarseSolver, smoother),
                     PreSmoother = thislevelsmoother,
                     PostSmoother = thislevelsmoother,
                 };
@@ -1385,7 +1375,6 @@ namespace BoSSS.Solution {
 
                         Schwarz swz1 = new Schwarz() {
                             FixedNoOfIterations = 1,
-                            CoarseSolver = null,
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 NoOfPartsOnCurrentProcess = NoOfBlocks
                             },
@@ -1563,12 +1552,12 @@ namespace BoSSS.Solution {
                 else
                     Console.WriteLine("KcycleMultiSchwarz: lv {0}, no of blocks {1} : ", iLevel, TotalNoOfSchwarzBlocks);
 
-                Func<int, int, int, bool> delayedCaching = delegate (int Iter, int MgLevel, int iBlock) {
+                Func<int, int, int, bool> SmootherCaching = delegate (int Iter, int MgLevel, int iBlock) {
                     //return Iter >= ((MaxMGLevel - MgLevel) * 3) * (1);
                     return true;
                 };
 
-                Func<int, int, int, bool> delayedCaching2 = delegate (int Iter, int MgLevel, int iBlock) {
+                Func<int, int, bool> CoarseCaching = delegate (int Iter, int MgLevel) {
                     //return Iter >= MaxMGDepth+1;
                     return true;
                 };
@@ -1580,7 +1569,7 @@ namespace BoSSS.Solution {
                         WhichSolver = DirectSolver._whichSolver.PARDISO,
                         SolverVersion = Parallelism.SEQ,
                         TestSolution = false,
-                        ActivateCaching = delayedCaching2,
+                        ActivateCaching = CoarseCaching,
                     };
 
                     //levelSolver = new Schwarz() {
@@ -1601,13 +1590,13 @@ namespace BoSSS.Solution {
                     //};
                 } else {
 
+
                     var smoother1 = new Schwarz() {
                         FixedNoOfIterations = 1,
-                        CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsOnCurrentProcess = LocalNoOfSchwarzBlocks,
                         },
-                        ActivateCachingOfBlockMatrix = delayedCaching,
+                        ActivateCachingOfBlockMatrix = SmootherCaching,
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
                     };
@@ -1621,7 +1610,7 @@ namespace BoSSS.Solution {
                     if (iLevel > 0) {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
                     } else {
-                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
+                        ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r > r0 * m_lc.ConvergenceCriterion + m_lc.ConvergenceCriterion;
                     }
 
                     /*
@@ -1810,19 +1799,15 @@ namespace BoSSS.Solution {
 
                     var solve1 = new Schwarz() {
                         FixedNoOfIterations = 1,
-                        CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsOnCurrentProcess = LocalNoOfSchwarzBlocks
                             //NoOfPartsOnCurrentProcess = 4
                         },
                         Overlap = 1, // overlap seems to help; more overlap seems to help more
                         EnableOverlapScaling = true,
-                        UsePMGinBlocks = false,
-                        CoarseSolveOfCutcells = true,
-                        CoarseLowOrder = m_lc.pMaxOfCoarseSolver
                     };
 
-                    //var solve2 = new BlockJacobi() { omega = 0.5 };
+                    //var solve1 = new BlockJacobi() { omega = 0.5 };
 
                     //var smoother1 = new SolverSquence() { SolverChain = new ISolverSmootherTemplate[] { solve1, solve2 } };
                     //var smoother2 = new SolverSquence() { SolverChain = new ISolverSmootherTemplate[] { solve1, solve2 } };
@@ -1919,7 +1904,6 @@ namespace BoSSS.Solution {
                    
                     var smoother1 = new Schwarz() {
                         FixedNoOfIterations = 1,
-                        CoarseSolver = null,
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                             NoOfPartsOnCurrentProcess = NoOfBlocks
                         },
@@ -2115,4 +2099,4 @@ namespace BoSSS.Solution {
         #endregion
 
     }
-    }
+}

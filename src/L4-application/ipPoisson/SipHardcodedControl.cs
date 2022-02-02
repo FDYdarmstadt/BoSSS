@@ -249,11 +249,11 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 5, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0, LinearSolverCode solver =  LinearSolverCode.classic_pardiso) {
+        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 4, string blapath = null, double xStretch = 1.0, double yStretch = 1.0, double zStretch = 1.0, LinearSolverCode solver =  LinearSolverCode.classic_pardiso) {
             // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2, solver:BoSSS.Solution.Control.LinearSolverCode.exp_Kcycle_schwarz)'
-            xRes = (int)Math.Pow(xRes, PowRes);
-            yRes = (int)Math.Pow(yRes, PowRes);
-            zRes = (int)Math.Pow(zRes, PowRes);
+            int xRes = (int)Math.Pow(2, PowRes);
+            int yRes = (int)Math.Pow(2, PowRes);
+            int zRes = (int)Math.Pow(2, PowRes);
             var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
@@ -297,6 +297,7 @@ namespace BoSSS.Application.SipPoisson {
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
             R.AddBoundaryValue(BoundaryType.Neumann.ToString());
+            R.PostprocessingModules.Add(new CondLogger());
 
             return R;
         }

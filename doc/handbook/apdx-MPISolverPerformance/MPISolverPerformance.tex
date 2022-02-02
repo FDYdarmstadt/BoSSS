@@ -1,11 +1,10 @@
 This section covers basic performance tests, i.e. how specific algorithms scale in parallel with increasing \emph{number of processors}. So far, all calculations for this research were conducted on the Lichtenberg high performance computer of the TU Darmstadt.
 
-\section{Weak scaling - XdgPoisson}
+\section{ Xdg Poisson, steady droplet }
+\subsection{weak scaling}
 Weak scaling is investigated of the test problem introduced in \ref{sec:XdgPoisson}. This means the problem size per processor is constant during the study (in this case approximately 10.000 DOF / core). So the total problem size grows with increasing number of cores. The expectation is that wall clock time remains constant trough the study. This means in the same time frame with $N$ cores we are able to solve a system, which is $N$ times the size of a single core run.
 
 In \ref{weakXdgPoissonScaling} the scaling of V-krylov-cycle is shown:
-
-\subsection{solver scaling}
 
 \graphicspath{{./apdx-MPISolverPerformance/weakScaling/XdgPoisson/plots/}} 
 \begin{figure}[h!]
@@ -19,8 +18,6 @@ In \ref{weakXdgPoissonScaling} the scaling of V-krylov-cycle is shown:
 	\label{fig:weakXdgPoissonScaling}
 \end{figure}
 
-\subsection{kcycle profiling}{\tiny }
-\graphicspath{{./apdx-MPISolverPerformance/weakScaling/XdgPoisson/plots/}} 
 \begin{figure}[h!]
 	\begin{center}
 		\input{./apdx-MPISolverPerformance/weakScaling/XdgPoisson/plots/Profiling_2.tex}
@@ -32,69 +29,210 @@ In \ref{weakXdgPoissonScaling} the scaling of V-krylov-cycle is shown:
 	\label{fig:weakXdgPoisson-kcycle-profiling}
 \end{figure}
 
+\subsection{strong scaling}
 
-\section{Parallel Efficiency - Navier-Stokes problems}
-Different solver strategies are conducted to solve the fully coupled incompressible Navier-Stokes equations. At the moment the following strategies can be examined:
-\begin{itemize}
-	\item Linearizsation of the NSE with: Newton(Gmres) or Picard
-	\item Solving the linear problem with a Gmres approach
-	\item Preconditioning with Additive-Schwarz domain decomposition (with coarse solve on the coarsest multigrid level) and direct solver MUMPS for the Blocks
-\end{itemize}
-\subsection{Simple 3D sphere immersed in a fluid flow}
-\label{sec:MPIPerformanceSphere}
-The problem
+\graphicspath{{./apdx-MPISolverPerformance/strongScaling/XdgPoisson/plots/}} 
+\begin{figure}[h!]
+	\begin{center}
+		\input{./apdx-MPISolverPerformance/strongScaling/XdgPoisson/plots/Scaling_2.tex}
+	\end{center}
+	\caption{
+		Solver wall clock time vs. no of processors, for polynomial degree $k=2$ and approximately 10.000 DOF / processor, Grid partitioning with METIS (except 128 cores with predefined partitioning),
+		for problem/Equation (\ref{eq:poisson-jump-problem-def}).
+	}
+	\label{fig:weakXdgPoissonScaling}
+\end{figure}
+
+\begin{figure}[h!]
+	\begin{center}
+		\input{./apdx-MPISolverPerformance/strongScaling/XdgPoisson/plots/Profiling_2.tex}
+	\end{center}
+	\caption{
+		profiling of the V-kcycle run for the same setting:
+		for problem/Equation (\ref{eq:poisson-jump-problem-def}).
+	}
+	\label{fig:weakXdgPoisson-kcycle-profiling}
+\end{figure}
+
+
+\section{Stokes rotating sphere}
+In this section we will stick to a rigid body $\Omega_S$ which is embedded in the computational domain $\Omega \subset \mathbb{R}^D$, and the fluid domain is given as 
+$\Omega_F(t)=\Omega \setminus \overline{\Omega}_S(t)$.
+We further assume the incompressible Navier-Stokes equation:
+
 \begin{equation}
 \left\{ \begin{array} {rclll}
-\rho_f\Big(\frac{\partial \vec{u}}{\partial t}+ \vec{u} \cdot \nabla \vec{u}\Big) +\nabla p - \mu_f \Delta \vec{u} & = & \vec{f}                   
-& \text{and}\   &  \\
-% ----
-\nabla \cdot \vec{u} & = & 0                             
-& \text{in}\ \Omega = (-5,10) \times (-5,5) \times (-5,5)  & \\
- \vec{u}_D & = & 0                             
-& \text{on}\ \Gamma_D = \{ (x,y,z,t) \in \real^3; \ z = -5,5 \} 
-& \text{Dirichlet-boundary}\\
- \vec{u}_S & = & 0                             
- & \text{on}\ \Gamma_S = \{ (x,y,z) \in \real^3; \ x^2+y^2+z^2 = 1 \}
-& \text{Dirichlet-boundary} \\
- p_O & = & 0                             
-& \text{on}\ \Gamma_O = \{ (x,y,z) \in \real^3; \ x = 10 \}
-& \text{Dirichlet-boundary} \\
-% ----
-\vec{u}(x,-5,z) & = & \vec{u}(x,5,z)  
-& \text{on}\ \Gamma_P = \partial \Omega \setminus \Gamma_D \setminus \Gamma_S \setminus \Gamma_O
-& \text{Periodic-boundary}\\
-\vec{u}_0(x,y,z) & = & \{1,0,0\}  
-& \text{in}\ \Omega = (-5,10) \times (-5,5) \times (-5,5)   
-& \text{Initial Condition}
+\frac{\partial \rho \Vector{u}}{\partial t}+ \nabla \cdot ( \rho \Vector{u} \otimes \Vector{u}) + \nabla p - \eta \Delta \Vector{u} & = & \Vector{f} \quad & in \ \ \Omega_F(t) \times (0,T) \\
+\nabla \cdot \Vector{u} & = & 0 \quad & in \ \ \Omega_F(t) \times (0,T) \\
+\Vector{u}(\Vector{x},0) & = & \Vector{0} \quad & on \ \ \Omega_F(0) \\
+p(\Vector{x},0) & = & 0 \quad & on \ \ \Omega_F(0) \\
+\Vector{u}(\Vector{x},t) & = & \Vector{0} \quad & on \ \ \partial\Omega_F \setminus \Interface \\
+\Vector{u}(\Vector{x},t) & = & \boldsymbol{\omega}(t) \times \Vector{r} \quad & on \ \ \Interface = \partial\Omega_S \cap \partial\Omega_F 
 \end{array} \right.
-\label{eq:NavierStokesSphereBenchmark}
 \end{equation}
-is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of the fluid are 
-choosen to be $\rho_f=1$ and $\mu_f=0.002$ which renders down to a Reynolds Number of 100. 
-The problem basically describes a sphere flow between two plates.
+where rigid body $\Omega_S(t)$ is rotating with the angular velocity of $\boldsymbol{\omega}$. At the domain boundary $\partial\Omega_F \setminus \Interface$ and at the interface dirichlet boundary conditions are imposed. The surface $\partial \Omega_S$, respectively $\Interface$, is represented by the isocontour of the level-set $\varphi(x,t)$.
 
-\graphicspath{{./apdx-MPISolverPerformance/strongScaling/NSESphere/plots/}}
+A sphere is defined by the isocontour of: 
+\begin{equation}
+	-x_1^2-x_2^2-x_3^2+r^2=0.
+\end{equation}
 
-\begin{figure}[h!]
-	\begin{center}
-		\input{./apdx-MPISolverPerformance/strongScaling/NSESphere/plots/MPIScalingTimes.tex}
-	\end{center}
-	\caption{
-		Solver runtime vs. processors, for polynomial degree $k=1/0$ leading to 212992 DoFs,
-		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
-	}
-	\label{fig:Spherek1Time}
+\subsection{parallel efficiency (weak scaling)}
+\begin{figure}[H]
+	\centering
+	\pgfplotsset{xlabel = cores, ylabel= Efficiency $T(8)/T(P)$, width = 0.6\textwidth, height= 0.45\textwidth}
+	\begin{tikzpicture}
+	\begin{loglogaxis}[
+	xmin=8 ,xmax=256,
+	legend columns=-1,
+	%legend to name=bastingComparisonLegend,
+	ymin=0,ymax=1,
+	xtick={8,16,32,64,128,256},
+	xticklabels={$\mathsf{8}$, $\mathsf{16}$, $\mathsf{32}$, $\mathsf{64}$, $\mathsf{128}$, $\mathsf{256}$}, 
+	legend style={at={(.5,1.1)},anchor=north},
+	]
+	\def \WeakPath {./apdx-MPISolverPerformance/weakScaling/DG_rotSphere/plots}
+	
+	\addplot[mark=none, red] table[y=Speedup] {\WeakPath/weak_k2.dat};
+	\addplot[mark=none, blue] table[y=Speedup] {\WeakPath/weak_k3.dat};
+	\addplot[mark=none, orange] table[y=Speedup] {\WeakPath/weak_k4.dat};
+	\legend{ $k2$, $k3$, $k4$ };
+	\end{loglogaxis}
+	\end{tikzpicture}
+	
+	\caption{weak scaling efficiency, weak scaling: constant degrees of freedom per core, sweep from 8 to 256 cores }
+	\label{plt:weak_scaling}
 \end{figure}
 
-\graphicspath{{./apdx-MPISolverPerformance/strongScaling/NSESphereComplex/plots/}}
-
-\begin{figure}[h!]
-	\begin{center}
-		\input{./apdx-MPISolverPerformance/strongScaling/NSESphereComplex/plots/MPIScalingTimes.tex}
-	\end{center}
-	\caption{
-		Solver runtime vs. processors, for polynomial degree $k=2/1$ leading to 557056 DoFs,
-		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
-	}
-	\label{fig:Spherek1Time}
+\subsection{parallel speedup (strong scaling)}
+\begin{figure}[H]
+	\centering
+	\pgfplotsset{xlabel = cores, ylabel= Speedup $T(8)/T(P)$, width = 0.6\textwidth, height= 0.45\textwidth}
+	\begin{tikzpicture}
+	\begin{loglogaxis}[
+	xmin=8 ,xmax=256,
+	legend columns=-1,
+	%legend to name=bastingComparisonLegend,
+	ymin=1,ymax=32,
+	xtick={8,16,32,64,128,256},
+	xticklabels={$\mathsf{8}$, $\mathsf{16}$, $\mathsf{32}$, $\mathsf{64}$, $\mathsf{128}$, $\mathsf{256}$}, 
+	legend style={at={(.5,1.1)},anchor=north},
+	]
+	\def \StrongPath {./apdx-MPISolverPerformance/strongScaling/DG_rotSphere/plots}
+	
+	\addplot[mark=none, red] table[y=Speedup] {\StrongPath/strong_k2.dat};
+	\addplot[mark=none, blue] table[y=Speedup] {\StrongPath/strong_k3.dat};
+	\addplot[mark=none, orange] table[y=Speedup] {\StrongPath/strong_k4.dat};
+	\legend{ $k2$, $k3$, $k4$ };
+	\end{loglogaxis}
+	\end{tikzpicture}
+	
+	\caption{maximum runtime per linear solver iteration over all cores, sweep from 8 to 256 cores, }
+	\label{plt:strong_scaling}
 \end{figure}
+
+\subsection{profile}
+\begin{figure}[H]
+	\centering
+	\pgfplotsset{xlabel = cores, ylabel= runtime per iteration [sec] , width = 0.6\textwidth, height= 0.45\textwidth}
+	\begin{tikzpicture}
+	\begin{axis}
+	[ybar stacked, enlargelimits=0.25,
+	symbolic x coords={8, 16, 32, 64, 128, 256},
+	%nodes near coords,
+	%nodes near coords xbar stacked configuration/.style={},
+	xtick=data,
+	%every node near coord/.append style={xshift=5pt},
+	legend style={at={(1.1,.5)},anchor=west},
+	%totals/.style={nodes near coords align={anchor=south}},
+	%x tick label style={anchor=south,yshift=-0.5cm},
+	]
+	%MatrixAssembly_time	AggregationBaseInit_time	DataIO_time	CGProjection_time	SayeCompile_time	StandardCompile_time	AMR_time	LoadBal_time	SolverInit_time	SolverRun_time
+	
+	\def \ProfilePath {./apdx-MPISolverPerformance/strongScaling/DG_rotSphere/plots/}
+	
+	
+	\addplot table[y=AggregationBaseInit_time] {\ProfilePath};
+	\addplot table[y=DataIO_time] {\ProfilePath};
+	%\addplot table[y=CGProjection_time] {\ProfilePath};
+	\addplot table[y=SayeCompile_time] {\ProfilePath};
+	\addplot table[y=StandardCompile_time] {\ProfilePath};
+	%\addplot table[y=AMR_time] {\ProfilePath};
+	\addplot table[y=LoadBal_time] {\ProfilePath};
+	\addplot table[y=SolverInit_time] {\ProfilePath};
+	\addplot table[y=MatrixAssembly_time] {\ProfilePath};
+	\addplot table[y=SolverRun_time,nodes near coords, nodes near coords align={horizontal}] {\ProfilePath};
+	
+	%\legend{ $MatrixAssembly_time$, $AggregationBaseInit_time$, $DataIO_time$, $CGProjection_time$, $SayeCompile_time$, $StandardCompile_time$, $AMR_time$, $LoadBal_time$, $SolverInit_time$, $SolverRun_time$ };
+	\legend{  $AggregationBaseInit_time$, $DataIO_time$, $SayeCompile_time$, $StandardCompile_time$, $LoadBal_time$, $SolverInit_time$, $MatrixAssembly_time$, $SolverRun_time$ };
+	\end{axis}
+	\end{tikzpicture}
+	\caption{k4, runtime profile of IBM solver}
+	\label{plt:profiling}
+\end{figure}
+
+%\section{Parallel Efficiency - Navier-Stokes problems}
+%Different solver strategies are conducted to solve the fully coupled incompressible Navier-Stokes equations. At the moment the following strategies can be examined:
+%\begin{itemize}
+%	\item Linearizsation of the NSE with: Newton(Gmres) or Picard
+%	\item Solving the linear problem with a Gmres approach
+%	\item Preconditioning with Additive-Schwarz domain decomposition (with coarse solve on the coarsest multigrid level) and direct solver MUMPS for the Blocks
+%\end{itemize}
+%\subsection{Simple 3D sphere immersed in a fluid flow}
+%\label{sec:MPIPerformanceSphere}
+%The problem
+%\begin{equation}
+%\left\{ \begin{array} {rclll}
+%\rho_f\Big(\frac{\partial \vec{u}}{\partial t}+ \vec{u} \cdot \nabla \vec{u}\Big) +\nabla p - \mu_f \Delta \vec{u} & = & \vec{f}                   
+%& \text{and}\   &  \\
+%% ----
+%\nabla \cdot \vec{u} & = & 0                             
+%& \text{in}\ \Omega = (-5,10) \times (-5,5) \times (-5,5)  & \\
+% \vec{u}_D & = & 0                             
+%& \text{on}\ \Gamma_D = \{ (x,y,z,t) \in \real^3; \ z = -5,5 \} 
+%& \text{Dirichlet-boundary}\\
+% \vec{u}_S & = & 0                             
+% & \text{on}\ \Gamma_S = \{ (x,y,z) \in \real^3; \ x^2+y^2+z^2 = 1 \}
+%& \text{Dirichlet-boundary} \\
+% p_O & = & 0                             
+%& \text{on}\ \Gamma_O = \{ (x,y,z) \in \real^3; \ x = 10 \}
+%& \text{Dirichlet-boundary} \\
+%% ----
+%\vec{u}(x,-5,z) & = & \vec{u}(x,5,z)  
+%& \text{on}\ \Gamma_P = \partial \Omega \setminus \Gamma_D \setminus \Gamma_S \setminus \Gamma_O
+%& \text{Periodic-boundary}\\
+%\vec{u}_0(x,y,z) & = & \{1,0,0\}  
+%& \text{in}\ \Omega = (-5,10) \times (-5,5) \times (-5,5)   
+%& \text{Initial Condition}
+%\end{array} \right.
+%\label{eq:NavierStokesSphereBenchmark}
+%\end{equation}
+%is investigated on a 64x16x16 cell Cartesian grid. The physical parameters of the fluid are 
+%choosen to be $\rho_f=1$ and $\mu_f=0.002$ which renders down to a Reynolds Number of 100. 
+%The problem basically describes a sphere flow between two plates.
+%
+%\graphicspath{{./apdx-MPISolverPerformance/strongScaling/NSESphere/plots/}}
+%
+%\begin{figure}[h!]
+%	\begin{center}
+%		\input{./apdx-MPISolverPerformance/strongScaling/NSESphere/plots/MPIScalingTimes.tex}
+%	\end{center}
+%	\caption{
+%		Solver runtime vs. processors, for polynomial degree $k=1/0$ leading to 212992 DoFs,
+%		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
+%	}
+%	\label{fig:Spherek1Time}
+%\end{figure}
+%
+%\graphicspath{{./apdx-MPISolverPerformance/strongScaling/NSESphereComplex/plots/}}
+%
+%\begin{figure}[h!]
+%	\begin{center}
+%		\input{./apdx-MPISolverPerformance/strongScaling/NSESphereComplex/plots/MPIScalingTimes.tex}
+%	\end{center}
+%	\caption{
+%		Solver runtime vs. processors, for polynomial degree $k=2/1$ leading to 557056 DoFs,
+%		for problem/Equation (\ref{eq:ContantCoeffPoissonBenchmark}).
+%	}
+%	\label{fig:Spherek1Time}
+%\end{figure}

@@ -142,7 +142,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         public static double Condest_MUMPS(this IMutableMatrixEx Mtx) {
             using(new FuncTrace()) {
-                using(var slv = new ilPSP.LinSolvers.MUMPS.MUMPSSolver()) {
+                using(var slv = new ilPSP.LinSolvers.MUMPS.MUMPSSolver() { Parallelism=Parallelism.MPI }) {
                     slv.Statistics = MUMPS.MUMPSStatistics.AllStatistics;
 
                     slv.DefineMatrix(Mtx);
@@ -205,6 +205,38 @@ namespace ilPSP.LinSolvers {
                 Evect.ScaleV(1.0 / normFin);
                 return (1.0 / invMinLambda, Evect);
             }
+        }
+
+        /// <summary>
+        /// Computes the maximal Eigenvalue and Eigenvector
+        /// </summary>
+        /// <param name="Mtx"></param>
+        /// <param name="tol"></param>
+        /// <returns></returns>
+        static public (double lambdaMax, double[] V) MaximalEigen(this IMutableMatrixEx Mtx, double tol = 1.0e-6) {
+            int L = Mtx.RowPartitioning.LocalLength;
+            double[] Evect = new double[L];
+            double[] tmp = new double[L];
+            double MaxLambda = 0;
+            Evect.FillRandom();
+
+            for (int i = 0; i < 100; i++) {
+                double norm = Evect.MPI_L2Norm();
+                Evect.ScaleV(1.0 / norm);
+                Mtx.SpMV(1.0, Evect, 0.0, tmp);
+                double prev_MaxLambda = MaxLambda;
+                MaxLambda = tmp.MPI_InnerProd(Evect);
+                double ChangeNorm = Math.Abs(MaxLambda - prev_MaxLambda) / Math.Max(MaxLambda.Abs(), prev_MaxLambda.Abs());
+                var a = Evect;
+                Evect = tmp;
+                tmp = a;
+
+                if (ChangeNorm < tol)
+                    break;
+            }
+            double normFin = Evect.MPI_L2Norm();
+            Evect.ScaleV(1.0 / normFin);
+            return (MaxLambda, Evect);
         }
     }
 }

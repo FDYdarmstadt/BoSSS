@@ -45,13 +45,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ///// <summary>
         /////  Individual configuration of <see cref="OrthonormalizationMultigrid"/>
         ///// </summary>
-        //public class myConfig : ConfigBase {
+        //public class myConfig : ConfigBase<OrthonormalizationMultigrid> {
         //    /// <summary>
         //    /// config cctor of <see cref="OrthonormalizationMultigrid"/>
         //    /// </summary>
-        //    public myConfig() {
-        public int MaxKrylovDim = int.MaxValue;
-        //    }
+            //public myConfig() {
+                public int MaxKrylovDim = int.MaxValue;
+            //}
+
             /// <summary>
             /// No restriction and prolongation on coarsest grid
             /// </summary>
@@ -61,25 +62,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// W-cycle
             /// </summary>
             public int m_omega = 1;
-
-        //    /// <summary>
-        //    /// ~
-        //    /// </summary>
-        //    /// <returns></returns>
-        //    public override ISolverSmootherTemplate GetInstance() {
-        //        return new OrthonormalizationMultigrid();
-        //    }
         //}
 
-        //myConfig m_config;
-        
+        //myConfig m_config = new myConfig();
+
         ///// <summary>
         ///// ~
         ///// </summary>
-        //public ConfigBase Config {
+        //public myConfig Config {
         //    get {
-        //        if (m_config == null)
-        //            m_config = new myConfig();
         //        return m_config;
         //    }
         //}
@@ -320,6 +311,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 //viz.PlotVectors(new double[][] { Res.ToArray(), Res1, Res_coarse, RemRes }, new[] { "Residual", "ProloResi", "CarseResi", "RestResi" });
                 */
+
+                //if(m_MgOperator.LevelIndex == 0)
+                //    viz.PlotVectors(new double[][] { Res.ToArray() }, new[] { "Res" });
             }
         }
 
@@ -360,8 +354,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     return __NormMxx;
                 }
 
-
-
                 Debug.Assert(SolHistory.Count == MxxHistory.Count);
                 Debug.Assert(X.Length == OpMatrix._RowPartitioning.LocalLength);
                 int L = X.Length;
@@ -383,7 +375,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Mxx.ScaleV(1.0 / NormMxx);
                 X.ScaleV(1.0 / NormMxx);
 
-                for (int jj = 0; jj < 10; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 162, section 6.3.2
+                for (int jj = 0; jj < 10; jj++) { // re-orthogonalisation, loop-limit to 2; See book of Saad, p 156, section 6.3.2
 
                     for (int i = 0; i < KrylovDim; i++) {
                         Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
@@ -401,7 +393,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         using (new BlockTrace("re-orthonormalization", ft)) {
                             // a lot of canceling out has occurred.
                             // do another loop, to ensure ortho-normality:
-                            //
                             // Mxx and X lost more than 5 Magnitudes, so we might have lost a couple of digits of accuracy
 
                             // Note: although |Mxx| might be small, |X| can be quite large (and probably random).
