@@ -1,4 +1,4 @@
-                                                           clear
+clear
 
 polVel = dlmread('polarVelCase1.txt');
 radVel = dlmread('radialVelCase1.txt');

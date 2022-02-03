@@ -913,15 +913,24 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="SphericalHarmonicsTest"/>
         /// </summary>
         [Test]
-        public static void SphericalHarmonoicsPostprocessingTest() {
-            // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonoicsPostprocessingTest()
+        public static void SphericalHarmonicsPostprocessingTest(
+            [Values(true, false)] bool OnQuarterDomain,
+            [Values(3, 5)] int MaxL,
+            [Values(true, false)] bool RotationalSymmetric) {
+            // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonicsPostprocessingTest()
+
+            if(MaxL == 5 && (OnQuarterDomain || RotationalSymmetric))
+                return;
+
             var Tst = new SphericalHarmonicsTest();
+            Tst.ComputeOnQuarterDomain = OnQuarterDomain;
+            Tst.IsRotationalSymmetric = RotationalSymmetric;
             var C = TstObj2CtrlObj(Tst, 2, 0.1,
                 ViscosityMode.FullySymmetric, 
                 XQuadFactoryHelper.MomentFittingVariants.Saye, 
                 SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
 
-            var pp = new Logging.SphericalHarmonicsLogging();
+            var pp = new Logging.SphericalHarmonicsLogging(MaxL, RotationalSymmetric);
             C.PostprocessingModules.Add(pp);
             C.SkipSolveAndEvaluateResidual = true;
 
