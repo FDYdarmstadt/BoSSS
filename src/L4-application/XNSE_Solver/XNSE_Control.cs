@@ -131,14 +131,15 @@ namespace BoSSS.Application.XNSE_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
-                Degree = LevSetDegree,
+                Degree = LevSetDegree ,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
+            Console.WriteLine("Das muss wieder weg!");
             FieldOptions.Add(VariableNames.LevelSetCGidx(1), new FieldOpts() {
-                Degree = LevSetDegree,
+                Degree = LevSetDegree + 2,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {

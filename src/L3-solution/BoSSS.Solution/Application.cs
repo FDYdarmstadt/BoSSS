@@ -2308,6 +2308,128 @@ namespace BoSSS.Solution {
             }
         }
 
+        public void SetupSolverMode() {
+            // =========================================
+            // loading grid, initializing database, etc:
+            // =========================================
+            SetUpEnvironment(); // remark: tracer is not avail before setup
+
+            using (var tr = new FuncTrace()) {
+
+                var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
+
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                double physTime = 0.0;
+                TimestepNumber i0 = 0;
+                if (this.Control == null) {
+                    SetInitial(0.0); // default behavior if no control file is present
+                } else {
+                    if (this.Control != null) {
+                        if (!this.Control.InitialValues_Evaluators.IsNullOrEmpty() && this.Control.RestartInfo != null) {
+                            //throw new ApplicationException("Invalid state in control object: the specification of initial values ('AppControl.InitialValues') and restart info ('AppControl.RestartInfo') is exclusive: "
+                            //    + " both cannot be unequal null at the same time.");
+                            Console.WriteLine("Warning: InitialValues set, while restarting a simulation.");
+                        }
+
+                        if (this.Control.RestartInfo != null) {
+                            LoadRestart(out physTime, out i0);
+                            TimeStepNoRestart = i0;
+                        } else {
+                            SetInitial(0.0);
+                        }
+                    }
+                }
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                m_queryHandler.QueryResults.Clear();
+
+                if (this.Control.RestartInfo != null) {
+                    CreateEquationsAndSolvers(null);
+                    tr.LogMemoryStat();
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                    if (LsTrk != null) {
+                        if (LsTrk.Regions.Time != physTime)
+                            LsTrk.UpdateTracker(physTime);
+                        LsTrk.PushStacks();
+                    }
+                }
+
+                // =========================================================
+                // Adaptive-Mesh-Refinement and/or load balancing on startup
+                // =========================================================
+
+
+                // load balancing solo
+                if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
+                    PlotAndSave(physTime, i0, rollingSavesTsi);
+                    MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+                    PlotAndSave(physTime, i0, rollingSavesTsi);
+                }
+
+                // load balancing and adaptive mesh refinement
+                if (this.Control.AdaptiveMeshRefinement) {
+
+                    // unprocessed initial value IO
+                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
+
+                    var ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(0)), physTime); // save the initial value
+                    if (this.RollingSave)
+                        rollingSavesTsi.Add(Tuple.Create(0, ts0amr));
+
+
+                    bool initialRedist = false;
+                    for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
+                        initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+
+                        if (initialRedist == true) {
+
+                            if (this.Control.ImmediatePlotPeriod > 0)
+                                PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+
+                            ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                            if (this.RollingSave)
+                                rollingSavesTsi[0] = Tuple.Create(0, ts0amr);
+
+                        }
+                    }
+                }
+
+                // ================================================================================
+                // sometimes, the operators depend on parameters,
+                // therefore 'CreateEquationsAndSolvers()' has to be called after ' SetInitial()',
+                // resp. 'LoadRestart(..)'!!!
+                // ================================================================================
+
+                if (this.Control.RestartInfo == null) {
+                    //{ 
+                    CreateEquationsAndSolvers(null);
+                    tr.LogMemoryStat();
+                    csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
+                    if (LsTrk != null)
+                        LsTrk.PushStacks();
+                }
+
+                // ========================================================================
+                // initial value IO:
+                // (note: in some apps, the initial values might be tweaked in the 
+                // 'CreateEquationsAndSolvers(...)' method; but here we should have the 
+                // "true" initial value)
+                // ========================================================================
+
+
+                if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                    PlotCurrentState(physTime, i0, this.Control.SuperSampling);
+
+                var ts0 = SaveToDatabase(i0, physTime); // save the initial value
+                if (this.RollingSave)
+                    rollingSavesTsi.Add(Tuple.Create(0, ts0));
+            }
+        }
+
         private void PlotAndSave(double TS, TimestepNumber TSno, List<Tuple<int, ITimestepInfo>> rollingSavesSammeldingens) {
             if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
                 PlotCurrentState(TS, new TimestepNumber(TSno.Numbers.Cat(0)), this.Control.SuperSampling);
