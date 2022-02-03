@@ -110,7 +110,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                 CurrentDimension = d;
                 ScalarFunction Function = NonVectorizedScalarFunction.Vectorize(VelocityFunction, t);
                 levelSetVelocity[d] = ParameterVarFields[ParameterNames[d]];
-
                 levelSetVelocity[d].Clear();
                 levelSetVelocity[d].ProjectField(1.0, Function, new CellQuadratureScheme(true, AllCutCells));
             }

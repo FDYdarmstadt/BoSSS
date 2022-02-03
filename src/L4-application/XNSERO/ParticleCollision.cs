@@ -122,7 +122,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // =======================================================
             double saveTimestep = 0;
             int ParticleOffset = Particles.Length;
-            double distanceThreshold = GridLengthScale / 10;
+            double distanceThreshold = GridLengthScale;
             if (MinDistance != 0)
                 distanceThreshold = MinDistance;
             // Step 2

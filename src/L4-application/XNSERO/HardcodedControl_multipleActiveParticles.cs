@@ -105,7 +105,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
-        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength = 10, double noOfParticles = 10) {
+        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength = 12, double noOfParticles = 20) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -129,11 +129,11 @@ namespace BoSSS.Application.XNSERO_Solver {
             double activeStress = 1e1;
             double nextParticleDistance = particleLength * 3;
             double domainLength = nextParticleDistance * noOfParticles;
-            //List<string> boundaryValues = new List<string> {
-            //    "Wall"
-            //};
-            //C.SetBoundaries(boundaryValues);
-            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, true, true);
+            List<string> boundaryValues = new List<string> {
+                "Wall"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, false, false);
             C.minDistanceThreshold = 2 / cellsPerUnitLength;
             C.CoefficientOfRestitution = 0.5;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
@@ -166,7 +166,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.LinearSolver.pMaxOfCoarseSolver = 1;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            //C.NonLinearSolver.ConvergenceCriterion = 1e-4;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-4;
 
             return C;
         }

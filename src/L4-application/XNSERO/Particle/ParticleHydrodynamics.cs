@@ -143,7 +143,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Post-processing of the hydrodynamics. If desired the underrelaxation is applied to the forces and torque.
+        /// Post-processing of the hydrodynamics. If desired the underrelaxation is applied to the forces and torque. Küttler+Wall 2008: "Fixed-point fluid–structure interaction solvers with dynamic relaxation"
         /// </summary>
         /// <param name="hydrodynamics"></param>
         private double[] HydrodynamicsRelaxation(double[] hydrodynamics, ref double omega) {
