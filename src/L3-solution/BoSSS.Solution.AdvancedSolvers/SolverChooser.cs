@@ -417,6 +417,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_Kcycle_schwarz_4Rheology:
                 case LinearSolverCode.exp_AS:
                 case LinearSolverCode.exp_AS_MG:
+                case LinearSolverCode.exp_pTG:
                 case LinearSolverCode.automatic:
                 precond[0] = null;
                 break;
@@ -558,8 +559,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_another_Kcycle:
                     precond[0] = null;
                     //precond[0]= expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize);
-                    break;
-
+                    break; 
 
                 default:
                     throw new NotImplementedException($"Preconditioner for solver code {lc.SolverCode} not available.");
@@ -743,11 +743,17 @@ namespace BoSSS.Solution {
                 };
                 break;
                 case LinearSolverCode.exp_another_Kcycle:
-                        templinearSolve = new FlexGMRES() {
-                            PrecondS = new ISolverSmootherTemplate[] { expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize) },
-                            MaxKrylovDim = 50,
-                            TerminationCriterion = (int iter, double r0, double r) => iter <= 1,
-                        };
+                    templinearSolve = new FlexGMRES() {
+                        PrecondS = new ISolverSmootherTemplate[] { expKcycleSchwarz(MaxMGDepth, LocalDOF, X => m_lc.TargetBlockSize) },
+                        MaxKrylovDim = 50,
+                        TerminationCriterion = (int iter, double r0, double r) => iter <= 1,
+                    };
+                    break;
+                case LinearSolverCode.exp_pTG:
+                    templinearSolve = new LevelPmg() {
+                        OrderOfCoarseSystem = m_lc.pMaxOfCoarseSolver,
+                        UseHiOrderSmoothing = true
+                    };
                     break;
                 case LinearSolverCode.selfmade:
                 Console.WriteLine("INFO: Selfmade LinearSolver is used!");

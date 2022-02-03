@@ -125,6 +125,10 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_Kcycle_ILU = 54,
 
+        /// <summary>
+        /// p two grid. Not intended as standalone, used for tests.
+        /// </summary>
+        exp_pTG = 60,
 
         selfmade = 999,
     }
