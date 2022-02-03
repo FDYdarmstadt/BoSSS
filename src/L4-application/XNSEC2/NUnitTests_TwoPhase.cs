@@ -216,7 +216,7 @@ namespace BoSSS.Application.XNSEC {
             var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, false, RightBC_PressureOutlet);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, constantDensity: true, resolution);
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
             XNSECSolverTest(Tst, C);
         }
 
@@ -342,7 +342,7 @@ namespace BoSSS.Application.XNSEC {
             var Tst = new SteadyStateEvaporationTestXNSEC_TwoChemicalComponents(rawangle * Math.PI / 180.0);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, true, 17);
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
             C.PlotAdditionalParameters = false;
             //C.AgglomerationThreshold = 0.1;
 

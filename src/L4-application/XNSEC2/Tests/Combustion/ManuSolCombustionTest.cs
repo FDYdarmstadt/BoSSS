@@ -18,13 +18,11 @@ namespace BoSSS.Application.XNSEC {
             C.NonLinearSolver.verbose = true;
             C.ReactionRateConstants = new double[] { 1e4, 3, 1, 1 };
             C.HeatRelease = 1;
-            C.ImmediatePlotPeriod = 1;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
 
             C.VariableOneStepParameters = false;
             C.NumberOfChemicalSpecies = 4; // number of chemical species, without inert
-            C.ImmediatePlotPeriod = 1;
 
             //C.myThermalWallType = SIPDiffusionTemperature.ThermalWallType.fixedTemperature;
 

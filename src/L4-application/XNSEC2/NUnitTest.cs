@@ -201,7 +201,7 @@ namespace BoSSS.Application.XNSEC {
         public static void IncompressibleUnsteadyTaylorVortexTest() {
             using (var p = new XNSEC()) {
                 var c = BoSSS.Application.XNSEC.FullNSEControlExamples.NUnitUnsteadyTaylorVortex();
-                c.ImmediatePlotPeriod = 1;
+                //c.ImmediatePlotPeriod = 1;
                 p.Init(c);
                 p.RunSolverMode();
                 double err_u = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityX];

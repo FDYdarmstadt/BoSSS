@@ -19,7 +19,6 @@ namespace BoSSS.Application.XNSEC {
             C.ThermodynamicPressureMode = ThermodynamicPressureMode.MassDetermined;
             C.savetodb = false;
             //C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.ImmediatePlotPeriod = 0;
             C.NonLinearSolver.MaxSolverIterations = 1500;
             C.myThermalWallType = SIPDiffusionTemperature.ThermalWallType.fixedTemperature;
             C.TRef = 600;
@@ -55,7 +54,6 @@ namespace BoSSS.Application.XNSEC {
             C.ThermodynamicPressureMode = ThermodynamicPressureMode.MassDetermined;
             C.savetodb = false;
             C.NonLinearSolver.ConvergenceCriterion = 1e-6;
-            C.ImmediatePlotPeriod = 1;
             C.TRef = 600;
             C.UseSelfMadeTemporalOperator = false;
             C.timeDerivativeEnergyp0_OK = false;
@@ -70,7 +68,6 @@ namespace BoSSS.Application.XNSEC {
             C.TRef = 600;
             C.savetodb = true;
             C.NonLinearSolver.ConvergenceCriterion = 1e-6;
-            C.ImmediatePlotPeriod = 1;
             C.NonLinearSolver.MaxSolverIterations = 40;
             //C.PlotNewtonIterations = true;
             C.EnableMassFractions = false;
@@ -86,7 +83,6 @@ namespace BoSSS.Application.XNSEC {
             C.ThermodynamicPressureMode = ThermodynamicPressureMode.MassDetermined;
             C.savetodb = true;
             C.NonLinearSolver.ConvergenceCriterion = 1e-6;
-            C.ImmediatePlotPeriod = 1;
             C.TRef = 600;
             C.UseSelfMadeTemporalOperator = false;
             C.timeDerivativeEnergyp0_OK = false;
@@ -210,7 +206,6 @@ namespace BoSSS.Application.XNSEC {
             C.ChemicalReactionActive = false;
             C.MatParamsMode = MaterialParamsMode.Sutherland;
             C.physicsMode = PhysicsMode.Combustion;
-            C.ImmediatePlotPeriod = 0;
             //C.BDFOrder = 1;
 
             ////////////
@@ -414,7 +409,6 @@ namespace BoSSS.Application.XNSEC {
             C.ThermodynamicPressureMode = ThermodynamicPressureMode.MassDetermined;
             //C.GravityDirection = new double[] { 0, 1, 0 };
             C.NonLinearSolver.ConvergenceCriterion = 1e-6;
-            C.ImmediatePlotPeriod = 1;
 
             C.timeDerivativeConti_OK = false;
             C.timeDerivativeEnergyp0_OK = true;
@@ -445,7 +439,6 @@ namespace BoSSS.Application.XNSEC {
             C.NumberOfChemicalSpecies = 1;
             C.ChemicalReactionActive = false;
             C.MatParamsMode = MaterialParamsMode.Sutherland;
-            C.ImmediatePlotPeriod = 1;
 
             // ====================
             // Solver configuration
