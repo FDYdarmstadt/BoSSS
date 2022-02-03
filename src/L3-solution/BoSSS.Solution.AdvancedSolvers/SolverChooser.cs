@@ -752,7 +752,7 @@ namespace BoSSS.Solution {
                 case LinearSolverCode.exp_pTG:
                     templinearSolve = new LevelPmg() {
                         OrderOfCoarseSystem = m_lc.pMaxOfCoarseSolver,
-                        UseHiOrderSmoothing = true
+                        UseHiOrderSmoothing = true,
                     };
                     break;
                 case LinearSolverCode.selfmade:

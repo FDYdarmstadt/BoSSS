@@ -1154,6 +1154,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Rigidbody.SpecifyShape(Shape.Cube);
             C.Rigidbody.SetRotationAxis("z");
             C.PhysicalParameters.IncludeConvection = IncludeConv;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_pTG;
             
             return C;
         }
