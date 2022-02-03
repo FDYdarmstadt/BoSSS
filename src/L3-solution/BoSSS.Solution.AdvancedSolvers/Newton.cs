@@ -719,8 +719,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(FreeMeanValue[iFld]) {
                         //double mean = flds[iFld].GetMeanValueTotal(null);
 
-                        if(RefCellLocal >= 0)
+                        if(RefCellLocal >= 0) {
                             MeanValues[iFld] = flds[iFld].GetMeanValue(RefCellLocal);
+
+                        }
 
                         //flds[iFld].AccConstant(-mean);
                     }
@@ -1213,8 +1215,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // Termination of entry
                     //if(rho < GMRESConvCrit)
-                    if(Termination(rho))
-                        return SolutionVec.ToArray();
+                    if (Termination(rho))
+                        return currentX.ToArray();
 
                     V[0].SetV(r, alpha: (1.0 / rho));
                     double beta = rho;

@@ -111,7 +111,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         PrecondS[i] = new Schwarz() {
                             FixedNoOfIterations = 1,
-                            CoarseSolver = null,
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 NoOfPartsOnCurrentProcess = NoOfBlocks
                             },

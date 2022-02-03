@@ -925,10 +925,14 @@ namespace ilPSP {
             }
 
 
-            int absLen = 1;
+            long labsLen = 1;
             for (int i = 0; i < __Lengths.Length; i++) {
-                absLen *= __Lengths[i];
+                labsLen *= __Lengths[i];
             }
+            if(labsLen >= int.MaxValue)
+                throw new OverflowException($"Trying to allocate {labsLen} entries, which is more than the allowed limit of {int.MaxValue} entries -- not supported.");
+
+            int absLen = (int)labsLen;
 
             if (absLen < 0) {
                 throw new ArgumentOutOfRangeException("Array length smaller than 0 makes no sense.");

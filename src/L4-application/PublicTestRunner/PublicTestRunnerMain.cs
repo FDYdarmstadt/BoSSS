@@ -78,6 +78,12 @@ namespace PublicTestRunner {
         /// Root for data searches
         /// </summary>
         DirectoryInfo GetRepositoryBaseDir();
+
+        /// <summary>
+        /// If true, the managed assemblies are not copied for every job; there is only a single copy to reduce IO load.
+        /// Uses the <see cref="Job.EntryAssemblyRedirection"/> - hack;
+        /// </summary>
+        bool CopyManagedAssembliesCentraly { get; } 
     }
 
     /// <summary>
@@ -93,7 +99,7 @@ namespace PublicTestRunner {
             get {
                 return new Type[] {
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
-                        typeof(AdvancedSolverTests.AdvancedSolverMain),
+                        typeof(AdvancedSolverTests.TestsMain),
                         typeof(BoSSS.Application.CDG_ProjectionTest.AllUpTest),
                         typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
                         typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
@@ -128,11 +134,11 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
                         typeof(CNS.Program),
                         typeof(NSE_SIMPLE.SIMPLESolver),
-                        typeof(BoSSS.Application.TutorialTests.AllUpTest), // temp. deact for .NET 5
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
                         typeof(LTSTests.Program),
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest), 
                         typeof(BoSSS.Application.XNSEC.XNSEC),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
@@ -146,7 +152,8 @@ namespace PublicTestRunner {
                 return new (Type type, int NoOfProcs)[] {
                         (typeof(CDG_Projection_MPI.ConstrainedDGField_Tests), 4),
                         (typeof(CDG_Projection_MPI.ConstrainedDGField_Tests), 2),
-                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
+                        (typeof(AdvancedSolverTests.TestsMain),4),
+                        (typeof(AdvancedSolverTests.MPITests),4),
                         (typeof(MPITest.Program), 4),
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),
@@ -199,6 +206,8 @@ namespace PublicTestRunner {
 
             return repoRoot;
         }
+
+        virtual public bool CopyManagedAssembliesCentraly => true;
     }
 
     /// <summary>
@@ -217,7 +226,10 @@ namespace PublicTestRunner {
         static bool ignore_tests_w_deps = false;
 
 
-        static Assembly[] GetAllAssemblies() {
+        /// <summary>
+        /// finds all assemblies which potentially contain tests.
+        /// </summary>
+        static Assembly[] GetAllAssembliesForTests() {
             using(new FuncTrace()) {
                 var R = new HashSet<Assembly>();
 
@@ -244,6 +256,13 @@ namespace PublicTestRunner {
                 return R.ToArray();
             }
         }
+
+
+        
+
+        
+
+        
 
         //static bool IsReleaseOnlyAssembly
 
@@ -433,12 +452,26 @@ namespace PublicTestRunner {
             }
         }
 
+
+        /// <summary>
+        /// Decides whether an assembly <paramref name="a"/> matches the filter (wildcard <paramref name="AssemblyFilter"/>) specified by the user
+        /// </summary>
         static bool FilterAssembly(Assembly a, string AssemblyFilter) {
             if (AssemblyFilter.IsEmptyOrWhite())
                 return true;
             string[] sFilters = AssemblyFilter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var filter in sFilters) {
-                if (filter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)))
+                string modFilter;
+                bool expect = false;
+                if(filter.StartsWith("!")) {
+                    modFilter = filter.Substring(1);
+                    expect = false;
+                } else {
+                    modFilter = filter;
+                    expect = true;
+                }
+
+                if (modFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == expect)
                     return true;
             }
             return false;
@@ -461,7 +494,7 @@ namespace PublicTestRunner {
            
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
                 {
-                    var assln = GetAllAssemblies();
+                    var assln = GetAllAssembliesForTests();
                     if(assln != null) {
                         foreach(var a in assln) {
                             if(FilterAssembly(a, null)) {
@@ -674,6 +707,7 @@ namespace PublicTestRunner {
 
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
+                // deployment of native libraries
                 DirectoryInfo NativeOverride;
                 if(!bpc.DeployRuntime) {
                     NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_amd64"));
@@ -683,12 +717,26 @@ namespace PublicTestRunner {
                     NativeOverride = null;
                 }
 
+                // deployment of assemblies
+                string RelManagedPath;
+                if(TestTypeProvider.CopyManagedAssembliesCentraly) {
+                    string mngdir = RunnerPrefix +DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
+                    DirectoryInfo ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
+                    ManagedOverride.Create();
+                    TestTypeProvider.GetType().Assembly.DeployAt(ManagedOverride);
+
+                    RelManagedPath = "../" + mngdir + "/" + Path.GetFileName(TestTypeProvider.GetType().Assembly.Location);
+                } else {
+                    RelManagedPath = null;
+                }
+
+
                 // collection for all tests:
                 var allTests = new List<(Assembly ass, string testname, string shortname, string[] depfiles, int NoOfProcs)>();
                 
                 // Find all serial tests:
                 {
-                    var assln = GetAllAssemblies();
+                    var assln = GetAllAssembliesForTests();
                     if(assln != null) {
                         foreach(var a in assln) {
                             if(FilterAssembly(a, AssemblyFilter)) {
@@ -768,7 +816,7 @@ namespace PublicTestRunner {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                            var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, cnt);
+                            var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, RelManagedPath, cnt);
                             if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
@@ -1073,6 +1121,7 @@ namespace PublicTestRunner {
             string prefix,
             int NoOfMpiProcs,
             DirectoryInfo nativeOverride,
+            string TestRunnerRelPath,
             int cnt) {
             using (new FuncTrace()) {
 
@@ -1117,6 +1166,8 @@ namespace PublicTestRunner {
                     j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride.FullName);
                 }
                 j.NumberOfMPIProcs = NoOfMpiProcs;
+                if(TestRunnerRelPath != null)
+                    j.EntryAssemblyRedirection = TestRunnerRelPath;
                 j.Activate(bpc);
                 return (j, resultFile, TestName);
             }
@@ -1171,7 +1222,7 @@ namespace PublicTestRunner {
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
 
             using(var ftr = new FuncTrace()) {
-                Assembly[] assln = GetAllAssemblies();
+                Assembly[] assln = GetAllAssembliesForTests();
 
                 if(MpiSize != 1) {
                     // this seems some parallel run

@@ -51,7 +51,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
-            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            AgglomerationAlgorithm.Katastrophenplot = KatastrophenPlot;
             _Main(args, false, delegate () {
                 var p = new XNSERO();
                 return p;

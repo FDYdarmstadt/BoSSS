@@ -126,7 +126,7 @@ namespace ilPSP.Connectors.Matlab {
         /// <summary>
         /// Inter-process synchronization of file IO
         /// </summary>
-        static Mutex TempDirMutex = new Mutex(false, "BoSSSbatchmodeconnector_IOmutex");
+        static Mutex TempDirMutex = new Mutex(false, "BoSSSbatchmodeconnector_IOmutex-new");
 
         /// <summary>
         /// creates a new instance of the MATLAB connector.

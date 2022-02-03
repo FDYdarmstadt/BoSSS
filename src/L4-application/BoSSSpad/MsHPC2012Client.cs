@@ -665,7 +665,7 @@ namespace BoSSS.Application.BoSSSpad {
                 str.Write("mpiexec ");
                 if(!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
-                str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
+                str.Write(myJob.EntryAssemblyName);
                 foreach(string arg in myJob.CommandLineArguments) {
                     str.Write(" ");
                     str.Write(arg);
@@ -683,11 +683,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             string Nodes = "";
             if(this.ComputeNodes != null) {
-                foreach(string node in ComputeNodes) {
-                    if(Nodes.Length > 0)
-                        Nodes = ",";
-                    Nodes += node;
-                }
+                Nodes = ComputeNodes.ToConcatString("", ",", "");
             }
 
 

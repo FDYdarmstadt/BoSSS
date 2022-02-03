@@ -582,7 +582,7 @@ namespace BoSSS.Application.XRheology_Solver {
                                                     NoOfPartsOnCurrentProcess = this.CurrentSolution.Count / 10000,
                                                 },
                                                 Overlap = 1,
-                                                CoarseSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS }
+                                                CoarseSolver = new Schwarz.ClassicMG() { CoarseSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS } }
                                             };
                     } else {
                         //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };

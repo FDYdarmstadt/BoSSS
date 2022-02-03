@@ -66,6 +66,8 @@ namespace BoSSS.Solution.Control {
 
         exp_gmres_ILU = 31,
 
+        exp_gmres_kcycle_Schwarz = 32,
+
         //CG versions
 
         /// <summary>
@@ -180,7 +182,7 @@ namespace BoSSS.Solution.Control {
         /// If iterative solvers are used, the minimum number of iterations.
         /// </summary>
         [DataMember]
-        public int MinSolverIterations = 2;
+        public int MinSolverIterations = 1;
 
         /// <summary>
         /// Convergence criterion for linear solver.

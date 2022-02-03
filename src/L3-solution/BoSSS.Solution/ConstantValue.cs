@@ -41,7 +41,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// 
         /// </summary>
-        public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+        public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
             output.SetAll(DaValue);
         }
 

@@ -58,23 +58,18 @@ namespace BoSSS.Foundation.IO
         /// Indicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
-        public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database)
-        {
-            using (new FuncTrace())
-            {
+        public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database) {
+            using(new FuncTrace()) {
                 var Grids = database.Grids;
-                foreach (var GrdInf in Grids)
-                {
-                    IGrid gridInDatabase =(IGrid) this.LoadGridInfo(GrdInf.ID, database);
+                foreach(var GrdInf in Grids) {
+                    IGrid gridInDatabase = (IGrid)this.LoadGridInfo(GrdInf.ID, database);
 
                     IEqualityComparer<IGrid> cellComparer = grid.GridSerializationHandler.CellComparer;
                     IEqualityComparer<IGrid> referenceComparer = grid.GridSerializationHandler.BasePropertiesComparer;
 
-                    if (referenceComparer.Equals(grid, gridInDatabase))
-                    {
+                    if(referenceComparer.Equals(grid, gridInDatabase)) {
                         gridInDatabase = LoadGridData(gridInDatabase);
-                        if (cellComparer.Equals(grid, gridInDatabase))
-                        {
+                        if(cellComparer.Equals(grid, gridInDatabase)) {
                             grid = gridInDatabase;
                             EquivalentGridFound = true;
                             return grid.ID;

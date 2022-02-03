@@ -779,7 +779,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 return Math.Sin(Math.PI * X[1] * lamda);
             }
 
-            public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+            public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
                 NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
             }
 
@@ -808,7 +808,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 return Math.Sin(Math.PI * X[0] * lamda);
             }
 
-            public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+            public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
                 NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
             }
 
