@@ -2,6 +2,7 @@
 using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XheatCommon;
 using ilPSP;
@@ -11,7 +12,7 @@ using System;
 namespace BoSSS.Solution.XNSECommon {
 
     /// <summary>
-    /// Continuity equation for the Low-Mach equations, where density varies locally with temperature and concentrations in the bulk.
+    /// Continuity equation for the Low-Mach equations, where density varies locally with temperature and mass fractions in the bulk.
     /// </summary>
     public class LowMachContinuity : BulkEquation {
         private string speciesName;
@@ -24,7 +25,8 @@ namespace BoSSS.Solution.XNSECommon {
             IncompressibleBoundaryCondMap BcMap,
             MaterialLaw EoS,
             double dt,
-            Func<double[], double, double> ManSol) {
+            Func<double[], double, double> ManSol,
+            NonLinearSolverCode NonLinSolverCode) {
             int NoOfChemicalSpecies = config.NoOfChemicalSpecies;
 
             codomainName = EquationNames.ContinuityEquation;
@@ -33,18 +35,7 @@ namespace BoSSS.Solution.XNSECommon {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.MassFractions(NoOfChemicalSpecies));
 
             speciesName = spcName;
-            double[] MolarMasses = new double[] { 2.0, 1.0, 1.0, 1.0, 1.0 };
 
-            for (int d = 0; d < D; ++d) {
-                var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifference(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
-                AddComponent(conti);
-            }
-
-            // manufactured solution
-            if (config.manSolSource_OK) {
-                var MS_conti = new BoSSS.Solution.XNSECommon.LowMach_ManSolution(spcName, ManSol);
-                AddComponent(MS_conti);
-            }
 
             //Temporal term contribution:
             //Implicit Euler:  d(rho) / dt = (rho ^ n_t - rho_(t - 1)) / delta t, n: newton iteration counter
@@ -53,6 +44,42 @@ namespace BoSSS.Solution.XNSECommon {
                 AddComponent(drho_dt);
                 AddParameter("Density_t0");
             }
+
+            // Divergence term
+            // \/ . (\rho \vec{u})
+            if (NonLinSolverCode == NonLinearSolverCode.Newton) {
+                for (int d = 0; d < D; ++d) {
+                    var contiNewton = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifferenceNewton(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
+                    AddComponent(contiNewton);
+                }
+            } else if (NonLinSolverCode == NonLinearSolverCode.Picard) {
+                for (int d = 0; d < D; ++d) {
+                    var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifference(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
+                    AddComponent(conti);
+                }
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Temperature0);
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.MassFraction0_0);
+            } else {
+                throw new NotImplementedException("Not implemented non linear solver");
+            }
+
+            //for (int d = 0; d < D; ++d) {
+            //    if (NonLinSolverCode == NonLinearSolverCode.Newton) {
+            //        var contiNewton = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifferenceNewton(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
+            //        AddComponent(contiNewton);
+            //    } else if (NonLinSolverCode == NonLinearSolverCode.Picard) {
+            //        var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifference(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
+            //        AddComponent(conti);
+            //    }
+            //}
+
+            // manufactured solution
+            if (config.manSolSource_OK) {
+                var MS_conti = new BoSSS.Solution.XNSECommon.LowMach_ManSolution(spcName, ManSol);
+                AddComponent(MS_conti);
+            }
+
+       
         }
 
         public override string SpeciesName => speciesName;
@@ -230,7 +257,8 @@ namespace BoSSS.Solution.XNSECommon {
             IncompressibleBoundaryCondMap boundaryMap,
             XNSEC_OperatorConfiguration config,
             MaterialLaw EoS,
-            Func<double[], double, double> ManSol) {
+            Func<double[], double, double> ManSol,
+            NonLinearSolverCode NonLinSolverCode) {
             double Reynolds = config.Reynolds;
             double Froude = config.Froude;
             int NoOfChemicalSpecies = config.NoOfChemicalSpecies;
@@ -249,11 +277,17 @@ namespace BoSSS.Solution.XNSECommon {
             // =================
 
             if (config.physParams.IncludeConvection && config.isTransport) {
-                var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
-                AddComponent(conv);
-
-                //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
-                //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
+                if (NonLinSolverCode == NonLinearSolverCode.Newton) {
+                    var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF_Newton(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
+                    AddComponent(conv);
+                } else if (NonLinSolverCode == NonLinearSolverCode.Picard) {
+                    var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
+                    AddComponent(conv);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.Temperature0);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.MassFraction0_0);
+                }
             }
 
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.ThermodynamicPressure);

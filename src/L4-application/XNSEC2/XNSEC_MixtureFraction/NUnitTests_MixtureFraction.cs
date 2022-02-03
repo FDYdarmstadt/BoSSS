@@ -43,7 +43,7 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// Simple Test for Evaporation of a straight interface with two chemical species
         /// </summary>
-        [Test]
+        //[Test]
         public static void SteadyStateEvaporationTest_XNSEC_MixtureFraction(
             [Values(0.0, 15.0, 45.0, 73.1264, 90.0)] double rawangle,
             [Values(3)] int deg,

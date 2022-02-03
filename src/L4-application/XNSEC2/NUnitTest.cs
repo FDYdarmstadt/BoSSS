@@ -80,6 +80,37 @@ namespace BoSSS.Application.XNSEC {
             }
         }
 
+
+
+        ///// <summary>
+        ///// Tests the steady 2D-Channel flow using the 'Steady_SIMPLE' algorithm.***
+        ///// </summary>
+        //[Test]
+        //public static void BackwardFacingStep() {
+        //    using (var p = new XNSEC()) {
+        //        var c = BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep();
+        //        p.Init(c);
+        //        p.RunSolverMode();
+        //        //p.OperatorAnalysis();
+        //        // p.CheckJacobian();
+        //        double err_u = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityX];
+        //        double err_v = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityY];
+        //        double err_p = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.Pressure];
+        //        double thres_u = 5.1e-6;
+        //        double thres_v = 2.8e-6;
+        //        double thres_p = 1.6e-5;
+
+        //        Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
+        //        Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
+        //        Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
+
+        //        Assert.Less(err_u, thres_u, "L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
+        //        Assert.Less(err_v, thres_v, "L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
+        //        Assert.Less(err_p, thres_p, "L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
+        //    }
+        //}
+
+
         /// <summary>
         /// Tests the steady 2D-Channel flow using the 'Steady_SIMPLE' algorithm.***
         /// </summary>

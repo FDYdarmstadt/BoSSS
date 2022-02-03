@@ -1,13 +1,15 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
-using ilPSP.Utils;
+using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace BoSSS.Application.XNSEC {
 
@@ -309,53 +311,53 @@ namespace BoSSS.Application.XNSEC {
 
         public override IList<string> ParameterNames => new string[] { paramName };
 
-        public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            string[] Fields = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(m_NumberOfChemicalSpecies));
-            XDGField[] allFields = new XDGField[Fields.Length];
-            for(int i = 0; i < Fields.Length; i++) {
-                allFields[i] = (XDGField)DomainVarFields[Fields[i]].CloneAs();
-            }
+        //public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+        //    string[] Fields = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(m_NumberOfChemicalSpecies));
+        //    XDGField[] allFields = new XDGField[Fields.Length];
+        //    for(int i = 0; i < Fields.Length; i++) {
+        //        allFields[i] = (XDGField)DomainVarFields[Fields[i]].CloneAs();
+        //    }
 
-            XDGField rhoOldTimeStep = (XDGField)ParameterVarFields[paramName];
+        //    XDGField rhoOldTimeStep = (XDGField)ParameterVarFields[paramName];
 
-            var p0Field = (XDGField)ParameterVarFields[VariableNames.ThermodynamicPressure];
-            double p0 = p0Field.GetSpeciesShadowField("A").GetMeanValueTotal(null); // should already contain the "correct" value from the last timestep...
+        //    var p0Field = (XDGField)ParameterVarFields[VariableNames.ThermodynamicPressure];
+        //    double p0 = p0Field.GetSpeciesShadowField("A").GetMeanValueTotal(null); // should already contain the "correct" value from the last timestep...
 
-            //if(p0 <= 0)
-            //    Console.WriteLine("??");
+        //    //if(p0 <= 0)
+        //    //    Console.WriteLine("??");
 
-            rhoOldTimeStep.Clear();
-            //rhoOldTimeStep.GetSpeciesShadowField("A").ProjectField(1.0,
-            //                   delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-            //                       int K = result.GetLength(1);
-            //                       MultidimensionalArray tempT = MultidimensionalArray.Create(Len, K);
-            //                       var tempMFs = new MultidimensionalArray[m_NumberOfChemicalSpecies];
+        //    //rhoOldTimeStep.Clear();
+        //    //rhoOldTimeStep.GetSpeciesShadowField("A").ProjectField(1.0,
+        //    //                   delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+        //    //                       int K = result.GetLength(1);
+        //    //                       MultidimensionalArray tempT = MultidimensionalArray.Create(Len, K);
+        //    //                       var tempMFs = new MultidimensionalArray[m_NumberOfChemicalSpecies];
 
-            //                       allFields[0].GetSpeciesShadowField("A").Evaluate(j0, Len, NS, tempT);
-            //                       for(int i = 0; i < m_NumberOfChemicalSpecies; i++) {
-            //                           tempMFs[i] = MultidimensionalArray.Create(Len, K);
-            //                           allFields[i + 1].GetSpeciesShadowField("A").Evaluate(j0, Len, NS, tempMFs[i]);
-            //                       }
+        //    //                       allFields[0].GetSpeciesShadowField("A").Evaluate(j0, Len, NS, tempT);
+        //    //                       for(int i = 0; i < m_NumberOfChemicalSpecies; i++) {
+        //    //                           tempMFs[i] = MultidimensionalArray.Create(Len, K);
+        //    //                           allFields[i + 1].GetSpeciesShadowField("A").Evaluate(j0, Len, NS, tempMFs[i]);
+        //    //                       }
 
-            //                       for(int j = 0; j < Len; j++) {
-            //                           for(int k = 0; k < K; k++) {
-            //                               double[] densityArguments = new double[1 + m_NumberOfChemicalSpecies];
-            //                               densityArguments[0] = tempT[j, k];
-            //                               for(int i = 0; i < m_NumberOfChemicalSpecies; i++) {
-            //                                   densityArguments[i + 1] = tempMFs[i][j, k];
-            //                               }
-            //                               result[j, k] = m_EoS.GetDensity(p0, densityArguments);
-            //                           }
-            //                       }
-            //                   }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
+        //    //                       for(int j = 0; j < Len; j++) {
+        //    //                           for(int k = 0; k < K; k++) {
+        //    //                               double[] densityArguments = new double[1 + m_NumberOfChemicalSpecies];
+        //    //                               densityArguments[0] = tempT[j, k];
+        //    //                               for(int i = 0; i < m_NumberOfChemicalSpecies; i++) {
+        //    //                                   densityArguments[i + 1] = tempMFs[i][j, k];
+        //    //                               }
+        //    //                               result[j, k] = m_EoS.GetDensity(p0, densityArguments);
+        //    //                           }
+        //    //                       }
+        //    //                   }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
 
-            double min; double max;
-            rhoOldTimeStep.GetSpeciesShadowField("A").GetExtremalValues(out min, out max);
+        //    double min; double max;
+        //    rhoOldTimeStep.GetSpeciesShadowField("A").GetExtremalValues(out min, out max);
 
-            //XDGField rhoOld = (XDGField)ParameterVarFields[paramName];
-            //XDGField rho = (XDGField)ParameterVarFields[VariableNames.Rho];
-            //rhoOld = rho.CloneAs();
-        }
+        //    //XDGField rhoOld = (XDGField)ParameterVarFields[paramName];
+        //    //XDGField rho = (XDGField)ParameterVarFields[VariableNames.Rho];
+        //    //rhoOld = rho.CloneAs();
+        //}
 
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var density = new (string, DGField)[1];
@@ -479,7 +481,7 @@ namespace BoSSS.Application.XNSEC {
             var MassFraction2 = (XDGField)DomainVarFields[VariableNames.MassFraction2];
             var MassFraction3 = (XDGField)DomainVarFields[VariableNames.MassFraction3];
             string sp = "A";//....
-            double Ta = 15900 / 300;
+            double Ta = 0.2;
             // obtain density arguments
             kReact.GetSpeciesShadowField(sp).ProjectField(1.0,
                                 delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
@@ -505,7 +507,9 @@ namespace BoSSS.Application.XNSEC {
                                             double _Y3 = Y3[j, k];
                                             double rho = m_EoS.GetDensity(new double[] { Temp, _Y0, _Y1, _Y2, _Y3 });
                                             double TA = m_EoS.m_ChemModel.getTa(_Y0, _Y1);
-                                            result[j, k] = Math.Exp(-TA / Temp * 300) * (rho * _Y0 / m_EoS.MolarMasses[0]) * (rho * _Y1 / m_EoS.MolarMasses[1]);
+                                            result[j, k] = Math.Exp(-TA / Temp ) * (rho * _Y0 / m_EoS.MolarMasses[0]) * (rho * _Y1 / m_EoS.MolarMasses[1]);
+                                            //result[j, k] = (rho * _Y0 / m_EoS.MolarMasses[0]) * (rho * _Y1 / m_EoS.MolarMasses[1]);
+
                                         }
                                     }
                                 }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
@@ -514,6 +518,278 @@ namespace BoSSS.Application.XNSEC {
             kReact.GetExtremalValues(out min, out max);
         }
     }
+
+    class Temperature0 : ParameterS {
+        public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.Temperature0 };
+
+        public override DelParameterFactory Factory => Temperature0Factory;
+
+        public Temperature0() {
+        }
+
+        (string, DGField)[] Temperature0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            var temperature0 = new (string, DGField)[1];
+
+            string temperaturename = BoSSS.Solution.NSECommon.VariableNames.Temperature;
+            DGField temperature = DomainVarFields[temperaturename];
+            string paramName = BoSSS.Solution.NSECommon.VariableNames.Temperature0;
+            temperature0[0] = (paramName, temperature);
+
+            return temperature0;
+        }
+    }
+
+    class MassFraction0_0 : ParameterS {
+        public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.MassFraction0_0 };
+
+        public override DelParameterFactory Factory => MassFraction0_0Factory;
+
+        public MassFraction0_0() {
+        }
+
+        (string, DGField)[] MassFraction0_0Factory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            var massFraction0_0 = new (string, DGField)[1];
+
+            string mfname = BoSSS.Solution.NSECommon.VariableNames.MassFraction0;
+            DGField mf0 = DomainVarFields[mfname];
+            string paramName = BoSSS.Solution.NSECommon.VariableNames.MassFraction0_0;
+            massFraction0_0[0] = (paramName, mf0);
+
+            return massFraction0_0;
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    /// Cell-wise mean value, required for the for the 
+    /// localized Lax-Friedrichs flux <see cref="XNSECommon.Operator.Convection.ConvectionInBulk_LLF"/>,
+    /// to have a constant Eigenvalue (aka. flow direction) along an edge.
+    /// </summary>
+    public class Temperature0Mean : ParameterS {
+
+
+        protected int cutCellQuadOrder;
+
+        protected LevelSetTracker LsTrk;
+
+        public Temperature0Mean(LevelSetTracker LsTrk, int cutCellQuadOrder) {
+            this.cutCellQuadOrder = cutCellQuadOrder;
+            this.LsTrk = LsTrk;
+        }
+
+        public override DelParameterFactory Factory => ParameterFactory;
+
+        public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.Temperature0Mean } ;
+
+        public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            this.LsTrk = ((XDGBasis)DomainVarFields.First().Value.Basis).Tracker;
+            var Temperature0Mean = new (string, DGField)[0];
+           
+                XDGBasis T0meanBasis = new XDGBasis(LsTrk, 0);
+                string paramName = BoSSS.Solution.NSECommon.VariableNames.Temperature0Mean;
+                XDGField U0mean = new XDGField(T0meanBasis, paramName);
+                Temperature0Mean[0] = (paramName, U0mean);
+        
+            return Temperature0Mean;
+        }
+
+        protected IList<string> SpeciesNames;
+
+        protected LevelSetTracker.LevelSetRegions regions;
+
+        protected IDictionary<string, SpeciesId> speciesMap;
+
+        protected XQuadSchemeHelper schemeHelper;
+
+        protected double minvol;
+
+      
+
+        public override DelPartialParameterUpdate Update {
+            get {
+                return T0MeanUpdate;
+            }
+        }
+
+        protected virtual void T0MeanUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            using (new FuncTrace()) {
+                
+                    foreach (string speciesName in SpeciesNames) {
+                        XDGField paramMeanTemperature = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature0Mean];
+                        DGField speciesParam = paramMeanTemperature.GetSpeciesShadowField(speciesName);
+
+                        XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.Temperature];
+                        DGField speciesTemperature = temperature.GetSpeciesShadowField(speciesName);
+
+                        //Uncut
+                        speciesParam.SetMeanValueTo(speciesTemperature);
+
+                        //Cut
+                        CellMask cutCells = regions.GetSpeciesMask(speciesName);
+                        SpeciesId speciesId = speciesMap[speciesName];
+                        CellQuadratureScheme scheme = schemeHelper.GetVolumeQuadScheme(speciesId, IntegrationDomain: cutCells);
+                        SetMeanValueToMeanOf(speciesParam, speciesTemperature, minvol, cutCellQuadOrder, scheme);
+                    }
+                }
+            
+        }
+
+        protected static void SetMeanValueToMeanOf(DGField target, DGField source, double minvol, int order, CellQuadratureScheme scheme) {
+            //Cut
+            int D = source.GridDat.SpatialDimension;
+            var rule = scheme.Compile(source.GridDat, order);
+            CellQuadrature.GetQuadrature(new int[] { 2 },
+                source.GridDat,
+                rule,
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                    EvalResult.Clear();
+                    source.Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    var Vol = EvalResult.ExtractSubArrayShallow(-1, -1, 1);
+                    Vol.SetAll(1.0);
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < Length; i++) {
+                        int jCell = i + i0;
+
+                        double Volume = ResultsOfIntegration[i, 1];
+                        if (Math.Abs(Volume) < minvol * 1.0e-12) {
+                            // keep current value
+                            // since the volume of species 'Spc' in cell 'jCell' is 0.0, the value in this cell should have no effect
+                        } else {
+                            double IntVal = ResultsOfIntegration[i, 0];
+                            target.SetMeanValue(jCell, IntVal / Volume);
+                        }
+
+                    }
+                }).Execute();
+        }
+    }
+
+
+
+
+
+
+
+
+    /// <summary>
+    /// Cell-wise mean value, required for the for the 
+    /// localized Lax-Friedrichs flux <see cref="XNSECommon.Operator.Convection.ConvectionInBulk_LLF"/>,
+    /// to have a constant Eigenvalue (aka. flow direction) along an edge.
+    /// </summary>
+    public class MassFraction0Mean : ParameterS {
+   
+
+        protected int cutCellQuadOrder;
+
+        protected LevelSetTracker LsTrk;
+
+        public MassFraction0Mean(LevelSetTracker LsTrk, int cutCellQuadOrder) {
+            this.cutCellQuadOrder = cutCellQuadOrder;
+            this.LsTrk = LsTrk;
+        }
+
+        public override DelParameterFactory Factory => ParameterFactory;
+
+        public override IList<string> ParameterNames => new string[] { BoSSS.Solution.NSECommon.VariableNames.MassFraction0Mean };
+
+        public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            this.LsTrk = ((XDGBasis)DomainVarFields.First().Value.Basis).Tracker;
+            var MassFraction0Mean = new (string, DGField)[0];
+
+            XDGBasis T0meanBasis = new XDGBasis(LsTrk, 0);
+            string paramName = BoSSS.Solution.NSECommon.VariableNames.MassFraction0Mean;
+            XDGField U0mean = new XDGField(T0meanBasis, paramName);
+            MassFraction0Mean[0] = (paramName, U0mean);
+
+            return MassFraction0Mean;
+        }
+
+        protected IList<string> SpeciesNames;
+
+        protected LevelSetTracker.LevelSetRegions regions;
+
+        protected IDictionary<string, SpeciesId> speciesMap;
+
+        protected XQuadSchemeHelper schemeHelper;
+
+        protected double minvol;
+
+
+
+        public override DelPartialParameterUpdate Update {
+            get {
+                return T0MeanUpdate;
+            }
+        }
+
+        protected virtual void T0MeanUpdate(double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            using (new FuncTrace()) {
+
+                foreach (string speciesName in SpeciesNames) {
+                    XDGField paramMeanTemperature = (XDGField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.MassFraction0Mean];
+                    DGField speciesParam = paramMeanTemperature.GetSpeciesShadowField(speciesName);
+
+                    XDGField temperature = (XDGField)DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.MassFraction0];
+                    DGField speciesTemperature = temperature.GetSpeciesShadowField(speciesName);
+
+                    //Uncut
+                    speciesParam.SetMeanValueTo(speciesTemperature);
+
+                    //Cut
+                    CellMask cutCells = regions.GetSpeciesMask(speciesName);
+                    SpeciesId speciesId = speciesMap[speciesName];
+                    CellQuadratureScheme scheme = schemeHelper.GetVolumeQuadScheme(speciesId, IntegrationDomain: cutCells);
+                    SetMeanValueToMeanOf(speciesParam, speciesTemperature, minvol, cutCellQuadOrder, scheme);
+                }
+            }
+
+        }
+
+        protected static void SetMeanValueToMeanOf(DGField target, DGField source, double minvol, int order, CellQuadratureScheme scheme) {
+            //Cut
+            int D = source.GridDat.SpatialDimension;
+            var rule = scheme.Compile(source.GridDat, order);
+            CellQuadrature.GetQuadrature(new int[] { 2 },
+                source.GridDat,
+                rule,
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
+                    EvalResult.Clear();
+                    source.Evaluate(i0, Length, QR.Nodes, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
+                    var Vol = EvalResult.ExtractSubArrayShallow(-1, -1, 1);
+                    Vol.SetAll(1.0);
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                    for (int i = 0; i < Length; i++) {
+                        int jCell = i + i0;
+
+                        double Volume = ResultsOfIntegration[i, 1];
+                        if (Math.Abs(Volume) < minvol * 1.0e-12) {
+                            // keep current value
+                            // since the volume of species 'Spc' in cell 'jCell' is 0.0, the value in this cell should have no effect
+                        } else {
+                            double IntVal = ResultsOfIntegration[i, 0];
+                            target.SetMeanValue(jCell, IntVal / Volume);
+                        }
+
+                    }
+                }).Execute();
+        }
+    }
+
+
+
+
+
+
+
+
 
     /// <summary>
     ///

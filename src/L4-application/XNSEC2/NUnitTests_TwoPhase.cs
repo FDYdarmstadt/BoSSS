@@ -328,7 +328,7 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// Simple Test for Evaporation of a straight interface with two chemical species
         /// </summary>
-        [Test]
+        //[Test]
         public static void SteadyStateEvaporationTest_TwoSpecies_XNSEC(
             [Values(0.0, 15.0, 45.0, 73.1264, 90.0)] double rawangle,
             [Values(3)] int deg,
@@ -343,7 +343,6 @@ namespace BoSSS.Application.XNSEC {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, true, 17);
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
             C.ImmediatePlotPeriod = 1;
-            C.PlotNewtonIterations = true;
             C.PlotAdditionalParameters = false;
             //C.AgglomerationThreshold = 0.1;
 

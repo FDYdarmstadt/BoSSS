@@ -221,7 +221,6 @@ namespace BoSSS.Solution.XNSECommon {
             double rhoActual = m_EoS.GetDensity(U);
             double rhoOld = cpv.Parameters[0];
 
-
             return (rhoActual - rhoOld) / m_dt * V;
 
         }
