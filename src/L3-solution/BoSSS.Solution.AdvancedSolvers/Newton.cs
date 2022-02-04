@@ -64,7 +64,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public int constant_newton_it = 1;
 
-
+        /// <summary>
+        /// If, for a specific homotopy parameter value, Newton does not converges successfully,
+        /// (within this number of iterations) a roll-back to the last solution is done and the step with is reduced
+        /// </summary>
+        public int HomotopyStepLongFail = 1;
 
         /// <summary>
         /// Convergence criterion for nonlinear iteration;
@@ -441,7 +445,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // preventing step width being to long:
                 // ---------------------------------------
              
-                const int HomotopyStepLongFail = 20; // If, for a specific homotopy parameter value, Newton does not converges successfully,
+                //const int HomotopyStepLongFail = 20; // If, for a specific homotopy parameter value, Newton does not converges successfully,
                 //   (within this number of iterations) a roll-back to the last solution is done and the step with is reduced
                 const double StepWidthReductionFactor = 0.2; // Reduction factor (must be smaller 1.0) for the homotopy step (if homotopy step failed)
 
@@ -1215,8 +1219,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // Termination of entry
                     //if(rho < GMRESConvCrit)
-                    if(Termination(rho))
-                        return SolutionVec.ToArray();
+                    if (Termination(rho))
+                        return currentX.ToArray();
 
                     V[0].SetV(r, alpha: (1.0 / rho));
                     double beta = rho;

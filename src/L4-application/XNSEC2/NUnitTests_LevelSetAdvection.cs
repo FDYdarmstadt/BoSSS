@@ -91,7 +91,7 @@ namespace BoSSS.Application.XNSEC {
             var Tst = new LevelSetAdvectionTestXNSEC(2, LSdegree, reversed);
             var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, gridResolution, AMRlevel);
             C.SkipSolveAndEvaluateResidual = false;
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
             C.NonLinearSolver.verbose = true;
             C.LinearSolver.verbose = true;
             //string IO = $"LSAdvectionTest2D-deg{LSdegree}-amrLvl{AMRlevel}-lsEvo{levelSetEvolution}-rev{reversed}-grdRes{gridResolution}";

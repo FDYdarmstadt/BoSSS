@@ -188,7 +188,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 case _whichSolver.PARDISO:
                 bool CachingOn = false;
                 if (ActivateCaching != null) {
-                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, m_MultigridOp.LevelIndex, 0);
+                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, m_MultigridOp.LevelIndex);
                 }
                 
                 solver = new PARDISOSolver() {
@@ -332,7 +332,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool m_TestSolution = true;
 
-        public Func<int, int, int, bool> ActivateCaching {
+        /// <summary>
+        /// Instruction for delayed caching of the factorization of block solver.
+        /// Useful if memory peaks in linear solver tend to burst the memory.
+        /// int1: number of iterations
+        /// int2: multigrid level
+        /// </summary>
+        public Func<int, int, bool> ActivateCaching {
             private get;
             set;
         }

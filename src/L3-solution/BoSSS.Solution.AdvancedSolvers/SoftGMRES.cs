@@ -311,12 +311,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                     #endregion
                     //Debugger.Launch();
 
-
                     if (!TerminationCriterion(totIterCounter, iter0_error2, error2)) {
                         this.m_Converged = true;
                         break;
                     }
-
 
                     // y = H(1:m,1:m) \ s(1:m);
                     y = new double[m];
@@ -331,7 +329,6 @@ namespace BoSSS.Solution.AdvancedSolvers
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
                     error2 = z.MPI_L2Norm();
-                    IterationCallback?.Invoke(iter, X.CloneAs(), z.CloneAs(), this.m_mgop);
 
                     if (this.Precond != null) {
                         r.Clear();
@@ -339,7 +336,6 @@ namespace BoSSS.Solution.AdvancedSolvers
                     } else {
                         r.SetV(z);
                     }
-
 
                     norm_r = r.MPI_L2Norm();
                     s[i + 1 - 1] = norm_r;
@@ -359,8 +355,8 @@ namespace BoSSS.Solution.AdvancedSolvers
                     _X.SetV(X);
                 B.SetV(z);
 
-                if (this.Precond is IDisposable)
-                    (this.Precond as IDisposable).Dispose();
+                //if (this.Precond is IDisposable)
+                //    (this.Precond as IDisposable).Dispose();
             }
         }
 

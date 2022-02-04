@@ -558,26 +558,22 @@ namespace BoSSS.Application.IBM_Solver {
                 case 8:
                     {
                         C.LinearSolver.NoOfMultigridLevels = 5;
-                        Prec = new Schwarz()
-                        {
-                            m_BlockingStrategy = new Schwarz.METISBlockingStrategy()
-                            {
-                                //noofparts = 5,
-                                NoOfPartsOnCurrentProcess = ASparts,
-                            },
-                            CoarseSolver = new ClassicMultigrid()
-                            {
-                                CoarserLevelSolver = new ClassicMultigrid()
-                                {
-                                    CoarserLevelSolver = new ClassicMultigrid()
-                                    {
-                                        CoarserLevelSolver = new DirectSolver()
-                                        {
+                    Prec = new Schwarz() {
+                        m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
+                            //noofparts = 5,
+                            NoOfPartsOnCurrentProcess = ASparts,
+                        },
+                        CoarseSolver = new Schwarz.ClassicMG() {
+                            CoarseSolver = new ClassicMultigrid() {
+                                CoarserLevelSolver = new ClassicMultigrid() {
+                                    CoarserLevelSolver = new ClassicMultigrid() {
+                                        CoarserLevelSolver = new DirectSolver() {
                                             WhichSolver = DirectSolver._whichSolver.MUMPS
                                         },
                                     },
                                 },
                             },
+                        },
                             Overlap = 1
                         };
                         break;

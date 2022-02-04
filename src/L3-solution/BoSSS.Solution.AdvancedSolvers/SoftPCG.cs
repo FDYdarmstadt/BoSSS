@@ -314,7 +314,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
-            throw new NotImplementedException();
+            Precond.Dispose();
         }
 
         public long UsedMemory() {
