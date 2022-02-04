@@ -445,7 +445,6 @@ namespace BoSSS.Solution.Gnuplot {
                     stw.Write("plot ");
                 }
 
-                stw.Write("plot ");
                 stw.Write(equation);
                 stw.Write(" ");
                 stw.Write(Format2D(title, format, useX2, useY2));
