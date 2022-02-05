@@ -148,7 +148,7 @@ namespace BoSSS.Application.XNSEC {
             //C.activeAMRlevelIndicators.Add(new AMR_onFlameSheet(C.zSt, 4));
             //C.activeAMRlevelIndicators.Add(new BoSSS.Application.XNSEC.AMR_onProblematicPoints(troubledPoints, C.AMR_startUpSweeps));
             C.activeAMRlevelIndicators.Add(new BoSSS.Application.XNSEC.AMR_RefineAroundProblematicPoints(troubledPoints, C.AMR_startUpSweeps, 0.01));
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
 
             //C.activeAMRlevelIndicators.Add(new BoSSS.Application.XNSEC.AMR_AroundCenterline(C.AMR_startUpSweeps));
             C.TimesteppingMode = Solution.Control.AppControl._TimesteppingMode.Steady;
@@ -230,7 +230,7 @@ namespace BoSSS.Application.XNSEC {
 
             C.usesimplifiedGeometry = false;
 
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
             Console.WriteLine("Velocity fuel: " + uInFuel);
             Console.WriteLine("Velocity air: " + uInAir);
             Console.WriteLine("Strain: {0}, 1/s", (Math.Abs(uInFuel) + Math.Abs(uInAir)) / L);

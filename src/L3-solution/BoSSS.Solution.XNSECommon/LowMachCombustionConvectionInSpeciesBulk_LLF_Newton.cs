@@ -31,8 +31,44 @@ using BoSSS.Solution.NSECommon;
 
 
 namespace BoSSS.Solution.XNSECommon.Operator.Convection {
+    /// <summary>
+    /// Convective term of the momentum equation. Compatible with newton solver
+    /// </summary>
+    public class LowMachCombustionConvectionInSpeciesBulk_LLF_Newton : LinearizedConvectionJacobi, ISpeciesFilter {
+        /// <summary>
+        /// Constructor for 
+        /// </summary>
+        /// <param name="spcName"></param>
+        /// <param name="SpatDim"></param>
+        /// <param name="_bcmap"></param>
+        /// <param name="_component"></param>
+        /// <param name="EoS"></param>
+        /// <param name="NumberOfComponents"></param>
+        public LowMachCombustionConvectionInSpeciesBulk_LLF_Newton(string spcName, int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component, MaterialLaw EoS, int NumberOfComponents = -1) : base(SpatDim, _bcmap, _component, EoS, NumberOfComponents) {
+            ValidSpecies = spcName;
+        }
 
-    public class LowMachCombustionConvectionInSpeciesBulk_LLF : LinearizedConvectionJacobi, ISpeciesFilter {
+        /// <summary>
+        /// Constructor for incompressible flow. Just for testing
+        /// </summary>
+        /// <param name="spcName"></param>
+        /// <param name="SpatDim"></param>
+        /// <param name="_bcmap"></param>
+        /// <param name="_component"></param>
+        /// <param name="EoS"></param>
+        /// <param name="NumberOfComponents"></param>
+        public LowMachCombustionConvectionInSpeciesBulk_LLF_Newton(string spcName, int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component) : base(SpatDim, _bcmap, _component) {
+            ValidSpecies = spcName;
+        }
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+    }
+    /// <summary>
+    /// Convective term of the momentum equation.
+    /// </summary>
+    public class LowMachCombustionConvectionInSpeciesBulk_LLF : LinearizedConvection, ISpeciesFilter {
         /// <summary>
         /// Constructor for 
         /// </summary>
@@ -58,15 +94,15 @@ namespace BoSSS.Solution.XNSECommon.Operator.Convection {
         public LowMachCombustionConvectionInSpeciesBulk_LLF(string spcName, int SpatDim, IncompressibleBoundaryCondMap _bcmap, int _component) : base(SpatDim, _bcmap, _component) {
             ValidSpecies = spcName;
         }
-
-
         public string ValidSpecies {
             get;
             private set;
         }
-
-
     }
+
+
+
+
     /// <summary>
     /// Scalar convection in the bulk phase for the low mach combustion solver.
     /// </summary>

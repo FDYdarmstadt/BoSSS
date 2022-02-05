@@ -19,7 +19,6 @@ namespace BoSSS.Application.XNSEC {
             var C = SteadyCouetteFlowWithTemperatureGradient(DGp: 2, resolutions:5 );
             C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            C.ImmediatePlotPeriod = 1;
             //C.rhoOne = true;
 
 
