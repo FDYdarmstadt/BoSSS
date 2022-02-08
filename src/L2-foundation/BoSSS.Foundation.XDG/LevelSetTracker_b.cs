@@ -162,7 +162,7 @@ namespace BoSSS.Foundation.XDG {
             double[] oldTs__AgglomerationTreshold = null,
             double NewbornAndDecasedThreshold = 1.0e-6
             ) {
-
+            
             return new MultiphaseCellAgglomerator(this, Spc, CutCellsQuadOrder,
                 __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold);
         }
