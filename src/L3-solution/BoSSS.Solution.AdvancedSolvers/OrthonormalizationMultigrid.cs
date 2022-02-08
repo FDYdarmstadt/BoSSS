@@ -595,9 +595,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             using(var f = new FuncTrace()) {
-                if(this.m_MgOperator.LevelIndex == 0) {
-                    GC.Collect();
-                }
+                //if(this.m_MgOperator.LevelIndex == 0) {
+                //    GC.Collect();
+                //} leads to a Internal CLR error at timestep > 1. see WIP-roCube at Jenkins 
 
 
 
