@@ -99,7 +99,7 @@ namespace PublicTestRunner {
             get {
                 return new Type[] {
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
-                        typeof(AdvancedSolverTests.AdvancedSolverMain),
+                        typeof(AdvancedSolverTests.TestsMain),
                         typeof(BoSSS.Application.CDG_ProjectionTest.AllUpTest),
                         typeof(BoSSS.Application.Matrix_MPItest.AllUpTest),
                         typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
@@ -152,7 +152,8 @@ namespace PublicTestRunner {
                 return new (Type type, int NoOfProcs)[] {
                         (typeof(CDG_Projection_MPI.ConstrainedDGField_Tests), 4),
                         (typeof(CDG_Projection_MPI.ConstrainedDGField_Tests), 2),
-                        (typeof(AdvancedSolverTests.AdvancedSolverMain),4),
+                        (typeof(AdvancedSolverTests.TestsMain),4),
+                        (typeof(AdvancedSolverTests.MPITests),4),
                         (typeof(MPITest.Program), 4),
                         (typeof(MPITest.Program), 3),
                         (typeof(MPITest.Program), 2),

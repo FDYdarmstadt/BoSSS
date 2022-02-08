@@ -55,7 +55,6 @@ namespace BoSSS.Application.XNSEC {
             C.EnableTemperature = true;
             C.NumberOfChemicalSpecies = 2;
             C.ChemicalReactionActive = false;
-            C.ImmediatePlotPeriod = 1;
 
             //C.ProjectDescription = "Static droplet";
             //C.SessionName = "SD_meshStudy_Hysing_mesh" + kelem; // "_AMR"+AMRlvl;

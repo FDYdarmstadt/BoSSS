@@ -97,6 +97,14 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public int constantNewtonIterations = 1;
 
+
+        /// <summary>
+        ///  If, for a specific homotopy parameter value, Newton does not converges successfully,
+        /// (within this number of iterations) a roll-back to the last solution is done and the step with is reduced
+        /// </summary>
+        [DataMember]
+        public int HomotopyStepLongFail = 20;
+
         /*
         /// <summary>
         /// Prints the step reduction factor of the newton backtracking method
@@ -123,8 +131,9 @@ namespace BoSSS.Solution.Control {
                 SolverCode = this.SolverCode,
                 UnderRelax = this.UnderRelax,
                 Globalization = this.Globalization,
-                verbose = this.verbose
-        };
+                verbose = this.verbose,
+                HomotopyStepLongFail = this.HomotopyStepLongFail
+            };
             return clone;
         }
 
@@ -144,7 +153,8 @@ namespace BoSSS.Solution.Control {
                 this.SolverCode == compareto.SolverCode &&
                 this.UnderRelax == compareto.UnderRelax &&
                 this.Globalization == compareto.Globalization &&
-                this.verbose == compareto.verbose;
+                this.verbose == compareto.verbose &&
+                this.HomotopyStepLongFail == compareto.HomotopyStepLongFail;
         }
     }
 }

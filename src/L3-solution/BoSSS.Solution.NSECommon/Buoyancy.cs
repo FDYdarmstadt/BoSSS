@@ -14,30 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
-using BoSSS.Platform.LinAlg;
 using BoSSS.Solution.Utils;
 using ilPSP;
 using ilPSP.Utils;
+using System;
+using System.Collections.Generic;
 
 namespace BoSSS.Solution.NSECommon {
-    
+
     /// <summary>
     /// [LowMach] Buoyant force.
     /// </summary>
     //public class Buoyancy : BoSSS.Foundation.IVolumeForm {
-    public class Buoyancy : LinearSource { 
-        Vector GravityDirection;
-        int SpatialComponent;
-        double Froude;
-        MaterialLaw EoS;
-        PhysicsMode physicsMode;
-        string[] m_ParameterOrdering;
+    public class Buoyancy : LinearSource {
+        private Vector GravityDirection;
+        private int SpatialComponent;
+        private double Froude;
+        private MaterialLaw EoS;
+        private PhysicsMode physicsMode;
+        private string[] m_ParameterOrdering;
 
         /// <summary>
         /// Ctor.
@@ -63,16 +60,18 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.LowMach:
                     this.m_ParameterOrdering = new string[] { VariableNames.Temperature0 };
                     break;
+
                 case PhysicsMode.Combustion:
                     this.m_ParameterOrdering = new string[] { VariableNames.Temperature0, VariableNames.MassFraction0_0, VariableNames.MassFraction1_0, VariableNames.MassFraction2_0, VariableNames.MassFraction3_0 };
                     break;
+
                 default:
                     throw new ApplicationException("wrong physicsmode");
             }
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="x"></param>
         /// <param name="parameters"></param>
@@ -84,7 +83,7 @@ namespace BoSSS.Solution.NSECommon {
             //double rho = EoS.GetDensity(U[0]);
             double rho = EoS.GetDensity(parameters);
 
-            src =  1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent]; 
+            src = 1.0 / (Froude * Froude) * rho * GravityDirection[SpatialComponent];
 
             return src;
         }
@@ -95,43 +94,42 @@ namespace BoSSS.Solution.NSECommon {
         public override IList<string> ArgumentOrdering {
             get {
                 return new string[] {
-                    //VariableNames.Temperature 
+                    //VariableNames.Temperature
                 };
             }
         }
+
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public override TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
+
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public override IList<string> ParameterOrdering {
-            get {               
+            get {
                 return m_ParameterOrdering;
             }
         }
-
- 
     }
-    
 
     /// <summary>
     /// [LowMach] Buoyant force.
     /// </summary>
 
     public class BuoyancyJacobi : IVolumeForm, ISupportsJacobianComponent {
-        Vector GravityDirection;
-        int SpatialComponent;
-        double Froude;
-        MaterialLaw EoS;
-        PhysicsMode physicsMode;
-        string[] m_ParameterOrdering;
-        string[] m_ArgumentOrdering;
+        private Vector GravityDirection;
+        private int SpatialComponent;
+        private double Froude;
+        private MaterialLaw EoS;
+        private PhysicsMode physicsMode;
+        private string[] m_ParameterOrdering;
+        private string[] m_ArgumentOrdering;
 
         /// <summary>
         /// Ctor.
@@ -155,25 +153,28 @@ namespace BoSSS.Solution.NSECommon {
 
             switch (physicsMode) {
                 case PhysicsMode.MixtureFraction:
-                this.m_ParameterOrdering = null;
-                this.m_ArgumentOrdering = new string[] { VariableNames.MixtureFraction };
-                break;
+                    this.m_ParameterOrdering = null;
+                    this.m_ArgumentOrdering = new string[] { VariableNames.MixtureFraction };
+                    break;
+
                 case PhysicsMode.LowMach:
-                this.m_ParameterOrdering = null; // new string[] { VariableNames.Temperature0 };
-                this.m_ArgumentOrdering = new string[] { VariableNames.Temperature };
-                break;
+                    this.m_ParameterOrdering = null; // new string[] { VariableNames.Temperature0 };
+                    this.m_ArgumentOrdering = new string[] { VariableNames.Temperature };
+                    break;
+
                 case PhysicsMode.Combustion:
-                this.m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.Rho, VariableNames.Mu ,VariableNames.cp};// null;
-                string[] MFs = VariableNames.MassFractions(noOfChemComponents);
-                this.m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, MFs);
-                break;
+                    this.m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.Rho, VariableNames.Mu, VariableNames.cp };// null;
+                    string[] MFs = VariableNames.MassFractions(noOfChemComponents);
+                    this.m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, MFs);
+                    break;
+
                 default:
-                throw new ApplicationException("wrong physicsmode");
+                    throw new ApplicationException("wrong physicsmode");
             }
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="x"></param>
         /// <param name="parameters"></param>
@@ -187,10 +188,12 @@ namespace BoSSS.Solution.NSECommon {
                 case PhysicsMode.MixtureFraction:
                     rho = EoS.getDensityFromZ(U[0]);
                     break;
+
                 case PhysicsMode.LowMach:
                 case PhysicsMode.Combustion:
                     rho = EoS.GetDensity(U);
                     break;
+
                 default:
                     throw new NotImplementedException("wrong PhysicsMode");
             }
@@ -218,24 +221,92 @@ namespace BoSSS.Solution.NSECommon {
                 return m_ArgumentOrdering;
             }
         }
+
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public virtual TermActivationFlags VolTerms {
             get {
                 return TermActivationFlags.AllOn;//TermActivationFlags.UxV | TermActivationFlags.V;
             }
         }
+
         /// <summary>
-        /// 
+        ///
         /// </summary>
-        public virtual  IList<string> ParameterOrdering {
+        public virtual IList<string> ParameterOrdering {
             get {
                 return m_ParameterOrdering;
             }
         }
-
-
     }
 
+    /// <summary>
+    /// [LowMach] Buoyant force.
+    /// </summary>
+
+    public class DummyParameter : IVolumeForm, ISupportsJacobianComponent {
+        private string[] m_ParameterOrdering;
+        private string[] m_ArgumentOrdering;
+
+        /// <summary>
+        /// Ctor.
+        /// </summary>
+        /// <param name="GravityDirection">Unit vector for spatial direction of gravity.</param>
+        /// <param name="SpatialComponent">Spatial component of source.</param>
+        /// <param name="Froude">Dimensionless Froude number.</param>
+        /// <param name="physicsMode"></param>
+        /// <param name="EoS">Equation of state for calculating density.</param>
+        public DummyParameter() {
+            this.m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.Rho, VariableNames.Mu, VariableNames.cp };
+            this.m_ArgumentOrdering = new string[] { };
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="parameters"></param>
+        /// <param name="U"></param>
+        /// <returns></returns>
+        protected double Source(double[] x, double[] parameters, double[] U) {
+            return 0.0;
+        }
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            return this.Source(cpv.Xglobal, cpv.Parameters, U) * V;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var SourceDerivVol = new VolumeFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { SourceDerivVol };
+        }
+
+        /// <summary>
+        /// Temperature
+        /// </summary>
+        public virtual IList<string> ArgumentOrdering {
+            get {
+                return m_ArgumentOrdering;
+            }
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public virtual TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.None;
+            }
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        public virtual IList<string> ParameterOrdering {
+            get {
+                return m_ParameterOrdering;
+            }
+        }
+    }
 }

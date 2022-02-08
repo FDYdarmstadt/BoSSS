@@ -49,7 +49,7 @@ namespace AdvancedSolverTests {
         diagonal_spec, // a matrix without coupling of cells and variables
     }
 
-    class SubBlockTestSolver2Var : Application {
+    public class SubBlockTestSolver2Var : Application {
 
         internal XDGusage m_UseXdg;
         internal MatrixShape m_Mshape;
