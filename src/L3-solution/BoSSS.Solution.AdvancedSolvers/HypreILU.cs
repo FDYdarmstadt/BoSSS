@@ -156,7 +156,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public object Clone() {
-            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+            var clone = new HypreILU();
+            clone.LocalPreconditioning = this.m_LocalPrecond;
+            if(this.IterationCallback !=null) clone.IterationCallback = this.IterationCallback.CloneAs();
+            return clone;
         }
 
         public long UsedMemory() {

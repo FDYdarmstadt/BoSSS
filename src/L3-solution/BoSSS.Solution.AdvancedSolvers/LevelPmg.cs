@@ -30,6 +30,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public LevelPmg() {
             UseHiOrderSmoothing = true;
+            TerminationCriterion = (int iter, double r0, double r) => iter < 1;
         }
 
         /// <summary>
@@ -301,8 +302,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // compute fine residual
                 Res_f.SetV(B);
                 Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+                m_Iter = 0;
                 while (true) {
-
 
                     if (!TerminationCriterion(m_Iter, Res_f.MPI_L2Norm(), Cor_f.MPI_L2Norm())) {
                         Converged = true;

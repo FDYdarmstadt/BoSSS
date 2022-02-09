@@ -526,7 +526,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
                     break;
                 case 4:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
+                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_MG_gmres;
                     break;
                 default:
                     throw new NotImplementedException("guess again");
@@ -537,7 +537,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"D:\Xdg_Poisson_CondNum";
 
-            int Res = 30;
+            int Res = 50;
             int blocksize = 10000;
 
             C.GridFunc = delegate () {
@@ -545,7 +545,9 @@ namespace BoSSS.Application.XdgPoisson3 {
                 double[] yNodes = GenericBlas.Linspace(-1, +1, Res + 1);
                 double[] zNodes = GenericBlas.Linspace(-1, +1, Res + 1);
                 int J = (xNodes.Length - 1) * (yNodes.Length - 1) * (zNodes.Length - 1);
+                //int J = (xNodes.Length - 1) * (yNodes.Length - 1);
                 var grid = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+                //var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                 grid.Name = "thisisatestgrid";
                 grid.EdgeTagNames.Add(1, "Dirichlet");
                 grid.DefineEdgeTags(delegate (double[] X) {
@@ -558,8 +560,9 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.ProjectName = "PoisonTest";
             C.GridPartType = GridPartType.Hilbert;
             C.LinearSolver.TargetBlockSize = blocksize;
-            C.SetDGdegree(2);
+            C.SetDGdegree(4);
 
+            //C.PrePreCond = MultigridOperator.Mode.Eye;
             C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.MaxSolverIterations = 1000;
@@ -569,6 +572,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.ExcactSolSupported = false;
             double radius = 0.7;
             C.InitialValues_Evaluators.Add("Phi", X => X[0].Pow2() + X[1].Pow2() + X[2].Pow2() - radius.Pow2());
+            //C.InitialValues_Evaluators.Add("Phi", X => X[0].Pow2() + X[1].Pow2() - radius.Pow2());
             C.MU_A = -1;
             C.MU_B = -1000;
             C.InitialValues_Evaluators.Add("rhs#A", X => 1.0);

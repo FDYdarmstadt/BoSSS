@@ -107,7 +107,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double iter0ResidualNorm = Residual(rl, xl, bl);
                 double iterNorm = iter0ResidualNorm;
 
-                for (int iIter = 0; true; iIter++) {
+                for (int iIter = 1; true; iIter++) {
                     if (!TerminationCriterion(iIter, iter0ResidualNorm, iterNorm))
                         return;
 
