@@ -104,7 +104,7 @@ namespace BoSSS.Solution.Gnuplot {
                 throw new IOException($"Gnuplot output file empty or non-existent.");
             }
         }
-        
+
 
         /*
         /// <summary>
@@ -251,7 +251,44 @@ namespace BoSSS.Solution.Gnuplot {
             return clc;  
         }
         */
-        
+
+        /// <summary>
+        /// Add a Log slope to the <see cref="Gnuplot"/>
+        /// </summary>
+        /// <param name="gp"></param>
+        /// <param name="_2DData"></param>
+        /// <param name="mode">'a' = average, '+' = max, '-' = min</param>
+        public static void PlotLogSlope(this Gnuplot gp, Plot2Ddata _2DData, char mode = 'a', PlotFormat format = null, double round = 0.5) {
+
+            var slopes = _2DData.Regression();
+            double slope = 0.0;
+            if(mode == '+') {
+                slope = slopes.Max(kv => kv.Value);
+            }else if (mode == '-') {
+                slope = slopes.Min(kv => kv.Value);
+            } else {
+                slope = slopes.Average(kv => kv.Value);
+            }
+
+            double yMin_mag = double.MaxValue;
+            double yMax_mag = double.MinValue;
+            double xMin_mag = double.MaxValue;
+            double xMax_mag = double.MinValue;
+
+            foreach (var grp in _2DData.dataGroups) {
+                yMin_mag = Math.Min(yMin_mag, Math.Log(grp.Values.Min(), 10));
+                yMax_mag = Math.Max(yMax_mag, Math.Log(grp.Values.Max(), 10));
+                xMin_mag = Math.Min(xMin_mag, Math.Log(grp.Abscissas.Min(), 10));
+                xMax_mag = Math.Max(xMax_mag, Math.Log(grp.Abscissas.Max(), 10));
+            }
+
+            double[] point = new double[2];
+            point[0] = Math.Pow(10, xMin_mag + (1.0 / 3.0) * (xMax_mag - xMin_mag));
+            point[1] = slope > 0 ? Math.Pow(10, yMin_mag) : Math.Pow(10, yMax_mag);
+            double size = Math.Pow(10, xMin_mag + (1.0 / 3.0 + 1.0 / 10.0) * (xMax_mag - xMin_mag)) - point[0];
+
+            gp.PlotLogSlope(slope, point, null, format, true, false, false, slope != 0.0, size, 'a', round);
+        }
 
         /// <summary>
         /// Single plot window:
