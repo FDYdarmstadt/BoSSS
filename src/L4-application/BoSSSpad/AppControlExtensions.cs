@@ -77,15 +77,27 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="queueIdx">
         /// Index int <see cref="InteractiveShell.ExecutionQueues"/>
         /// </param>
-        public static Job RunBatch(this AppControl ctrl, int queueIdx = 0) {
-            var b = InteractiveShell.ExecutionQueues[queueIdx];
-            return RunBatch(ctrl, InteractiveShell.ExecutionQueues[queueIdx]);
+        public static Job RunBatch(this AppControl ctrl, int queueIdx) {
+            var b = BoSSSshell.ExecutionQueues[queueIdx];
+            return RunBatch(ctrl, b);
         }
+
+
+        /// <summary>
+        /// Runs the solver described by the control object <paramref name="ctrl"/> 
+        /// on the default batch system 
+        /// The method returns immediately after the job is deployed., i.e. it does not wait for the job to finish.
+        /// </summary>
+        public static Job RunBatch(this AppControl ctrl) {
+            var b = BoSSSshell.GetDefaultQueue();
+            return RunBatch(ctrl, b);
+        }
+
 
         /// <summary>
         /// Creates a job for the control object <paramref name="ctrl"/>.
         /// The method returns immediately.
-        /// This job can still be configured (e.g. setting number of MPI processors) and must be activated (<see cref="Job.Activate"/>)
+        /// This job can still be configured (e.g. setting number of MPI processors) and must be activated (<see cref="Job.Activate(BatchProcessorClient)"/>)
         /// to run on a batch system.
         /// </summary>
         /// <param name="ctrl"></param>
@@ -157,7 +169,7 @@ namespace BoSSS.Application.BoSSSpad {
             job.NumberOfMPIProcs = job2rest.NumberOfMPIProcs;
             job.RetryCount = job2rest.RetryCount;
             //job.MemPerCPU = job2rest.MemPerCPU;
-            job.ExecutionTime = job2rest.ExecutionTime;
+            //job.ExecutionTime = job2rest.ExecutionTime;
             return job;
         }
 

@@ -250,7 +250,7 @@ namespace BoSSS.Foundation.XDG {
                                     AgglomCellsBitmask[jCell] = true;
                                     AgglomCellsList.Add(jCell);
 
-                                    Console.WriteLine("Must agglom cell " + jCell + "#" + Tracker.GetSpeciesName(spId) + " volume frac is " + frac + "on time level " + iTimeLev);
+                                    //Console.WriteLine("Must agglom cell " + jCell + "#" + Tracker.GetSpeciesName(spId) + " volume frac is " + frac + "on time level " + iTimeLev);
 
                                 }
                             }

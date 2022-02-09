@@ -170,6 +170,8 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
         [Test]
         static public void Run__convStudy() {
+            NotebookRunner.DeleteDatabase("ConvStudyTutorial");
+            NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
             RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
         }
 #endif
