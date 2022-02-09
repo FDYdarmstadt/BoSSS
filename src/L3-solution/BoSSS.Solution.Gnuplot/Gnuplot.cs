@@ -445,7 +445,6 @@ namespace BoSSS.Solution.Gnuplot {
                     stw.Write("plot ");
                 }
 
-                stw.Write("plot ");
                 stw.Write(equation);
                 stw.Write(" ");
                 stw.Write(Format2D(title, format, useX2, useY2));
@@ -561,6 +560,97 @@ namespace BoSSS.Solution.Gnuplot {
                     Cmd(stringWriter.ToString());
                 }
             }
+        }
+
+
+
+        /// <summary>
+        /// plots slope of a power law, use only in double logarithmic plots. Has to be called before <see cref="Plot2Ddata.ToGnuplot(Gnuplot)"/> to take effect.
+        /// </summary>
+        /// <param name="slope">exponent of power law to plot</param>
+        /// <param name="intercept"> the slope will cross this point</param>
+        /// <param name="title"></param>
+        /// <param name="format"></param>
+        /// <param name="deferred"></param>
+        /// <param name="useX2"></param>
+        /// <param name="useY2"></param>
+        /// <param name="writeSlope"> triangle with slope </param>
+        /// <param name="size"> size of the triangle, good value to try is 10% of x-Axis length </param>
+        /// <param name="pos"> position of triangle, 'a' = auto, 'r'=right, 'l' = left</param>
+        public void PlotLogSlope(double slope, double[] intercept, string title = null, PlotFormat format = null, bool deferred = true, bool useX2 = false, bool useY2 = false, bool writeSlope = true, double size = -1, char pos = 'a', double round = 0.0) {
+
+            if (round > 0.0) {
+                slope = Math.Round(slope / round) * round;
+            }
+
+            if (writeSlope) {
+                double[,] points = new double[4, 2];
+                double x0 = intercept[0];
+                double x1 = size > 0.0 ? intercept[0] + size : 10 * intercept[0]; // if size not specified: one magnitude
+                double y0 = intercept[1];
+                double y1 = intercept[1] * Math.Pow(x1 / x0, slope);
+
+                points[0, 0] = x0;
+                points[1, 0] = x1;
+                points[2, 0] = x1;
+                points[3, 0] = x0;
+
+                points[0, 1] = y0;
+                points[1, 1] = y0;
+                points[2, 1] = y1;
+                points[3, 1] = y1;
+
+                using (StringWriter stw = new StringWriter()) {
+                    stw.Write("set object poly from ");
+
+                    if (pos == 'a' || pos == 'r') {
+                        stw.Write(points[0, 0] + "," + points[0, 1]); stw.Write(" to ");
+                        stw.Write(points[1, 0] + "," + points[1, 1]); stw.Write(" to ");
+                        stw.Write(points[2, 0] + "," + points[2, 1]); stw.Write(" to ");
+                        stw.Write(points[0, 0] + "," + points[0, 1]);
+                    } else if(pos == 'l'){
+                        stw.Write(points[0, 0] + "," + points[0, 1]); stw.Write(" to ");
+                        stw.Write(points[2, 0] + "," + points[2, 1]); stw.Write(" to ");
+                        stw.Write(points[3, 0] + "," + points[3, 1]); stw.Write(" to ");
+                        stw.Write(points[0, 0] + "," + points[0, 1]);
+                    }
+
+                    string ColorString;
+                    if (format != null) {
+                        if (Enum.IsDefined(typeof(LineColors), format.LineColor)) {
+                            ColorString = "\"" + format.LineColor.ToString().ToLowerInvariant() + "\"";
+                        } else {
+                            ColorString = format.LineColor.ToString();
+                        }
+                    } else {
+                        ColorString = "\"black\"";
+                    }
+                    
+                    stw.Write(" fs empty border lc rgb "+ColorString);
+                    stw.WriteLine();
+
+                    stw.Write("set label "); stw.Write("\"$1$\""); stw.Write(" at ");
+                    if (pos == 'a' || pos == 'r') {
+                        stw.Write(0.5 * (points[0, 0] + points[1, 0]) + "," + points[0, 1]);
+                        if (slope > 0) { stw.Write(" offset character -0.5,-0.75"); } else { stw.Write(" offset character -0.5,0.5"); };
+                    } else if (pos == 'l') {
+                        stw.Write(0.5 * (points[0, 0] + points[1, 0]) + "," + points[2, 1]);
+                        if (slope > 0) { stw.Write(" offset character -0.5,0.5"); } else { stw.Write(" offset character -0.5,-0.75"); };
+                    }
+                    stw.WriteLine();
+
+                    stw.Write("set label "); stw.Write("\"$" + slope + "$\""); stw.Write(" at ");
+                    if (pos == 'a' || pos == 'r') {
+                        stw.Write(points[1, 0] + "," + 0.5 * (points[1, 1] + points[2, 1])); stw.Write(" left offset character 0.25,-0.25");
+                    } else if (pos == 'l') {
+                        stw.Write(points[0, 0] + "," + 0.5 * (points[0, 1] + points[3, 1])); stw.Write(" right offset character -0.25,-0.25");
+                    }
+
+                    this.Cmd(stw.ToString());
+                }
+            }
+
+            this.PlotEquation("(x/" + intercept[0] + ")**" + slope + " * " + intercept[1], title, format, deferred, useX2, useY2);
         }
 
         /// <summary>

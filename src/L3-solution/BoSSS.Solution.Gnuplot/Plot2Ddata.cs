@@ -417,6 +417,12 @@ namespace BoSSS.Solution.Gnuplot {
         public int? Legend_maxrows = null;
 
         /// <summary>
+        /// Draws a box behind the key
+        /// </summary>
+        [DataMember]
+        public bool LegendBox = false;
+
+        /// <summary>
         /// Swaps entries of legend
         /// </summary>
         [DataMember]
@@ -1328,6 +1334,9 @@ namespace BoSSS.Solution.Gnuplot {
 
                     if (this.LegendSwap == true)
                         command += "Left reverse ";
+
+                    if (this.LegendBox == true)
+                        command += "box opaque ";
 
                     System.Console.WriteLine(command);
                     gp.Cmd(command);
