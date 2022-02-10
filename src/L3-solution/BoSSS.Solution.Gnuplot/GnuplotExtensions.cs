@@ -185,7 +185,7 @@ namespace BoSSS.Solution.Gnuplot {
                 gp.Terminal = string.Format("cairolatex {0} size {1}cm,{2}cm", Options != null ? Options : " ");
 
             // set output file
-            string baseName = Path.GetTempFileName();
+            string baseName = MyGetTempFileName();
             baseName = Path.Combine(Path.GetDirectoryName(baseName), Path.GetFileNameWithoutExtension(baseName));
             string TexOutfileName = baseName + ".tex";
             gp.OutputFile = TexOutfileName;

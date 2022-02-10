@@ -285,7 +285,7 @@ namespace BoSSS.Solution.Gnuplot {
                 throw new ArgumentException("the yScale must have as much entries as Z rows");
 
             // create temp file
-            String name = Path.GetTempFileName();
+            String name = MyGetTempFileName();
 
             FileStream f = new FileStream(name, FileMode.OpenOrCreate);
             StreamWriter s = new StreamWriter(f);
@@ -793,6 +793,23 @@ namespace BoSSS.Solution.Gnuplot {
         }
 
         /// <summary>
+        /// see: https://stackoverflow.com/questions/18350699/system-io-ioexception-the-file-exists-when-using-system-io-path-gettempfilena
+        /// there it says:
+        /// 
+        /// Do not use System.IO.Path.GetTempFileName()!
+        /// GetTempFileName() is a wrapper of the two decades old Win32 Api. 
+        /// It generate file names that will very easily collide. 
+        /// It circumvents those collitions by heavily looping on the file system, 
+        /// iterating possible file names from "%temp%\tmp0000.tmp" to "tmpFFFF.tmp" and skipping already existing ones. 
+        /// This is a I/O intensive, slow, and frankly terrible algorithm.
+        /// Also using only 4 hex characters is what makes the artificial limit of 65536 files before failing.
+        /// </summary>
+        private string MyGetTempFileName() {
+
+            return Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        }
+
+        /// <summary>
         /// Standard plot of <paramref name="x"/> vs. <paramref name="y"/>
         /// using linear scaling.
         /// </summary>
@@ -825,7 +842,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if ((x != null) && (x.Count() != y.Count()))
                     throw new ArgumentException("x and y Vector must have the same lengths.");
-                string s1 = Path.GetTempFileName();
+                string s1 = MyGetTempFileName();
 
                 FileStream fileStream = new FileStream(s1, FileMode.Open);
                 StreamWriter streamWriter = new StreamWriter(fileStream);
