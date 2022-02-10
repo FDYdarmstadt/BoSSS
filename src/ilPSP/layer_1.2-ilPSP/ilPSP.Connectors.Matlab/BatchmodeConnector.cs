@@ -866,7 +866,8 @@ namespace ilPSP.Connectors.Matlab {
             { 
                 if(SuccessfulExe) {
                     try {
-                        TempDirMutex.WaitOne();
+                        if (TempDirMutex != null)
+                            TempDirMutex.WaitOne();
                         foreach(var f in CreatedFiles) {
                             try {
                                 File.Delete(f);
@@ -882,7 +883,8 @@ namespace ilPSP.Connectors.Matlab {
                             }
                         }
                     } finally {
-                        TempDirMutex.ReleaseMutex();
+                        if(TempDirMutex != null)
+                            TempDirMutex.ReleaseMutex();
                     }
                 } else {
                     // keeping files for diagnostic purposes
