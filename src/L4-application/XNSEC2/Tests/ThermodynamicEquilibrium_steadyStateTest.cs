@@ -362,7 +362,6 @@ namespace BoSSS.Application.XNSEC {
             C.ContinueOnIoError = false;
 
 
-            C.ImmediatePlotPeriod = 1;
             #endregion
 
 

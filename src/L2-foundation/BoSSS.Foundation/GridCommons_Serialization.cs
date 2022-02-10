@@ -6,13 +6,10 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using BoSSS.Foundation.IO;
 
-namespace BoSSS.Foundation.Grid.Classic
-{
-    class GridCommonsDatabaseMethods : IGridSerializationHandler
-    {
-        readonly GridCommons grid; 
-        public GridCommonsDatabaseMethods(GridCommons grid)
-        {
+namespace BoSSS.Foundation.Grid.Classic {
+    class GridCommonsDatabaseMethods : IGridSerializationHandler {
+        readonly GridCommons grid;
+        public GridCommonsDatabaseMethods(GridCommons grid) {
             this.grid = grid;
         }
 
@@ -28,15 +25,12 @@ namespace BoSSS.Foundation.Grid.Classic
         [JsonIgnore]
         object[][] data;
 
-        public object[][] GetVectorData()
-        {
-            if (data == null)
-            {
+        public object[][] GetVectorData() {
+            if(data == null) {
                 int numberOfObjects = grid.m_PredefinedGridPartitioning.Count + 2;
                 data = new object[numberOfObjects][];
                 data[0] = grid.Cells;
-                for (int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
-                {
+                for(int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i) {
                     var s = grid.m_PredefinedGridPartitioning.ElementAt(i);
                     int[] cellToRankMap = s.Value.CellToRankMap;
                     data[i + 1] = cellToRankMap.Cast<object>().ToArray();
@@ -47,16 +41,14 @@ namespace BoSSS.Foundation.Grid.Classic
             return data;
         }
 
-        public void SetVectorData(object[][] data)
-        {
+        public void SetVectorData(object[][] data) {
             grid.Cells = data[0].Cast<Cell>().ToArray();
 
-            for (int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
-            {
+            for(int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i) {
                 var s = grid.m_PredefinedGridPartitioning.ElementAt(i);
                 grid.m_PredefinedGridPartitioning[s.Key] = new GridCommons.GridPartitioningVector { Guid = guids[i + 1], CellToRankMap = data[i + 1].Cast<int>().ToArray() };
             }
-            if (data.Last() != null)
+            if(data.Last() != null)
                 grid.BcCells = data.Last().Cast<BCElement>().ToArray();
 
             grid.InitNumberOfCells();
@@ -64,16 +56,13 @@ namespace BoSSS.Foundation.Grid.Classic
 
         Type[] types;
 
-        public Type[] GetVectorTypes()
-        {
-            if (types == null)
-            {
+        public Type[] GetVectorTypes() {
+            if(types == null) {
                 int numberOfObjects = grid.m_PredefinedGridPartitioning.Count + 2;
                 types = new Type[numberOfObjects];
                 types[0] = typeof(Cell);
 
-                for (int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
-                {
+                for(int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i) {
                     types[i + 1] = typeof(int);
                 }
                 types[numberOfObjects - 1] = typeof(BCElement);
@@ -83,22 +72,18 @@ namespace BoSSS.Foundation.Grid.Classic
 
         Guid[] guids;
 
-        public Guid[] GetVectorGuids()
-        {
-            if (guids == null)
-            {
+        public Guid[] GetVectorGuids() {
+            if(guids == null) {
                 guids = InitializeVectorGuids();
             }
             return guids;
         }
 
-        Guid[] InitializeVectorGuids()
-        {
+        Guid[] InitializeVectorGuids() {
             int numberOfObjects = grid.m_PredefinedGridPartitioning.Count + 2;
             Guid[] guids = new Guid[numberOfObjects];
             guids[0] = grid.StorageGuid;
-            for (int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i)
-            {
+            for(int i = 0; i < grid.m_PredefinedGridPartitioning.Count; ++i) {
                 var s = grid.m_PredefinedGridPartitioning.ElementAt(i);
                 guids[i + 1] = s.Value.Guid;
             }
@@ -106,8 +91,7 @@ namespace BoSSS.Foundation.Grid.Classic
             return guids;
         }
 
-        public void SetVectorGuids(Guid[] guids)
-        {
+        public void SetVectorGuids(Guid[] guids) {
             this.guids = guids;
             grid.StorageGuid = guids[0];
             grid.BcCellsStorageGuid = guids.Last();
@@ -127,3 +111,5 @@ namespace BoSSS.Foundation.Grid.Classic
 
     }
 }
+
+

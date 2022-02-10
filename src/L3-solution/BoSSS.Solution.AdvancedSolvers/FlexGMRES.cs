@@ -53,12 +53,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var MgMap = op.Mapping;
             this.m_mgop = op;
 
-            if(!M.RowPartitioning.Equals(MgMap.Partitioning))
+            if (!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
-            if(!M.ColPartition.Equals(MgMap.Partitioning))
+            if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Column partitioning mismatch.");
 
-            foreach(var pc in PrecondS) {
+            foreach (var pc in PrecondS) {
                 pc.Init(m_mgop);
             }
         }
@@ -176,6 +176,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Vau.Add(W);
 
                     Debug.Assert(Vau.Count == Zed.Count + 1);
+
+                    //if (j >= 1) {
+                    //    var y = new double[j];
+                    //    H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { j - 1, j - 1 }).Solve(y, W.GetSubVector(0, j));
+                    //    double[] Xtmp = X.ToArray();
+                    //    for (int ii = 0; ii < j; ii++) {
+                    //        Xtmp.AccV(y[ii], Vau[ii]);
+                    //    }
+                    //    double[] ztmp = new double[Xtmp.Length];
+                    //    ztmp.SetV(B);
+                    //    this.m_mgop.OperatorMatrix.SpMV(-1.0, Xtmp, 1.0, ztmp);
+                    //    IterationCallback?.Invoke(j, Xtmp, ztmp, this.m_mgop);
+                    //}
                 }
 
                 // compute minimized-Residual solution over 'Zed'-Vectors

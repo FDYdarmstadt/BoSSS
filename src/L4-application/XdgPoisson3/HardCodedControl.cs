@@ -507,31 +507,29 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 1)
-        {
+        public static XdgPoisson3Control TestOrTreat(int solver = 4) {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
-            switch (solver)
-            {
+            switch(solver) {
                 case 0:
-                    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-                    break; 
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+                break;
                 case 1:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-                    break;
+                C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+                break;
                 case 2:
-                    throw new NotImplementedException("deactivated old solver config.");
-                    //C.LinearSolver.SolverCode = LinearSolverCode.exp_softgmres;
-                    //break;
+                throw new NotImplementedException("deactivated old solver config.");
+                //C.LinearSolver.SolverCode = LinearSolverCode.exp_softgmres;
+                //break;
                 case 3:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-                    break;
+                C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+                break;
                 case 4:
-                    throw new NotImplementedException("deactivated old solver config.");
-                    //C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
-                    //break;
+                throw new NotImplementedException("deactivated old solver config.");
+                //C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+                //break;
                 default:
-                    throw new NotImplementedException("guess again");
+                throw new NotImplementedException("guess again");
             }
 
             C.savetodb = false;
@@ -539,7 +537,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.DbPath = @"D:\trash_db";
             //C.DbPath = @"D:\Xdg_Poisson_CondNum";
 
-            int Res = 59;
+            int Res = 30;
             int blocksize = 10000;
 
             C.GridFunc = delegate () {
@@ -562,10 +560,10 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.LinearSolver.TargetBlockSize = blocksize;
             C.SetDGdegree(2);
 
-            C.LinearSolver.NoOfMultigridLevels = 5;
+            C.LinearSolver.NoOfMultigridLevels = 3;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MaxKrylovDim = 1000;
+            C.LinearSolver.MaxKrylovDim = 50;
             //C.LinearSolver.pMaxOfCoarseSolver = 1;
             //C.LinearSolver.TargetBlockSize = 79;
             C.ExcactSolSupported = false;

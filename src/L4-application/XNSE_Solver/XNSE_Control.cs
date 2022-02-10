@@ -66,7 +66,7 @@ namespace BoSSS.Application.XNSE_Solver {
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 0.0; //Solver_ConvergenceCriterion: solve as accurate as possible. Don't change this, Grüße von FK!
-            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //NonLinearSolver
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton; //NonLinearSolver
             base.TimesteppingMode = AppControl._TimesteppingMode.Steady;
         }
 
@@ -589,6 +589,12 @@ namespace BoSSS.Application.XNSE_Solver {
         [NonSerialized]
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
+        /// <summary>
+        /// Exact solution, Mixture fraction, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
 
         /// <summary>
         /// Time dependent (component-wise) gravitational acceleration (either A or B).

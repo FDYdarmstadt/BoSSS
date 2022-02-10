@@ -250,7 +250,7 @@ namespace BoSSS.Foundation.XDG {
                                     AgglomCellsBitmask[jCell] = true;
                                     AgglomCellsList.Add(jCell);
 
-                                    Console.WriteLine("Must agglom cell " + jCell + "#" + Tracker.GetSpeciesName(spId) + " volume frac is " + frac + "on time level " + iTimeLev);
+                                    //Console.WriteLine("Must agglom cell " + jCell + "#" + Tracker.GetSpeciesName(spId) + " volume frac is " + frac + "on time level " + iTimeLev);
 
                                 }
                             }
@@ -819,8 +819,9 @@ namespace BoSSS.Foundation.XDG {
 
                                         
                     {
-                        if(jCellNeigh_max < 0)
-                            throw new Exception("unable to do agglomeration");
+                        if(jCellNeigh_max < 0) {
+                            failCells.Add(jCell);
+                        }
 
                         //_AccEdgesMask[jEdge_max] = true;
 
@@ -888,7 +889,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-            string message = ("Agglomeration failed - no candidate for agglomeration found");
+            string message = ($"Agglomeration failed - no candidate for agglomeration found for {failCells.Count} cells.");
             if (ExceptionOnFailedAgglomeration)
                 throw new Exception(message);
             else

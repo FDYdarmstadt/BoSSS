@@ -121,11 +121,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     }
 
     /// <summary>
-    /// Variable density bulk term.
+    /// Variable density bulk term. Formulation suitable for use of the Newton solver
     /// </summary>
-    public class DivergenceInSpeciesBulk_CentralDifference : Divergence_CentralDifferenceJacobian, ISpeciesFilter {   
+    public class DivergenceInSpeciesBulk_CentralDifferenceNewton : Divergence_CentralDifferenceJacobian, ISpeciesFilter {   
 
-        public DivergenceInSpeciesBulk_CentralDifference(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfChemicalSpecies) 
+        public DivergenceInSpeciesBulk_CentralDifferenceNewton(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfChemicalSpecies) 
             : base(Component, Bcmap, SpatDim, EoS, NumberOfChemicalSpecies) {
             ValidSpecies = spcName;
         }
@@ -138,7 +138,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         /// <param name="SpatDim"></param>
         /// <param name="EoS"></param>
         /// <param name="NumberOfChemicalSpecies"></param>
-        public DivergenceInSpeciesBulk_CentralDifference(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim) : base(Component, Bcmap, SpatDim) {
+        public DivergenceInSpeciesBulk_CentralDifferenceNewton(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim) : base(Component, Bcmap, SpatDim) {
             ValidSpecies = spcName;
         }
 
@@ -149,6 +149,33 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     }
 
 
+    /// <summary>
+    /// Variable density bulk term. Formulation suitable for use of the Newton solver
+    /// </summary>
+    public class DivergenceInSpeciesBulk_CentralDifference : Divergence_CentralDifference, ISpeciesFilter {
+
+        public DivergenceInSpeciesBulk_CentralDifference(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfChemicalSpecies)
+            : base(Component, Bcmap, EoS, NumberOfChemicalSpecies) {
+            ValidSpecies = spcName;
+        }
+        /// <summary>
+        /// constructor for incompressible
+        /// </summary>
+        /// <param name="spcName"></param>
+        /// <param name="Component"></param>
+        /// <param name="Bcmap"></param>
+        /// <param name="SpatDim"></param>
+        /// <param name="EoS"></param>
+        /// <param name="NumberOfChemicalSpecies"></param>
+        public DivergenceInSpeciesBulk_CentralDifference(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim) : base(Component, Bcmap) {
+            ValidSpecies = spcName;
+        }
+
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+    }
 
 
 

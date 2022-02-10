@@ -1331,6 +1331,14 @@ namespace BoSSS.Application.BoSSSpad {
         public static bool UndocumentedSuperHack = false;
 
         /// <summary>
+        /// Activates the Job in the default queue (<see cref="BoSSSshell.GetDefaultQueue"/>)
+        /// </summary>
+        public void Activate() {
+            var bpc = BoSSSshell.GetDefaultQueue();
+            this.Activate(bpc);
+        }
+
+        /// <summary>
         /// Activates the job; can only be called once in this objects lifetime.
         /// </summary>
         /// <remarks>
@@ -1579,6 +1587,12 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        /*
+
+        // Note: Fk, 09feb22: this is a slurm-specific issue; therefore it should not be in this class.
+        // If it is job-specific, it must be implemented for all batch-processors!
+
+
         string m_ExecutionTime = "05:00:00";
 
         /// <summary>
@@ -1593,6 +1607,7 @@ namespace BoSSS.Application.BoSSSpad {
                 m_ExecutionTime = value;
             }
         }
+        */
 
         
         /// <summary>

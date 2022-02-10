@@ -44,8 +44,6 @@ namespace BoSSS.Application.SipPoisson {
             base.LinearSolver.verbose = true;
         }
 
-
-
         /// <summary>
         /// Type of <see cref="SipPoissonMain"/>.
         /// </summary>

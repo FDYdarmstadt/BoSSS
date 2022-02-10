@@ -67,6 +67,8 @@ namespace BoSSS.Solution.Control {
 
         exp_gmres_ILU = 31,
 
+        exp_gmres_kcycle_Schwarz = 32,
+
         //CG versions
         */
 

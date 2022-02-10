@@ -560,11 +560,13 @@ namespace BoSSS.Application.IBM_Solver {
                             //noofparts = 5,
                             NoOfPartsOnCurrentProcess = ASparts,
                         },
-                        CoarseSolver = new ClassicMultigrid() {
-                            CoarserLevelSolver = new ClassicMultigrid() {
+                        CoarseSolver = new Schwarz.ClassicMG() {
+                            CoarseSolver = new ClassicMultigrid() {
                                 CoarserLevelSolver = new ClassicMultigrid() {
-                                    CoarserLevelSolver = new DirectSolver() {
-                                        WhichSolver = DirectSolver._whichSolver.MUMPS
+                                    CoarserLevelSolver = new ClassicMultigrid() {
+                                        CoarserLevelSolver = new DirectSolver() {
+                                            WhichSolver = DirectSolver._whichSolver.MUMPS
+                                        },
                                     },
                                 },
                             },

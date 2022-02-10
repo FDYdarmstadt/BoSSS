@@ -29,7 +29,7 @@ namespace BoSSS.Solution.XNSECommon {
             speciesName = spcName;
 
             for(int d = 0; d < D; ++d) {
-                var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifference(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
+                var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifferenceNewton(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
                 AddComponent(conti);
             }
         }
@@ -86,7 +86,7 @@ namespace BoSSS.Solution.XNSECommon {
             // =================
 
             if(config.physParams.IncludeConvection && config.isTransport) {
-                var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
+                var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF_Newton(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
                 AddComponent(conv);
                 //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
                 //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);

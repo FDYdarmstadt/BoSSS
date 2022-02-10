@@ -23,7 +23,6 @@ namespace BoSSS.Application.XNSEC {
 
             C.saveperiod = 1;
             C.SetSaveOptions(dbPath, 1);
-            C.ImmediatePlotPeriod = 1;
 
             //if(dbPath != null) {
             //    C.DbPath = dbPath;

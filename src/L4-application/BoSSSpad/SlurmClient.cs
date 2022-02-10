@@ -79,6 +79,15 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Estimated execution time limit. Important for slurm queuing
+        /// </summary>
+        [DataMember]
+        public string ExecutionTime {
+            get;
+            set;
+        } = "05:00:00";
+
+        /// <summary>
         /// Base directory where the executables should be deployed,
         /// i.e. the same location as <see cref="BatchProcessorClient.DeploymentBaseDirectory"/>,
         /// but in the file system of the remote computer on which Slurm is running.
@@ -370,7 +379,7 @@ namespace BoSSS.Application.BoSSSpad {
             string jobpath_unix = DeploymentDirectoryAtRemote(myJob, DeploymentDirectory);
 
             string jobname = myJob.Name;
-            string executiontime = myJob.ExecutionTime;
+            string executiontime = this.ExecutionTime;
             int MPIcores = myJob.NumberOfMPIProcs;
             string userName = Username;
             string startupstring;

@@ -333,7 +333,6 @@ namespace BoSSS.Solution.AdvancedSolvers
                         break;
                     }
 
-
                     // y = H(1:m,1:m) \ s(1:m);
                     y = new double[m];
                     H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { m - 1, m - 1 })
@@ -349,13 +348,13 @@ namespace BoSSS.Solution.AdvancedSolvers
                     error2 = z.MPI_L2Norm();
                     IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop);
 
+
                     if (this.Precond != null) {
                         r.Clear();
                         this.Precond.Solve(r, z);
                     } else {
                         r.SetV(z);
                     }
-
 
                     norm_r = r.MPI_L2Norm();
                     s[i + 1 - 1] = norm_r;
@@ -375,10 +374,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                     _X.SetV(X);
                 B.SetV(z);
 
-                if(this.Precond is IDisposable) {
-                    tr.Info("Disposing Precond.");
-                    (this.Precond as IDisposable).Dispose();
-                }
+                // Disposing should not be done here, 
+                // otherwise the Precond must be initialized very often.
+                //if (this.Precond is IDisposable)
+                //    (this.Precond as IDisposable).Dispose();
             }
         }
 
@@ -432,7 +431,8 @@ namespace BoSSS.Solution.AdvancedSolvers
         }
 
         public void Dispose() {
-            this.Precond.Dispose();
+            if(this.Precond != null)
+                this.Precond.Dispose();
         }
 
         public long UsedMemory() {
