@@ -287,7 +287,7 @@ namespace BoSSS.Solution.Gnuplot {
             // create temp file
             String name = MyGetTempFileName();
 
-            FileStream f = new FileStream(name, FileMode.OpenOrCreate);
+            FileStream f = new FileStream(name, FileMode.Create);
             StreamWriter s = new StreamWriter(f);
 
             // Save the temporary filename
@@ -844,7 +844,7 @@ namespace BoSSS.Solution.Gnuplot {
                     throw new ArgumentException("x and y Vector must have the same lengths.");
                 string s1 = MyGetTempFileName();
 
-                FileStream fileStream = new FileStream(s1, FileMode.Open);
+                FileStream fileStream = new FileStream(s1, FileMode.Create);
                 StreamWriter streamWriter = new StreamWriter(fileStream);
                 m_TempFiles.Add(s1);
                 if (x == null) {

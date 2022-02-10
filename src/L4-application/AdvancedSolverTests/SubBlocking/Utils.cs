@@ -76,6 +76,7 @@ namespace AdvancedSolverTests.SubBlocking
             AssertWatch.Stop();
             double time = AssertWatch.Elapsed.TotalSeconds;
             double timelimit = 240; //sec
+            // FK to Jens: what are you doing???
             //Assert.IsTrue(time < timelimit, "time limit of " + timelimit + " seconds exceeded. There is something rotten, plz check ...");
             if (time > timelimit)
                 Console.WriteLine("Warning: time limit of " + timelimit + " seconds exceeded. There is something rotten, plz check ...");
