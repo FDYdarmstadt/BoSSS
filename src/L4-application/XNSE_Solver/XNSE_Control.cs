@@ -137,9 +137,8 @@ namespace BoSSS.Application.XNSE_Solver {
             FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
-            Console.WriteLine("Das muss wieder weg!");
             FieldOptions.Add(VariableNames.LevelSetCGidx(1), new FieldOpts() {
-                Degree = LevSetDegree + 2,
+                Degree = LevSetDegree ,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
