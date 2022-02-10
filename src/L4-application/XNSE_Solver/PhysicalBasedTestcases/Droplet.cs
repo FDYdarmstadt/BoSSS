@@ -827,19 +827,13 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// Experimental setup for Linear solver Development.
         /// (to be deleted at some point)
         /// </summary>
-        public static XNSE_Control OscillatingDroplet_fk_Nov21(int p = 2, int kelem = 20, int method = 0, double mu_scl = 1.0, bool onlyB = false, double tScale = 1.0) {
+        public static XNSE_Control OscillatingDroplet_fk_Nov21(int p = 2, int kelem = 8) {
             // --control 'cs:BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.Droplet.OscillatingDroplet_fk_Nov21(p: 2, kelem: 20)'
 
             XNSE_Control C = new XNSE_Control();
 
-            bool hysing = true;
+            bool hysing = false;
 
-            AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
-
-            //_DbPath = @"\\fdyprime\userspace\smuda\cluster\cluster_db";
-            //_DbPath = @"\\dc1\userspace\yotov\bosss-db";
-            //string _DbPath = @"\\HPCCLUSTER\hpccluster-scratch\smuda\XNSE_studyDB";
-            //string _DbPath = @"\\terminal03\Users\smuda\local\terminal03_XNSE_studyDB";
             //string _DbPath = @"D:\local\local_Testcase_databases\Testcase_OscillatingDroplet";
             string _DbPath = null;
 
@@ -868,7 +862,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             // ==========
             #region degrees
 
-            C.SetDGdegree(2);
+            C.SetDGdegree(p);
 
 
             #endregion
@@ -895,9 +889,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 // Air - Water: 
                 C.PhysicalParameters.rho_A = 1e3;
                 C.PhysicalParameters.rho_B = 1.2;
-                C.PhysicalParameters.mu_A = (onlyB) ? 1e-3 : 1e-3 * mu_scl;
-                C.PhysicalParameters.mu_B = 17.1e-6 * mu_scl;
+                C.PhysicalParameters.mu_A = 1e-3;
+                C.PhysicalParameters.mu_B = 17.1e-6;
                 C.PhysicalParameters.Sigma = 72.75e-3;
+
+                //C.PhysicalParameters.rho_A = 1;
+                //C.PhysicalParameters.mu_A = 1;
+                //C.PhysicalParameters.rho_B = C.PhysicalParameters.rho_A;
+                //C.PhysicalParameters.mu_B = C.PhysicalParameters.mu_A;
             }
 
 
@@ -964,8 +963,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 a = 1.25 * r;
                 b = 0.8 * r;
             } else {
-                a = 1.1 * r;
-                b = 0.91 * r;
+                double asym = 1e-2;
+                a = (1 + asym) * r;
+                b = (1 - asym) * r;
             }
             Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() / a.Pow2() + (X[1] - 0.0).Pow2() / b.Pow2()) - 1);          // ellipse                     
 
@@ -1010,7 +1010,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.SetLevelSetMethod(method, FourierCntrl);
             ////C.SessionName = "OscillatingDroplet_setup3_muScl"+mu_scl+"_methodStudy_k2_" + C.methodTagLS;
             ////C.Option_LevelSetEvolution = LevelSetEvolution.None;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint;
 
             C.InitSignedDistance = true;
 
@@ -1032,8 +1032,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
 
-
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_another_Kcycle;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MaxSolverIterations = 50;
             C.LinearSolver.ConvergenceCriterion = 1e-8;

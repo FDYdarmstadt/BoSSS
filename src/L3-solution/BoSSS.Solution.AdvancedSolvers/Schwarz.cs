@@ -624,7 +624,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             fullMask = new BlockMask(fullSel, ExtRows);
                         } catch (ArgumentException ex) {
                             // void cells, lead to empty selection error this is a fallback for this case
-                            if (fullMask == null || fullMask.GetNoOfMaskedCells == 0) {
+                            if (fullMask == null || fullMask.NoOfMaskedCells == 0) {
                                 //Console.WriteLine("Exception caught:" + ex.Message);
                                 RedList.Add(iPart);
                                 Console.WriteLine($"Warning: empty selection at proc{op.Mapping.MpiRank}/lvl{op.LevelIndex}/swb{iPart}. You probably encountered a void cell! Block will be ignored ...");
@@ -697,7 +697,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
 
-                        int rows = BMfullBlocks[iPart].GetNoOfMaskedRows;
+                        int rows = BMfullBlocks[iPart].NoOfMaskedRows;
                         double[] druffdamit = rows.ForLoop<double>(i => 1.0);
 
                         BMfullBlocks[iPart].AccSubVec(druffdamit, XExchange.Vector_Ext, SolScale);

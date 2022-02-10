@@ -582,9 +582,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(
-            [Values(2, 3)] int FlowSolverDegree = 3,
-            [Values(false, true)] bool SchurCompl = true,
-            [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+            [Values(2, 3)] int FlowSolverDegree,
+            [Values(false, true)] bool SchurCompl,
+            [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
             ) {
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
             TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
@@ -613,7 +613,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son_p3(
             //[Values(2, 3)] int FlowSolverDegree = 3,
             //[Values(false,true)] bool SchurCompl = true,
-            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver 
             ) {
             int FlowSolverDegree = 3;
             bool SchurCompl = true;
@@ -628,7 +628,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p3(
             //[Values(2, 3)] int FlowSolverDegree = 3,
             //[Values(false,true)] bool SchurCompl = true,
-            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver 
             ) {
 
             int FlowSolverDegree = 3;
@@ -686,17 +686,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
                 C.NonLinearSolver.ConvergenceCriterion = 1e-10;
                 C.UseSchurBlockPrec = SchurCompl;
-                //C.ImmediatePlotPeriod = 1;
-                //C.SuperSampling = 3;
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 3;
+                
                 CS[i] = C;
-
-                //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
-                //C.ImmediatePlotPeriod = 1;
-                //C.SuperSampling = 3;
-                //C.SkipSolveAndEvaluateResidual = false;
-                //C.UseSchurBlockPrec = true;
-                //XNSESolverTest(Tst, C);
-                //break;
             }
 
             XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 }); // be **very** generous with the expected slopes

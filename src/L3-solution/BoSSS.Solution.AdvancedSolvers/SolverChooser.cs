@@ -680,12 +680,17 @@ namespace BoSSS.Solution {
                 //case LinearSolverCode.exp_softgmres:
                 //case LinearSolverCode.exp_gmres_AS:
                 //case LinearSolverCode.exp_gmres_AS_MG:
-                templinearSolve = new SoftGMRES() {
-                    //m_Tolerance = lc.ConvergenceCriterion,
-                    //m_MaxIterations = lc.MaxSolverIterations,
-                    MaxKrylovDim = lc.MaxKrylovDim,
-                    Precond = precond[0]
-                };
+
+                
+            templinearSolve = new SoftGMRES() {
+                //m_Tolerance = lc.ConvergenceCriterion,
+                //m_MaxIterations = lc.MaxSolverIterations,
+                MaxKrylovDim = lc.MaxKrylovDim,
+                Precond = precond[0]
+            };
+                
+                
+
                 break;
                 /*
                 case LinearSolverCode.exp_gmres_ILU:
@@ -2089,16 +2094,17 @@ namespace BoSSS.Solution {
                 //    CompareAttributes("UsePMGinBlocks", true, kcycleSchwarz.UsePMGinBlocks);
                 //    break;
                 case LinearSolverCode.exp_gmres_levelpmg:
-                    LevelPmg TGP = null;
                     try {
+                        LevelPmg TGP = null;
                         TGP = (LevelPmg)((SoftGMRES)solver).Precond;
+                        CompareAttributes("UseHiOrderSmoothing", true, TGP.UseHiOrderSmoothing);
+                        CompareAttributes("CoarseLowOrder", 1, TGP.OrderOfCoarseSystem);
+                        CompareAttributes("UseDiagonalPmg", true, TGP.UseDiagonalPmg);
                     } catch (Exception) {
-                        throw new ApplicationException("levelpmg setting is messed up");
+                        //throw new ApplicationException("levelpmg setting is messed up");
+                        Console.Error.WriteLine("levelpmg setting is messed up");
                     }
 
-                    CompareAttributes("UseHiOrderSmoothing", true, TGP.UseHiOrderSmoothing);
-                    CompareAttributes("CoarseLowOrder", 1, TGP.OrderOfCoarseSystem);
-                    CompareAttributes("UseDiagonalPmg", true, TGP.UseDiagonalPmg);
                     break;
                 case LinearSolverCode.classic_pardiso:
                     DirectSolver sparsesolver = null;

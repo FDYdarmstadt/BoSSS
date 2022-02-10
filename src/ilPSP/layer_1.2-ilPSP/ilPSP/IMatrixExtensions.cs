@@ -2182,6 +2182,15 @@ namespace ilPSP {
 
         //static public Stopwatch DGETRF_stopwatch;// = new Stopwatch();
 
+        static public double[] Solve<T,W>(this T M, W b)
+            where T : IMatrix
+            where W : IList<double> //
+        {
+            double[] x = new double[b.Count];
+            M.Solve(x, b);
+            return x;
+        }
+
         /// <summary>
         /// Solves the linear equation system:
         /// 
@@ -2190,18 +2199,26 @@ namespace ilPSP {
         /// <param name="x">On exit, the solution of the equation system.</param>
         /// <param name="b">Right-hand-side of the equation system.</param>
         /// <param name="M">General quadratic, non-singular matrix.</param>
-        static public void Solve<T>(this T M, double[] x, double[] b) where T : IMatrix {
+        static public void Solve<T,V,W>(this T M, V x, W b) 
+            where T : IMatrix
+            where V : IList<double>
+            where W : IList<double>
+        {
             if (M.NoOfRows != M.NoOfCols)
                 throw new ApplicationException("Cannot solve nonquadratic matrix.");
-            if (x.Length != M.NoOfCols)
+            if (x.Count != M.NoOfCols)
                 throw new ArgumentException("length of x must be equal to number of columns");
-            if (b.Length != M.NoOfRows)
+            if (b.Count != M.NoOfRows)
                 throw new ArgumentException("length of b must be equal to number of rows");
             unsafe {
 
                 int L = M.NoOfCols;
 
-                Array.Copy(b, x, x.Length);
+                double[] _x = x as double[];
+                if(_x == null) {
+                    _x = new double[x.Count];
+                }
+                _x.SetV(b);
 
                 int* ipiv = stackalloc int[L];
                 int i0;
@@ -2228,13 +2245,16 @@ namespace ilPSP {
                     //         TRANS, N, NRHS, A,            LDA, IPIV, B, LDB
                     char transp = 'N';
                     int eins = 1;
-                    LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, x, ref L, out info);
+                    LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, _x, ref L, out info);
                     if(info != 0) {
                         TempBuffer.FreeTempBuffer(i0);
                         throw new ArithmeticException("LAPACK dgetrs info: " + info);
                     }
                 }
                 TempBuffer.FreeTempBuffer(i0);
+
+                if(!object.ReferenceEquals(x, _x))
+                    x.SetV(_x);
             }
         }
 

@@ -37,19 +37,28 @@ namespace BoSSS.Solution.AdvancedSolvers
     public class SoftGMRES : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination
     {
 
+        Func<int, double, double, (bool bNotTerminate, bool bSuccess)> m_TerminationCriterion;
+
         /// <summary>
         /// ~
         /// </summary>
         public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
-            get;
-            set;
+            get {
+                return m_TerminationCriterion;
+            }
+            set {
+                m_TerminationCriterion = value;
+            }
         }
 
         /// <summary>
         /// ctor
         /// </summary>
         public SoftGMRES() {
-            TerminationCriterion = (iIter, r0, ri) => (iIter <= 100 && ri > 1e-7, ri <= 1e-7);
+            m_TerminationCriterion = (iIter, r0, ri) => {
+                Console.WriteLine("iIter: " + iIter + " ri = " + ri);
+                return (iIter <= 500 && ri > 1e-7, ri <= 1e-7);
+            };
         }
 
         /// <summary>
@@ -135,6 +144,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             where V2 : IList<double> {
 
             using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = false;
+                tr.Info("IterationCallback set? " + (this.IterationCallback != null));
+                tr.Info("Preconditioner is " + (this.Precond?.ToString() ?? "null"));
                 double[] X, B;
                 if (_X is double[]) {
                     X = _X as double[];
@@ -363,8 +375,10 @@ namespace BoSSS.Solution.AdvancedSolvers
                     _X.SetV(X);
                 B.SetV(z);
 
-                if (this.Precond is IDisposable)
+                if(this.Precond is IDisposable) {
+                    tr.Info("Disposing Precond.");
                     (this.Precond as IDisposable).Dispose();
+                }
             }
         }
 

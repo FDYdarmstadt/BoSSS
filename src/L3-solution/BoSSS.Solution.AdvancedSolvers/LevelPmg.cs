@@ -105,8 +105,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Krankplätze müssen verdichtet werden
-        /// -Kranführer Ronny, ProSieben Reportage
+        /// 
         /// </summary>
         public void Init(MultigridOperator op) {
 
@@ -134,18 +133,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ModifyLowSelector(DGlowSelect, op);
 
             lMask = new BlockMask(DGlowSelect);
-            m_lowMaskLen = lMask.GetNoOfMaskedRows;
+            int m_lowMaskLen = lMask.NoOfMaskedRows;
 
             if (UseHiOrderSmoothing && AnyHighOrderTerms) {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
                 Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
+                //Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg >= 0;
                 DGhighSelect.ModeSelector(highFilter);
 
                 if (FullSolveOfCutcells)
                     ModifyHighSelector(DGhighSelect, op);
 
                 hMask = new BlockMask(DGhighSelect);
-                m_highMaskLen = hMask.GetNoOfMaskedRows;
+                int m_highMaskLen = hMask.NoOfMaskedRows;
 
                 BlockMsrMatrix P01HiMatrix = null;
 
@@ -221,7 +221,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private void AssignXdgBlocksModification(SubBlockSelector sbs, MultigridOperator op, bool IsLowSelector) {
             var Filter = sbs.ModeFilter;
+            //var Mask = (op.BaseGridProblemMapping.BasisS[0] as XDGBasis).Tracker.Regions.GetNearFieldMask(0);
+            //var bMask = Mask.GetBitMask();
+            //Console.WriteLine($"Fine solution in {Mask.NoOfItemsLocally} of {Mask.GridData.iLogicalCells.NoOfLocalUpdatedCells} cells.");
+
             Func<int, int, int, int, bool> Modification = delegate (int iCell, int iVar, int iSpec, int pDeg) {
+                //if(bMask[iCell])
+                //    return true;
+
                 int NoOfSpec = op.Mapping.AggBasis[0].GetNoOfSpecies(iCell);
                 if (NoOfSpec >= 2)
                     return IsLowSelector;
@@ -244,9 +251,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private ISparseSolver hiSolver;
 
         int m_Iter = 0;
-
-        private int m_lowMaskLen = 0;
-        private int m_highMaskLen = 0;
+                
 
         private BlockMask hMask;
         private BlockMask lMask;
@@ -259,10 +264,151 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ThisLevelIterations = 0;
         }
 
-        double[] Res_f;
-        double[] Cor_c;
 
-        public bool SkipLowOrderSolve = false;
+        /// <summary>
+        /// Computes the coarse-grid correction
+        /// </summary>
+        /// <param name="x_out">output: coarse level solution, prolongated to fine level</param>
+        /// <param name="in_rhs">input: RHS on fine level</param>
+        void CoarseSolve(double[] x_out, double[] in_rhs) {
+            // project to low-p/coarse
+            double[] rhs_c = lMask.GetSubVec(in_rhs);
+
+            // low-p solve
+            double[] x_c = new double[rhs_c.Length];
+            lowSolver.Solve(x_c, rhs_c);
+
+            // accumulate low-p correction
+            lMask.AccSubVec(x_c, x_out);
+
+            //// test: if we use an exact solution, we should terminate in one iteration!
+            //double[] xtest = new double[in_rhs.Length];
+            //m_op.OperatorMatrix.Solve_Direct(xtest, in_rhs);
+            //x_out.AccV(1.0, xtest);
+
+        }
+
+        /// <summary>
+        /// smoothing/solving on high level
+        /// </summary>
+        void FineSolve(double[] x_in_out, double[] in_rhs) {
+            using(var tr = new FuncTrace()) {
+
+
+                // compute residual
+                double[] Res_f = in_rhs.CloneAs();
+                this.m_op.OperatorMatrix.SpMV(-1.0, x_in_out, 1.0, Res_f);
+
+
+                // test: if we use an exact solution, we should terminate in one iteration!
+                /*
+                double[] xtest = new double[in_rhs.Length];
+                m_op.OperatorMatrix.Solve_Direct(xtest, Res_f);
+                x_in_out.AccV(1.0, xtest);
+                Res_f.ClearEntries();
+                */
+    
+
+                if(UseHiOrderSmoothing && AnyHighOrderTerms) {
+                    // solver high-order 
+
+                    tr.Info("UseDiagonalPmg: " + UseDiagonalPmg);
+                    if(UseDiagonalPmg) {
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // solve the high-order blocks diagonally, i.e. use a DENSE direct solver LOCALLY IN EACH CELL
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        int J = HighOrderBlocks_LU.Length;
+
+                        for(int j = 0; j < J; j++) { // loop over cells
+
+                            if(HighOrderBlocks_LU[j] != null) {
+                                int NpTotHi = HighOrderBlocks_LU[j].NoOfRows;
+                                var x_hi = new double[NpTotHi];
+
+                                double[] b_f = hMask.GetSubVecOfCell(Res_f, j);
+                                Debug.Assert(b_f.Length == NpTotHi);
+                                HighOrderBlocks_LU[j].BacksubsLU(HighOrderBlocks_LUpivots[j], x_hi, b_f);
+                                hMask.AccSubVecOfCell(x_hi, j, x_in_out);
+                            }
+
+                        }
+                    } else {
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                        // solver the high-order system at once, using a SPARSE direct solver for all high-order modes
+                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                        int Hc = (hMask?.NoOfMaskedRows) ?? 0;
+
+                        if(Hc > 0) {
+                            // project to low-p/coarse
+                            double[] hi_Res_c = hMask.GetSubVec(Res_f);
+                            Debug.Assert(hi_Res_c.Length == Hc);
+                            double[] hi_Cor_c = new double[Hc];
+                            hiSolver.Solve(hi_Cor_c, hi_Res_c);
+                            hMask.AccSubVec(hi_Cor_c, x_in_out);
+                        }
+                    }
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// Algorithm 3 in:
+        /// 
+        /// p-Multigrid matrix-free discontinuous Galerkin solution strategies for the under-resolved simulation of incompressible turbulent flows
+        /// M. Franciolini, L. Botti, A. Colombo, A. Crivellini
+        /// </summary>
+        double[] MGfull(int l, double[] gl, double[] wl) {
+            if(l >= 1) {
+                // 
+                throw new Exception("should not happen");
+            } else {
+                double[] wl_hat = new double[gl.Length];
+                CoarseSolve(wl_hat, gl.CloneAs());
+
+                var dl = gl.CloneAs();
+                m_op.OperatorMatrix.SpMV(-1.0, wl_hat, 1.0, dl);
+
+                var el = MGv(l, dl, new double[gl.Length]);
+
+                // wl_dash = wl_hat + el
+                var wl_dash = el.CloneAs();
+                wl_dash.AccV(1, wl_hat);
+
+                return wl_dash;
+            }
+        }
+
+        /// <summary>
+        /// Algorithm 2 in:
+        /// 
+        /// p-Multigrid matrix-free discontinuous Galerkin solution strategies for the under-resolved simulation of incompressible turbulent flows
+        /// M. Franciolini, L. Botti, A. Colombo, A. Crivellini
+        /// </summary>
+        double[] MGv(int l, double[] gl, double[] wl) {
+            if(l >= 1) {
+                throw new Exception("should not happen");
+            } else {
+                var wl_dash = wl.CloneAs();
+                FineSolve(wl_dash, gl);
+
+                var dl = gl.CloneAs();
+                m_op.OperatorMatrix.SpMV(-1.0, wl_dash, 1.0, dl);
+
+                double[] el = new double[wl.Length];
+                CoarseSolve(el, dl);
+                double[] wl_hat = wl_dash.CloneAs();
+                wl_hat.AccV(1.0, el);
+
+
+                FineSolve(wl_hat, gl);
+                wl_dash = wl_hat;
+                return wl_dash;
+            }
+        }
+
 
         /// <summary>
         /// ~
@@ -272,23 +418,43 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double> // 
         {
             using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
                 int Lf = m_op.Mapping.LocalLength; // DOF's in entire system
-                int Lc = m_lowMaskLen; //             DOF's in low-order system
+                //int Lc = this.lMask.NoOfMaskedRows; // DOF's in low-order system
 
-                if(Res_f == null || Res_f.Length != Lf) {
-                    Res_f = new double[Lf];
-                }
-                if(Cor_c == null || Cor_c.Length != Lc) {
-                    Cor_c = new double[Lc];
-                }
-                var Cor_f = new double[Lf];
-                Cor_f.SetV(X);
+                
                 var Mtx = m_op.OperatorMatrix;
 
-                // compute fine residual
+                // compute fine residual: Res_f = B - Mtx*X
+                double[] Res_f = new double[Lf];
                 Res_f.SetV(B);
-                Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
+                Mtx.SpMV(-1.0, X, 1.0, Res_f);
+                
+                // solve for coarse correction
+                var Cor_f = new double[Lf];
+                CoarseSolve(Cor_f, Res_f);
 
+                // accumulate smoothing 
+                FineSolve(Cor_f, Res_f);
+                
+                // solution update
+                X.AccV(1.0, Cor_f);
+                m_Iter++;
+                
+              
+
+                if(IterationCallback != null) {
+                    Res_f.SetV(B);
+                    Mtx.SpMV(-1.0, X, 1.0, Res_f);
+                    IterationCallback(m_Iter, X.ToArray(), Res_f, m_op);
+                }
+
+
+                //var Res_f_0 = Res_f.CloneAs();
+
+               
+
+                /*
                 if(!SkipLowOrderSolve) {
                     // project to low-p/coarse
                     double[] Res_c = lMask.GetSubVec(Res_f);
@@ -299,100 +465,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // accumulate low-p correction
                     lMask.AccSubVec(Cor_c, Cor_f);
 
-                    // compute residual of low-order solution
+                    // compute residual of low-order solution (on fine Level)
                     Res_f.SetV(B);
-                    Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
-
-                    /*
-                    DGField[] afterLow = this.m_op.ProlongateSolToDg(Cor_f, "Correction");
-                    Tecplot.Tecplot.PlotFields(afterLow, "LevelPMG-0", 0.0, 2);
-                    */
-                }
-
-
-                if(UseHiOrderSmoothing && AnyHighOrderTerms) {
-                    // solver high-order 
-
-                    Console.WriteLine("UseDiagonalPmg: " + UseDiagonalPmg);
-                    if(UseDiagonalPmg) {
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        // solve the high-order blocks diagonally, i.e. use a DENSE direct solver for each cell
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                        var Map = m_op.Mapping;
-                        int NoVars = Map.AggBasis.Length;
-                        long j0 = Map.FirstBlock;
-                        int J = HighOrderBlocks_LU.Length;
-                        int[] degs = m_op.Degrees;
-                        var BS = Map.AggBasis;
-
-                        long Mapi0 = Map.i0;
-                        double[] x_hi = null;
-                        for(int j = 0; j < J; j++) { // loop over cells
-
-                            if(HighOrderBlocks_LU[j] != null) {
-                                int NpTotHi = HighOrderBlocks_LU[j].NoOfRows;
-                                x_hi = new double[NpTotHi];
-
-                                double[] b_f = hMask.GetSubVecOfCell(Res_f, j);
-                                Debug.Assert(b_f.Length == NpTotHi);
-                                HighOrderBlocks_LU[j].BacksubsLU(HighOrderBlocks_LUpivots[j], x_hi, b_f);
-                                hMask.AccSubVecOfCell(x_hi, j, X);
-                            }
-
-                        }
-                    } else {
-                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                        // solver the high-order system at once, using a SPARSE direct solver for all high-order modes
-                        // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                        if(m_highMaskLen > 0) {
-                            int Hc = m_highMaskLen;
-                            // project to low-p/coarse
-                            double[] hi_Res_c = hMask.GetSubVec(Res_f);
-                            Debug.Assert(hi_Res_c.Length == m_highMaskLen);
-                            double[] hi_Cor_c = new double[Hc];
-                            hiSolver.Solve(hi_Cor_c, hi_Res_c);
-                            hMask.AccSubVec(hi_Cor_c, X);
-                        }
-                    }
-
-                    //compute residual for Callback
-                    Res_f.SetV(B);
-                    Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f);
-                }
-
-                // combine fine mode correction with low order solution
-                X.ScaleV(0.5);
-                X.AccV(1.0, Cor_f);
-                
-                
-                /*
-                DGField[] afterHigh = this.m_op.ProlongateSolToDg(X, "Correction");
-                Tecplot.Tecplot.PlotFields(afterHigh, "LevelPMG-1", 0.0, 2);
-
-
-                double[] exact = new double[Cor_f.Length];
-                this.m_op.OperatorMatrix.Solve_Direct(exact, B);
-
-                DGField[] exactDG = this.m_op.ProlongateSolToDg(exact, "Correction");
-                Tecplot.Tecplot.PlotFields(exactDG, "LevelPMG-2", 0.0, 2);
-
-                var st = DateTime.Now;
-                int lastEll = -1;
-                while(true) {
-                    int ell = (int)((DateTime.Now - st).TotalSeconds)/5;
-                    if(ell > lastEll)
-                        Console.WriteLine("infinity loop...");
-                    lastEll = ell;
+                    Mtx.SpMV(-1.0, Cor_f, 1.0, Res_f); 
                 }
                 */
 
-                //IterationCallback?.Invoke(m_Iter, X.ToArray(), Res_f, m_op);
+
+                
 
                 m_Iter++;
             }
         }
+
+        double[] GetVariableDOFs(double[] X, int SelVar) {
+            var DGSelect = new SubBlockSelector(m_op.Mapping);
+            DGSelect.VariableSelector(SelVar);
+                      
+
+            var lMask = new BlockMask(DGSelect);
+
+            var X_SelVar = lMask.GetSubVec(X);
+
+            double[] Ret = new double[X.Length];
+            lMask.AccSubVec(X_SelVar, Ret);
+
+            return Ret;
+        }
+
+        
+
+
 
         /// <summary>
         /// Called upon each iteration
