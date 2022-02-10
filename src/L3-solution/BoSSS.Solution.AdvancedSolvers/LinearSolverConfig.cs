@@ -100,11 +100,6 @@ namespace BoSSS.Solution.Control {
         exp_gmres_schwarz_pmg = 48,
 
         /// <summary>
-        /// highly experimental shit
-        /// </summary>
-        exp_decomposedMG_OrthoScheme = 50,
-
-        /// <summary>
         /// Orthonormalization Scheme with p-multigrid preconditioner
         /// </summary>
         exp_OrthoS_pMG = 51,

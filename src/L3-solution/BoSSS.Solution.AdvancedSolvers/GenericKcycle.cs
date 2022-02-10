@@ -11,6 +11,10 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Solution.AdvancedSolvers
 {
+    /// <summary>
+    /// Krylov-cycle: solver at coarse level is krylov method with further MG descend/coarse grid as preconditioner.
+    /// inspired by (Notay and Vassilevski, 2008), DOI:http://doi.wiley.com/10.1002/nla.542
+    /// </summary>
     public class kcycle : ISolverSmootherTemplate, ISolverWithCallback
     {
         private MultigridOperator m_MgOperator;
