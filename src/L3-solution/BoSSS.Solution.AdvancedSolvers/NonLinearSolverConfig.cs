@@ -47,7 +47,7 @@ namespace BoSSS.Solution.Control {
     /// <summary>
     /// User-Options for nonlinear solver configuration; 
     /// </summary>
-    public class NonLinearSolverConfig : ICloneable, IEquatable<NonLinearSolverConfig>{
+    public class NonLinearSolverConfig : IEquatable<NonLinearSolverConfig>{
 
         /// <summary>
         /// This will print out more information about iterations.
@@ -117,25 +117,6 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public GlobalizationOption Globalization = GlobalizationOption.Dogleg;
-
-        /// <summary>
-        /// Clones the NonLinearConfig
-        /// </summary>
-        /// <returns></returns>
-        public object Clone() {
-            var clone = new NonLinearSolverConfig() {
-                constantNewtonIterations = this.constantNewtonIterations,
-                ConvergenceCriterion = this.ConvergenceCriterion,
-                MaxSolverIterations = this.MaxSolverIterations,
-                MinSolverIterations = this.MinSolverIterations,
-                SolverCode = this.SolverCode,
-                UnderRelax = this.UnderRelax,
-                Globalization = this.Globalization,
-                verbose = this.verbose,
-                HomotopyStepLongFail = this.HomotopyStepLongFail
-            };
-            return clone;
-        }
 
         /// <summary>
         /// Compares value not reference!

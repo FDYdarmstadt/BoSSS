@@ -34,46 +34,57 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Statistic;
 using System.IO;
+using System.Runtime.Serialization;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Solution.AdvancedSolvers {
+
+    ///// <summary>
+    /////  Individual configuration of <see cref="OrthonormalizationMultigrid"/>
+    ///// </summary>
+    [DataContract]
+    [Serializable]
+    public class OrthoMGConfig : ISolverFactory {
+
+        /// <summary>
+        /// config cctor of <see cref="OrthonormalizationMultigrid"/>
+        /// </summary>
+        public int MaxKrylovDim = int.MaxValue;
+
+        /// <summary>
+        /// No restriction and prolongation on coarsest grid
+        /// </summary>
+        [DataMember]
+        public bool CoarseOnLovwerLevel = true;
+
+        /// <summary>
+        /// W-cycle
+        /// </summary>
+        [DataMember]
+        public int m_omega = 1;
+
+        public string Name {
+            get { return "OrthonormalizationMultigrid with additive Schwarz smoother"; }
+         }
+
+        public string Shortname {
+            get { return "exp_Kcycle_schwarz"; }
+        }
+
+        public ISolverSmootherTemplate CreateInstance() {
+            var instance = new OrthonormalizationMultigrid();
+            instance.myConfig = this;
+            return instance;
+        }
+    }
+
 
     /// <summary>
     /// 
     /// </summary>
     public class OrthonormalizationMultigrid : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
-        ///// <summary>
-        /////  Individual configuration of <see cref="OrthonormalizationMultigrid"/>
-        ///// </summary>
-        //public class myConfig : ConfigBase<OrthonormalizationMultigrid> {
-        //    /// <summary>
-        //    /// config cctor of <see cref="OrthonormalizationMultigrid"/>
-        //    /// </summary>
-            //public myConfig() {
-                public int MaxKrylovDim = int.MaxValue;
-            //}
-
-            /// <summary>
-            /// No restriction and prolongation on coarsest grid
-            /// </summary>
-            public bool CoarseOnLovwerLevel = true;
-            
-            /// <summary>
-            /// W-cycle
-            /// </summary>
-            public int m_omega = 1;
-        //}
-
-        //myConfig m_config = new myConfig();
-
-        ///// <summary>
-        ///// ~
-        ///// </summary>
-        //public myConfig Config {
-        //    get {
-        //        return m_config;
-        //    }
-        //}
+        public OrthoMGConfig myConfig = new OrthoMGConfig();
 
         /// <summary>
         /// ctor
@@ -150,11 +161,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } else {
                     if (op.CoarserLevel != null) {
                         this.CoarserLevelSolver.Init(op.CoarserLevel);
-                        CoarseOnLovwerLevel = true;
+                        myConfig.CoarseOnLovwerLevel = true;
                     } else {
                         Console.WriteLine("OrthonormalizationMultigrid: running coarse solver on same level.");
                         this.CoarserLevelSolver.Init(op);
-                        CoarseOnLovwerLevel = false;
+                        myConfig.CoarseOnLovwerLevel = false;
                     }
                 }
 
@@ -619,7 +630,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int L = X.Length;
                 int Lc;
-                if(this.CoarserLevelSolver != null && CoarseOnLovwerLevel)
+                if(this.CoarserLevelSolver != null && myConfig.CoarseOnLovwerLevel)
                     Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength;
                 else
                     Lc = -1;
@@ -695,11 +706,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     VerivyCurrentResidual(X, B, Res, iIter);
 
 
-                    for(int i = 0; i < m_omega; i++) {
+                    for(int i = 0; i < myConfig.m_omega; i++) {
                         if(this.CoarserLevelSolver != null) {
 
                             double[] vl = new double[L];
-                            if(CoarseOnLovwerLevel) {
+                            if(myConfig.CoarseOnLovwerLevel) {
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 // coarse grid solver defined on COARSER MESH LEVEL:
                                 // this solver must perform restriction and prolongation

@@ -199,8 +199,8 @@ namespace ilPSP.LinSolvers.ILU {
             double* M = (double*)ILUfactorization.aPtr;
             int[] rowoffsetinarray = ILUfactorization.ia;
             int[] colidx = ILUfactorization.ja;
-            int NoNZ = ILUfactorization.n;
-
+            int NoNZ = colidx.Length;
+            Console.WriteLine($"NoNZ: {NoNZ}");
             var out_Matrix = new MsrMatrix(m_Matrix.RowPartitioning);
             int r = -1;
             for(int i =0;i< NoNZ; i++) {
