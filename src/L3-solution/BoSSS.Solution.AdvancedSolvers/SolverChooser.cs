@@ -1431,7 +1431,6 @@ namespace BoSSS.Solution {
                 if (useDirect) {
                     levelSolver = new DirectSolver() {
                         WhichSolver = DirectSolver._whichSolver.PARDISO,
-                        SolverVersion = Parallelism.OMP,
                         TestSolution = false,
                         ActivateCaching = CoarseCaching,
                     };
@@ -1500,7 +1499,7 @@ namespace BoSSS.Solution {
                 if (useDirect)
                     Console.WriteLine("KcycleMultiILU: lv {0}, Direct solver ", iLevel);
                 else
-                    Console.WriteLine("KcycleMultiILU: lv {0}, ", mgLevel);
+                    Console.WriteLine("KcycleMultiILU: lv {0}, ", iLevel);
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
@@ -1515,7 +1514,7 @@ namespace BoSSS.Solution {
                     //};
 
                     var smoother1 = new CellILU() {
-                        ILU_level = mgLevel == 0 ? 1 : 0
+                        ILU_level = iLevel == 0 ? 1 : 0
                     };
 
 
@@ -1527,7 +1526,7 @@ namespace BoSSS.Solution {
                         },
                     };
 
-                    if (mgLevel > 0) {
+                    if (iLevel > 0) {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
                     } else {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
@@ -1536,9 +1535,9 @@ namespace BoSSS.Solution {
                 }
                 SolverChain.Add(levelSolver);
 
-                if (mgLevel > 0) {
+                if (iLevel > 0) {
 
-                    ((OrthonormalizationMultigrid)(SolverChain[mgLevel - 1])).CoarserLevelSolver = levelSolver;
+                    ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
 
                 }
             }
