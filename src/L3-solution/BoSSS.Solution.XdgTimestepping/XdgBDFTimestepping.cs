@@ -1847,8 +1847,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             RHSsmall = new double[Lsmall];
 
             var ReferenceSolver = new DirectSolver() {
-                WhichSolver = DirectSolver._whichSolver.PARDISO,
-                SolverVersion = Parallelism.SEQ,
+                WhichSolver = DirectSolver._whichSolver.PARDISO
             };
 
             ReferenceSolver.Init(mgOperator);
@@ -1899,8 +1898,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (use_exact_solution) {
                 StartSolution = new double[Lbig];
                 var ReferenceSolver = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.PARDISO,
-                    SolverVersion = Parallelism.SEQ,
+                    WhichSolver = DirectSolver._whichSolver.PARDISO
                 };
 
                 ReferenceSolver.Init(mgOperator);

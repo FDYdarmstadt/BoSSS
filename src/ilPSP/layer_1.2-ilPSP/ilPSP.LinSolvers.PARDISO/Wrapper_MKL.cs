@@ -23,35 +23,6 @@ using MPI.Wrappers.Utils;
 namespace ilPSP.LinSolvers.PARDISO {
 
 
-    //    /// <summary>
-    //    /// experimental stuff
-    //    /// </summary>
-    //    class MKL_threadCtrl : DynLibLoader {
-
-    //        public MKL_threadCtrl()
-    //            : base(
-    //                new string[] { "mkl_intel_thread.dll", "libmkl_intel_thread.so" },
-    //                new GetNameMangling[] { DynLibLoader.Identity, LinuxMapping },
-    //                new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
-    //                new int[] { -1, -1 }) { }
-
-
-    //        public delegate void _set_num_threads(int n);
-
-    //#pragma warning disable        649
-    //        public _set_num_threads mkl_serv_mkl_set_num_threads;
-    //#pragma warning restore        649
-
-    //        public override void Dispose() {
-    //            //base.Dispose();
-    //        }
-
-
-    //        static string LinuxMapping(string s) {
-    //            return ("mkl_serv" + s);
-    //        }
-    //    }
-
 
     /// <summary>
     /// wrapper for loading the PARDISO solver from the Intel MKL libraries
@@ -69,11 +40,11 @@ namespace ilPSP.LinSolvers.PARDISO {
             string[] liborder;
             switch(par) {
                 case Parallelism.OMP:
-                liborder = new string[] { "PARDISO.dll", "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
+                liborder = new string[] { "PARDISO_omp.dll", "libBoSSSnative_omp.so" };
                 break;
 
                 case Parallelism.SEQ:
-                liborder = new string[] { "PARDISO.dll", "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
+                liborder = new string[] { "PARDISO_seq.dll", "libBoSSSnative_seq.so" };
                 break;
 
                 default:
@@ -88,10 +59,12 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// </summary>
         public Wrapper_MKL(Parallelism par) : base(
             SelectLibrary(par),
-            new string[3][][],
-            new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
-            new PlatformID[] { PlatformID.Win32NT, PlatformID.Win32NT, PlatformID.Unix },
-            new int[] { -1, -1, -1 }) {
+            new string[2][][],
+            new GetNameMangling[] {  DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix },
+            new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix },
+            new int[] { -1, -1 }) {
+
+            
         }
 
         /// <summary>

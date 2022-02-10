@@ -22,14 +22,14 @@ namespace BoSSS.Solution.Control {
         /// ctor
         /// </summary>
         public AppControlSolver() {
-            NoOfMultigridLevels = 1;
+            this.NoOfMultigridLevels = 1000000;
         }
 
 
         /// <summary>
         /// Linked to <see cref="LinearSolverConfig.NoOfMultigridLevels"/>.
         /// </summary>
-        [DataMember]
+        [JsonIgnore]
         public override int NoOfMultigridLevels {
             get {
                 return LinearSolver.NoOfMultigridLevels;

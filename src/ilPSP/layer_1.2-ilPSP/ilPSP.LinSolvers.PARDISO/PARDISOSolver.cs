@@ -54,12 +54,12 @@ namespace ilPSP.LinSolvers.PARDISO {
         public Parallelism Parallelism {
             get {
                 return m_Parallelism;
+
             }
             set {
                 if(m_wrapper != null) {
                     throw new NotSupportedException("Cannot be changed after init.");
                 }
-
                 m_Parallelism = value;
             }
         }

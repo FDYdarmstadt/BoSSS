@@ -112,7 +112,7 @@ namespace BoSSS.Application.BoSSSpad {
             if (PlotMode == PlotNowMode.CairoLatex) {
                 return cl;
             } else {
-                return cl.Preview();
+                return cl.PreviewSVG();
             }
         }
 

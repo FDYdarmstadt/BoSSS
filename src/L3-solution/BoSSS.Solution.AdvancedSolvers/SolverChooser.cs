@@ -651,15 +651,13 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.classic_mumps:
                 templinearSolve = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.MUMPS,
-                    SolverVersion = Parallelism.MPI,
+                    WhichSolver = DirectSolver._whichSolver.MUMPS
                 };
                 break;
 
                 case LinearSolverCode.classic_pardiso:
                 templinearSolve = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.PARDISO,
-                    SolverVersion = Parallelism.OMP,
+                    WhichSolver = DirectSolver._whichSolver.PARDISO
                 };
                 break;
 
@@ -692,8 +690,7 @@ namespace BoSSS.Solution {
                     EnableOverlapScaling = true,
                 };
                 var coarsesolver = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.PARDISO,
-                    SolverVersion = Parallelism.SEQ,
+                    WhichSolver = DirectSolver._whichSolver.PARDISO
                 };
                 templinearSolve = ClassicMGwithSmoother(MaxMGDepth-1, coarsesolver, smoother);
 
@@ -1503,7 +1500,7 @@ namespace BoSSS.Solution {
                 if (useDirect)
                     Console.WriteLine("KcycleMultiILU: lv {0}, Direct solver ", iLevel);
                 else
-                    Console.WriteLine("KcycleMultiILU: lv {0}, ", iLevel);
+                    Console.WriteLine("KcycleMultiILU: lv {0}, ", mgLevel);
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
@@ -1513,9 +1510,12 @@ namespace BoSSS.Solution {
                     };
 
                 } else {
+                    //var smoother1 = new HypreILU() {
+                    //    LocalPreconditioning = true
+                    //};
 
-                    var smoother1 = new HypreILU() {
-                        LocalPreconditioning = true
+                    var smoother1 = new CellILU() {
+                        ILU_level = mgLevel == 0 ? 1 : 0
                     };
 
 
@@ -1527,7 +1527,7 @@ namespace BoSSS.Solution {
                         },
                     };
 
-                    if (iLevel > 0) {
+                    if (mgLevel > 0) {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
                     } else {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
@@ -1536,9 +1536,9 @@ namespace BoSSS.Solution {
                 }
                 SolverChain.Add(levelSolver);
 
-                if (iLevel > 0) {
+                if (mgLevel > 0) {
 
-                    ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
+                    ((OrthonormalizationMultigrid)(SolverChain[mgLevel - 1])).CoarserLevelSolver = levelSolver;
 
                 }
             }
@@ -1836,7 +1836,7 @@ namespace BoSSS.Solution {
 
                     if (sparsesolver.WhichSolver != DirectSolver._whichSolver.PARDISO)
                         throw new ApplicationException("someone messed up classic pardiso settings");
-                    CompareAttributes("SolverVersion", Parallelism.OMP.ToString(), sparsesolver.SolverVersion.ToString());
+                    //CompareAttributes("SolverVersion", Parallelism.OMP.ToString(), sparsesolver.SolverVersion.ToString());
                     break;
             }
 

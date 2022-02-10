@@ -417,6 +417,12 @@ namespace BoSSS.Solution.Gnuplot {
         public int? Legend_maxrows = null;
 
         /// <summary>
+        /// Draws a box behind the key
+        /// </summary>
+        [DataMember]
+        public bool LegendBox = false;
+
+        /// <summary>
         /// Swaps entries of legend
         /// </summary>
         [DataMember]
@@ -790,7 +796,13 @@ namespace BoSSS.Solution.Gnuplot {
         /// <see cref="Tuple{Double,Double}.Item2"/> denote the slope and the
         /// affine offset of the linear fit, respectively.
         /// </returns>
-        public IEnumerable<KeyValuePair<string, double>> Regression() {
+        /// <param name="SkipStart">
+        /// Exclude some points at the begining
+        /// </param>
+        /// <param name="TrimEnd">
+        /// Exclude some points at the end
+        /// </param>
+        public IEnumerable<KeyValuePair<string, double>> Regression(int SkipStart = 0, int TrimEnd = 0) {
             foreach (var group in dataGroups) {
                 double[] xValues;
                 if ((LogX && !group.UseX2) || (LogX2 && group.UseX2)) {
@@ -806,6 +818,17 @@ namespace BoSSS.Solution.Gnuplot {
                 } else {
                     yValues = group.Values;
                 }
+
+                if (SkipStart > 0) {
+                    xValues = xValues.Skip(SkipStart).ToArray();
+                    yValues = yValues.Skip(SkipStart).ToArray();
+                }
+                if (SkipStart > 0) {
+                    xValues = xValues.Take(xValues.Length - TrimEnd).ToArray();
+                    yValues = yValues.Take(xValues.Length - TrimEnd).ToArray();
+                }
+
+
                 double yAvg = yValues.Average();
 
                 double v1 = 0.0;
@@ -1311,6 +1334,9 @@ namespace BoSSS.Solution.Gnuplot {
 
                     if (this.LegendSwap == true)
                         command += "Left reverse ";
+
+                    if (this.LegendBox == true)
+                        command += "box opaque ";
 
                     System.Console.WriteLine(command);
                     gp.Cmd(command);

@@ -198,7 +198,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Debug.Assert(UseDiagonalPmg && lowSolver != null);
             Debug.Assert(UseDiagonalPmg || (!UseDiagonalPmg && hiSolver != null));
             Debug.Assert(m_lowMaskLen > 0);
-            Debug.Assert(AnyHighOrderTerms && m_highMaskLen > 0);
+            //Debug.Assert(AnyHighOrderTerms && m_highMaskLen > 0);
 #if TEST
             P01SubMatrix.SaveToTextFileSparseDebug("lowM");
             P01SubMatrix.SaveToTextFileSparse("lowM_full");
