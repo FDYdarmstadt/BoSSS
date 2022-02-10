@@ -85,9 +85,6 @@ namespace ilPSP.LinSolvers {
             }
         }
 
-
-        
-
         /// <summary>
         /// Adds <paramref name="factor"/> to all diagonal entries of <paramref name="M"/>.
         /// </summary>
@@ -118,6 +115,50 @@ namespace ilPSP.LinSolvers {
                 }
             }
         }
+
+
+        /// <summary>
+        /// Extraction of a block from a <see cref="BlockMsrMatrix"/>;
+        /// 
+        /// This is a convenience routine, which
+        /// causes memory allocation, and therefore impacts performance slughtly negatively.
+        /// For best performance, use <see cref="BlockMsrMatrix.ReadBlock"/> instead.
+        /// </summary>
+        static public MultidimensionalArray GetBlock(this BlockMsrMatrix M, long iBlk, long jBlk) {
+            var rpart = M._RowPartitioning;
+            var cpart = M._ColPartitioning;
+            int _sz_i = rpart.GetBlockLen(iBlk);
+            int _sz_j = cpart.GetBlockLen(jBlk);
+            long _idx_i = rpart.GetBlockI0(iBlk);
+            long _idx_j = cpart.GetBlockI0(jBlk);
+            var ret = MultidimensionalArray.Create(_sz_i, _sz_j);
+            M.ReadBlock(_idx_i, _idx_j, ret);
+            return ret;
+        }
+
+        /// <summary>
+        /// Setting a block from a <see cref="BlockMsrMatrix"/>;
+        /// 
+        /// This is a convenience routine, which
+        /// causes memory allocation, and therefore impacts performance slughtly negatively.
+        /// For best performance, use <see cref="BlockMsrMatrix.AccBlock(long, long, double, MultidimensionalArray, double)"/> instead.
+        /// </summary>
+        public static void SetBlock(this BlockMsrMatrix M, MultidimensionalArray Blk, long iBlk, long jBlk) {
+            var rpart = M._RowPartitioning;
+            var cpart = M._ColPartitioning;
+            int _sz_i = rpart.GetBlockLen(iBlk);
+            int _sz_j = cpart.GetBlockLen(jBlk);
+            if(_sz_i != Blk.NoOfRows)
+                throw new ArgumentException();
+            if(_sz_j != Blk.NoOfCols)
+                throw new ArgumentException();
+            long _idx_i = rpart.GetBlockI0(iBlk);
+            long _idx_j = cpart.GetBlockI0(jBlk);
+
+            M.AccBlock(_idx_i, _idx_j, 1.0, Blk, 0.0); // last entry 0.0 will also clear NAN, INF, etc.
+        }
+
+
 
     }
 
@@ -1348,7 +1389,9 @@ namespace ilPSP.LinSolvers {
         /// <param name="j0">Column offset.</param>
         /// <param name="alpha">Scaling factor for the accumulation operation.</param>
         /// <param name="Block">Block to accumulate.</param>
-        /// <param name="beta">Scaling applied to this matrix before accumulation</param>
+        /// <param name="beta">Scaling applied to this matrix before accumulation;
+        /// Note: if set to 0.0, this will also clear NAN's, etc.
+        /// </param>
         public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta) {
             if(Block.Dimension != 2)
                 throw new ArgumentException("Expecting a 2D array.");
@@ -1362,6 +1405,9 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Column index out of range.");
             if(j0 + J > this.ColPartition.TotalLength)
                 throw new ArgumentException("Column index out of range.");
+            if(I <= 0 || J <= 0)
+                return;
+
 
 #if DEBUG_EXTENDED
             BitArray bTouch = new BitArray(I * J);
@@ -1397,7 +1443,10 @@ namespace ilPSP.LinSolvers {
                                 bTouch[(i + iw) * J + j + jw] = true;
 #endif
                                 int StorageIdx = Offset + (iSblk + iw) * CI + (jSblk + jw) * CJ;
-                                Storage[StorageIdx] = Storage[StorageIdx] * beta + alpha * Block[i + iw, j + jw];
+                                if(beta == 0.0)
+                                    Storage[StorageIdx] = alpha * Block[i + iw, j + jw];
+                                else
+                                    Storage[StorageIdx] = Storage[StorageIdx] * beta + alpha * Block[i + iw, j + jw];
                             }
                         }
                     } else {
@@ -1449,6 +1498,8 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Column index out of range.");
             if(j0 + J > this.ColPartition.TotalLength)
                 throw new ArgumentException("Column index out of range.");
+            if(I <= 0 || J <= 0)
+                return;
 
 #if DEBUG_EXTENDED
             BitArray bTouch = new BitArray(I * J);
@@ -1556,6 +1607,8 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Column index out of range.");
             if(j0 + J > this.ColPartition.TotalLength)
                 throw new ArgumentException("Column index out of range.");
+            if(I <= 0 || J <= 0)
+                return;
 
 #if DEBUG_EXTENDED
             BitArray bTouch = new BitArray(I * J);
@@ -3960,6 +4013,38 @@ namespace ilPSP.LinSolvers {
         }
 
         #endregion
+
+        /// <summary>
+        /// Returns the block-column index of all non-zero blocks in block-row <paramref name="iBlk"/>
+        /// </summary>
+        /// <param name="alsoExternal">also return block indices in the external range (<see cref="IBlockPartitioning.FirstBlock"/>, <see cref="IBlockPartitioning.LocalNoOfBlocks"/>, <see cref=""/>), i.e. coupling with other MPI processors</param>
+        /// <param name="iBlk">row block index in the local range</param>
+        public long[] GetOccupiedRowBlockIndices(long iBlk, bool alsoExternal = false) {
+            var part = this._RowPartitioning;
+            if(part.GetBlockLen(iBlk) <= 0)
+                return new long[0];
+
+            int iBlkLoc = (int)(iBlk - part.FirstBlock);
+
+            if(alsoExternal == true)
+                throw new NotSupportedException("Todo; I'm not sure how to handle this; ");
+
+            var RowDict = this.m_BlockRows[iBlkLoc];
+            if(RowDict == null)
+                return new long[0];
+
+            List<long> ret = new List<long>();
+            foreach(var kv in RowDict) {
+                long jBlk = kv.Key;
+                BlockEntry block = kv.Value;
+                if(!block.IsEmpty) {
+                    ret.Add(jBlk);
+                }
+            }
+
+            return ret.ToArray();
+        }
+
 
         #region MatrixMatrixMult
 

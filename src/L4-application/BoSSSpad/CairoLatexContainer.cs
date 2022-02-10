@@ -206,9 +206,9 @@ namespace BoSSS.Application.BoSSSpad {
         
         /// <summary>
         /// Compiles the Latex document (to pdf or eps, depending on <see cref="CairolatexContainer.PdfLatex"/>),
-        /// and converts the output to a png image, which can be previewed in BoSSSpad.
+        /// and converts the output to a png image, which can be previewed in (old) BoSSSpad.
         /// </summary>
-        public Image Preview(bool trimPage = true, int dpi = 200) {
+        public Image PreviewPNG(bool trimPage = true, int dpi = 200) {
             if(dpi < 10 || dpi > 10000)
                 throw new ArgumentOutOfRangeException();
 
@@ -252,11 +252,14 @@ namespace BoSSS.Application.BoSSSpad {
                 string mainPngFile = Path.ChangeExtension(mainTexFile, ".png");
 
 
-                string ImageMagikTool = "magick.exe";
+                string ImageMagikTool = "magick";
+                if (Path.DirectorySeparatorChar == '\\') {
+                    ImageMagikTool += ".exe";
+                }
 
                 ProcessStartInfo psi = new ProcessStartInfo();
                 psi.WorkingDirectory = WorkingDirectory.FullName;
-                psi.Arguments = string.Format(" -verbose -density {3} {0} {2} PNG:{1}", Path.GetFileName(mainPdfFile), Path.GetFileName(mainPngFile), trimPage ? "-trim" : "", dpi);
+                psi.Arguments = string.Format($" -verbose -density {dpi} {Path.GetFileName(mainPdfFile)} {(trimPage ? "-trim" : "")} PNG:{Path.GetFileName(mainPngFile)}");
                 psi.FileName = ImageMagikTool;
 
                 var p = new Process();
@@ -282,7 +285,135 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new NotImplementedException("Todo: implement conversion using 'dvipng' tool.");
             }
         }
-        
+
+        /// <summary>
+        /// Compiles the Latex document (to pdf or eps, depending on <see cref="CairolatexContainer.PdfLatex"/>),
+        /// and converts the output to a SVG image, which can be previewed in Jupyter.
+        /// </summary>
+        /// <remarks>
+        /// Requires the following programmes to be correctly installed and in the PATH environment variable:
+        /// - pdflatex
+        /// - pdfcrop (if <paramref name="trimPage"/> is true)
+        /// - pdf2svg https://github.com/dawbarton/pdf2svg (binaries for windows see: https://github.com/jalios/pdf2svg-windows)
+        /// </remarks>
+        public Microsoft.AspNetCore.Html.HtmlString PreviewSVG(bool trimPage = true) {
+            
+            // get a temporary directory
+            // =========================
+            DirectoryInfo WorkingDirectory;
+            {
+                var rnd = new Random();
+                bool Exists = false;
+                do {
+                    var tempPath = Path.GetTempPath();
+                    var tempDir = rnd.Next().ToString();
+                    WorkingDirectory = new DirectoryInfo(Path.Combine(tempPath, tempDir));
+                    Exists = WorkingDirectory.Exists;
+                    if (!Exists) {
+                        WorkingDirectory.Create();
+                    }
+                } while (Exists == true);
+            }
+
+
+            // write data & compile
+            // ====================
+            string mainTexFile = Path.Combine(WorkingDirectory.FullName, "main.tex");
+            WriteMinimalCompileableExample(mainTexFile, PerformLatexCompilation: true);
+
+
+
+            // try to read an image
+            // ====================
+            if (this.PdfLatex) {
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // Pdf Output: using 'pdfcrop' to crop
+                // using small too pdf2svg to get an svg
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                string mainPdfFile = Path.ChangeExtension(mainTexFile, ".pdf");
+                if (!File.Exists(mainPdfFile))
+                    throw new IOException("Unable to find PDF output.");
+
+                string cropPdfFile = Path.Combine(Path.GetDirectoryName(mainTexFile), Path.GetFileNameWithoutExtension(mainPdfFile) + "-crop.pdf");
+
+                string mainSvgFile = Path.ChangeExtension(mainTexFile, ".svg");
+
+                try {
+
+                    if (trimPage)
+                        CallConversion(WorkingDirectory, "pdfcrop", $" {mainPdfFile} {cropPdfFile} ", cropPdfFile);
+                    else
+                        cropPdfFile = mainPdfFile;
+
+                    CallConversion(WorkingDirectory, "pdf2svg", $" {Path.GetFileName(cropPdfFile)} {Path.GetFileName(mainSvgFile)} 1", mainSvgFile);
+                //if (Path.DirectorySeparatorChar == '\\') {
+                //    ConversionTool += ".exe";
+                //}
+
+                //ProcessStartInfo psi = new ProcessStartInfo();
+                //psi.WorkingDirectory = WorkingDirectory.FullName;
+                //psi.Arguments = string.Format($" {Path.GetFileName(mainPdfFile)} {Path.GetFileName(mainSvgFile)} 1");
+                //psi.FileName = ConversionTool;
+
+                //var p = new Process();
+               
+                //    p.StartInfo = psi;
+                //    p.Start();
+                //    p.WaitForExit();
+
+                //    if (p.ExitCode != 0 || !File.Exists(mainSvgFile))
+                //        throw new Exception("'" + ConversionTool + "' exited with: " + p.ExitCode + ",  directory is " + WorkingDirectory.FullName);
+
+
+                } catch (Exception e) {
+
+                    Console.Error.WriteLine("Unable to convert to svg: " + e.Message + "  (" + e.GetType().Name + ")");
+                    return null;
+                }
+
+                // return image
+                var fi = (new FileInfo(mainSvgFile));
+                if (fi.Exists && fi.Length > 0) {
+                    string SVGtext = File.ReadAllText(mainSvgFile);
+                    File.Delete(mainSvgFile);
+                    return new Microsoft.AspNetCore.Html.HtmlString(SVGtext);
+                    //return Image.FromFile(OutfileName); // it seems, the image object does not work anymore when the file is deleted
+                } else {
+                    Console.Error.WriteLine("Gnuplot output file empty or non-existent.");
+                    return null;
+                }
+
+            } else {
+                throw new NotImplementedException("Todo: implement conversion using 'dvi -> ps -> pdf -> svg' tools.");
+            }
+        }
+
+        static void CallConversion(DirectoryInfo WorkingDirectory, string ConversionTool, string arguments, string resultFile) {
+            if (Path.DirectorySeparatorChar == '\\') {
+                ConversionTool += ".exe";
+            }
+
+            ProcessStartInfo psi = new ProcessStartInfo();
+            psi.WorkingDirectory = WorkingDirectory.FullName;
+            psi.Arguments = arguments;
+            psi.FileName = ConversionTool;
+
+
+
+            var p = new Process();
+
+            p.StartInfo = psi;
+            p.Start();
+            p.WaitForExit();
+
+            if (p.ExitCode != 0 || !File.Exists(resultFile))
+                throw new Exception("'" + ConversionTool + "' exited with: " + p.ExitCode + ",  directory is " + WorkingDirectory.FullName);
+
+
+
+        }
+
     }
 
 

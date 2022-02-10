@@ -57,6 +57,8 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__BoundaryAndInitialData() {
             // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
+            NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
+            NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
             RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
         }
 
@@ -170,6 +172,8 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
         [Test]
         static public void Run__convStudy() {
+            NotebookRunner.DeleteDatabase("ConvStudyTutorial");
+            NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
             RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
         }
 #endif
@@ -375,8 +379,7 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary>
-        /// Deletes all deployments matchin the search patter <paramref name="Directory"/>
-        /// 
+        /// Deletes all deployments matchin the search patter <paramref name="DirectoryWildCard"/>
         /// </summary>
         public static void DeleteDeployments(string DirectoryWildCard) {
 
@@ -387,7 +390,14 @@ namespace BoSSS.Application.TutorialTests {
                     var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
                     foreach(var d in deplDirs) {
                         Console.WriteLine("Deleting deployment: " + d.FullName);
-                        d.Delete(true);
+                        try {
+                            // we can be forgiving on deletion of old deployments; 
+                            // an old deployment will not harm or influence the worksheet execution
+                            // (for an old database, it's a different story!
+                            d.Delete(true);
+                        } catch (Exception e) {
+                            Console.Error.WriteLine($"{e.GetType()} during deletion of {d.FullName}: {e.Message}.");
+                        }
                     }
                 } else {
                     Console.WriteLine("Warning: missing directory: " + localBaseDir.FullName);

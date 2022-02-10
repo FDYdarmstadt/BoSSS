@@ -79,6 +79,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         override public bool SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
             using (var tr = new FuncTrace()) {
 
+                if (this.ConvCrit <= 0)
+                    throw new ArgumentException($"Fixpoint iterator: convergence criterion set to {ConvCrit}: solver will most likely not converge!");
+
                 // initial guess and its residual
                 // ==============================
                 double[] Solution, Residual;

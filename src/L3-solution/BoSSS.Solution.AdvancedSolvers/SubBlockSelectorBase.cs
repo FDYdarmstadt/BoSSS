@@ -455,20 +455,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// 
+        /// Selector for cells.
+        /// - 1st argument: local cell index
+        /// - return value: respective DOFs should be included (true) or excluded (false)
         /// </summary>
         public Func<int, bool> CellFilter {
             get { return m_CellFilter; }
         }
 
+        /// <summary>
+        /// Selector for cells and variables.
+        /// - 1st argument: local cell index
+        /// - 2nd argument: variable index
+        /// - return value: respective DOFs should be included (true) or excluded (false)
+        /// </summary>
         public Func<int, int, bool> VariableFilter {
             get { return m_VariableFilter; }
         }
 
+        /// <summary>
+        /// Selector for cells and variables and species.
+        /// - 1st argument: cell index
+        /// - 2nd argument: variable index
+        /// - 3rd argument: species index
+        /// - return value: respective DOFs should be included (true) or excluded (false)
+        /// </summary>
         public Func<int, int, int, bool> SpeciesFilter {
             get { return m_SpeciesFilter; }
         }
 
+
+        /// <summary>
+        /// Selector for cells and variables and species.
+        /// - 1st argument: cell index
+        /// - 2nd argument: variable index
+        /// - 3rd argument: species index
+        /// - 4th argument: DG polynomial degree
+        /// - return value: respective DOFs should be included (true) or excluded (false)
+        /// </summary>
         public Func<int, int, int, int, bool> ModeFilter {
             get { return m_ModeFilter; }
         }
@@ -784,7 +808,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //ilPSP.Environment.StdoutOnlyOnRank0 = false;
 
             // loop over cells...
-            for (int iLoc=0; iLoc < NoOfCells; iLoc++) {
+            for (int iLoc = 0; iLoc < NoOfCells; iLoc++) {
                 int jLoc = m_CellOffset + iLoc; //to address correctly, external cells offset has to be considered, you know ...
                 emptysel &= !CellInstruction(jLoc); //for testing if the entire selection is empty, which hopefully only can happen at the level of cells
                 if (!CellInstruction(jLoc))
@@ -813,7 +837,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 int LocalModeOffset = m_Ni0[degree].i0 + LocalOffset;
                                 int ModeLength = m_Ni0[degree].N;
                                 var newNi0 = new extNi0(LocalModeOffset, GlobalModeOffset, SubOffset, ModeLength);
-                                    SubOffset += ModeLength;                      
+                                SubOffset += ModeLength;
 
                                 // Fill int lists
                                 for (int i = 0; i < newNi0.N; i++) {
@@ -825,12 +849,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 // Fill Ni0 Lists
                                 tmpMod.Add(newNi0);
-                                    Ni0Length++;
-                                    ListNi0.Add(newNi0);
+                                Ni0Length++;
+                                ListNi0.Add(newNi0);
                                 Debug.Assert(m_map.LocalUniqueIndex(iVar, jLoc, iSpc, GetNp(degree) - 1) == LocalModeOffset + ModeLength - 1);
                             }
                         }
-                        if(tmpMod.Count>0)
+                        if (tmpMod.Count > 0)
                             tmpSpc.Add(tmpMod.ToArray());
                     }
                     if (tmpSpc.Count > 0)
@@ -855,15 +879,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // e.g. consider a combination of empty external and non empty local mask
             // In case of IBM, selections with no species are also allowed
             if (!emptysel && totNoOfSpeciesInSelection > 0) {
-                Debug.Assert(ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1)); // test for uniqueness of local index
-                Debug.Assert(ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1)); // test for uniqueness of global index
+
+                // `ListNi0.Count` filters some phatological use case, e.g. very coarse meshes
+
+                Debug.Assert(ListNi0.Count <= 0 || ListNi0.GroupBy(x => x.Li0).Any(g => g.Count() == 1)); // test for uniqueness of local index
+                Debug.Assert(ListNi0.Count <= 0 || ListNi0.GroupBy(x => x.Gi0).Any(g => g.Count() == 1)); // test for uniqueness of global index
                 Debug.Assert(ListNi0.Count() == NumOfNi0);
                 Debug.Assert(MaskLen <= m_LocalLength);
-                Debug.Assert(Localint.GroupBy(x => x).Any(g => g.Count() == 1));
-                Debug.Assert(Globalint.GroupBy(x => x).Any(g => g.Count() == 1));
+                Debug.Assert(Localint.Count <= 0 || Localint.GroupBy(x => x).Any(g => g.Count() == 1));
+                Debug.Assert(Globalint.Count <= 0 || Globalint.GroupBy(x => x).Any(g => g.Count() == 1));
                 Debug.Assert(Localint.Count() == MaskLen);
                 Debug.Assert(SubBlockIdx.Count() == MaskLen);
-                Debug.Assert(SubBlockIdx.GroupBy(x => x).Any(g => g.Count() == 1));
+                Debug.Assert(SubBlockIdx.Count <= 0 || SubBlockIdx.GroupBy(x => x).Any(g => g.Count() == 1));
             }
             
             m_GlobalMask = Globalint;

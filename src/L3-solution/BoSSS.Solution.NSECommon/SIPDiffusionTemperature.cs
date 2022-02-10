@@ -183,8 +183,6 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// For the
         /// </summary>
-        /// <param name="Parameters"></param>
-        /// <returns></returns>
         protected override double Diffusivity(double[] U, double[,] GradU, Vector NodeCoordinates) {
             //double Diffusivity = ((MaterialLawLowMach)EoS).GetHeatConductivity(U[0]); // Just a Temperature dependence
             double Diffusivity = ((MaterialLaw_MultipleSpecies)EoS).GetHeatConductivity(U[0]); // Just a Temperature dependence

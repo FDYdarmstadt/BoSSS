@@ -610,15 +610,13 @@ namespace BoSSS.Solution {
 
                 case LinearSolverCode.classic_mumps:
                 templinearSolve = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.MUMPS,
-                    SolverVersion = Parallelism.MPI,
+                    WhichSolver = DirectSolver._whichSolver.MUMPS
                 };
                 break;
 
                 case LinearSolverCode.classic_pardiso:
                 templinearSolve = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.PARDISO,
-                    SolverVersion = Parallelism.OMP,
+                    WhichSolver = DirectSolver._whichSolver.PARDISO
                 };
                 break;
 
@@ -651,8 +649,7 @@ namespace BoSSS.Solution {
                     EnableOverlapScaling = true,
                 };
                 var coarsesolver = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.PARDISO,
-                    SolverVersion = Parallelism.SEQ,
+                    WhichSolver = DirectSolver._whichSolver.PARDISO
                 };
                 templinearSolve = ClassicMGwithSmoother(MaxMGDepth-1, coarsesolver, smoother);
 
@@ -1543,8 +1540,11 @@ namespace BoSSS.Solution {
                 useDirect |= (SysSize < DirectKickIn);
                 //useDirect |= (double)PrevSize / (double)SysSize < 1.5 && SysSize < 50000; // degenerated MG-Agglomeration, because too few candidates
                 useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
+                //Console.WriteLine($"3 usedirect = {useDirect}, m_lc.NoOfMultigridLevels: {m_lc.NoOfMultigridLevels}");
                 useDirect |= TotalNoOfSchwarzBlocks < MPIsize;
+                //Console.WriteLine($"4 usedirect = {useDirect}, TotalNoOfSchwarzBlocks: {TotalNoOfSchwarzBlocks}, MPIsize: {MPIsize}");
                 useDirect |= iLevel == MaxMGDepth - 1; // otherwise error, due to missing coarse solver
+                //Console.WriteLine($"5 usedirect = {useDirect}, iLevel: {iLevel}, MaxMGDepth: {MaxMGDepth}");
                 useDirect = useDirect.MPIOr();
 
                 if (useDirect)
@@ -1567,7 +1567,6 @@ namespace BoSSS.Solution {
                 if (useDirect) {
                     levelSolver = new DirectSolver() {
                         WhichSolver = DirectSolver._whichSolver.PARDISO,
-                        SolverVersion = Parallelism.SEQ,
                         TestSolution = false,
                         ActivateCaching = CoarseCaching,
                     };
@@ -1658,16 +1657,17 @@ namespace BoSSS.Solution {
             }
 
             int DirectKickIn = m_lc.TargetBlockSize; // 10'000 DOF seemed to be optimal at lowest lvl
+            //int DirectKickIn = 10;
             int LocSysSizeZeroLvl = _LocalDOF[0];
             
 
-            for (int iLevel = 0; iLevel < MaxMGDepth; iLevel++) {
-                MaxMGLevel = iLevel;
-                double SizeFraction = (double)LocalDOF4directSolver[iLevel] / (double)SchwarzblockSize(iLevel);
-                int SysSize = _LocalDOF[iLevel].MPISum();
-                Console.WriteLine("DOF on L{0}: {1}",iLevel,SysSize);
-                if (SizeFraction < 1 && iLevel == 0) {
-                    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver[iLevel]}) < Schwarz-Block size ({SchwarzblockSize(iLevel)});");
+            for (int mgLevel = 0; mgLevel < MaxMGDepth; mgLevel++) {
+                MaxMGLevel = mgLevel;
+                double SizeFraction = (double)LocalDOF4directSolver[mgLevel] / (double)SchwarzblockSize(mgLevel);
+                int SysSize = _LocalDOF[mgLevel].MPISum();
+                Console.WriteLine("DOF on L{0}: {1}",mgLevel,SysSize);
+                if (SizeFraction < 1 && mgLevel == 0) {
+                    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver[mgLevel]}) < Schwarz-Block size ({SchwarzblockSize(mgLevel)});");
                     Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
                 }
 
@@ -1675,13 +1675,13 @@ namespace BoSSS.Solution {
                 // It has to be ensured, that directKickin takes place on all ranks at same level
                 // therefore only global criterion have to be used here !!!
                 useDirect |= (SysSize < DirectKickIn);
-                useDirect |= iLevel == m_lc.NoOfMultigridLevels - 1;
+                useDirect |= mgLevel == m_lc.NoOfMultigridLevels - 1;
                 useDirect = useDirect.MPIOr();
 
                 if(useDirect)
-                    Console.WriteLine("KcycleMultiILU: lv {0}, Direct solver ", iLevel);
+                    Console.WriteLine("KcycleMultiILU: lv {0}, Direct solver ", mgLevel);
                 else
-                    Console.WriteLine("KcycleMultiILU: lv {0}, ", iLevel);
+                    Console.WriteLine("KcycleMultiILU: lv {0}, ", mgLevel);
 
                 ISolverSmootherTemplate levelSolver;
                 if (useDirect) {
@@ -1691,13 +1691,12 @@ namespace BoSSS.Solution {
                     };
 
                 } else {
-
-                    //var smoother1 = new DirectSolver() {
-                    //    TestSolution = true
+                    //var smoother1 = new HypreILU() {
+                    //    LocalPreconditioning = true
                     //};
 
-                    var smoother1 = new HypreILU() {
-                        LocalPreconditioning = true
+                    var smoother1 = new CellILU() {
+                        ILU_level = mgLevel == 0 ? 1 : 0
                     };
 
 
@@ -1707,7 +1706,7 @@ namespace BoSSS.Solution {
                         m_omega = 1,
                     };
 
-                    if (iLevel > 0) {
+                    if (mgLevel > 0) {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= 1;
                     } else {
                         ((OrthonormalizationMultigrid)levelSolver).TerminationCriterion = (i, r0, r) => i <= m_lc.MaxSolverIterations && r>r0*m_lc.ConvergenceCriterion;
@@ -1727,14 +1726,14 @@ namespace BoSSS.Solution {
                 }
                 SolverChain.Add(levelSolver);
 
-                if (iLevel > 0) {
+                if (mgLevel > 0) {
 
-                    ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
+                    ((OrthonormalizationMultigrid)(SolverChain[mgLevel - 1])).CoarserLevelSolver = levelSolver;
 
                 }
 
                 if (useDirect) {
-                    Console.WriteLine("INFO: using {0} levels, lowest level DOF is {1}, target size is {2}.", iLevel + 1, SysSize, DirectKickIn);
+                    Console.WriteLine("INFO: using {0} levels, lowest level DOF is {1}, target size is {2}.", mgLevel + 1, SysSize, DirectKickIn);
                     break;
                 }
             }
@@ -2070,7 +2069,7 @@ namespace BoSSS.Solution {
 
                     if (sparsesolver.WhichSolver != DirectSolver._whichSolver.PARDISO)
                         throw new ApplicationException("someone messed up classic pardiso settings");
-                    CompareAttributes("SolverVersion", Parallelism.OMP.ToString(), sparsesolver.SolverVersion.ToString());
+                    //CompareAttributes("SolverVersion", Parallelism.OMP.ToString(), sparsesolver.SolverVersion.ToString());
                     break;
             }
 
