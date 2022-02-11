@@ -78,8 +78,16 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     if (aggGrids.Count >= MaxDepth)
                         break;
 
+                    double allowedRatio = 1/(Math.Pow(2, D));
+                    var grid2coarsen = aggGrids.Last();
+                    AggregationGridData grid = aggGrids.Last();
+                    for (int iCoarsen = 0; iCoarsen<1;iCoarsen++) {
+                        grid = Coarsen(grid2coarsen, (int)(Math.Pow(2, D)));
+                        double coarseningRatio = (double)grid.CellPartitioning.LocalLength / (double)grid2coarsen.CellPartitioning.LocalLength;
+                        if (coarseningRatio < allowedRatio) break;
+                        grid2coarsen = grid;
+                    }
 
-                    AggregationGridData grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, D)));
                     //var grid = ZeroAggregation(aggGrids.Last());
 
                     int Jloc = grid.CellPartitioning.LocalLength;
@@ -119,12 +127,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     Debug.Assert(C2F.Length == JCoarse);
                     for (int jC = 0; jC < JCoarse; jC++) {
                         foreach (int jF in C2F[jC]) {
-                            Debug.Assert(testMarker[jF] == false);
+                            Debug.Assert(testMarker[jF] == false,$"cell {jF} already appears in coarse grid: agglomerated to cell {jC}!");
                             testMarker[jF] = true;
                         }
                     }
                     for (int jF = 0; jF < JFine; jF++) {
-                        Debug.Assert(testMarker[jF] == true);
+                        Debug.Assert(testMarker[jF] == true,$"cell {jF} of fine grid was not agglomerated");
                     }
 
                     // test the fine-to-coarse mapping

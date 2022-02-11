@@ -507,7 +507,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         /// <param name="myDB"></param>
         /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 3)
+        public static XdgPoisson3Control TestOrTreat(int solver = 1)
         {
             XdgPoisson3Control C = new XdgPoisson3Control();
 
@@ -543,11 +543,11 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
                 double[] yNodes = GenericBlas.Linspace(-1, +1, Res + 1);
-                //double[] zNodes = GenericBlas.Linspace(-1, +1, Res + 1);
-                int J = (xNodes.Length - 1) * (yNodes.Length - 1);// * (zNodes.Length - 1);
+                double[] zNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+                int J = (xNodes.Length - 1) * (yNodes.Length - 1) * (zNodes.Length - 1);
                 //int J = (xNodes.Length - 1) * (yNodes.Length - 1);
-                //var grid = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
-                var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+                var grid = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+                //var grid = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                 grid.Name = "thisisatestgrid";
                 grid.EdgeTagNames.Add(1, "Dirichlet");
                 grid.DefineEdgeTags(delegate (double[] X) {
@@ -571,8 +571,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             //C.LinearSolver.TargetBlockSize = 79;
             C.ExcactSolSupported = false;
             double radius = 0.7;
-            //C.InitialValues_Evaluators.Add("Phi", X => X[0].Pow2() + X[1].Pow2() + X[2].Pow2() - radius.Pow2());
-            C.InitialValues_Evaluators.Add("Phi", X => X[0].Pow2() + X[1].Pow2() - radius.Pow2());
+            C.InitialValues_Evaluators.Add("Phi", X => X[0].Pow2() + X[1].Pow2() + X[2].Pow2() - radius.Pow2());
+            //C.InitialValues_Evaluators.Add("Phi", X => X[0].Pow2() + X[1].Pow2() - radius.Pow2());
             C.MU_A = -1;
             C.MU_B = -1000;
             C.InitialValues_Evaluators.Add("rhs#A", X => 1.0);

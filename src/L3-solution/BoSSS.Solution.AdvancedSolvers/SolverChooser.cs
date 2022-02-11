@@ -127,7 +127,7 @@ namespace BoSSS.Solution {
             return m_qh != null;
         }
 
-        private int[] _LocalDOF {
+        private int[] LocalDOF {
             get {
                 if (m_LocalDOF == null)
                     m_LocalDOF = GetLocalDOF();
@@ -135,9 +135,9 @@ namespace BoSSS.Solution {
             }
         }
 
-        private int _NoOfBlocks {
+        private int NoOfBlocks {
             get {
-                return (int)Math.Max(1, Math.Round(_LocalDOF[0] / (double)m_lc.TargetBlockSize));
+                return (int)Math.Max(1, Math.Round(LocalDOF[0] / (double)m_lc.TargetBlockSize));
             }
         }
 
@@ -446,7 +446,7 @@ namespace BoSSS.Solution {
                 };
                 var Smoother = new Schwarz() {
                     m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                        NoOfPartsOnCurrentProcess = _NoOfBlocks,
+                        NoOfPartsOnCurrentProcess = NoOfBlocks,
                     },
                     Overlap = 1,
                     EnableOverlapScaling = false,
@@ -463,7 +463,7 @@ namespace BoSSS.Solution {
 
                     var addSchwarz = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsOnCurrentProcess = _NoOfBlocks,
+                            NoOfPartsOnCurrentProcess = NoOfBlocks,
                         },
                         Overlap = 1,
                         EnableOverlapScaling = true,
@@ -497,7 +497,7 @@ namespace BoSSS.Solution {
 
                     precond[0] = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsOnCurrentProcess = _NoOfBlocks,
+                            NoOfPartsOnCurrentProcess = NoOfBlocks,
                         },
                         Overlap = 1,
                         EnableOverlapScaling = true,
@@ -509,7 +509,7 @@ namespace BoSSS.Solution {
 
                     precond[0] = new Schwarz() {
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsOnCurrentProcess = _NoOfBlocks,
+                            NoOfPartsOnCurrentProcess = NoOfBlocks,
                         },
                         Overlap = 1,
                         EnableOverlapScaling = true,
@@ -522,7 +522,7 @@ namespace BoSSS.Solution {
                     precond[0] = new Schwarz() {
                         CoarseSolver = new Schwarz.ClassicMG(),
                         m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                            NoOfPartsOnCurrentProcess = _NoOfBlocks
+                            NoOfPartsOnCurrentProcess = NoOfBlocks
                         },
                         Overlap = 1,
                     };
@@ -665,7 +665,7 @@ namespace BoSSS.Solution {
                 templinearSolve = new Schwarz() {
                     FixedNoOfIterations = m_lc.MaxSolverIterations,
                     m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                        NoOfPartsOnCurrentProcess = _NoOfBlocks,
+                        NoOfPartsOnCurrentProcess = NoOfBlocks,
                     },
                     Overlap = 1, // overlap seems to help; more overlap seems to help more
                     EnableOverlapScaling = true,
@@ -683,7 +683,7 @@ namespace BoSSS.Solution {
                 var smoother = new Schwarz() {
                     FixedNoOfIterations = m_lc.MaxSolverIterations,
                     m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                        NoOfPartsOnCurrentProcess = _NoOfBlocks,
+                        NoOfPartsOnCurrentProcess = NoOfBlocks,
                     },
                     Overlap = 1, // overlap seems to help; more overlap seems to help more
                     EnableOverlapScaling = true,
@@ -836,7 +836,7 @@ namespace BoSSS.Solution {
                     solverinfotxt.Add("pmg used in Schwarz Blocks");
                     solverinfotxt.Add("entries upto p=" + ((Schwarz)solver).CoarseLowOrder + " are assigned to low order blocks");
                 }
-                solverinfotxt.Add("Additive Schwarz w. direct coarse, No of blocks: " + _NoOfBlocks);
+                solverinfotxt.Add("Additive Schwarz w. direct coarse, No of blocks: " + NoOfBlocks);
             }
             foreach (string line in solverinfotxt)
                 Console.WriteLine(solvername + " INFO:\t" + line);
@@ -988,11 +988,11 @@ namespace BoSSS.Solution {
         private int GetMGDepth(int DirectKickIn, int MSLength) {
             int maxlevel = -1;
             int MGDepth = Math.Min(MSLength, m_lc.NoOfMultigridLevels);
-            var PrevSize = _LocalDOF[0].MPISum(); // system size on finer level
+            var PrevSize = LocalDOF[0].MPISum(); // system size on finer level
 
             for (int iLevel = 0; iLevel < MGDepth; iLevel++) {
-                int SysSize = _LocalDOF[iLevel].MPISum();
-                Console.WriteLine("DOF on L{0}: {1}", 0, SysSize);
+                int SysSize = LocalDOF[iLevel].MPISum();
+                Console.WriteLine("DOF on L{0}: {1}", iLevel, SysSize);
                 bool useDirect = false;
                 useDirect |= (SysSize < DirectKickIn);
                 useDirect |= (double)PrevSize / (double)SysSize < 1.5 && SysSize < 50000; // degenerated MG-Agglomeration, because too few candidates
@@ -1006,7 +1006,7 @@ namespace BoSSS.Solution {
 
                 PrevSize = SysSize;
             }
-            Console.WriteLine("INFO: using {0} levels, lowest level DOF is {1}, target size is {2}.", maxlevel + 1, _LocalDOF[maxlevel], DirectKickIn);
+            Console.WriteLine("INFO: using {0} levels, lowest level DOF is {1}, target size is {2}.", maxlevel+1, LocalDOF[maxlevel], DirectKickIn);
             MaxUsedMGLevel = maxlevel; // remember this for saving in query
             return maxlevel+1;
         }
@@ -1175,7 +1175,7 @@ namespace BoSSS.Solution {
             var D = Dim;
 
             //int pV = Control.FieldOptions["VelocityX"].Degree;
-            int pV = _LocalDOF[0];
+            int pV = LocalDOF[0];
             int pP = pV - 1; //Control.FieldOptions["Pressure"].Degree;
 
 
@@ -1198,7 +1198,7 @@ namespace BoSSS.Solution {
                         };
                         break;
                     case 3:
-                        var dofsPerCell3D = _LocalDOF[0] / NoCellsLoc;
+                        var dofsPerCell3D = LocalDOF[0] / NoCellsLoc;
                         var dofsLoc = dofsPerCell3D * cellsLoc;
                         var dofsGlo = dofsPerCell3D * cellsGlo;
 
@@ -1788,11 +1788,11 @@ namespace BoSSS.Solution {
             int DirectKickIn = m_lc.TargetBlockSize;
 
             if (MaxUsedMGLevel >= 2) { //indicates that a mutligrid solver was build ...
-                if (DirectKickIn < _LocalDOF.Last()) {
-                    Console.WriteLine("WARNING: target blocksize ({0}) < smallest blocksize of MG ({1}).", DirectKickIn, _LocalDOF.Last());
+                if (DirectKickIn < LocalDOF.Last()) {
+                    Console.WriteLine("WARNING: target blocksize ({0}) < smallest blocksize of MG ({1}).", DirectKickIn, LocalDOF.Last());
                     Console.WriteLine("\tYour Choice of LinearSolverConfig.TargetBlockSize will not influence the MG depth. ");
-                    Console.WriteLine("\t Choose LinearSolverConfig.TargetBlockSize > {0} or Raise LinearSolverConfig.NoOfMultigridLevels", _LocalDOF.Last());
-                    DirectKickIn = _LocalDOF.Last();
+                    Console.WriteLine("\t Choose LinearSolverConfig.TargetBlockSize > {0} or Raise LinearSolverConfig.NoOfMultigridLevels", LocalDOF.Last());
+                    DirectKickIn = LocalDOF.Last();
                 }
             }
 

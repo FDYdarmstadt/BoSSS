@@ -939,9 +939,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             long Memory = 0;
             if (this.CoarserLevelSolver is OrthonormalizationMultigrid)
                 Memory += (this.CoarserLevelSolver as OrthonormalizationMultigrid).MemoryOfMultigrid();
-            int SizeSol = this.SolHistory.Count() * this.SolHistory[0].Length * sizeof(double);
-            int SizeMxx = this.MxxHistory.Count() * this.MxxHistory[0].Length * sizeof(double);
-            int SizeAlpha = this.Alphas.Count() * (sizeof(double)*2+sizeof(int));
+            int SizeSol = SolHistory != null && SolHistory.Count() > 0? this.SolHistory.Count() * this.SolHistory[0].Length * sizeof(double):0;
+            int SizeMxx = MxxHistory != null && MxxHistory.Count() > 0? this.MxxHistory.Count() * this.MxxHistory[0].Length * sizeof(double):0;
+            int SizeAlpha = Alphas != null && Alphas.Count() > 0 ? this.Alphas.Count() * (sizeof(double)*2+sizeof(int)):0;
             Memory += (SizeSol + SizeMxx + SizeAlpha);
             return Memory;
         }
