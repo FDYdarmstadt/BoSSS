@@ -364,6 +364,60 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             private set;
         }
 
+        public void MergeWithPartentGrid(AggregationGridData parent) {
+            var grid = this;
+            Debug.Assert(parent.CellPartitioning.LocalLength > grid.CellPartitioning.LocalLength, "target is smaller then this grid. Do you messed up things?");
+        
+            var JCoarse = grid.iLogicalCells.Count;
+            var Jparentparent = parent.jCellFine2jCellCoarse.Length;
+
+            var mergedC2F = new int[JCoarse][];
+            var mergedF2C = new int[Jparentparent];
+
+            int checkcounter = 0;
+            for (int jC = 0; jC < JCoarse; jC++) {
+                var tmp = new List<int>();
+                foreach (int jP in grid.jCellCoarse2jCellFine[jC]) {
+                    int[] jPPs = parent.jCellCoarse2jCellFine[jP];
+                    tmp.AddRange(jPPs);
+                }
+                mergedC2F[jC] = tmp.ToArray();
+                checkcounter += tmp.Count();
+            }
+            Debug.Assert(checkcounter== Jparentparent);
+
+            for (int jF = 0; jF < Jparentparent; jF++) {
+                int jC = grid.jCellFine2jCellCoarse[parent.jCellFine2jCellCoarse[jF]];
+                mergedF2C[jF] = jC;
+            }
+#if DEBUG
+            // Test 4 surjective mapping
+            // test the coarse-to-fine map
+            bool[] testMarker = new bool[Jparentparent];
+            int[][] C2F = mergedC2F;
+            Debug.Assert(C2F.Length == JCoarse);
+            for (int jC = 0; jC < JCoarse; jC++) {
+                foreach (int jF in C2F[jC]) {
+                    Debug.Assert(testMarker[jF] == false, $"cell {jF} already appears in coarse grid.");
+                    testMarker[jF] = true;
+                }
+            }
+            for (int jF = 0; jF < Jparentparent; jF++) {
+                Debug.Assert(testMarker[jF] == true, $"cell {jF} of fine grid was not agglomerated");
+            }
+
+            // test the fine-to-coarse map
+            int[] F2C = mergedF2C;
+            Debug.Assert(F2C.Length == Jparentparent);
+            for (int jF = 0; jF < Jparentparent; jF++) {
+                Debug.Assert(C2F[F2C[jF]].Contains(jF), $"mapping is not invertable!{jF} could not been mapped back");
+            }
+#endif
+            grid.ParentGrid = parent.ParentGrid;
+            grid.jCellCoarse2jCellFine = mergedC2F;
+            grid.jCellFine2jCellCoarse = mergedF2C;
+        }
+
         /// <summary>
         /// Sets up the decomposition of the aggregate cell into elementary parts, which can be mapped to reference elements.
         /// </summary>

@@ -78,14 +78,18 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     if (aggGrids.Count >= MaxDepth)
                         break;
 
-                    double allowedRatio = 1/(Math.Pow(2, D));
+                    // simple coarsening
                     var grid2coarsen = aggGrids.Last();
-                    AggregationGridData grid = aggGrids.Last();
-                    for (int iCoarsen = 0; iCoarsen<1;iCoarsen++) {
-                        grid = Coarsen(grid2coarsen, (int)(Math.Pow(2, D)));
-                        double coarseningRatio = (double)grid.CellPartitioning.LocalLength / (double)grid2coarsen.CellPartitioning.LocalLength;
-                        if (coarseningRatio < allowedRatio) break;
+                    var grid = Coarsen(grid2coarsen, (int)(Math.Pow(2, D)));
+
+                    // repeat coarsening if size reduction not sufficient
+                    double aimred = 1 / (Math.Pow(2, D)) * 2; // half of the potentially possible reduction
+                    for (int iCoarsen = 0; iCoarsen < 1; iCoarsen++) {
+                        double actualred = (double)grid.CellPartitioning.LocalLength / (double)aggGrids.Last().CellPartitioning.LocalLength;
+                        if (actualred < aimred) break;
                         grid2coarsen = grid;
+                        grid = Coarsen(grid2coarsen, (int)(Math.Pow(2, D)));
+                        grid.MergeWithPartentGrid(grid2coarsen); // merge with intermediate AggGrid
                     }
 
                     //var grid = ZeroAggregation(aggGrids.Last());
@@ -139,7 +143,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     int[] F2C = aggGrids[iLevel + 1].jCellFine2jCellCoarse;
                     Debug.Assert(F2C.Length == JFine);
                     for (int jF = 0; jF < JFine; jF++) {
-                        Debug.Assert(C2F[F2C[jF]].Contains(jF));
+                        Debug.Assert(C2F[F2C[jF]].Contains(jF),"");
                     }
 
 #endif
@@ -150,6 +154,8 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 return aggGrids.ToArray();
             }
         }
+
+
 
         /// <summary>
         /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
