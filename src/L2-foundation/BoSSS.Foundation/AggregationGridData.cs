@@ -366,7 +366,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
         public void MergeWithPartentGrid(AggregationGridData parent) {
             var grid = this;
-            Debug.Assert(parent.CellPartitioning.LocalLength > grid.CellPartitioning.LocalLength, "target is smaller then this grid. Do you messed up things?");
+            Debug.Assert(parent.CellPartitioning.LocalLength >= grid.CellPartitioning.LocalLength, "target is smaller then this grid. Do you messed up things?");
         
             var JCoarse = grid.iLogicalCells.Count;
             var Jparentparent = parent.jCellFine2jCellCoarse.Length;
