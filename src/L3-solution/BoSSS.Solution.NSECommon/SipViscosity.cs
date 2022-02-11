@@ -508,43 +508,7 @@ namespace BoSSS.Solution.NSECommon {
             //g_Neu_GradU = D.ForLoop(d => bcmap.bndFunction[VariableNames.Velocity_GradientVector(D).GetRow(iComp)[d]]);
         }
 
-        /*
-        // begfin testcode 0000000000000000000000000000000000000000000000000000
-
-        MultidimensionalArray cj;
-        double penalty_base;
-
-        double MyPenaltyFactor(IGridData g, int jCellIn, int jCellOut) {
-            MyCoefficientUpdate(g, new int[] { 2 }, 2);
-
-            double PenaltySafety = 2;
-            double cj_in = cj[jCellIn];
-            double eta = penalty_base * cj_in * PenaltySafety;
-            if(jCellOut >= 0) {
-                double cj_out = cj[jCellOut];
-                eta = Math.Max(eta, penalty_base * cj_out * PenaltySafety);
-            }
-            return eta;
-        }
-
-
-        /// Update of penalty length scales.
-        void MyCoefficientUpdate(IGridData GrdDat, int[] DomainDGdeg, int TestDGdeg) {
-            int D = GrdDat.SpatialDimension;
-            double _D = D;
-            double _p = DomainDGdeg.Max();
-
-            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
-            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
-
-            penalty_base = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
-
-            cj = ((BoSSS.Foundation.Grid.Classic.GridData)(GrdDat)).Cells.cj;
-        }
-
-        // end testcode 0000000000000000000000000000000000000000000000000000000000
-        */
-
+      
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
@@ -562,7 +526,6 @@ namespace BoSSS.Solution.NSECommon {
         public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
             double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
-            //pnlty = MyPenaltyFactor(inp.GridDat, inp.jCellIn, inp.jCellOut);
             double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             double muB = this.Viscosity(inp.Parameters_OUT, _uB, _Grad_uB);
 
@@ -606,7 +569,6 @@ namespace BoSSS.Solution.NSECommon {
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
             double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
-            //pnlty = MyPenaltyFactor(inp.GridDat, inp.jCellIn, -1);
             
             double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];

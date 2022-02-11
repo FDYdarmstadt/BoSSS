@@ -1613,17 +1613,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                         //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
                         //p.PlotInteractive();
 
-                        //to remove:
-                        Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!1 another pise of testcode");
-                        mgOperator.OperatorMatrix.SaveToTextFileSparse("C:\\tmp\\Bug\\BottiWrg.txt");
-                        double[] _RHS = new double[mgOperator.Mapping.LocalLength];
-                        //var __RHS = VectorIO.LoadFromTextFile("C:\\tmp\\Bug\\BottiRhsCor.txt");
-                        mgOperator.TransformRhsInto(RHS, _RHS, true);
-                        _RHS.SaveToTextFile("C:\\tmp\\Bug\\BottiRhsWrg.txt");
-                        //RHS.ClearEntries();
-                        //mgOperator.TransformRhsFrom(RHS, __RHS);
-                        // end to remove
-
                         using(new BlockTrace("Slv Init", tr)) {
                             linearSolver.Init(mgOperator);
                         }
