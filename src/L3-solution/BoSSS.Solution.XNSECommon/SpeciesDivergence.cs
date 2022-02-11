@@ -53,7 +53,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
             int d = base.component;
             base.bndFunction = _bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName];
-
+            
             this.m_bcmap = _bcmap;
         }
 

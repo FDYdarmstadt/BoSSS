@@ -168,8 +168,9 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.NoSlipNeumann:
                 {
                     double u_j_In = Uin[0];
-                    FluxInCell = -u_j_In * inp.Normal[component];
-                        break;
+                    double u_j_Out = this.bndFunction[inp.EdgeTag](inp.X, inp.time);
+                    FluxInCell = -(u_j_In - u_j_Out) * inp.Normal[component];
+                    break;
                 }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");

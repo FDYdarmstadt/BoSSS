@@ -446,19 +446,6 @@ namespace BoSSS.Application.XNSE_Solver {
         public double[] prescribedLSwaveData;
 
         /// <summary>
-        /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-
-        /// <summary>
-        /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-
-
-        /// <summary>
         /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
         /// </summary>
         [DataMember]

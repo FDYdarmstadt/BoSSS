@@ -976,7 +976,6 @@ namespace BoSSS.Application.XNSE_Solver {
             C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             //C.UseSchurBlockPrec = true;
             C.AgglomerationThreshold = 0.1;
-            C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
@@ -1926,29 +1925,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ==========
             #region degrees
 
-            C.FieldOptions.Add("VelocityX", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("VelocityY", new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Pressure", new FieldOpts() {
-                Degree = p - 1,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("PhiDG", new FieldOpts() {
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 4,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            C.FieldOptions.Add("Curvature", new FieldOpts() {
-                Degree = 8,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            C.SetDGdegree(p);
 
             #endregion
 
@@ -2076,6 +2053,68 @@ namespace BoSSS.Application.XNSE_Solver {
             C.NoOfTimesteps = 15;
 
             #endregion
+
+            return C;
+        }
+
+        /// <summary>
+        /// 2D manufactured solution from:
+        /// 
+        /// p‑Multilevel Preconditioners for HHO Discretizations of the Stokes Equations with Static Condensation,
+        /// Lorenzo Botti, Daniele A. Di Pietro; https://doi.org/10.1007/s42967-021-00142-5
+        /// </summary>
+        public static XNSE_Control BottiDiPietro2D(int Res = 20, int p = 2) {
+            // --control cs: BoSSS.Application.XNSE_Solver.HardcodedControl.BottiDiPietro2D()
+            var C = new XNSE_Control();
+
+            C.GridFunc = delegate () {
+                GridCommons g;
+                double[] xNodes = GenericBlas.Linspace(-1, +1, Res + 1);
+                double[] yNodes = xNodes;
+                g = Grid2D.Cartesian2DGrid(xNodes, yNodes);
+
+                g.DefineEdgeTags(delegate (double[] X) {
+                    double x = X[0];
+                    //if(Math.Abs(x - (-1)) < 1e-8)
+                    //    return "pressure_outlet";
+                    return "wall"; // for the moment, ignore the Neumann boundary.
+                });
+
+                return g;
+            };
+
+
+            C.SetDGdegree(p);
+
+
+            C.PhysicalParameters.rho_A = 1; // not relevant, since density is not present in steady-state Stokes.
+            C.PhysicalParameters.rho_B = 1; // not relevant, since density is not present in steady-state Stokes.
+            C.PhysicalParameters.mu_A = 1; // dimensionless
+            C.PhysicalParameters.mu_B = 1; // dimensionless
+            C.PhysicalParameters.Sigma = 0; // not relevant, since single phase
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+
+            double VelocityXex(double[] X) {
+                return -Math.Exp(X[0]) * (X[1] * Math.Cos(X[1]) + Math.Sin(X[1]));
+            }
+
+            double VelocityYex(double[] X) {
+                return Math.Exp(X[0]) * X[1] * Math.Sin(X[1]);
+            }
+
+
+            C.AddBoundaryValue("wall", "VelocityX", VelocityXex);
+            C.AddBoundaryValue("wall", "VelocityY", VelocityYex);
+
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            C.LevelSet_ConvergenceCriterion = 1e-6;
+
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
+            
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             return C;
         }
