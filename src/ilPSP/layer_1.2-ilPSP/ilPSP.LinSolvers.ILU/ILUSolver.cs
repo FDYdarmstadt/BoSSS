@@ -87,6 +87,18 @@ namespace ilPSP.LinSolvers.ILU {
         }
 
 
+        protected double[] ForwardSubstitution( double[] rhs) {
+            var X=new double[rhs.Length];
+            LocalSubstitution(X, rhs, sparse_fill_mode_t.SPARSE_FILL_MODE_LOWER);
+            return X;
+        }
+
+        protected double[] BackwardSubstitution(double[] rhs) {
+            var X = new double[rhs.Length];
+            LocalSubstitution(X, rhs, sparse_fill_mode_t.SPARSE_FILL_MODE_UPPER);
+            return X;
+        }
+
         private unsafe void LocalSubstitution(double[] sol, double[] rhs, sparse_fill_mode_t Mode) {
             fixed (double* p_sol = sol, p_rhs = rhs) {
                 
@@ -104,11 +116,12 @@ namespace ilPSP.LinSolvers.ILU {
                 switch (Mode) {
                     case sparse_fill_mode_t.SPARSE_FILL_MODE_LOWER:
                         Diag = sparse_diag_type_t.SPARSE_DIAG_UNIT;
-                    operation = sparse_operation_t.SPARSE_OPERATION_NON_TRANSPOSE;
+                        operation = sparse_operation_t.SPARSE_OPERATION_NON_TRANSPOSE;
                         break;
                     case sparse_fill_mode_t.SPARSE_FILL_MODE_UPPER:
                         Diag = sparse_diag_type_t.SPARSE_DIAG_NON_UNIT;
-                        operation = sparse_operation_t.SPARSE_OPERATION_TRANSPOSE;
+                        operation = sparse_operation_t.SPARSE_OPERATION_NON_TRANSPOSE;
+                        //operation = sparse_operation_t.SPARSE_OPERATION_TRANSPOSE;
                         break;
                     default:
                         throw new NotSupportedException();

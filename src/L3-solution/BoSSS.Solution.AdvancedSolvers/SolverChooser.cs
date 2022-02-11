@@ -988,8 +988,7 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Determine max MG level from target blocksize.
-        /// +1 level is considered for the direct solver
+        /// Determine max MG level from target blocksize
         /// </summary>
         /// <param name="DirectKickIn"></param>
         /// <returns></returns>
