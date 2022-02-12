@@ -27,10 +27,15 @@ using BoSSS.Platform.Utils;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
+    public enum Library {
+        HYPRE = 0,
+        Intel_MKL = 1,
+    }
+
     /// <summary>
     /// Parallel ILU from HYPRE library
     /// </summary>
-    public class HypreILU : ISolverSmootherTemplate, ISolverWithCallback, IDisposable {
+    public class sparseILU : ISolverSmootherTemplate, ISolverWithCallback, IDisposable {
 
         public int IterationsInNested {
             get { return 0; }
@@ -73,11 +78,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// forces to apply ILU only on local systems.
+        /// This is always the case for the intel version, because library is sequential.
+        /// A parallel version is probably available, but not included right now
+        /// </summary>
         public bool LocalPreconditioning {
             set {
                 if (m_ILUmatrix != null)
                     throw new Exception("No adjustment after initialization allowed!");
                 m_LocalPrecond = value; }
+        }
+
+        /// <summary>
+        /// Switch between HYPRE and INTEL version
+        /// </summary>
+        public Library UsedLibrary {
+            set {
+                m_lib=value;
+            }
         }
 
         public void Init(MultigridOperator op) {
@@ -90,15 +109,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Column partitioning mismatch.");
 
-            if (!m_LocalPrecond)
-                m_ILUmatrix = Mtx.CloneAs();
-            else
-                m_ILUmatrix = GetLocalMatrix(Mtx);
 
-            m_HYPRE_ILU = new ilPSP.LinSolvers.HYPRE.Euclid() {
-                Level = 0, // = 0 corresponds to ILU(0), with zero fill in, there are other versions available like ILUT, etc.
-                
-            };
+            if (m_LocalPrecond || MgMap.MpiSize > 1 && m_lib == Library.Intel_MKL) {
+                m_ILUmatrix = GetLocalMatrix(Mtx);
+                Console.WriteLine("INFO: the sparse ILU preconditioner is applied to local system");
+            } else
+                m_ILUmatrix = Mtx.CloneAs();
+            
+
+            switch (m_lib) {
+                case Library.HYPRE:
+                    m_ILU_Solver = new ilPSP.LinSolvers.HYPRE.Euclid() {
+                        Level = 0, // = 0 corresponds to ILU(0), with zero fill in, there are other versions available like ILUT, etc.
+                    };
+                    break;
+                case Library.Intel_MKL:
+                    m_ILU_Solver = new ilPSP.LinSolvers.ILU.ILUSolver() {
+                    };
+                    break;
+            }
 
             // Zeros on diagonal elements because of saddle point structure
             long i0 = m_ILUmatrix._RowPartitioning.i0;
@@ -109,19 +138,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
             if (m_ILUmatrix != null && m_ILUmatrix.RowPartitioning.LocalLength > 0) 
-                m_HYPRE_ILU.DefineMatrix(m_ILUmatrix);
+                m_ILU_Solver.DefineMatrix(m_ILUmatrix);
         }
 
-        ilPSP.LinSolvers.HYPRE.Solver m_HYPRE_ILU;
+        ISparseSolver m_ILU_Solver;
         BlockMsrMatrix m_ILUmatrix;
         MultigridOperator m_mgop;
         bool m_LocalPrecond = false;
+        Library m_lib = Library.Intel_MKL;
 
         public void Solve<P, Q>(P X, Q B)
             where P : IList<double>
             where Q : IList<double> //
         {
-            var SolverResult = m_HYPRE_ILU.Solve(X, B);
+            var SolverResult = m_ILU_Solver.Solve(X, B);
             m_ThisLevelIterations += SolverResult.NoOfIterations;
         }
 
@@ -150,13 +180,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
-            m_HYPRE_ILU.Dispose();
+            m_ILU_Solver.Dispose();
             m_ILUmatrix = null;
             m_mgop = null;
         }
 
         public object Clone() {
-            var clone = new HypreILU();
+            var clone = new sparseILU();
             clone.LocalPreconditioning = this.m_LocalPrecond;
             if(this.IterationCallback !=null) clone.IterationCallback = this.IterationCallback.CloneAs();
             return clone;

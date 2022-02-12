@@ -450,8 +450,9 @@ namespace BoSSS.Solution {
                 precond[0] = null;
                 break;
                 case LinearSolverCode.exp_gmres_ILU:
-                    precond[0] = new HypreILU() {
-                };
+                    precond[0] = new sparseILU() {
+                        UsedLibrary = Library.Intel_MKL
+                    };
                 break;
                 case LinearSolverCode.exp_gmres_AS_MG:
                 var dirSolver = new DirectSolver() {
