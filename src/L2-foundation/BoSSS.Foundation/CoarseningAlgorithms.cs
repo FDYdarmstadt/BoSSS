@@ -86,7 +86,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     double aimred = 1 / (Math.Pow(2, D)) * 2; // half of the potentially possible reduction
                     for (int iCoarsen = 0; iCoarsen < 1; iCoarsen++) {
                         double actualred = (double)grid.CellPartitioning.LocalLength / (double)aggGrids.Last().CellPartitioning.LocalLength;
-                        if (actualred < aimred) break;
+                        if ((actualred < aimred).MPIAnd()) break;
                         grid2coarsen = grid;
                         grid = Coarsen(grid2coarsen, (int)(Math.Pow(2, D)));
                         grid.MergeWithPartentGrid(grid2coarsen); // merge with intermediate AggGrid
