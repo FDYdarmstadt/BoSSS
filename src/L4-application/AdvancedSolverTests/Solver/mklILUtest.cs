@@ -60,7 +60,7 @@ namespace AdvancedSolverTests.Solver {
             return LU;
         }
 
-        [Test]
+        [Test, Ignore("ILU.dll is not available in native-build")]
         public static void CompareFactorization() {
             var matrices=GenMatrix();
             var mklILU = ExecuteILU(matrices.A);
@@ -73,7 +73,7 @@ namespace AdvancedSolverTests.Solver {
             Assert.IsTrue(mklILU.InfNorm()-1<1E-14,"matlab and mkl ilu factorization are not equal");
         }
 
-        [Test]
+        [Test, Ignore("ILU.dll is not available in native-build")]
         public static void CompareSubstitution() {
             // matlab part
             var matrices = GenMatrix();
