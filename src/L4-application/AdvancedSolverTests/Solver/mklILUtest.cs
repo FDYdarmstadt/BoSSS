@@ -10,7 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace AdvancedSolverTests.Solver {
-    public class mklILU {
+    public class mklILUtest {
         public class testilu : ilPSP.LinSolvers.ILU.ILUSolver {
             public double[] _ForwardSubstitution(double[] rhs) {
                 return ForwardSubstitution(rhs);
@@ -45,13 +45,15 @@ namespace AdvancedSolverTests.Solver {
                 matlab.GetMatrix(U_matlab, "Ufull");
                 matlab.Execute();
             }
-            Console.WriteLine(L_matlab.InfNorm());
+            Console.WriteLine($"Inf-Norm of matlabs L: {L_matlab.InfNorm()}");
+            Console.WriteLine($"Inf-Norm of matlabs U: {U_matlab.InfNorm()}");
             return (L_matlab, U_matlab, A);
         }
 
         private static MsrMatrix ExecuteILU(MultidimensionalArray A) {
             var ilu = new testilu();
-            var A_BMsr = new MsrMatrix(A.Lengths[0],A.Lengths[1]);
+            var rowpart = new Partitioning(A.GetLength(0), MPI.Wrappers.csMPI.Raw._COMM.SELF);
+            var A_BMsr = new MsrMatrix(rowpart);
             A_BMsr.AccDenseMatrix(1.0, A);
             ilu.DefineMatrix(A_BMsr);
             var LU=ilu.GetILUFactorization;
@@ -83,7 +85,8 @@ namespace AdvancedSolverTests.Solver {
 
             // mkl part
             var ilu = new testilu();
-            var A_BMsr = new MsrMatrix(matrices.A.GetLength(0), matrices.A.GetLength(1));
+            var rowpart = new Partitioning(matrices.A.GetLength(0), MPI.Wrappers.csMPI.Raw._COMM.SELF);
+            var A_BMsr = new MsrMatrix(rowpart);
             A_BMsr.AccDenseMatrix(1.0, matrices.A);
             ilu.DefineMatrix(A_BMsr);
             var Y = ilu._ForwardSubstitution(rndB);
@@ -91,8 +94,12 @@ namespace AdvancedSolverTests.Solver {
 
             Ycheck.AccV(-1.0, Y);
             Xcheck.AccV(-1.0, X);
-            Assert.IsTrue(Ycheck.L2Norm() < 1E-14);
-            Assert.IsTrue(Xcheck.L2Norm() < 1E-14);
+            double errorY = Ycheck.L2Norm();
+            double errorX = Xcheck.L2Norm();
+            Console.WriteLine($"err_Y = {errorY}");
+            Console.WriteLine($"err_X = {errorX}");
+            Assert.IsTrue(errorY < 1E-14);
+            Assert.IsTrue(errorX < 1E-14);
         }
 
         private static double[] ForwardSubstitution(MultidimensionalArray L, double[] RHS) {
