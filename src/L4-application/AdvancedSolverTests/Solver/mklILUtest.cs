@@ -70,7 +70,7 @@ namespace AdvancedSolverTests.Solver {
             //ILU.SaveToTextFileSparse("ILU");
             mklILU.AccBlock(0,0,-1.0, matrices.L_matlab);
             mklILU.AccBlock(0,0,-1.0, matrices.U_matlab);
-            Assert.IsTrue(mklILU.InfNorm()-1<1E-14);
+            Assert.IsTrue(mklILU.InfNorm()-1<1E-14,"matlab and mkl ilu factorization are not equal");
         }
 
         [Test]
@@ -98,8 +98,8 @@ namespace AdvancedSolverTests.Solver {
             double errorX = Xcheck.L2Norm();
             Console.WriteLine($"err_Y = {errorY}");
             Console.WriteLine($"err_X = {errorX}");
-            Assert.IsTrue(errorY < 1E-14);
-            Assert.IsTrue(errorX < 1E-14);
+            Assert.IsTrue(errorY < 1E-14,"error in forward substitution");
+            Assert.IsTrue(errorX < 1E-14, "error in backward substitution");
         }
 
         private static double[] ForwardSubstitution(MultidimensionalArray L, double[] RHS) {
