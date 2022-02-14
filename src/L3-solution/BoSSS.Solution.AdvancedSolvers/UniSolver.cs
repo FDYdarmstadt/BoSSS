@@ -250,8 +250,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Console.WriteLine("done {0} sec.", stwAssi.Elapsed.TotalSeconds);
 
                         if(verbose || queryHandler != null) {
-                            int minBlkSize = Solution.MaxTotalNoOfCoordinatesPerCell;
-                            int maxBlkSize = Solution.MinTotalNoOfCoordinatesPerCell;
+                            int minBlkSize = Solution.MinTotalNoOfCoordinatesPerCell;
+                            int maxBlkSize = Solution.MaxTotalNoOfCoordinatesPerCell;
                             int NoOfMtxBlocks = 0;
                             int J = gdat.iLogicalCells.NoOfLocalUpdatedCells;
                             for(int j = 0; j < J; j++) {

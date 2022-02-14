@@ -29,7 +29,9 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SubBlocking.LocalTests.MapConsistencyTest(XDGusage.none, 2);
             //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.none, 2, MatrixShape.diagonal);
             //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2, MatrixShape.diagonal);
-            
+            //AdvancedSolverTests.Solver.mklILU.CompareFactorization();
+            //AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
+            AdvancedSolverTests.Solver.mklILUtest.CompareFactorization();
         }
 
     }
