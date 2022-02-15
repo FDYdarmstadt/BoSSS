@@ -212,7 +212,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
         /// </summary>
         /// <param name="output"></param>
         /// <param name="input">input DG field; unchanged on </param>
-        public void Perform(SinglePhaseField output, SinglePhaseField input) {
+        public void Perform(ConventionalDGField output, ConventionalDGField input) {
             if(!output.Basis.Equals(this.m_bOutput))
                 throw new ArgumentException("output basis mismatch");
             if(!input.Basis.Equals(this.m_bInput))
