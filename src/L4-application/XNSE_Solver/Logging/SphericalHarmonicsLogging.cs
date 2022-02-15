@@ -18,13 +18,8 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
     /// </summary>
     [Serializable]
     public class SphericalHarmonicsLogging : SphericalHarmonicsLogging<XNSE_Control> {
-
-
-        public SphericalHarmonicsLogging(int MaxL = 3, bool RotSymmetric = false) {
-            base.MaxL = MaxL;
-            base.RotSymmetric = RotSymmetric;
+        public SphericalHarmonicsLogging(int MaxL, bool RotSymmetric) : base(MaxL, RotSymmetric) {
         }
-
     }
 
     /// <summary>
@@ -61,6 +56,13 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
         /// </summary>
         protected int MaxL;
 
+        public SphericalHarmonicsLogging(int MaxL, bool RotSymmetric ) {
+            this.MaxL = MaxL;
+            this.RotSymmetric = RotSymmetric;
+        }
+
+        public SphericalHarmonicsLogging() : this(3, false) {
+        }
 
         /// <summary>
         /// Spherical Harmonics mapping from a pair to a linear index: (l,m) -> idx
