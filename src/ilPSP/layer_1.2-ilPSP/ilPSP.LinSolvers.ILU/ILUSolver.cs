@@ -8,8 +8,20 @@ using ilPSP.Tracing;
 using static ilPSP.LinSolvers.ILU.Wrapper_MKL;
 
 namespace ilPSP.LinSolvers.ILU {
+
+    /// <summary>
+    /// Object-oriented wrapper for loading the ILU pre-conditioner from the Intel MKL libraries,
+    /// see https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/sparse-solver-routines/precondition-based-on-incomplete-lu-factorization.html
+    /// 
+    /// Note: since the ILU is only an incomplete factorization, this does not actually computes a solution, only a crude approximation.
+    /// This can only be used as a pre-conditioner for some other solver.
+    /// </summary>
+
     public class ILUSolver : ISparseSolver, IDisposable {
 
+        /// <summary>
+        /// <see cref="ISparseSolver.DefineMatrix"/>
+        /// </summary>
         public void DefineMatrix(IMutableMatrixEx inputMatrix) {
             m_Matrix= inputMatrix;
             wrapper = new Wrapper_MKL();
@@ -39,6 +51,11 @@ namespace ilPSP.LinSolvers.ILU {
         Matrix ILUfactorization;
         IntPtr mklHandleForCSRMatrix;
 
+        /// <summary>
+        /// Performs one solution of the ILU system.
+        /// Note: since the ILU is only an incomplete factorization, this does not actually computes a solution, only a crude approximation.
+        /// This can only be used as a pre-conditioner for some other solver.
+        /// </summary>
         public SolverResult Solve<Tunknowns, TRHS>(Tunknowns X, TRHS B)
             where Tunknowns : IList<double>
             where TRHS : IList<double>
@@ -86,13 +103,18 @@ namespace ilPSP.LinSolvers.ILU {
             m_parms.dparm[31] = 1.0; //replace zero diagonal with this value, default is 1.0e-10
         }
 
-
+        /// <summary>
+        ///solve for the lower triangular part of the ILU decomposition
+        /// </summary>
         protected double[] ForwardSubstitution( double[] rhs) {
             var X=new double[rhs.Length];
             LocalSubstitution(X, rhs, sparse_fill_mode_t.SPARSE_FILL_MODE_LOWER);
             return X;
         }
 
+        /// <summary>
+        /// solve for the upper triangular part of the ILU decomposition
+        /// </summary>
         protected double[] BackwardSubstitution(double[] rhs) {
             var X = new double[rhs.Length];
             LocalSubstitution(X, rhs, sparse_fill_mode_t.SPARSE_FILL_MODE_UPPER);
@@ -195,6 +217,9 @@ namespace ilPSP.LinSolvers.ILU {
             Debug.Assert(ILUfactorization.aPtr != null);
         }
 
+        /// <summary>
+        /// release of internal data structures
+        /// </summary>
         public void Dispose() {
             int stat = wrapper.Destroy(mklHandleForCSRMatrix);
             m_Matrix = null;
@@ -225,6 +250,9 @@ namespace ilPSP.LinSolvers.ILU {
             return out_Matrix;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public MsrMatrix GetILUFactorization {
             get { return TranslateMatrixBack(); }
         }

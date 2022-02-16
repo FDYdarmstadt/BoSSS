@@ -32,6 +32,7 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <UseVSHostingProcess>true</UseVSHostingProcess>
+	<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
