@@ -135,6 +135,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // termination condition
                 if (!TerminationCriterion(iIter, iter0_l2Residual, iter_l2Residual)) {
+                    m_Converged = true;
                     break;
                 }
                                     
@@ -265,7 +266,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public object Clone() {
-            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+            var clone = new FlexGMRES();
+            clone.TerminationCriterion = this.TerminationCriterion;
+            clone.MaxKrylovDim = this.MaxKrylovDim;
+            var tmp = new List<ISolverSmootherTemplate>();
+            foreach (ISolverSmootherTemplate precond in this.PrecondS) {
+                tmp.Add(precond.CloneAs());
+            }
+            clone.PrecondS = tmp.ToArray();
+            return clone;
         }
 
         public void Dispose() {

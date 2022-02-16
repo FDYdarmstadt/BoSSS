@@ -87,6 +87,18 @@ namespace ilPSP.LinSolvers.ILU {
         }
 
 
+        protected double[] ForwardSubstitution( double[] rhs) {
+            var X=new double[rhs.Length];
+            LocalSubstitution(X, rhs, sparse_fill_mode_t.SPARSE_FILL_MODE_LOWER);
+            return X;
+        }
+
+        protected double[] BackwardSubstitution(double[] rhs) {
+            var X = new double[rhs.Length];
+            LocalSubstitution(X, rhs, sparse_fill_mode_t.SPARSE_FILL_MODE_UPPER);
+            return X;
+        }
+
         private unsafe void LocalSubstitution(double[] sol, double[] rhs, sparse_fill_mode_t Mode) {
             fixed (double* p_sol = sol, p_rhs = rhs) {
                 
@@ -104,11 +116,12 @@ namespace ilPSP.LinSolvers.ILU {
                 switch (Mode) {
                     case sparse_fill_mode_t.SPARSE_FILL_MODE_LOWER:
                         Diag = sparse_diag_type_t.SPARSE_DIAG_UNIT;
-                    operation = sparse_operation_t.SPARSE_OPERATION_NON_TRANSPOSE;
+                        operation = sparse_operation_t.SPARSE_OPERATION_NON_TRANSPOSE;
                         break;
                     case sparse_fill_mode_t.SPARSE_FILL_MODE_UPPER:
                         Diag = sparse_diag_type_t.SPARSE_DIAG_NON_UNIT;
-                        operation = sparse_operation_t.SPARSE_OPERATION_TRANSPOSE;
+                        operation = sparse_operation_t.SPARSE_OPERATION_NON_TRANSPOSE;
+                        //operation = sparse_operation_t.SPARSE_OPERATION_TRANSPOSE;
                         break;
                     default:
                         throw new NotSupportedException();
@@ -172,7 +185,7 @@ namespace ilPSP.LinSolvers.ILU {
                     int error = 0;
                     //int* n, double* a, int* ia, int* ja, double* bilu0, int* ipar, double* dpar, int* ierr);
                     wrapper.ILU0(&N, a, p_ia, p_ja, p_bilu, iparm, dparm, &error);
-                    Console.WriteLine(ILUerror2string(error));
+                    Console.WriteLine("MKL ILU:"+ILUerror2string(error));
 
                     ILUfactorization = new Matrix((IntPtr)p_bilu, ia, ja, N);
                     //TranslateMatrixBack(bilu,ia,ja,nonZ);
@@ -199,8 +212,8 @@ namespace ilPSP.LinSolvers.ILU {
             double* M = (double*)ILUfactorization.aPtr;
             int[] rowoffsetinarray = ILUfactorization.ia;
             int[] colidx = ILUfactorization.ja;
-            int NoNZ = ILUfactorization.n;
-
+            int NoNZ = colidx.Length;
+            Console.WriteLine($"NoNZ: {NoNZ}");
             var out_Matrix = new MsrMatrix(m_Matrix.RowPartitioning);
             int r = -1;
             for(int i =0;i< NoNZ; i++) {

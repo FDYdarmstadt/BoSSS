@@ -259,11 +259,13 @@ namespace BoSSS.Application.XdgPoisson3 {
         MultigridOperator.ChangeOfBasisConfig[][] OpConfig {
             get {
                 int p = this.u.Basis.Degree;
-                return new MultigridOperator.ChangeOfBasisConfig[][] {
+                int NoOfLevelWithDifferentConfig = 1;// (u.Basis.Degree - 1); // for p-MG
+                var retOpConfig = NoOfLevelWithDifferentConfig.ForLoop(iLvl =>
                     new MultigridOperator.ChangeOfBasisConfig[] {
-                        new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = this.Control.PrePreCond, DegreeS = new int[] { p } }
+                        new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = this.Control.PrePreCond, DegreeS = new int[] { p - iLvl } }
                     }
-                };
+                );
+                return retOpConfig;
             }
         }
 

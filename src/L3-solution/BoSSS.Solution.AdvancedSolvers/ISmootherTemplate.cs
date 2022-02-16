@@ -83,26 +83,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
     }
 
 
-    /// <summary>
-    /// Individual Configuration of Solver. Inherits <see cref="LinearSolverConfig"/>, which can be adjusted by control object (by the user).
-    /// </summary>
-    public class ConfigBase<T> : LinearSolverConfig
-        where T : ISolverSmootherTemplate {
 
-        /// <summary>
-        /// cctor of Individual Configuration
-        /// </summary>
-        public ConfigBase() : base() { }
+    public interface ISolverFactory  {
 
-        /// <summary>
-        /// returns an instance of the configured linear solver
-        /// </summary>
-        /// <returns></returns>
-        public T GetInstance() {
-            return (T)Activator.CreateInstance(typeof(T), new object[] { });
-        }
+        string Name { get; }
+
+        string Shortname { get; }
+
+        ISolverSmootherTemplate CreateInstance();
     }
-
 
     /// <summary>
     /// For certain solvers, a programmable termination criterion seems handy.

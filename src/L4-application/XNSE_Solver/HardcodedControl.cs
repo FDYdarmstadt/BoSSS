@@ -656,6 +656,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            
             C.LinearSolver.NoOfMultigridLevels = 4;
             C.LinearSolver.ConvergenceCriterion = 1E-8;
             C.LinearSolver.MaxSolverIterations = 200;
@@ -1144,7 +1145,7 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public static XNSE_Control Rotating_Cube(int k = 3, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 2, bool writeToDB = false, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
+        public static XNSE_Control Rotating_Cube(int k = 4, int Res = 20, int SpaceDim = 2, bool useAMR = true, int NoOfTimesteps = 2, bool writeToDB = false, bool tracing = false, bool loadbalancing = false, bool IncludeConv = false) {
             double Re = 1000;
             double particleRad = 0.261;
 
@@ -1153,6 +1154,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Rigidbody.SpecifyShape(Shape.Cube);
             C.Rigidbody.SetRotationAxis("z");
             C.PhysicalParameters.IncludeConvection = IncludeConv;
+            C.LinearSolver.SolverCode = LinearSolverCode.exp_another_Kcycle;
             
             return C;
         }

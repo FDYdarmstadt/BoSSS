@@ -66,7 +66,7 @@ namespace BoSSS.Solution.Control {
 
         exp_gmres_ILU = 31,
 
-        exp_gmres_kcycle_Schwarz = 32,
+        exp_gmres_MG_AS = 32,
 
         //CG versions
 
@@ -100,11 +100,6 @@ namespace BoSSS.Solution.Control {
         exp_gmres_schwarz_pmg = 48,
 
         /// <summary>
-        /// highly experimental shit
-        /// </summary>
-        exp_decomposedMG_OrthoScheme = 50,
-
-        /// <summary>
         /// Orthonormalization Scheme with p-multigrid preconditioner
         /// </summary>
         exp_OrthoS_pMG = 51,
@@ -125,6 +120,17 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_Kcycle_ILU = 54,
 
+        // algebraic MG respective p-MGs
+
+        /// <summary>
+        /// p two grid. Not intended as standalone, used for tests.
+        /// </summary>
+        exp_pTG = 60,
+
+        /// <summary>
+        /// Hypre's algebraic multigrid package
+        /// </summary>
+        exp_HYPRE_AMG = 61,
 
         selfmade = 999,
     }
@@ -150,7 +156,7 @@ namespace BoSSS.Solution.Control {
     /// The linear solver config
     /// </summary>
     [Serializable]
-    public class LinearSolverConfig : ICloneable, IEquatable<LinearSolverConfig> {
+    public class LinearSolverConfig : IEquatable<LinearSolverConfig> {
 
         private bool m_verbose = false;
 
@@ -250,24 +256,6 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public int pMaxOfCoarseSolver = 1;
 
-        public bool UsePMGonly = false;
-
-        /// <summary>
-        /// Clones the LinearConfig
-        /// </summary>
-        /// <returns></returns>
-        public object Clone() {
-            var clone = new LinearSolverConfig() {
-                verbose = this.verbose,
-                MaxKrylovDim = this.MaxKrylovDim,
-                MaxSolverIterations = this.MaxSolverIterations,
-                MinSolverIterations = this.MinSolverIterations,
-                NoOfMultigridLevels = this.NoOfMultigridLevels,
-                SolverCode = this.SolverCode,
-                TargetBlockSize = this.TargetBlockSize
-            };
-            return clone;
-        }
 
         /// <summary>
         /// Compares value not ref!

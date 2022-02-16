@@ -11,6 +11,10 @@ using System.Threading.Tasks;
 
 namespace BoSSS.Solution.AdvancedSolvers
 {
+    /// <summary>
+    /// Krylov-cycle: solver at coarse level is krylov method with further MG descend/coarse grid as preconditioner.
+    /// inspired by (Notay and Vassilevski, 2008), DOI:http://doi.wiley.com/10.1002/nla.542
+    /// </summary>
     public class kcycle : ISolverSmootherTemplate, ISolverWithCallback
     {
         private MultigridOperator m_MgOperator;
@@ -52,9 +56,14 @@ namespace BoSSS.Solution.AdvancedSolvers
                 // ======================
                 ThisLevelKrylovMethod = new FlexGMRES() {
                     PrecondS = new ISolverSmootherTemplate[] { this.CoarserLevelSolver },
-                    MaxKrylovDim = 1,
+                    MaxKrylovDim = 1, // =2 corresponds to W-cycle
                     TerminationCriterion = (int iter, double r0, double r) => iter <= 1,
                 };
+                //ThisLevelKrylovMethod = new SoftGMRES() {
+                //    Precond = this.CoarserLevelSolver,
+                //    MaxKrylovDim = 1,
+                //    TerminationCriterion = (int iter, double r0, double r) => iter <= 1,
+                //};
                 ThisLevelKrylovMethod.Init(op.CoarserLevel);
 
                 // init smoother
@@ -107,7 +116,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double iter0ResidualNorm = Residual(rl, xl, bl);
                 double iterNorm = iter0ResidualNorm;
 
-                for (int iIter = 0; true; iIter++) {
+                for (int iIter = 1; true; iIter++) {
                     if (!TerminationCriterion(iIter, iter0ResidualNorm, iterNorm))
                         return;
 
