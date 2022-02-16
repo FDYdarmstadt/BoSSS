@@ -43,7 +43,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public EventHandler<AutoCompleteEventArgs> AutoCompleteEvent;
 
-
+        /// <summary>
+        /// Defines arguments for <see cref="AutoCompleteEvent"/>.
+        /// </summary>
         public class AutoCompleteEventArgs : EventArgs {
 
             /// <summary>
