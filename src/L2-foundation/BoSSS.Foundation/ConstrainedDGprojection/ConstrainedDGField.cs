@@ -2638,9 +2638,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="numVCond"></param>
-        /// <param name="numECond"></param>
-        /// <returns></returns>
         private NodeSet getEdgeInterpolationNodes(int numVcond, int numEcond, int[] edgeOrientation = null, int minNoFixedEdges = 0) {
 
             int degree = m_Basis.Degree;

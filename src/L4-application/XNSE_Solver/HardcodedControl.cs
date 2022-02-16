@@ -1167,7 +1167,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             var C = Rotating_Something(k, Res, SpaceDim, useAMR, NoOfTimesteps, writeToDB, tracing, loadbalancing, Re, particleRad);
             C.Rigidbody.SpecifyShape(Shape.Sphere);
-            C.Rigidbody.SetRotationAxis("x");
+            C.Rigidbody.SetRotationAxis("z");
             C.PhysicalParameters.IncludeConvection = IncludeConv;
 
             //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
@@ -1228,8 +1228,8 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============================
 
             //// Create Grid
-            double xMin = -1, yMin = -1, zMin = -1;
-            double xMax = 3, yMax = 1, zMax = 1;
+            double xMin = -2, yMin = -2, zMin = -1;
+            double xMax = 3, yMax = 2, zMax = 1;
 
             Func<double[], int> MakeDebugPart = delegate (double[] X) {
                 double x = X[0];
@@ -1338,7 +1338,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // Physical Parameters
             // ===================
             const double rhoA = 1;
-            const double muA = 1E-3;
+            const double muA =  1E-3;
             double d_hyd = 2 * particleRad;
             double anglev = Reynoldsnumber * muA / rhoA / d_hyd;
             double VelocityIn = Reynoldsnumber * muA / rhoA / d_hyd;
@@ -1388,7 +1388,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver.MaxKrylovDim = 50;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -1406,13 +1406,13 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
 
             //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-            double dt = 0.01;
-            //C.dtMax = dt;
-            //C.dtMin = dt*1E-2;
-            C.dtFixed = dt;
-            C.NoOfTimesteps = NoOfTimesteps;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            //C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            //double dt = 0.01;
+            ////C.dtMax = dt;
+            ////C.dtMin = dt*1E-2;
+            //C.dtFixed = dt;
+            //C.NoOfTimesteps = NoOfTimesteps;
 
             // haben fertig...
             // ===============

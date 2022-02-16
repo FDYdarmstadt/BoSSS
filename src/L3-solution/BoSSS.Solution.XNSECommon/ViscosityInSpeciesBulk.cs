@@ -31,14 +31,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.m_bcMap = bcMap;
 
             ValidSpecies = spcName;
-            switch (spcName) {
+            switch(spcName) {
                 case "A": currentMu = _muA; complementMu = _muB; break;
                 case "B": currentMu = _muB; complementMu = _muA; break;
                 default: throw new ArgumentException("Unknown species.");
             }
 
-            double muFactor = Math.Max(currentMu, complementMu) / currentMu;
-            base.m_penalty_base = penalty_safety * muFactor;
+            //double muFactor = Math.Max(currentMu, complementMu) / currentMu;
+            //base.m_penalty_base = penalty_safety * muFactor;
 
             int D = base.m_D;
             base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);
@@ -71,14 +71,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.m_bcMap = bcMap;
 
             ValidSpecies = spcName;
-            switch (spcName) {
+            switch(spcName) {
                 case "A": currentMu = _muA; complementMu = _muB; break;
                 case "B": currentMu = _muB; complementMu = _muA; break;
                 default: throw new ArgumentException("Unknown species.");
             }
 
-            double muFactor = Math.Max(currentMu, complementMu) / currentMu;
-            base.m_penalty_base = penalty * muFactor;
+            //double muFactor = Math.Max(currentMu, complementMu) / currentMu;
+            //base.m_penalty_base = penalty * muFactor;
 
             int D = base.m_D;
             base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);
