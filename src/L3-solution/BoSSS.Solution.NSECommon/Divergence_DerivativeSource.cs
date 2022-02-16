@@ -154,6 +154,7 @@ namespace BoSSS.Solution.NSECommon {
                     FluxInCell = 0.0;
                         break;
                 }
+                case IncompressibleBcType.Wall: // wall and inlet are both Dirichlet conditions w.r.t. velocity
                 case IncompressibleBcType.Velocity_Inlet:
                 case IncompressibleBcType.NavierSlip_Linear: {
                     double u_j_In = Uin[0];
@@ -162,13 +163,12 @@ namespace BoSSS.Solution.NSECommon {
                     FluxInCell = -(u_j_In - u_j_Out) * inp.Normal[component];
                         break;
                 }
-                case IncompressibleBcType.Wall:
                 case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NoSlipNeumann:
                 {
                     double u_j_In = Uin[0];
-                    double u_j_Out = this.bndFunction[inp.EdgeTag](inp.X, inp.time);
+                    double u_j_Out = 0.0;// this.bndFunction[inp.EdgeTag](inp.X, inp.time);
                     FluxInCell = -(u_j_In - u_j_Out) * inp.Normal[component];
                     break;
                 }

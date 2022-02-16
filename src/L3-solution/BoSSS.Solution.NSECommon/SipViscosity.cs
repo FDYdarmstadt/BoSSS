@@ -312,7 +312,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// base multiplier for the penalty computation
         /// </summary>
-        protected double m_penalty_base;
+        private double m_penalty_base;
 
 
         /// <summary>
@@ -492,10 +492,10 @@ namespace BoSSS.Solution.NSECommon {
     ///   -\mathrm{div} \left( \mu \nabla \vec{u} \right)
     /// \f]
     /// </summary>
-    public class SipViscosity_GradU : SipViscosityBase
-        , INonlinVolumeForm_GradV,
+    public class SipViscosity_GradU : SipViscosityBase,
+        INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
-        INonlinEdgeForm_V 
+        INonlinEdgeForm_V  //
     {
 
         /// <summary>
@@ -525,7 +525,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
-            double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
+            double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);
             double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             double muB = this.Viscosity(inp.Parameters_OUT, _uB, _Grad_uB);
 
@@ -539,8 +539,7 @@ namespace BoSSS.Solution.NSECommon {
             double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
             //Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * muMax; // penalty term
             Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * muMax; // penalty term 
-
-           return -Acc;
+            return -Acc;
         }
 
 
@@ -1000,7 +999,6 @@ namespace BoSSS.Solution.NSECommon {
                                    ViscosityOption _ViscosityMode, /*ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,*/
                                    double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
-            throw new Exception("remove me");
             //this.ViscSolverMode = ViscSolverMode;
         }
 

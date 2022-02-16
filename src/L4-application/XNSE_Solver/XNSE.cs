@@ -313,6 +313,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 configsLevel.Add(confMomConti);
             } else {
+                
                 // configurations for velocity
                 for (int d = 0; d < D; d++) {
                     var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
@@ -517,7 +518,12 @@ namespace BoSSS.Application.XNSE_Solver {
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
 
-            if (this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature) BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
+            // testcode: delete if in master
+            //Console.WriteLine("!!!!!!!!!!!!!!!!! skipping IBM");
+            //return;
+
+            if (this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature) 
+                BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
 
             for (int d = 0; d < D; ++d) {
                 // so far only no slip!

@@ -45,7 +45,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
                 // the last configuration entry will be used for all higher level
                 MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[this.Control.LinearSolver.NoOfMultigridLevels][];
-                for(int iLevel = 0; iLevel < 15; iLevel++) { // after level 14, the same config is used over an over;
+                for(int iLevel = 0; iLevel < Math.Min(15, configs.Length); iLevel++) { // after level 14, the same config is used over an over;
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
                     AddMultigridConfigLevel(configsLevel, iLevel);
