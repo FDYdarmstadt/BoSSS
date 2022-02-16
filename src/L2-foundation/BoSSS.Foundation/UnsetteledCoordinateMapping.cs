@@ -101,6 +101,8 @@ namespace BoSSS.Foundation {
         /// Constructs a new mapping from an ordered list of basis functions;
         /// </summary>
         /// <param name="_basis">the list of DG basis'es that define this mapping</param>
+        /// <param name="g"></param>
+        /// <param name="_Comm"></param>
         private UnsetteledCoordinateMapping(IGridData g, IEnumerable<Basis> _basis, MPI_Comm _Comm) :
             base(ComputeLength(_basis), _Comm) //
         {

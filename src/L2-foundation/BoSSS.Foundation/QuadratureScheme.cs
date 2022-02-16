@@ -779,7 +779,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="QuadratureScheme{S, T}.GetDefaultRuleFactory"/>
         /// </param>
         /// <param name="elem">
-        /// reference element, must be one of <see cref="BoSSS.Foundation.Grid.GridCommons.RefElements"/>
+        /// reference element, must be one of <see cref="IGeometricalCellsData.RefElements"/>
         /// </param>
         /// <returns>
         /// An instance of <see cref="StandardQuadRuleFactory"/> for the volume
@@ -931,7 +931,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="QuadratureScheme{S, T}.GetDefaultRuleFactory"/>
         /// </param>
         /// <param name="elem">
-        /// reference element, must be one of <see cref="BoSSS.Foundation.Grid.GridCommons.RefElements"/>
+        /// reference element, must be one of <see cref="IGeometricalCellsData.RefElements"/>
         /// </param>
         /// <returns>
         /// An instance of <see cref="CellBoundaryFromEdgeRuleFactory{T}"/>
