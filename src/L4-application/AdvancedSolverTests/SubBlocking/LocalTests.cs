@@ -97,9 +97,15 @@ namespace AdvancedSolverTests.SubBlocking
         /// </summary>
         [Test]
         public static void SubBlockExtractionWithCoupling(
+#if DEBUG
+            [Values(XDGusage.all)] XDGusage UseXdg,
+            [Values(1)] int DGOrder,
+            [Values(MatrixShape.diagonal, MatrixShape.diagonal_var)] MatrixShape MShape
+#else
             [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder,
             [Values(MatrixShape.diagonal, MatrixShape.diagonal_var, MatrixShape.diagonal_spec, MatrixShape.diagonal_var_spec)] MatrixShape MShape
+#endif
             ) {
 
             Utils.TestInit((int)UseXdg, DGOrder, (int)MShape);
@@ -169,6 +175,8 @@ namespace AdvancedSolverTests.SubBlocking
                 //Was wird getestet: funktioniert ignorecoupling richtig?
             }
         }
+
+
         [Test]
         public static void SubMatrixExtractionWithCoupling(
         [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
