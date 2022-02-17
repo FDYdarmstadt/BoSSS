@@ -34,7 +34,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class swipViscosityNewBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
+    public abstract class SipViscosityNewBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
 
         /// <summary>
         /// ctor.
@@ -66,7 +66,7 @@ namespace BoSSS.Solution.NSECommon {
         /// </param>
         /// Flag for activating/deactivating the optimized fluxes
         /// <param name="ignoreVectorized"></param>
-        protected swipViscosityNewBase(
+        protected SipViscosityNewBase(
                                     double _penaltyBase,
                                     int iComp, int D, ViscosityTermsSwitch ViscosityTerms, IncompressibleBoundaryCondMap bcmap, /*TermSwitches ViscosityTerms,*/
                                     ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false) {
@@ -507,13 +507,13 @@ namespace BoSSS.Solution.NSECommon {
     /// \f]
     /// for a variable \mu value
     /// </summary>
-    public class sipViscosity_Variable : swipViscosityNewBase, INonlinVolumeForm_GradV,
+    public class SipViscosity_Variable : SipViscosityNewBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
         /// <summary>
         /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
         /// </summary>
-        public sipViscosity_Variable(double _penalty, int iComp, int D, ViscosityTermsSwitch myviscosityTerms, IncompressibleBoundaryCondMap bcmap,
+        public SipViscosity_Variable(double _penalty, int iComp, int D, ViscosityTermsSwitch myviscosityTerms, IncompressibleBoundaryCondMap bcmap,
                                    ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false)
             //Func<double, int, int, MultidimensionalArray, double> ComputePenalty = null)
             : base(_penalty, iComp, D, myviscosityTerms, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS, ignoreVectorized) {

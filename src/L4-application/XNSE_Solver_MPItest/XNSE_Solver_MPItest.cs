@@ -47,9 +47,12 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSE_Solver_MPItest {
 
         [Test]
-        static public void ParallelRisingDroplet() {
-            var C = RisingBubble();
+        static public void ParallelRisingDroplet([Values(3)] int p) {
+            var C = RisingBubble(p: p);
             C.TracingNamespaces = "*";
+
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 3;
 
             using (var solver = new XNSE()) {
                 solver.Init(C);
@@ -141,35 +144,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         static void Main(string[] args) {
-            /*
+            
             BoSSS.Solution.Application.InitMPI();
+            ParallelRisingDroplet(1);
+            ParallelRisingDroplet(2);
+            ParallelRisingDroplet(3);
 
-            int[] idxS;
-            int root = 3;
-            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int myRank);
-            if(myRank == root) {
-                idxS = new[] { 4, 3, 2, 1 };
-            } else {
-                idxS = null;
-            }
-
-            idxS = idxS.MPIBroadcast(root);
-            Assert.AreEqual(idxS[0], 4);
-            Assert.AreEqual(idxS[1], 3);
-            Assert.AreEqual(idxS[2], 2);
-            Assert.AreEqual(idxS[3], 1);
-
-            Console.WriteLine("check ok.");
-
-            BoSSS.Solution.Application.FinalizeMPI();
-            return;
-            */
-
-        
-
-            BoSSS.Solution.Application.InitMPI();
-            //BadInitiallyDistributionTest();
-            emptyMaskInSchwarz();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 

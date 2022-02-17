@@ -72,7 +72,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// ~
         /// </summary>
-        public Func<int, double, double, bool> TerminationCriterion {
+        public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;
         }
@@ -81,7 +81,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ctor
         /// </summary>
         public FlexGMRES() {
-            TerminationCriterion = (iIter, r0, ri) => iIter <= 1;
+            TerminationCriterion = (iIter, r0, ri) => (iIter <= 1, true);
         }
 
 
@@ -134,8 +134,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.IterationCallback?.Invoke(iIter, X0.CloneAs(), R0.CloneAs(), this.m_mgop);
 
                 // termination condition
-                if (!TerminationCriterion(iIter, iter0_l2Residual, iter_l2Residual)) {
-                    m_Converged = true;
+                var term = TerminationCriterion(iIter, iter0_l2Residual, iter_l2Residual);
+                if (!term.bNotTerminate) {
+                    this.m_Converged = term.bSuccess;
                     break;
                 }
                                     

@@ -37,19 +37,28 @@ namespace BoSSS.Solution.AdvancedSolvers
     public class SoftGMRES : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination
     {
 
+        Func<int, double, double, (bool bNotTerminate, bool bSuccess)> m_TerminationCriterion;
+
         /// <summary>
         /// ~
         /// </summary>
-        public Func<int, double, double, bool> TerminationCriterion {
-            get;
-            set;
+        public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
+            get {
+                return m_TerminationCriterion;
+            }
+            set {
+                m_TerminationCriterion = value;
+            }
         }
 
         /// <summary>
         /// ctor
         /// </summary>
         public SoftGMRES() {
-            TerminationCriterion = (iIter, r0, ri) => iIter <= 100 && ri > 1e-7;
+            m_TerminationCriterion = (iIter, r0, ri) => {
+                Console.WriteLine("iIter: " + iIter + " ri = " + ri);
+                return (iIter <= 500 && ri > 1e-7, ri <= 1e-7);
+            };
         }
 
         /// <summary>
@@ -135,6 +144,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             where V2 : IList<double> {
 
             using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = false;
+                tr.Info("IterationCallback set? " + (this.IterationCallback != null));
+                tr.Info("Preconditioner is " + (this.Precond?.ToString() ?? "null"));
                 double[] X, B;
                 if (_X is double[]) {
                     X = _X as double[];
@@ -176,13 +188,15 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double iter0_error2 = error2;
 
                 double error = (r.L2NormPow2().MPISum().Sqrt()) / bnrm2;
-                if (!TerminationCriterion(0, error2, error2)) {
-
+                var term0 = TerminationCriterion(0, error2, error2);
+                if (!term0.bNotTerminate) {
 
                     if (!object.ReferenceEquals(_X, X))
                         _X.SetV(X);
                     B.SetV(z);
-                    this.m_Converged = true;
+                    tr.Info($"convergence reached before iterations, success? {term0.bSuccess}: iter0_err = {iter0_error2}");
+                    //Console.WriteLine("convergence reached (1);");
+                    this.m_Converged = term0.bSuccess;
                     return;
                 }
 
@@ -291,7 +305,8 @@ namespace BoSSS.Solution.AdvancedSolvers
                         IterationCallback?.Invoke(iter, Xtmp.CloneAs(), ztmp.CloneAs(), this.m_mgop);
                         */
 
-                        if (!TerminationCriterion(totIterCounter, iter0_error2, error2)) {
+                        var term1 = TerminationCriterion(totIterCounter, iter0_error2, error2);
+                        if (!term1.bNotTerminate) {
                             // update approximation and exit
                             //y = H(1:i,1:i) \ s(1:i);    
                             y = new double[i];
@@ -302,17 +317,19 @@ namespace BoSSS.Solution.AdvancedSolvers
                             for (int ii = 0; ii < i; ii++) {
                                 X.AccV(y[ii], V[ii]);
                             }
-                            this.m_Converged = true;
+                            this.m_Converged = term1.bSuccess;
+                            tr.Info($"convergence reached (2), success? {term1.bSuccess}: iter {totIterCounter}:   iter0_err = {iter0_error2}, err = {error2}");
                             break;
                         }
 
-                        totIterCounter++;
+                        totIterCounter++; // every preconditioner call is count as one iteration
                     }
                     #endregion
-                    //Debugger.Launch();
 
-                    if (!TerminationCriterion(totIterCounter, iter0_error2, error2)) {
-                        this.m_Converged = true;
+                    var term2 = TerminationCriterion(totIterCounter, iter0_error2, error2);
+                    if (!term2.bNotTerminate) {
+                        this.m_Converged = term2.bSuccess;
+                        tr.Info($"convergence reached (3), success? {term2.bSuccess}: iter {totIterCounter}:   iter0_err = {iter0_error2}, err = {error2}");
                         break;
                     }
 
@@ -329,6 +346,8 @@ namespace BoSSS.Solution.AdvancedSolvers
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
                     error2 = z.MPI_L2Norm();
+                    IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop);
+
 
                     if (this.Precond != null) {
                         r.Clear();
@@ -355,6 +374,8 @@ namespace BoSSS.Solution.AdvancedSolvers
                     _X.SetV(X);
                 B.SetV(z);
 
+                // Disposing should not be done here, 
+                // otherwise the Precond must be initialized very often.
                 //if (this.Precond is IDisposable)
                 //    (this.Precond as IDisposable).Dispose();
             }
@@ -410,7 +431,8 @@ namespace BoSSS.Solution.AdvancedSolvers
         }
 
         public void Dispose() {
-            this.Precond.Dispose();
+            if(this.Precond != null)
+                this.Precond.Dispose();
         }
 
         public long UsedMemory() {

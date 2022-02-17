@@ -189,8 +189,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Debug.Assert(lowMask != null);
             BMloBlock = lowMask;
             var HiMask = new BlockMask(HiSel, ExtMatrix);
-            Debug.Assert(HiMask.GetNoOfMaskedCells == lowMask.GetNoOfMaskedCells);
-            Debug.Assert(HiMask.GetNoOfMaskedCells == fullBlock._RowPartitioning.LocalNoOfBlocks);
+            Debug.Assert(HiMask.NoOfMaskedCells == lowMask.NoOfMaskedCells);
+            Debug.Assert(HiMask.NoOfMaskedCells == fullBlock._RowPartitioning.LocalNoOfBlocks);
 
             //Console.WriteLine("Testcode in Schwarz.");
             //Debug.Assert(HiMask.GetNoOfMaskedCells == BlockCellIdc.Count() || m_FullSolveOfCutcells); // Probably not fulfilled for IBM, there maybe emtpy cells, due to no species

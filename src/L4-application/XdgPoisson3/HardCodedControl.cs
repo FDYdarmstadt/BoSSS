@@ -229,7 +229,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz;//R.solverName = "pcg+schwarz";
+            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "pcg+schwarz";
             R.LinearSolver.NoOfMultigridLevels = 2;
             R.AgglomerationThreshold = 0.0;
 
@@ -505,31 +505,31 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// This is a testrun similar to the one in \public\doc\handbook\apdx-NodeSolverPerformance\XDGPoisson\Part1-Calculations.bws
         /// phase A: 3D sphere, pahse B: [-1,1]^3\sphere
         /// </summary>
-        /// <param name="myDB"></param>
-        /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 2)
-        {
+        public static XdgPoisson3Control TestOrTreat(int solver = 4) {
+
             XdgPoisson3Control C = new XdgPoisson3Control();
 
-            switch (solver)
-            {
+            switch(solver) {
                 case 0:
-                    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-                    break; 
+                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+                break;
                 case 1:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-                    break;
+                C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+                break;
                 case 2:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_ILU;
-                    break;
+                C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_ILU;
+                break;
+
                 case 3:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_MG_AS;
-                    break;
+                C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+                break;
+
                 case 4:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
-                    break;
+                throw new NotImplementedException("deactivated old solver config.");
+                //C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+                //break;
                 default:
-                    throw new NotImplementedException("guess again");
+                throw new NotImplementedException("guess again");
             }
 
             C.savetodb = false;

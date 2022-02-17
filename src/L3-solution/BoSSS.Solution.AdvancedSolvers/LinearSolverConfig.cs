@@ -42,6 +42,7 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         classic_pardiso = 2,
 
+        /*
         //Schwarz: Domain decomposition (direct Solver)
 
         /// <summary>
@@ -64,11 +65,13 @@ namespace BoSSS.Solution.Control {
         exp_gmres_AS = 27,
         exp_gmres_AS_MG = 30,
 
-        exp_gmres_ILU = 31,
 
         exp_gmres_MG_AS = 32,
 
         //CG versions
+        */
+
+        exp_gmres_ILU = 31,
 
         /// <summary>
         /// Conjugate gradient (from monkey library) without any preconditioning.
@@ -80,43 +83,42 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         exp_Kcycle_schwarz = 41,
 
-        exp_softpcg_jacobi_mg =42,
+        //exp_softpcg_jacobi_mg =42,
 
-        /// <summary>
-        /// Conjugate gradient, with additive Schwarz preconditioner.
-        /// </summary>
-        exp_softpcg_schwarz = 43,
+        ///// <summary>
+        ///// Conjugate gradient, with additive Schwarz preconditioner.
+        ///// </summary>
+        //exp_softpcg_schwarz = 43,
 
-        /// <summary>
-        /// Conjugate gradient, with additive Schwarz preconditioner, including a coarse-grid solver.
-        /// </summary>
-        exp_softpcg_schwarz_directcoarse = 44,
+        ///// <summary>
+        ///// Conjugate gradient, with additive Schwarz preconditioner, including a coarse-grid solver.
+        ///// </summary>
+        //exp_softpcg_schwarz_directcoarse = 44,
 
         /// <summary>
         /// GMRES with p-multigrid on the same mesh level; direct solver is used for 
         /// </summary>
         exp_gmres_levelpmg = 47,
 
+        /// <summary>
+        /// GMRES with additive Schwarz (<see cref="AdvancedSolvers.Schwarz"/>) as preconditioner
+        /// </summary>
         exp_gmres_schwarz_pmg = 48,
 
-        /// <summary>
-        /// Orthonormalization Scheme with p-multigrid preconditioner
-        /// </summary>
-        exp_OrthoS_pMG = 51,
+        ///// <summary>
+        ///// highly experimental shit
+        ///// </summary>
+        //exp_decomposedMG_OrthoScheme = 50,
+
 
         /// <summary>
-        /// Work-in-progress: experimental stuff for rheology solver
-        /// </summary>
-        exp_Kcycle_schwarz_4Rheology = 52,
-
-        /// <summary>
-        /// 
+        /// Experimental, not for end-user
         /// </summary>
         exp_another_Kcycle = 53,
 
 
         /// <summary>
-        /// a k-cycle, with ILU at each level
+        /// a k-cycle (i.e. a tree of <see cref="AdvancedSolvers.OrthonormalizationMultigrid"/> solvers), with ILU-preconditioner (<see cref="AdvancedSolvers.CellILU"/>) at each level
         /// </summary>
         exp_Kcycle_ILU = 54,
 

@@ -235,7 +235,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// ~
         /// </summary>
-        public Func<int, double, double, bool> TerminationCriterion {
+        public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;
         }
@@ -248,7 +248,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ctor
         /// </summary>
         public ClassicMultigrid() {
-            TerminationCriterion = (iIter, r0, ri) => iIter <= 1;
+            TerminationCriterion = (iIter, r0, ri) => (iIter <= 1, true);
         }
 
 
@@ -271,7 +271,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double iterNorm = iter0ResidualNorm;
 
                 for (int iIter = 0; true; iIter++) {
-                    if (!TerminationCriterion(iIter, iter0ResidualNorm, iterNorm))
+                    var term = TerminationCriterion(iIter, iter0ResidualNorm, iterNorm);
+                    this.m_converged = term.bSuccess;
+                    if (!term.bNotTerminate)
                         return;
 
                     var DGBasis = m_MgOperator.BaseGridProblemMapping.BasisS[0];

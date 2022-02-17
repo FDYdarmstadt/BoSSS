@@ -104,9 +104,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// - 1st argument: iteration index
         /// - 2nd argument: l2-Norm of residual of initial solution 
         /// - 3rd argument: l2-Norm of residual of solution in current iteration
-        /// - return value: true to continue, false to terminate
+        /// - return value, 1st item: true to continue, false to terminate
+        /// - return value, 2nd item: true for successful convergence (e.g. convergence criterion reached), false for failure (e.g. maximum number of iterations reached)
         /// </summary>
-        Func<int, double, double, bool> TerminationCriterion {
+        Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;
         }

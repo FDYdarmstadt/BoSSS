@@ -1575,9 +1575,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     GetSolver(out nonlinSolver, out linearSolver);
 
                     if(RequiresNonlinearSolver) {
-
+                        // ++++++++++++++++++++++++++++++++
                         // Nonlinear Solver (Navier-Stokes)
-                        // --------------------------------
+                        // ++++++++++++++++++++++++++++++++
 
                         // use solver
                         success = nonlinSolver.SolverDriver(m_Stack_u[0], default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
@@ -1587,8 +1587,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                         m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
 
                     } else {
+                        // ++++++++++++++++++++++++++++++++
                         // Linear Solver (Stokes)
-                        // ----------------------
+                        // ++++++++++++++++++++++++++++++++
                         tr.Info("Using linear solver.");
 
                         // build the saddle-point matrix
@@ -1607,29 +1608,34 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
                         }
 
-                        // init linear solver
-
-
                         //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
                         //p.PlotInteractive();
 
+                        //var EigValVect = mgOperator.OperatorMatrix.MinimalEigen();
+                        //var DGevevt = mgOperator.ProlongateSolToDg(EigValVect.V, "MinimalEigen");
+                        //Tecplot.Tecplot.PlotFields(DGevevt, "Eigen", 0.0, 4);
+                        //throw new Exception("done eigen");
+
+                        //mgOperator.OperatorMatrix.SaveToTextFileSparse("C:\\tmp\\Bug2\\XNS.txt");
+                        //throw new Exception("term");
+
+                        // init linear solver
                         using(new BlockTrace("Slv Init", tr)) {
                             linearSolver.Init(mgOperator);
                         }
 
                         // try to solve the saddle-point system.
                         using(new BlockTrace("Slv Iter", tr)) {
-
-
                             mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
+                            //mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
                         }
-
+                        Console.WriteLine("solver success: " + linearSolver.Converged);
                         success = linearSolver.Converged;
-
-
+                        
                         // 'revert' agglomeration
                         Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                         m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+
 
 
                     //ExtractSomeSamplepoints("samples");
