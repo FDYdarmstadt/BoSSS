@@ -86,12 +86,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     public interface ISolverFactory  {
 
+        /// <summary>
+        /// Name/Description of the solver configuration
+        /// </summary>
         string Name { get; }
 
+        /// <summary>
+        /// short version of <see cref="Name"/>, e.g. to be used in plots
+        /// </summary>
         string Shortname { get; }
 
-        ISolverSmootherTemplate CreateInstance();
+        /// <summary>
+        /// Creates an Instance of the respective solver
+        /// </summary>
+        ISolverSmootherTemplate CreateInstance(MultigridOperator level);
     }
+
+
 
     /// <summary>
     /// For certain solvers, a programmable termination criterion seems handy.

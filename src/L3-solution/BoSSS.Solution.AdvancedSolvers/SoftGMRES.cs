@@ -29,13 +29,11 @@ using BoSSS.Foundation;
 using System.IO;
 using ilPSP.Tracing;
 
-namespace BoSSS.Solution.AdvancedSolvers
-{
+namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Standard preconditioned GMRES.
     /// </summary>
-    public class SoftGMRES : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination
-    {
+    public class SoftGMRES : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
         Func<int, double, double, (bool bNotTerminate, bool bSuccess)> m_TerminationCriterion;
 
@@ -56,7 +54,6 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         public SoftGMRES() {
             m_TerminationCriterion = (iIter, r0, ri) => {
-                Console.WriteLine("iIter: " + iIter + " ri = " + ri);
                 return (iIter <= 500 && ri > 1e-7, ri <= 1e-7);
             };
         }
@@ -64,20 +61,18 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// ~
         /// </summary>
-        public void Init(MultigridOperator op)
-        {
+        public void Init(MultigridOperator op) {
 
             var Mtx = op.OperatorMatrix;
             var MgMap = op.Mapping;
             this.m_mgop = op;
 
-            if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+            if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Row partitioning mismatch.");
-            if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+            if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
                 throw new ArgumentException("Column partitioning mismatch.");
             this.Matrix = Mtx;
-            if (Precond != null)
-            {
+            if(Precond != null) {
                 Precond.Init(op);
             }
         }
@@ -112,22 +107,16 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Compute the Givens rotation matrix parameters for a and b.
         /// </summary>
-        static void rotmat(out double c, out double s, double a, double b)
-        {
+        static void rotmat(out double c, out double s, double a, double b) {
             double temp;
-            if (b == 0.0)
-            {
+            if(b == 0.0) {
                 c = 1.0;
                 s = 0.0;
-            }
-            else if (Math.Abs(b) > Math.Abs(a))
-            {
+            } else if(Math.Abs(b) > Math.Abs(a)) {
                 temp = a / b;
                 s = 1.0 / Math.Sqrt(1.0 + temp * temp);
                 c = temp * s;
-            }
-            else
-            {
+            } else {
                 temp = b / a;
                 c = 1.0 / Math.Sqrt(1.0 + temp * temp);
                 s = temp * c;
@@ -143,17 +132,17 @@ namespace BoSSS.Solution.AdvancedSolvers
             where V1 : IList<double>
             where V2 : IList<double> {
 
-            using (var tr = new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 tr.InfoToConsole = false;
                 tr.Info("IterationCallback set? " + (this.IterationCallback != null));
                 tr.Info("Preconditioner is " + (this.Precond?.ToString() ?? "null"));
                 double[] X, B;
-                if (_X is double[]) {
+                if(_X is double[]) {
                     X = _X as double[];
                 } else {
                     X = _X.ToArray();
                 }
-                if (_B is double[]) {
+                if(_B is double[]) {
                     B = _B as double[];
                 } else {
                     B = _B.ToArray();
@@ -161,7 +150,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
 
                 double bnrm2 = B.MPI_L2Norm();
-                if (bnrm2 == 0.0) {
+                if(bnrm2 == 0.0) {
                     bnrm2 = 1.0;
                 }
 
@@ -176,7 +165,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 Matrix.SpMV(-1.0, X, 1.0, z);
                 IterationCallback?.Invoke(0, X.CloneAs(), z.CloneAs(), this.m_mgop);
 
-                if (this.Precond != null) {
+                if(this.Precond != null) {
                     r.Clear();
                     this.Precond.Solve(r, z);
                 } else {
@@ -189,9 +178,9 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                 double error = (r.L2NormPow2().MPISum().Sqrt()) / bnrm2;
                 var term0 = TerminationCriterion(0, error2, error2);
-                if (!term0.bNotTerminate) {
+                if(!term0.bNotTerminate) {
 
-                    if (!object.ReferenceEquals(_X, X))
+                    if(!object.ReferenceEquals(_X, X))
                         _X.SetV(X);
                     B.SetV(z);
                     tr.Info($"convergence reached before iterations, success? {term0.bSuccess}: iter0_err = {iter0_error2}");
@@ -200,7 +189,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     return;
                 }
 
-                if (MaxKrylovDim <= 0)
+                if(MaxKrylovDim <= 0)
                     throw new NotSupportedException("unsupported restart length.");
 
                 int m = MaxKrylovDim;
@@ -218,14 +207,14 @@ namespace BoSSS.Solution.AdvancedSolvers
                 double temp;
                 int iter;
                 int totIterCounter = 0;
-                for (iter = 1; true; iter++) { // GMRES iterations
-                                               // r = M \ ( b-A*x );
+                for(iter = 1; true; iter++) { // GMRES iterations
+                                              // r = M \ ( b-A*x );
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
 
                     error2 = z.MPI_L2Norm();
 
-                    if (this.Precond != null) {
+                    if(this.Precond != null) {
                         r.Clear();
                         this.Precond.Solve(r, z);
                     } else {
@@ -242,21 +231,21 @@ namespace BoSSS.Solution.AdvancedSolvers
                     int i;
 
                     #region Gram-Schmidt (construct orthonormal basis using Gram-Schmidt)
-                    for (i = 1; i <= m; i++) {
+                    for(i = 1; i <= m; i++) {
                         this.NoOfIterations++;
 
                         #region Arnoldi procdure
 
                         //w = M \ (A*V(:,i));                         
                         Matrix.SpMV(1.0, V[i - 1], 0.0, z);
-                        if (this.Precond != null) {
+                        if(this.Precond != null) {
                             w.Clear();
                             this.Precond.Solve(w, z);
                         } else {
                             w.SetV(z);
                         }
 
-                        for (int k = 1; k <= i; k++) {
+                        for(int k = 1; k <= i; k++) {
                             H[k - 1, i - 1] = GenericBlas.InnerProd(w, V[k - 1]).MPISum();
                             //w = w - H(k,i)*V(:,k);
                             w.AccV(-H[k - 1, i - 1], V[k - 1]);
@@ -271,7 +260,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
                         #region Givens rotation
 
-                        for (int k = 1; k <= i - 1; k++) {
+                        for(int k = 1; k <= i - 1; k++) {
                             // apply Givens rotation, H is Hessenberg-Matrix
                             temp = cs[k - 1] * H[k - 1, i - 1] + sn[k - 1] * H[k + 1 - 1, i - 1];
                             H[k + 1 - 1, i - 1] = -sn[k - 1] * H[k - 1, i - 1] + cs[k - 1] * H[k + 1 - 1, i - 1];
@@ -306,7 +295,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                         */
 
                         var term1 = TerminationCriterion(totIterCounter, iter0_error2, error2);
-                        if (!term1.bNotTerminate) {
+                        if(!term1.bNotTerminate) {
                             // update approximation and exit
                             //y = H(1:i,1:i) \ s(1:i);    
                             y = new double[i];
@@ -314,7 +303,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                                 .Solve(y, s.GetSubVector(0, i));
 
                             // x = x + V(:,1:i)*y;
-                            for (int ii = 0; ii < i; ii++) {
+                            for(int ii = 0; ii < i; ii++) {
                                 X.AccV(y[ii], V[ii]);
                             }
                             this.m_Converged = term1.bSuccess;
@@ -327,7 +316,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     #endregion
 
                     var term2 = TerminationCriterion(totIterCounter, iter0_error2, error2);
-                    if (!term2.bNotTerminate) {
+                    if(!term2.bNotTerminate) {
                         this.m_Converged = term2.bSuccess;
                         tr.Info($"convergence reached (3), success? {term2.bSuccess}: iter {totIterCounter}:   iter0_err = {iter0_error2}, err = {error2}");
                         break;
@@ -338,7 +327,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { m - 1, m - 1 })
                         .Solve(y, s.GetSubVector(0, m));
                     // update approximation: x = x + V(:,1:m)*y;  
-                    for (int ii = 0; ii < m; ii++) {
+                    for(int ii = 0; ii < m; ii++) {
                         X.AccV(y[ii], V[ii]);
                     }
 
@@ -349,7 +338,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop);
 
 
-                    if (this.Precond != null) {
+                    if(this.Precond != null) {
                         r.Clear();
                         this.Precond.Solve(r, z);
                     } else {
@@ -363,14 +352,14 @@ namespace BoSSS.Solution.AdvancedSolvers
                                                          //break;
                 }
 
-                if (IterationCallback != null) {
+                if(IterationCallback != null) {
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
                     IterationCallback(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop);
                 }
 
 
-                if (!object.ReferenceEquals(_X, X))
+                if(!object.ReferenceEquals(_X, X))
                     _X.SetV(X);
                 B.SetV(z);
 
@@ -386,7 +375,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         public int IterationsInNested {
             get {
-                if (this.Precond != null)
+                if(this.Precond != null)
                     return this.Precond.IterationsInNested + this.Precond.ThisLevelIterations;
                 else
                     return 0;
@@ -411,11 +400,10 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
         }
 
-        public void ResetStat()
-        {
+        public void ResetStat() {
             this.m_Converged = false;
             this.NoOfIterations = 0;
-            if (this.Precond != null)
+            if(this.Precond != null)
                 this.Precond.ResetStat();
         }
 
@@ -425,7 +413,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             Clone.IterationCallback = this.IterationCallback;
             Clone.MaxKrylovDim = this.MaxKrylovDim;
             Clone.TerminationCriterion = this.TerminationCriterion;
-            if (this.Precond != null)
+            if(this.Precond != null)
                 Clone.Precond = this.Precond.CloneAs();
             return Clone;
         }
