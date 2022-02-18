@@ -35,10 +35,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         [DataMember]
         public double ConvergenceCriterion = 1e-10;
 
-        //public bool
-        //i <= MaxSolverIterations && r > r0 * ConvergenceCriterion, // termination criterion (both, success and fail)
-        //                    r <= r0 * ConvergenceCriterion  // success criterion
 
+        /// <summary>
+        /// Termination criterion based on the threshold <see cref="ConvergenceCriterion"/>.
+        /// </summary>
+        /// <returns>
+        /// - 1st item: true: solver should continue; false: terminate;
+        /// - 2nd item: if first item true, either success (true, i.e. solver converged successfully) or fail (false, e.g. reached the <see cref="MaxSolverIterations"/>);
+        /// </returns>
         public (bool bNotTerminate, bool bSuccess) DefaultTermination(int iter, double R0_l2, double R_l2) {
             if(iter <= MinSolverIterations)
                 return (true, false); // keep running
@@ -89,7 +93,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Determines maximal DG order within coarse system of a p-Multigrid. Only applicable for p-two-grid, e.g. Schwarz with p-MG or PTG <see cref="exp_gmres_levelpmg"/> preconditioner.
+        /// Determines maximal DG order within coarse system of a p-Multigrid. 
         /// </summary>
         [DataMember]
         public int pMaxOfCoarseSolver = 1;
@@ -191,9 +195,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Number of Blocks at this level. Minimum 1 per core
         /// </summary>
-        /// <param name="MGLevel"></param>
-        /// <param name="pCoarse"></param>
-        /// <returns></returns>
         private int NoOfBlocksAtLevel(MultigridOperator op, int MGLevel = 0, int pCoarsest = -1, Func<int, int> targetblocksize = null) {
             if(targetblocksize == null)
                 targetblocksize = (int iLevel) => TargetBlockSize;
@@ -213,8 +214,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// No Of Local Schwarz Blocks (process local) for all MG levels
         /// </summary>
-        /// <param name="pCoarsest">if pMG used in block solver</param>
-        /// <returns></returns>
+
         private int[] NoOfSchwarzBlocks(MultigridOperator op, int pCoarsest = -1, Func<int, int> targetblocksize = null) {
             int MSLength = op.NoOfLevels;
             var NoOfBlocks = MSLength.ForLoop(level => -1);

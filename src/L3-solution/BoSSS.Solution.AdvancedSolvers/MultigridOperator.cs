@@ -1178,9 +1178,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="IN_RHS">
         /// right-hand-side of the linear problem
         /// </param>
-        /// <param name="OUT_Resi">
-        /// On output, 
-        /// </param>
+        /// <returns>
+        /// the residual vector
+        /// </returns>
         public double[] ComputeResidual<T1, T2>(T1 IN_X, T2 IN_RHS)
             where T1 : IList<double>
             where T2 : IList<double>//

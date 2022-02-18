@@ -17,7 +17,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public class SolverFactory {
 
         /// <summary>
-        /// This <see cref="SolverFactory"/> enables creation of linear and nonlinear solver objects. The configuration <see cref="LinearSolverConfig"/> and <see cref="NonLinearSolverConfig"/> can be set in Control-Files (defined in <see cref="AppControl"/>).
+        /// This <see cref="SolverFactory"/> enables creation of nonlinear solver objects. The configuration <see cref="ISolverFactory"/> and <see cref="NonLinearSolverConfig"/> can be set in Control-Files (defined in <see cref="AppControl"/>).
         /// </summary>
         public SolverFactory(NonLinearSolverConfig nc, ISolverFactory lc) {
             m_lc = lc;
@@ -69,7 +69,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private IEnumerable<AggregationGridBasis[]> m_MGBasis;
 
         /// <summary>
-        /// This will return <code>linear</code> and <code>nonlinear</code> solver objects, which are configured according to <see cref="LinearSolverConfig"/> and <see cref="NonLinearSolverConfig"/>, which can be adjusted from Controlfile (defined in <see cref="AppControl"/>).
+        /// This will return which are configured according to <see cref="Config"/>
         /// </summary>
         public void GenerateNonLin(out NonlinearSolver nonlinSolver, OperatorEvalOrLin ts_AssembleMatrixCallback, IEnumerable<AggregationGridBasis[]> ts_MultigridBasis, MultigridOperator.ChangeOfBasisConfig[][] ts_MultigridOperatorConfig) {
 

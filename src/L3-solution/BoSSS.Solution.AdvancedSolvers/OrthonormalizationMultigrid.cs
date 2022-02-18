@@ -43,7 +43,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// A recursive multigrid method, where the convergence (i.e. non-divergence) of each mesh level is guaranteed by an
     /// orthonormalization approach, similar to flexible GMRES, 
     /// as described in:
-    ///   BoSSS: A package for multigrid extended discontinuous Galerkin methods; Kummer, Florian; Weber, Jens; Smuda, Martin; Computers & Mathematics with Applications 81
+    ///   BoSSS: A package for multigrid extended discontinuous Galerkin methods; Kummer, Florian; Weber, Jens; Smuda, Martin; Computers &amp; Mathematics with Applications 81
     ///   see https://www.sciencedirect.com/science/article/abs/pii/S0898122120301917?via%3Dihub
     ///   see also https://tubiblio.ulb.tu-darmstadt.de/121465/
     ///   

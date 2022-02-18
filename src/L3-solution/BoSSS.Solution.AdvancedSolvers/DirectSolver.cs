@@ -113,7 +113,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             /// <summary>
             /// Conversion to dense matrix, solution 
-            /// via LU-decomposition from LAPACK, see also <see cref="IMatrixExtensions.Solve{T}(T, double[], double[])"/>.
+            /// via LU-decomposition from LAPACK, see also <see cref="IMatrixExtensions.Solve{T, W}(T, W)"/>.
             /// Only suitable for small systems (less than 10000 DOF).
             /// </summary>
             Lapack,

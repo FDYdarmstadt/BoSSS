@@ -183,7 +183,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 bool success = false;
 
                 // Initialization
-                /// =============
+                // =============
 
                 double[] CurSol, // "current (approximate) solution", i.e.
                     CurRes; // residual associated with 'CurSol'
@@ -784,6 +784,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         /// <param name="step">
         /// input: Newton step
+        /// </param>
+        /// <param name="HomotopyValue">
+        /// current paramter for the homotopy curve
         /// </param>
         /// <returns>
         /// Updated Solution
@@ -1390,6 +1393,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <param name="w">Direction</param>
             /// <param name="f0">f0, usually has been calculated earlier</param>
             /// <param name="linearization">True if the Operator should be linearized and evaluated afterwards</param>
+            /// <param name="currentX">linearization point</param>
             /// <returns></returns>
             double[] dirder(CoordinateVector SolutionVec, double[] currentX, double[] w, double[] f0, bool linearization = false) {
                 using(var tr = new FuncTrace()) {

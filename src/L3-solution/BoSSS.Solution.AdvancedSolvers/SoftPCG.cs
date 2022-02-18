@@ -95,9 +95,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// implementation of the CG algorithm
         /// </summary>
-        /// <param name="_x"></param>
-        /// <param name="_R"></param>
-        /// <param name="stats"></param>
         public void Solve<Vec1, Vec2>(Vec1 _x, Vec2 _R)
             where Vec1 : IList<double>
             where Vec2 : IList<double> //
