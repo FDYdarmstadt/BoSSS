@@ -62,18 +62,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ~
         /// </summary>
         public void Init(MultigridOperator op) {
+            using(new FuncTrace()) {
+                if(object.ReferenceEquals(op, this.m_mgop))
+                    return; // already initialized
+                else
+                    this.Dispose(); // must re-initialize
 
-            var Mtx = op.OperatorMatrix;
-            var MgMap = op.Mapping;
-            this.m_mgop = op;
+                var Mtx = op.OperatorMatrix;
+                var MgMap = op.Mapping;
+                this.m_mgop = op;
 
-            if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Row partitioning mismatch.");
-            if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Column partitioning mismatch.");
-            this.Matrix = Mtx;
-            if(Precond != null) {
-                Precond.Init(op);
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Row partitioning mismatch.");
+                if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Column partitioning mismatch.");
+                this.Matrix = Mtx;
+                if(Precond != null) {
+                    Precond.Init(op);
+                }
             }
         }
 

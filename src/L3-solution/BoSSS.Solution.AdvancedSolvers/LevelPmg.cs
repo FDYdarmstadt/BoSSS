@@ -21,15 +21,73 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class LevelPmg : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
-        public bool UseDiagonalPmg = true;
+        /// <summary>
+        /// Configuation
+        /// </summary>
+        [Serializable]
+        public class Config : ISolverFactory {
+            public string Name => "p-two-grid";
 
-        public bool EqualOrder = false;
+            public string Shortname => "pTG";
+
+
+            /// <summary>
+            /// If true, the high order system is solved cell-by-cell (i.e. a Block-Jacobi)
+            /// </summary>
+            public bool UseDiagonalPmg = true;
+
+            /// <summary>
+            /// Hack, for the treatment of incompressible flows:
+            /// - false (default): the D-th variable, where D is the spatial dimension (2 or 3), is assumed to be the pressure; the order is one lower than for velocity
+            /// - true: no special treatment of individual variables
+            /// </summary>
+            public bool EqualOrder = false;
+
+            /// <summary>
+            /// If true, cell-local solvers will be used to approximate a solution to high-order modes
+            /// </summary>
+            public bool UseHiOrderSmoothing = true;
+
+            /// <summary>
+            /// DG degree at low order blocks. This degree is the border, which divides into low order and high order blocks
+            /// </summary>
+            public int OrderOfCoarseSystem = 1;
+
+            /// <summary>
+            /// If true blocks/cells containing more than one species are completely assigned to low order block solver.
+            /// This hopefully is better than the default approach
+            /// </summary>
+            public bool FullSolveOfCutcells = true;
+
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+                var instance = new LevelPmg();
+                instance.m_Config = this;
+                instance.Init(level);
+                return instance;
+            }
+        }
+
+        Config m_Config = new Config();
+
+        /// <summary>
+        /// configuration
+        /// </summary>
+        public Config config {
+            get {
+                return m_Config;
+            }
+        }
+
+
 
         /// <summary>
         /// ctor
         /// </summary>
         public LevelPmg() {
-            UseHiOrderSmoothing = true;
             TerminationCriterion = (int iter, double r0, double r) => (iter < 1, true);
         }
 
@@ -71,13 +129,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             private set;
         }
 
-        /// <summary>
-        /// If true, cell-local solvers will be used to approximate a solution to high-order modes
-        /// </summary>
-        public bool UseHiOrderSmoothing {
-            get;
-            set;
-        }
+       
 
         public object Clone() {
             throw new NotImplementedException();
@@ -91,31 +143,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultidimensionalArray[] HighOrderBlocks_LU;
         int[][] HighOrderBlocks_LUpivots;
 
-        public int OrderOfCoarseSystem {
-            get { return m_LowOrder; }
-            set { m_LowOrder = value; }
-        }
 
 
-
-        /// <summary>
-        /// DG degree at low order blocks. This degree is the border, which divides into low order and high order blocks
-        /// </summary>
-        private int m_LowOrder = 1;
-
-        /// <summary>
-        /// If true blocks/cells containing more than one species are completely assigned to low order block solver.
-        /// This hopefully is better than the default approach
-        /// </summary>
-        public bool FullSolveOfCutcells {
-            get;
-            set;
-        }
+        
 
         private bool AnyHighOrderTerms {
             get {
                 Debug.Assert(m_op != null, "there is no matrix given yet!");
-                return m_op.Mapping.DgDegree.Any(p => p > m_LowOrder);
+                return m_op.Mapping.DgDegree.Any(p => p > config.OrderOfCoarseSystem);
             }
         }
 
@@ -128,7 +163,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
             m_op = op;
 
-            if (m_LowOrder > m_op.Mapping.DgDegree.Max())
+            if (config.OrderOfCoarseSystem > m_op.Mapping.DgDegree.Max())
                 throw new ArgumentOutOfRangeException("CoarseLowOrder is higher than maximal DG degree");
 
 #if TEST
@@ -141,22 +176,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
-            Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1); // containd the pressure hack
+            Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1); // containd the pressure hack
             DGlowSelect.ModeSelector(lowFilter);
 
-            if (FullSolveOfCutcells)
+            if (config.FullSolveOfCutcells)
                 ModifyLowSelector(DGlowSelect, op);
 
             lMask = new BlockMask(DGlowSelect);
             int m_lowMaskLen = lMask.NoOfMaskedRows;
 
-            if (UseHiOrderSmoothing && AnyHighOrderTerms) {
+            if (config.UseHiOrderSmoothing && AnyHighOrderTerms) {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
-                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
+                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1);
                 //Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg >= 0;
                 DGhighSelect.ModeSelector(highFilter);
 
-                if (FullSolveOfCutcells)
+                if (config.FullSolveOfCutcells)
                     ModifyHighSelector(DGhighSelect, op);
 
                 hMask = new BlockMask(DGhighSelect);
@@ -164,7 +199,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 BlockMsrMatrix P01HiMatrix = null;
 
-                if (UseDiagonalPmg) {
+                if (config.UseDiagonalPmg) {
                     HighOrderBlocks_LU = hMask.GetDiagonalBlocks(op.OperatorMatrix, false, false);
                     int NoOfBlocks = HighOrderBlocks_LU.Length;
                     HighOrderBlocks_LUpivots = new int[NoOfBlocks][];
@@ -196,8 +231,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             lowSolver.DefineMatrix(P01SubMatrix);
 
 
-            Debug.Assert(UseDiagonalPmg && lowSolver != null);
-            Debug.Assert(UseDiagonalPmg || (!UseDiagonalPmg && hiSolver != null));
+            Debug.Assert(config.UseDiagonalPmg && lowSolver != null);
+            Debug.Assert(config.UseDiagonalPmg || (!config.UseDiagonalPmg && hiSolver != null));
             Debug.Assert(m_lowMaskLen > 0);
             //Debug.Assert(AnyHighOrderTerms && m_highMaskLen > 0);
 #if TEST
@@ -255,12 +290,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// Solver of low order system.
-        /// The low order system is defined by <see cref="OrderOfCoarseSystem"/>
+        /// The low order system is defined by <see cref="Config.OrderOfCoarseSystem"/>
         /// </summary>
         private ISparseSolver lowSolver;
 
         /// <summary>
-        /// experimental, used if <see cref="UseDiagonalPmg"/> is not set.
+        /// experimental, used if <see cref="Config.UseDiagonalPmg"/> is not set.
         /// Then low order and high order blocks are both solved by direct solver.
         /// </summary>
         private ISparseSolver hiSolver;
@@ -324,11 +359,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 */
     
 
-                if(UseHiOrderSmoothing && AnyHighOrderTerms) {
+                if(config.UseHiOrderSmoothing && AnyHighOrderTerms) {
                     // solver high-order 
 
-                    tr.Info("UseDiagonalPmg: " + UseDiagonalPmg);
-                    if(UseDiagonalPmg) {
+                    tr.Info("UseDiagonalPmg: " + config.UseDiagonalPmg);
+                    if(config.UseDiagonalPmg) {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                         // solve the high-order blocks diagonally, i.e. use a DENSE direct solver LOCALLY IN EACH CELL
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

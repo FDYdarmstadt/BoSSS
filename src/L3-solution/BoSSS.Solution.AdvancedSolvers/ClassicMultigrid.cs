@@ -97,97 +97,103 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// defines the problem matrix
         /// </summary>
         public void Init(MultigridOperator op) {
-            this.m_MgOperator = op;
-            var Mtx = op.OperatorMatrix;
-            var MgMap = op.Mapping;
+            using(new FuncTrace()) {
+                if(object.ReferenceEquals(op, this.m_MgOperator))
+                    return; // already initialized
+                else
+                    this.Dispose();
 
-            if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Row partitioning mismatch.");
-            if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Column partitioning mismatch.");
+                this.m_MgOperator = op;
+                var Mtx = op.OperatorMatrix;
+                var MgMap = op.Mapping;
+
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Row partitioning mismatch.");
+                if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Column partitioning mismatch.");
 
 
-            double Dim = MgMap.ProblemMapping.GridDat.SpatialDimension;
+                double Dim = MgMap.ProblemMapping.GridDat.SpatialDimension;
 
-            // set operator
-            // ============
-            if(op.CoarserLevel == null) {
-                throw new NotSupportedException("Multigrid algorithm cannot be used as a solver on the finest level.");
+                // set operator
+                // ============
+                if(op.CoarserLevel == null) {
+                    throw new NotSupportedException("Multigrid algorithm cannot be used as a solver on the finest level.");
+                }
+                this.OpMatrix = Mtx;
+
+
+                /*
+                // construct restriction and prolongation
+                // ======================================
+
+                var thisLevel = MgMap.AggBasis;
+                var lowerLevel = MgMap.CoarserLevel.AggBasis;
+
+                int[] this_p = MgMap.DgDegree;
+                int[] low_p = MgMap.CoarserLevel.DgDegree;
+
+                var __PrlgOperator = thisLevel.FromOtherLevelMatrix(MgMap.ProblemMapping, this_p, lowerLevel, low_p);
+                Debug.Assert(__PrlgOperator.RowPartitioning.LocalLength == MgMap.LocalLength);
+                Debug.Assert(__PrlgOperator.ColPartition.LocalLength == MgMap.CoarserLevel.LocalLength);
+    #if DEBUG
+                var __RestOperator = lowerLevel.FromOtherLevelMatrix(MgMap.ProblemMapping, low_p, thisLevel, this_p);
+                {
+                    var __RestOperator2 = __PrlgOperator.Transpose();
+                    __RestOperator2.Acc(-1.0, __RestOperator);
+                    double dingsNorm = __RestOperator2.InfNorm();
+                    Debug.Assert(dingsNorm <= 1.0e-10);
+                }
+    #else 
+                var __RestOperator = __PrlgOperator.Transpose();
+    #endif
+                int iLevel = MgMap.LevelIndex;
+
+                if(this.UseSmoothedInterpolation) {
+                    MsrMatrix DinvA;
+                    double specRadius = Utils.rhoDinvA(OpMatrix, out DinvA);
+                    Console.WriteLine("Level {0} spectral radius = {1}", iLevel, specRadius);
+                    double omega = ((Dim + 1) / Dim) * (1.0 / specRadius);
+
+                    DinvA.Scale(-omega);
+                    //DinvA.Clear();
+                    DinvA.AccEyeSp(1.0);
+
+                    PrologateOperator = MsrMatrix.Multiply(DinvA, __PrlgOperator);
+                    RestrictionOperator = this.PrologateOperator.Transpose();
+                } else {
+                    PrologateOperator = __PrlgOperator;
+                    RestrictionOperator = __RestOperator;
+
+                    var RX = this.RestrictionOperator.CloneAs();
+                    RX.Acc(-1.0, m_MgOperator.RestrictionOperator);
+                    double tst = RX.InfNorm();
+                    Debug.Assert(tst <= 1.0e-10);
+
+                    var PX = this.PrologateOperator.CloneAs();
+                    PX.Acc(-1.0, m_MgOperator.PrologateOperator);
+                    double tst2 = PX.InfNorm();
+                    Debug.Assert(tst2 <= 1.0e-10);
+                }
+                //*/
+
+                // initiate coarser level
+                // ======================
+                //var M1 = MsrMatrix.Multiply(this.OpMatrix, this.PrologateOperator);
+                //var CoarseMtx = MsrMatrix.Multiply(this.RestrictionOperator, M1);
+                if(this.CoarserLevelSolver == null)
+                    throw new NotSupportedException("Missing coarse level solver.");
+                this.CoarserLevelSolver.Init(op.CoarserLevel);
+
+
+                // init pre&post smoother
+                // ======================
+                if(this.PreSmoother != null)
+                    this.PreSmoother.Init(op);
+                if(this.PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
+                    this.PostSmoother.Init(op);
             }
-            this.OpMatrix = Mtx;
-
-            
-            /*
-            // construct restriction and prolongation
-            // ======================================
-
-            var thisLevel = MgMap.AggBasis;
-            var lowerLevel = MgMap.CoarserLevel.AggBasis;
-
-            int[] this_p = MgMap.DgDegree;
-            int[] low_p = MgMap.CoarserLevel.DgDegree;
-
-            var __PrlgOperator = thisLevel.FromOtherLevelMatrix(MgMap.ProblemMapping, this_p, lowerLevel, low_p);
-            Debug.Assert(__PrlgOperator.RowPartitioning.LocalLength == MgMap.LocalLength);
-            Debug.Assert(__PrlgOperator.ColPartition.LocalLength == MgMap.CoarserLevel.LocalLength);
-#if DEBUG
-            var __RestOperator = lowerLevel.FromOtherLevelMatrix(MgMap.ProblemMapping, low_p, thisLevel, this_p);
-            {
-                var __RestOperator2 = __PrlgOperator.Transpose();
-                __RestOperator2.Acc(-1.0, __RestOperator);
-                double dingsNorm = __RestOperator2.InfNorm();
-                Debug.Assert(dingsNorm <= 1.0e-10);
-            }
-#else 
-            var __RestOperator = __PrlgOperator.Transpose();
-#endif
-            int iLevel = MgMap.LevelIndex;
-
-            if(this.UseSmoothedInterpolation) {
-                MsrMatrix DinvA;
-                double specRadius = Utils.rhoDinvA(OpMatrix, out DinvA);
-                Console.WriteLine("Level {0} spectral radius = {1}", iLevel, specRadius);
-                double omega = ((Dim + 1) / Dim) * (1.0 / specRadius);
-
-                DinvA.Scale(-omega);
-                //DinvA.Clear();
-                DinvA.AccEyeSp(1.0);
-
-                PrologateOperator = MsrMatrix.Multiply(DinvA, __PrlgOperator);
-                RestrictionOperator = this.PrologateOperator.Transpose();
-            } else {
-                PrologateOperator = __PrlgOperator;
-                RestrictionOperator = __RestOperator;
-
-                var RX = this.RestrictionOperator.CloneAs();
-                RX.Acc(-1.0, m_MgOperator.RestrictionOperator);
-                double tst = RX.InfNorm();
-                Debug.Assert(tst <= 1.0e-10);
-
-                var PX = this.PrologateOperator.CloneAs();
-                PX.Acc(-1.0, m_MgOperator.PrologateOperator);
-                double tst2 = PX.InfNorm();
-                Debug.Assert(tst2 <= 1.0e-10);
-            }
-            //*/
-
-            // initiate coarser level
-            // ======================
-            //var M1 = MsrMatrix.Multiply(this.OpMatrix, this.PrologateOperator);
-            //var CoarseMtx = MsrMatrix.Multiply(this.RestrictionOperator, M1);
-            if(this.CoarserLevelSolver == null)
-                throw new NotSupportedException("Missing coarse level solver.");
-            this.CoarserLevelSolver.Init(op.CoarserLevel);
-
-
-            // init pre&post smoother
-            // ======================
-            if(this.PreSmoother != null)
-                this.PreSmoother.Init(op);
-            if(this.PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
-                this.PostSmoother.Init(op);
         }
-
         
         public ISolverSmootherTemplate CoarserLevelSolver;
         public ISolverSmootherTemplate PreSmoother;

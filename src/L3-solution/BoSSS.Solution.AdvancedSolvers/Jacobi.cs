@@ -24,7 +24,7 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils;
-
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
     public class Jacobi : ISolverSmootherTemplate, ISolverWithCallback {
@@ -32,23 +32,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultigridOperator m_mgop;
 
         public void Init(MultigridOperator op) {
-            var M = op.OperatorMatrix;
-            var MgMap = op.Mapping;
-            this.m_mgop = op;
-                        
-            if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Row partitioning mismatch.");
-            if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Column partitioning mismatch.");
-            
-            Mtx = M;
-            int L = M.RowPartitioning.LocalLength;
+            using(new FuncTrace()) {
+                if(object.ReferenceEquals(op, m_mgop))
+                    return; // already initialized
+                else
+                    this.Dispose();
 
-            diag = new double[L];
-            long i0 = Mtx.RowPartitioning.i0;
+                var M = op.OperatorMatrix;
+                var MgMap = op.Mapping;
+                this.m_mgop = op;
 
-            for(int i = 0; i < L; i++) {
-                diag[i] = Mtx[i0 + i, i0 + i];
+                if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Row partitioning mismatch.");
+                if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Column partitioning mismatch.");
+
+                Mtx = M;
+                int L = M.RowPartitioning.LocalLength;
+
+                diag = new double[L];
+                long i0 = Mtx.RowPartitioning.i0;
+
+                for(int i = 0; i < L; i++) {
+                    diag[i] = Mtx[i0 + i, i0 + i];
+                }
             }
         }
 

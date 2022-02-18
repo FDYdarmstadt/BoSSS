@@ -93,6 +93,11 @@ namespace BoSSS.Solution.Control {
                 return new AdvancedSolvers.OrthoMGSchwarzConfig();
 
                 case LinearSolverCode.exp_gmres_levelpmg:
+                return new AdvancedSolvers.PTGconfig();
+
+                case LinearSolverCode.exp_Kcycle_ILU:
+                return new AdvancedSolvers.OrthoMGILUconfig();
+
                 default:
                 throw new NotImplementedException("todo");
             }

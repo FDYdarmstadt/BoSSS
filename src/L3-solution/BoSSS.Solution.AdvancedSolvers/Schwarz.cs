@@ -520,6 +520,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
+                if(object.ReferenceEquals(op, m_MgOp))
+                    return; // already initialized
+                else
+                    this.Dispose();
+
                 ResetStat();
                 // Without checking the matrix, the other criteria is not enough to determine if reusing is possible
                 // Init shall be a Init, so skip that ... 

@@ -161,6 +161,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             using(var tr = new FuncTrace()) {
+                if(object.ReferenceEquals(op, m_MgOperator))
+                    return; // already initialized
+                else
+                    this.Dispose();
+
+
                 this.m_MgOperator = op;
                 var Mtx = op.OperatorMatrix;
                 var MgMap = op.Mapping;

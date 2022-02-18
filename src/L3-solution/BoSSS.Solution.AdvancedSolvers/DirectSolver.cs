@@ -95,7 +95,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-       
+
         /// <summary>
         /// 
         /// </summary>
@@ -130,6 +130,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void Init(MultigridOperator op) {
             using(var tr = new FuncTrace()) {
+                if(object.ReferenceEquals(op, m_MultigridOp))
+                    return; // already initialized
+                else
+                    this.Dispose();
+
                 var Mtx = op.OperatorMatrix;
                 var MgMap = op.Mapping;
                 m_MultigridOp = op;
@@ -149,6 +154,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_Mtx = Mtx;
             }
         }
+    
 
         MultigridOperator m_MultigridOp;
 
