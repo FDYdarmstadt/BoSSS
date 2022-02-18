@@ -74,7 +74,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public override string Shortname => "Mky" + WhichSolver;
 
             public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-                throw new NotImplementedException();
+                var inst = new MonkeySolver();
+                inst.m_config = this;
+                inst.Init(level);
+                return inst;
             }
         }
 

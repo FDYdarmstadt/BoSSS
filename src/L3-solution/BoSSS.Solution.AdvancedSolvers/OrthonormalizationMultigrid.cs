@@ -953,14 +953,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void Dispose() {
             TrackMemory(3);
             //if (m_MTracker != null) m_MTracker.Dispose();
-            if(m_verbose && this.m_MgOperator.LevelIndex == 0) {
+            if(m_MgOperator != null && m_verbose && this.m_MgOperator.LevelIndex == 0) {
                 Console.WriteLine($"OrthoMG - total memory: {UsedMemory()} MB");
                 Console.WriteLine($"OrthoMG - internal memory: {MemoryOfMultigrid()} MB");
                 Console.WriteLine($"OrthoMG - smoother memory: {MemoryOfSmoother()} MB");
             }
             if(this.CoarserLevelSolver != null)
                 this.CoarserLevelSolver.Dispose();
-            this.CoarserLevelSolver = null;
+            //this.CoarserLevelSolver = null; // don't delete - we need this again for the next init
             
             this.SolHistory = null;
             this.MxxHistory = null;
@@ -970,8 +970,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.PreSmoother.Dispose();
             if(PostSmoother != null) 
                 this.PostSmoother.Dispose();
-            this.PreSmoother = null;
-            this.PostSmoother = null;
+            //this.PreSmoother = null; // don't delete - we need this again for the next init
+            //this.PostSmoother = null;  // don't delete - we need this again for the next init
         }
     }
 }
