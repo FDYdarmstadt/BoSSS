@@ -86,7 +86,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// 
     /// </summary>
-    public interface ISolverFactory  {
+    public interface ISolverFactory : IEquatable<ISolverFactory> {
 
         /// <summary>
         /// Name/Description of the solver configuration

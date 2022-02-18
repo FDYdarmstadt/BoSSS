@@ -72,7 +72,6 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
             //InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(1, false, NonLinearSolverCode.Newton);

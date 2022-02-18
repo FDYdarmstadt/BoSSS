@@ -178,9 +178,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Column partitioning mismatch.");
 
-                MxxHistory.Clear();
-                SolHistory.Clear();
-                Alphas.Clear();
+
+
+                MxxHistory = new List<double[]>();
+                SolHistory = new List<double[]>();
+                Alphas = new List<(double, double, int)>();
 
 
                 // set operator
@@ -958,18 +960,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             if(this.CoarserLevelSolver != null)
                 this.CoarserLevelSolver.Dispose();
-            this.SolHistory.Clear();
-            this.MxxHistory.Clear();
-            this.Alphas.Clear();
+            this.CoarserLevelSolver = null;
+            
             this.SolHistory = null;
             this.MxxHistory = null;
             this.Alphas = null;
 
-            if(PreSmoother != null) this.PreSmoother.Dispose();
-            if(PostSmoother != null) this.PostSmoother.Dispose();
+            if(PreSmoother != null) 
+                this.PreSmoother.Dispose();
+            if(PostSmoother != null) 
+                this.PostSmoother.Dispose();
             this.PreSmoother = null;
             this.PostSmoother = null;
-            this.CoarserLevelSolver = null;
         }
     }
 }

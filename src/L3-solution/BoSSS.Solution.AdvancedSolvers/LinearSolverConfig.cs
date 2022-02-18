@@ -97,9 +97,12 @@ namespace BoSSS.Solution.Control {
 
                 case LinearSolverCode.exp_Kcycle_ILU:
                 return new AdvancedSolvers.OrthoMGILUconfig();
+                
+                case LinearSolverCode.classic_cg:
+                return new AdvancedSolvers.MonkeySolver.Config() { WhichSolver = AdvancedSolvers.MonkeySolver._whichSolver.CG };
 
                 default:
-                throw new NotImplementedException("todo");
+                throw new NotImplementedException("todo: " + config);
             }
 
 

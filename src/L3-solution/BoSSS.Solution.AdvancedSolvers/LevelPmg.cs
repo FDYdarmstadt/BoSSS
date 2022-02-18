@@ -69,6 +69,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 instance.Init(level);
                 return instance;
             }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public bool Equals(ISolverFactory other) {
+                return EqualsImpl(other);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public override bool Equals(object obj) {
+                return EqualsImpl(obj);
+            }
+
+            private bool EqualsImpl(object o) {
+                var other = o as Config;
+
+                return (this.UseDiagonalPmg == other.UseDiagonalPmg)
+                    && (this.EqualOrder == other.EqualOrder)
+                    && (this.FullSolveOfCutcells == other.FullSolveOfCutcells)
+                    && (this.OrderOfCoarseSystem == other.OrderOfCoarseSystem)
+                    && (this.UseHiOrderSmoothing == other.UseHiOrderSmoothing);
+            }
+
+            public override int GetHashCode() {
+                return this.OrderOfCoarseSystem;
+            }
+
         }
 
         Config m_Config = new Config();
