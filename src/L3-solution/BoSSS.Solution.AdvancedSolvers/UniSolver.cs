@@ -484,6 +484,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// An optional right-hand-side for the system; per Definition, it is independent of the solution.
         /// If provided, the mapping must be partition-equal (<see cref="Partitioning_Extensions.EqualsPartition(IPartitioning, IPartitioning)"/>) to <paramref name="Solution"/>
         /// </param>
+        /// <returns>
+        /// true on solver success
+        /// </returns>
         static public bool Solve(this ISpatialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
             MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null,
             NonLinearSolverConfig nsc = null, ISolverFactory lsc = null,
@@ -570,8 +573,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     var solverSetup = new Stopwatch();
                     solverSetup.Start();
-                    ISolverSmootherTemplate solver;
-
+                    
                     if(verbose)
                         Console.WriteLine("Setting up multigrid operator...");
 
