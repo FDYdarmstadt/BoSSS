@@ -58,12 +58,37 @@ namespace BoSSS.Solution.AdvancedSolvers {
             
         }
 
-   
+        /// <summary>
+        /// Configurable factory for the Money solver
+        /// </summary>
+        [Serializable]
+        public class Config : IterativeSolverConfig {
+
+            /// <summary>
+            /// Switch between CG/PCG
+            /// </summary>
+            public _whichSolver WhichSolver = _whichSolver.CG;
+
+            public override string Name => "Monkey" + WhichSolver;
+
+            public override string Shortname => "Mky" + WhichSolver;
+
+            public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+                throw new NotImplementedException();
+            }
+        }
+
+        Config m_config = new Config();
 
         /// <summary>
-        /// Switch between PARDISO and MUMPS.
+        /// Solver configuration
         /// </summary>
-        public _whichSolver WhichSolver = _whichSolver.CG;
+        public Config config {
+            get {
+                return m_config;
+            }
+        }
+
 
         public void Init(MultigridOperator op) {
             using (var tr = new FuncTrace()) {
@@ -87,20 +112,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ISparseSolverExt solver;
 
             
-            switch (WhichSolver) {
+            switch (config.WhichSolver) {
 
                 case _whichSolver.CG: {
                     var _solver = new CG(); solver = _solver;
                     _solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda;
-                    _solver.MaxIterations = Switcher<int>(_solver.MaxIterations, LinConfig.MaxSolverIterations);
-                    _solver.Tolerance = Switcher<double>(_solver.Tolerance, LinConfig.ConvergenceCriterion);
+                    _solver.MaxIterations = config.MaxSolverIterations;
+                    _solver.Tolerance = config.ConvergenceCriterion;
                     break;
                 }
                 case _whichSolver.PCG: {
                     var _solver = new PCG();solver = _solver;
                     _solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda;
-                    _solver.MaxIterations = Switcher<int>(_solver.MaxIterations, LinConfig.MaxSolverIterations);
-                    _solver.Tolerance = Switcher<double>(_solver.Tolerance, LinConfig.ConvergenceCriterion);
+                    _solver.MaxIterations = config.MaxSolverIterations;
+                    _solver.Tolerance = config.ConvergenceCriterion;
                     break;
                 }
 
@@ -172,20 +197,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Converged = false;
         }
 
-        private static T Switcher<T>(T origin,T setter) {
-            T thisreturn;
-            if (setter != null) {
-                thisreturn = setter;
-            } else {
-                thisreturn = origin;
-            }
-            return thisreturn;
-        }
+        //private static T Switcher<T>(T origin,T setter) {
+        //    T thisreturn;
+        //    if (setter != null) {
+        //        thisreturn = setter;
+        //    } else {
+        //        thisreturn = origin;
+        //    }
+        //    return thisreturn;
+        //}
 
-        public LinearSolverConfig LinConfig {
-            get;
-            set;
-        }
 
         /// <summary>
         /// 

@@ -463,9 +463,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            public ISolverSmootherTemplate CoarseSolver = new DirectSolver() {
-                WhichSolver = DirectSolver._whichSolver.PARDISO
-            };
+            public ISolverSmootherTemplate CoarseSolver = new DirectSolver();
 
             public override void Dispose() {
                 CoarseSolver.Dispose();

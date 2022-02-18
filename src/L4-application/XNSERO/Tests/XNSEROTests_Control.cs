@@ -58,9 +58,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AgglomerationThreshold = 0.2;
-            C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
-            C.LinearSolver.NoOfMultigridLevels = 1;
 
             double dt = 1e-2;
             C.dtMax = dt;
@@ -108,9 +106,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AgglomerationThreshold = 0.2;
-            C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
-            C.LinearSolver.NoOfMultigridLevels = 1;
 
             double dt = 1e-2;
             C.dtMax = dt;
@@ -152,12 +148,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             // ====================
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AgglomerationThreshold = 0.1;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 5;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
             C.NonLinearSolver.ConvergenceCriterion = 1e-12;
 
             // Timestepping
@@ -182,7 +175,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             var C = TestParticleInShearFlow(k);
             C.UsePhoreticField = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
             C.NonLinearSolver.ConvergenceCriterion = 1e-12;
             return C;
         }
@@ -231,12 +224,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             // ====================
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AgglomerationThreshold = 0.1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.NoOfMultigridLevels = 1;
 
             // ============
 

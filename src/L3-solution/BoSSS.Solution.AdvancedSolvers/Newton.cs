@@ -107,7 +107,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MatrixFreeGMRES = 1,
 
             /// <summary>
-            /// Using the solver <see cref="NonlinearSolver.Precond"/> for computing Newton corrections
+            /// Using the solver <see cref="NonlinearSolver.PrecondConfig"/> for computing Newton corrections
             /// </summary>
             ExternalSolver = 2
         }
@@ -627,43 +627,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // Option: Matrix-Free GMRES
                 // ++++++++++++++++++++++++++
 
-                if(Precond != null) {
-                    Precond.Init(CurrentLin);
-                }
-                var mtxFreeSlv = new MatrixFreeGMRES() { owner = this, HomotopyValue = HomotopyValue };
-                double thresh = norm_CurRes * 1e-5;
-                mtxFreeSlv.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                    return ((R_l2 > thresh) && (iter < 100), R_l2 <= thresh);
-                };
+             
+                using(var mtxFreeSlv = new MatrixFreeGMRES() { owner = this, HomotopyValue = HomotopyValue }) {
+                    double thresh = norm_CurRes * 1e-5;
+                    mtxFreeSlv.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                        return ((R_l2 > thresh) && (iter < 100), R_l2 <= thresh);
+                    };
 
-                step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
-                step.ScaleV(-1);
+                    step = mtxFreeSlv.Krylov(SolutionVec, CurSol, CurRes, out double errstep);
+                    step.ScaleV(-1);
+
+                }
                 
             } else if(ApproxJac == ApproxInvJacobianOptions.ExternalSolver) {
                 // +++++++++++++++++++++++++++++
                 // Option: use 'external' solver
                 // +++++++++++++++++++++++++++++
 
-                var solver = this.Precond;
-                solver.Init(CurrentLin);
-                step.ClearEntries();
-                var check = CurRes.CloneAs();
-                solver.ResetStat();
+                using(var solver = this.PrecondConfig.CreateInstance(CurrentLin)) {
 
-                if(solver is IProgrammableTermination pt) {
-                    // iterative solver with programmable termination is used - so use it
+                    step.ClearEntries();
+                    var check = CurRes.CloneAs();
+                    solver.ResetStat();
 
-                    double thresh = norm_CurRes * 1e-5;
-                    Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
-                    pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
-                        return ((R_l2 > thresh) && (iter < 100), R_l2 < thresh);
-                    };
+                    if(solver is IProgrammableTermination pt) {
+                        // iterative solver with programmable termination is used - so use it
+
+                        double thresh = norm_CurRes * 1e-5;
+                        Console.WriteLine($"Inexact Newton: setting convergence threshold to {thresh:0.##E-00}");
+                        pt.TerminationCriterion = (iter, R0_l2, R_l2) => {
+                            return ((R_l2 > thresh) && (iter < 100), R_l2 < thresh);
+                        };
+                    }
+
+                    //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
+                    //Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
+                    solver.Solve(step, CurRes);
+                    step.ScaleV(-1);
                 }
-
-                //dgREs = CurrentLin.ProlongateRhsToDg(CurRes, "Rhs_");
-                //Console.WriteLine("RHS in ref cell: " + dgREs[2].GetMeanValue(CurrentLin.ReferenceCell_local));
-                solver.Solve(step, CurRes);
-                step.ScaleV(-1);
             } else {
                 throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
             }
@@ -1132,8 +1133,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public int IterationsInNested {
                 get {
-                    if(this.owner.Precond != null) {
-                        return this.owner.Precond.ThisLevelIterations;
+                    if(this.PrecondInstance != null) {
+                        return this.PrecondInstance.ThisLevelIterations;
                     } else {
                         return 0;
                     }
@@ -1164,7 +1165,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             */
 
             /// <summary>
-            /// Preconditioned GMRES, using <see cref="NonlinearSolver.Precond"/> as a preconditioner
+            /// Preconditioned GMRES, using <see cref="NonlinearSolver.PrecondConfig"/> as a preconditioner
             /// </summary>
             /// <param name="SolutionVec">Current Point</param>
             /// <param name="f0">Function at current point</param>
@@ -1196,11 +1197,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         r.AccV(-1, dirder(SolutionVec, currentX, x, f0));
                     }
                     // Precond = null;
-                    if(owner.Precond != null) {
+                    if(this.PrecondInstance != null) {
                         var temp2 = r.CloneAs();
                         r.ClearEntries();
                         //this.OpMtxRaw.InvertBlocks(OnlyDiagonal: false, Subblocks: false).SpMV(1, temp2, 0, r);
-                        owner.Precond.Solve(r, temp2);
+                        this.PrecondInstance.Solve(r, temp2);
                     }
 
                     int m = maxKrylovDim;
@@ -1234,11 +1235,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         ThisLevelIterations++;
 
-                        if(owner.Precond != null) {
+                        if(this.PrecondInstance != null) {
                             var temp3 = V[k].CloneAs();
                             V[k].ClearEntries();
                             //this.OpMtxRaw.InvertBlocks(false,false).SpMV(1, temp3, 0, V[k]);
-                            owner.Precond.Solve(V[k], temp3);
+                            this.PrecondInstance.Solve(V[k], temp3);
                         }
 
                         double normav = V[k].MPI_L2Norm();
@@ -1504,7 +1505,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
                 OrgDG = new CoordinateVector(ff);
+
+                if(PrecondInstance != null) {
+                    PrecondInstance.Dispose();
+                    PrecondInstance = null;
+                }
+
+                if(owner.PrecondConfig != null)
+                    PrecondInstance = owner.PrecondConfig.CreateInstance(op);
             }
+
+            /// <summary>
+            /// Instance of <see cref="NonlinearSolver.PrecondConfig"/>
+            /// </summary>
+            ISolverSmootherTemplate PrecondInstance;
 
             CoordinateVector OrgDG; 
 
@@ -1533,7 +1547,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             public void Dispose() {
-                throw new NotImplementedException();
+                if(PrecondInstance != null)
+                    PrecondInstance.Dispose();
+                PrecondInstance = null;
             }
 
             public long UsedMemory() {

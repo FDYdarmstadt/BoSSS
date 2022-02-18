@@ -486,7 +486,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         static public void Solve(this ISpatialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
             MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null,
-            NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null,
+            NonLinearSolverConfig nsc = null, ISolverFactory lsc = null,
             AggregationGridData[] MultigridSequence = null,
             bool verbose = false, QueryHandler queryHandler = null) {
             using(var tr = new FuncTrace()) {
@@ -511,8 +511,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 if(lsc == null) {
-                    lsc = new LinearSolverConfig() {
-                        SolverCode = LinearSolverCode.classic_pardiso
+                    lsc = new DirectSolver.Config() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO
                     };
                 }
 
@@ -579,8 +579,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         opMtx, MassMatrix, G.MgConfig,
                         op.DomainVar.Select(varName => op.FreeMeanValue[varName]).ToArray());
 
-                    SolverFactory SF = new SolverFactory(nsc, lsc);
-                    SF.GenerateLinear(out solver, G.AggBasisS, G.MgConfig);
+                    //SolverFactory SF = new SolverFactory(nsc, lsc);
+                    //SF.GenerateLinear(out solver, G.AggBasisS, G.MgConfig);
+                    solver = lsc.CreateInstance(MultigridOp);
 
                     using(new BlockTrace("Solver_Init", tr)) {
                         solver.Init(MultigridOp);
@@ -624,6 +625,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     Converged = solver.Converged;
 
+                    solver.Dispose();
 
                 } else {
                     // ++++++++++++++++++++

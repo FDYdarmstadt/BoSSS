@@ -145,10 +145,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         BlockMsrMatrix loModeBlock;
 
-        /// <summary>
-        /// experimental. LU Pivoting. Can be dismissed ...
-        /// </summary>
-        int[][] HighOrderBlocks_LUpivots;
+        ///// <summary>
+        ///// experimental. LU Pivoting. Can be dismissed ...
+        ///// </summary>
+        //int[][] HighOrderBlocks_LUpivots;
 
         private bool AnyHighOrderTerms {
             get {

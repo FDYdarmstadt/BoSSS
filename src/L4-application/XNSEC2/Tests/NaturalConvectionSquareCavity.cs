@@ -27,7 +27,7 @@ namespace BoSSS.Application.XNSEC {
             C.timeDerivativeConti_OK = false;
             //C.HomotopyApproach = XNSEC_Control.HomotopyType.Automatic;
 
-            C.LinearSolver.SolverCode = Solution.Control.LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver = Solution.Control.LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
             //C.LinearSolver.NoOfMultigridLevels = 10;
             C.HomotopyVariable = XNSEC_Control.HomotopyVariableEnum.Reynolds;
             C.homotopieAimedValue = Math.Sqrt(1e6);
@@ -214,11 +214,9 @@ namespace BoSSS.Application.XNSEC {
             C.SetDGdegree(DGp);
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
-            C.LinearSolver.ConvergenceCriterion = 1e-12;
             C.NonLinearSolver.verbose = true;
-            C.LinearSolver.verbose = false;
             C.NonLinearSolver.MaxSolverIterations = 50;
 
             C.PenaltyViscMomentum = 1.0 * penalty;
@@ -446,9 +444,7 @@ namespace BoSSS.Application.XNSEC {
             C.SetDGdegree(DGp);
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver.ConvergenceCriterion = 1e-12;
             C.NonLinearSolver.verbose = true;
-            C.LinearSolver.verbose = false;
 
             C.PenaltyViscMomentum = 1.0;
             C.PenaltyHeatConduction = 1.0;
@@ -541,7 +537,6 @@ namespace BoSSS.Application.XNSEC {
                                                                                    // C.NonLinearSolver.MaxSolverIterations = 40;
             C.NonLinearSolver.ConvergenceCriterion = nonLinConvCrit;
             //C.NonLinearSolver.ConvergenceCriterion = 1e-5;
-            C.LinearSolver.ConvergenceCriterion = 1e-10;
             C.NonLinearSolver.verbose = true;
 
             //C.NonLinearSolver.PrecondSolver.verbose =true;
@@ -559,12 +554,6 @@ namespace BoSSS.Application.XNSEC {
                 case 2:
                 C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
                 C.NonLinearSolver.UnderRelax = 0.2;
-                break;
-
-                case 3:
-                C.NonLinearSolver.MinSolverIterations = 20;  //NUMBER OF FIX POINT ITERATIONS IN THE MIXED NON LIN SOLVER STRATEGY
-                C.NonLinearSolver.SolverCode = NonLinearSolverCode.NLSolverSequence;
-                C.NonLinearSolver.UnderRelax = 0.1;
                 break;
 
                 default:

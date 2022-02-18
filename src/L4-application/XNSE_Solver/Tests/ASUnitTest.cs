@@ -238,7 +238,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine,
                     CutCellQuadratureType: CutCellQuadratureType);
                 //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-                //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+                //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
 
                 C.InitSignedDistance = false;
 
@@ -871,7 +871,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, nonlinsolver: nonlinsolver); // surface tension plays no role in this test, so ignore it
             //C.SkipSolveAndEvaluateResidual = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
             //C.Solver_MaxIterations = 100;
             XNSESolverTest(Tst, C);
             //if(AgglomerationTreshold > 0) {
@@ -1241,12 +1240,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.dtFixed = tst.dt;
             }
 
-            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver.ConvergenceCriterion = 1e-9;
             //C.Solver_ConvergenceCriterion = 1e-9;
 
-            C.LinearSolver.SolverCode = solvercode;
             C.NonLinearSolver.SolverCode = nonlinsolver;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            
+            C.LinearSolver = solvercode.GetConfig();
+            if(C.LinearSolver is Solution.AdvancedSolvers.IterativeSolverConfig isc) {
+                isc.ConvergenceCriterion = 1e-9;
+            }
 
             // return
             // ======

@@ -186,7 +186,7 @@ namespace BoSSS.Application.XNSEC {
             //C.NonLinearSolver.MaxSolverIterations = 3;
             //C.Solver_ConvergenceCriterion = 1e-9;
 
-            C.LinearSolver.SolverCode = solvercode;
+            C.LinearSolver = solvercode.GetConfig();
             C.GravityDirection = tst.GravityDirection;
 
             C.rhoOne = constantDensity;

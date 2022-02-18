@@ -58,7 +58,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         [DataContract]
         [Serializable]
-        public class OrthoMGConfig : ISolverFactory {
+        public class Config : IterativeSolverConfig {
 
             /// <summary>
             /// config cctor of <see cref="OrthonormalizationMultigrid"/>
@@ -81,32 +81,40 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// 
             /// </summary>
-            public string Name {
+            override public string Name {
                 get { return "OrthonormalizationMultigrid"; }
             }
 
             /// <summary>
             /// 
             /// </summary>
-            public string Shortname {
+            override public string Shortname {
                 get { return "OrthMG"; }
             }
 
             /// <summary>
             /// factory
             /// </summary>
-            public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+            override public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
                 var instance = new OrthonormalizationMultigrid();
                 instance.myConfig = this;
                 instance.Init(level);
+                instance.TerminationCriterion = base.DefaultTermination;
                 return instance;
             }
         }
 
 
+        Config myConfig = new Config();
 
-
-        public OrthoMGConfig myConfig = new OrthoMGConfig();
+        /// <summary>
+        /// Solver configuration
+        /// </summary>
+        public Config config {
+            get {
+                return myConfig;
+            }
+        }
 
         /// <summary>
         /// ctor
@@ -248,7 +256,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
         }
 
+#if TEST
         StreamWriter m_MTracker = null;
+#endif
 
 #pragma warning disable 0649
         MGViz viz;

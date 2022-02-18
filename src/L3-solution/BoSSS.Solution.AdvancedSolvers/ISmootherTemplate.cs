@@ -83,7 +83,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
     }
 
 
-
+    /// <summary>
+    /// 
+    /// </summary>
     public interface ISolverFactory  {
 
         /// <summary>
@@ -92,7 +94,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         string Name { get; }
 
         /// <summary>
-        /// short version of <see cref="Name"/>, e.g. to be used in plots
+        /// short version of <see cref="Name"/>, e.g. to be used in plots or tables
         /// </summary>
         string Shortname { get; }
 
@@ -131,10 +133,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public interface ISolverWithCallback : ISolverSmootherTemplate {
 
         /// <summary>
-        ///  - 1st argument: iteration index<br/>
-        ///  - 2nd argument: current solution<br/>
-        ///  - 3rd argument: current residual<br/>
-        ///  - 4th argument: the currently used operator<br/>
+        ///  - 1st argument: iteration index
+        ///  - 2nd argument: current solution
+        ///  - 3rd argument: current residual
+        ///  - 4th argument: the currently used operator
         /// </summary>      
         Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;

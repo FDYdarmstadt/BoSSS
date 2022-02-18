@@ -986,6 +986,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         int[] m_Lengths;
 
+        /// <summary>
+        /// Global (over all MPI processes) maximum number of degrees-of-freedom per cell for polynomial degree <paramref name="p"/>
+        /// </summary>
         public virtual int GetMaximalLength(int p) {
             Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
             if (DGBasis.MaximalLength == 0)
@@ -993,11 +996,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return this.GetLength(0, p);
         }
 
+        /// <summary>
+        /// Global (over all MPI processes) maximum number of degrees-of-freedom per cell for polynomial degree <paramref name="p"/>
+        /// </summary>
         public virtual int GetMinimalLength(int p) {
             Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
             return this.GetLength(0, p);
         }
-        
+
+        /// <summary>
+        /// number of degrees-of-freedom for polynomial degree <paramref name="p"/> in cell <paramref name="jCell"/>
+        /// </summary>        
         public virtual int GetLength(int jCell, int p) {
             GetNp();
             if (m_Lengths[p] == 0)
