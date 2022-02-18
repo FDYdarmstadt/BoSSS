@@ -69,6 +69,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
                 var instance = new DirectSolver();
                 instance.m_config = this;
+                instance.Init(level);
                 return instance;
             }
 
