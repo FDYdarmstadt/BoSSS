@@ -74,6 +74,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             //InitMPI();
             //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(1, false, NonLinearSolverCode.Newton);
             //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
             //NUnit.Framework.Assert.IsTrue(false, "remove me"); //*/
