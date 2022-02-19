@@ -74,6 +74,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             /// <summary>
+            /// 
+            /// </summary>
+            public bool Equals(ISolverFactory other) {
+                return EqualsImpl(other);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public override bool Equals(object obj) {
+                return EqualsImpl(obj);
+            }
+
+
+            public override int GetHashCode() {
+                return (int)(this.WhichSolver);
+            }
+
+            private bool EqualsImpl(object o) {
+                var other = o as Config;
+
+                return (this.WhichSolver == other.WhichSolver);
+            }
+
+
+            /// <summary>
             /// If set to true, the solution returned by the direct solver is tested by computing the residual norm.
             /// Currently, the default is true, since the direct solvers seem unreliable.
             /// </summary>
@@ -237,7 +263,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             
             switch(config.WhichSolver) {
                 case _whichSolver.PARDISO:
-                bool CachingOn = false;
+                bool CachingOn = true;
                 if (ActivateCaching != null) {
                     CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, m_MultigridOp.LevelIndex);
                 }

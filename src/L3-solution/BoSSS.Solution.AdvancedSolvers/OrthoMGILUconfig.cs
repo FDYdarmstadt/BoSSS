@@ -1,6 +1,7 @@
 ﻿using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.Serialization;
 using System.Text;
 
@@ -99,16 +100,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         _levelSolver.TerminationCriterion = (i, r0, r) => (i <= 1, true);
                     } else {
                         _levelSolver.TerminationCriterion = this.DefaultTermination;
-                    }              
+                    }
+
+                }
+
+                if(iLevel > 0) {
+                    Debugger.Launch();
+                    ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
 
                 }
                 SolverChain.Add(levelSolver);
 
-                if (iLevel > 0) {
-
-                    ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
-
-                }
+                if(useDirect)
+                    break;
+               
             }
 
             return SolverChain[0];

@@ -1560,7 +1560,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (this.CoarseSolver != null) {
                 this.CoarseSolver.Dispose();
-                this.CoarseSolver = null;
+                //this.CoarseSolver = null; // don't delete - we need this again for the next init
             }
         }
 

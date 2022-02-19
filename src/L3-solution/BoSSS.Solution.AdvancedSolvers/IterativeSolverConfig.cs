@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Runtime.Serialization;
 using System.Text;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-    
+
     /// <summary>
     /// Base-class for iterative solver configurations
     /// </summary>
@@ -55,7 +56,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Name/Description of the solver configuration
         /// </summary>
         public abstract string Name { get; }
-        
+
         /// <summary>
         /// short version of <see cref="Name"/>, e.g. to be used in plots or tables
         /// </summary>
@@ -65,5 +66,56 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <see cref="ISolverFactory.CreateInstance"/>
         /// </summary>
         public abstract ISolverSmootherTemplate CreateInstance(MultigridOperator level);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool Equals(ISolverFactory other) {
+            return EqualsImpl(other);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override bool Equals(object obj) {
+            return EqualsImpl(obj);
+        }
+
+        private bool EqualsImpl(object o) {
+            if(object.ReferenceEquals(o, this))
+                return true;
+
+            var other = o as IterativeSolverConfig;
+            if(other == null)
+                return false;
+
+            var t = this.GetType();
+            if(!t.Equals(other.GetType()))
+                return false;
+
+            var flds = t.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance);
+
+            foreach(var fld in flds) {
+                var fld_this = fld.GetValue(this);
+                var fld_othr = fld.GetValue(other);
+
+                if(fld_this == fld_othr)
+                    continue;
+                if(fld_othr == null && fld_this != null)
+                    return false;
+                if(fld_othr != null && fld_this == null)
+                    return false;
+
+                if(!fld_othr.Equals(fld_this))
+                    return false;
+            }
+
+
+            return true;
+        }
+
+        public override int GetHashCode() {
+            return 0;
+        }
     }
 }
