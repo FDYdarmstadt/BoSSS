@@ -51,11 +51,9 @@ namespace BoSSS.Application.XNSEC {
             this.GravityDirection = new double[] { 0.0, 0.0, 0.0 }; //No gravity.
             base.NoOfMultigridLevels = 1;
             base.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            base.LinearSolver.ConvergenceCriterion = 1e-10;
             base.NonLinearSolver.verbose = true;
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            base.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            base.LinearSolver.verbose = false;
+            base.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             base.NonLinearSolver.MaxSolverIterations = 20;
             //base.NoOfTimesteps = int.MaxValue;
             this.BDFOrder = 1;

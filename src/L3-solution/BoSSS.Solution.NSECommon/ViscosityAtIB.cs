@@ -123,7 +123,6 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
 
             double _penalty = Penalty(inp.jCellIn);
-
             int D = N.Length;
 
             //var parameters_P = m_getParticleParams(inp.X, inp.time);
@@ -158,6 +157,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             Ret += _penalty * (uA[component] - uAFict) * (vA); // penalty term
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
+   
             return Ret * muA;
         }
 
@@ -335,12 +335,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
             // Evaluate the complete velocity as a sum of translation and angular velocity
             double Ret = 0.0;
 
-            double[] uAFict = new double[D];
-            if (m_UseLevelSetVelocityParameter) {
-                for (int d = 0; d < D; d++) {
-                    uAFict[d] = inp.Parameters_IN[d];
-                }
-            }
+            Vector uAFict = m_UseLevelSetVelocityParameter ? new Vector(inp.Parameters_IN, 0, D) : new Vector(D);
 
             Ret -= Grad_uA_xN * (vA);                           // consistency term
             Ret -= Grad_vA_xN * (uA[component] - uAFict[component]);     // symmetry term

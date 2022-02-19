@@ -69,10 +69,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// 
         /// </summary>
         public void Init(MultigridOperator op) {
-            m_op = op;
-            Console.WriteLine($"CellILU, MG level {op.LevelIndex}...");
-            UpdateILU();
-            //CheckILU();
+            using(new FuncTrace()) {
+                if(object.ReferenceEquals(op, m_op))
+                    return; // already initialized
+                else
+                    this.Dispose();
+
+                m_op = op;
+                Console.WriteLine($"CellILU, MG level {op.LevelIndex}...");
+                UpdateILU();
+                //CheckILU();
+            }
         }
 
         /// <summary>

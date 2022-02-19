@@ -52,7 +52,6 @@ namespace BoSSS.Application.LoadBalancingTest {
         protected override IGrid CreateOrLoadGrid() {
             double[] nodes = GenericBlas.Linspace(-5, 5, 21);
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
-            this.Control.LinearSolver.NoOfMultigridLevels = 1; // required for XDG-BDF timestepper
             return grd;
         }
               

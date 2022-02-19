@@ -180,7 +180,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected XdgTimesteppingBase(
             Control.NonLinearSolverConfig nonlinconfig,
-            Control.LinearSolverConfig linearconfig) {
+            ISolverFactory linearconfig) {
+            this.LinearSolverConfig = linearconfig;
             XdgSolverFactory = new SolverFactory(nonlinconfig, linearconfig);
         }
 
@@ -404,56 +405,57 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         public SolverFactory XdgSolverFactory;
 
-        private Control.NonLinearSolverConfig m_nonlinconfig {
-            get {
-                return XdgSolverFactory.GetNonLinearConfig;
-            }
-        }
+        
 
-        private Control.LinearSolverConfig m_linearconfig {
-            get {
-                return XdgSolverFactory.GetLinearConfig;
-            }
+        /// <summary>
+        /// linear solver to use
+        /// </summary>
+        public ISolverFactory LinearSolverConfig {
+            get;
+            private set;
         }
 
 
         /// <summary>
-        /// Returns either a solver for the Navier-Stokes or the Stokes system.
-        /// E.g. for testing purposes, one might also use a nonlinear solver on a Stokes system.
+        /// Returns the nonlinear solver
         /// </summary>
-        protected virtual string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
-            nonlinSolver = null;
-            linearSolver = null;
+        protected virtual NonlinearSolver GetNonlinSolver() {
+            NonlinearSolver nonlinSolver = null;
 
             if (Config_SpatialOperatorType != SpatialOperatorType.Nonlinear)
-                m_nonlinconfig.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Picard;
+                this.XdgSolverFactory.Config.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Picard;
 
-            XdgSolverFactory.GenerateNonLin(out nonlinSolver, out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, MultigridSequence);
+            XdgSolverFactory.GenerateNonLin(out nonlinSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator);
             
-            string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
-            string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);
-
+     
             if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)) {
                 if(nonlinSolver is FixpointIterator fixPoint) {
                     fixPoint.CoupledIteration_Converged = LevelSetConvergenceReached;
                 }
             }
 
-            // set callback, to fill residual field
-            // ------------------------------------
-            if (Config_SpatialOperatorType == SpatialOperatorType.Nonlinear) {
-                if (nonlinSolver != null) {
-                    nonlinSolver.IterationCallback += this.LogResis;
-                }
-            } else {
-                m_ResLogger.SetOnce(false);
-                if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)linearSolver).IterationCallback += this.LogResis;
-                }
-            }
+            nonlinSolver.IterationCallback += this.LogResis;
+
+            return nonlinSolver;
+
           
-            return String.Format("nonlinear Solver: {0}, linear Solver: {1}", nls_strg, ls_strg);
         }
+
+        /// <summary>
+        /// Returns the linear solver
+        /// </summary>
+        protected virtual ISolverSmootherTemplate GetLinearSolver(MultigridOperator op) {
+
+            ISolverSmootherTemplate linearSolver = this.LinearSolverConfig.CreateInstance(op);
+
+            if(linearSolver is ISolverWithCallback swc) {
+                swc.IterationCallback += this.LogResis;
+            }
+
+            return linearSolver;
+        }
+
+
 
         /// <summary>
         /// Residual logging

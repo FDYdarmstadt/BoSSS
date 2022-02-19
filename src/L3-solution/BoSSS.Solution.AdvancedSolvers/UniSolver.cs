@@ -484,9 +484,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// An optional right-hand-side for the system; per Definition, it is independent of the solution.
         /// If provided, the mapping must be partition-equal (<see cref="Partitioning_Extensions.EqualsPartition(IPartitioning, IPartitioning)"/>) to <paramref name="Solution"/>
         /// </param>
-        static public void Solve(this ISpatialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
+        /// <returns>
+        /// true on solver success
+        /// </returns>
+        static public bool Solve(this ISpatialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
             MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null,
-            NonLinearSolverConfig nsc = null, LinearSolverConfig lsc = null,
+            NonLinearSolverConfig nsc = null, ISolverFactory lsc = null,
             AggregationGridData[] MultigridSequence = null,
             bool verbose = false, QueryHandler queryHandler = null) {
             using(var tr = new FuncTrace()) {
@@ -511,8 +514,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 if(lsc == null) {
-                    lsc = new LinearSolverConfig() {
-                        SolverCode = LinearSolverCode.classic_pardiso
+                    lsc = new DirectSolver.Config() {
+                        WhichSolver = DirectSolver._whichSolver.PARDISO
                     };
                 }
 
@@ -570,8 +573,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     var solverSetup = new Stopwatch();
                     solverSetup.Start();
-                    ISolverSmootherTemplate solver;
-
+                    
                     if(verbose)
                         Console.WriteLine("Setting up multigrid operator...");
 
@@ -579,52 +581,54 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         opMtx, MassMatrix, G.MgConfig,
                         op.DomainVar.Select(varName => op.FreeMeanValue[varName]).ToArray());
 
-                    SolverFactory SF = new SolverFactory(nsc, lsc);
-                    SF.GenerateLinear(out solver, G.AggBasisS, G.MgConfig);
+                    //SolverFactory SF = new SolverFactory(nsc, lsc);
+                    //SF.GenerateLinear(out solver, G.AggBasisS, G.MgConfig);
+                    using(ISolverSmootherTemplate solver = lsc.CreateInstance(MultigridOp)) {
 
-                    using(new BlockTrace("Solver_Init", tr)) {
-                        solver.Init(MultigridOp);
-                    }
+                        using(new BlockTrace("Solver_Init", tr)) {
+                            solver.Init(MultigridOp);
+                        }
 
-                    solverSetup.Stop();
-                    if(verbose)
-                        Console.WriteLine("done. (" + solverSetup.Elapsed.TotalSeconds + " sec)");
+                        solverSetup.Stop();
+                        if(verbose)
+                            Console.WriteLine("done. (" + solverSetup.Elapsed.TotalSeconds + " sec)");
 
-                    if(verbose) {
-                        MultigridOp.GetMemoryInfo(out long AllocMem, out long UsedMem);
-                        Console.WriteLine("  Memory reserved|used by multi-grid operator {0:F2} | {1:F2} MB", (double)AllocMem / (1024.0 * 1024.0), (double)UsedMem / (1024.0 * 1024.0));
-                    }
-                    //LastMtx = MultigridOp.OperatorMatrix.CloneAs();
+                        if(verbose) {
+                            MultigridOp.GetMemoryInfo(out long AllocMem, out long UsedMem);
+                            Console.WriteLine("  Memory reserved|used by multi-grid operator {0:F2} | {1:F2} MB", (double)AllocMem / (1024.0 * 1024.0), (double)UsedMem / (1024.0 * 1024.0));
+                        }
+                        //LastMtx = MultigridOp.OperatorMatrix.CloneAs();
 
-                    // call the linear solver
-                    // ----------------------
+                        // call the linear solver
+                        // ----------------------
 
-                    if(verbose)
-                        Console.WriteLine("Running solver...");
-                    var solverIteration = new Stopwatch();
-                    solverIteration.Start();
-                    using(new BlockTrace("Solver_Run", tr)) {
-                        solver.ResetStat();
+                        if(verbose)
+                            Console.WriteLine("Running solver...");
+                        var solverIteration = new Stopwatch();
+                        solverIteration.Start();
+                        using(new BlockTrace("Solver_Run", tr)) {
+                            solver.ResetStat();
 
-                        var RHSvec = opAff.CloneAs();
-                        RHSvec.ScaleV(-1);
+                            var RHSvec = opAff.CloneAs();
+                            RHSvec.ScaleV(-1);
+
+                            if(optRHS != null)
+                                RHSvec.AccV(1.0, new CoordinateVector(optRHS));
+
+                            MultigridOp.UseSolver(solver, G.SolutionVec, RHSvec);
+
+                            NoOfIterations = solver.ThisLevelIterations;
+                        }
+                        solverIteration.Stop();
+                        if(verbose) {
+                            Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
+                        }
+
+
+                        Converged = solver.Converged;
+
                         
-                        if(optRHS != null)
-                            RHSvec.AccV(1.0, new CoordinateVector(optRHS));
-
-                        MultigridOp.UseSolver(solver, G.SolutionVec, RHSvec);
-
-                        NoOfIterations = solver.ThisLevelIterations;
                     }
-                    solverIteration.Stop();
-                    if(verbose) {
-                        Console.WriteLine("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
-                    }
-
-
-                    Converged = solver.Converged;
-
-
                 } else {
                     // ++++++++++++++++++++
                     // use nonlinear solver
@@ -686,6 +690,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     G.queryHandler.ValueQuery("maxBlkSize", Solution.MaxTotalNoOfCoordinatesPerCell, true);
                     G.queryHandler.ValueQuery("minBlkSize", Solution.MinTotalNoOfCoordinatesPerCell, true);
                 }
+
+                return Converged;
             }
         }
 

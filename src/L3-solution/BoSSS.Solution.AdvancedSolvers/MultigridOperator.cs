@@ -479,6 +479,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool setupdone = false;
 
+        /// <summary>
+        /// deferred initialization of matrices; only executed if an actual matrix is requested.
+        /// </summary>
         void Setup() {
             using (var tr = new FuncTrace()) {
                 if (setupdone)
@@ -731,7 +734,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Returns the index of this multigrid level. Smaller indices correspont to finer grids.
+        /// Returns the index of this multigrid level. Smaller indices correspond to finer grids.
         /// </summary>
         public int LevelIndex {
             get {
@@ -739,6 +742,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     return 0;
                 else
                     return this.FinerLevel.LevelIndex + 1;
+            }
+        }
+
+        /// <summary>
+        /// Number of multigrid levels available, including the current level
+        /// </summary>
+        public int NoOfLevels {
+            get {
+                if(this.CoarserLevel == null)
+                    return 1;
+                else
+                    return CoarserLevel.NoOfLevels + 1;
             }
         }
 
@@ -909,6 +924,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 else
                     return this;
             }
+        }
+
+        /// <summary>
+        /// Returns a multigrid operator at a specifiv level index
+        /// </summary>
+        public MultigridOperator GetLevel(int iLevel) {
+            return this.FinestLevel.GetLevelRecursive(iLevel);
+        }
+
+
+        MultigridOperator GetLevelRecursive(int iLevel) {
+            if(iLevel < 0)
+                throw new ArgumentException("Level index cannot be negative");
+            if(iLevel == this.LevelIndex)
+                return this;
+            if(CoarserLevel == null)
+                throw new ArgumentException($"Multigrid level {iLevel} does not exist.");
+
+            return CoarserLevel.GetLevelRecursive(iLevel);
         }
 
         /// <summary>
@@ -1144,9 +1178,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="IN_RHS">
         /// right-hand-side of the linear problem
         /// </param>
-        /// <param name="OUT_Resi">
-        /// On output, 
-        /// </param>
+        /// <returns>
+        /// the residual vector
+        /// </returns>
         public double[] ComputeResidual<T1, T2>(T1 IN_X, T2 IN_RHS)
             where T1 : IList<double>
             where T2 : IList<double>//

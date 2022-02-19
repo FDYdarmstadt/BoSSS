@@ -79,15 +79,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetTimesteps(1e-1, 50000000);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AgglomerationThreshold = 0.1;
-            C.LinearSolver.NoOfMultigridLevels = 10;
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.verbose = false;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.UseSchurBlockPrec = false;
-            C.LinearSolver.pMaxOfCoarseSolver = k;
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
-            C.LinearSolver.TargetBlockSize = 10000;
             return C;
         }
     }

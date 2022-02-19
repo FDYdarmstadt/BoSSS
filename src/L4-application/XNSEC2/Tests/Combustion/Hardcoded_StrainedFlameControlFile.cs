@@ -67,9 +67,10 @@ namespace BoSSS.Application.XNSEC {
             C.myThermalWallType = SIPDiffusionTemperature.ThermalWallType.Adiabatic;
 
             C.UseMixtureFractionsForCombustionInitialization = true;
-            C.LinearSolver.SolverCode = Solution.Control.LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.NoOfMultigridLevels = 10;
-            C.LinearSolver.verbose = true;
+            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                NoOfMultigridLevels = 10,
+                //verbose = true
+            };
 
             C.NoOfTimesteps = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;

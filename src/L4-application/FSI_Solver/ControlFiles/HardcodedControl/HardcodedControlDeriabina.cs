@@ -69,8 +69,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NoOfMultigridLevels = 1;
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MinSolverIterations = 1;
             C.LSunderrelax = 1.0;
 
             // Coupling Properties
@@ -204,9 +202,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
-            C.LinearSolver.NoOfMultigridLevels = 1;
 
 
             // Timestepping
