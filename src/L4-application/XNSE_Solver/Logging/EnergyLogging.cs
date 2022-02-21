@@ -72,7 +72,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
                 double sigma = Control.PhysicalParameters.Sigma;
                 double surfaceEnergy = EnergyUtils.GetSurfaceEnergy(LsTrk, sigma, quadOrder);
 
-                double totalEnergy = kineticEnergy * surfaceEnergy;
+                double totalEnergy = kineticEnergy + surfaceEnergy;
 
                 double[] muS = new double[] { Control.PhysicalParameters.mu_A, Control.PhysicalParameters.mu_B };
                 double kineticDissipation = EnergyUtils.GetKineticDissipation(LsTrk, CurrentVel, muS, quadOrder);

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -18,8 +19,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
     /// </summary>
     [Serializable]
     public class SphericalHarmonicsLogging : SphericalHarmonicsLogging<XNSE_Control> {
-        public SphericalHarmonicsLogging(int MaxL, bool RotSymmetric) : base(MaxL, RotSymmetric) {
-        }
+
     }
 
     /// <summary>
@@ -49,20 +49,15 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
         /// <summary>
         /// assuming rotational symmetry, excluding the computation of modes m != 0
         /// </summary>
-        protected bool RotSymmetric;
+        [DataMember]
+        public bool RotSymmetric = false;
 
         /// <summary>
         /// maximum mode l 
         /// </summary>
-        protected int MaxL;
+        [DataMember]
+        public int MaxL = 1;
 
-        public SphericalHarmonicsLogging(int MaxL, bool RotSymmetric ) {
-            this.MaxL = MaxL;
-            this.RotSymmetric = RotSymmetric;
-        }
-
-        public SphericalHarmonicsLogging() : this(3, false) {
-        }
 
         /// <summary>
         /// Spherical Harmonics mapping from a pair to a linear index: (l,m) -> idx
@@ -244,7 +239,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
 
 
         protected override void WriteHeader(TextWriter textWriter) {
-            string header = SH_dim(MaxL, RotSymmetric).ForLoop(l => SH_mappingInv(l)).ToConcatString("time\t", "\t", "");
+            string header = SH_dim(MaxL, RotSymmetric).ForLoop(l => SH_mappingInv(l, RotSymmetric)).ToConcatString("time\t", "\t", "");
             Log.WriteLine(header);
             Log.Flush();
         }

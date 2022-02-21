@@ -154,10 +154,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             MultidimensionalArray InterfacePoints = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
 
             double r_theta0 = 0.0;
-            double dist_zAxis_min = double.MaxValue;
             double r_theta90x = 0.0;
             double dist_xAxis_min = double.MaxValue;
-            double r_theta90y = 0.0;
             double dist_yAxis_min = double.MaxValue;
             for(int i = 0; i < InterfacePoints.Lengths[0]; i++) {
                 double xCoord = InterfacePoints[i, 0];

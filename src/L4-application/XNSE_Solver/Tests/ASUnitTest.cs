@@ -915,11 +915,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void SphericalHarmonicsPostprocessingTest(
             [Values(true, false)] bool OnQuarterDomain,
-            [Values(3, 5)] int MaxL,
+            [Values(3, 5)] int MaxLength,
             [Values(true, false)] bool RotationalSymmetric) {
             // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonicsPostprocessingTest()
 
-            if(MaxL == 5 && (OnQuarterDomain || RotationalSymmetric))
+            if(MaxLength == 5 && (OnQuarterDomain || RotationalSymmetric))
                 return;
 
             var Tst = new SphericalHarmonicsTest();
@@ -930,7 +930,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 XQuadFactoryHelper.MomentFittingVariants.Saye, 
                 SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
 
-            var pp = new Logging.SphericalHarmonicsLogging(MaxL, RotationalSymmetric);
+            var pp = new Logging.SphericalHarmonicsLogging() { MaxL = MaxLength, RotSymmetric = RotationalSymmetric};
             C.PostprocessingModules.Add(pp);
             C.SkipSolveAndEvaluateResidual = true;
 

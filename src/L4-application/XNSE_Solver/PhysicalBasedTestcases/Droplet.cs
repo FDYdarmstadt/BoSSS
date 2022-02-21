@@ -33,6 +33,7 @@ using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Application.XNSE_Solver.Logging;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -828,7 +829,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// Movement induced by surface terms.
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D(int p = 2, int kelem = 7, bool useAMR = true) {
+        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 7, bool useAMR = true) {
 
             XNSE_Control C = new XNSE_Control();
             //C.ImmediatePlotPeriod = 1;
@@ -856,7 +857,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             C.ContinueOnIoError = false;
-            //C.PostprocessingModules.Add(new Dropletlike() { LogPeriod = 4 });
+            C.PostprocessingModules.Add(new SphericalHarmonicsLogging() { MaxL = 9, RotSymmetric = true}); ;
+            C.PostprocessingModules.Add(new DropletMetricsLogging());
+            C.PostprocessingModules.Add(new EnergyLogging());
 
             #endregion
 
@@ -917,15 +920,36 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.PhysicalParameters.mu_B = 1 * ratio;
             //C.PhysicalParameters.Sigma = 1;
 
-            C.Tags.Add("Ohnesorge Zahl = 0.76");
-            C.PhysicalParameters.rho_A = 1260;
-            C.PhysicalParameters.rho_B = 1260 * ratio;
-            C.PhysicalParameters.mu_A = 0.0714;
-            C.PhysicalParameters.mu_B = 0.0714 * ratio;
-            C.PhysicalParameters.Sigma = 7e-3;
+            //C.Tags.Add("Ohnesorge Zahl = 0.76");
+            //C.PhysicalParameters.rho_A = 1260;
+            //C.PhysicalParameters.rho_B = 1260 * ratio;
+            //C.PhysicalParameters.mu_A = 0.0714;
+            //C.PhysicalParameters.mu_B = 0.0714 * ratio;
+            //C.PhysicalParameters.Sigma = 7e-3;
+
+            //C.PhysicalParameters.IncludeConvection = true;
+            //C.PhysicalParameters.Material = true;
+
 
             C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.rho_B = 0.001;
+            C.PhysicalParameters.mu_A = 0.1;
+            C.PhysicalParameters.mu_B = 0.001;
+            C.PhysicalParameters.reynolds_B = 0.0;
+            C.PhysicalParameters.reynolds_A = 0.0;
+            C.PhysicalParameters.Sigma = 1;
+            C.PhysicalParameters.pFree = 0.0;
+            C.PhysicalParameters.mu_I = 0.0;
+            C.PhysicalParameters.lambda_I = 0.0;
+            C.PhysicalParameters.lambdaI_tilde = -1.0;
+            C.PhysicalParameters.betaS_A = 0.0;
+            C.PhysicalParameters.betaS_B = 0.0;
+            C.PhysicalParameters.betaL = 0.0;
+            C.PhysicalParameters.theta_e = 1.5707963267948966;
+            C.PhysicalParameters.sliplength = 0.0;
             C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.useArtificialSurfaceForce = false;
 
             #endregion
 
@@ -1059,24 +1083,39 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //};
 
             // Becker
-            double r_0 = 1;
-            double a_P = 0.5;       //initial disturbance to corresponding Legendre polynomial P
-            double a_0 = 0.94754;   // for a_2 = 0.5 and r_0 = 1 (script available in maple)
-            //double a_0 = 0.9643;   // for a_3 = 0.5 and r_0 = 1 (script available in maple)
-            //double a_0 = 0.97146;   // for a_4 = 0.5 and r_0 = 1 (script available in maple)
-            Func<double[], double> PhiFunc = delegate (double[] X) {
-                double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
-                double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
-                double theta = Math.Atan2(r_xy, -X[2]);
-                //double f = r_0;
-                double f = r_0 * (a_0 + a_P * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0));                                        // P_2
-                //double f = r_0 * (a_0 + a_P * 0.5 * (5.0 * (Math.Cos(theta)).Pow(3) - 3.0 * Math.Cos(theta)));                      // P_3
-                //double f = r_0 * (a_0 + a_P * 0.125 * (35.0 * (Math.Cos(theta)).Pow(4) - 30.0 * (Math.Cos(theta)).Pow(2) + 3.0));   // P_4
-                double phi = r - f;
-                return phi;
-            };
+            //double r_0 = 1;
+            //double a_P = 0.5;       //initial disturbance to corresponding Legendre polynomial P
+            //double a_0 = 0.94754;   // for a_2 = 0.5 and r_0 = 1 (script available in maple)
+            ////double a_0 = 0.9643;   // for a_3 = 0.5 and r_0 = 1 (script available in maple)
+            ////double a_0 = 0.97146;   // for a_4 = 0.5 and r_0 = 1 (script available in maple)
+            //Func<double[], double> PhiFunc = delegate (double[] X) {
+            //    double r = ((X[0]).Pow2() + (X[1]).Pow2() + (X[2]).Pow2()).Sqrt();
+            //    double r_xy = ((X[0]).Pow2() + (X[1]).Pow2()).Sqrt();
+            //    double theta = Math.Atan2(r_xy, -X[2]);
+            //    //double f = r_0;
+            //    double f = r_0 * (a_0 + a_P * 0.5 * (3.0 * (Math.Cos(theta)).Pow2() - 1.0));                                        // P_2
+            //    //double f = r_0 * (a_0 + a_P * 0.5 * (5.0 * (Math.Cos(theta)).Pow(3) - 3.0 * Math.Cos(theta)));                      // P_3
+            //    //double f = r_0 * (a_0 + a_P * 0.125 * (35.0 * (Math.Cos(theta)).Pow(4) - 30.0 * (Math.Cos(theta)).Pow(2) + 3.0));   // P_4
+            //    double phi = r - f;
+            //    return phi;
+            //};
 
-            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+
+            var Phi1Init = new Formula(
+                "Phi1",
+                false,
+                "using ilPSP.Utils; " +
+                "double Phi1(double[] X) { " +
+                "     " +
+                "    (double theta, double phi) = SphericalHarmonics.GetAngular(X); " +
+                "    double R =    0.966781*SphericalHarmonics.MyRealSpherical(0, 0, theta, phi) " +
+                "                +      0.4*SphericalHarmonics.MyRealSpherical(2, 0, theta, phi); " +
+                "    return X.L2Norm() - R; " +
+                "}");
+
+            C.InitialValues.Add("Phi", Phi1Init);
 
             //// restart
             //Guid restartID = new Guid("78808235-9904-439c-a4e5-d32a97eee5f5");
@@ -1125,7 +1164,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.LinearSolver.NoOfMultigridLevels = 3;
@@ -1156,7 +1195,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitSignedDistance = true;
 
 
-            C.AdaptiveMeshRefinement = useAMR;
+            //C.AdaptiveMeshRefinement = useAMR;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
 
