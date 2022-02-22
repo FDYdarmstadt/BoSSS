@@ -179,9 +179,9 @@ namespace BoSSS.Application.XNSEC {
 
             FieldOptions.Add(VariableNames.ThermodynamicPressure, new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             var bla = this.EnableTemperature ? DGp : 0;
-            FieldOptions[VariableNames.Temperature] = new FieldOpts() { Degree = this.EnableTemperature ? DGp : 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE };
+            FieldOptions[VariableNames.Temperature] = new FieldOpts() { Degree = this.EnableTemperature ? DGp : 0, SaveToDB = FieldOpts.SaveToDBOpt.TRUE };
             for (int i = 0; i < this.NumberOfChemicalSpecies; i++) {
-                FieldOptions.Add(VariableNames.MassFraction_n(i), new FieldOpts() { Degree = this.EnableTemperature ? DGp : 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+                FieldOptions.Add(VariableNames.MassFraction_n(i), new FieldOpts() { Degree = this.EnableMassFractions? DGp : 0, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             }
 
             FieldOptions.Add(VariableNames.MixtureFraction, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });

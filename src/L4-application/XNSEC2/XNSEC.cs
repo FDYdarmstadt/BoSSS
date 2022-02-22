@@ -3,6 +3,7 @@ using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution;
@@ -51,7 +52,7 @@ namespace BoSSS.Application.XNSEC {
 
             //NUnitTest.IncompressibleUnsteadyTaylorVortexTest(); //
 
-            //NUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            ////NUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
@@ -80,13 +81,13 @@ namespace BoSSS.Application.XNSEC {
             //NUnitTest.TwoPhaseIncompressibleSteadyPoiseuilleFlowTest(); // TODO!
             ////NUnitTest.ThermodynamicPressureTest(); // TODO
 
-            //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.NonReactingMixingLayerTests(2, 10, 1)", "--delplt" }, false, delegate () {
+            //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()", "--delplt" }, false, delegate () {
             //    var p = new XNSEC();
             //    return p;
             //});
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
-            //-n 4./ XNSEC.exe - c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.NonReactingMixingLayerTests(2, 10, 1)"
+            //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
             //System.Threading.Thread.Sleep(10000);
             bool MixtureFractionCalculation = false;
@@ -722,6 +723,10 @@ namespace BoSSS.Application.XNSEC {
                     };
                 }
             }
+
+            ////============================
+            //// Solver safe guard 
+            ////============================
             if (Control.VariableBounds != null) {
                 Console.WriteLine("Using solver safe guard!");
                 XOP.SolverSafeguard = DelValidationCombustion;
@@ -888,6 +893,30 @@ namespace BoSSS.Application.XNSEC {
         public override IDictionary<string, double> OperatorAnalysis() {
             return this.Operator.OperatorAnalysis(this.CurrentStateVector.Mapping, this.MultigridOperatorConfig);
         }
+
+
+        //protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+        //    // Cells Numbers
+        //    var CellNumbers = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbers").SingleOrDefault();
+        //    if (CellNumbers == null) {
+        //        CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbers");
+        //        this.RegisterField(CellNumbers);
+        //    }
+        //    CellNumbers.Clear();
+        //    CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+        //        int K = result.GetLength(1); // No nof Nodes
+        //        for (int j = 0; j < Len; j++) {
+        //            for (int k = 0; k < K; k++) {
+        //                result[j, k] = j0 + j;
+        //            }
+        //        }
+        //    }, new CellQuadratureScheme());
+
+
+        //    //DGField[] RefinedFields = new[] { Refined_u, Refined_TestData, Refined_Grad_u[0], Refined_Grad_u[1], Refined_MagGrad_u };
+        //    //string filename2 = "RefinedGrid." + timestepNo;
+        //    //Tecplot.PlotFields(RefinedFields, filename2, physTime, superSampling);
+        //}
 
         /// <summary>
         /// User-defined validation of a solver step, e.g. to prevent the solver to iterate out-of-bounds,

@@ -507,7 +507,7 @@ namespace BoSSS.Application.XNSEC {
                                             double _Y3 = Y3[j, k];
                                             double rho = m_EoS.GetDensity(new double[] { Temp, _Y0, _Y1, _Y2, _Y3 });
                                             double TA = m_EoS.m_ChemModel.getTa(_Y0, _Y1);
-                                            result[j, k] = Math.Exp(-TA / Temp ) * (rho * _Y0 / m_EoS.MolarMasses[0]) * (rho * _Y1 / m_EoS.MolarMasses[1]);
+                                            result[j, k] = Math.Exp(-(TA/300) / Temp ) * (rho * _Y0 / m_EoS.MolarMasses[0]) * (rho * _Y1 / m_EoS.MolarMasses[1]);
                                             //result[j, k] = (rho * _Y0 / m_EoS.MolarMasses[0]) * (rho * _Y1 / m_EoS.MolarMasses[1]);
 
                                         }

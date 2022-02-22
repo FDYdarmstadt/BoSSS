@@ -18,17 +18,22 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         static public XNSEC_Control NUnitUnsteadyTaylorVortex() {
             var C = UnsteadyTaylorVortex(2, 7);
-            C.rhoOne = true;
+            //var C = UnsteadyTaylorVortex(1, 5);
+
+            C.rhoOne = false;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.DbPath = null;// @"C:\Databases\BoSSS_DB";
             C.savetodb = false;
             C.ChemicalReactionActive = false;
-            C.UseSelfMadeTemporalOperator = false;
+            C.UseSelfMadeTemporalOperator = true;
             C.timeDerivativeConti_OK = false;
             C.timeDerivativeEnergyp0_OK = false;
             C.PhysicalParameters.IncludeConvection = true;
+            C.EnableTemperature = true;
+            C.EnableMassFractions = true;
+            C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.BDF3;
             //C.NonLinearSolver.Globalization = Solution.AdvancedSolvers.Newton.GlobalizationOption.LineSearch;
             return C;
         }
@@ -51,13 +56,11 @@ namespace BoSSS.Application.XNSEC {
             C.NumberOfChemicalSpecies = 1;
             C.SetDGdegree(DGp);
             C.GravityDirection = new double[] { 0.0, 0.0, 0.0 };
-
             C.PhysicalParameters.IncludeConvection = true;
 
-            C.EnableTemperature = false; // T=1
-            C.EnableMassFractions = false; // Y_0 = 1
-            //C.MomentumConvection_OK = false; // Only Stokes
-            C.rhoOne = true;
+            //C.EnableTemperature = false; // T=1
+            //C.EnableMassFractions = false; // Y_0 = 1
+            //C.rhoOne = true;
 
             C.NoOfTimesteps = int.MaxValue;
             C.MatParamsMode = MaterialParamsMode.Constant;
