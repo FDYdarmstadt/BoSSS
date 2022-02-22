@@ -251,8 +251,6 @@ namespace BoSSS.Foundation.XDG {
                     ExceptionOnFailedAgglomeration
                     );
 
-
-
                 var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs);
                 this.DictAgglomeration.Add(spc, m_agglomeration);
             }

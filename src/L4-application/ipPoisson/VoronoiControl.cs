@@ -117,9 +117,8 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", X => 1.0);
             R.InitialValues_Evaluators.Add("Tex", X => X[0]);
             R.ExactSolution_provided = false;
-            R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
-            R.LinearSolver.SolverCode = solver_name;
-            R.LinearSolver.NoOfMultigridLevels = 1;
+            R.LinearSolver = solver_name.GetConfig();
+            
             //R.TargetBlockSize = 100;
 
             grid.SetGridAndBoundaries(R);

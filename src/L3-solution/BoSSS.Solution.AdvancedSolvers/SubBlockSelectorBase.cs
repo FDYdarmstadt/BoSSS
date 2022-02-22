@@ -278,8 +278,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Selects Species by <see cref="SpeciesId"/>.
         /// </summary>
-        /// <param name="Species"></param>
-        /// <returns></returns>
         public SubBlockSelectorBase SpeciesSelector(SpeciesId SId) {
 
             this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
@@ -298,8 +296,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Selects Species by <see cref="SpeciesId"/>.
         /// </summary>
-        /// <param name="Species"></param>
-        /// <returns></returns>
         public SubBlockSelectorBase SpeciesSelector(string Species) {
 
             this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
@@ -317,10 +313,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Selects multiple species by <see cref="IEnumerable<SpeciesId>"/>.
+        /// Selects multiple species by <see cref="IEnumerable{SpeciesId}"/>.
         /// </summary>
-        /// <param name="SetOfSpecies"></param>
-        /// <returns></returns>
         public SubBlockSelectorBase SpeciesSelector(IEnumerable<SpeciesId> SetOfSpecies) {
             //for (int v = 0; v < m_map.NoOfVariables; v++) {
             //    if (this.m_map.AggBasis[v].GetType() == typeof(XdgAggregationBasis))
@@ -599,8 +593,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// This abstract class is the unification of internal and external cell masking.
-    /// Therefore <see cref="m_NoOfCells"/> and <see cref="m_CellOffset"/> have to be overriden by inheriting classes.
-    /// There are two inheriting classes: <see cref="BlockMaskExt"/> and <see cref="BlockMaskLoc"/>,
+    /// Therefore <see cref="m_NoOfCells"/> and <see cref="m_CellOffset"/> have to be overridden by inheriting classes.
+    /// There are two inheriting classes: <see cref="BlockMask.BlockMaskExt"/> and <see cref="BlockMask.BlockMaskLoc"/>,
     /// which handle the masking of external cells and internal cells respectively.
     /// The purpose of this class is to provide the index lists and structs,
     /// which correspond to underlying selection through the <see cref="SubBlockSelector"/>.
@@ -630,9 +624,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// Generates Block Mask (index lists) from Sub block selection based on a multigrid mapping. 
-        /// abstract parts are individuallized by child classes: <see cref="BlockMask.BlockMaskLoc"/> and <see cref="BlockMask.BlockMaskExt"/>
+        /// abstract parts are individualized by child classes: <see cref="BlockMask.BlockMaskLoc"/> and <see cref="BlockMask.BlockMaskExt"/>
         /// </summary>
-        /// <param name="SBS"></param>
         public BlockMaskBase(SubBlockSelector SBS, MPI_Comm MPIcomm) {
             m_map = SBS.GetMapping;
             m_sbs = SBS;

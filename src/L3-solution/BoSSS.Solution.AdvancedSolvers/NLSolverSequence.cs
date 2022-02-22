@@ -30,6 +30,8 @@ using System.IO;
 using System.Diagnostics;
 
 namespace BoSSS.Solution.AdvancedSolvers {
+
+    /*
     /// <summary>
 
     /// </summary>
@@ -79,6 +81,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
     }
+    */
 }
 
 

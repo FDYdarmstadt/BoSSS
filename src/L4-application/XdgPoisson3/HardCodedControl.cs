@@ -78,7 +78,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             R.AgglomerationThreshold = 0.0;
             R.PrePreCond = MultigridOperator.Mode.IdMass;
             R.penalty_multiplyer = 1.1;
@@ -128,15 +128,12 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.g_Diri = (X => 0.0);
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = solver;
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            R.LinearSolver = solver.GetConfig();
 
             R.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
             R.AgglomerationThreshold = 0.1;
             R.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            R.LinearSolver.NoOfMultigridLevels = 5;
-
 
             return R;
         }
@@ -229,14 +226,13 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_schwarz;//R.solverName = "pcg+schwarz";
-            R.LinearSolver.NoOfMultigridLevels = 2;
+            R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             R.AgglomerationThreshold = 0.0;
 
             return R;
         }
 
-
+        /*
         /// <summary>
         /// A piecewise linear solution.
         /// </summary>
@@ -304,12 +300,13 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();//R.solverName = "direct";
             R.AgglomerationThreshold = 0.2;
 
 
             return R;
         }
+        */
 
         /// <summary>
         /// a piecewise parabolic solution.
@@ -376,7 +373,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
+            R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             R.AgglomerationThreshold = 0.0;
             R.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
@@ -492,7 +489,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.xLaplaceBCs.g_Diri = ((CommonParamsBnd inp) => 0.0);
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver.SolverCode = solverCode;//R.solverName = "direct";
+            R.LinearSolver = solverCode.GetConfig();
             R.AgglomerationThreshold = 0.1;
             R.PrePreCond = MultigridOperator.Mode.DiagBlockEquilib;
             R.penalty_multiplyer = 1.1;
@@ -501,35 +498,36 @@ namespace BoSSS.Application.XdgPoisson3 {
             return R;
         }
 
+        /*
         /// <summary>
         /// This is a testrun similar to the one in \public\doc\handbook\apdx-NodeSolverPerformance\XDGPoisson\Part1-Calculations.bws
         /// phase A: 3D sphere, pahse B: [-1,1]^3\sphere
         /// </summary>
-        /// <param name="myDB"></param>
-        /// <returns></returns>
-        public static XdgPoisson3Control TestOrTreat(int solver = 2)
-        {
+        public static XdgPoisson3Control TestOrTreat(int solver = 4) {
+
             XdgPoisson3Control C = new XdgPoisson3Control();
 
-            switch (solver)
-            {
+            switch(solver) {
                 case 0:
-                    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-                    break; 
+                C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+                break;
                 case 1:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-                    break;
+                C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+                break;
                 case 2:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_ILU;
-                    break;
+                C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_ILU;
+                break;
+
                 case 3:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_MG_AS;
-                    break;
+                C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
+                break;
+
                 case 4:
-                    C.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_AS;
-                    break;
+                throw new NotImplementedException("deactivated old solver config.");
+                //C.LinearSolver.SolverCode = LinearSolverCode.exp_OrthoS_pMG;
+                //break;
                 default:
-                    throw new NotImplementedException("guess again");
+                throw new NotImplementedException("guess again");
             }
 
             C.savetodb = false;
@@ -591,6 +589,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             return C;
         }
+        */
 
         /// <summary>
         /// A circular interface within the 2D domain \f$ (-1,1)^2 \f$, with Dirichlet boundary conditions at \f$ x = -1 \f$ and Neumann boundary conditions elsewhere.
@@ -651,8 +650,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.InitialValues_Evaluators.Add("uEx#B", X => Math.Sin((X[0] + 1.0) * 3) * (1.0 / 9.0));
 
             // Solver Parameters
-            //C.solverName = "pcg+mg+schwarz";
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//R.solverName = "direct";
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
 
             // Discretization Parameters
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;

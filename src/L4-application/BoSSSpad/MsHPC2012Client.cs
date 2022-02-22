@@ -587,7 +587,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// 
         /// </summary>
-        private (int id, JobState state)[] ListJobs() {
+        private (int id, JobState state)[] _ListJobs() {
 
 
             string user = this.Username;

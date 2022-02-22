@@ -41,7 +41,6 @@ namespace BoSSS.Application.SipPoisson {
             base.NoOfMultigridLevels = 1;
             base.TimesteppingMode = _TimesteppingMode.Steady;
             base.NoOfTimesteps = 1;
-            base.LinearSolver.verbose = true;
         }
 
         /// <summary>

@@ -244,7 +244,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Gets number of blocks/cells covert by mask
         /// </summary>
-        public int GetNoOfMaskedCells {
+        public int NoOfMaskedCells {
             get {
                 if (m_includeExternalCells) {
                     return BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length;
@@ -257,7 +257,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Gets number of rows covert by mask
         /// </summary>
-        public int GetNoOfMaskedRows {
+        public int NoOfMaskedRows {
             get {
                 if (m_includeExternalCells) {
                     return BMLoc.LocalDOF + BMExt.LocalDOF;
@@ -822,6 +822,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             return _Sblocks;
         }
 
+        /// <summary>
+        /// global (i.e. across all MPI processors) indices of vector entries, resp. matrix rows and columns to select.
+        /// </summary>
         public long[] GlobalIndices {
             get {
                 List<long> tmp = new List<long>();

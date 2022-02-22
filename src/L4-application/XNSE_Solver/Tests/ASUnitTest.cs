@@ -238,7 +238,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     SurfTensionMode: SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine,
                     CutCellQuadratureType: CutCellQuadratureType);
                 //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-                //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+                //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
 
                 C.InitSignedDistance = false;
 
@@ -582,9 +582,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(
-            [Values(2, 3)] int FlowSolverDegree = 3,
-            [Values(false, true)] bool SchurCompl = true,
-            [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+            [Values(2, 3)] int FlowSolverDegree,
+            [Values(false, true)] bool SchurCompl,
+            [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
             ) {
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
             TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
@@ -613,7 +613,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Son_p3(
             //[Values(2, 3)] int FlowSolverDegree = 3,
             //[Values(false,true)] bool SchurCompl = true,
-            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver 
             ) {
             int FlowSolverDegree = 3;
             bool SchurCompl = true;
@@ -628,7 +628,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p3(
             //[Values(2, 3)] int FlowSolverDegree = 3,
             //[Values(false,true)] bool SchurCompl = true,
-            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver 
             ) {
 
             int FlowSolverDegree = 3;
@@ -686,17 +686,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
                 C.NonLinearSolver.ConvergenceCriterion = 1e-10;
                 C.UseSchurBlockPrec = SchurCompl;
-                //C.ImmediatePlotPeriod = 1;
-                //C.SuperSampling = 3;
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 3;
+                
                 CS[i] = C;
-
-                //Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!1   remove me !!!!!!!!!!!!!!!!!!!!!!1");
-                //C.ImmediatePlotPeriod = 1;
-                //C.SuperSampling = 3;
-                //C.SkipSolveAndEvaluateResidual = false;
-                //C.UseSchurBlockPrec = true;
-                //XNSESolverTest(Tst, C);
-                //break;
             }
 
             XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 }); // be **very** generous with the expected slopes
@@ -878,7 +871,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, nonlinsolver: nonlinsolver); // surface tension plays no role in this test, so ignore it
             //C.SkipSolveAndEvaluateResidual = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
             //C.Solver_MaxIterations = 100;
             XNSESolverTest(Tst, C);
             //if(AgglomerationTreshold > 0) {
@@ -1248,12 +1240,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 C.dtFixed = tst.dt;
             }
 
-            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver.ConvergenceCriterion = 1e-9;
             //C.Solver_ConvergenceCriterion = 1e-9;
 
-            C.LinearSolver.SolverCode = solvercode;
             C.NonLinearSolver.SolverCode = nonlinsolver;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            
+            C.LinearSolver = solvercode.GetConfig();
+            if(C.LinearSolver is Solution.AdvancedSolvers.IterativeSolverConfig isc) {
+                isc.ConvergenceCriterion = 1e-9;
+            }
 
             // return
             // ======
