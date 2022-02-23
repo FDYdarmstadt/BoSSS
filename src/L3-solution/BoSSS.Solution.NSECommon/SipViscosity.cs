@@ -312,7 +312,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// base multiplier for the penalty computation
         /// </summary>
-        private double m_penalty_base;
+        protected double m_penalty_base;
 
 
         /// <summary>
