@@ -539,10 +539,10 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             for (int i = 0; i < nodeMap.Length - 1; ++i) {
                 if (phiValuesIn[0, i] * phiValuesIn[0, i+1] < 0) {
                     NodeSet edgeNodes1 = new NodeSet(Line.Instance, 1, 1);
-                    edgeNodes1[0] = edgeNodes[i];
+                    edgeNodes1[0,0] = edgeNodes[i, 0];
                     edgeNodes1.LockForever();
                     phi1(edge, edgeNodes1, phiValuesIn1, phiValuesOut1);
-                    if(phiValuesIn1[0] > 0) {
+                    if(phiValuesIn1[0,0] > 0) {
                         nodeMap[i] = true;
                         ++numberOfEdgeNodes;
                     }
