@@ -33,6 +33,7 @@ using ilPSP.Utils;
 using BoSSS.Solution.LevelSetTools;
 using System.Linq;
 using BoSSS.Foundation;
+using BoSSS.Solution.Statistic;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -656,6 +657,24 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
         /// </summary>
+        [Test]
+        public static void TaylorCouetteConvergenceTest_temp(
+            [Values(2, 3)] int FlowSolverDegree,
+            [Values(Tests.TaylorCouette.Mode.Test2Phase, Tests.TaylorCouette.Mode.TestIBM)] Tests.TaylorCouette.Mode modus
+            ) //
+        {
+            // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_temp
+            SurfaceStressTensor_IsotropicMode stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
+            bool SchurCompl = true;
+            NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton;
+
+            TaylorCouetteConvergenceTest(FlowSolverDegree, modus, stm, SchurCompl, nonlinsolver);
+        }
+
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
+        /// </summary>
         public static void TaylorCouetteConvergenceTest(
             [Values(2, 3)] int FlowSolverDegree = 3,
             [Values(Tests.TaylorCouette.Mode.Test2Phase, Tests.TaylorCouette.Mode.TestIBM)] Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.TestIBM,
@@ -692,7 +711,20 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 CS[i] = C;
             }
 
-            XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 }); // be **very** generous with the expected slopes
+            
+            
+            var RegData = XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 });
+            using(var dataFile = new System.IO.StreamWriter("RegData.txt", true)) {
+                dataFile.Write("FlowSolverDegree: " + FlowSolverDegree);
+                dataFile.Write(" modus: " + modus.ToString());
+                dataFile.Write(" ");
+                foreach(var ttt in RegData)
+                    dataFile.Write(ttt + " ");
+                dataFile.WriteLine();
+            }
+
+
+            // be **very** generous with the expected slopes
         }
 
         /// <summary>
@@ -807,6 +839,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 2;
+
+            C.PhysicalParameters.IncludeConvection = false;
 
             // set to transient...
             C.dtFixed = 0.1;
@@ -1024,30 +1058,34 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        private static void XNSESolverConvergenceTest(IXNSETest Tst, XNSE_Control[] CS, bool useExactSolution, double[] ExpectedSlopes) {
+        private static (string Name, double slope, double Intercept)[] XNSESolverConvergenceTest(IXNSETest Tst, XNSE_Control[] CS, bool useExactSolution, double[] ExpectedSlopes) {
             int D = Tst.SpatialDimension;
             int NoOfMeshes = CS.Length;
+            if(ExpectedSlopes.Length != D + 1)
+                throw new ArgumentException("Expecting slopes for vlocity and pressure.");
 
-            double[] hS = new double[NoOfMeshes];
-            MultidimensionalArray errorS = null;
-            string[] Names = null;
+            var Ret = new List<(string Name, double slope, double Intercept)>();
 
-            XNSE[] solvers = new XNSE[NoOfMeshes];
-            if (useExactSolution) {
-
-                if (NoOfMeshes < 2)
+            if(useExactSolution) {
+                if(NoOfMeshes < 2)
                     throw new ArgumentException("At least two meshes required for convergence against exact solution.");
 
-                for (int k = 0; k < CS.Length; k++) {
+                MultidimensionalArray errorS = null;
+                string[] Names = null;
+
+                double[] hS = new double[NoOfMeshes];
+                XNSE[] solvers = new XNSE[NoOfMeshes];
+
+                for(int k = 0; k < CS.Length; k++) {
 
                     var C = CS[k];
                     //using(var solver = new XNSE()) {
                     var solver = new XNSE();
                     solvers[k] = solver;
                     {
-                        //Console.WriteLine("Warning! - enabled immediate plotting");
-                        //C.ImmediatePlotPeriod = 1;
-                        //C.SuperSampling = 3;
+                        Console.WriteLine("Warning! - enabled immediate plotting");
+                        C.ImmediatePlotPeriod = 1;
+                        C.SuperSampling = 3;
 
                         solver.Init(C);
                         solver.RunSolverMode();
@@ -1058,19 +1096,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                         double[] ErrThresh = Tst.AcceptableL2Error;
 
 
-                        if (k == 0) {
+                        if(k == 0) {
                             errorS = MultidimensionalArray.Create(NoOfMeshes, LastErrors.Length);
                             Names = new string[LastErrors.Length];
-                            if (ExpectedSlopes.Length != Names.Length)
+                            if(ExpectedSlopes.Length != Names.Length)
                                 throw new ArgumentOutOfRangeException();
                         } else {
-                            if (LastErrors.Length != Names.Length)
+                            if(LastErrors.Length != Names.Length)
                                 throw new ApplicationException();
                         }
 
-                        if (LastErrors.Length != ErrThresh.Length)
+                        if(LastErrors.Length != ErrThresh.Length)
                             throw new ApplicationException();
-                        for (int i = 0; i < ErrThresh.Length; i++) {
+                        for(int i = 0; i < ErrThresh.Length; i++) {
                             Console.WriteLine($"L2 error, '{solver.Operator.DomainVar[i]}': \t{LastErrors[i]}");
                             Names[i] = solver.Operator.DomainVar[i];
                         }
@@ -1080,32 +1118,41 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     }
 
                 }
+
+                for(int i = 0; i < errorS.GetLength(1); i++) {
+                    var RegModel = hS.LogLogRegression(errorS.GetColumn(i));
+                    Console.WriteLine($"Convergence slope for Error of '{Names[i]}', k = {CS[0].FieldOptions[Names[i]].Degree}: \t{RegModel.Slope}\tIntercept: \t{RegModel.Intercept}(Expecting: {ExpectedSlopes[i]})");
+                    Ret.Add((Names[i], RegModel.Slope, RegModel.Intercept));
+                }
+
+                for(int i = 0; i < errorS.GetLength(1); i++) {
+                    var slope = hS.LogLogRegressionSlope(errorS.GetColumn(i));
+                    Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+                }
+
+                foreach(var s in solvers) {
+                    s.Dispose();
+                }
             } else {
-                if (NoOfMeshes < 3)
+                if(NoOfMeshes < 3)
                     throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact.");
-                throw new NotImplementedException("todo");
+
+
+
+                BoSSS.Solution.Statistic.ConvergenceTest.SolverConvergenceTest_Experimental(
+                    CS,
+                    "Experimental Convergence",
+                    (D + 1).ForLoop(iVar => (iVar < D ? VariableNames.Velocity_d(iVar) : VariableNames.Pressure,
+                                             ExpectedSlopes[iVar],
+                                             iVar < D ? NormType.L2_approximate : NormType.L2noMean_approximate)));
+
             }
 
 
-            //hS = hS.Take(hS.Length - 1).ToArray();
+
+            return Ret.ToArray();
 
            
-
-
-            for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = hS.LogLogRegression(errorS.GetColumn(i));
-
-                Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
-            }
-
-            for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = hS.LogLogRegression(errorS.GetColumn(i));
-                Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
-            }
-
-            foreach (var s in solvers) {
-                s.Dispose();
-            }
         }
 
         private static void ASScalingTest(IXNSETest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard) {
