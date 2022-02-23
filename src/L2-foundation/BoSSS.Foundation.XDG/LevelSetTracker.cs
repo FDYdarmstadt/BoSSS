@@ -681,6 +681,39 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
+        /// Returns the levelSets that are sperating the 
+        /// species <paramref name="species"/> as defined in <see cref="m_SpeciesTable"/>. 
+        /// </summary>
+        /// <param name="species"></param>
+        /// <returns></returns>
+        public IEnumerable<int> GetLevelSetsSeparatingSpecies(IList<string> species) {
+
+            LinkedList<int> levelSetIndices = new LinkedList<int>();
+            for(int levSetIdx = 0; levSetIdx < SpeciesTable.Rank; ++levSetIdx) {
+                LinkedList<SpeciesPair> speciesOfLevelSet = FindSeparatedSpeciesPairs(levSetIdx);
+                foreach(SpeciesPair ofLevelSet in speciesOfLevelSet) {
+                    if (ContainsPair(species, ofLevelSet)) {
+                        levelSetIndices.AddLast(levSetIdx);
+                        break;
+                    }
+                }
+            }
+            return levelSetIndices;
+        }
+
+        bool ContainsPair(IList<string> candidates, SpeciesPair pair) {
+            for (int j = 0; j < candidates.Count() - 1; ++j) {
+                for (int k = j; k < candidates.Count(); ++k) {
+                    SpeciesPair candidatePair = new SpeciesPair(candidates[j], candidates[k]);
+                    if (pair.Equals(candidatePair)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
         /// Returns the species that are speratated by Level Set <paramref name="levSetIdx"/>, as defined in <see cref="m_SpeciesTable"/>. 
         /// </summary>
         /// <param name="levSetIdx"></param>

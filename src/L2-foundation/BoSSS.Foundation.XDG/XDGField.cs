@@ -410,12 +410,69 @@ namespace BoSSS.Foundation.XDG {
                 DGField.EvaluateInternal,
                 ref m_Evaluate_SpeciesEvalBuffer,
                 __M => new int[] { 1, __M },
-                delegate (MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR) {
+                delegate (MultidimensionalArray R, int offset, int m, LevelSetSignCode levset_bytecode,
+                    ReducedRegionCode reducedRegionCode, MultidimensionalArray[] SR) {
+                    int SpcInd = this.Basis.Tracker.GetSpeciesIndex(reducedRegionCode, levset_bytecode);
                     double r = R[offset, m] * _ResultPreScale;
                     r += SR[SpcInd][0, m];
                     R[offset, m] = r;
                 });
         }
+
+        /// <summary>
+        /// Evaluates the cut-cell DG - field;
+        /// </summary>
+        /// <param name="species">Restrict evaluation to these species </param>
+        /// <param name="_j0">local index of the first cell to evaluate</param>
+        /// <param name="_Len">Number of cells to evaluate</param>
+        /// <param name="_NodeSet">
+        /// as usual, the node set;
+        /// </param>
+        /// <param name="_result">
+        /// on exit, result of the evaluations are accumulated there;
+        /// the original content is scaled by <paramref name="_ResultPreScale"/>;<br/>
+        /// 1st index: cell index minus <paramref name="_j0"/>;<br/>
+        /// 2nd index: node index;
+        /// </param>
+        /// <param name="_ResultCellindexOffset">
+        /// an offset for the first index of <paramref name="_result"/>;
+        /// </param>
+        /// <param name="_ResultPreScale">
+        /// see <paramref name="_result"/>
+        /// </param>
+        public void Evaluate(string[] species, int _j0, int _Len, NodeSet _NodeSet, MultidimensionalArray _result, 
+            int _ResultCellindexOffset, double _ResultPreScale) {
+            int _M = _NodeSet.NoOfNodes; // number of nodes per cell
+
+            if (_result.Dimension != 2)
+                throw new ArgumentOutOfRangeException("result", "dimension of result array must be 2");
+            if (_result.GetLength(1) != _M)
+                throw new ArgumentOutOfRangeException();
+
+            MultidimensionalArray[] m_Evaluate_SpeciesEvalBuffer = new MultidimensionalArray[0];
+
+            IEnumerable<int> levelSets = this.Basis.Tracker.GetLevelSetsSeparatingSpecies(species);
+
+            GenericEval(_j0, _Len, _NodeSet, _result, _ResultCellindexOffset, _ResultPreScale,
+            DGField.EvaluateInternal,
+            ref m_Evaluate_SpeciesEvalBuffer,
+            __M => new int[] { 1, __M },
+            delegate (MultidimensionalArray R, int offset, int m, LevelSetSignCode levset_bytecode,
+                ReducedRegionCode reducedRegionCode, MultidimensionalArray[] SR) {
+                    //Set unused regions to far
+                    for(int iLevSet = 0; iLevSet < this.Basis.Tracker.NoOfLevelSets; ++ iLevSet) {
+                        if (!levelSets.Contains(iLevSet)) {
+                            reducedRegionCode = ReducedRegionCode.Set2Far(iLevSet, levset_bytecode.GetSign(iLevSet), reducedRegionCode);
+                        }
+                    }
+                    int SpcInd = this.Basis.Tracker.GetSpeciesIndex(reducedRegionCode, levset_bytecode);
+                    double r = R[offset, m] * _ResultPreScale;
+                    r += SR[SpcInd][0, m];
+                    R[offset, m] = r;
+                });
+        }
+
+
 
         /// <summary>
         /// <see cref="DGField.EvaluateEdge(int, int, NodeSet, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, MultidimensionalArray, int, double)"/>
@@ -463,9 +520,12 @@ namespace BoSSS.Foundation.XDG {
                 DGField.EvaluateGradientInternal,
                 ref m_EvaluateGradient_SpeciesEvalBuffer,
                 _M => new int[] { 1, _M, D },
-                delegate (MultidimensionalArray R, int offset, int m, int SpcInd, MultidimensionalArray[] SR) {
-                    for (int d = 0; d < D; d++) {
-                        double r = R[offset, m, d] * ResultPreScale;
+                delegate (MultidimensionalArray R, int offset, int m, LevelSetSignCode levset_bytecode,
+                    ReducedRegionCode reducedRegionCode, MultidimensionalArray[] SR) {
+                        int SpcInd = this.Basis.Tracker.GetSpeciesIndex(reducedRegionCode, levset_bytecode);
+                        for (int d = 0; d < D; d++) {
+                            
+                            double r = R[offset, m, d] * ResultPreScale;
                         r += SR[SpcInd][0, m, d];
                         R[offset, m, d] = r;
                     }
