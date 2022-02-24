@@ -30,17 +30,22 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             base.m_alpha = sw;
             this.m_bcMap = bcMap;
 
-            double complementMu;
+            //double complementMu;
             ValidSpecies = spcName;
             switch(spcName) {
-                case "A": currentMu = _muA; complementMu = _muB; break;
-                case "B": currentMu = _muB; complementMu = _muA; break;
+                case "A": currentMu = _muA; 
+                //complementMu = _muB; 
+                break;
+                case "B": 
+                currentMu = _muB; 
+                //complementMu = _muA;
+                break;
                 default: throw new ArgumentException("Unknown species.");
             }
 
-            double muFactor = Math.Max(currentMu, complementMu) / currentMu;
-            Console.WriteLine("muFactor is: " + muFactor + " in species " + spcName);
-            base.m_penalty_base = penalty_safety * muFactor; // totally wrong scaling; fk, 16feb22, 04:05 AM
+            //double muFactor = Math.Max(currentMu, complementMu) / currentMu;
+            //Console.WriteLine("muFactor is: " + muFactor + " in species " + spcName);
+            //base.m_penalty_base = penalty_safety * muFactor; // totally wrong scaling; fk, 16feb22, 04:05 AM
 
             int D = base.m_D;
             base.velFunction = D.ForLoop(d => this.m_bcMap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName]);

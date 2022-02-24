@@ -263,7 +263,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             
             switch(config.WhichSolver) {
                 case _whichSolver.PARDISO:
-                bool CachingOn = true;
+                bool CachingOn = false;
                 if (ActivateCaching != null) {
                     CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, m_MultigridOp.LevelIndex);
                 }
