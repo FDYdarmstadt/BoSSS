@@ -1121,7 +1121,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 for(int i = 0; i < errorS.GetLength(1); i++) {
                     var RegModel = hS.LogLogRegression(errorS.GetColumn(i));
-                    Console.WriteLine($"Convergence slope for Error of '{Names[i]}', k = {CS[0].FieldOptions[Names[i]].Degree}: \t{RegModel.Slope}\tIntercept: \t{RegModel.Intercept}(Expecting: {ExpectedSlopes[i]})");
+                    Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{RegModel.Slope}\tIntercept: \t{RegModel.Intercept}(Expecting: {ExpectedSlopes[i]})");
                     Ret.Add((Names[i], RegModel.Slope, RegModel.Intercept));
                 }
 
