@@ -711,17 +711,36 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 CS[i] = C;
             }
 
+            // wrongly scaled mu (see commit 4451965a7b620e7173949cabfd22c156aa9de23c, 16feb22, fk):
+            //FlowSolverDegree: 2 modus: Test2Phase (VelocityX, 3.083483164355715, 0.7989661925786997) (VelocityY, 3.0834840895521585, 0.7989627364682361) (Pressure, 3.4906457282676495, 1.8723140951578137)
+            //FlowSolverDegree: 2 modus: TestIBM (VelocityX, 2.515012543968083, 1.3838718070630835) (VelocityY, 2.515012543968087, 1.3838718070630929) (Pressure, 2.214610364766888, 0.3311383592014634)     
+            //FlowSolverDegree: 3 modus: Test2Phase (VelocityX, 4.654926583305634, 1.0928175327396197) (VelocityY, 4.654927897587302, 1.0928285940487372) (Pressure, 3.130217351146254, 0.7776322436159941)  
+            //FlowSolverDegree: 3 modus: TestIBM (VelocityX, 4.00386309467254, 0.8724039374232135) (VelocityY, 4.002991471367835, 0.8712665660677734) (Pressure, 2.6954476819767255, -0.2606463145099438)    
+
+            // correctly scaled mu:
+            //FlowSolverDegree: 2 modus: Test2Phase (VelocityX, 3.1254595326793955, 0.7404020602004735) (VelocityY, 3.1254601695618773, 0.7403994267116443) (Pressure, 3.437159541536483, 1.6811550756258642)
+            //FlowSolverDegree: 2 modus: TestIBM (VelocityX, 3.6865441522172957, 0.855131845172898) (VelocityY, 3.686544152216214, 0.8551318451720138) (Pressure, 2.4618884145401307, -0.9380731392988562)
+            //FlowSolverDegree: 3 modus: Test2Phase (VelocityX, 4.6639625753059795, 0.9897897821002215) (VelocityY, 4.6639506311723515, 0.9897856559892002) (Pressure, 3.195132673497341, 0.7451829927632292)
+            //FlowSolverDegree: 3 modus: TestIBM (VelocityX, 4.453883287724354, -0.10906474316034576) (VelocityY, 4.453610133084815, -0.10508285176620813) (Pressure, 3.2604571163979905, -1.6391369361012353)
+            var RegressionBounds = new Dictionary<(int Degree, TaylorCouette.Mode mode), (string Name, double Slope, double intercept, double interceptTol)[]>();
+            RegressionBounds.Add((2, TaylorCouette.Mode.Test2Phase), new[] { ("VelocityX", 3.0, 0.740, 0.1), ("VelocityY", 3.0, 0.740, 0.1), ("Pressure", 2.0, 1.68, 0.1) });
+            RegressionBounds.Add((2, TaylorCouette.Mode.TestIBM), new[] { ("VelocityX", 3.0, 0.855, 0.1), ("VelocityY", 3.0, 0.855, 0.1), ("Pressure", 2.0, -0.938, 0.1) });
+            RegressionBounds.Add((3, TaylorCouette.Mode.Test2Phase), new[] { ("VelocityX", 4.0, 0.990, 0.1), ("VelocityY", 4.0, 0.990, 0.1), ("Pressure", 3.0, 0.745, 0.1) });
+            RegressionBounds.Add((3, TaylorCouette.Mode.TestIBM), new[] { ("VelocityX", 4.0, -0.109, 0.1), ("VelocityY", 4.0, -0.105, 0.1), ("Pressure", 3.0, -1.639, 0.1) });
+            
+            XNSESolverConvergenceTest(Tst, CS, true, RegressionBounds[(FlowSolverDegree, modus)]);
             
             
-            var RegData = XNSESolverConvergenceTest(Tst, CS, true, new double[] { FlowSolverDegree, FlowSolverDegree, FlowSolverDegree - 1 });
-            using(var dataFile = new System.IO.StreamWriter("RegData.txt", true)) {
-                dataFile.Write("FlowSolverDegree: " + FlowSolverDegree);
-                dataFile.Write(" modus: " + modus.ToString());
-                dataFile.Write(" ");
-                foreach(var ttt in RegData)
-                    dataFile.Write(ttt + " ");
-                dataFile.WriteLine();
-            }
+            //writing the Reference Data:
+            //var RegData = XNSESolverConvergenceTest(Tst, CS, true, RegressionBounds[(FlowSolverDegree, modus)]);
+            //using(var dataFile = new System.IO.StreamWriter("RegData.txt", true)) {
+            //    dataFile.Write("FlowSolverDegree: " + FlowSolverDegree);
+            //    dataFile.Write(" modus: " + modus.ToString());
+            //    dataFile.Write(" ");
+            //    foreach(var ttt in RegData)
+            //        dataFile.Write(ttt + " ");
+            //    dataFile.WriteLine();
+            //}
 
 
             // be **very** generous with the expected slopes
@@ -1058,11 +1077,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
-        private static (string Name, double slope, double Intercept)[] XNSESolverConvergenceTest(IXNSETest Tst, XNSE_Control[] CS, bool useExactSolution, double[] ExpectedSlopes) {
+        private static (string Name, double slope, double Intercept)[] XNSESolverConvergenceTest(IXNSETest Tst, XNSE_Control[] CS, bool useExactSolution,  (string Name, double Slope, double intercept, double interceptTol)[] RegResults) {
             int D = Tst.SpatialDimension;
             int NoOfMeshes = CS.Length;
-            if(ExpectedSlopes.Length != D + 1)
-                throw new ArgumentException("Expecting slopes for vlocity and pressure.");
+            if(RegResults.Length != D + 1)
+                throw new ArgumentException("Expecting slopes for velocity and pressure.");
 
             var Ret = new List<(string Name, double slope, double Intercept)>();
 
@@ -1099,7 +1118,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                         if(k == 0) {
                             errorS = MultidimensionalArray.Create(NoOfMeshes, LastErrors.Length);
                             Names = new string[LastErrors.Length];
-                            if(ExpectedSlopes.Length != Names.Length)
+                            if(RegResults.Length != Names.Length)
                                 throw new ArgumentOutOfRangeException();
                         } else {
                             if(LastErrors.Length != Names.Length)
@@ -1121,13 +1140,19 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
                 for(int i = 0; i < errorS.GetLength(1); i++) {
                     var RegModel = hS.LogLogRegression(errorS.GetColumn(i));
-                    Console.WriteLine($"Convergence slope for Error of '{Names[i]}', k = {CS[0].FieldOptions[Names[i]].Degree}: \t{RegModel.Slope}\tIntercept: \t{RegModel.Intercept}(Expecting: {ExpectedSlopes[i]})");
+                    var RegRef = RegResults.Single(ttt => ttt.Name == Names[i]);
+                    Console.WriteLine($"Convergence slope for Error of '{Names[i]}', k = {CS[0].FieldOptions[Names[i]].Degree}: \t{RegModel.Slope}\tIntercept: \t{RegModel.Intercept}\t(Expecting: {RegRef.Slope}, {RegRef.intercept}+/-{RegRef.interceptTol})");
                     Ret.Add((Names[i], RegModel.Slope, RegModel.Intercept));
                 }
 
                 for(int i = 0; i < errorS.GetLength(1); i++) {
-                    var slope = hS.LogLogRegressionSlope(errorS.GetColumn(i));
-                    Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
+                    var RegModel = hS.LogLogRegression(errorS.GetColumn(i));
+                    var RegRef = RegResults.Single(ttt => ttt.Name == Names[i]);
+
+
+                    Assert.GreaterOrEqual(RegModel.Slope, RegRef.Slope, $"Convergence Slope of {Names[i]} is degenerate.");
+                    Assert.GreaterOrEqual(RegModel.Intercept, RegRef.intercept - RegRef.interceptTol, $"Convergence Intercept of {Names[i]} is degenerate.");
+                    Assert.LessOrEqual(RegModel.Intercept, RegRef.intercept + RegRef.interceptTol, $"Convergence Intercept of {Names[i]} overshoot.");
                 }
 
                 foreach(var s in solvers) {
@@ -1143,8 +1168,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     CS,
                     "Experimental Convergence",
                     (D + 1).ForLoop(iVar => (iVar < D ? VariableNames.Velocity_d(iVar) : VariableNames.Pressure,
-                                             ExpectedSlopes[iVar],
-                                             iVar < D ? NormType.L2_approximate : NormType.L2noMean_approximate)));
+                                             iVar < D ? NormType.L2_approximate : NormType.L2noMean_approximate,
+                                             RegResults[iVar].Slope,
+                                             RegResults[iVar].intercept, RegResults[iVar].interceptTol)));
 
             }
 
