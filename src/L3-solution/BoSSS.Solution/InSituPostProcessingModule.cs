@@ -65,7 +65,8 @@ namespace BoSSS.Solution {
                         this.Log = new StreamWriter(Stream.Null);
                     }
                 } else {
-                    this.Log = new StreamWriter(LogFileName + ".txt");
+                    this.Log = new StreamWriter(
+                        new FileStream(LogFileName + ".txt", FileMode.Create, FileAccess.Write, FileShare.Read));
                 }
             }
             WriteHeader(this.Log);

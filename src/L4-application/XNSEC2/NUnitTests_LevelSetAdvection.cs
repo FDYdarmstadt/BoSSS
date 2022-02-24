@@ -106,7 +106,8 @@ namespace BoSSS.Application.XNSEC {
 
             public LevelSetAdvectionTestXNSEC(int spatDim, int LevelSetDegree, bool reversed) : base(spatDim, LevelSetDegree, reversed) {
             }
-
+            public bool EnableMassFractions => false;
+            public bool EnableTemperature => false;
             public int NumberOfChemicalComponents => 1;
 
             public bool ChemicalReactionTermsActive => false;

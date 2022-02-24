@@ -70,7 +70,7 @@ namespace BoSSS.Foundation.IO {
                         return database.Controller.DBDriver.LoadSession(sessionID, database);
                     } catch(Exception e) {
                         Console.WriteLine(
-                            "Loading session {0} failed with message '{1}'", ID, e.Message);
+                            $"Loading session {ID} failed with message '{e.Message}'");
                         return null;
                     }
                 },

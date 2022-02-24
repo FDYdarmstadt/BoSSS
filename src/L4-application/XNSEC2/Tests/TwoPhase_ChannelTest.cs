@@ -390,7 +390,8 @@ namespace BoSSS.Application.XNSEC {
                 return 2;
             }
         }
-
+        public bool EnableMassFractions => false;
+        public bool EnableTemperature => false;
         public int NumberOfChemicalComponents => 1;
 
         public bool ChemicalReactionTermsActive => false;

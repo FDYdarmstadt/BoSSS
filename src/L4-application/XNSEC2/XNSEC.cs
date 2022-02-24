@@ -29,7 +29,7 @@ namespace BoSSS.Application.XNSEC {
         private static void Main(string[] args) {
             //InitMPI();
             //DeleteOldPlotFiles();
-
+            //DeleteOldTextFiles();
             //NUnitTest.COMBUSTION_TEST();
             //NUnitTest.COMBUSTION_CoFlowFlame_TEST();
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
@@ -41,14 +41,19 @@ namespace BoSSS.Application.XNSEC {
 
 
 
-            //NUnitTest.IncompressibleSteadyPoiseuilleFlowTest(); //
+            //NUnitTest.IncompressibleSteadyPoiseuilleFlowTest();
             //NUnitTest.CavityNaturalConvection();
-            //NUnitTest.IncompressibleSteadyPoiseuilleFlowTest(); //
+
             //NUnitTest.LowMachSteadyCouetteWithTemperatureGradientTest(); //
+
             //NUnitTest.ManufacturedSolutionLowMachCombustionTest(); //
+            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
+
             //NUnitTest.IncompressibleUnsteadyTaylorVortexTest(); //
 
-            //NUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0, false, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //NUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
+
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
             //NUnitTest.NuNit_ChannelTest(2, 0.0, ViscosityMode.FullySymmetric, 60.0 * Math.PI / 180.0, XQuadFactoryHelper.MomentFittingVariants.Saye);
 
@@ -56,8 +61,8 @@ namespace BoSSS.Application.XNSEC {
             //NUnitTest.BcTest_PressureOutletTest(2, 2, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false);
             //NUnitTest.TranspiratingChannelTest(2, 0.1, 0.2, ViscosityMode.FullySymmetric, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, NonLinearSolverCode.Newton);
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //NUnitTest.PseudoTwoDimensionalTwoPhaseFlow(2, 0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, differentFluids: false);
+            //NUnitTest.ViscosityJumpTest(2, 2, 0.0, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //NUnitTest.PseudoTwoDimensionalTwoPhaseFlow(1, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, differentFluids: true, RightBC_PressureOutlet: true);
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
 
@@ -120,10 +125,7 @@ namespace BoSSS.Application.XNSEC {
                 });
             }
 
-            //_Main(args, false, delegate () {
-            //    var p = new XNSEC();
-            //    return p;
-            //});
+
         }
 
         #region Operator configuration
@@ -428,9 +430,9 @@ namespace BoSSS.Application.XNSEC {
             opFactory.AddEquation(new LowMachContinuity(D, "B", config, boundaryMap, EoS_B, Control.dtFixed));
             opFactory.AddEquation(new InterfaceContinuityLowMach(config, D, LsTrk, config.isMatInt));
 
-            // === evaporation extension === //
+             //=== evaporation extension === //
             if (config.isEvaporation) {
-                opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton("A", "B", D, config));
+                opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton_LowMach("A", "B", D, config));
             }
 
             var rho0 = new Density_t0(config.NoOfChemicalSpecies, (MaterialLaw_MultipleSpecies)EoS_A);
@@ -461,12 +463,35 @@ namespace BoSSS.Application.XNSEC {
             if (config.TemperatureEquationOK) {
                 opFactory.AddEquation(new LowMachEnergy("A", D, boundaryMap, config, EoS_A, Control.HeatRelease, Control.ReactionRateConstants, Control.MolarMasses, Control.TRef, Control.cpRef, Control.dtFixed, Control.myThermalWallType));
                 opFactory.AddEquation(new LowMachEnergy("B", D, boundaryMap, config, EoS_B, Control.HeatRelease, Control.ReactionRateConstants, Control.MolarMasses, Control.TRef, Control.cpRef, Control.dtFixed, Control.myThermalWallType));
-
+                opFactory.AddEquation(new HeatInterface_LowMach("A", "B", D, boundaryMap, config));
                 if (config.isEvaporation) {
                     //opFactory.AddEquation(new HeatInterface_Evaporation_Newton("A", "B", D, thermBoundaryMap, config));
                 } else {
                     opFactory.AddEquation(new HeatInterface_LowMach("A", "B", D, boundaryMap, config));
                 }
+
+
+
+                if (config.isEvaporation) {
+  
+
+                    var MassFluxExt = new MassFluxExtension_Evaporation(config);
+                    lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, MassFluxExt);
+                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                        opFactory.AddParameter(MassFluxExt);
+                    }
+                }
+
+                opFactory.AddCoefficient(new EvapMicroRegion());
+
+                if (config.prescribedMassflux != null)
+                    opFactory.AddCoefficient(new PrescribedMassFlux(config));
+
+
+
+
+
+
                 opFactory.AddParameter(new dp0dt(EoS_A, Control.Reynolds, Control.Prandtl));
 
                 opFactory.AddParameter(new ThermodynamicPressure(1.0, Control.ThermodynamicPressureMode, EoS_A));
@@ -764,18 +789,7 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Nusselt2:" + NusseltResults[2]);
             }
 
-            //for(int i = 0; i < this.CurrentStateVector.Fields.Count(); i++) {
-            //    Console.WriteLine("Field " + this.CurrentStateVector.Fields[i].Identification + "has " + this.CurrentStateVector.Fields[0].Coordinates.NoOfCols + " cols and " + this.CurrentStateVector.Fields[0].Coordinates.NoOfRows + "rows"
-            //        );
-            //}
 
-            if (Control.TimesteppingMode == AppControl._TimesteppingMode.Steady /*&& Control.NoOfTimesteps == TimestepNo*/) {
-                if (!SolverSuccess) {
-                    //Console.WriteLine("SOLVER_ERROR!");
-                    base.CurrentSessionInfo.AddTag("NOTCONVERGED");
-                    //throw new Exception("Solver couldnt find a solution");
-                }
-            }
 
             //sensor.Update(CurrentState.Fields.Where(f => f.Identification == VariableNames.Temperature).Single());
 

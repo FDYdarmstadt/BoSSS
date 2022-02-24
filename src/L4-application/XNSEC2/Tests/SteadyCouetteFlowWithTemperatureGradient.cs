@@ -235,7 +235,7 @@ namespace BoSSS.Application.XNSEC {
                 QueryLibrary.L2Error(VariableNames.VelocityY, C.AnalyticVelocityY, queryQuadOrder));
             C.Queries.Add(
                 "SolL2err_p",
-                QueryLibrary.L2Error(VariableNames.Pressure, C.AnalyticPressure, queryQuadOrder));
+                QueryLibrary.L2ErrorNoMean(VariableNames.Pressure, C.AnalyticPressure, queryQuadOrder));
             C.Queries.Add(
                 "SolL2err_T",
                 QueryLibrary.L2Error(VariableNames.Temperature, C.AnalyticTemperature, queryQuadOrder));

@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
   <metadata>
     <id>Microsoft.dotnet-interactive</id>
-    <version>1.0.225503</version>
+    <version>1.0.255305</version>
     <authors>Microsoft</authors>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <license type="expression">MIT</license>
@@ -16,7 +16,7 @@
     <packageTypes>
       <packageType name="DotnetTool" />
     </packageTypes>
-    <repository type="git" url="https://github.com/dotnet/interactive" commit="3174511575ce656cd699fc7978d7c9a8ecd4353c" />
+    <repository type="git" url="https://github.com/dotnet/interactive" commit="f6698168fb0fd16af127aa513c4223e5f2e141a5" />
     <frameworkReferences>
       <group targetFramework="net5.0">
         <frameworkReference name="Microsoft.AspNetCore.App" />

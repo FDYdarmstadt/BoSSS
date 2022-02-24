@@ -738,7 +738,7 @@ namespace ilPSP {
         /// <returns></returns>
         public static string ToConcatString(this System.Collections.IEnumerable ie, string firstSign, string separator, string lastSign) {
             using(var stw = new StringWriter()) {
-                if(!firstSign.IsEmptyOrWhite())
+                if(firstSign != null)
                     stw.Write(firstSign);
                 int L = ie.Count();
                 int cnt = 0;
@@ -751,7 +751,7 @@ namespace ilPSP {
                         stw.Write(separator);
                     cnt++;
                 }
-                if(!lastSign.IsEmptyOrWhite())
+                if(lastSign != null)
                     stw.Write(lastSign);
                 
                 return stw.ToString();

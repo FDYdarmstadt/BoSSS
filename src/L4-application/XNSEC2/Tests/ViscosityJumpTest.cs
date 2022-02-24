@@ -394,5 +394,9 @@ namespace BoSSS.Application.XNSEC {
         public Func<double[], double, double> GetPhi2U(int d) {
             throw new NotImplementedException();
         }
+
+        public bool EnableMassFractions => false;
+
+        public bool EnableTemperature => false;
     }
 }

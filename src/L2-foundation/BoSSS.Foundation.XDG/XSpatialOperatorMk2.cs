@@ -1804,7 +1804,7 @@ namespace BoSSS.Foundation.XDG {
         /// Evaluation of the <see cref="QuadOrderFunction"/>.
         /// </summary>
         public int GetOrderFromQuadOrderFunction(IEnumerable<Basis> DomainBasis, IEnumerable<Basis> ParameterBasis, IEnumerable<Basis> CodomainBasis) {
-            /// Compute Quadrature Order
+            // Compute Quadrature Order
             int order;
             int[] DomainDegrees = DomainBasis.Select(f => f.Degree).ToArray();
             int[] CodomainDegrees = CodomainBasis.Select(f => f.Degree).ToArray();

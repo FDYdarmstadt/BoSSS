@@ -721,7 +721,7 @@ namespace BoSSS.Foundation.XDG {
 
                 CellMask CellMask = GetCellMask(sp, IntegrationDomain);
 
-                /// Debugging Code
+                // Debugging Code
                 //if (IntegrationDomain != null) {
                 //    CellMask.ToTxtFile("VolDom-" + this.lsTrk.GridDat.MyRank + "of" + this.lsTrk.GridDat.Size + ".csv", false);
                 //}
