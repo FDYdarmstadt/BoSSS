@@ -79,7 +79,7 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                 }
                 if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
                     // if Moving mesh, we need the interface transport term somehow
-                    throw new NotImplementedException("Something missing here.");
+                    throw new NotImplementedException("Convective terms for active boundary in case of moving mesh are unknown (Feb 2022).");
                 }
 
                 // pressure gradient

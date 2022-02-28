@@ -1,6 +1,7 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XdgTimestepping;
@@ -10,6 +11,7 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -24,7 +26,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             //Debugger.Launch();
             base.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
-            // Set default values to LevelSet (one could still overwrite those)
+            // Set default values to LevelSet (one can still overwrite those)
             AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
             Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.Prescribed;
             AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -328,7 +330,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         public override LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
         */
 
-        public void SetParticles(List<Particle> ParticleList) {
+        public void SetParticles(List<Particle> ParticleList, bool IsRestart = false, string PathToOldSessionDir = "", int timestep=0) {
+            if (IsRestart) {
+                ParticleList= LoadParticlesOnRestart(PathToOldSessionDir, ParticleList, timestep);
+            }
             Particles = ParticleList.ToArray();
             // Initialize particle level-set
             double levelSet(double[] X) {
@@ -382,5 +387,60 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         [DataMember]
         public bool UseAveragedEquations = false;
+
+        public static List<Particle> LoadParticlesOnRestart(string pathToOldSessionDir, List<Particle> ParticleList, int timestep=0) {
+            string pathToPhysicalData = Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
+
+            int historyLength = 3;
+            string[] records = File.ReadAllLines(pathToPhysicalData);
+            int timestepIndexOffset = 0;
+            string lastLine = records[records.Length-1];
+            string[] lastLineFields = lastLine.Split(',');
+            int lastTimestep = Convert.ToInt32(lastLineFields[0]);
+            if (timestep != 0)
+                lastTimestep = timestep;
+            if (lastTimestep < historyLength + 1)
+                throw new Exception("At least " + historyLength + " time-steps necessary for particle restart!");
+            for (int r = 1; r < records.Length; r++) {// 0th line does not contain data
+                string currentLine = records[r];
+                string[] currentLineFields = currentLine.Split(',');
+                if (lastTimestep == Convert.ToInt32(currentLineFields[0])) {
+                    timestepIndexOffset = r;
+                    break;
+                }
+            }
+
+            for (int t = 0; t < historyLength; t++) {
+                for (int p = 0; p < ParticleList.Count; p++) {
+                    Particle currentParticle = ParticleList[p];
+                    int index = timestepIndexOffset - ParticleList.Count * t + p;
+                    string currentLine = records[index];
+                    string[] currentLineFields = currentLine.Split(',');
+                    double[] position = new double[2];
+                    double[] translationalVelocity = new double[2];
+                    double[] force = new double[2];
+                    double[] duplicateDistance = new double[2];
+                    double[] physicalData = currentLineFields.Select(eachElement => Convert.ToDouble(eachElement)).ToArray();
+                    position[0] = Convert.ToDouble(currentLineFields[3]);
+                    position[1] = Convert.ToDouble(currentLineFields[4]);
+                    force[0] = Convert.ToDouble(currentLineFields[9]);
+                    force[1] = Convert.ToDouble(currentLineFields[10]);
+                    double angle = Convert.ToDouble(currentLineFields[5]) * 360 / (2 * Math.PI);
+                    translationalVelocity[0] = Convert.ToDouble(currentLineFields[6]);
+                    translationalVelocity[1] = Convert.ToDouble(currentLineFields[7]);
+                    double angularVelocity = Convert.ToDouble(currentLineFields[8]);
+                    double torque = Convert.ToDouble(currentLineFields[11]);
+                    //duplicateDistance[0] = Convert.ToDouble(currentLineFields[12]);
+                    //duplicateDistance[1] = Convert.ToDouble(currentLineFields[13]);
+                    currentParticle.Motion.InitializeParticlePositionAndAngle(new double[] { physicalData[3], physicalData[4] }, physicalData[5] * 360 / (2 * Math.PI), historyLength, t);
+                    currentParticle.Motion.InitializeParticleVelocity(new double[] { physicalData[6], physicalData[7] }, physicalData[8], historyLength, t);
+                    double currentParticleMass = currentParticle.Motion.Density * currentParticle.Motion.Volume;
+                    double[] transAcc = new double[] { physicalData[9] / currentParticleMass, physicalData[10] / currentParticleMass };
+                    double rotAcc = physicalData[11] / currentParticle.Motion.MomentOfInertia;
+                    currentParticle.Motion.InitializeParticleAcceleration(transAcc, rotAcc, historyLength, t);
+                }
+            }
+            return ParticleList;
+        }
     }
 }

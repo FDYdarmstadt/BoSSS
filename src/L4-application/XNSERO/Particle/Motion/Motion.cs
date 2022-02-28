@@ -412,12 +412,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="initialAngle">
         /// The initial angle.
         /// </param>
-        internal void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle, int historyLength = 0) {
+        internal void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle, int historyLength = 0, int currentHistoryPos = 0) {
             using (new FuncTrace()) {
                 if (historyLength == 0)
                     historyLength = NumberOfHistoryEntries;
                 Aux = new Auxillary();
-                for (int i = 0; i < historyLength; i++) {
+                for (int i = currentHistoryPos; i < historyLength; i++) {
                     Position[i] = new Vector(initialPosition);
                     Angle[i] = initialAngle * 2 * Math.PI / 360;
                     Aux.TestArithmeticException(Position[i], "initial particle position");
@@ -435,11 +435,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="initalRotation">
         /// The initial rotational velocity.
         /// </param>
-        internal void InitializeParticleVelocity(double[] initalTranslation, double initalRotation, int historyLength = 0) {
+        internal void InitializeParticleVelocity(double[] initalTranslation, double initalRotation, int historyLength = 0, int currentHistoryPos = 0) {
             using (new FuncTrace()) {
                 if (historyLength == 0)
                     historyLength = NumberOfHistoryEntries;
-                for (int i = 0; i < historyLength; i++) {
+                for (int i = currentHistoryPos; i < historyLength; i++) {
                     TranslationalVelocity[i] = initalTranslation == null ? new Vector(SpatialDim) : new Vector(initalTranslation);
                     RotationalVelocity[i] = initalRotation;
                     Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");
@@ -457,11 +457,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="initalRotation">
         /// The initial rotational velocity.
         /// </param>
-        internal void InitializeParticleAcceleration(double[] initalTranslationAcceleration, double initalRotationAcceleration, int historyLength = 0) {
+        internal void InitializeParticleAcceleration(double[] initalTranslationAcceleration, double initalRotationAcceleration, int historyLength = 0, int currentHistoryPos = 0) {
             using (new FuncTrace()) {
                 if (historyLength == 0)
                     historyLength = NumberOfHistoryEntries;
-                for (int i = 0; i < historyLength; i++) {
+                for (int i = currentHistoryPos; i < historyLength; i++) {
                     TranslationalAcceleration[i] = new Vector(initalTranslationAcceleration);
                     RotationalAcceleration[i] = initalRotationAcceleration;
                     Aux.TestArithmeticException(TranslationalVelocity[i], "initial particle translational velocity");

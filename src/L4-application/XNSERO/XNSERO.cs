@@ -322,6 +322,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         //}
 
         RTree tree = new RTree(2, 0.05);
+        bool treeInitialized = false;
 
         /// <summary>
         /// Update fluid variable fields and particle position and orientation angle.
@@ -340,8 +341,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                 CreatePhysicalDataLogger();
             }
             InitializeParticlesNewTimestep(dt);
-            if (TimestepNo - 1 % 10 == 0)
+            if (TimestepNo - 1 % 10 == 0 || !treeInitialized) {
                 tree.InitializeTree(Particles, dt);
+                treeInitialized = true;
+            }
             else
                 tree.UpdateTree(Particles, dt);
             Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);

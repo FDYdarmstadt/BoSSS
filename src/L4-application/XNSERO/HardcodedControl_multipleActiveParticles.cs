@@ -16,6 +16,7 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.XdgTimestepping;
@@ -25,14 +26,18 @@ using MPI.Wrappers;
 namespace BoSSS.Application.XNSERO_Solver {
 
     public static class MultiplePacticles {
-        public static XNSERO_Control Main(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength =12, double noOfParticles = 4) {
+        public static XNSERO_Control Main(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength =25, double noOfParticles = 3) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
-            //string ID = "ccf040a2-e5db-47a7-b226-b642676636cd";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
+            string ID = "e5a0398f-1cc2-45cf-85ef-ab16c76b538d";
+            Guid SID = new Guid(ID);
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("1"));
+            int timestep = 699;
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
             //C.IsRestart = true;
+            string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\e5a0398f-1cc2-45cf-85ef-ab16c76b538d";
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -40,7 +45,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_B = 1;
             C.PhysicalParameters.IncludeConvection = false;
-            C.LS_TrackerWidth = 2;
+            C.LS_TrackerWidth = 4;
 
             // Particle Properties
             // =============================
@@ -85,17 +90,16 @@ namespace BoSSS.Application.XNSERO_Solver {
             //    }
             //    j += 1;
             //}
-            C.AddBoundaryValue("Wall_upper", "VelocityX#A", (X, t) => 0);
+            C.AddBoundaryValue("Wall_upper", "VelocityX#A", (X, t) => 1);
             C.AddBoundaryValue("Wall_lower", "VelocityX#A", (X, t) => 0);
-            C.SetParticles(particles);
+            C.SetParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
             C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.4;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.TargetBlockSize = 10000;
-            C.LinearSolver.verbose = false;
+            C.LinearSolver.verbose = true;
             C.UseSchurBlockPrec = false;
             C.LinearSolver.pMaxOfCoarseSolver = 1;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
@@ -105,14 +109,18 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
-        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength = 12, double noOfParticles = 20) {
+        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength = 15, double noOfParticles = 10) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
-            //string ID = "ccf040a2-e5db-47a7-b226-b642676636cd";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
+            string ID = "b971c5ee-ecaf-41fb-96c5-8214b68b0a81";
+            Guid SID = new Guid(ID);
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("1"));
+            int timestep = 1430;
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
             //C.IsRestart = true;
+            string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\b971c5ee-ecaf-41fb-96c5-8214b68b0a81";
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -134,27 +142,24 @@ namespace BoSSS.Application.XNSERO_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, false, false);
-            C.minDistanceThreshold = 2 / cellsPerUnitLength;
-            C.CoefficientOfRestitution = 0.5;
+            C.minDistanceThreshold = 1 / cellsPerUnitLength*0.5;
+            C.CoefficientOfRestitution = 1;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2 ;
-            Random angle = new Random();
             int j = 0;
             List<Particle> particles = new List<Particle>();
-            while (leftCorner + j * nextParticleDistance < domainLength / 2) {
+            while (leftCorner + j * nextParticleDistance * aspectRatio * 1.6 < domainLength / 2) {
                 int i = 0;
                 while (leftCorner + i * nextParticleDistance < domainLength / 2) {
-                    //double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
-                    //angle2//.MPIBroadcast(0);
-                    double angle2 = 90 * (-i + j);
-                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance }, angle2, activeStress));
+                    double angle2 = 180 * (-i + j);
+                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance * aspectRatio * 1.6 }, angle2, activeStress));
 
                     i += 1;
                 }
                 j += 1;
             }
-            C.SetParticles(particles);
-            C.SetTimesteps(dt: 1e-1, noOfTimesteps: int.MaxValue);
+            C.SetParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.4;
             C.LinearSolver.NoOfMultigridLevels = 1;
