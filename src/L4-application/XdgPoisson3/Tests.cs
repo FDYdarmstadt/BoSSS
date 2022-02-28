@@ -17,6 +17,7 @@ limitations under the License.
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.AdvancedSolvers.Testing;
+using BoSSS.Solution.Control;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
@@ -99,7 +100,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             
             foreach (int res in ResS) {
                 var C = HardCodedControl.Circle(Resolution: res, p: dgDegree);
-                C.LinearSolver.SolverCode = Code.classic_pardiso;
+                C.LinearSolver = Code.classic_pardiso.GetConfig();
                 C.savetodb = false;
 
                 Controls.Add(C);

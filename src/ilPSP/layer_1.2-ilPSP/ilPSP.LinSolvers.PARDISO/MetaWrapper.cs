@@ -20,7 +20,7 @@ using System.Linq;
 using System.Text;
 
 namespace ilPSP.LinSolvers.PARDISO {
-       
+
 
     /// <summary>
     /// Another wrapper layer that encapsulates 
@@ -31,7 +31,16 @@ namespace ilPSP.LinSolvers.PARDISO {
         /// ctor.
         /// </summary>
         public MetaWrapper(Version __V, Parallelism par) {
+            parallelism = par;
             Init(__V, par);
+        }
+
+        /// <summary>
+        /// specified during construction
+        /// </summary>
+        public Parallelism parallelism {
+            get;
+            private set;
         }
 
         private void Init(Version __V, Parallelism par) {

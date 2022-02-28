@@ -23,7 +23,6 @@ namespace BoSSS.Application.XNSEC {
             C.savetodb = true;
             C.DbPath = @"C:\Databases\BoSSS_DB";
             C.ChemicalReactionActive = false;
-            C.ImmediatePlotPeriod = 1;
             return C;
         }
 
@@ -65,7 +64,6 @@ namespace BoSSS.Application.XNSEC {
             C.PenaltyViscMomentum = 4.0;
             C.PenaltyHeatConduction = 4.0;
 
-            C.ImmediatePlotPeriod = 1;
             // Grid declaration
             // ===============
             double h = Math.Pow(2, -nCellsMult + 1); // cell length

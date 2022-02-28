@@ -34,6 +34,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             NonlinearCouplingSolidFluid = true;
             UseImmersedBoundary = true;
             CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            base.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
         }
 
         /// <summary>

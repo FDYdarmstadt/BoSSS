@@ -1,7 +1,7 @@
                                                            clear
 
-polVel = dlmread('polarVelCase1.txt');
-radVel = dlmread('radialVelCase1.txt');
+polVel = dlmread('polarVelCase3.txt');
+radVel = dlmread('radialVelCase3.txt');
 
 rS = polVel(:,1);
 tS = polVel(:,2);
@@ -39,6 +39,9 @@ end
 
 quiver(x, z, Vx, Vz);
 axis equal
+
+max(abs(Vx))
+max(abs(Vz))
 
 %plot(1:I,tS,'+',1:I,theta_rec,'o')
 

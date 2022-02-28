@@ -4,10 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Foundation.Grid.Aggregation
-{
-    static class AggregationGridComparer
-    {
+namespace BoSSS.Foundation.Grid.Aggregation {
+    static class AggregationGridComparer {
         public static IEqualityComparer<IGrid> ReferenceComparer {
             get {
                 return new GridComparer<AggregationGrid>(AreReferencesEqual);
@@ -20,16 +18,14 @@ namespace BoSSS.Foundation.Grid.Aggregation
             }
         }
 
-        static bool AreCellsEqual(AggregationGrid A, AggregationGrid B)
-        {
+        static bool AreCellsEqual(AggregationGrid A, AggregationGrid B) {
             //To do: Compare aggregation grid
             IEqualityComparer<IGrid> parentCellComparer = A.ParentGrid.GridSerializationHandler.CellComparer;
             bool parentCellsAreEqual = parentCellComparer.Equals(A.ParentGrid, B.ParentGrid);
             return parentCellsAreEqual;
         }
 
-        static bool AreReferencesEqual(AggregationGrid A, AggregationGrid B)
-        {
+        static bool AreReferencesEqual(AggregationGrid A, AggregationGrid B) {
             //To do: Compare aggregation grid
             IEqualityComparer<IGrid> parentReferenceComparer = A.ParentGrid.GridSerializationHandler.BasePropertiesComparer;
             bool parentReferencesAreEqual = parentReferenceComparer.Equals(A.ParentGrid, B.ParentGrid);

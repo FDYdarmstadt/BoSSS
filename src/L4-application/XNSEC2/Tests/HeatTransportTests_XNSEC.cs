@@ -60,8 +60,10 @@ namespace BoSSS.Application.XNSEC {
         public double c_B => 1.0;
 
         public double k_A => 2.0;
-
         public double k_B => 1.0;
+
+        public double rhoD_A => 1.0;
+        public double rhoD_B => 1.0;
 
         public double T_sat => Double.MaxValue;
 

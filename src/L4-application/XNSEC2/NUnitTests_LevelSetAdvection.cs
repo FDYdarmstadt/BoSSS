@@ -91,9 +91,8 @@ namespace BoSSS.Application.XNSEC {
             var Tst = new LevelSetAdvectionTestXNSEC(2, LSdegree, reversed);
             var C = LSTstObj2CtrlObj(Tst, LSdegree, 40, levelSetEvolution, levelSetHandling, gridResolution, AMRlevel);
             C.SkipSolveAndEvaluateResidual = false;
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
             C.NonLinearSolver.verbose = true;
-            C.LinearSolver.verbose = true;
             //string IO = $"LSAdvectionTest2D-deg{LSdegree}-amrLvl{AMRlevel}-lsEvo{levelSetEvolution}-rev{reversed}-grdRes{gridResolution}";
             //C.ImmediatePlotPeriod = 1;
             //C.SuperSampling = 3;
@@ -303,9 +302,7 @@ namespace BoSSS.Application.XNSEC {
             C.Endtime = dt * C.NoOfTimesteps;
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver.ConvergenceCriterion = 1e-9;
-
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
 
             // return
             // ======

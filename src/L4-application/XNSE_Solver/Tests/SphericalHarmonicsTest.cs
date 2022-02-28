@@ -12,8 +12,15 @@ using System.Threading.Tasks;
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
     /// <summary>
-    /// Test for the verification of the <see cref="Logging.SphericalHarmonicsLogging"/> post-processing
+    /// Test for the verification of the <see cref="Logging.SphericalHarmonicsLogging"/> post-processing:
+    /// An initial level-set is defined using a specific set of modes for the spherical harmonics (<see cref="modes"/>) representation.
+    /// It is verified that <see cref="Logging.SphericalHarmonicsLogging"/> is capable of recovering these values for the modes
+    /// with a certain accuracy.
     /// </summary>
+    /// <remarks>
+    /// - The physics of this test-case is irrelevant
+    /// - Fk, Oct. 2021; developed for DACH-cooperation project with TU Graz, Prof. Brenn.
+    /// </remarks>
     class SphericalHarmonicsTest : IXNSETest {
         public double mu_A => 1e-2;
 

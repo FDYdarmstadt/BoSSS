@@ -1056,7 +1056,8 @@ namespace BoSSS.Foundation {
         /// field must be contained in the basis of this field (see
         /// <see cref="Basis"/>);
         /// </summary>
-        /// <param name="other"></param>
+        /// <param name="alpha"></param>
+        /// 
         virtual public void ScaleAndAcc(DGField other, double alpha = 0.5) {
             if (!other.Basis.Equals(this.Basis)) {
                 throw new ApplicationException(

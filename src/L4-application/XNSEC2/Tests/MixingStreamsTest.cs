@@ -23,7 +23,6 @@ namespace BoSSS.Application.XNSEC {
 
             C.saveperiod = 1;
             C.SetSaveOptions(dbPath, 1);
-            C.ImmediatePlotPeriod = 1;
 
             //if(dbPath != null) {
             //    C.DbPath = dbPath;
@@ -39,11 +38,9 @@ namespace BoSSS.Application.XNSEC {
             C.SetDGdegree(DGp);
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver.ConvergenceCriterion = 1e-12;
             C.NonLinearSolver.verbose = true;
-            C.LinearSolver.verbose = true;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
 
             if(dt < 0) {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;

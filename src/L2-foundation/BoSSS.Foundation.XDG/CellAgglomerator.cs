@@ -282,12 +282,12 @@ namespace BoSSS.Foundation.XDG {
                         int jAggSource = AggPair.Item1;
 
                         if (jAggSource < 0 || jAggSource >= J)
-                            throw new IndexOutOfRangeException("Agglomeration source cell must be in the range of locally updated cells.");
+                            throw new IndexOutOfRangeException($"Agglomeration source cell (cell index {jAggSource}) must be in the range of locally updated cells.");
                         if (jAggTarget < 0 || jAggTarget >= JE)
-                            throw new IndexOutOfRangeException("Agglomeration target is not a valid cell index.");
+                            throw new IndexOutOfRangeException($"Agglomeration target (cell index {jAggTarget}) is not a valid cell index.");
 
                         if (sourceUnique[jAggSource])
-                            throw new ArgumentException("Illegal agglomeration graph: Local cell " + jAggSource + " is occurc in at least two agglomertion pairs as source.");
+                            throw new ArgumentException("Illegal agglomeration graph: Local cell " + jAggSource + " is occurring in at least two agglomeration pairs as source.");
                         sourceUnique[jAggSource] = true;
 
                     }

@@ -231,12 +231,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetTimesteps(dt: 1e-1, noOfTimesteps: 10);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LinearSolver.NoOfMultigridLevels = 10;
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.TargetBlockSize = 10000;
-            C.LinearSolver.verbose = false;
             C.UseSchurBlockPrec = false;
             C.LinearSolver.pMaxOfCoarseSolver = 1;
 
@@ -303,7 +300,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.5;
             C.LinearSolver.NoOfMultigridLevels = 1;
             C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             C.LinearSolver.TargetBlockSize = 10000;
             C.LinearSolver.verbose = false;
             C.UseSchurBlockPrec = false;
