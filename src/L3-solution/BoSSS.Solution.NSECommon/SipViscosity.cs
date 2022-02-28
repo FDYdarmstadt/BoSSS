@@ -715,9 +715,6 @@ namespace BoSSS.Solution.NSECommon {
         
         
         void INonlinVolumeForm_GradV.Form(ref VolumFormParams prm, MultidimensionalArray[] U, MultidimensionalArray[] GradU, MultidimensionalArray f) {
-
-            throw new Exception("a");
-
             int NumofCells = prm.Len;
             int NumOfNodes = f.GetLength(1); // no of nodes per cell
             Debug.Assert(f.GetLength(0) == NumofCells);
@@ -743,8 +740,6 @@ namespace BoSSS.Solution.NSECommon {
 
         
         void INonlinInnerEdgeForm_GradV.NonlinInternalEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fIN, MultidimensionalArray fOT) { // OK :)
-            throw new Exception("1");
-            
             int NumOfEdges = efp.Len;
             Debug.Assert(fIN.GetLength(0) == NumOfEdges);
             Debug.Assert(fOT.GetLength(0) == NumOfEdges);
@@ -794,9 +789,6 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         void INonlinBoundaryEdgeForm_GradV.NonlinBoundaryEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
-
-            throw new Exception("c");
-
             int L = efp.Len;
             Debug.Assert(f.GetLength(0) == L);
             int K = f.GetLength(1); // no of nodes per cell
@@ -865,8 +857,6 @@ namespace BoSSS.Solution.NSECommon {
         //*/
         
         void INonlinInnerEdgeForm_V.NonlinInternalEdge_V(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fin, MultidimensionalArray fot) {
-            throw new Exception("4");
-            
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
@@ -911,8 +901,6 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         void INonlinBoundaryEdgeForm_V.NonlinBoundaryEdge_V(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] GradUin, MultidimensionalArray f) {
-            throw new Exception("iv");
-            
             int L = efp.Len;
             Debug.Assert(f.GetLength(0) == L);
             int K = f.GetLength(1); // no of nodes per cell

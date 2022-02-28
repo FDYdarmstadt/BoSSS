@@ -510,7 +510,7 @@ namespace BoSSS.Solution.NSECommon {
     public class SipViscosity_Variable : SipViscosityNewBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
-        
+
         /// <summary>
         /// ctor; parameter documentation see <see cref="SipViscosityNewBase.SipViscosityNewBase"/>.
         /// </summary>

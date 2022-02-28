@@ -266,20 +266,13 @@ namespace BoSSS.Application.XNSEC {
             //C.InitSignedDistance = false;
             C.adaptiveReInit = false;
 
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.SolverCode = LinearSolverCode.automatic;
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.automatic.GetConfig();
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
 
 
-            C.LinearSolver.NoOfMultigridLevels = 2;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 80;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-9;
             C.LevelSet_ConvergenceCriterion = 1e-7;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;

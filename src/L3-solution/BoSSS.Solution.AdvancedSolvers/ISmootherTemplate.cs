@@ -84,24 +84,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
     /// <summary>
-    /// Individual Configuration of Solver. Inherits <see cref="LinearSolverConfig"/>, which can be adjusted by control object (by the user).
+    /// 
     /// </summary>
-    public class ConfigBase<T> : LinearSolverConfig
-        where T : ISolverSmootherTemplate {
+    public interface ISolverFactory : IEquatable<ISolverFactory> {
 
         /// <summary>
-        /// cctor of Individual Configuration
+        /// Name/Description of the solver configuration
         /// </summary>
-        public ConfigBase() : base() { }
+        string Name { get; }
 
         /// <summary>
-        /// returns an instance of the configured linear solver
+        /// short version of <see cref="Name"/>, e.g. to be used in plots or tables
         /// </summary>
-        /// <returns></returns>
-        public T GetInstance() {
-            return (T)Activator.CreateInstance(typeof(T), new object[] { });
-        }
+        string Shortname { get; }
+
+        /// <summary>
+        /// Creates an Instance of the respective solver
+        /// </summary>
+        ISolverSmootherTemplate CreateInstance(MultigridOperator level);
     }
+
 
 
     /// <summary>
@@ -131,10 +133,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public interface ISolverWithCallback : ISolverSmootherTemplate {
 
         /// <summary>
-        ///  - 1st argument: iteration index<br/>
-        ///  - 2nd argument: current solution<br/>
-        ///  - 3rd argument: current residual<br/>
-        ///  - 4th argument: the currently used operator<br/>
+        ///  - 1st argument: iteration index
+        ///  - 2nd argument: current solution
+        ///  - 3rd argument: current residual
+        ///  - 4th argument: the currently used operator
         /// </summary>      
         Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;

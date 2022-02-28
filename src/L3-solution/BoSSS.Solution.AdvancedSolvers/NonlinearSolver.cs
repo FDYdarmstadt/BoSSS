@@ -179,10 +179,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         
         /// <summary>
-        /// Preconditioner/solver for the linearized problem
+        /// Preconditioner/solver configuration for the linearized problem
         /// </summary>
-        public ISolverSmootherTemplate Precond;
-        
+        public ISolverFactory PrecondConfig;
+
+
+
 
 
         /// <summary>

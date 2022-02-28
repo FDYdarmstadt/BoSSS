@@ -48,7 +48,6 @@ namespace BoSSS.Foundation.Grid {
         /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
         /// the dictionary
         /// </summary>
-        /// <param name="EdgeTagFunc"></param>
         static public void DefineEdgeTags(this IGrid g, Func<double[], byte> EdgeTagFunc) {
             g.DefineEdgeTags((Vector v) => EdgeTagFunc(v));
         }
@@ -60,7 +59,6 @@ namespace BoSSS.Foundation.Grid {
         /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
         /// the dictionary
         /// </summary>
-        /// <param name="EdgeTagFunc"></param>
         static public void DefineEdgeTags(this IGrid g, Func<double[], string> EdgeTagFunc) {
             g.DefineEdgeTags((Vector v) => EdgeTagFunc(v));
         }

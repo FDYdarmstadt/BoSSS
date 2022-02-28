@@ -260,16 +260,8 @@ namespace BoSSS.Application.XNSEC {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.useSolutionParamUpdate = true;
@@ -565,16 +557,8 @@ namespace BoSSS.Application.XNSEC {
 
             C.LSContiProjectionMethod = BoSSS.Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.useSolutionParamUpdate = true;

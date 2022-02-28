@@ -47,14 +47,9 @@ namespace BoSSS.Application.XRheology_Solver {
         /// Ctor.
         /// </summary>
         public XRheology_Control() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
-            base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;
-            base.LinearSolver.MaxSolverIterations = 50; //Solver_MaxIterations
-            base.LinearSolver.MinSolverIterations = 50; //Solver_MinIterations
-            base.LinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
-            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //LinearSolver
+            base.LinearSolver = LinearSolverCode.classic_mumps.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 50; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 50; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion

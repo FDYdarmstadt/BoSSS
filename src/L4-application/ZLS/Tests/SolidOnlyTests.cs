@@ -58,9 +58,9 @@ namespace ZwoLevelSetSolver.Tests {
             }
 
             controlFiles.SolverConvergenceTest_Experimental("SolidSolverConvP" + p,
-                (VariableNames.DisplacementX, p - 1.5, NormType.L2_embedded),
-                (VariableNames.DisplacementY, p - 1.5, NormType.L2_embedded),
-                (BoSSS.Solution.NSECommon.VariableNames.Pressure, p - 1.5, NormType.L2noMean_embedded)
+                (VariableNames.DisplacementX, NormType.L2_embedded, p - 1.5, 0, 100000),
+                (VariableNames.DisplacementY, NormType.L2_embedded, p - 1.5, 0, 100000),
+                (BoSSS.Solution.NSECommon.VariableNames.Pressure, NormType.L2noMean_embedded, p - 1.5, 0, 100000)
                 // in a steady-state setting, the velocity is 0.0; therefore, we cannot measure convergence
                 //(BoSSS.Solution.NSECommon.VariableNames.VelocityX, p - 1.2, NormType.L2_embedded),
                 //(BoSSS.Solution.NSECommon.VariableNames.VelocityY, p - 1.2, NormType.L2_embedded)

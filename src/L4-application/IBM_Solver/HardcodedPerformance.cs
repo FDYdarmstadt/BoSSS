@@ -245,15 +245,10 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = true;
-            C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.verbose = true;
-            C.LinearSolver.NoOfMultigridLevels = 3;
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
 
             C.EqualOrder = false;
             C.PressureStabilizationFactor = 1;
-            C.LinearSolver.pMaxOfCoarseSolver = k;
 
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
@@ -267,9 +262,9 @@ namespace BoSSS.Application.IBM_Solver {
             // ============
 
             //if (pardiso) {
-            //    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //    C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             //} else {
-            //    C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //    C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
             //}
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
@@ -610,8 +605,6 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.LinearSolver.MaxKrylovDim = 20;
-            C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
 
@@ -619,9 +612,9 @@ namespace BoSSS.Application.IBM_Solver {
             // ============
 
             if(pardiso) {
-                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+                C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             } else {
-                C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+                C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
             }
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
@@ -633,7 +626,6 @@ namespace BoSSS.Application.IBM_Solver {
             C.Endtime = 10000000;
             //C.NoOfTimesteps = 10;
             C.NoOfTimesteps = 1;
-            C.LinearSolver.NoOfMultigridLevels = 3;
 
             return C;
         }
@@ -930,17 +922,14 @@ namespace BoSSS.Application.IBM_Solver {
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.LevelSetSmoothing = false;
-            //C.option_solver = "direct";
-            C.LinearSolver.MaxKrylovDim = 20;
-            C.LinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
             //C.NoOfMultigridLevels = 0;
 
             if(pardiso) {
-                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+                C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             } else {
-                C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+                C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
             }
             // Timestepping
             // ============

@@ -93,8 +93,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool _useX, Control.NonLinearSolverConfig nonlinconfig,
-            Control.LinearSolverConfig linearconfig) : base(nonlinconfig,
-            linearconfig) {
+            ISolverFactory linearconfig) 
+            : base(nonlinconfig, linearconfig) //
+        {
 
             m_nonlinconfig = nonlinconfig;
 
@@ -1570,18 +1571,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // normal solver run 
                     // ++++++++++++++++++
 
-                    NonlinearSolver nonlinSolver;
-                    ISolverSmootherTemplate linearSolver;
-                    GetSolver(out nonlinSolver, out linearSolver);
-
+                    
                     if(RequiresNonlinearSolver) {
                         // ++++++++++++++++++++++++++++++++
                         // Nonlinear Solver (Navier-Stokes)
                         // ++++++++++++++++++++++++++++++++
 
                         // use solver
+                        var nonlinSolver = GetNonlinSolver();
                         success = nonlinSolver.SolverDriver(m_Stack_u[0], default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
-
+                        
                         // 'revert' agglomeration
                         Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                         m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
@@ -1608,40 +1607,41 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 dummy.DomainVar.Select(varName => dummy.FreeMeanValue[varName]).ToArray());
                         }
 
-                        //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
-                        //p.PlotInteractive();
+                        using(var linearSolver = GetLinearSolver(mgOperator)) {
 
-                        //var EigValVect = mgOperator.OperatorMatrix.MinimalEigen();
-                        //var DGevevt = mgOperator.ProlongateSolToDg(EigValVect.V, "MinimalEigen");
-                        //Tecplot.Tecplot.PlotFields(DGevevt, "Eigen", 0.0, 4);
-                        //throw new Exception("done eigen");
+                            //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
+                            //p.PlotInteractive();
 
-                        //mgOperator.OperatorMatrix.SaveToTextFileSparse("C:\\tmp\\Bug2\\XNS.txt");
-                        //throw new Exception("term");
+                            //var EigValVect = mgOperator.OperatorMatrix.MinimalEigen();
+                            //var DGevevt = mgOperator.ProlongateSolToDg(EigValVect.V, "MinimalEigen");
+                            //Tecplot.Tecplot.PlotFields(DGevevt, "Eigen", 0.0, 4);
+                            //throw new Exception("done eigen");
 
-                        // init linear solver
-                        using(new BlockTrace("Slv Init", tr)) {
-                            linearSolver.Init(mgOperator);
+                            //mgOperator.OperatorMatrix.SaveToTextFileSparse("C:\\tmp\\Bug2\\XNS.txt");
+                            //throw new Exception("term");
+
+                            // init linear solver
+                            using(new BlockTrace("Slv Init", tr)) {
+                                linearSolver.Init(mgOperator);
+                            }
+
+                            // try to solve the saddle-point system.
+                            using(new BlockTrace("Slv Iter", tr)) {
+                                mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
+                                //mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
+                            }
+                            Console.WriteLine("solver success: " + linearSolver.Converged);
+                            success = linearSolver.Converged;
+
+                            // 'revert' agglomeration
+                            Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
+                            m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+
                         }
-
-                        // try to solve the saddle-point system.
-                        using(new BlockTrace("Slv Iter", tr)) {
-                            mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
-                            //mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
-                        }
-                        Console.WriteLine("solver success: " + linearSolver.Converged);
-                        success = linearSolver.Converged;
-                        
-                        // 'revert' agglomeration
-                        Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
-                        m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
-
-
 
                     //ExtractSomeSamplepoints("samples");
-                    
                 }
-                linearSolver.Dispose();
+
             } else {
                 // ++++++++++++++++++++++++++++++++++++
                 // compute residual of actual solution 
@@ -1807,9 +1807,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             //            () => new SparseSolver() { WhichSolver = SparseSolver._whichSolver.MUMPS }) },
             //    Tolerance = 1.0e-10
             //};
-            ISolverSmootherTemplate linearSolver;
-            NonlinearSolver NonlinearSolver;
-            GetSolver(out NonlinearSolver, out linearSolver);
+            
 
             // set-up the convergence observer
             double[] uEx = this.m_Stack_u[0].ToArray();
@@ -1819,19 +1817,20 @@ namespace BoSSS.Solution.XdgTimestepping {
             uEx = null;
             CO.TecplotOut = TecOutBaseName;
             //CO.PlotDecomposition(this.u.CoordinateVector.ToArray());
-            ((ISolverWithCallback)linearSolver).IterationCallback = CO.IterationCallback;
 
             // init linear solver
-            linearSolver.Init(mgOperator);
+            using(var linearSolver = GetLinearSolver(mgOperator)) {
+                ((ISolverWithCallback)linearSolver).IterationCallback = CO.IterationCallback;
 
-            // try to solve the saddle-point system.
-            mgOperator.UseSolver(linearSolver, new double[L], RHS);
-
+                // try to solve the saddle-point system.
+                mgOperator.UseSolver(linearSolver, new double[L], RHS);
+            }
 
             // return
             return CO;
         }
 
+        /*
         public void ExtractSomeSamplepoints(string OutputDir) {
             BlockMsrMatrix System, MaMa;
             double[] RHSsmall, RHSbig, RHS;
@@ -1865,7 +1864,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             var CO = new ConvergenceObserver(mgOperator, MaMa, ubig);
             CO.Resample(1, usmall, "samples");
         }
+        */
 
+        /*
         public void CreateFAMatrices(string OutputDir) {
             bool use_exact_solution = false; // switch between exact and zero solution
 
@@ -1938,6 +1939,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // try to solve the saddle-point system.
             mgOperator.UseSolver(linearSolver, StartSolution, RHS);
         }
+        */
 
         /// <summary>
         /// If an iterative linear solver is used:
@@ -1957,29 +1959,31 @@ namespace BoSSS.Solution.XdgTimestepping {
                 System, MaMa,
                 this.Config_MultigridOperator,
                 opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
-            XdgSolverFactory.GetLinearConfig.MaxSolverIterations = 30;
-            ISolverSmootherTemplate linearSolver;
-            NonlinearSolver NonlinearSolver;
-            GetSolver(out NonlinearSolver, out linearSolver);
-            var plots = ConvergenceObserver.WaterfallAnalysis((ISolverWithCallback)linearSolver, mgOperator, MaMa);
-            // put this shit out
-            foreach(var kv in plots) {
-                //var CL = kv.Value.ToGnuplot().PlotCairolatex(xSize: 14, ySize: 12);
-                //CL.WriteMinimalCompileableExample(Path.Combine(OutputDir, "plot_" + kv.Key + ".tex"), kv.Key + ".tex");
-                kv.Value.SavePgfplotsFile_WA(OutputDir+@"\"+kv.Key+".tex");
+
+            if(LinearSolverConfig is IterativeSolverConfig ics)
+                ics.MaxSolverIterations = 30;
+
+
+            using(ISolverSmootherTemplate linearSolver = GetLinearSolver(mgOperator)) {
+
+                var plots = ConvergenceObserver.WaterfallAnalysis((ISolverWithCallback)linearSolver, mgOperator, MaMa);
+                // put this shit out
+                foreach(var kv in plots) {
+                    //var CL = kv.Value.ToGnuplot().PlotCairolatex(xSize: 14, ySize: 12);
+                    //CL.WriteMinimalCompileableExample(Path.Combine(OutputDir, "plot_" + kv.Key + ".tex"), kv.Key + ".tex");
+                    kv.Value.SavePgfplotsFile_WA(OutputDir + @"\" + kv.Key + ".tex");
+                }
             }
         }
 
+        
         /// <summary>
         /// Executes the linear solver with a random right-hand-side (RHS)
         /// </summary>
         /// <param name="Iter">on exit, the number of solver iterations used</param>
         public void ExecuteRandom(out int Iter) {
             // Get the configured solvers
-            XdgSolverFactory.GetLinearConfig.MaxSolverIterations = int.MaxValue;
-            ISolverSmootherTemplate linearSolver;
-            NonlinearSolver NonlinearSolver;
-            GetSolver(out NonlinearSolver, out linearSolver);
+            
 
             BlockMsrMatrix System, MaMa;
             double[] RHS;
@@ -2002,40 +2006,51 @@ namespace BoSSS.Solution.XdgTimestepping {
                 RHS[l] = rnd.NextDouble();
             }
 
-            // init linear solver
-            linearSolver.Init(mgOperator);
+            using(var linearSolver = GetLinearSolver(mgOperator)) {
+                // init linear solver
+                linearSolver.Init(mgOperator);
 
-            // try to solve the saddle-point system.
-            mgOperator.UseSolver(linearSolver, x0, RHS);
-            Iter = linearSolver.ThisLevelIterations;
+                // try to solve the saddle-point system.
+                mgOperator.UseSolver(linearSolver, x0, RHS);
+                Iter = linearSolver.ThisLevelIterations;
+            }
         }
+        
 
+        /// <summary>
+        /// Bad design, should be removed; FK 18feb22
+        /// </summary>
         public event Action<int, double[], double[], MultigridOperator> CustomIterationCallback;
 
-        protected override string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
-            string description = base.GetSolver(out nonlinSolver, out linearSolver);
+        
 
-            if (RequiresNonlinearSolver) {
+        protected override NonlinearSolver GetNonlinSolver() {
+            var nonlinSolver = base.GetNonlinSolver();
 
-                if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
-                    nonlinSolver.IterationCallback += this.CoupledIterationCallback;
-                    if(nonlinSolver is FixpointIterator)
-                        ((FixpointIterator)nonlinSolver).Iteration_Count = this.CoupledIterationCounter;
-                }
-
-                nonlinSolver.IterationCallback += this.CustomIterationCallback;
-
-            } else {
-                if (linearSolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)linearSolver).IterationCallback += this.CustomIterationCallback;
-                }
+            if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                nonlinSolver.IterationCallback += this.CoupledIterationCallback;
+                if(nonlinSolver is FixpointIterator)
+                    ((FixpointIterator)nonlinSolver).Iteration_Count = this.CoupledIterationCounter;
             }
 
-            return description;
+            nonlinSolver.IterationCallback += this.CustomIterationCallback;
+
+            return nonlinSolver;
         }
 
-        public bool coupledOperator = false;
+        protected override ISolverSmootherTemplate GetLinearSolver(MultigridOperator op) {
+            var linearSolver = base.GetLinearSolver(op);
+            if(linearSolver is ISolverWithCallback swc) {
+                swc.IterationCallback += this.CustomIterationCallback;
+            }
+            return linearSolver;
+        }
 
+
+        /// <summary>
+        /// Bad, undocumented design! To be removed! Fk, 18feb22
+        /// </summary>
+        private bool coupledOperator = false;
 
 
         /// <summary>

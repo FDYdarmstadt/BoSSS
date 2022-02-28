@@ -18,7 +18,7 @@ namespace BoSSS.Application.XNSEC {
             C.NonLinearSolver.verbose = true;
             C.ReactionRateConstants = new double[] { 1e4, 3, 1, 1 };
             C.HeatRelease = 1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
 
             C.VariableOneStepParameters = false;
@@ -61,8 +61,9 @@ namespace BoSSS.Application.XNSEC {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.NoOfMultigridLevels = 4;
+            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                NoOfMultigridLevels = 4
+            };
             C.HeatRelease = 5;
 
             C.PhysicalParameters.IncludeConvection = true;

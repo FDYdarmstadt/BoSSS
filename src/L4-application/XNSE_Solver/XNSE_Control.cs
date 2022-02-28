@@ -58,11 +58,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
-            base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;
-            base.LinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
-            base.LinearSolver.MinSolverIterations = 4; //Solver_MinIterations
-            base.LinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
-            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //LinearSolver
+            base.LinearSolver = LinearSolverCode.classic_mumps.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 0.0; //Solver_ConvergenceCriterion: solve as accurate as possible. Don't change this, Grüße von FK!

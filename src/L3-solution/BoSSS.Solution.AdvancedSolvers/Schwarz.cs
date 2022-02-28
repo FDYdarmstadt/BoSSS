@@ -463,9 +463,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            public ISolverSmootherTemplate CoarseSolver = new DirectSolver() {
-                WhichSolver = DirectSolver._whichSolver.PARDISO
-            };
+            public ISolverSmootherTemplate CoarseSolver = new DirectSolver();
 
             public override void Dispose() {
                 CoarseSolver.Dispose();
@@ -522,6 +520,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
+                if(object.ReferenceEquals(op, m_MgOp))
+                    return; // already initialized
+                else
+                    this.Dispose();
+
                 ResetStat();
                 // Without checking the matrix, the other criteria is not enough to determine if reusing is possible
                 // Init shall be a Init, so skip that ... 
@@ -1557,7 +1560,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (this.CoarseSolver != null) {
                 this.CoarseSolver.Dispose();
-                this.CoarseSolver = null;
+                //this.CoarseSolver = null; // don't delete - we need this again for the next init
             }
         }
 

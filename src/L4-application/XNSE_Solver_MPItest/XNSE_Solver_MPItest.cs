@@ -125,8 +125,9 @@ namespace BoSSS.Application.XNSE_Solver {
             // because of voidcells Schwarzblocks would be empty
             // Remedy: force repartitioning at startup and fallback in schwarz if only some blocks are empty ...
             var C = PartlyCoverdDomain(2, 50, 2, false, true, false);
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.TargetBlockSize = 1000;
+            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                TargetBlockSize = 1000
+            };
             C.GridPartType = GridPartType.clusterHilbert;
             C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = true;
@@ -416,15 +417,10 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//C.LinearSolver = DirectSolver._whichSolver.PARDISO;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
@@ -569,16 +565,16 @@ namespace BoSSS.Application.XNSE_Solver {
             C.ProjectDescription = "rotating cube";
             C.Tags.Add("rotating");
             C.Tags.Add("level set");
-            C.Tags.Add(String.Format("{0}D",SpaceDim));
+            C.Tags.Add(String.Format("{0}D", SpaceDim));
 
             // DG degrees
             // ==========
 
             C.SetFieldOptions(k, Math.Max(2, k * 2));
-            if (UsePredefPartitioning) {
+            if(UsePredefPartitioning) {
                 C.GridPartType = GridPartType.Predefined;
                 C.GridPartOptions = "testgrid";
-            } else 
+            } else
                 C.GridPartType = GridPartType.clusterHilbert;
 
             C.SessionName = "XNSE_rotcube_test";
@@ -604,11 +600,11 @@ namespace BoSSS.Application.XNSE_Solver {
             double[] pos = new double[SpaceDim];
             double particleRad = 0.261;
 
-            var PhiFunc = GenPhiFunc(anglev, Gshape, SpaceDim,particleRad,pos);
+            var PhiFunc = GenPhiFunc(anglev, Gshape, SpaceDim, particleRad, pos);
 
             Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
 
-                if (pos.Length != X.Length)
+                if(pos.Length != X.Length)
                     throw new ArgumentException("check dimension of center of mass");
 
                 Vector angVelo = new Vector(new double[] { 0, 0, anglev });
@@ -617,7 +613,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 Vector transVelocity = new Vector(new double[SpaceDim]);
                 Vector pointVelocity;
 
-                switch (SpaceDim) {
+                switch(SpaceDim) {
                     case 2:
                     pointVelocity = new Vector(transVelocity[0] - angVelo[2] * radialVector[1], transVelocity[1] + angVelo[2] * radialVector[0]);
                     break;
@@ -639,12 +635,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
             C.UseImmersedBoundary = true;
-            if (C.UseImmersedBoundary) {
+            if(C.UseImmersedBoundary) {
                 //C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
                 C.InitialValues_EvaluatorsVec.Add(VariableNames.LevelSetCGidx(1), PhiFuncDelegate);
                 C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
                 C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
-                if (SpaceDim == 3)
+                if(SpaceDim == 3)
                     C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
             }
             C.InitialValues_Evaluators.Add("Pressure", X => 0);
@@ -660,13 +656,14 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.LinearSolver.NoOfMultigridLevels = 5;
-            C.LinearSolver.ConvergenceCriterion = 1E-8;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxKrylovDim = 30;
-            C.LinearSolver.TargetBlockSize = 10000;
-            C.LinearSolver.verbose = true;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
+            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                NoOfMultigridLevels = 5,
+                ConvergenceCriterion = 1E-8,
+                MaxSolverIterations = 100,
+                //MaxKrylovDim = 30,
+                TargetBlockSize = 10000,
+                //verbose = true
+            };
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.verbose = true;

@@ -70,10 +70,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================  
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.LevelSetSmoothing = false;
 
 
@@ -126,10 +123,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================  
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.LevelSetSmoothing = false;
 
 
@@ -184,10 +178,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================  
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.LevelSetSmoothing = false;
 
 

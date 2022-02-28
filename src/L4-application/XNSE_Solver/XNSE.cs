@@ -72,7 +72,6 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
             //InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
@@ -738,11 +737,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 Console.WriteLine("=============== {0} ===============", "Linear Solver Configuration");
-                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.LinearSolver.SolverCode);
-                if (this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_mumps & this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_pardiso) {
-                    Console.WriteLine("TODO");
-                }
-
+                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.LinearSolver.Name);
+                
                 Console.WriteLine("=============== {0} ===============", "Nonlinear Solver Configuration");
                 Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.NonLinearSolver.SolverCode);
                 Console.WriteLine("     {0,-30}:{1}", "Convergence Criterion", this.Control.NonLinearSolver.ConvergenceCriterion);

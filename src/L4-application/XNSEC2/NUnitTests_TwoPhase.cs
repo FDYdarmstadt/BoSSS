@@ -398,7 +398,6 @@ namespace BoSSS.Application.XNSEC {
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local, constantDensity: true, GridResolution: 1);
             //C.SkipSolveAndEvaluateResidual = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
             C.EnableTemperature = false;
             C.EnableMassFractions = false;
 
