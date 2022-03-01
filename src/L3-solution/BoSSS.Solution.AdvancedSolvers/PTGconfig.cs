@@ -36,10 +36,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public bool UseHiOrderSmoothing = true;
 
-        /// <summary>
-        /// DG degree at low order blocks. This degree is the border, which divides into low order and high order blocks
-        /// </summary>
-        public int OrderOfCoarseSystem = 1;
+        ///// <summary>
+        ///// DG degree at low order blocks. This degree is the border, which divides into low order and high order blocks
+        ///// </summary>
+        //public int OrderOfCoarseSystem = 1;
 
         /// <summary>
         /// If true blocks/cells containing more than one species are completely assigned to low order block solver.
@@ -86,5 +86,42 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return templinearSolve;
         }
 
+    }
+
+
+    public class PTGconfig2 : PTGconfig {
+
+
+        public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+            var precond = new LevelPmg();
+            precond.config.UseHiOrderSmoothing = false;
+            precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
+            precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
+            precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
+            precond.config.EqualOrder = this.EqualOrder;
+            
+
+            var bj = new BlockJacobi() {
+                NoOfIterations = 1,
+                
+            };
+            
+            /*
+            var smoother = new SoftGMRES() {
+                MaxKrylovDim = 10,
+                TerminationCriterion = (int iter, double r0, double ri) => (iter <= 10, true),
+                Precond = bj
+            };
+            */
+
+            var templinearSolve = new OrthonormalizationMultigrid() {
+                PreSmoother = precond,
+                TerminationCriterion = this.DefaultTermination,
+                PostSmoother = bj
+            };
+
+            templinearSolve.Init(level);
+            return templinearSolve;
+        }
     }
 }

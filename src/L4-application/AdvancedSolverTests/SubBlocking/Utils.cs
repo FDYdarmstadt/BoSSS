@@ -285,8 +285,8 @@ namespace AdvancedSolverTests.SubBlocking
         }
 
         private static void DefaultSpeciesSplit(this SubBlockSelector sbs, bool upper) {
-            if (sbs.GetMapping.AggBasis[0] is XdgAggregationBasis) {
-                SpeciesId[] SIdc = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies;
+            if (sbs.Mapping.AggBasis[0] is XdgAggregationBasis) {
+                SpeciesId[] SIdc = ((XdgAggregationBasis)sbs.Mapping.AggBasis[0]).UsedSpecies;
                 SpeciesId[] OtherSpec = (SIdc.Length - 1).ForLoop(i => SIdc[i + 1]);
                 if (upper)
                     sbs.SpeciesSelector(SIdc[0]);
@@ -299,7 +299,7 @@ namespace AdvancedSolverTests.SubBlocking
 
         private static void DefaultVarSplit(this SubBlockSelector sbs, bool upper) {
             sbs.VariableSelector(upper ? 0 : 1);
-            int NoOfVar = sbs.GetMapping.NoOfVariables;
+            int NoOfVar = sbs.Mapping.NoOfVariables;
             int[] OtherVars = (NoOfVar - 1).ForLoop(i => i + 1);
             if (upper)
                 sbs.VariableSelector(0);
@@ -313,10 +313,10 @@ namespace AdvancedSolverTests.SubBlocking
             int i0, iE;
             if (islocal) {
                 i0 = 0;
-                iE = sbs.GetMapping.LocalNoOfBlocks;
+                iE = sbs.Mapping.LocalNoOfBlocks;
             } else {
-                i0 = sbs.GetMapping.LocalNoOfBlocks;
-                iE = sbs.GetMapping.AggGrid.iLogicalCells.NoOfExternalCells+ sbs.GetMapping.LocalNoOfBlocks;
+                i0 = sbs.Mapping.LocalNoOfBlocks;
+                iE = sbs.Mapping.AggGrid.iLogicalCells.NoOfExternalCells+ sbs.Mapping.LocalNoOfBlocks;
             }
 
             for (int i = i0; i < iE; i++) {
@@ -330,8 +330,8 @@ namespace AdvancedSolverTests.SubBlocking
 
 
         public static void GetDefaultSelection(this SubBlockSelector sbs, SelectionType SType, int iCell) {
-            SpeciesId A = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies[0];
-            SpeciesId B = ((XdgAggregationBasis)sbs.GetMapping.AggBasis[0]).UsedSpecies[1];
+            SpeciesId A = ((XdgAggregationBasis)sbs.Mapping.AggBasis[0]).UsedSpecies[0];
+            SpeciesId B = ((XdgAggregationBasis)sbs.Mapping.AggBasis[0]).UsedSpecies[1];
 
             sbs.CellSelector(iCell);
             //do not change this, selection corresponds to hardcoded masking
@@ -441,7 +441,7 @@ namespace AdvancedSolverTests.SubBlocking
         }
 
         public static int[] AllExternalCellsSelection(this SubBlockSelector sbs) {
-            var map = sbs.GetMapping;
+            var map = sbs.Mapping;
             var extcells=GetAllExternalCells(map);
             sbs.CellSelector(extcells,false);
             return extcells;

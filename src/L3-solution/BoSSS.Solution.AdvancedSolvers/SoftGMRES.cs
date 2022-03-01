@@ -430,7 +430,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public long UsedMemory() {
-            throw new NotImplementedException();
+            long Memory = 0;
+            if(Precond != null)
+                Memory += Precond.UsedMemory();
+            return Memory;
         }
     }
 }

@@ -607,16 +607,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public long UsedMemory() {
             long r = 0;
 
-            foreach(var mda in this.HighOrderBlocks_LU) {
-                if(mda != null) {
-                    r += mda.Length * sizeof(double);
+            if(this.HighOrderBlocks_LUpivots != null) {
+                foreach(var mda in this.HighOrderBlocks_LU) {
+                    if(mda != null) {
+                        r += mda.Length * sizeof(double);
+                    }
                 }
             }
 
-            foreach(var ia in this.HighOrderBlocks_LUpivots) {
-                if(ia != null) {
-                    r += ia.Length * sizeof(int);
+            if(this.HighOrderBlocks_LU != null) {
+                foreach(var ia in this.HighOrderBlocks_LUpivots) {
+                    if(ia != null) {
+                        r += ia.Length * sizeof(int);
+                    }
                 }
+            }
+
+
+            var lowPard = this.lowSolver as PARDISOSolver;
+            if(lowPard != null) {
+                r += lowPard.UsedMemory();
+            }
+
+            var hiPard = this.hiSolver as PARDISOSolver;
+            if(hiPard != null) {
+                r += hiPard.UsedMemory();
             }
 
 

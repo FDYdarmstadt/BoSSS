@@ -82,6 +82,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
         long UsedMemory();
     }
 
+    public interface IOperatorMappingPair {
+        
+        /// <summary>
+        /// Returns the Operator matrix on the current multigrid level.
+        /// </summary>
+        BlockMsrMatrix OperatorMatrix {
+            get;
+        }
+
+         
+    }
+
+    public interface ISmallerSolver : ISolverSmootherTemplate {
+
+        void OtherInit(IOperatorMappingPair op);
+    }
+
+
+
 
     /// <summary>
     /// 

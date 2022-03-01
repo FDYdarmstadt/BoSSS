@@ -40,18 +40,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //    /// <summary>
         //    /// Configuration cctor of <see cref="BlockJacobi"/>
         //    /// </summary>
-            //public myConfig() {
-                int MaxSolverIterations = 1;
-            //}
-            /// <summary>
-            /// Jacobi-Damping
-            /// </summary>
-            public double omega = 1.0; // jacobi - under-relax
+        //public myConfig() {
+        int MaxSolverIterations = 1;
+        //}
+        /// <summary>
+        /// Jacobi-Damping
+        /// </summary>
+        public double omega = 1.0; // jacobi - under-relax
 
-            /// <summary>
-            /// Fixed number of block-Jacobi 
-            /// </summary>
-            public int NoOfIterations = 1;
+        /// <summary>
+        /// Fixed number of block-Jacobi 
+        /// </summary>
+        public int NoOfIterations = 1;
 
         //    /// <summary>
         //    /// ~
@@ -97,7 +97,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
                     throw new ArgumentException("Column partitioning mismatch.");
 
-                Mtx = M;
+                
                 int L = M.RowPartitioning.LocalLength;
 
                 /*
@@ -148,7 +148,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        BlockMsrMatrix Mtx;
+        BlockMsrMatrix Mtx {
+            get {
+                return m_MultigridOp.OperatorMatrix;
+            }
+        }
+
         BlockMsrMatrix Diag;
         BlockMsrMatrix invDiag;
         //double[] diag;
@@ -164,7 +169,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-      
+
         /// <summary>
         /// Jacobi iteration
         /// </summary>
@@ -176,15 +181,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             double iter0_ResNorm = 0;
 
-            for (int iIter = 0; true; iIter++) {
+            for(int iIter = 0; true; iIter++) {
                 ql.SetV(bl);
                 Mtx.SpMV(-1.0, xl, 1.0, ql);
                 double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
 
-                if (iIter == 0) {
+                if(iIter == 0) {
                     iter0_ResNorm = ResNorm;
 
-                    if (this.IterationCallback != null) {
+                    if(this.IterationCallback != null) {
                         double[] _xl = xl.ToArray();
                         double[] _bl = bl.ToArray();
                         Mtx.SpMV(-1.0, _xl, 1.0, _bl);
@@ -192,7 +197,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
 
-                if (!TerminationCriterion(iIter, iter0_ResNorm, ResNorm)) {
+                if(!TerminationCriterion(iIter, iter0_ResNorm, ResNorm)) {
                     m_Converged = true;
                     return;
                 }
@@ -210,7 +215,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-                if (this.IterationCallback != null) {
+                if(this.IterationCallback != null) {
                     double[] _xl = xl.ToArray();
                     double[] _bl = bl.ToArray();
                     Mtx.SpMV(-1.0, _xl, 1.0, _bl);
@@ -241,7 +246,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
-            throw new NotImplementedException();
+            //throw new Exception();
+            this.m_MultigridOp = null;
+            this.invDiag = null;
+            this.Diag = null;
         }
 
         public object Clone() {
@@ -253,7 +261,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public long UsedMemory() {
-            throw new NotImplementedException();
+            return (this.invDiag.UsedMemory + this.Diag.UsedMemory);
         }
     }
 }

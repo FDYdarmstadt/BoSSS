@@ -24,7 +24,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// ctor
         /// </summary>
         /// <param name="map"></param>
-        public SubBlockSelector(MultigridMapping map) : base(map) { }
+        public SubBlockSelector(ICoordinateMapping map) : base(map) { }
     }
 
 
@@ -76,11 +76,11 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         private class BlockMaskExt : BlockMaskBase {
 
-            public BlockMaskExt(SubBlockSelector SBS, int LocMaskOffset) : base(SBS, SBS.GetMapping.MPI_Comm) {
+            public BlockMaskExt(SubBlockSelector SBS, int LocMaskOffset) : base(SBS, SBS.Mapping.MPI_Comm) {
                 
                 // must be set before mask generation
                 m_LocOffset = LocMaskOffset;
-                m_extLocLen = m_map.GetLocalLength_Ext();
+                m_extLocLen = GetLocalLength_Ext(SBS.Mapping);
 
                 base.GenerateAllMasks();
                 foreach (int idx in this.m_GlobalMask) {
@@ -88,7 +88,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
 
                 int LL = m_map.LocalLength;
-                int jMax = m_map.AggGrid.iLogicalCells.Count - 1;
+                int jMax = m_map.LocalCellCount - 1;
                 int LE = m_map.LocalUniqueIndex(0, jMax, 0) + m_map.GetLength(jMax);
 
                 foreach (int idx in this.m_LocalMask) {
@@ -97,18 +97,41 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
             }
 
+
+            /// <summary>
+            /// Gets DOF of ghost cells available on this proc
+            /// </summary>
+            /// <returns>DOF of ghost cells available on this proc
+            /// </returns>
+            static public int GetLocalLength_Ext(ICoordinateMapping cm) {
+                int Jup = cm.NoOfLocalUpdatedCells;
+                int Jtt = cm.LocalCellCount;
+                int Len = 0;
+                for(int j = Jup; j < Jtt; j++)
+                    Len += cm.GetLength(j);
+
+                //int[] LocCellIdxExt = this.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + Locoffset);
+                //foreach(int jCell in LocCellIdxExt) {
+                //    for(int fld = 0; fld < NoOfVariables; fld++) {
+                //        Len += this.AggBasis[fld].GetLength(jCell, this.DgDegree[fld]);
+                //    }
+                //}
+                return Len;
+            }
+            
+
             private int m_LocOffset;
             private int m_extLocLen;
 
             protected override int m_NoOfCells {
                 get {
-                    return m_map.AggGrid.iLogicalCells.NoOfExternalCells;
+                    return m_map.NoOfExternalCells;
                 }
             }
 
             protected override int m_CellOffset {
                 get {
-                    return m_map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                    return m_map.NoOfLocalUpdatedCells;
                 }
             }
 
@@ -142,7 +165,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="sbs">sub block selection defined by dev</param>
         /// <param name="ExtRows">external rows collected from other MPI-processes on this proc</param>
         public BlockMask(SubBlockSelector sbs, BlockMsrMatrix ExtRows = null) {
-            m_map = sbs.GetMapping;
+            m_map = sbs.Mapping;
             m_ExtRows = ExtRows;
             m_includeExternalCells = (ExtRows != null) && m_map.MpiSize > 1;
             BMLoc = new BlockMaskLoc(sbs);
@@ -232,9 +255,9 @@ namespace BoSSS.Solution.AdvancedSolvers
         extNi0[][][][] StructuredNi0;
 
         /// <summary>
-        /// <see cref="MultigridMapping"/>, which this mask is based upon
+        /// <see cref="ICoordinateMapping"/>, which this mask is based upon
         /// </summary>
-        MultigridMapping m_map;
+        ICoordinateMapping m_map;
 
         /// <summary>
         /// external rows, which correspond to ghost cells, overgiven in cctor
@@ -760,11 +783,9 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// 
         /// </summary>
-        public static int GetLocalAndExternalDOF(MultigridMapping map) {
-            int eCell = map.LocalNoOfBlocks + map.AggGrid.iLogicalCells.NoOfExternalCells - 1;
-            int eVar = map.AggBasis.Length - 1;
-            int eN = map.AggBasis[eVar].GetLength(eCell, map.DgDegree[eVar]) - 1;
-            return map.LocalUniqueIndex(eVar, eCell, eN) + 1;
+        public static int GetLocalAndExternalDOF(ICoordinateMapping map) {
+            int eCell = map.LocalNoOfBlocks + map.NoOfExternalCells - 1;
+            return map.LocalUniqueIndex(0, eCell, 0) + map.GetLength(eCell);
         }
 
         #region stuff for Operator Testing

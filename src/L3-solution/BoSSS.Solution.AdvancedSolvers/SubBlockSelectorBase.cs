@@ -37,6 +37,126 @@ using System.Collections;
 namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
+    /// Common interface for **coordinate mappings**
+    /// </summary>
+    public interface ICoordinateMapping : IBlockPartitioning {
+
+        /// <summary>
+        /// 
+        /// </summary>
+        int NoOfVariables { get; }
+
+        /// <summary>
+        /// true, if the <paramref name="iVar"/>-th variable is XDG; otherwise, it must be DG
+        /// </summary>
+        bool IsXDGvariable(int iVar);
+
+        /// <summary>
+        /// index of species <paramref name="SId"/> in cell <paramref name="jCell"/>
+        /// </summary>
+        int GetSpeciesIndex(int jCell, SpeciesId SId);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        int GetNoOfSpecies(int jCell);
+
+        /// <summary>
+        /// DG polynomial degree (aka order) for each variable
+        /// </summary>
+        int[] DgDegree {
+            get;
+        }
+
+        /// <summary>
+        /// Number of locally stored external cells - no computations are carried out for
+        /// that cells, but their values are needed.
+        /// 
+        /// see also <see cref="ILogicalCellData.NoOfExternalCells"/>
+        /// </summary>
+        int NoOfExternalCells {
+            get;
+        }
+
+        /// <summary>
+        /// Alias for <see cref="IBlockPartitioning.GetBlockLen(long)"/>; however, in local coordinates
+        /// </summary>
+        /// <param name="jLoc"></param>
+        /// <returns></returns>
+        int GetLength(int jLoc);
+
+
+        /// <summary>
+        /// Mapping from a quadruple (<paramref name="ifld"/>,<paramref name="jCell"/>,<paramref name="iSpec"/>,<paramref name="n"/>) to a 
+        /// MPI-local linear index range 
+        /// </summary>
+        /// <param name="ifld">field/variable index</param>
+        /// <param name="jCell">cell index</param>
+        /// <param name="n">DG/XDG mode index</param>
+        /// <param name="iSpec">XDG species index</param>
+        /// <returns>
+        /// local index, i.e. starting at 0 on all MPI processes 
+        /// </returns>
+        int LocalUniqueIndex(int ifld, int jCell, int iSpec, int n);
+
+        /// <summary>
+        /// MPI-global version of <see cref="LocalUniqueIndex(int, int, int, int)"/>
+        /// </summary>
+        /// <returns>
+        /// A global index, i.e. it a different range, 
+        /// from <see cref="IPartitioning.i0"/> (including) to <see cref="IPartitioning.iE"/> (excluding),
+        /// on each MPI process.
+        /// </returns>
+        long GlobalUniqueIndex(int ifld, int jCell, int jSpec, int n);
+
+        /// <summary>
+        /// Mapping from a triple (<paramref name="ifld"/>,<paramref name="jCell"/>,<paramref name="n"/>) to a linear index range 
+        /// </summary>
+        /// <param name="ifld">field/variable index</param>
+        /// <param name="jCell">cell index</param>
+        /// <param name="n">DG/XDG mode index</param>
+        /// <returns>
+        /// local index, i.e. starting at 0 on all MPI processes 
+        /// </returns>
+        int LocalUniqueIndex(int ifld, int jCell, int n);
+
+        /// <summary>
+        /// MPI-global version of <see cref="LocalUniqueIndex(int, int, int"/>
+        /// </summary>
+        /// <returns>
+        /// A global index, i.e. it a different range, 
+        /// from <see cref="IPartitioning.i0"/> (including) to <see cref="IPartitioning.iE"/> (excluding),
+        /// on each MPI process.
+        /// </returns>
+        long GlobalUniqueIndex(int ifld, int jCell, int n);
+
+        /// <summary>
+        /// 1D, 2D or 3D;
+        /// </summary>
+        int SpatialDimension { get;  }
+
+
+        /// <summary>
+        /// Alias for <see cref="IBlockPartitioning.LocalNoOfBlocks"/>:
+        /// Number of locally updated cells - the cells which are computed on
+        /// this processor (in contrast, see <see cref="NoOfExternalCells"/>); 
+        /// see also <see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>
+        /// </summary>
+        int NoOfLocalUpdatedCells {
+            get;
+        }
+                
+
+        /// <summary>
+        /// <see cref="NoOfExternalCells"/> plus <see cref="NoOfLocalUpdatedCells"/>; see also <see cref="ILogicalCellData.Count"/>
+        /// </summary>
+        int LocalCellCount {
+            get;
+        }
+    }
+
+
+    /// <summary>
     /// This contains a block Selection, which can be specified by the user with the hierachical Selectors: every Matrix is subdivided into cell, variable, species and mode blocks.
     /// </summary>
     public abstract class SubBlockSelectorBase {
@@ -45,7 +165,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Specifies, which blocks in a matrix shall be selected. Blocksubdivision Default: Selects all blocks.  
         /// </summary>
         /// <param name="map"></param>
-        public SubBlockSelectorBase(MultigridMapping map) {
+        public SubBlockSelectorBase(ICoordinateMapping map) {
             if (map == null)
                 throw new ArgumentNullException("empty mapping! This will not end well ...");
             m_map = map;
@@ -56,7 +176,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         //internal get
-        protected MultigridMapping m_map;
+        protected ICoordinateMapping m_map;
 
         /// <summary>
         /// Selector for cells.
@@ -165,10 +285,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             List<int> tmpList = new List<int>();
             if (global) {
                 foreach (int CellIdx in ListOfCellIdx) {
-                    int tmpIdx = (int)(CellIdx - m_i0);
+                    int tmpIdx = (int)(CellIdx - Cell_j0);
 
                     int idxfound = 0;
-                    if (m_i0 <= tmpIdx && m_iE >= tmpIdx)
+                    if (Cell_j0 <= tmpIdx && Cell_jE >= tmpIdx)
                         idxfound = 1;
                     Debug.Assert(idxfound.MPISum() == 1);
 
@@ -208,7 +328,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public SubBlockSelectorBase VariableSelector() {
             this.m_VariableFilter = delegate (int iCell, int iVar) {
 #if DEBUG
-                int NoOfVar = m_AggBS.Length;
+                int NoOfVar = m_map.NoOfVariables;
                 Debug.Assert(iVar >= 0);
                 Debug.Assert(iVar < NoOfVar);
 #endif
@@ -249,7 +369,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (Variables.Max() >= m_NoOfVar)
                 throw new ArgumentOutOfRangeException("Some variable index is larger than number of variables..");
 
-            int NoOfVar = m_AggBS.Length;
+            int NoOfVar = m_map.NoOfVariables;
 
             var VarSelector = GetListInstruction(Variables);
 
@@ -262,14 +382,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 #endregion
 
-#region SpeciesSelector
+        #region SpeciesSelector
         /// <summary>
         /// Selects all species blocks
         /// </summary>
         /// <returns></returns>
         public SubBlockSelectorBase SpeciesSelector() {
             this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
-                int NoOfSpec = m_AggBS[iVar].GetNoOfSpecies(iCell);
+                int NoOfSpec = m_map.GetNoOfSpecies(iCell);
                 return GetAllInstruction(NoOfSpec)(iSpec);
             };
             return this;
@@ -281,9 +401,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public SubBlockSelectorBase SpeciesSelector(SpeciesId SId) {
 
             this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
-                if (this.m_map.AggBasis[iVar].GetType() != typeof(XdgAggregationBasis))
+                if (!this.m_map.IsXDGvariable(iVar))
                     throw new NotSupportedException("You tried to select a species within a non-xdg field!");
-                int SpcIdx = ((XdgAggregationBasis)this.m_map.AggBasis[iVar]).GetSpeciesIndex(iCell, SId);
+                int SpcIdx = this.m_map.GetSpeciesIndex(iCell, SId);
                 if (SpcIdx < 0)
                     return GetDoNothingInstruction()(iSpec);
                 else
@@ -293,16 +413,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return this;
         }
 
+        /*
         /// <summary>
         /// Selects Species by <see cref="SpeciesId"/>.
         /// </summary>
         public SubBlockSelectorBase SpeciesSelector(string Species) {
 
             this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
-                if (this.m_map.AggBasis[iVar].GetType() != typeof(XdgAggregationBasis))
+                if (!this.m_map.IsXDGvariable(iVar))
                     throw new NotSupportedException("You tried to select a species within a non-xdg field!");
-                SpeciesId SpecId =((XdgAggregationBasis)this.m_map.AggBasis[iVar]).XDGBasis.Tracker.GetSpeciesId(Species);
-                int SpcIdx = ((XdgAggregationBasis)this.m_map.AggBasis[iVar]).GetSpeciesIndex(iCell, SpecId);
+                SpeciesId SpecId = this.m_map.GetSpeciesId(Species);
+                int SpcIdx = this.m_map.GetSpeciesIndex(iCell, SpecId);
                 if (SpcIdx < 0)
                     return GetDoNothingInstruction()(iSpec);
                 else
@@ -311,6 +432,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return this;
         }
+        */
 
         /// <summary>
         /// Selects multiple species by <see cref="IEnumerable{SpeciesId}"/>.
@@ -323,7 +445,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.m_SpeciesFilter = delegate (int iCell, int iVar, int iSpec) {
                 List<int> SpcInt = new List<int>();
                 foreach(SpeciesId spi in SetOfSpecies) {
-                    int SpcIdx = ((XdgAggregationBasis)this.m_map.AggBasis[iVar]).GetSpeciesIndex(iCell, spi);
+                    int SpcIdx = m_map.GetSpeciesIndex(iCell, spi);
                     if (SpcIdx <0)
                         continue;
                     SpcInt.Add(SpcIdx);
@@ -336,9 +458,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return this;
         }
 
-#endregion
+        #endregion
 
-#region ModeSelector
+        #region ModeSelector
 
         /// <summary>
         /// Selects all Modes
@@ -495,17 +617,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// gets the multigrid operator on which this selector shall work on 
         /// </summary>
-        public MultigridMapping GetMapping {
+        public ICoordinateMapping Mapping {
             get {
                 return m_map;
             }
         }
 
+        /*
         private AggregationGridBasis[] m_AggBS {
             get {
                 return m_map.AggBasis;
             }
         }
+        */
 
         private int[] m_DGdegree {
             get {
@@ -515,7 +639,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private int m_NoLocalCells {
             get {
-                return m_map.LocalNoOfBlocks + m_map.AggBasis[0].AggGrid.iLogicalCells.NoOfExternalCells;
+                return m_map.LocalNoOfBlocks + m_map.NoOfExternalCells;
             }
         }
 
@@ -530,15 +654,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        private long m_i0 {
+        private long Cell_j0 {
             get {
-                return m_map.AggGrid.CellPartitioning.i0;
+                return m_map.FirstBlock;
             }
         }
 
-        private long m_iE {
+        private long Cell_jE {
             get {
-                return m_map.AggGrid.CellPartitioning.iE;
+                return m_map.LocalNoOfBlocks + Cell_j0;
             }
         }
 
@@ -627,19 +751,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// abstract parts are individualized by child classes: <see cref="BlockMask.BlockMaskLoc"/> and <see cref="BlockMask.BlockMaskExt"/>
         /// </summary>
         public BlockMaskBase(SubBlockSelector SBS, MPI_Comm MPIcomm) {
-            m_map = SBS.GetMapping;
             m_sbs = SBS;
-            m_AggBS = m_map.AggBasis;
             m_DGdegree = m_map.DgDegree;
             m_Ni0 = Ni0Gen();
-            m_NoOfVariables = m_AggBS.Length;
             m_MPIcomm = MPIcomm;
             //Testen ob es cells gibt wo Var<>NoOfVar, das würde dementsprechend auch m_DG beeinflussen
             m_NoOfSpecies = new int[m_NoOfCells][];
             for (int iCell = 0; iCell < m_NoOfCells; iCell++) {
                 m_NoOfSpecies[iCell] = new int[m_NoOfVariables];
                 for (int iVar = 0; iVar < m_NoOfVariables; iVar++) {
-                    m_NoOfSpecies[iCell][iVar] = m_AggBS[iVar].GetNoOfSpecies(iCell + m_CellOffset);
+                    m_NoOfSpecies[iCell][iVar] = m_map.GetNoOfSpecies(iCell + m_CellOffset);
                 }
             }
         }
@@ -667,11 +788,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         // internal get
         // ============
         private SubBlockSelectorBase m_sbs;
-        protected MultigridMapping m_map;
-        private AggregationGridBasis[] m_AggBS;
+
+        protected ICoordinateMapping m_map => m_sbs.Mapping;
+
+        //private AggregationGridBasis[] m_AggBS;
         private int[] m_DGdegree;
-        private int m_NoOfVariables;
+        private int m_NoOfVariables => m_map.NoOfVariables;
+        
         private int[][] m_NoOfSpecies;
+
         private MPI_Comm m_MPIcomm;
 
         // ============
@@ -745,7 +870,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private int GetNp(int p) {
             int Np = -1;
-            int SpacDim = m_map.AggGrid.SpatialDimension;
+            int SpacDim = m_map.SpatialDimension;
             Debug.Assert(p >= 0);
             switch (SpacDim) {
                 case 1:

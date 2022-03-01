@@ -39,7 +39,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// For each aggregation grid level, this mapping defines a bijection between variable index,
     /// DG mode and aggregation cell index and a unique index.
     /// </summary>
-    public class MultigridMapping : IBlockPartitioning {
+    public class MultigridMapping : IBlockPartitioning, ICoordinateMapping {
 
         /// <summary>
         /// Base grid on which the problem is defined.
@@ -396,6 +396,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        public int NoOfExternalCells {
+            get {
+                return AggGrid.iLogicalCells.NoOfExternalCells;
+            }
+        }
+
+        public int SpatialDimension {
+            get {
+                return AggGrid.SpatialDimension;
+            }
+        }
+
+        public int NoOfLocalUpdatedCells {
+            get {
+                return AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+            }
+        }
+
+        public int LocalCellCount {
+            get {
+                return NoOfLocalUpdatedCells + NoOfExternalCells;
+            }
+        }
+
         public int LocalUniqueIndex(int ifld, int jCell, int n) {
             Debug.Assert(ifld >= 0 && ifld < this.m_DgDegree.Length);
             Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));
@@ -420,7 +444,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return S;
         }
 
-        public int LocalUniqueIndex(int ifld, int jCell, int jSpec ,int n) {
+        public int LocalUniqueIndex(int ifld, int jCell, int jSpec, int n) {
             int Np_tot = this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]);
             int NoOfSpec = AggBasis[ifld].GetNoOfSpecies(jCell);
             int Np_Spec = Np_tot / NoOfSpec;
@@ -778,21 +802,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return R.ToArray();
         }
 
-        /// <summary>
-        /// Gets DOF of ghost cells available on this proc
-        /// </summary>
-        /// <returns>DOF of ghost cells available on this proc</returns>
-        public int GetLocalLength_Ext() {
-            int Locoffset = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-            int[] LocCellIdxExt = this.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + Locoffset);
-            int Len = 0;
-            foreach (int jCell in LocCellIdxExt) {
-                for (int fld = 0; fld < NoOfVariables; fld++) {
-                    Len += this.AggBasis[fld].GetLength(jCell, this.DgDegree[fld]);
-                }
-            }
-            return Len;
-        }
+        
 
         /// <summary>
         /// Gets index vecor of all ghost cells available on this proc
@@ -1031,6 +1041,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public int Global2Local(long i) {
             return checked((int)(i - this.i0));
+        }
+
+        public bool IsXDGvariable(int iVar) {
+            return AggBasis[iVar] is XdgAggregationBasis;
+        }
+
+        public int GetSpeciesIndex(int jCell, SpeciesId SId) {
+            return (AggBasis[0] as XdgAggregationBasis).GetSpeciesIndex(jCell, SId);
+        }
+
+        public int GetNoOfSpecies(int jCell) {
+            return (AggBasis[0] as XdgAggregationBasis).GetNoOfSpecies(jCell);
         }
     }
 }

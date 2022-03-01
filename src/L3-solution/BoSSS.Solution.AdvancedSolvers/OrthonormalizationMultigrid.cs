@@ -154,8 +154,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultigridOperator m_MgOperator;
 
 
-
-
         /// <summary>
         /// defines the problem matrix
         /// </summary>
@@ -771,7 +769,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     for(int g = 0; g < 2; g++) { // doppelt hält besser
                                                  // Test: Residual on this level / already computed by 'MinimizeResidual' above
 
-                        VerivyCurrentResidual(X, B, Res, iIter);
+                        VerivyCurrentResidual(X, B, Res, iIter); // 
 
 
                         if(PostSmoother != null) {
@@ -814,6 +812,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
             } // end of functrace
         }
 
+
+        /// <summary>
+        /// For performance optimization, the <see cref="OrthonormalizationMultigrid"/>
+        /// assumes that <see cref="PreSmoother"/> and <see cref="PostSmoother"/>
+        /// update the residual on exit.
+        /// </summary>
+        /// <param name="X"></param>
+        /// <param name="B"></param>
+        /// <param name="Res"></param>
+        /// <param name="iter"></param>
         private void VerivyCurrentResidual(double[] X, double[] B, double[] Res, int iter) {
             using(new FuncTrace()) {
 #if DEBUG
