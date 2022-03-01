@@ -121,7 +121,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         int LocalUniqueIndex(int ifld, int jCell, int n);
 
         /// <summary>
-        /// MPI-global version of <see cref="LocalUniqueIndex(int, int, int"/>
+        /// MPI-global version of <see cref="LocalUniqueIndex(int, int, int)"/>
         /// </summary>
         /// <returns>
         /// A global index, i.e. it a different range, 
