@@ -40,7 +40,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// - MUMPS (<see cref="MUMPSSolver"/>) or
     /// - LAPACK.
     /// </summary>
-    public class DirectSolver : ISolverSmootherTemplate, ISolverWithCallback {
+    public class DirectSolver : ISubSolver, ISolverWithCallback {
 
         /// <summary>
         /// 
@@ -155,20 +155,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-        public void Init(MultigridOperator op) {
+        void InitImpl(IOperatorMappingPair op) {
             using(var tr = new FuncTrace()) {
-                if(object.ReferenceEquals(op, m_MultigridOp))
+                if(object.ReferenceEquals(op, MatrixNMapping))
                     return; // already initialized
                 else
                     this.Dispose();
 
                 var Mtx = op.OperatorMatrix;
-                var MgMap = op.Mapping;
-                m_MultigridOp = op;
+                var MgMap = op.DgMapping;
+                MatrixNMapping = op;
 
-                if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 Mtx.CheckForNanOrInfM(typeof(DirectSolver) + ", matrix definition: ");
@@ -183,7 +183,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
     
 
-        MultigridOperator m_MultigridOp;
+        IOperatorMappingPair MatrixNMapping;
 
         class MatlabSolverWrapper : ISparseSolver {
 
@@ -264,8 +264,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             switch(config.WhichSolver) {
                 case _whichSolver.PARDISO:
                 bool CachingOn = false;
-                if (ActivateCaching != null) {
-                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, m_MultigridOp.LevelIndex);
+                if (ActivateCaching != null && MatrixNMapping is MultigridOperator mgop) {
+                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, mgop.LevelIndex);
                 }
                 
                 solver = new PARDISOSolver() {
@@ -383,7 +383,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double[] _xl = X.ToArray();
                     double[] _bl = B.ToArray();
                     m_Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                    this.IterationCallback(1, _xl, _bl, this.m_MultigridOp);
+                    this.IterationCallback(1, _xl, _bl, this.MatrixNMapping as MultigridOperator);
                 }
             }
         }
@@ -447,6 +447,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return m_UsedMemoryInLastCall;
         }
 
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
+
+        public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
     }
 
 

@@ -153,6 +153,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         int LocalCellCount {
             get;
         }
+
+        /// <summary>
+        /// All used XDG species.
+        /// Index: enumeration over species.
+        /// </summary>
+        SpeciesId[] UsedSpecies {
+            get;
+        }
     }
 
 

@@ -525,7 +525,7 @@ namespace BoSSS.Foundation.Grid {
         CellMask GetCells4Refelement(RefElement Kref);
 
         /// <summary>
-        /// Mapping form geometrical to logical cells
+        /// Mapping form geometrical to logical cells; this is the inverse to <see cref="ILogicalCellData.AggregateCellToParts"/>
         /// </summary>
         int[] GeomCell2LogicalCell {
             get;
@@ -594,6 +594,7 @@ namespace BoSSS.Foundation.Grid {
         /// Mapping from logical cells to geometrical cells; only required if geometrical and logical cells are not identical, *otherwise null*.
         /// - 1st index: local (logical) cell index
         /// - 2nd index: enumeration of geometrical cells (parts)
+        /// This is the inverse to <see cref="IGeometricalCellsData.GeomCell2LogicalCell"/>.
         /// </summary>
         int[][] AggregateCellToParts {
             get;

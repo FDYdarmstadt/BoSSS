@@ -76,7 +76,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose();
 
                 m_op = op;
-                Console.WriteLine($"CellILU, MG level {op.LevelIndex}...");
+
                 UpdateILU();
                 //CheckILU();
             }
@@ -241,12 +241,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         void UpdateILU() {
             using(var ft = new FuncTrace()) {
-                if(m_op.Mapping.MpiSize > 1)
+                if(m_op.DgMapping.MpiSize > 1)
                     throw new NotImplementedException();
 
                 var grd = m_op.Mapping.GridData;
                 var Mtx = m_op.OperatorMatrix;
-                IBlockPartitioning part = m_op.Mapping;
+                IBlockPartitioning part = m_op.DgMapping;
                 Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
                 Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
                 long cell0 = part.FirstBlock;

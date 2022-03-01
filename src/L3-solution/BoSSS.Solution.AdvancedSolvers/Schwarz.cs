@@ -44,7 +44,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Additive Schwarz method with optional, multiplicative coarse-grid correction.
     /// </summary>
-    public class Schwarz : ISolverSmootherTemplate, ISolverWithCallback {
+    public class Schwarz : ISolverSmootherTemplate {
 
         public Schwarz() {
             ActivateCachingOfBlockMatrix = (int noiter, int mglvl, int iblock) => true;
@@ -490,7 +490,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private bool AnyHighOrderTerms {
             get {
                 Debug.Assert(m_MgOp != null, "there is no matrix given yet!");
-                return m_MgOp.Mapping.DgDegree.Any(p => p > pLow);
+                return m_MgOp.DgMapping.DgDegree.Any(p => p > pLow);
             }
         }
 
@@ -564,15 +564,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.m_MgOp = op;
                 int myMpiRank = MgMap.MpiRank;
                 int myMpisize = MgMap.MpiSize;
-                int D = m_MgOp.GridData.SpatialDimension;
+                int D = MgMap.SpatialDimension;
 
                 //if (UsePMGinBlocks && AnyHighOrderTerms)
                 //    Console.WriteLine("Schwarz: pmg is used as blocksolve");
                 //if (UsePMGinBlocks && !AnyHighOrderTerms)
                 //    Console.WriteLine("Schwarz: Only low order terms present. Schwarz blocks will be solved direct instead of PMG");
-                if (!Mop.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if (!Mop.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if (!Mop.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if (!Mop.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 var ag = MgMap.AggGrid;
@@ -1048,13 +1048,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
-            get;
-            set;
-        }
+        ///// <summary>
+        ///// ~
+        ///// </summary>
+        //public Action<int, double[], double[], MultigridOperator> IterationCallback {
+        //    get;
+        //    set;
+        //}
 
 
         /// <summary>
@@ -1106,7 +1106,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //Console.WriteLine("norm on swz entry: " + X.L2Norm());
                     this.MtxFull.SpMV(-1.0, X, 1.0, Res);
 
-                    IterationCallback?.Invoke(iIter, X.ToArray(), Res.CloneAs(), this.m_MgOp);
+                    //IterationCallback?.Invoke(iIter, X.ToArray(), Res.CloneAs(), this.m_MgOp);
 
                     if (Overlap > 0) {
                         ResExchange.TransceiveStartImReturn();
@@ -1304,7 +1304,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             Clone.FixedNoOfIterations = this.FixedNoOfIterations;
             Clone.m_Overlap = this.m_Overlap;
-            Clone.IterationCallback = this.IterationCallback;
+            //Clone.IterationCallback = this.IterationCallback;
             if (this.CoarseSolver != null) {
                 throw new NotImplementedException();
             }

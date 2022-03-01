@@ -104,9 +104,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Partitioning of the vector among MPI processes.
         /// </summary>
-        public Partitioning Partitioning {
-            get;
-            private set;
+        public IPartitioning Partitioning {
+            get {
+                return this;
+            }
         }
 
         /// <summary>
@@ -226,7 +227,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         BlockLen.Add(S);
                     }
-                    Partitioning = new Partitioning(LL);
+                    //var Partitioning = new Partitioning(LL);
                     long i0Part = Partitioning.i0;
                     m_i0 = new int[JAGGtot + 1];
                     for (int jag = 0; jag < JAGGloc; jag++) {
@@ -273,7 +274,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     m_Subblk_i0 = new int[][] { new int[] { 0 } };
                     m_SubblkLen = new int[][] { new int[] { this.MaximalLength } };
 
-                    Partitioning = new Partitioning(this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells * this.MaximalLength);
+                    //Partitioning = new Partitioning(this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells * this.MaximalLength);
                 }
 
 
@@ -1053,6 +1054,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public int GetNoOfSpecies(int jCell) {
             return (AggBasis[0] as XdgAggregationBasis).GetNoOfSpecies(jCell);
+        }
+
+        /// <summary>
+        /// All used XDG species.
+        /// Index: enumeration over species.
+        /// </summary>
+        public SpeciesId[] UsedSpecies {
+            get {
+                SpeciesId[] ret = new SpeciesId[0];
+                for(int iVar = 0; iVar < NoOfVariables; iVar++) {
+                    if(IsXDGvariable(iVar)) {
+                        if(ret == null) {
+                            ret = ((XdgAggregationBasis)AggBasis[iVar]).UsedSpecies.CloneAs();
+                        } else {
+                            if(!ret.SetEquals(((XdgAggregationBasis)AggBasis[iVar]).UsedSpecies))
+                                throw new NotSupportedException("Different Variables seem to be defined for different species; not supported yet.");
+                        }
+
+                    }
+
+                }
+                return ret;
+            }
         }
     }
 }

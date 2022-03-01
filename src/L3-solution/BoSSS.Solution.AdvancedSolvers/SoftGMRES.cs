@@ -33,7 +33,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Standard preconditioned GMRES.
     /// </summary>
-    public class SoftGMRES : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
+    public class SoftGMRES : ISubSolver, ISolverWithCallback, IProgrammableTermination {
 
         Func<int, double, double, (bool bNotTerminate, bool bSuccess)> m_TerminationCriterion;
 
@@ -58,10 +58,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
             };
         }
 
+
+        /// <summary>
+        /// ~
+        /// </summary>
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
+
         /// <summary>
         /// ~
         /// </summary>
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+        void InitImpl(IOperatorMappingPair op) {
             using(new FuncTrace()) {
                 if(object.ReferenceEquals(op, this.m_mgop))
                     return; // already initialized
@@ -69,26 +81,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose(); // must re-initialize
 
                 var Mtx = op.OperatorMatrix;
-                var MgMap = op.Mapping;
+                var MgMap = op.DgMapping;
                 this.m_mgop = op;
 
-                if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
-                this.Matrix = Mtx;
                 if(Precond != null) {
-                    Precond.Init(op);
+                    Precond.Init(op as MultigridOperator);
                 }
             }
         }
 
 
-        MultigridOperator m_mgop;
+        IOperatorMappingPair m_mgop;
 
         public ISolverSmootherTemplate Precond;
 
-        BlockMsrMatrix Matrix;
+        BlockMsrMatrix Matrix => m_mgop.OperatorMatrix;
 
         public string m_SessionPath;
 
@@ -169,7 +180,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //r = M \ ( b-A*x );, where M is the precond
                 z.SetV(B);
                 Matrix.SpMV(-1.0, X, 1.0, z);
-                IterationCallback?.Invoke(0, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                IterationCallback?.Invoke(0, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
                 if(this.Precond != null) {
                     r.Clear();
@@ -341,7 +352,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
                     error2 = z.MPI_L2Norm();
-                    IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                    IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
 
                     if(this.Precond != null) {
@@ -361,7 +372,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(IterationCallback != null) {
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
-                    IterationCallback(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                    IterationCallback(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
                 }
 
 

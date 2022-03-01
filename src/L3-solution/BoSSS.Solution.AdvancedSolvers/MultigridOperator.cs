@@ -34,7 +34,7 @@ using BoSSS.Foundation.Grid;
 namespace BoSSS.Solution.AdvancedSolvers {
 
 
-    public partial class MultigridOperator {
+    public partial class MultigridOperator : IOperatorMappingPair {
 
         internal static LevelSetTracker GetTracker(UnsetteledCoordinateMapping map) {
             LevelSetTracker lsTrk = null;
@@ -885,6 +885,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public MultigridMapping Mapping {
             get;
             //private set;
+        }
+
+        public ICoordinateMapping DgMapping {
+            get {
+                return Mapping;
+            }
         }
 
         /// <summary>

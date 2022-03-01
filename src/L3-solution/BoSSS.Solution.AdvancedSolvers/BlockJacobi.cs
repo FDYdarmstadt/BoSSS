@@ -31,7 +31,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Block-Jacobi smoother, maybe only useful in combination with the multi-grid solver (<see cref="ClassicMultigrid"/>).
     /// </summary>
-    public class BlockJacobi : ISolverSmootherTemplate, ISolverWithCallback {
+    public class BlockJacobi : ISubSolver {
 
         ///// <summary>
         ///// Configuration of <see cref="BlockJacobi"/>
@@ -75,12 +75,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
         //    }
         //}
 
-        MultigridOperator m_MultigridOp;
+        IOperatorMappingPair m_MultigridOp;
 
         /// <summary>
         /// ~
         /// </summary>
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+
+        /// <summary>
+        /// ~
+        /// </summary>
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
+
+        /// <summary>
+        /// ~
+        /// </summary>
+        void InitImpl(IOperatorMappingPair op) {
             using(new FuncTrace()) {
                 if(object.ReferenceEquals(op, this.m_MultigridOp))
                     return; // already initialized
@@ -88,13 +103,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose();
 
                 BlockMsrMatrix M = op.OperatorMatrix;
-                var MgMap = op.Mapping;
+                var MgMap = op.DgMapping;
                 this.m_MultigridOp = op;
 
 
-                if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if(!M.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if(!M.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 
@@ -140,13 +155,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
-            get;
-            set;
-        }
+        ///// <summary>
+        ///// ~
+        ///// </summary>
+        //public Action<int, double[], double[], MultigridOperator> IterationCallback {
+        //    get;
+        //    set;
+        //}
 
         BlockMsrMatrix Mtx {
             get {
@@ -189,12 +204,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(iIter == 0) {
                     iter0_ResNorm = ResNorm;
 
-                    if(this.IterationCallback != null) {
-                        double[] _xl = xl.ToArray();
-                        double[] _bl = bl.ToArray();
-                        Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                        this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
-                    }
+                    //if(this.IterationCallback != null) {
+                    //    double[] _xl = xl.ToArray();
+                    //    double[] _bl = bl.ToArray();
+                    //    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
+                    //    this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
+                    //}
                 }
 
                 if(!TerminationCriterion(iIter, iter0_ResNorm, ResNorm)) {
@@ -215,12 +230,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-                if(this.IterationCallback != null) {
-                    double[] _xl = xl.ToArray();
-                    double[] _bl = bl.ToArray();
-                    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                    this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
-                }
+                //if(this.IterationCallback != null) {
+                //    double[] _xl = xl.ToArray();
+                //    double[] _bl = bl.ToArray();
+                //    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
+                //    this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
+                //}
             }
         }
 
@@ -254,7 +269,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public object Clone() {
             var clone = new BlockJacobi();
-            clone.IterationCallback = this.IterationCallback;
+            //clone.IterationCallback = this.IterationCallback;
             clone.omega = this.omega;
             clone.NoOfIterations = this.NoOfIterations;
             return clone;

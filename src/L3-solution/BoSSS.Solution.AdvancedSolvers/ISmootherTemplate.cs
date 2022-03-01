@@ -91,13 +91,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
         }
 
-         
+        ICoordinateMapping DgMapping {
+            get;
+        }
+
     }
 
-    public interface ISmallerSolver : ISolverSmootherTemplate {
-
-        void OtherInit(IOperatorMappingPair op);
+    public interface ISubSolver : ISolverSmootherTemplate {
+        
+        /// <summary>
+        /// Initializes the linear solver.
+        /// </summary>
+        /// <param name="op">
+        /// Provides the matrix for the solver.
+        /// </param>
+        void Init(IOperatorMappingPair op);
+        
     }
+   
 
 
 

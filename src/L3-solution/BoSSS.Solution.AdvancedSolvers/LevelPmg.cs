@@ -22,7 +22,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public class LevelPmg : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
         /// <summary>
-        /// Configuation
+        /// Configuration
         /// </summary>
         [Serializable]
         public class Config : ISolverFactory {
