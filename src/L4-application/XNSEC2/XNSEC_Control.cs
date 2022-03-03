@@ -575,11 +575,28 @@ namespace BoSSS.Application.XNSEC {
         public Dictionary<string, Tuple<double, double>> VariableBounds = null;
 
         /// <summary>
-        /// Reynolds homotopy values
+        /// Homotopy values
         /// Allows gradual increase of the Reynolds number to improve convergence
         /// </summary>
         [DataMember]
-        public double[] ReynoldsHomotopyValues;
+        public double[] SelfDefinedHomotopyArray;
+
+
+ 
+
+        public double[] HomotopyArray {
+            get {
+                //if (m_HomotopyArray == null && this.HomotopyApproach == HomotopyType.Manual) {
+                //    SelfDefinedHomotopyArray
+                //}
+                return SelfDefinedHomotopyArray;
+            }
+            set {
+                SelfDefinedHomotopyArray = value;
+                this.NoOfTimesteps = SelfDefinedHomotopyArray.Length;
+            }
+        }
+
 
         [DataMember]
         public string NameFieldForSensor;

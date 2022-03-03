@@ -642,15 +642,15 @@ namespace BoSSS.Application.XNSEC {
                         double AimedValue = Control.Reynolds;
 
                         //Linear
-                        //double slope = (AimedValue - StartingValue) / (1 - 0);
-                        //double val = slope * (HomotopyScalar - 0) + StartingValue;
-                        //this.CurrentHomotopyValue = val;
+                        double slope = (AimedValue - StartingValue) / (1 - 0);
+                        double val = slope * (HomotopyScalar - 0) + StartingValue;
+                        this.CurrentHomotopyValue = val;
 
-                        ////Exponential
-                        Console.WriteLine("Updating the homotopy value using a Exponential function ");
-                        double slope = (Math.Log10(AimedValue) - Math.Log10(StartingValue)) / (1 - 0);
-                        double reExponent = slope * (HomotopyScalar - 0) + Math.Log10(StartingValue);
-                        this.CurrentHomotopyValue = Math.Pow(10, reExponent);
+                        //////Exponential
+                        //Console.WriteLine("Updating the homotopy value using a Exponential function ");
+                        //double slope = (Math.Log10(AimedValue) - Math.Log10(StartingValue)) / (1 - 0);
+                        //double reExponent = slope * (HomotopyScalar - 0) + Math.Log10(StartingValue);
+                        //this.CurrentHomotopyValue = Math.Pow(10, reExponent);
 
                         Console.WriteLine("HomotopyScalar:" + HomotopyScalar);
                         Console.WriteLine("HomotopyValue:" + CurrentHomotopyValue);
@@ -757,6 +757,7 @@ namespace BoSSS.Application.XNSEC {
             }
         }
 
+        int homotopyStep = 0;
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             //Update Calls
             dt = GetTimestep();
@@ -785,6 +786,20 @@ namespace BoSSS.Application.XNSEC {
             }
 
 
+
+            // Selfmade homotopy
+            if (this.Control.HomotopyApproach == XNSEC_Control.HomotopyType.Manual) {
+                this.CurrentHomotopyValue= this.Control.SelfDefinedHomotopyArray[homotopyStep];
+                Console.WriteLine("Setting reynolds number to " + this.CurrentHomotopyValue);
+                var defaultcoefficients = XOP.OperatorCoefficientsProvider;
+                XOP.OperatorCoefficientsProvider = delegate (LevelSetTracker lstrk, SpeciesId spc, int quadOrder, int TrackerHistoryIdx, double time) {
+                    CoefficientSet cs = defaultcoefficients(lstrk, spc, quadOrder, TrackerHistoryIdx, time);
+                    cs.UserDefinedValues[Control.homotopieVariableName] = this.CurrentHomotopyValue;
+                    return cs;
+                };
+                homotopyStep++;
+            }
+
             var overallstart = DateTime.Now;
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
             bool SolverSuccess = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
@@ -802,23 +817,22 @@ namespace BoSSS.Application.XNSEC {
                 CalcErrors();
             }
 
-            //Calculate nusselt number
-            if ((Control.EdgeTagsNusselt != null) && Control.TimesteppingMode == AppControl._TimesteppingMode.Steady) {
-                Console.WriteLine("Calculating nusselt numbers!");
-                var temperatureXdg = (XDGField)(CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
-                var temp = temperatureXdg.ProjectToSinglePhaseField(4);
-                var NusseltResults = CalculateNusselt(TimestepNo, base.GridData, temp, Control);
-                this.CurrentSessionInfo.KeysAndQueries.Add("NusseltNumber0", NusseltResults[0]);
-                this.CurrentSessionInfo.KeysAndQueries.Add("NusseltNumber1", NusseltResults[1]);
-                this.CurrentSessionInfo.KeysAndQueries.Add("NusseltNumber2", NusseltResults[2]);
+            ////Calculate nusselt number
+            //if ((Control.EdgeTagsNusselt != null) && Control.TimesteppingMode == AppControl._TimesteppingMode.Steady) {
+            //    Console.WriteLine("Calculating nusselt numbers!");
+            //    var temperatureXdg = (XDGField)(CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
+            //    var temp = temperatureXdg.ProjectToSinglePhaseField(4);
+            //    var NusseltResults = CalculateNusselt(TimestepNo, base.GridData, temp, Control);
+            //    this.CurrentSessionInfo.KeysAndQueries.Add("NusseltNumber0", NusseltResults[0]);
+            //    this.CurrentSessionInfo.KeysAndQueries.Add("NusseltNumber1", NusseltResults[1]);
+            //    this.CurrentSessionInfo.KeysAndQueries.Add("NusseltNumber2", NusseltResults[2]);
 
-                Console.WriteLine("Nusselt0:" + NusseltResults[0]);
-                Console.WriteLine("Nusselt1:" + NusseltResults[1]);
-                Console.WriteLine("Nusselt2:" + NusseltResults[2]);
-            }
+            //    Console.WriteLine("Nusselt0:" + NusseltResults[0]);
+            //    Console.WriteLine("Nusselt1:" + NusseltResults[1]);
+            //    Console.WriteLine("Nusselt2:" + NusseltResults[2]);
+            //}
 
             //sensor.Update(CurrentState.Fields.Where(f => f.Identification == VariableNames.Temperature).Single());
-
             return dt;
         }
 

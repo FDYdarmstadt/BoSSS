@@ -59,7 +59,7 @@ namespace BoSSS.Application.XNSEC {
             C.SetDGdegree(DGp);
             // Solver configuration
             // ==============
-            C.DbPath = dbpath; // "D:\\bosss_db";
+            C.DbPath = dbpath; // "D:\\bosss_db"; 
             C.ProjectName = "CouetteFlowTempGrad_DG" + DGp + "K" + resolutions;
             C.ProjectDescription = "Steady Low Mach couette flow with temperature gradient";
             C.savetodb = dbpath == null ? false : true;
@@ -67,10 +67,9 @@ namespace BoSSS.Application.XNSEC {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NonLinearSolver.verbose = true;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
             C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.PhysicalParameters.IncludeConvection = false;
-            C.MatParamsMode = MaterialParamsMode.Constant;
+            C.MatParamsMode = MaterialParamsMode.PowerLaw;
             C.ChemicalReactionActive = false;
             C.EnableMassFractions = false;
 
@@ -78,7 +77,6 @@ namespace BoSSS.Application.XNSEC {
             double h = Math.Pow(2, -resolutions + 1); // cell length
             double cells = 1 / h;
             int cells2 = (int)cells;
-
             // Grid declaration
             // ===============
 
