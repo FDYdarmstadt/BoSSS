@@ -38,7 +38,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Wrapper around the monkey solver (supports GPU acceleration).
     /// </summary>
-    public class MonkeySolver : ISubSolver {
+    public class MonkeySolver : ISubsystemSolver {
 
         /// <summary>
         /// 

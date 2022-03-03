@@ -206,7 +206,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
             Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1); // containd the pressure hack
-            DGlowSelect.ModeSelector(lowFilter);
+            DGlowSelect.SetModeSelector(lowFilter);
 
             if (config.FullSolveOfCutcells)
                 ModifyLowSelector(DGlowSelect, op);
@@ -218,7 +218,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
                 Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1);
                 //Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg >= 0;
-                DGhighSelect.ModeSelector(highFilter);
+                DGhighSelect.SetModeSelector(highFilter);
 
                 if (config.FullSolveOfCutcells)
                     ModifyHighSelector(DGhighSelect, op);
@@ -314,7 +314,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 else
                     return Filter(iCell, iVar, iSpec, pDeg);
             };
-            sbs.ModeSelector(Modification);
+            sbs.SetModeSelector(Modification);
         }
 
         /// <summary>

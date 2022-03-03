@@ -31,7 +31,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Block-Jacobi smoother, maybe only useful in combination with the multi-grid solver (<see cref="ClassicMultigrid"/>).
     /// </summary>
-    public class BlockJacobi : ISubSolver {
+    public class BlockJacobi : ISubsystemSolver {
 
         ///// <summary>
         ///// Configuration of <see cref="BlockJacobi"/>

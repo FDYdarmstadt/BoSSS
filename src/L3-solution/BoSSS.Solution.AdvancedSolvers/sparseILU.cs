@@ -35,7 +35,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Parallel ILU from HYPRE library
     /// </summary>
-    public class sparseILU : ISubSolver, IDisposable {
+    public class sparseILU : ISubsystemSolver, IDisposable {
 
         public int IterationsInNested {
             get { return 0; }

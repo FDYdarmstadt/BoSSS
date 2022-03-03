@@ -27,7 +27,7 @@ using BoSSS.Platform.Utils;
 using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-    public class Jacobi : ISubSolver {
+    public class Jacobi : ISubsystemSolver {
 
         IOperatorMappingPair m_mgop;
 

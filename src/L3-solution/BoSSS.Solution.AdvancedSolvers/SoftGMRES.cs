@@ -33,7 +33,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Standard preconditioned GMRES.
     /// </summary>
-    public class SoftGMRES : ISubSolver, ISolverWithCallback, IProgrammableTermination {
+    public class SoftGMRES : ISubsystemSolver, ISolverWithCallback, IProgrammableTermination {
 
         Func<int, double, double, (bool bNotTerminate, bool bSuccess)> m_TerminationCriterion;
 

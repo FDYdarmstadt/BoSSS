@@ -67,7 +67,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             fullSel.CellSelector(BlockCellIdc.ToList(), false);
             var ExtRows = BlockMask.GetAllExternalRows(m_op.Mapping, m_op.OperatorMatrix);
             fullMask = new BlockMask(fullSel, ExtRows);
-            fullBlock = fullMask.GetSubBlockMatrix(m_op.OperatorMatrix);
+            fullBlock = fullMask.GetSubBlockMatrix_MpiSelf(m_op.OperatorMatrix);
 
             solver.Init(m_op,BlockCellIdc, m_ExtMatrix, fullBlock, fullMask);
             return solver;
@@ -174,13 +174,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var lowSel = new SubBlockSelector(op.Mapping);
             lowSel.CellSelector(BlockCellIdc, false);
-            lowSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !m_EqualOrder ? m_pLow : m_pLow - 1));
+            lowSel.SetModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !m_EqualOrder ? m_pLow : m_pLow - 1));
             if (m_FullSolveOfCutcells)
                 ModifyLowSelector(lowSel, op);
 
             var HiSel = new SubBlockSelector(op.Mapping);
             HiSel.CellSelector(BlockCellIdc, false);
-            HiSel.ModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !m_EqualOrder ? m_pLow : m_pLow - 1));
+            HiSel.SetModeSelector((int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !m_EqualOrder ? m_pLow : m_pLow - 1));
             if (m_FullSolveOfCutcells)
                 ModifyHighSelector(HiSel, op);
 
@@ -199,7 +199,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             //get subblocks from masking
             MultidimensionalArray[] hiBlocks = HiMask.GetDiagonalBlocks(op.OperatorMatrix, false, false); //gets diagonal-blocks only        
-            var loBlock = lowMask.GetSubBlockMatrix(op.OperatorMatrix);
+            var loBlock = lowMask.GetSubBlockMatrix_MpiSelf(op.OperatorMatrix);
 
             //get inverse of high-order blocks
             if (hiBlocks != null) {
@@ -267,7 +267,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 else
                     return Filter(iCell, iVar, iSpec, pDeg);
             };
-            sbs.ModeSelector(Modification);
+            sbs.SetModeSelector(Modification);
         }
 
 

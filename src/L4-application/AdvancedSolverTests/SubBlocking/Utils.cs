@@ -338,7 +338,7 @@ namespace AdvancedSolverTests.SubBlocking
             //see GetSubIndices
             switch (SType) {
                 case SelectionType.degrees:
-                    sbs.ModeSelector(p => p == 1);
+                    sbs.SetModeSelector(p => p == 1);
                     break;
                 case SelectionType.species:
                     sbs.SpeciesSelector(A);
@@ -347,7 +347,7 @@ namespace AdvancedSolverTests.SubBlocking
                     sbs.VariableSelector(1);
                     break;
                 case SelectionType.all_combined:
-                    sbs.ModeSelector(p => p == 1);
+                    sbs.SetModeSelector(p => p == 1);
                     sbs.SpeciesSelector(A);
                     sbs.VariableSelector(1);
                     break;

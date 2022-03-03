@@ -406,9 +406,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var coarseSelector = new SubBlockSelector(op.Mapping);
                 int OrderOfCoarseSystem = 1; // max order of low order system; pressure is k-1, if non-equalorder
                 Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
-                coarseSelector.ModeSelector(lowFilter);
+                coarseSelector.SetModeSelector(lowFilter);
                 coarseMask = new BlockMask(coarseSelector,ExtRows);
-                var coarseMatrix = coarseMask.GetSubBlockMatrix(op.OperatorMatrix);
+                
+                var coarseMatrix = coarseMask.GetSubBlockMatrix_MpiSelf(op.OperatorMatrix);
 
                 CoarseSolver.DefineMatrix(coarseMatrix);
             }
@@ -743,7 +744,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                         
 
-                        fullBlock = fullMask.GetSubBlockMatrix(Mop);
+                        fullBlock = fullMask.GetSubBlockMatrix_MpiSelf(Mop);
                         Debug.Assert(fullBlock.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF);
 
                         BlockMatrices[iPart] = fullBlock; // just used to calculate memory consumption
@@ -856,7 +857,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 else
                     return Filter(iCell, iVar, iSpec, pDeg);
             };
-            sbs.ModeSelector(Modification);
+            sbs.SetModeSelector(Modification);
         }
 
         private void NonOverlapRestrictionInit() {
@@ -1367,7 +1368,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
                 BlockIndices_Local[iPart] = locallist.ToArray();
                 BlockIndices_External[iPart] = extlist.ToArray();
-                Blocks.Add(BMs[iPart].GetSubBlockMatrix(Mop.OperatorMatrix));
+                Blocks.Add(BMs[iPart].GetSubBlockMatrix_MpiSelf(Mop.OperatorMatrix));
             }
 
 

@@ -106,7 +106,7 @@ namespace AdvancedSolverTests.SubBlocking {
 
                 //Act --- Extract SubMatrix
                 stw.Start();
-                BlockMsrMatrix subM = mask.GetSubBlockMatrix(M);
+                BlockMsrMatrix subM = mask.GetSubBlockMatrix_MpiSelf(M);
                 stw.Stop();
 
                 //Arrange --- Extract Blocks in Matlab and substract

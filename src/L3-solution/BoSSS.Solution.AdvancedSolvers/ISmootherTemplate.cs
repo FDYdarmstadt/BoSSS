@@ -82,6 +82,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
         long UsedMemory();
     }
 
+    /// <summary>
+    /// Minimal information which a solver/smoother might require; This is
+    /// - obviously, the matrix <see cref="OperatorMatrix"/>
+    /// - minimal information about the underlying GD discretization, see <see cref="DgMapping"/>
+    /// </summary>
+    /// <remarks>
+    /// Feb22: This was designed in an attempt to make the solvers defined by <see cref="ISolverSmootherTemplate"/>,
+    /// which always work on the **entire** mesh and system usable on **sub-systems**.
+    /// At this point, the functionality in <see cref="SubBlockSelector"/> and <see cref="BlockMask"/> allows
+    /// to extract sub-matrices of the full system matrix. However, it is not possible to apply a <see cref="ISolverSmootherTemplate"/>
+    /// onto this matrix, since those solvers require a full <see cref="MultigridOperator"/> 
+    /// to be initialized (<see cref="ISolverSmootherTemplate.Init(MultigridOperator)"/>.
+    /// </remarks>
     public interface IOperatorMappingPair {
         
         /// <summary>
@@ -91,13 +104,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
         }
 
+        /// <summary>
+        /// Minimal information about the DG structure behind matrix <see cref="OperatorMatrix"/>
+        /// </summary>
         ICoordinateMapping DgMapping {
             get;
         }
 
     }
 
-    public interface ISubSolver : ISolverSmootherTemplate {
+
+    /// <summary>
+    /// Defines a solver which is able to work on sub-system, i.e. some part of the matrix on the full mesh.
+    /// </summary>
+    public interface ISubsystemSolver : ISolverSmootherTemplate {
         
         /// <summary>
         /// Initializes the linear solver.
@@ -108,10 +128,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         void Init(IOperatorMappingPair op);
         
     }
-   
-
-
-
+  
 
     /// <summary>
     /// 
@@ -150,6 +167,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// - return value, 1st item: true to continue, false to terminate
         /// - return value, 2nd item: true for successful convergence (e.g. convergence criterion reached), false for failure (e.g. maximum number of iterations reached)
         /// </summary>
+        /// <remarks>
+        /// For an example implementation, see
+        /// <see cref="IterativeSolverConfig.DefaultTermination"/>.
+        /// </remarks>
         Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;

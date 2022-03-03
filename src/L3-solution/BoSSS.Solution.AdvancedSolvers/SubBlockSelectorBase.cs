@@ -79,9 +79,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Alias for <see cref="IBlockPartitioning.GetBlockLen(long)"/>; however, in local coordinates
+        /// Number of degrees-of-freedom per cell
         /// </summary>
-        /// <param name="jLoc"></param>
+        /// <param name="jLoc">local cell index</param>
         /// <returns></returns>
         int GetLength(int jLoc);
 
@@ -488,7 +488,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Selects Modes according to instruction.
         /// </summary>
-        public SubBlockSelectorBase ModeSelector(Func<int, bool> boolinstruct) {
+        public SubBlockSelectorBase SetModeSelector(Func<int, bool> boolinstruct) {
             this.m_ModeFilter = delegate (int iCell, int iVar, int iSpec, int pDeg) {
                 return boolinstruct(pDeg);
             };
@@ -498,7 +498,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Selects Modes according to instruction.
         /// </summary>
-        public SubBlockSelectorBase ModeSelector(Func<int, int, int, int, bool> boolinstruct) {
+        public SubBlockSelectorBase SetModeSelector(Func<int, int, int, int, bool> boolinstruct) {
             this.m_ModeFilter = boolinstruct;
             return this;
         }
@@ -877,23 +877,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         private int GetNp(int p) {
-            int Np = -1;
             int SpacDim = m_map.SpatialDimension;
             Debug.Assert(p >= 0);
             switch (SpacDim) {
-                case 1:
-                    Np = p + 1 + p + 1;
-                    break;
-                case 2:
-                    Np = (p * p + 3 * p + 2) / 2;
-                    break;
-                case 3:
-                    Np = (p * p * p + 6 * p * p + 11 * p + 6) / 6;
-                    break;
-                default:
-                    throw new Exception("wtf?Spacialdim=1,2,3 expected");
+                case 1: return p + 1;
+                case 2: return (p * p + 3 * p + 2) / 2;
+                case 3: return (p * p * p + 6 * p * p + 11 * p + 6) / 6;
+                default: throw new Exception("wtf?Spacialdim=1,2,3 expected");
             }
-            return Np;
         }
 
         /// <summary>

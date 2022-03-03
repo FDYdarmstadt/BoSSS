@@ -297,7 +297,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 // MUMPS condition number
                 // ======================
 
-                double condestFullMUMPS = (new BlockMask(FullSel)).GetSubBlockMatrix(Mtx).Condest_MUMPS();
+                double condestFullMUMPS = (new BlockMask(FullSel)).GetSubBlockMatrix_MpiSelf(Mtx).Condest_MUMPS();
                 //double condestInnerMUMPS = 1.0;
 
                 //if(InnerCellsMask.NoOfItemsLocally.MPISum() > 0) {

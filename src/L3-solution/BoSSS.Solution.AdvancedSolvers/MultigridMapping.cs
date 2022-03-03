@@ -105,9 +105,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Partitioning of the vector among MPI processes.
         /// </summary>
         public IPartitioning Partitioning {
-            get {
-                return this;
-            }
+            get;
         }
 
         /// <summary>
@@ -227,7 +225,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         BlockLen.Add(S);
                     }
-                    //var Partitioning = new Partitioning(LL);
+                    this.Partitioning = new Partitioning(LL);
                     long i0Part = Partitioning.i0;
                     m_i0 = new int[JAGGtot + 1];
                     for (int jag = 0; jag < JAGGloc; jag++) {
@@ -274,7 +272,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     m_Subblk_i0 = new int[][] { new int[] { 0 } };
                     m_SubblkLen = new int[][] { new int[] { this.MaximalLength } };
 
-                    //Partitioning = new Partitioning(this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells * this.MaximalLength);
+                    this.Partitioning = new Partitioning(this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells * this.MaximalLength);
                 }
 
 
@@ -1053,7 +1051,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public int GetNoOfSpecies(int jCell) {
-            return (AggBasis[0] as XdgAggregationBasis).GetNoOfSpecies(jCell);
+            return AggBasis[0].GetNoOfSpecies(jCell);
+            //if(AggBasis[0] is XdgAggregationBasis xb)
+            //    return xb.GetNoOfSpecies(jCell);
+            //else
+            //    return 1;
         }
 
         /// <summary>

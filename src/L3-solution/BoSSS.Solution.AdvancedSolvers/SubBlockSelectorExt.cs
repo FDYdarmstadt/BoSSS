@@ -247,6 +247,10 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         List<int> SubMatrixLen;
 
+
+        /// <summary>
+        /// inter-process communication of matrix rows
+        /// </summary>
         bool m_includeExternalCells;
 
         /// <summary>
@@ -295,8 +299,8 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// If you just want to get the <see cref="BlockMsrMatrix"/>, which corresponds to this <see cref="BlockMask"/>.
         /// This is the method to choose!
         /// </summary>
-        /// <returns>submatrix on MPI_Comm.SELF</returns>
-        public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source) {
+        /// <returns>sub-matrix on <see cref="IMPI_CommConstants.SELF"/></returns>
+        public BlockMsrMatrix GetSubBlockMatrix_MpiSelf(BlockMsrMatrix source) {
             return GetSubBlockMatrix(source, csMPI.Raw._COMM.SELF);
         }
 
@@ -304,7 +308,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// If you just want to get the <see cref="BlockMsrMatrix"/>, which corresponds to this <see cref="BlockMask"/>.
         /// This is the method to choose! In addition, MPI communicator can be defined via <paramref name="comm"/>.
         /// </summary>
-        /// <returns>submatrix on <paramref name="comm"/></returns>
+        /// <returns>sub-matrix on <paramref name="comm"/></returns>
         public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source, MPI_Comm comm) {
             if (source == null)
                 throw new ArgumentNullException();
@@ -355,8 +359,8 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Get array of diagonal cell-blocks covert by <see cref="BlockMask"/>. With the ignore flags,
         /// coupling blocks can be left out (e.g. blocks containing level-set).
-        /// - index i : block of i-th cell within mask (note: if some cell selection specified, i corresponds not to local cell index)
-        /// - content : matrix corresponding to masking
+        /// - index i: block of i-th cell within mask (note: if some cell selection specified, i corresponds not to local cell index)
+        /// - content: matrix corresponding to masking
         /// </summary>
         /// <param name="source">matrix to apply masking to</param>
         /// <param name="ignoreVarCoupling">flag to ignore variable coupling</param>
@@ -447,7 +451,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// Get SubMatrix corresponding to this <see cref="BlockMask"/>.
         /// With the ignore flags, coupling blocks can be left out (e.g. blocks containing level-set).
         /// If <paramref name="ignoreCellCoupling"/> is set true, only diagonal blocks are considered.
-        /// Probably slower than <see cref="GetSubBlockMatrix(BlockMsrMatrix)"/>.
+        /// Probably slower than <see cref="GetSubBlockMatrix_MpiSelf(BlockMsrMatrix)"/>.
         /// </summary>
         /// <remarks>
         /// If you are using <paramref name="ignoreCellCoupling"/>, you may dismiss coupling with other cells.
@@ -753,6 +757,10 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="map">Multigrid mapping</param>
         /// <param name="M">matrix distributed according to <paramref name="map"/></param>
         /// <returns></returns>
+        /// <remarks>
+        /// Exchange of matrix rows between MPI processors is implemented using multiplication with a permutation matrix.
+        /// In this way, the MPI-communication routines of <see cref="BlockMsrMatrix.Multiply(BlockMsrMatrix, BlockMsrMatrix)"/> can be re-used.
+        /// </remarks>
         public static BlockMsrMatrix GetAllExternalRows(MultigridMapping map, BlockMsrMatrix M) {
             using(new FuncTrace()) {
                 var extcells = map.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + map.LocalNoOfBlocks);

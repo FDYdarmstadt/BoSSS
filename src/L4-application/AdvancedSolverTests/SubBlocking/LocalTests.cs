@@ -81,7 +81,7 @@ namespace AdvancedSolverTests.SubBlocking
 
                 //Act --- Create Mapping from mask
                 stw.Start();
-                var submatrix = mask.GetSubBlockMatrix(MGOp.OperatorMatrix);
+                var submatrix = mask.GetSubBlockMatrix_MpiSelf(MGOp.OperatorMatrix);
                 stw.Stop();
                 var rowpart = submatrix._RowPartitioning;
                 var colpart = submatrix._ColPartitioning;
@@ -243,7 +243,7 @@ namespace AdvancedSolverTests.SubBlocking
 
                 //Act --- establish submatrix
                 stw.Start();
-                var Mext = mask.GetSubBlockMatrix(M);
+                var Mext = mask.GetSubBlockMatrix_MpiSelf(M);
                 stw.Stop();
 
                 var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(), true);
@@ -451,8 +451,8 @@ namespace AdvancedSolverTests.SubBlocking
 
                 //Act --- get subblocks
                 stw.Start();
-                BlockMsrMatrix subA = maskA.GetSubBlockMatrix(mgo.OperatorMatrix);
-                BlockMsrMatrix subB = maskB.GetSubBlockMatrix(mgo.OperatorMatrix);
+                BlockMsrMatrix subA = maskA.GetSubBlockMatrix_MpiSelf(mgo.OperatorMatrix);
+                BlockMsrMatrix subB = maskB.GetSubBlockMatrix_MpiSelf(mgo.OperatorMatrix);
                 stw.Stop();
 
                 //Assert --- compare masking of single spec cell

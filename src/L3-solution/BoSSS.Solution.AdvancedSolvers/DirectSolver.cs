@@ -40,7 +40,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// - MUMPS (<see cref="MUMPSSolver"/>) or
     /// - LAPACK.
     /// </summary>
-    public class DirectSolver : ISubSolver, ISolverWithCallback {
+    public class DirectSolver : ISubsystemSolver, ISolverWithCallback {
 
         /// <summary>
         /// 
