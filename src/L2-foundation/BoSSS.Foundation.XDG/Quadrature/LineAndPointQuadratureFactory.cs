@@ -438,12 +438,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             double[] roots = _roots[e];
                             Fullsum += referenceSegment.Length*edgeDet;
                             LineSegment[] subSegments = referenceSegment.Split(roots);
-                            
+
 
                             for (int k = 0; k < subSegments.Length; k++) {
                                 // Evaluate sub segment at center to determine sign
                                 NodeSet _point = new NodeSet(this.m_RefElement, subSegments[k].GetPointOnSegment(0.0));
-                                
+
                                 double weightFactor = subSegments[k].Length / referenceSegment.Length;
 
                                 if (weightFactor < this.Tolerance)
@@ -459,12 +459,82 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 List<double> LnMeas_weights;
                                 int[] LnMeas_noOfNodesPerEdge;
                                 bool PositiveSegment;
-                                if (levelSetValue[0, 0] <= 0) {
+                                bool Skip = false;
+                                if (levelSetValue[0, 0].Abs() < BLAS.MachineEps) {
+                                    // probably level set parallel to edge, skip this edge, no "normal" quadrature.
+                                    // alternative, check conformality of adjacent cells, edge should contain a quad rule of the opposite phase of the conformal cell.
+                                    // then the edge should be a quad rule for the opposite phase, dont ask me why, but any other way gives weird results in cells with hanging nodes.
+                                    bool empty = true;
+                                    if (!empty) {
+                                        NodeSet center_point = new NodeSet(this.m_RefElement, this.m_RefElement.Center);
+                                        MultidimensionalArray j_levelSetValue = LevelSetData.GetLevSetValues(center_point, jCell, 1);
+
+                                        int iEdge = -1;
+                                        int otherCell = -1;
+                                        bool jConformal = false;
+                                        bool otherConformal = false;
+                                        foreach (int em in cell2Edge_j) {
+                                            int _iedge = Math.Abs(em) - 1;
+                                            int _inOut = em > 0 ? 0 : 1;
+
+                                            if (EdgeData.CellIndices[_iedge, _inOut] == jCell && EdgeData.FaceIndices[_iedge, _inOut] == e) {
+                                                iEdge = _iedge;
+                                                if (_inOut == 0) {
+                                                    otherCell = EdgeData.CellIndices[_iedge, 1];
+                                                    jConformal = grdDat.Edges.IsEdgeConformalWithCell1(iEdge);
+                                                    otherConformal = grdDat.Edges.IsEdgeConformalWithCell2(iEdge);
+                                                } else {
+                                                    otherCell = EdgeData.CellIndices[_iedge, 0];
+                                                    jConformal = grdDat.Edges.IsEdgeConformalWithCell2(iEdge);
+                                                    otherConformal = grdDat.Edges.IsEdgeConformalWithCell1(iEdge);
+                                                }
+                                                break;
+                                            }
+                                        }
+
+                                        if (jConformal && otherConformal) {
+                                            // both conformal evaluate levelset in globally lower index cell and choose the phase of this edge quadrature accordingly (the levelset quadrature is valid in the lower index cell...)
+                                            int J = grdDat.Cells.NoOfLocalUpdatedCells;
+                                            long jCellGlob = jCell + grdDat.CellPartitioning.i0;
+                                            long otherCellGlob = otherCell < J ? otherCell + grdDat.CellPartitioning.i0 : grdDat.Parallel.GlobalIndicesExternalCells[otherCell - J];
+                                            bool jLower = jCellGlob < otherCellGlob;
+                                            // the relevant part for conformal cells is not in which phase this quadrature holds, but for parallel simulations, that all procs use the same phase!!!
+                                            // we could probably also just use the negative phase always, but this way this is consistent with the handling of hanging nodes below, where it matters which phase we choose!
+                                            if ((jLower && j_levelSetValue[0, 0] > 0) || (!jLower && j_levelSetValue[0, 0] <= 0)) {
+                                                LnMeas_nodes = LnMeasNeg_nodes;
+                                                LnMeas_weights = LnMeasNeg_weights;
+                                                LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
+                                                PositiveSegment = false;
+                                            } else {
+                                                LnMeas_nodes = LnMeasPos_nodes;
+                                                LnMeas_weights = LnMeasPos_weights;
+                                                LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
+                                                PositiveSegment = true;
+                                            }
+                                        } else if ((jConformal && j_levelSetValue[0, 0] > 0) || (!jConformal && j_levelSetValue[0, 0] <= 0)) {
+                                            LnMeas_nodes = LnMeasNeg_nodes;
+                                            LnMeas_weights = LnMeasNeg_weights;
+                                            LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
+                                            PositiveSegment = false;
+                                        } else {
+                                            LnMeas_nodes = LnMeasPos_nodes;
+                                            LnMeas_weights = LnMeasPos_weights;
+                                            LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
+                                            PositiveSegment = true;
+                                        }
+                                    } else {
+                                        LnMeas_nodes = LnMeasNeg_nodes;
+                                        LnMeas_weights = LnMeasNeg_weights;
+                                        LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
+                                        PositiveSegment = false;
+                                        Skip = true;
+                                    }
+                                } else if (levelSetValue[0, 0] < 0) {
                                     // negative segment...
                                     LnMeas_nodes = LnMeasNeg_nodes;
                                     LnMeas_weights = LnMeasNeg_weights;
                                     LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
-                                    PositiveSegment = false;
+                                    PositiveSegment = false;                                    
                                 } else {
                                     // positive segment
                                     LnMeas_nodes = LnMeasPos_nodes;
@@ -488,15 +558,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 //    MultidimensionalArray levelSetValue = tracker.GetLevSetValues(levSetIndex, 0, jCell, 1);
                                 //    end = levelSetValue[0, 0] > -Tolerance;
                                 //}
+                                if (!Skip) {
+                                    for (int m = 0; m < baseRule.NoOfNodes; m++) {
+                                        // Base rule _always_ is a line rule, thus Nodes[*, _0_]
+                                        Vector point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
 
-                                for (int m = 0; m < baseRule.NoOfNodes; m++) {
-                                    // Base rule _always_ is a line rule, thus Nodes[*, _0_]
-                                    Vector point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
+                                        LnMeas_weights.Add(weightFactor * baseRule.Weights[m]);
+                                        LnMeas_nodes.Add(point);
 
-                                    LnMeas_weights.Add(weightFactor * baseRule.Weights[m]);
-                                    LnMeas_nodes.Add(point);
-
-                                    LnMeas_noOfNodesPerEdge[e]++;
+                                        LnMeas_noOfNodesPerEdge[e]++;
+                                    }
                                 }
                             }
                         }
