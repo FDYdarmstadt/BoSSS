@@ -41,7 +41,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             public BlockMsrMatrix OperatorMatrix {
                 get {
-                    if(m_OperatorMatrix != null) {
+                    if(m_OperatorMatrix == null) {
                         m_OperatorMatrix = m_Mask.GetSubBlockMatrix(m_Unrestricted.OperatorMatrix, m_Unrestricted.OperatorMatrix.MPI_Comm);
                     }
                     return m_OperatorMatrix;
@@ -149,8 +149,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
         }
-
-
 
         public int IterationsInNested {
             get {

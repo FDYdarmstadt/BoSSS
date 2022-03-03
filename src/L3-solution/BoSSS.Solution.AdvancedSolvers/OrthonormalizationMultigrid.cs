@@ -66,7 +66,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public int MaxKrylovDim = int.MaxValue;
 
             /// <summary>
-            /// No restriction and prolongation on coarsest grid
+            /// - True: the default value: <see cref="OrthonormalizationMultigrid.CoarserLevelSolver"/> is initialized and solved on coarser level
+            /// - false: <see cref="OrthonormalizationMultigrid.CoarserLevelSolver"/> is initialized on the same level, but it may perform tis own restriction
             /// </summary>
             [DataMember]
             public bool CoarseOnLovwerLevel = true;
@@ -196,13 +197,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //throw new NotSupportedException("Missing coarse level solver.");
                     Console.WriteLine("OrthonormalizationMultigrid: running without coarse solver.");
                 } else {
-                    if(op.CoarserLevel != null) {
+                    if(myConfig.CoarseOnLovwerLevel && op.CoarserLevel != null) {
                         this.CoarserLevelSolver.Init(op.CoarserLevel);
-                        myConfig.CoarseOnLovwerLevel = true;
                     } else {
                         Console.WriteLine("OrthonormalizationMultigrid: running coarse solver on same level.");
                         this.CoarserLevelSolver.Init(op);
-                        myConfig.CoarseOnLovwerLevel = false;
                     }
                 }
 

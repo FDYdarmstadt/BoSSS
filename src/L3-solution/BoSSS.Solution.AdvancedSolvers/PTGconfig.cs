@@ -105,7 +105,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 NoOfIterations = 1,
                 
             };
-            
+
             /*
             var smoother = new SoftGMRES() {
                 MaxKrylovDim = 10,
@@ -114,11 +114,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
             };
             */
 
-            var templinearSolve = new OrthonormalizationMultigrid() {
-                PreSmoother = precond,
-                TerminationCriterion = this.DefaultTermination,
-                PostSmoother = bj
+            var loPsol = new DirectSolver() {
+
             };
+
+            var coarseSolver = new PRestriction() {
+                LowerPSolver = loPsol
+            };
+
+
+            var templinearSolve = new OrthonormalizationMultigrid() {
+                //CoarserLevelSolver = loPsol,
+                PreSmoother = coarseSolver,
+                TerminationCriterion = this.DefaultTermination,
+                PostSmoother = bj,
+                //CoarserLevelSolver = loPsol
+            };
+
+
+
 
             templinearSolve.Init(level);
             return templinearSolve;

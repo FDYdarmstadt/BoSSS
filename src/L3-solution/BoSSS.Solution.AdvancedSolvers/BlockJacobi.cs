@@ -32,17 +32,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// Block-Jacobi smoother, maybe only useful in combination with the multi-grid solver (<see cref="ClassicMultigrid"/>).
     /// </summary>
     public class BlockJacobi : ISubsystemSolver {
-
-        ///// <summary>
-        ///// Configuration of <see cref="BlockJacobi"/>
-        ///// </summary>
-        //public class myConfig : ConfigBase {
-        //    /// <summary>
-        //    /// Configuration cctor of <see cref="BlockJacobi"/>
-        //    /// </summary>
-        //public myConfig() {
-        int MaxSolverIterations = 1;
-        //}
+        
         /// <summary>
         /// Jacobi-Damping
         /// </summary>
@@ -52,28 +42,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Fixed number of block-Jacobi 
         /// </summary>
         public int NoOfIterations = 1;
-
-        //    /// <summary>
-        //    /// ~
-        //    /// </summary>
-        //    /// <returns></returns>
-        //    public override ISolverSmootherTemplate GetInstance() {
-        //        return new BlockJacobi();
-        //    }
-        //}
-
-        //myConfig m_config;
-
-        ///// <summary>
-        ///// ~
-        ///// </summary>
-        //public ConfigBase Config {
-        //    get {
-        //        if (m_config == null)
-        //            m_config = new myConfig();
-        //        return m_config;
-        //    }
-        //}
 
         IOperatorMappingPair m_MultigridOp;
 
@@ -92,9 +60,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             InitImpl(op);
         }
 
-        /// <summary>
-        /// ~
-        /// </summary>
         void InitImpl(IOperatorMappingPair op) {
             using(new FuncTrace()) {
                 if(object.ReferenceEquals(op, this.m_MultigridOp))
@@ -155,14 +120,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        ///// <summary>
-        ///// ~
-        ///// </summary>
-        //public Action<int, double[], double[], MultigridOperator> IterationCallback {
-        //    get;
-        //    set;
-        //}
-
         BlockMsrMatrix Mtx {
             get {
                 return m_MultigridOp.OperatorMatrix;
@@ -179,7 +136,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ~
         /// </summary>
         bool TerminationCriterion(int iter, double r0_l2, double r_l2) {
-            return (iter <= MaxSolverIterations);
+            return (iter <= this.NoOfIterations);
         }
 
 

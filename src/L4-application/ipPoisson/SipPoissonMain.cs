@@ -52,14 +52,13 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
+            //BoSSS.Solution.Application.InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_gmres_levelpmg);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
-            BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
+            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
             //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
-            FinalizeMPI();
-            return;
+            //FinalizeMPI();
+            //return;
             
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();

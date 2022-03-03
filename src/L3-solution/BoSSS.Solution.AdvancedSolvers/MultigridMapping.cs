@@ -55,7 +55,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public UnsetteledCoordinateMapping ProblemMapping {
             get;
-            private set;
+            //private set;
         }
 
 
@@ -64,7 +64,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public AggregationGridBasis[] AggBasis {
             get;
-            private set;
+            //private set;
         }
 
         /// <summary>
@@ -1047,11 +1047,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public int GetSpeciesIndex(int jCell, SpeciesId SId) {
-            return (AggBasis[0] as XdgAggregationBasis).GetSpeciesIndex(jCell, SId);
+            for(int iVar = 0; iVar < NoOfVariables; iVar++) {
+                if(AggBasis[iVar] is XdgAggregationBasis xb)
+                    return xb.GetSpeciesIndex(jCell, SId);
+            }
+            throw new NotSupportedException("Only DG variables; no species defined.");
         }
 
         public int GetNoOfSpecies(int jCell) {
-            return AggBasis[0].GetNoOfSpecies(jCell);
+            for(int iVar = 0; iVar < NoOfVariables; iVar++) {
+                if(AggBasis[iVar] is XdgAggregationBasis xb)
+                    return xb.GetNoOfSpecies(jCell);
+            }
+            return 1;
             //if(AggBasis[0] is XdgAggregationBasis xb)
             //    return xb.GetNoOfSpecies(jCell);
             //else
@@ -1064,7 +1072,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public SpeciesId[] UsedSpecies {
             get {
-                SpeciesId[] ret = new SpeciesId[0];
+                SpeciesId[] ret = null;
                 for(int iVar = 0; iVar < NoOfVariables; iVar++) {
                     if(IsXDGvariable(iVar)) {
                         if(ret == null) {
