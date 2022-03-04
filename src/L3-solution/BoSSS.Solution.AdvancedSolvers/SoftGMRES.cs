@@ -89,7 +89,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
                 if(Precond != null) {
-                    Precond.Init(op as MultigridOperator);
+                    if(Precond is ISubsystemSolver sssol) {
+                        sssol.Init(m_mgop);
+                    } else if(m_mgop is MultigridOperator mgOp) {
+                        Precond.Init(mgOp);
+                    } else {
+                        throw new NotSupportedException($"Unable to initialize preconditioner if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
+                    }
                 }
             }
         }

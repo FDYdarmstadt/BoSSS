@@ -2073,7 +2073,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.LinearSolver = new PTGconfig2() {
-                ConvergenceCriterion = 1e-8,
+                ConvergenceCriterion = 1e-9,
                 pMaxOfCoarseSolver = p - 1
             };
             

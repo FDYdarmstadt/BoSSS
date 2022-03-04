@@ -264,8 +264,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             switch(config.WhichSolver) {
                 case _whichSolver.PARDISO:
                 bool CachingOn = false;
-                if (ActivateCaching != null && MatrixNMapping is MultigridOperator mgop) {
-                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, mgop.LevelIndex);
+                if (ActivateCaching != null) {
+                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, (MatrixNMapping as MultigridOperator)?.LevelIndex ?? -1);
                 }
                 
                 solver = new PARDISOSolver() {

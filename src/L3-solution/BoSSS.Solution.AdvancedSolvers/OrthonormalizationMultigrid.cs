@@ -50,7 +50,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// One instance of this class represents only one level of the multigrid method; coarser 
     /// levels must be added by configuring the <see cref="OrthonormalizationMultigrid.CoarserLevelSolver"/> member.
     /// </summary>
-    public class OrthonormalizationMultigrid : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
+    public class OrthonormalizationMultigrid : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination, ISubsystemSolver {
 
 
         /// <summary>
@@ -59,6 +59,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         [DataContract]
         [Serializable]
         public class Config : IterativeSolverConfig {
+
+
+            /// <summary>
+            /// Ctor
+            /// </summary>
+            public Config() {
+            }
+
+
 
             /// <summary>
             /// config cctor of <see cref="OrthonormalizationMultigrid"/>
@@ -106,7 +115,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        Config myConfig = new Config();
+        Config myConfig;
 
         /// <summary>
         /// Solver configuration
@@ -121,9 +130,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ctor
         /// </summary>
         public OrthonormalizationMultigrid() {
-            TerminationCriterion = DefaultTermination;
+            myConfig = new Config();
+            TerminationCriterion = myConfig.DefaultTermination;
         }
 
+        /*
         static private (bool bNotTerminate, bool bSuccess) DefaultTermination(int iter, double R0_l2, double R_l2) {
             if(iter > 100)
                 return (false, false); // fail
@@ -133,7 +144,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return (true, false); // keep running
         }
-
+        */
 
         /// <summary>
         /// ~
@@ -147,18 +158,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// The matrix at this level.
         /// </summary>
-        public BlockMsrMatrix OpMatrix;
+        public BlockMsrMatrix OpMatrix => m_MgOperator.OperatorMatrix;
 
         /// <summary>
-        /// passed in <see cref="Init"/>
+        /// passed in <see cref="InitImpl"/>
         /// </summary>
-        MultigridOperator m_MgOperator;
+        IOperatorMappingPair m_MgOperator;
 
 
         /// <summary>
         /// defines the problem matrix
         /// </summary>
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
+
+        /// <summary>
+        /// defines the problem matrix
+        /// </summary>
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+        void InitImpl(IOperatorMappingPair op) {
             using(var tr = new FuncTrace()) {
                 if(object.ReferenceEquals(op, m_MgOperator))
                     return; // already initialized
@@ -168,13 +190,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 this.m_MgOperator = op;
                 var Mtx = op.OperatorMatrix;
-                var MgMap = op.Mapping;
-                if(op.LevelIndex == 0)
-                    viz = new MGViz(op);
+                var MgMap = op.DgMapping;
+                if(op is MultigridOperator _mgOp) {
+                    if(_mgOp.LevelIndex == 0)
+                        viz = new MGViz(_mgOp);
+                }
                 TrackMemory(1);
-                if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
 
@@ -186,7 +210,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // set operator
                 // ============
-                this.OpMatrix = Mtx;
 
 #if TEST
                 Console.WriteLine("level: {0} cells: {1} degree: {2}", op.LevelIndex, op.Mapping.LocalNoOfBlocks, op.Degrees[0]);
@@ -197,20 +220,44 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //throw new NotSupportedException("Missing coarse level solver.");
                     Console.WriteLine("OrthonormalizationMultigrid: running without coarse solver.");
                 } else {
-                    if(myConfig.CoarseOnLovwerLevel && op.CoarserLevel != null) {
-                        this.CoarserLevelSolver.Init(op.CoarserLevel);
+                    if(op is MultigridOperator mgOp) {
+                        if(myConfig.CoarseOnLovwerLevel && mgOp.CoarserLevel != null) {
+                            this.CoarserLevelSolver.Init(mgOp.CoarserLevel);
+                        } else {
+                            Console.WriteLine("OrthonormalizationMultigrid: running coarse solver on same level.");
+                            this.CoarserLevelSolver.Init(mgOp);
+                        }
                     } else {
-                        Console.WriteLine("OrthonormalizationMultigrid: running coarse solver on same level.");
-                        this.CoarserLevelSolver.Init(op);
+                        throw new NotSupportedException($"Unable to initialize coarse-level-solver if operator is not a {typeof(MultigridOperator)}");
                     }
                 }
 
                 // init smoother
                 // =============
-                if(PreSmoother != null)
-                    PreSmoother.Init(op);
-                if(PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
-                    PostSmoother.Init(op);
+                if(PreSmoother != null) {
+                    if(PreSmoother is ISubsystemSolver ssPreSmother) {
+                        ssPreSmother.Init(op);
+                    } else {
+                        if(op is MultigridOperator mgOp) {
+                            PreSmoother.Init(mgOp);
+                        } else {
+                            throw new NotSupportedException($"Unable to initialize pre-smoother if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
+                        }
+                    }
+                }
+                if(PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother)) {
+                    //PostSmoother.Init(op);
+                    if(PostSmoother is ISubsystemSolver ssPostSmother) {
+                        ssPostSmother.Init(op);
+                    } else {
+                        if(op is MultigridOperator mgOp) {
+                            PostSmoother.Init(mgOp);
+                        } else {
+                            throw new NotSupportedException($"Unable to initialize post-smoother if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
+                        }
+                    }
+
+                }
 #if TEST
                 try {
                     op.OperatorMatrix.CheckForNanOrInfM();
@@ -311,9 +358,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Res">output: on exit <paramref name="B"/> - <see cref="OpMatrix"/>*<paramref name="X"/></param>
         public void Residual(double[] Res, double[] X, double[] B) {
             using(new FuncTrace()) {
-                Debug.Assert(Res.Length == m_MgOperator.Mapping.LocalLength);
-                Debug.Assert(X.Length == m_MgOperator.Mapping.LocalLength);
-                Debug.Assert(B.Length == m_MgOperator.Mapping.LocalLength);
+                Debug.Assert(Res.Length == m_MgOperator.DgMapping.LocalLength);
+                Debug.Assert(X.Length == m_MgOperator.DgMapping.LocalLength);
+                Debug.Assert(B.Length == m_MgOperator.DgMapping.LocalLength);
                 int L = Res.Length;
                 //Res.SetV(B);
                 Array.Copy(B, Res, L);
@@ -406,7 +453,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // To ensure stability, we must start over with a re-scaled X!
                             // We have to re-scale what is remaining of X:
                             double Xnorm = X.MPI_L2Norm();
-                            Console.WriteLine("severe cancellation may have occurred, attempting re-orthonormalization");
+                            Console.WriteLine("severe cancellation may have occurred, attempting re-orthonormalization; L = " + X.Length);
                             ft.Info("severe cancellation may have occurred, norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + ")");
 
                             if(Xnorm < 1e-200) {
@@ -443,7 +490,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// optimized version of <see cref="MinimizeResidual"/>
+        /// Residual minimization in the space spanned by <see cref="SolHistory"/>/<see cref="MxxHistory"/>
         /// </summary>
         /// <param name="outX">
         /// - input: the solution build upon all vectors in the Krylov space **except the last one**
@@ -463,10 +510,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, int id) {
             using(var ft = new FuncTrace()) {
                 Debug.Assert(SolHistory.Count == MxxHistory.Count);
-                Debug.Assert(outX.Length == m_MgOperator.Mapping.LocalLength);
+                Debug.Assert(outX.Length == m_MgOperator.DgMapping.LocalLength);
                 //Debug.Assert(Sol0.Length == m_MgOperator.Mapping.LocalLength);
-                Debug.Assert(Res0.Length == m_MgOperator.Mapping.LocalLength);
-                Debug.Assert(outRes.Length == m_MgOperator.Mapping.LocalLength);
+                Debug.Assert(Res0.Length == m_MgOperator.DgMapping.LocalLength);
+                Debug.Assert(outRes.Length == m_MgOperator.DgMapping.LocalLength);
 
 
 
@@ -489,7 +536,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BLAS.daxpy(L, -alpha_i, MxxHistory[i], 1, outRes, 1); // ...and its effect on the residual
 
                 double xNorm = outX.MPI_L2Norm();
-                ft.Info("|x|: " + xNorm + ", last alpha was " + alpha_i);
+                if(m_MgOperator is MultigridOperator mgop && mgop.LevelIndex == 0) // prevent to much info dropping from lower levels
+                    ft.Info("|x|: " + xNorm + ", last alpha was " + alpha_i);
 
 
                 /*
@@ -618,16 +666,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 else
                     X = _xl.ToArray();
 
-                // clear history of coarse solvers
-                MxxHistory.Clear();
-                SolHistory.Clear();
-                Alphas.Clear();
+                
 
 
                 int L = X.Length;
                 int Lc;
                 if(this.CoarserLevelSolver != null && myConfig.CoarseOnLovwerLevel)
-                    Lc = m_MgOperator.CoarserLevel.Mapping.LocalLength;
+                    Lc = ((MultigridOperator)m_MgOperator).CoarserLevel.Mapping.LocalLength;
                 else
                     Lc = -1;
 
@@ -649,14 +694,58 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double iter0_resNorm = Res0.MPI_L2Norm();
                 double resNorm = iter0_resNorm;
-                this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator);
+                this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator as MultigridOperator);
 
+                //Console.Write("DG deg " + m_MgOperator.DgMapping.DgDegree.Min() + ", kdim = " + this.MxxHistory.Count + " ... ");
 
-                for(int iIter = 1; true; iIter++) {
+                // clear history of coarse solvers
+                MxxHistory.Clear();
+                SolHistory.Clear();
+                Alphas.Clear();
+                bool bIterate = true;
+                /*
+                var oldMxx = MxxHistory.ToArray();
+                var oldSol = SolHistory.ToArray();
+                MxxHistory.Clear();
+                SolHistory.Clear();
+                Alphas.Clear();
+
+                bool bIterate = false;
+                for(int i = 0; i < oldMxx.Length; i++) {
+                    MxxHistory.Add(oldMxx[i]);
+                    SolHistory.Add(oldSol[i]);
+                    resNorm = MinimizeResidual(X, Sol0, Res0, Res, -1);
+                }
+                //Console.WriteLine("Reduction through wisdom: " + (resNorm/iter0_resNorm));
+                {
+                    
+                    
+                    var termState0 = TerminationCriterion(0, iter0_resNorm, resNorm);
+                    if(!termState0.bNotTerminate) {
+                        Converged = termState0.bSuccess;
+
+                    } else {
+                        bIterate = true;
+                        
+                    }
+                }
+
+                if(oldMxx.Length > 40) {
+                    MxxHistory.Clear();
+                    SolHistory.Clear();
+                    Alphas.Clear();
+                }
+                oldSol = null;
+                oldMxx = null;
+                //*/
+                
+                for(int iIter = 1; bIterate; iIter++) {
                     var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if(!termState.bNotTerminate) {
                         Converged = termState.bSuccess;
                         break;
+                    } else {
+                        
                     }
 
                     TrackMemory(2);
@@ -692,7 +781,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Converged = termState2.bSuccess;
                             break;
                         }
-
                     }
 
                     //PlottyMcPlot(rl, X, Xprev, Corr, B);
@@ -709,20 +797,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             double[] vl = new double[L];
                             if(myConfig.CoarseOnLovwerLevel) {
+
+                                var _MgOperator = m_MgOperator as MultigridOperator;
+
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 // coarse grid solver defined on COARSER MESH LEVEL:
                                 // this solver must perform restriction and prolongation
                                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 using(new BlockTrace("Restriction", f)) {
                                     // restriction of residual
-                                    this.m_MgOperator.CoarserLevel.Restrict(Res, ResCoarse);
+                                    _MgOperator.CoarserLevel.Restrict(Res, ResCoarse);
                                 }
                                 // Berechnung der Grobgitterkorrektur
                                 double[] vlc = new double[Lc];
                                 this.CoarserLevelSolver.Solve(vlc, ResCoarse);
                                 using(new BlockTrace("Prolongation", f)) {
                                     // Prolongation der Grobgitterkorrektur
-                                    this.m_MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
+                                    _MgOperator.CoarserLevel.Prolongate(1.0, vl, 1.0, vlc);
                                 }
 
                             } else {
@@ -790,7 +881,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // iteration callback
                     // ------------------
                     this.ThisLevelIterations++;
-                    IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator);
+                    IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator as MultigridOperator);
 
                     SpecAnalysisSample(iIter, X, "_");
 
@@ -852,9 +943,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="name"></param>
         private void SpecAnalysisSample(int iter, double[] RealX, string name) {
 
-            if(ExtractSamples == null || this.m_MgOperator.LevelIndex > 0)
-                return; // zero overhead
+            var _mgOp = this.m_MgOperator as MultigridOperator;
 
+            if(ExtractSamples == null || _mgOp.LevelIndex > 0)
+                return; // zero overhead
 
             if(cloneofX == null)
                 cloneofX = new double[RealX.Length];
@@ -879,13 +971,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get {
                 int iter = 0;
 
-                if(PreSmoother != null)
-                    iter += this.PreSmoother.IterationsInNested + this.PreSmoother.ThisLevelIterations;
+                iter += (this.PreSmoother?.IterationsInNested ?? 0) + (this.PreSmoother?.ThisLevelIterations ?? 0);
 
                 if(this.PostSmoother != null && !object.ReferenceEquals(PreSmoother, PostSmoother))
                     iter += this.PostSmoother.IterationsInNested + this.PostSmoother.ThisLevelIterations;
 
-                iter += this.CoarserLevelSolver.IterationsInNested + this.CoarserLevelSolver.ThisLevelIterations;
+                iter += (this.CoarserLevelSolver?.IterationsInNested ?? 0) + (this.CoarserLevelSolver?.ThisLevelIterations ?? 0);
 
                 return iter;
             }
@@ -960,10 +1051,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void Dispose() {
             TrackMemory(3);
             //if (m_MTracker != null) m_MTracker.Dispose();
-            if(m_MgOperator != null && m_verbose && this.m_MgOperator.LevelIndex == 0) {
-                Console.WriteLine($"OrthoMG - total memory: {UsedMemory()} MB");
-                Console.WriteLine($"OrthoMG - internal memory: {MemoryOfMultigrid()} MB");
-                Console.WriteLine($"OrthoMG - smoother memory: {MemoryOfSmoother()} MB");
+            if(m_verbose && m_MgOperator != null && m_MgOperator is MultigridOperator _mgop && _mgop.LevelIndex == 0) {
+                Console.WriteLine($"OrthoMG - total memory: {UsedMemory()/(1024*1024)} MB");
+                Console.WriteLine($"OrthoMG - internal memory: {MemoryOfMultigrid()/(1024*1024)} MB");
+                Console.WriteLine($"OrthoMG - smoother memory: {MemoryOfSmoother()/(1024*1024)} MB");
             }
             if(this.CoarserLevelSolver != null)
                 this.CoarserLevelSolver.Dispose();
@@ -972,6 +1063,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.SolHistory = null;
             this.MxxHistory = null;
             this.Alphas = null;
+            this.m_MgOperator = null;
 
             if(PreSmoother != null) 
                 this.PreSmoother.Dispose();
@@ -980,5 +1072,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //this.PreSmoother = null; // don't delete - we need this again for the next init
             //this.PostSmoother = null;  // don't delete - we need this again for the next init
         }
+
+
     }
 }
