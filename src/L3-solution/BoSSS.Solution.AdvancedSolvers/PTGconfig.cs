@@ -136,13 +136,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     s.config.TestSolution = false;
                     s.ActivateCaching = (a, b) => true;
                     return s;
-                } else if(iLevel >= 20) {
+                } else if(iLevel >= 2) {
                     // +++++++++++++++++++++++++++
                     // intermediate level / coarse
                     // +++++++++++++++++++++++++++
 
                     var gmRes = new SoftGMRES();
-                    gmRes.TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= 3, true);
+                    gmRes.TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= 4, true);
                     gmRes.Precond = CreateLevelRecursive(dgDeg - 1, iLevel + 1);
                     return gmRes;
 
