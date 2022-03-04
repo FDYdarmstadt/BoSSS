@@ -95,6 +95,7 @@ namespace BoSSS.Foundation.Quadrature {
             // ==========
 
             BitArray CellBitMask = new BitArray(J);
+            KeyValuePair<long, long>[] ExternalCells = new KeyValuePair<long, long>[NoEdg]; // global cellpair to exchange rule from, Key : Src, Value : Dest
             int[] Cells = new int[NoEdg]; // mapping: Edge Index --> Cell Index (both geometrical)
             int[] Faces = new int[NoEdg]; // mapping: Edge Index --> Face 
             BitArray MaxDomainMask = m_maxDomain.GetBitMask();
@@ -114,11 +115,9 @@ namespace BoSSS.Foundation.Quadrature {
                     bool conf0 = grd.Edges.IsEdgeConformalWithCell1(iEdge);
                     bool conf1 = grd.Edges.IsEdgeConformalWithCell2(iEdge);
 
-
                     // this gives no errors for surface elements in 3D
                     bool Allow0 = MaxDomainMask[jCell0];
                     bool Allow1 = (jCell1 >= 0 && jCell1 < J) ? MaxDomainMask[jCell1] : false;
-
 
                     // //this is required for MPI parallel calculations
                     //bool Allow0 = true;// AllowedCells[jCell0];
@@ -146,6 +145,9 @@ namespace BoSSS.Foundation.Quadrature {
                             CellBitMask[jCell0] = true;
                             Faces[i] = Edg2Fac[iEdge, 0];
                             Cells[i] = jCell0;
+                            if (jCell1 >= grd.Cells.NoOfLocalUpdatedCells) {
+                                ExternalCells[i] = new KeyValuePair<long, long>(grd.Parallel.GetGlobalCellIndex(jCell0), grd.Parallel.GetGlobalCellIndex(jCell1));
+                            }
 
                         } else if (conf1 && Allow1) {
                             // cell 1 is allowed and conformal:
@@ -161,6 +163,9 @@ namespace BoSSS.Foundation.Quadrature {
                             CellBitMask[jCell0] = true;
                             Faces[i] = -Edg2Fac[iEdge, 0]; // by a negative index, we mark a non-conformal edge
                             Cells[i] = jCell0;
+                            if (jCell1 >= grd.Cells.NoOfLocalUpdatedCells) {
+                                ExternalCells[i] = new KeyValuePair<long, long>(grd.Parallel.GetGlobalCellIndex(jCell1), grd.Parallel.GetGlobalCellIndex(jCell0));
+                            }
 
                         } else if (Allow1) {
                             // cell 1 is allowed, but NOT conformal
@@ -183,7 +188,7 @@ namespace BoSSS.Foundation.Quadrature {
             IChunkRulePair<CellBoundaryQuadRule>[] cellBndRule = this.m_cellBndQF.GetQuadRuleSet(CellMask, order).ToArray();
             int[] jCell2PairIdx = new int[J];
             for (int i = 0; i < cellBndRule.Length; i++) {
-                var chk = cellBndRule[i].Chunk;
+                var chk = cellBndRule[i].Chunk; // cell chunk
                 for (int jCell = chk.JE - 1; jCell >= chk.i0; jCell--) {
                     jCell2PairIdx[jCell] = i + 555;
                 }
@@ -197,7 +202,6 @@ namespace BoSSS.Foundation.Quadrature {
                     iChunk[i] = int.MinValue;
                 }
             }
-
             // build rule
             // ==========
             {
@@ -212,7 +216,18 @@ namespace BoSSS.Foundation.Quadrature {
                     if (Faces[i] >= 0) {
                         qrEdge = this.CombineQr(null, CellBndR, Faces[i]);
                     } else {
-                        throw new NotSupportedException("currently no support for non-conformal edges.");
+                        int iEdge = EdgeIndices[i];
+                        int _inOut = Edg2Cel[iEdge, 0] == Cells[i] ? 0 : 1;
+                        int jCell0 = Edg2Cel[iEdge, _inOut];
+                        int jCell1 = Edg2Cel[iEdge, Math.Abs(_inOut - 1)];
+                        if (jCell1 >= grd.Cells.NoOfLocalUpdatedCells) {
+                            // cell on this proc does not qualify, but maybe we can find a suitable candidate on an external proc and import the rule
+                            // for now create an empty rule, we will exchange later
+                            Cells[i] = jCell1;
+                            qrEdge = QuadRule.CreateEmpty(this.RefElement, 1, this.RefElement.SpatialDimension);
+                        } else {
+                            throw new NotSupportedException("currently no support for non-conformal edges.");
+                        }
                     }
 
                     qrEdge.Nodes.LockForever();
@@ -221,6 +236,43 @@ namespace BoSSS.Foundation.Quadrature {
                     //} else {
                     //    Debug.Assert(Ret[i] != null);
                     //}
+                }
+            }
+
+            // MPI- Exchange
+            // =============
+            {
+                double[][,] NodesList = new double[NoEdg][,];
+                double[][] WeightsList = new double[NoEdg][];
+                for (int i = 0; i < NoEdg; i++) {
+                    // only send external cells and those rules where this proc is the sender
+                    if (!(ExternalCells[i].Key == 0 && ExternalCells[i].Value == 0) && grd.CellPartitioning.FindProcess(ExternalCells[i].Key) == grd.CellPartitioning.MpiRank) {
+                        NodesList[i] = Ret[i].Rule.Nodes.To2DArray();
+                        WeightsList[i] = Ret[i].Rule.Weights.To1DArray();
+                    }
+                }
+
+                var NodesListGlob = MPI.Wrappers.MPIExtensions.MPIAllGatherO(NodesList);
+                var WeightsListGlob = MPI.Wrappers.MPIExtensions.MPIAllGatherO(WeightsList);
+                var ExternalCellsGlob = MPI.Wrappers.MPIExtensions.MPIAllGatherO(ExternalCells);
+
+                for (int i = 0; i < NoEdg; i++) {
+                    if(Cells[i] >= grd.Cells.NoOfLocalUpdatedCells) {
+                        var CellPair = ExternalCells[i];
+                        int rank1 = grd.CellPartitioning.FindProcess(CellPair.Key);
+                        int j = ExternalCellsGlob[rank1].IndexOf(CellPair, (kvp0, kvp1) => kvp0.Key == kvp1.Key && kvp0.Value == kvp1.Value);
+
+                        if (j >= 0) {
+                            QuadRule qrEdge = new QuadRule();
+                            qrEdge.Nodes = new NodeSet(this.RefElement, NodesListGlob[rank1][j]);
+                            qrEdge.Weights = MultidimensionalArray.CreateWrapper(WeightsListGlob[rank1][j], new int[] { WeightsListGlob[rank1][j].Length });
+                            qrEdge.Nodes.LockForever();
+                            qrEdge.Weights.LockForever();
+                            Ret[i] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(EdgeIndices[i]), qrEdge);
+                        } else {
+                            throw new NotSupportedException("No suitable rule found on external proc, currently no support for non-conformal edges.");
+                        }
+                    }
                 }
             }
 
