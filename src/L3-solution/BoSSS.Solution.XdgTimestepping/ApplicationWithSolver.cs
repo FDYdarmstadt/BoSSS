@@ -161,7 +161,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var resFields = InstantiateResidualFields();
             CurrentResidualVector = new CoordinateVector(resFields);
             foreach(var f in resFields) {
-                base.RegisterField(f/*,IOListOption.Always*/);
+                base.RegisterField(f, IOListOption.Always);
             }
 
             CreateAdditionalFields();
