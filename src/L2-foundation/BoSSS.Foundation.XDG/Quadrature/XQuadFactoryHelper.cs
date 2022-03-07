@@ -215,6 +215,24 @@ namespace BoSSS.Foundation.XDG {
         /// Returns a rule factory for the boundary of surface-elements 
         /// (elements on the zero-level-set surface), i.e. on \f$  K \cap \mathfrak{I}\f$ .
         /// This are point integrals in 2D and line integrals in 3D.
+        /// This is used as a backup for when we use two level sets, but one of them is coinciding with the edge (typically the second one)
+        /// We need the near-band of both levelsets, when handling hanging nodes on this coinciding edge
+        /// </summary>
+        /// <returns>
+        /// the returned factory produces <see cref="QuadRule"/>'s on edges
+        /// </returns>
+        public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex, int jlevSetIndex, RefElement KrefVol) {
+            var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
+            int D = gdat.SpatialDimension;
+            return new EdgeRuleFromCellBoundaryFactory(gdat,
+                _GetSurfaceElement_BoundaryRuleFactory(levSetIndex, KrefVol),
+                this.m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).Union(this.m_LevelSetDatas[jlevSetIndex].Region.GetCutCellMask4LevSet(jlevSetIndex)));
+        }
+
+        /// <summary>
+        /// Returns a rule factory for the boundary of surface-elements 
+        /// (elements on the zero-level-set surface), i.e. on \f$  K \cap \mathfrak{I}\f$ .
+        /// This are point integrals in 2D and line integrals in 3D.
         /// </summary>
         /// <returns>
         /// the returned factory produces <see cref="QuadRule"/>'s on edges
@@ -312,6 +330,47 @@ namespace BoSSS.Foundation.XDG {
                     var r = new EdgeRuleFromCellBoundaryFactory(gdat,
                         GetCellFaceFactory(levSetIndex, KrefVol, JumpTypes.Heaviside),
                         m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex));
+                    return r;
+                } else if (jmp == JumpTypes.OneMinusHeaviside) {
+
+                    return new ComplementaryRuleFactory(GetEdgeRuleFactory(levSetIndex, JumpTypes.Heaviside, KrefVol));
+                } else
+                    throw new ArgumentOutOfRangeException("unsupported jump type");
+            }
+        }
+
+        /// <summary>
+        /// Generates a quadrature rule factory for the cut edge integrals.
+        /// Version with extended mask, important for handling of hanging nodes in double cut cells
+        /// </summary>
+        public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex, int jlevSetIndex, JumpTypes jmp, RefElement KrefVol) {
+
+            //void Phi(int x, NodeSet nodes, MultidimensionalArray inU, MultidimensionalArray outU)
+            //{
+            //    ((LevelSet)m_LevelSetDatas[levSetIndex].LevelSet).EvaluateEdge(x, 1, nodes, inU, outU);
+            //    inU.Scale(-1);
+            //};
+
+            //return new BruteForceQuadratureFactory(new BruteForceEdgeScheme(Phi));
+
+            var gdat = this.m_LevelSetDatas[levSetIndex].GridDat;
+            int D = gdat.SpatialDimension;
+
+            if (!gdat.Grid.RefElements.Contains(KrefVol, (a, b) => object.ReferenceEquals(a, b)))
+                throw new ArgumentException();
+
+            CheckJmp(jmp);
+
+            if (D == 2) {
+                var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+                    GetCellFaceFactory(levSetIndex, KrefVol, jmp),
+                    m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).Union(m_LevelSetDatas[jlevSetIndex].Region.GetCutCellMask4LevSet(jlevSetIndex)));
+                return r;
+            } else {
+                if (jmp == JumpTypes.Heaviside) {
+                    var r = new EdgeRuleFromCellBoundaryFactory(gdat,
+                        GetCellFaceFactory(levSetIndex, KrefVol, JumpTypes.Heaviside),
+                        m_LevelSetDatas[levSetIndex].Region.GetCutCellMask4LevSet(levSetIndex).Union(m_LevelSetDatas[jlevSetIndex].Region.GetCutCellMask4LevSet(jlevSetIndex)));
                     return r;
                 } else if (jmp == JumpTypes.OneMinusHeaviside) {
 
