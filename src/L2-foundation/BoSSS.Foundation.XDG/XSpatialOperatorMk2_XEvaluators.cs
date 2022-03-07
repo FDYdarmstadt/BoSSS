@@ -220,7 +220,8 @@ namespace BoSSS.Foundation.XDG {
 
                             SpeciesFrameVector<V> vec = vec_spc[iSpecies];
 
-                            foreach(var SpeciesBuilder in new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder, SpeciesContactLineBuilder }) {
+                            var SpeciesBuilders = DoEdge ? new[] { SpeciesBulkMtxBuilder, SpeciesGhostEdgeBuilder, SpeciesSurfElmBuilder, SpeciesContactLineBuilder } : new[] { SpeciesBulkMtxBuilder };
+                            foreach (var SpeciesBuilder in SpeciesBuilders) {
 
                                 if(SpeciesBuilder.ContainsKey(SpeciesId)) {
 
@@ -252,78 +253,79 @@ namespace BoSSS.Foundation.XDG {
                     // build matrix, coupling
                     ///////////////////
 
-                    
+
                     using(new BlockTrace("surface_integration", tr)) {
+                        if (DoEdge) {
 #if DEBUG
-                        {
-                            // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
-                            int[] crAllCount = CouplingRules.Count.MPIAllGather();
-                            for(int rnk = 0; rnk < crAllCount.Length; rnk++) {
-                                Debug.Assert(crAllCount[rnk] == CouplingRules.Count);
+                            {
+                                // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
+                                int[] crAllCount = CouplingRules.Count.MPIAllGather();
+                                for(int rnk = 0; rnk < crAllCount.Length; rnk++) {
+                                    Debug.Assert(crAllCount[rnk] == CouplingRules.Count);
+                                }
                             }
-                        }
 #endif
 
-                        var allBuilders = new List<LECQuadratureLevelSet<M, V>>();
-                        foreach(var tt in this.CouplingRules) {
-                            int iLevSet = tt.Item1;
-                            var SpeciesA = tt.Item2;
-                            var SpeciesB = tt.Item3;
-                            var rule = tt.Item4;
+                            var allBuilders = new List<LECQuadratureLevelSet<M, V>>();
+                            foreach(var tt in this.CouplingRules) {
+                                int iLevSet = tt.Item1;
+                                var SpeciesA = tt.Item2;
+                                var SpeciesB = tt.Item3;
+                                var rule = tt.Item4;
 #if DEBUG
-                            int[] all_iLs = iLevSet.MPIAllGather();
-                            int[] allSpcA = SpeciesA.cntnt.MPIAllGather();
-                            int[] allSpcB = SpeciesB.cntnt.MPIAllGather();
-                            for(int rnk = 0; rnk < all_iLs.Length; rnk++) {
-                                Debug.Assert(all_iLs[rnk] == iLevSet);
-                                Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
-                                Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
-                            }
+                                int[] all_iLs = iLevSet.MPIAllGather();
+                                int[] allSpcA = SpeciesA.cntnt.MPIAllGather();
+                                int[] allSpcB = SpeciesB.cntnt.MPIAllGather();
+                                for(int rnk = 0; rnk < all_iLs.Length; rnk++) {
+                                    Debug.Assert(all_iLs[rnk] == iLevSet);
+                                    Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
+                                    Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
+                                }
 
 #endif
 
-                            var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
-                                                             m_Xowner,
-                                                             OnlyAffine ? default(M) : Matrix, AffineOffset,
-                                                             CodomainMapping, Parameters, DomainMapping,
-                                                             lsTrk, iLevSet, TrackerHistoryIndex, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
-                                                             rule);
-                            allBuilders.Add(MtxBuilder);
+                                var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
+                                                                 m_Xowner,
+                                                                 OnlyAffine ? default(M) : Matrix, AffineOffset,
+                                                                 CodomainMapping, Parameters, DomainMapping,
+                                                                 lsTrk, iLevSet, TrackerHistoryIndex, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
+                                                                 rule);
+                                allBuilders.Add(MtxBuilder);
 
-                            if(trx != null) {
-                                trx.TransceiveFinish();
-                                trx = null; // we only need to do comm once!
+                                if(trx != null) {
+                                    trx.TransceiveFinish();
+                                    trx = null; // we only need to do comm once!
+                                }
+                            }
+
+                            // Note: this kind of deferred execution
+                            // (first, collecting all integrators in a list and second, executing them in a separate loop)
+                            // should prevent waiting for unevenly balanced level sets
+
+                            foreach(var MtxBuilder in allBuilders) {
+                                MtxBuilder.time = time;
+                                UpdateLevelSetCoefficients(MtxBuilder.m_LevSetIdx, MtxBuilder.SpeciesA, MtxBuilder.SpeciesB);
+                                MtxBuilder.Execute();
+
+#if DEBUG
+                                if(Matrix != null && OnlyAffine == false)
+                                    Matrix.CheckForNanOrInfM("Matrix assembly, after surface integration: ");
+                                if(AffineOffset != null)
+                                    GenericBlas.CheckForNanOrInfV(AffineOffset, messageprefix: "Affine vector assembly, after surface integration: ");
+#endif
+
                             }
                         }
 
-                        // Note: this kind of deferred execution
-                        // (first, collecting all integrators in a list and second, executing them in a separate loop)
-                        // should prevent waiting for unevenly balanced level sets
-
-                        foreach(var MtxBuilder in allBuilders) {
-                            MtxBuilder.time = time;
-                            UpdateLevelSetCoefficients(MtxBuilder.m_LevSetIdx, MtxBuilder.SpeciesA, MtxBuilder.SpeciesB);
-                            MtxBuilder.Execute();
-
-#if DEBUG
-                            if(Matrix != null && OnlyAffine == false)
-                                Matrix.CheckForNanOrInfM("Matrix assembly, after surface integration: ");
-                            if(AffineOffset != null)
-                                GenericBlas.CheckForNanOrInfV(AffineOffset, messageprefix: "Affine vector assembly, after surface integration: ");
-#endif
-
+                        // allow all processes to catch up
+                        // -------------------------------
+                        if(trx != null) {
+                            trx.TransceiveFinish();
+                            trx = null;
                         }
+
                     }
-                   
-                    // allow all processes to catch up
-                    // -------------------------------
-                    if(trx != null) {
-                        trx.TransceiveFinish();
-                        trx = null;
-                    }
-
-
-                }
+                }                
             }
 
             
@@ -408,7 +410,8 @@ namespace BoSSS.Foundation.XDG {
                             int iSpecies = Array.IndexOf(ReqSpecies, SpeciesId);
                             var vec = vec_spc[iSpecies];
 
-                            foreach (var SpeciesEval in new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval, SpeciesContactLineEval }) {
+                            var SpeciesBuilders = DoEdge ? new[] { SpeciesBulkEval, SpeciesGhostEval, SpeciesSurfElmEval, SpeciesContactLineEval } : new[] { SpeciesBulkEval };
+                            foreach (var SpeciesEval in SpeciesBuilders) {
 
                                 if (SpeciesEval.ContainsKey(SpeciesId)) {
 
@@ -434,62 +437,64 @@ namespace BoSSS.Foundation.XDG {
                     ///////////////////
 
                     using (new BlockTrace("surface_integration", tr)) {
+                        if (DoEdge) {
 #if DEBUG
-                    {
-                        // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
-                        int[] crAllCount = CouplingRules.Count.MPIAllGather();
-                        for(int rnk = 0; rnk < crAllCount.Length; rnk++) {
-                            Debug.Assert(crAllCount[rnk] == CouplingRules.Count);
-                        }
-                    }
-#endif
-                        var necList = new List<NECQuadratureLevelSet<Tout>> ();
-
-                        foreach(var tt in this.CouplingRules) {
-                            int iLevSet = tt.Item1;
-                            var SpeciesA = tt.Item2;
-                            var SpeciesB = tt.Item3;
-                            var rule = tt.Item4;
-#if DEBUG
-                            int[] all_iLs = iLevSet.MPIAllGather();
-                            int[] allSpcA = SpeciesA.cntnt.MPIAllGather();
-                            int[] allSpcB = SpeciesB.cntnt.MPIAllGather();
-                            for(int rnk = 0; rnk < all_iLs.Length; rnk++) {
-                                Debug.Assert(all_iLs[rnk] == iLevSet);
-                                Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
-                                Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
+                            {
+                                // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!
+                                int[] crAllCount = CouplingRules.Count.MPIAllGather();
+                                for(int rnk = 0; rnk < crAllCount.Length; rnk++) {
+                                    Debug.Assert(crAllCount[rnk] == CouplingRules.Count);
+                                }
                             }
 #endif
+                            var necList = new List<NECQuadratureLevelSet<Tout>> ();
+
+                            foreach(var tt in this.CouplingRules) {
+                                int iLevSet = tt.Item1;
+                                var SpeciesA = tt.Item2;
+                                var SpeciesB = tt.Item3;
+                                var rule = tt.Item4;
+#if DEBUG
+                                int[] all_iLs = iLevSet.MPIAllGather();
+                                int[] allSpcA = SpeciesA.cntnt.MPIAllGather();
+                                int[] allSpcB = SpeciesB.cntnt.MPIAllGather();
+                                for(int rnk = 0; rnk < all_iLs.Length; rnk++) {
+                                    Debug.Assert(all_iLs[rnk] == iLevSet);
+                                    Debug.Assert(allSpcA[rnk] == SpeciesA.cntnt);
+                                    Debug.Assert(allSpcB[rnk] == SpeciesB.cntnt);
+                                }
+#endif
 
 
-                            // constructor is a collective operation
-                            var LsEval = new NECQuadratureLevelSet<Tout>(GridDat,
-                                                             m_Xowner,
-                                                             output,
-                                                             this.DomainFields.Fields, Parameters, base.CodomainMapping,
-                                                             lsTrk, iLevSet, TrackerHistoryIndex, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
-                                                             rule);
-                            necList.Add(LsEval);
+                                // constructor is a collective operation
+                                var LsEval = new NECQuadratureLevelSet<Tout>(GridDat,
+                                                                 m_Xowner,
+                                                                 output,
+                                                                 this.DomainFields.Fields, Parameters, base.CodomainMapping,
+                                                                 lsTrk, iLevSet, TrackerHistoryIndex, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
+                                                                 rule);
+                                necList.Add(LsEval);
 
-                            if(trx != null) {
-                                trx.TransceiveFinish();
-                                trx = null;
+                                if(trx != null) {
+                                    trx.TransceiveFinish();
+                                    trx = null;
+                                }
                             }
-                        }
 
-                        // Note: this kind of deferred execution
-                        // (first, collecting all integrators in a list and second, executing them in a separate loop)
-                        // should prevent waiting for unevenly balanced level sets
-                        foreach(var LsEval in necList) { 
-                            LsEval.time = time;
-                            UpdateLevelSetCoefficients(LsEval.m_LevSetIdx, LsEval.SpeciesA, LsEval.SpeciesB);
-                            LsEval.Execute();
+                            // Note: this kind of deferred execution
+                            // (first, collecting all integrators in a list and second, executing them in a separate loop)
+                            // should prevent waiting for unevenly balanced level sets
+                            foreach(var LsEval in necList) {
+                                LsEval.time = time;
+                                UpdateLevelSetCoefficients(LsEval.m_LevSetIdx, LsEval.SpeciesA, LsEval.SpeciesB);
+                                LsEval.Execute();
 
 #if DEBUG
-                            GenericBlas.CheckForNanOrInfV(output);
+                                GenericBlas.CheckForNanOrInfV(output);
 #endif
-                        }
+                            }
 
+                        }
                     }
 
 
@@ -732,6 +737,7 @@ namespace BoSSS.Foundation.XDG {
                                 var edgeRule = edgeScheme.Compile(this.GridData, quadOrder);
                                 var volRule = cellScheme.Compile(this.GridData, quadOrder);
                                 //edgeRule.(GridData, $"Edge{iLevSet}-{lsTrk.GetSpeciesName(SpeciesA)}{lsTrk.GetSpeciesName(SpeciesB)}.csv");
+                                edgeRule.ToTextFileEdge(GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}.csv");
                                 edgeRule.SumOfWeightsToTextFileEdge(this.GridData, $"Edge-{lsTrk.GetSpeciesName(SpeciesId)}.csv");
 
                                 volRule.ToTextFileCell(GridData, $"Volume-{lsTrk.GetSpeciesName(SpeciesId)}-{lsTrk.CutCellQuadratureType}.csv");
@@ -767,7 +773,7 @@ namespace BoSSS.Foundation.XDG {
                                 EdgeQuadratureScheme ContactLine_Edge = new EdgeQuadratureScheme(false, EdgeMask.GetEmptyMask(GridData));
                                 CellQuadratureScheme ContactLine_Volume = m_Xowner.ContactLine_VolumeQuadratureSchemeProvider(lsTrk, SpeciesId, SchemeHelper, quadOrder, __TrackerHistoryIndex);
                                 if (ruleDiagnosis) {
-                                    ContactLine_Volume.ToTextFileCell(GridData, quadOrder, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}.txt");
+                                    ContactLine_Volume.ToTextFileCell(GridData, quadOrder, $"contactLineOperator_{lsTrk.GetSpeciesName(SpeciesId)}.csv");
                                 }
                                 ctorContactLineSpeciesIntegrator(SpeciesId, quadOrder, ContactLine_Volume, ContactLine_Edge, DomainFrame, CodomFrame, Params_4Species, DomFld_4Species);
                             }
