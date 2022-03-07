@@ -239,9 +239,12 @@ namespace BoSSS.Foundation.Quadrature {
                 }
             }
 
-            // MPI- Exchange
+            // MPI- Exchange - THIS PRODUCES DEADLOCKS; WHERE CAN WE PUT STH LIKE THIS?
             // =============
             {
+                if (grd.CellPartitioning.MpiSize > 1)
+                    throw new NotSupportedException("Careful, we will run into a deadlock!!");
+
                 double[][,] NodesList = new double[NoEdg][,];
                 double[][] WeightsList = new double[NoEdg][];
                 for (int i = 0; i < NoEdg; i++) {

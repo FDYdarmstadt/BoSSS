@@ -372,9 +372,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             switch (scheme) {
                 case BruteForceZeroScheme b:
+                    // to avoid deadlocks? construct here
+                    specialRule = ConstructSpecialQuadRule(i, singleMask, order);
+
                     // skip cells not in active phase, could otherwise lead to problems, when there are kinks in the levelset (i.e. different contact angle from right and left)
                     if (activeChunk) {
-                        specialRule = ConstructSpecialQuadRule(i, singleMask, order);
+                        // do nothing, already built
                     } else {
                         specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                         specialRule.Nodes.LockForever();
@@ -418,16 +421,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         bool ThisConform = InOrOut == 0 ? ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell1(iEdge) : ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell2(iEdge);
                         bool OtherConform = InOrOut == 0 ? ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell2(iEdge) : ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell1(iEdge);
 
+                        // to avoid deadlocks? construct here
+                        specialRule = ConstructSpecialQuadRule(i, singleMask, order);
+
                         // take conformal cell or that one with globally lower index
                         if (ThisConform & OtherConform) {
                             if(ThisCellGlob < OtherCellGlob) {
-                                specialRule = ConstructSpecialQuadRule(i, singleMask, order);
+                                // do nothing, already built
                             } else {
                                 specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                                 specialRule.Nodes.LockForever();
                             }
                         } else if (ThisConform & !OtherConform) {
-                            specialRule = ConstructSpecialQuadRule(i, singleMask, order);
+                            // do nothing, already built
                         } else if (!ThisConform & OtherConform) {
                             specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
                             specialRule.Nodes.LockForever();
