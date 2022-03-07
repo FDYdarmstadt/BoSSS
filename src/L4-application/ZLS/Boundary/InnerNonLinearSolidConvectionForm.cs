@@ -66,17 +66,15 @@ namespace ZwoLevelSetSolver.Boundary {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uIn, double[] uOut, double[,] Grad_uIN, double[,] Grad_uOut, double vIn, double vOut, double[] Grad_vIN, double[] Grad_vOUT) {
             double r = 0.0;
-            Vector VelocityIn = new Vector(uIn, 0, D);
             Vector VelocityOt = new Vector(uOut, 0, D);
-            Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
+            Vector VelocityIn = new Vector(uIn, 0, D);
 
-            r += uOut[D + d] * (VelocityAvg * inp.Normal);
+            r += uOut[D + d] * (VelocityOt * inp.Normal);
 
             return m_rho * r * (-vOut);
-
             // Upwinding:
             /*
-            if (VelocityAvg * inp.Normal >= 0)
+            if (VelocityIn * inp.Normal >= 0)
             {
                 return m_rho * uOut[D+d] * (VelocityIn * inp.Normal) * ( - vOut);
             }
@@ -216,12 +214,9 @@ namespace ZwoLevelSetSolver.Boundary {
         public double InnerEdgeForm(ref CommonParams inp, double[] uIn, double[] uOut, double[,] Grad_uIN, double[,] Grad_uOut, double vIn, double vOut, double[] Grad_vIN, double[] Grad_vOUT) {
             double r = 0.0;
 
-            Vector VelocityIn = new Vector(uIn, 1, m_D);
             Vector VelocityOt = new Vector(uOut, 1, m_D);
-            Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
-
-            double penalty = 0.5 * m_rho * Math.Abs(VelocityAvg * inp.Normal) * (uIn[0] - uOut[0]) * (- vOut);
-            return m_rho * uOut[0] * (VelocityAvg * inp.Normal) * ( - vOut) + penalty;
+            Vector VelocityIn = new Vector(uIn, 1, m_D);
+            return m_rho * uOut[0] * (VelocityOt * inp.Normal) * ( - vOut);
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

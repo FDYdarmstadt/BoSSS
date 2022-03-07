@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver.SolidPhase {
     class Continuity : BulkEquation {
 
-        internal static bool ContinuityStabilization = true;
+        internal static bool ContinuityStabilization = false;
 
         string spcName;
 

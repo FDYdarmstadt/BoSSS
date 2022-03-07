@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZwoLevelSetSolver.ContactLine;
 using ZwoLevelSetSolver.SolidPhase;
 
 namespace ZwoLevelSetSolver.Boundary {
@@ -33,6 +34,7 @@ namespace ZwoLevelSetSolver.Boundary {
             {
                 AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, d, D, 1, artificialViscosity, fluidViscosity, material.Viscosity));
             }
+            //AddSurfaceComponent(new SurfacePenaltyForm(ZwoLevelSetSolver.VariableNames.DisplacementComponent(d), -100));
         }
 
         public override string FirstSpeciesName => fluidSpecies;

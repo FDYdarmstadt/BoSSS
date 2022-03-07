@@ -866,7 +866,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
-            C.AgglomerationThreshold = 0.3;
+            C.AgglomerationThreshold = 0.1;
             C.NoOfMultigridLevels = 1;
 
             int D = 2;
@@ -908,9 +908,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.Material = false;
 
             C.Material = new Beam();
-
+            C.Material.Viscosity = 0;
             #endregion
-
 
             // grid generation
             // ===============
@@ -1035,8 +1034,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-10;
-            C.LinearSolver.ConvergenceCriterion = 1e-10;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
 
@@ -1056,7 +1055,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             //C.CheckJumpConditions = true;
 
-            C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
@@ -1449,10 +1448,6 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ==============
             #region init
 
-            double power = 2;
-            double a = 0.1;
-            double b = 1.01;
-
             Func<double[], double> PhiFunc = (X => -1);
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
@@ -1517,11 +1512,11 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region solver
 
             C.NonLinearSolver.MaxSolverIterations = 20;
-            C.NonLinearSolver.MinSolverIterations = 2;
+            C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.MaxSolverIterations = 20;
             //C.Solver_MaxIterations = 50;
             
-            C.NonLinearSolver.ConvergenceCriterion = 0.0;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
 
@@ -1541,7 +1536,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             //C.CheckJumpConditions = true;
 
-            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;

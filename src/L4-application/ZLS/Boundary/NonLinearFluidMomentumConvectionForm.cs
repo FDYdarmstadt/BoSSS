@@ -64,20 +64,16 @@ namespace ZwoLevelSetSolver.Boundary {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uIn, double[] uOut, double[,] Grad_uIN, double[,] Grad_uOut, double vIn, double vOut, double[] Grad_vIN, double[] Grad_vOUT) {
             double r = 0.0;
-
-            r += uIn[0] * ((uOut[1 + 0] + uIn[1 + 0]) * inp.Normal[0] + (uOut[1 + 1] + uIn[1 + 1]) * inp.Normal[1]);
-            if(m_D == 3) {
-                r += uIn[0] * (uOut[1 + 2] + uIn[1 + 2]) * inp.Normal[2];
-            }
-
-            Vector VelocityIn = new Vector(uIn, 1, m_D);
             Vector VelocityOt = new Vector(uOut, 1, m_D);
-            Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
-
-            r += Math.Abs((VelocityAvg * inp.Normal)) * (uIn[0] - uOut[0]);
-            r *= 0.5 * m_rho;
-            
-            return r * (vIn);
+            Vector VelocityIn = new Vector(uIn, 1, m_D);
+            return m_rho * uIn[0] * (VelocityIn * inp.Normal) * (vIn);
+            /*
+            if(VelocityOt * inp.Normal >= 0) {
+                return m_rho * uIn[0] * (VelocityOt * inp.Normal) * (vIn);
+            } else {
+                return m_rho * uOut[0] * (VelocityOt * inp.Normal) * (vIn);
+            }
+            */
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

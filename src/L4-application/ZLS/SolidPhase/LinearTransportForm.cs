@@ -19,7 +19,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         double rho;
 
-        string[] variableNames;
+        string[] velocityNames;
 
         string[] parameternames;
 
@@ -27,20 +27,20 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         int d;
 
-        public LinearTransportForm(string speciesName, string[] velocityParameterNames, string[] variableNames, int d, int D, double rho) {
+        public LinearTransportForm(string speciesName, string[] parameterNames, string[] velocityNames, int d, int D, double rho) {
             this.speciesName = speciesName;
-            this.variableNames = variableNames;
+            this.velocityNames = velocityNames;
             this.D = D;
             this.d = d;
             this.rho = rho;
-            this.parameternames = velocityParameterNames;
+            this.parameternames = parameterNames;
         }
 
         public TermActivationFlags VolTerms {
             get { return TermActivationFlags.UxGradV | TermActivationFlags.GradV; }
         }
 
-        public IList<string> ArgumentOrdering => variableNames;
+        public IList<string> ArgumentOrdering => velocityNames;
 
         public IList<string> ParameterOrdering => parameternames;
 
@@ -56,7 +56,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uA, double _vIN, double[] _Grad_vA) {
 
-            Vector VelocityIn = new Vector(inp.Parameters_IN, 0, D);
+            Vector VelocityIn = new Vector(_uIN, 0, D);
 
             return 0.0 * (_vIN); // inflow
         }
@@ -69,18 +69,18 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double r = 0.0;
 
-            Vector VelocityIn = new Vector(inp.Parameters_IN, 0, D);
-            Vector VelocityOt = new Vector(inp.Parameters_OUT, 0, D);
+            Vector VelocityIn = new Vector(_uIN, 0, D);
+            Vector VelocityOt = new Vector(_uOUT, 0, D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
 
-            return rho * ( 0.5 *  (_uIN[d]+ _uOUT[d]) * (VelocityAvg * inp.Normal) + (_uIN[d] - _uOUT[d]) * Math.Abs(VelocityAvg * inp.Normal)) * (_vIN - _vOUT);
+            return rho * ( 0.5 *  (inp.Parameters_IN[d]+ inp.Parameters_OUT[d]) * (VelocityAvg * inp.Normal) + (inp.Parameters_IN[d] - inp.Parameters_OUT[d]) * Math.Abs(VelocityAvg * inp.Normal)) * (_vIN - _vOUT);
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for(int i = 0; i < D; i++)
-                acc += cpv.Parameters[i] * GradV[i];
-            acc *= U[d];
+                acc += U[i] * GradV[i];
+            acc *= cpv.Parameters[d];
             acc *= rho;
             return -acc;
         }

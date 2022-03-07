@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using NSEVariableNames = BoSSS.Solution.NSECommon.VariableNames;
 
 namespace ZwoLevelSetSolver.ContactLine {
-    class SurfacePenaltyForm : IEdgeForm {
+    class SurfacePenaltyForm : IEdgeForm, ISupportsJacobianComponent {
 
         string[] variableNames;
         double penaltyScale;
@@ -29,6 +29,10 @@ namespace ZwoLevelSetSolver.ContactLine {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             return 0;
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, 

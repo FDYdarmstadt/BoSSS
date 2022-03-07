@@ -21,7 +21,7 @@ namespace ZwoLevelSetSolver.Boundary {
             this.solidSpecies = solidSpecies;
             //Stress equality
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
-            AddComponent(new InterfaceConvectionForm(ZwoLevelSetSolver.VariableNames.DisplacementVector(D), 1.0, d, D, 1, fluidSpecies, solidSpecies));
+            AddComponent(new InterfaceConvectionForm(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), 1.0, d, D, 1, fluidSpecies, solidSpecies));
             AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D));
 
             if(artificialViscosity != 0.0) {
@@ -91,11 +91,9 @@ namespace ZwoLevelSetSolver.Boundary {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uIn, double[] uOut, double[,] Grad_uIN, double[,] Grad_uOut, double vIn, double vOut, double[] Grad_vIN, double[] Grad_vOUT) {
 
-            Vector VelocityIn = new Vector(inp.Parameters_IN, 0, m_D);
-            Vector VelocityOt = new Vector(inp.Parameters_OUT, 0, m_D);
-            Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
+            Vector VelocityOt = new Vector(uOut, 0, m_D);
 
-            return m_rho * (uOut[m_d]) * (VelocityAvg * inp.Normal) *(-vOut);
+            return m_rho * (inp.Parameters_OUT[m_d]) * (VelocityOt * inp.Normal) *(-vOut);
         }
 
         /// <summary>

@@ -29,7 +29,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true) {
+        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, Basis extVelBasis, bool fullStokes = true) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
@@ -41,11 +41,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.levelSetName = levelSetName;
             this.bcmap = bcMap;
             parameters = NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
-            this.m_grd = grd;
             timeStepOrder = 2;
+            extensionVelocity = new SinglePhaseField[D];
+            for (int i = 0; i < D; ++i) {
+                extensionVelocity[i] = new SinglePhaseField(extVelBasis, $"ExtensionVelocity_{levelSetName}_X{i}");
+            }
         }
 
-        IGridData m_grd;
         int SpatialDimension;
         double AgglomThreshold;
         int m_HMForder;
@@ -77,10 +79,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             get {
                 var Ret = new Dictionary<string, DGField>();
 
-                if(extensionVelocity != null) {
-                    foreach(var f in extensionVelocity)
-                        Ret.Add(f.Identification, f);
-                }
+                foreach(var f in extensionVelocity)
+                    Ret.Add(f.Identification, f);
 
                 return Ret;
             }
@@ -134,18 +134,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 int D = levelSet.Tracker.GridDat.SpatialDimension;
 
                 SinglePhaseField[] meanVelocity = D.ForLoop(
-                    d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
-                    );
+                    d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]);
+                foreach(var f in extensionVelocity)
+                    f.Clear();
 
-                if(extensionVelocity == null) {
-                    extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
-                } else {
-                    foreach(var f in extensionVelocity)
-                        f.Clear();
-                }
-
-            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
-            ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
+                var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
+                ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
                 if(timeStepper == null) {
                     //timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
