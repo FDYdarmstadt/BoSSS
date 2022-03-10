@@ -304,6 +304,11 @@ namespace BoSSS.Foundation.Grid {
         /// </list>
         /// </param>
         /// <param name="jCell">local cell index of the cell to transform</param>
+        /// <param name="NewtonConvergence">
+        /// in the case of curved cells/isoparametic elements, where a Newton algorithm has to be used for the inverse transformation, 
+        /// diagnostic information whether the Newton algorithm has converged or not.
+        /// The index correlates with the vertex index in <paramref name="GlobalVerticesIn"/>.
+        /// </param>        
         void TransformGlobal2Local(MultidimensionalArray GlobalVerticesIn, MultidimensionalArray LocalVerticesOut, int jCell, bool[] NewtonConvergence);
 
 
@@ -377,8 +382,7 @@ namespace BoSSS.Foundation.Grid {
         /// the absolute value of the (Jacobi) determinant of the 
         /// transformation from local cell coordinate system to global
         /// coordinate system.
-        /// (see <see cref="EvaluateJacobian(NodeSet, int, int, MultidimensionalArray)"/>
-        /// 1st index: local cell index;
+        /// - 1st index: local geometrical cell index;
         /// </summary>
         MultidimensionalArray JacobiDet {
             get;
@@ -465,9 +469,8 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Returns the volume (to be more exact: the
-        /// <see cref="SpatialDimension"/> - dimensional measure) of the
-        /// cell <paramref name="j"/>;
+        /// Returns the volume (to be more exact: the <see cref="BoSSS.Foundation.IO.IGridInfo.SpatialDimension"/> - dimensional measure) 
+        /// of the cell <paramref name="j"/>;
         /// </summary>
         /// <param name="j">local cell index</param>
         /// <returns></returns>

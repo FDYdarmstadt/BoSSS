@@ -1312,7 +1312,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         //bool reduceLinearDependence = false;
 
         /// <summary>
-        /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
+        /// Projects some DG field <paramref name="orgDGField"/> onto the internal, continuous representation
         /// </summary>
         /// <param name="orgDGField">
         /// input; unchanged on exit
