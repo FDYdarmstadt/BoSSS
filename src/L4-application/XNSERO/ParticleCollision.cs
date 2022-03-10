@@ -122,7 +122,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // =======================================================
             double saveTimestep = 0;
             int ParticleOffset = Particles.Length;
-            double distanceThreshold = GridLengthScale*0.5;
+            double distanceThreshold = GridLengthScale*0.1;
             if (MinDistance != 0)
                 distanceThreshold = MinDistance;
             // Step 2
@@ -325,6 +325,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             if (IsParticle(SecondParticleID)) {
                 if (Particles[FirstParticleID].Motion.IncludeTranslation || Particles[FirstParticleID].Motion.IncludeRotation)
                     detectCollisionVn_P1 = CalculateNormalSurfaceVelocity(SecondParticleID, normalVector, ClosestPoints[SecondParticleID][FirstParticleID]);
+            } else {
+                detectCollisionVn_P0 = 10 * detectCollisionVn_P0;
             }
             return (detectCollisionVn_P1 - detectCollisionVn_P0 == 0) ? double.MaxValue : 0.01 * distance / (detectCollisionVn_P1 - detectCollisionVn_P0);
         }

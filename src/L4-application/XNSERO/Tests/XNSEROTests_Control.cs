@@ -39,6 +39,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            double dt = 1e-2;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
@@ -49,7 +50,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             List<Particle> particles = new List<Particle> {
                 new Particle_Sphere(motion1, 0.5, new double[] { 0.0, 0.0 }),
             };
-            C.SetParticles(particles);
+            C.SetParticles(particles,dt);
 
             C.PhysicalParameters.IncludeConvection = false;
 
@@ -60,7 +61,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AgglomerationThreshold = 0.2;
             C.NonLinearSolver.MaxSolverIterations = 10;
 
-            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1e-2;
@@ -97,7 +97,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 new Particle_Sphere(motion1, 1, new double[] { -2.0, 0.0 }),
                 new Particle_Ellipsoid(motion2, 1, 1, new double[] { 2.0, 0.0 }, startAngl: 0)
             };
-            C.SetParticles(particles);
+            double dt = 1e-2;
+            C.SetParticles(particles,dt);
 
             C.PhysicalParameters.IncludeConvection = false;
 
@@ -108,7 +109,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AgglomerationThreshold = 0.2;
             C.NonLinearSolver.MaxSolverIterations = 10;
 
-            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1e-2;
@@ -135,10 +135,11 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY#A", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY#A", X => -0.02);
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            double dt = 0.1;
 
             double particleDensity = 1;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, true);
-            C.SetParticles(new List<Particle> { new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) });
+            C.SetParticles(new List<Particle> { new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) },dt);
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.25;
             C.PhysicalParameters.IncludeConvection = true;
@@ -156,7 +157,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             // Timestepping
             // ============
 
-            double dt = 0.1;
             C.dtFixed = dt;
             C.dtMax = dt;
             C.dtMin = dt;
@@ -217,7 +217,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
                 new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
             };
-            C.SetParticles(particles);
+            double dt = 1e-2;
+            C.SetParticles(particles,dt);
             C.PhysicalParameters.IncludeConvection = false;
 
             // misc. solver options
@@ -231,7 +232,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             // ============
 
             // Timestepping
-            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;

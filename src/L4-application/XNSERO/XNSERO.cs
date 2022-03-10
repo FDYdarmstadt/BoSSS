@@ -1,6 +1,5 @@
 ﻿using BoSSS.Application.XNSE_Solver;
 using BoSSS.Foundation;
-using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
@@ -11,12 +10,10 @@ using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
-using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 
 namespace BoSSS.Application.XNSERO_Solver {
     /// <summary>
@@ -73,7 +70,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// FluidViscosity Phase A
+        /// Fluid viscosity
         /// </summary>
         private double[] FluidViscosity => new double[] { Control.PhysicalParameters.mu_A, Control.PhysicalParameters.mu_B };
 
@@ -116,17 +113,36 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         private double CoefficientOfRestitution => Control.CoefficientOfRestitution;
         
-        public static IGridData Cunk { get; private set; }
-
         /// <summary>
         /// Checks whether added damping tensors have been created. Only used if added damping is activated.
         /// </summary>
         private bool initAddedDamping = true;
 
         /// <summary>
-        /// Additional helper methods. Checking the validity of calculated results and mpi consistency.
+        /// Additional helper methods. Checking the validity of calculated results and MPI consistency.
         /// </summary>
-        private Auxillary Auxillary = new Auxillary();
+        private readonly Auxillary Auxillary = new();
+
+
+        /// <summary>
+        /// Saves the physical data of all particles
+        /// </summary>
+        private TextWriter LogParticleData;
+
+        /// <summary>
+        /// Prevents the creation of multiple log files
+        /// </summary>
+        bool CreatedLogger = false;
+
+        /// <summary>
+        /// Particles are sorted into an R-tree to improve calculation of collisions
+        /// </summary>
+        readonly RTree CollisionTree = new(2, 0.05);
+
+        /// <summary>
+        /// Prevents multiple initializations of <see cref="CollisionTree"/>
+        /// </summary>
+        bool treeInitialized = false;
 
         /// <summary>
         /// Provides information about the particle (rigid object) level set function to the level-set-updater.
@@ -165,7 +181,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <remarks>base: Navier Stokes, if(...): phoretic field</remarks>
         protected override void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             if (Control.UseAveragedEquations) {
-                XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
+                XNSE_OperatorConfiguration config = new(Control);
                 // === mass equations === //
                 DefineContinuityEquation(opFactory, config, D);
 
@@ -221,16 +237,11 @@ namespace BoSSS.Application.XNSERO_Solver {
                 opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D));
                 opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D));
 
-                //Normals normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.LevelSetCGidx(1));
-                //opFactory.AddParameter(normalsParameter);
-
                 string[] fluidSpecies = CreateSpeciesArray(ContainsSecondFluidSpecies);
+
                 RigidObjectLevelSetVelocity levelSetVelocity = new(VariableNames.LevelSetCGidx(1), Particles, FluidViscosity, fluidSpecies, Gravity, Control.dtFixed, MaxGridLength);
                 opFactory.AddParameter(levelSetVelocity);
-                //opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
-                //ActiveStress levelSetActiveStress = new(VariableNames.LevelSetCGidx(1), Particles, MaxGridLength);
-                //opFactory.AddParameter(levelSetActiveStress);
-                //lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCGidx(1), levelSetActiveStress);
+
                 Orientation OrientationVector = new(VariableNames.LevelSetCGidx(1), Particles, MaxGridLength);
                 opFactory.AddParameter(OrientationVector);
                 lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCGidx(1), OrientationVector);
@@ -270,7 +281,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Creates an string array with either one species A or two species A and B.
         /// </summary>
         /// <returns></returns>
-        private string[] CreateSpeciesArray(bool ContainsSecondFluidSpecies) {
+        private static string[] CreateSpeciesArray(bool ContainsSecondFluidSpecies) {
             string[] fluidSpecies;
             if (ContainsSecondFluidSpecies)
                 fluidSpecies = new string[] { "A", "B" };
@@ -310,19 +321,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-        ///// <summary>
-        ///// Provides the active stress at the surface of active particles as a parameter field. 
-        ///// Active stress is used to define a boundary condition for the velocity gradient.
-        ///// </summary>
-        ///// <param name="iLevSet"></param>
-        ///// <returns></returns>
-        //protected virtual ILevelSetParameter GetLevelSetActiveStress(int iLevSet) {
-        //    ILevelSetParameter levelSetVelocity = new ActiveStress(VariableNames.LevelSetCGidx(iLevSet), Particles, MaxGridLength);
-        //    return levelSetVelocity;
-        //}
-
-        RTree tree = new RTree(2, 0.05);
-        bool treeInitialized = false;
 
         /// <summary>
         /// Update fluid variable fields and particle position and orientation angle.
@@ -332,7 +330,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="dt"></param>
         /// <returns></returns>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            Stopwatch stopWatch = new Stopwatch();
+            Stopwatch stopWatch = new();
             stopWatch.Start();
             dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
@@ -342,20 +340,22 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
             InitializeParticlesNewTimestep(dt);
             if (TimestepNo - 1 % 10 == 0 || !treeInitialized) {
-                tree.InitializeTree(Particles, dt);
+                CollisionTree.InitializeTree(Particles, dt);
                 treeInitialized = true;
+                Console.WriteLine("Tree initialized");
+            } else {
+                Console.WriteLine("Update tree");
+                CollisionTree.UpdateTree(Particles, dt);
+                Console.WriteLine("Tree updated");
             }
-            else
-                tree.UpdateTree(Particles, dt);
+            Console.WriteLine("Start MPI Check");
             Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
+            Console.WriteLine("MPI Check finished, starting solver");
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            
+            Console.WriteLine("Solver finished, starting collision procedure.");
             CalculateCollision(Particles, dt);
             if (!AllParticlesFixed)
                 CalculateParticlePositionAndAngle(Particles, dt);
-            Console.WriteLine("Particle rotational velocity " + Particles[0].Motion.GetRotationalVelocity(0));
-            Console.WriteLine("Particle trans velocity " + Particles[0].Motion.GetTranslationalVelocity(0));
-            Console.WriteLine("Particle position " + Particles[0].Motion.GetPosition(0));
             LogPhysicalData(phystime, TimestepNo);
             Console.WriteLine($"done with time step {TimestepNo}");
             TimeSpan ts = stopWatch.Elapsed;
@@ -364,13 +364,11 @@ namespace BoSSS.Application.XNSERO_Solver {
             return dt;
         }
 
-        bool CreatedLogger = false;
 
         /// <summary>
         /// Safes old values for the velocity of the particles and updates added damping tensors (if used).
         /// </summary>
         private void InitializeParticlesNewTimestep(double dt) {
-            CellMask globalCutCells = LsTrk.Regions.GetCutCellMask4LevSet(1);
             foreach (Particle p in Particles) {
                 p.Motion.SaveVelocityOfPreviousTimestep();
                 p.LsTrk = LsTrk;
@@ -406,8 +404,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                     Particles[p].IsCollided = false;
                     //potentialCollisionPartners[p] = tree.SearchForOverlap(Particles[p], p).ToArray();
                 }
-                ParticleCollision Collision = new ParticleCollision(MaxGridLength, CoefficientOfRestitution, dt, Control.WallPositionPerDimension, Control.BoundaryIsPeriodic, 0, DetermineOnlyOverlap);
-                Collision.Calculate(Particles, tree);
+                ParticleCollision Collision = new(MaxGridLength, CoefficientOfRestitution, dt, Control.WallPositionPerDimension, Control.BoundaryIsPeriodic, 0, DetermineOnlyOverlap);
+                Collision.Calculate(Particles, CollisionTree);
             }
         }
 
@@ -422,18 +420,14 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-        /// <summary>
-        /// Saves the physical data of all particles
-        /// </summary>
-        private TextWriter logPhysicalDataParticles;
 
         /// <summary>
         /// Creates a log file for the physical data of the particles. Only active if a database is specified.
         /// </summary>
         private void CreatePhysicalDataLogger() {
             if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
-                logPhysicalDataParticles = DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
-                logPhysicalDataParticles.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", "time-step", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T"));
+                LogParticleData = DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
+                LogParticleData.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", "time-step", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T"));
             }
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
         }
@@ -445,10 +439,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </param>
         private void LogPhysicalData(double phystime, int timestepNo) {
             using (new FuncTrace()) {
-                if ((MPIRank == 0) && (logPhysicalDataParticles != null)) {
+                if ((MPIRank == 0) && (LogParticleData != null)) {
                     for (int p = 0; p < Particles.Length; p++) {
-                        logPhysicalDataParticles.WriteLine($"{timestepNo},{p},{phystime},{Particles[p].Motion.GetPosition(0).x},{Particles[p].Motion.GetPosition(0).y},{Particles[p].Motion.GetAngle(0)},{Particles[p].Motion.GetTranslationalVelocity(0).x},{Particles[p].Motion.GetTranslationalVelocity(0).y},{Particles[p].Motion.GetRotationalVelocity(0)},{Particles[p].Motion.GetHydrodynamicForces(0).x},{Particles[p].Motion.GetHydrodynamicForces(0).y},{Particles[p].Motion.GetHydrodynamicTorque(0)}");
-                        logPhysicalDataParticles.Flush();
+                        LogParticleData.WriteLine($"{timestepNo},{p},{phystime},{Particles[p].Motion.GetPosition(0).x},{Particles[p].Motion.GetPosition(0).y},{Particles[p].Motion.GetAngle(0)},{Particles[p].Motion.GetTranslationalVelocity(0).x},{Particles[p].Motion.GetTranslationalVelocity(0).y},{Particles[p].Motion.GetRotationalVelocity(0)},{Particles[p].Motion.GetHydrodynamicForces(0).x},{Particles[p].Motion.GetHydrodynamicForces(0).y},{Particles[p].Motion.GetHydrodynamicTorque(0)}");
+                        LogParticleData.Flush();
                     }
                 }
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -470,18 +464,5 @@ namespace BoSSS.Application.XNSERO_Solver {
                 configsLevel.Add(configPres);
             }
         }
-
-        /*
-        /// <summary>
-        /// In addition to the base-implementation, this method updates the mapping from cells to particles.
-        /// </summary>
-        public override double UpdateLevelset(DGField[] domainFields, double time, double dt, double UnderRelax, bool incremental) {
-            double resi = base.UpdateLevelset(domainFields, time, dt, UnderRelax, incremental);
-
-            
-
-            return resi;
-        }
-        */
     }
 }

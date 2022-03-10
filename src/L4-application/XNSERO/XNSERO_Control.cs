@@ -132,6 +132,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         public int SpatialDimension;
 
         /// <summary>
+        /// R-Tree to store information about particle location towards each other.
+        /// </summary>
+        [DataMember]
+        public RTree CollisionTree;
+
+        /// <summary>
         /// Add database and the frequency of saves.
         /// </summary>
         /// <param name="dataBasePath"></param>
@@ -333,7 +339,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public override LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
         */
 
-        public void SetParticles(List<Particle> ParticleList, bool IsRestart = false, string PathToOldSessionDir = "", int timestep=0) {
+        public void SetParticles(List<Particle> ParticleList, double dt, bool IsRestart = false, string PathToOldSessionDir = "", int timestep=0) {
             if (IsRestart) {
                 ParticleList= LoadParticlesOnRestart(PathToOldSessionDir, ParticleList, timestep);
             }
@@ -351,7 +357,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), levelSet);
             Option_LevelSetEvolution2 = Solution.LevelSetTools.LevelSetEvolution.RigidObject;
 
-            
+            CollisionTree = new(SpatialDimension, 0.05);
+            CollisionTree.InitializeTree(Particles, dt);
+
+            Console.WriteLine("Simulation with " + Particles.Length + " particles");
         }
 
         /// <summary>

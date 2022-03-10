@@ -92,16 +92,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             //}
             C.AddBoundaryValue("Wall_upper", "VelocityX#A", (X, t) => 1);
             C.AddBoundaryValue("Wall_lower", "VelocityX#A", (X, t) => 0);
-            C.SetParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
             C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
+            C.SetParticles(particles, 1e-2, C.IsRestart, PathToOldSessionDir, timestep);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            C.LinearSolver.TargetBlockSize = 10000;
-            C.LinearSolver.verbose = true;
             C.UseSchurBlockPrec = false;
-            C.LinearSolver.pMaxOfCoarseSolver = 1;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
@@ -109,18 +103,18 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
-        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.3, int cellsPerUnitLength = 15, double noOfParticles = 10) {
+        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.4, int cellsPerUnitLength = 12, double noOfParticles = 12) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
-            string ID = "b971c5ee-ecaf-41fb-96c5-8214b68b0a81";
+            string ID = "8ad19f8a-a11f-4aea-aa03-43b85ed0b17e";
             Guid SID = new Guid(ID);
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("1"));
-            int timestep = 1430;
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
-            //C.IsRestart = true;
-            string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\b971c5ee-ecaf-41fb-96c5-8214b68b0a81";
+            int timestep = 2430;
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
+            C.IsRestart = true;
+            string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\8ad19f8a-a11f-4aea-aa03-43b85ed0b17e";
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -142,9 +136,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, false, false);
-            C.minDistanceThreshold = 1 / cellsPerUnitLength*0.5;
-            C.CoefficientOfRestitution = 1;
-            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
+            C.minDistanceThreshold = 1 / cellsPerUnitLength*1.5;
+            C.CoefficientOfRestitution = 0.5;
+            InitializeMotion motion = new(particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2 ;
             int j = 0;
             List<Particle> particles = new List<Particle>();
@@ -158,17 +152,18 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
                 j += 1;
             }
-            C.SetParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
+            C.SetParticles(particles,1e-2, C.IsRestart, PathToOldSessionDir, timestep);
             C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.4;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            C.LinearSolver.TargetBlockSize = 10000;
-            C.LinearSolver.verbose = false;
-            C.UseSchurBlockPrec = false;
-            C.LinearSolver.pMaxOfCoarseSolver = 1;
+            //C.LinearSolver.NoOfMultigridLevels = 2;
+            //C.NoOfMultigridLevels = 2;
+            //C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            //C.LinearSolver.TargetBlockSize = 10000;
+            //C.LinearSolver.verbose = true;
+            C.UseSchurBlockPrec = true;
+            //C.LinearSolver.pMaxOfCoarseSolver = 1;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
@@ -192,6 +187,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 20, lengthY: 20, cellsPerUnitLength: 2, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(3);
+            double dt = 1e-1;
             //List<string> boundaryValues = new List<string> {
             //    "Pressure_Outlet"
             //};
@@ -219,7 +215,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -distance * Math.Cos(angleXAxis) / 2 + deviation, -distance * Math.Sin(angleXAxis) / 2+deviation }, 0, 1),
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { distance * Math.Cos(angleXAxis) / 2 + deviation, distance * Math.Sin(angleXAxis) / 2+deviation }, angle, 1)
             };
-            C.SetParticles(particles);
+            C.SetParticles(particles,dt);
             C.NonLinearSolver.ConvergenceCriterion = 1e-12;
             List<Func<Vector,double, bool>> Contains = new List<Func<Vector, double, bool>>();
             for(int p = 0; p < particles.Count; p++) {
@@ -228,14 +224,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.activeAMRlevelIndicators.Add(new AMRForRigidObject(Contains, 2) { maxRefinementLevel = 3 });
             // Timestepping
             // =============================  
-            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 10);
+            C.SetTimesteps(dt, noOfTimesteps: 10);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            C.LinearSolver.TargetBlockSize = 10000;
-            C.UseSchurBlockPrec = false;
-            C.LinearSolver.pMaxOfCoarseSolver = 1;
 
             // Coupling Properties
             // =============================
@@ -294,16 +286,11 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
                 j += 1;
             }
-            C.SetParticles(particles);
-            C.SetTimesteps(dt: 1e-1, noOfTimesteps: 50);
+            double dt = 1e-1;
+            C.SetParticles(particles, dt);
+            C.SetTimesteps(dt, noOfTimesteps: 50);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.5;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.TargetBlockSize = 10000;
-            C.LinearSolver.verbose = false;
-            C.UseSchurBlockPrec = false;
-            C.LinearSolver.pMaxOfCoarseSolver = 1;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
