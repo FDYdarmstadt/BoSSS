@@ -400,6 +400,14 @@ namespace BoSSS.Foundation.Quadrature {
                     NoOfNodes++;
                 }
             }
+
+            // create empty if none of the points lies on this edge
+            if(NoOfNodes == 0) {
+                NodesOnEdge = NodesOnEdge.Concat(this.RefElement.Center.ExtractSubArrayShallow(0,-1).To1DArray()).ToArray();
+                WeightsOnEdge = WeightsOnEdge.Concat(0.0).ToArray();
+                NoOfNodes++;
+            }
+
             // override the Node set with the "true" nodes located on the edge and in edge local coordinates
             Nodes = new NodeSet(this.RefElement, MultidimensionalArray.CreateWrapper(NodesOnEdge, new int[] { NoOfNodes, this.RefElement.SpatialDimension }));
             Weigts = MultidimensionalArray.CreateWrapper(WeightsOnEdge, new int[] { NoOfNodes });

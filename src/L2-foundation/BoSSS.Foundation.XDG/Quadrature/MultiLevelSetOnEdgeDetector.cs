@@ -105,7 +105,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
 
             bool jSpecial = false;
-            if (jCell >= 0) {
+            if (jCell >= 0 && jCell < grddat.Cells.NoOfLocalUpdatedCells) {
                 if (CoIncFaces[jCell] == null)
                     return iSpecial;                
                 foreach (var t in CoIncFaces[jCell]) {
@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                         jSpecial = true; // jetzt geht der Spass los!
                 }
             } else {
-                jSpecial = true;
+                jSpecial = true; // local boundary edge, act as if other cell is special
             }
             return iSpecial | jSpecial; // if either neighbor cell is a special we want to employ the special treatment
         }

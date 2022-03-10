@@ -312,7 +312,7 @@ namespace BoSSS.Foundation.XDG {
                             CellMask doublyCut = this.GetCutCells(iLevSet, jLevSet);
                             if (doublyCut.Count() > 0) {
                                 var jmpJ = IdentifyWingA(jLevSet, sp);
-                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, jLevSet, Kref);
+                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
                                 var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, Kref, backupFactory);
                                 LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
                             }
@@ -839,7 +839,7 @@ namespace BoSSS.Foundation.XDG {
                             //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
                             IQuadRuleFactory<QuadRule> backupFactory;
                             if (iLevSet == 1)
-                                backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, iLevSet, jmpA, Kref);
+                                backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, Kref);
                             else
                                 backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);
                             var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, jLevSet, jmpA, Kref, backupFactory);
