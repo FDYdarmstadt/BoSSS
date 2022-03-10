@@ -1176,7 +1176,7 @@ namespace BoSSS.Foundation {
         /// Used to load this field from database, not for direct user interaction
         /// </summary>
         /// <param name="j">local cell index</param>
-        /// <param name="coords_">DG data for cell <paramref name="j"/></param>
+        /// <param name="coords_j">DG data for cell <paramref name="j"/></param>
         public virtual void DeserializeDGcoords(int j, double[] coords_j) {
             int J = this.GridDat.CellPartitioning.LocalLength;
             if(j < 0 || j >= J)

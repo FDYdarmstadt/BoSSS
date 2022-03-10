@@ -574,11 +574,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="mask"></param>
-        /// <param name="fixedBoundaryMask"></param>
+
         void ProjectDGFieldBase(CellMask mask, EdgeMask fixedBoundaryMask = null, bool IsLocal = false) {
 
             // ...
@@ -1318,7 +1314,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
         /// </summary>
-        /// <param name="DGField">
+        /// <param name="orgDGField">
         /// input; unchanged on exit
         /// </param>
         /// <param name="mask"></param>
@@ -3765,13 +3761,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="numVCond"></param>
-        /// <param name="numECond"></param>
-        /// <returns></returns>
         private NodeSet getEdgeInterpolationNodes(int numVcond, int numEcond, int[] edgeOrientation = null) {
 
             int degree = m_Basis.Degree;
