@@ -928,7 +928,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         /// <param name="__gdat">~</param>
         /// <returns>
-        /// the minimum (over all cells j in all processes) of <see cref="CellData.h_min"/>[j]
+        /// the minimum (over all cells j in all processes) of <see cref="IGeometricalCellsData.h_min"/>[j]
         /// over v, where v is the Euclidean norm of a vector build from 
         /// <paramref name="velvect"/>;
         /// This vector is evaluated at cell center and all cell vertices.

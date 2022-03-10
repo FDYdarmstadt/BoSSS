@@ -789,7 +789,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeSource_V.InternalEdge"/>
+        /// see <see cref="IInnerEdgeSource_V.InternalEdge_V"/>
         /// </summary>
         void IInnerEdgeSource_V.InternalEdge_V(ref EdgeFormParams efp, MultidimensionalArray V) {
             InitGlobals(efp);

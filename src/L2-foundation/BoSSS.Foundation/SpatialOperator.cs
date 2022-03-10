@@ -922,9 +922,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// returns true, if any of the equation components associated with 
-        /// variable <paramref name="CodomVar"/> contains nonlinear integrands
-        /// on edges (these are objects that implement <see cref="INonlinearFlux"/>,
-        /// <see cref="INonlinearFluxEx"/> or <see cref="IDualValueFlux"/>);
+        /// variable <paramref name="CodomVar"/> contains nonlinear integrands on edges.
         /// </summary>
         /// <param name="CodomVar">
         /// identifies the codomain variable name, must be a member of
@@ -1003,8 +1001,6 @@ namespace BoSSS.Foundation {
         /// are assumed to be 0.0;
         /// If the differential operator contains no parameters, this argument can be null;
         /// </param>
-        /// <param name="edgeQrCtx">optional quadrature instruction for edges</param>
-        /// <param name="volQrCtx">optional quadrature instruction for volumes/cells</param>
         public virtual IEvaluatorNonLin GetEvaluatorEx(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {

@@ -327,15 +327,12 @@ namespace BoSSS.Foundation {
         /// It is not a good choice to use this 
         /// function if this operator should be evaluated multiple times
         /// and 
-        /// contains linear components (i.e. <see cref="ContainsLinear"/> returns true);
+        /// contains linear components (i.e. <see cref="ISpatialOperator.IsLinear"/> returns true);
         /// If the later one is the case, the matrix which represents
         /// the linear components of the operator must be computed first, which is computational- and
         /// memory - intensive;
         /// After execution of this method, the matrix will be lost;
-        /// If multiple evaluation is desired, the <see cref="Evaluator"/>-class should be used,
-        /// in which the matrix of the operator will persist;
-        /// However, if no linear components are present, the performance of this function should
-        /// be almost comparable to the use of the <see cref="Evaluator"/>-class;
+        /// If multiple evaluation is desired, the <see cref="ISpatialOperator.GetEvaluatorEx"/>-method should be used.
         /// </remarks>
         /// <param name="op"></param>
         /// <param name="time"></param>
