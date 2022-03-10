@@ -143,27 +143,27 @@ namespace BoSSS.Foundation.Quadrature {
                             // take this, it won't get better
 
                             CellBitMask[jCell0] = true;
-                            Faces[i] = Edg2Fac[iEdge, 0];
+                            Faces[i] = Edg2Fac[iEdge, 0] + 333; // arbitrary shift, as we need the sign to distinguish a case later on, otherwise Face = 0 is undefined and may lead to wrong results
                             Cells[i] = jCell0;
                         } else if (conf1 && Allow1) {
                             // cell 1 is allowed and conformal:
                             // take this, it won't get better
 
                             CellBitMask[jCell1] = true;
-                            Faces[i] = Edg2Fac[iEdge, 1];
+                            Faces[i] = Edg2Fac[iEdge, 1] + 333;
                             Cells[i] = jCell1;
 
                         } else if (Allow0) {
                             // cell 0 is allowed, but NOT conformal
 
                             CellBitMask[jCell0] = true;
-                            Faces[i] = -Edg2Fac[iEdge, 0]; // by a negative index, we mark a non-conformal edge
+                            Faces[i] = -(Edg2Fac[iEdge, 0] + 333); // by a negative index, we mark a non-conformal edge
                             Cells[i] = jCell0;
                         } else if (Allow1) {
                             // cell 1 is allowed, but NOT conformal
 
                             CellBitMask[jCell1] = true;
-                            Faces[i] = -Edg2Fac[iEdge, 1]; // by a negative index, we mark a non-conformal edge
+                            Faces[i] = -(Edg2Fac[iEdge, 1] + 333); // by a negative index, we mark a non-conformal edge
                             Cells[i] = jCell1;
                         }
 
@@ -206,11 +206,9 @@ namespace BoSSS.Foundation.Quadrature {
                     QuadRule qrEdge = null;
 
                     if(Faces[i] >= 0)
-                        qrEdge = this.CombineQr(null, CellBndR, Faces[i]);
-                    else {
-                        if(!grd.Edges.IsEdgeAffineLinear(EdgeIndices[i]))
-                            throw new NotSupportedException("currently no support for hanging nodes and curved edges"); // probably true, you may try at your own volition
-                        qrEdge = this.CombineQrNonConformal(null, CellBndR, -Faces[i], EdgeIndices[i], Cells[i]);
+                        qrEdge = this.CombineQr(null, CellBndR, Faces[i] - 333);
+                    else {                       
+                        qrEdge = this.CombineQrNonConformal(null, CellBndR, -Faces[i] - 333, EdgeIndices[i], Cells[i]);                        
                     }
 
                     qrEdge.Nodes.LockForever();
@@ -380,7 +378,7 @@ namespace BoSSS.Foundation.Quadrature {
             volSplx.GetInverseFaceTrafo(iFace).Transform(CellNodes, FaceNodes);
 
             // build transformation from face to edge
-            var Trafo = AffineTrafo.FromPoints(FaceNodes, EdgeNodes);
+            var Trafo = AffineTrafo.FromPoints(FaceNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension -1 }), EdgeNodes.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { this.RefElement.SpatialDimension, this.RefElement.SpatialDimension - 1 }));
             double scale = Trafo.Matrix.Determinant();
 
             // construct the NodeSet in edge local coordinates
