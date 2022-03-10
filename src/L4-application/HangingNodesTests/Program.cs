@@ -5,23 +5,30 @@ using System.Collections.Generic;
 using BoSSS.Foundation.IO;
 using MPI.Wrappers;
 using System.IO;
+using NUnit.Framework;
 
 namespace HangingNodesTests {
-    class Program {
+
+    /// <summary>
+    /// Tests correct construction of quadrules for various setups, with hanging nodes, specially handled double cut cells and grid partitioning
+    /// This is a technical test specifically designed to varify the techniques used in the heated wall simulation for SFB1194 K26
+    /// </summary>
+    [TestFixture]    
+    public class Program {
         static void Main(string[] args) {
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
 
-            //double[] sizes = new double[] { 1e0, 1e-3 };
-            //byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-            //int[] phases = new int[] { 1, 2, 3 };
+            double[] sizes = new double[] { 1e0 };
+            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            int[] phases = new int[] { 1, 2, 3 };
 
             // to test individual setups
-            double[] sizes = new double[] { 1e0 };
-            byte[] setup = new byte[] { 0 };
-            int[] phases = new int[] { 2 };
+            //double[] sizes = new double[] { 1e0 };
+            //byte[] setup = new byte[] { 2 };
+            //int[] phases = new int[] { 3 };
 
-            bool plot = true;
+            bool plot = false;
 
             csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
             csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
@@ -91,5 +98,73 @@ namespace HangingNodesTests {
                 Console.WriteLine(Description[i] + " : MomRes : {0}, TempRes : {1}", MomentumRes[i], TemperatureRes[i]);
             }
         }
+
+        [Test]
+        public static void Test1Phase() {
+            double[] sizes = new double[] { 1e0, 1e-3 };
+            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            RunTest(sizes, setup, 1);
+        }
+
+        [Test]
+        public static void Test2Phase() {
+            double[] sizes = new double[] { 1e0, 1e-3 };
+            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            RunTest(sizes, setup, 2);
+        }
+
+        [Test]
+        public static void Test3Phase() {
+            double[] sizes = new double[] { 1e0, 1e-3 };
+            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            RunTest(sizes, setup, 3);
+        }
+
+        private static void RunTest(double[] sizes, byte[] setup, int phase) {
+
+            csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
+            csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
+
+            List<double> TemperatureRes = new List<double>();
+            List<double> MomentumRes = new List<double>();
+            List<string> Description = new List<string>();
+
+            foreach (double size in sizes) {
+                foreach (byte s in setup) {
+                    string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs : {3}", size, phase, s, procs);
+                    Description.Add(desc);
+                    var C = HangingNodesTests.Control.TestSkeleton(size);
+                    HangingNodesTests.Control.SetAMR(C, size, s);
+                    HangingNodesTests.Control.SetLevelSet(C, size, phase);
+                    HangingNodesTests.Control.SetParallel(C, procs);
+
+                    using (var solver = new XNSFE()) {
+                        try {
+                            solver.Init(C);
+                            solver.RunSolverMode();
+                            MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
+                            TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
+                        } catch (Exception e) {
+                            Console.WriteLine(desc + " : failed");
+                            Console.WriteLine(e.Message);
+                            Console.WriteLine(e.StackTrace);
+                            TemperatureRes.Add(-1.0);
+                            MomentumRes.Add(-1.0);
+                        }
+                    }                    
+                }
+            }
+
+            BoSSS.Solution.Application.FinalizeMPI();
+            Console.WriteLine("Finished Hanging Nodes Test with {0} procs.", procs);
+            Console.WriteLine();
+            Console.WriteLine("Results:");
+            for (int i = 0; i < Description.Count; i++) {
+                Console.WriteLine(Description[i] + " : MomRes : {0}, TempRes : {1}", MomentumRes[i], TemperatureRes[i]);
+            }
+            Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
+            Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
+        }
+
     }
 }
