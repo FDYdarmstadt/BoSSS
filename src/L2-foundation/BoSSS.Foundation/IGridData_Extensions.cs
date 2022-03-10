@@ -511,6 +511,7 @@ namespace BoSSS.Foundation.Grid {
         /// This operation is MPI-collective, the output-values are equal on
         /// all MPI-processors.
         /// </remarks>
+        /// <param name="gdat">~</param>
         static public void LocatePoint(this IGridData gdat, double[] pt, out long GlobalId, out long GlobalIndex, out bool IsInside, out bool OnThisProcess, CellMask CM = null) {
             using (new FuncTrace()) {
                 if (pt.Length != gdat.SpatialDimension)
@@ -847,7 +848,7 @@ namespace BoSSS.Foundation.Grid {
         /// 0 for IN-cell/first cell, see <see cref="IsEdgeConformalWithCell1"/><br/>
         /// 1 for OUT-cell/second cell, see <see cref="IsEdgeConformalWithCell2"/>
         /// </param>
-        /// <returns></returns>
+        /// <param name="ge">~</param>
         static public bool IsEdgeConformal(this IGeometricalEdgeData ge, int iedge, int InOrOut) {
             switch (InOrOut) {
                 case 0:
@@ -912,10 +913,8 @@ namespace BoSSS.Foundation.Grid {
 
 
         /// <summary>
-        /// computes a global time-step length ("delta t") according to the 
-        /// Courant-Friedrichs-Lax - criterion, based on a velocity
-        /// vector (<paramref name="velvect"/>) and the cell size
-        /// this.<see cref="Cells"/>.<see cref="CellData.h_min"/>;
+        /// computes a global time-step length ("delta t") according to the Courant-Friedrichs-Lax - criterion, based on a velocity
+        /// vector (<paramref name="velvect"/>) and the cell size <see cref="Grid.IGeometricalCellsData.h_min"/>;
         /// </summary>
         /// <param name="velvect">
         /// components of a velocity vector
@@ -927,6 +926,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="cm">
         /// optional restriction of domain.
         /// </param>
+        /// <param name="__gdat">~</param>
         /// <returns>
         /// the minimum (over all cells j in all processes) of <see cref="CellData.h_min"/>[j]
         /// over v, where v is the Euclidean norm of a vector build from 

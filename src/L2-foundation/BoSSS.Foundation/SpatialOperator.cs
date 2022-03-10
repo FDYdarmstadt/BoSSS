@@ -1541,8 +1541,8 @@ namespace BoSSS.Foundation {
             }
 
             /// <summary>
-            /// evaluates the differential operator (<see cref="Owner"/>)
-            /// for the domain variables/fields in <see cref="DomainMapping"/>, i.e.
+            /// evaluates the differential operator (<see cref="EvaluatorBase.Owner"/>)
+            /// for the domain variables/fields in <see cref="EvaluatorBase.DomainMapping"/>, i.e.
             /// performs the operation
             /// <paramref name="output"/> = <paramref name="output"/>*<paramref name="beta"/> + Op(%)*<paramref name="alpha"/>
             /// </summary>
@@ -1553,7 +1553,7 @@ namespace BoSSS.Foundation {
             /// is <b>ACCUMULATED</b> here;
             /// It's up to the user to ensure that this array is initialized to 0.0,
             /// if necessary;
-            /// Indices into this vector are computed according to <see cref="CodomainMapping"/>;
+            /// Indices into this vector are computed according to <see cref="EvaluatorBase.CodomainMapping"/>;
             /// </param>
             /// <param name="outputBndEdge">
             /// Some additional output vector for boundary fluxes, used only by the local time stepping

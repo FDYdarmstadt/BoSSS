@@ -420,7 +420,7 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// minimum cell diameter over all cells in the subgrid
-        /// <see cref="GridData.CellData.h_min"/>
+        /// <see cref="IGeometricalCellsData.h_min"/>
         /// </summary>
         public double h_minSubGrd {
             get {
@@ -445,7 +445,7 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// maximum cell diameter over all cells in the subgrid
-        /// <see cref="GridData.CellData.h_max"/>
+        /// <see cref="IGeometricalCellsData.h_max"/>
         /// </summary>
         public double h_maxSubGrd {
             get {
