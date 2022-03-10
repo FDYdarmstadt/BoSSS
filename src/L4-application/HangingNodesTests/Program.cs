@@ -155,7 +155,6 @@ namespace HangingNodesTests {
                 }
             }
 
-            BoSSS.Solution.Application.FinalizeMPI();
             Console.WriteLine("Finished Hanging Nodes Test with {0} procs.", procs);
             Console.WriteLine();
             Console.WriteLine("Results:");
