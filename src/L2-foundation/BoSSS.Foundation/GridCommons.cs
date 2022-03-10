@@ -222,7 +222,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// layer (L2-layer of BoSSS). They may be used on a higher application
         /// layer; Usually, this member (as like mostly all other public
         /// variable of this class) should be initialized by grid generator
-        /// programs (see <see cref="DefineEdgeTags"/>).
+        /// programs (see <see cref="IGrid_Extensions.DefineEdgeTags(IGrid, Func{double[], string})"/>).
         /// </remarks>
         public IDictionary<byte, string> EdgeTagNames {
             get {

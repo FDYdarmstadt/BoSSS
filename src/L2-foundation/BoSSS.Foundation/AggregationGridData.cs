@@ -123,9 +123,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// Coarse cells which build up the fine cells.
         /// - 1st index: coarse (i.e. this) grid cell index
         /// - 2nd index: enumeration
-        /// - content: local cell index into the parent grid <paramref name="pGrid"/>.
+        /// - content: local cell index into the parent grid <see cref="AggregationGrid.ParentGrid"/>.
         /// </param>
-        public AggregationGridData(AggregationGrid aggregationGrid, int[][]AggregationCells) {
+        public AggregationGridData(AggregationGrid aggregationGrid, int[][] AggregationCells) {
 
             this.aggregationGrid = aggregationGrid;
             IGridData pGrid = aggregationGrid.ParentGrid.iGridData;

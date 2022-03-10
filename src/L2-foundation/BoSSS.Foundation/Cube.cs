@@ -123,7 +123,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 // ===================================
 
                 {
-                    int mem = 0;
+                    //int mem = 0;
                     var qrTemp1D = QuadRuleResource.DecodeFromBase64( Resource.LineQuadRules_bin);
                     foreach(var q in qrTemp1D) {
                         m_1Drules.Add(q.Item1, (q.Item2, q.Item3));

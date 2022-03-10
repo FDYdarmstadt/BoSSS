@@ -41,7 +41,7 @@ namespace BoSSS.Foundation {
         /// identification string for this field;
         /// This can be null or empty, 
         /// however, if IO should be preformed for this object, the identification must be unique 
-        /// within the given <see cref="GridData"/>-instance
+        /// among the other fields which should be saved
         /// </param>
         protected DGField(Basis __Basis, String __Identification) {
             MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
@@ -500,7 +500,6 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Set mean value to mean value of field
         /// </summary>
-        /// <param name="field"></param>
         public void SetMeanValueTo(DGField field, CellMask mask = null)
         {
             if(field.GridDat.GridID != this.GridDat.GridID)
@@ -1056,8 +1055,6 @@ namespace BoSSS.Foundation {
         /// field must be contained in the basis of this field (see
         /// <see cref="Basis"/>);
         /// </summary>
-        /// <param name="alpha"></param>
-        /// 
         virtual public void ScaleAndAcc(DGField other, double alpha = 0.5) {
             if (!other.Basis.Equals(this.Basis)) {
                 throw new ApplicationException(
@@ -1247,7 +1244,7 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <returns>
         /// The GlobalId of the first cell (depending on the actual
-        /// GlobalID-Permutation <see cref="Element.GlobalID"/>)
+        /// GlobalID-Permutation <see cref="IGridData.CurrentGlobalIdPermutation"/>)
         /// within the actual MPI-process in which an 'illegal value'
         /// (depending on <paramref name="CheckForInf"/> and
         /// <paramref name="CheckForNan"/>) is found; otherwise, a negative
@@ -1350,7 +1347,7 @@ namespace BoSSS.Foundation {
         /// <paramref name="proc"/> to the send buffer
         /// (<paramref name="Buffer"/>); This coordinates are those of the
         /// cells (with local index)
-        /// <see cref="GridData.Parallelization.m_SendCommLists"/>[<paramref name="proc"/>];
+        /// <see cref="IParallelization.SendCommLists"/>[<paramref name="proc"/>];
         /// </summary>
         /// <param name="Buffer">
         /// send buffer; the first item to send must be inserted at
