@@ -23,6 +23,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Platform;
 using ilPSP;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.Quadrature {
 
@@ -95,7 +96,6 @@ namespace BoSSS.Foundation.Quadrature {
             // ==========
 
             BitArray CellBitMask = new BitArray(J);
-            KeyValuePair<long, long>[] ExternalCells = new KeyValuePair<long, long>[NoEdg]; // global cellpair to exchange rule from, Key : Src, Value : Dest
             int[] Cells = new int[NoEdg]; // mapping: Edge Index --> Cell Index (both geometrical)
             int[] Faces = new int[NoEdg]; // mapping: Edge Index --> Face 
             BitArray MaxDomainMask = m_maxDomain.GetBitMask();
@@ -145,10 +145,6 @@ namespace BoSSS.Foundation.Quadrature {
                             CellBitMask[jCell0] = true;
                             Faces[i] = Edg2Fac[iEdge, 0];
                             Cells[i] = jCell0;
-                            if (jCell1 >= grd.Cells.NoOfLocalUpdatedCells) {
-                                ExternalCells[i] = new KeyValuePair<long, long>(grd.Parallel.GetGlobalCellIndex(jCell0), grd.Parallel.GetGlobalCellIndex(jCell1));
-                            }
-
                         } else if (conf1 && Allow1) {
                             // cell 1 is allowed and conformal:
                             // take this, it won't get better
@@ -163,10 +159,6 @@ namespace BoSSS.Foundation.Quadrature {
                             CellBitMask[jCell0] = true;
                             Faces[i] = -Edg2Fac[iEdge, 0]; // by a negative index, we mark a non-conformal edge
                             Cells[i] = jCell0;
-                            if (jCell1 >= grd.Cells.NoOfLocalUpdatedCells) {
-                                ExternalCells[i] = new KeyValuePair<long, long>(grd.Parallel.GetGlobalCellIndex(jCell1), grd.Parallel.GetGlobalCellIndex(jCell0));
-                            }
-
                         } else if (Allow1) {
                             // cell 1 is allowed, but NOT conformal
 
@@ -213,21 +205,12 @@ namespace BoSSS.Foundation.Quadrature {
                     var CellBndR = cellBndRule[iChunk[i]].Rule;
                     QuadRule qrEdge = null;
 
-                    if (Faces[i] >= 0) {
+                    if(Faces[i] >= 0)
                         qrEdge = this.CombineQr(null, CellBndR, Faces[i]);
-                    } else {
-                        int iEdge = EdgeIndices[i];
-                        int _inOut = Edg2Cel[iEdge, 0] == Cells[i] ? 0 : 1;
-                        int jCell0 = Edg2Cel[iEdge, _inOut];
-                        int jCell1 = Edg2Cel[iEdge, Math.Abs(_inOut - 1)];
-                        if (jCell1 >= grd.Cells.NoOfLocalUpdatedCells) {
-                            // cell on this proc does not qualify, but maybe we can find a suitable candidate on an external proc and import the rule
-                            // for now create an empty rule, we will exchange later
-                            Cells[i] = jCell1;
-                            qrEdge = QuadRule.CreateEmpty(this.RefElement, 1, this.RefElement.SpatialDimension);
-                        } else {
-                            throw new NotSupportedException("currently no support for non-conformal edges.");
-                        }
+                    else {
+                        if(!grd.Edges.IsEdgeAffineLinear(EdgeIndices[i]))
+                            throw new NotSupportedException("currently no support for hanging nodes and curved edges"); // probably true, you may try at your own volition
+                        qrEdge = this.CombineQrNonConformal(null, CellBndR, -Faces[i], EdgeIndices[i], Cells[i]);
                     }
 
                     qrEdge.Nodes.LockForever();
@@ -238,47 +221,6 @@ namespace BoSSS.Foundation.Quadrature {
                     //}
                 }
             }
-
-            // MPI- Exchange - THIS PRODUCES DEADLOCKS; WHERE CAN WE PUT STH LIKE THIS?
-            // =============
-            {
-                if (grd.CellPartitioning.MpiSize > 1)
-                    throw new NotSupportedException("Careful, we will run into a deadlock!!");
-
-                double[][,] NodesList = new double[NoEdg][,];
-                double[][] WeightsList = new double[NoEdg][];
-                for (int i = 0; i < NoEdg; i++) {
-                    // only send external cells and those rules where this proc is the sender
-                    if (!(ExternalCells[i].Key == 0 && ExternalCells[i].Value == 0) && grd.CellPartitioning.FindProcess(ExternalCells[i].Key) == grd.CellPartitioning.MpiRank) {
-                        NodesList[i] = Ret[i].Rule.Nodes.To2DArray();
-                        WeightsList[i] = Ret[i].Rule.Weights.To1DArray();
-                    }
-                }
-
-                var NodesListGlob = MPI.Wrappers.MPIExtensions.MPIAllGatherO(NodesList);
-                var WeightsListGlob = MPI.Wrappers.MPIExtensions.MPIAllGatherO(WeightsList);
-                var ExternalCellsGlob = MPI.Wrappers.MPIExtensions.MPIAllGatherO(ExternalCells);
-
-                for (int i = 0; i < NoEdg; i++) {
-                    if(Cells[i] >= grd.Cells.NoOfLocalUpdatedCells) {
-                        var CellPair = ExternalCells[i];
-                        int rank1 = grd.CellPartitioning.FindProcess(CellPair.Key);
-                        int j = ExternalCellsGlob[rank1].IndexOf(CellPair, (kvp0, kvp1) => kvp0.Key == kvp1.Key && kvp0.Value == kvp1.Value);
-
-                        if (j >= 0) {
-                            QuadRule qrEdge = new QuadRule();
-                            qrEdge.Nodes = new NodeSet(this.RefElement, NodesListGlob[rank1][j]);
-                            qrEdge.Weights = MultidimensionalArray.CreateWrapper(WeightsListGlob[rank1][j], new int[] { WeightsListGlob[rank1][j].Length });
-                            qrEdge.Nodes.LockForever();
-                            qrEdge.Weights.LockForever();
-                            Ret[i] = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(EdgeIndices[i]), qrEdge);
-                        } else {
-                            throw new NotSupportedException("No suitable rule found on external proc, currently no support for non-conformal edges.");
-                        }
-                    }
-                }
-            }
-
 
             // return
             // ======
@@ -333,6 +275,134 @@ namespace BoSSS.Foundation.Quadrature {
             NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD);
 
             volSplx.GetInverseFaceTrafo(iFace).Transform(NodesVol, Nodes);
+            Nodes.LockForever();
+
+            //Debug.Assert((Weigts.Sum() - grd.Grid.GridSimplex.EdgeSimplex.Volume).Abs() < 1.0e-6, "i've forgotten the gramian");
+
+            // combine 
+            // -------
+            if (qrEdge == null) {
+                // no rule defined yet - just set the one we have got
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++
+                qrEdge = new QuadRule();
+                qrEdge.Weights = Weigts;
+                qrEdge.Nodes = Nodes;
+                qrEdge.OrderOfPrecision = givenRule.OrderOfPrecision;
+
+            } else {
+                // take the mean of already defined and new rule
+                // +++++++++++++++++++++++++++++++++++++++++++++
+
+                int L1 = qrEdge.Nodes.GetLength(0);
+                int L2 = Nodes.GetLength(0);
+                Debug.Assert(coD == qrEdge.Nodes.GetLength(1));
+
+                NodeSet newNodes = new NodeSet(this.RefElement, L1 + L2, coD);
+                newNodes.SetSubArray(qrEdge.Nodes, new int[] { 0, 0 }, new int[] { L1 - 1, coD - 1 });
+                newNodes.SetSubArray(Nodes, new int[] { L1, 0 }, new int[] { L1 + L2 - 1, coD - 1 });
+                newNodes.LockForever();
+
+                MultidimensionalArray newWeights = MultidimensionalArray.Create(L1 + L2);
+                newWeights.AccSubArray(0.5, qrEdge.Weights, new int[] { 0 }, new int[] { L1 - 1 });
+                newWeights.AccSubArray(0.5, Weigts, new int[] { L1 }, new int[] { L1 + L2 - 1 });
+
+                double oldSum = qrEdge.Weights.Sum();
+                double newSum = Weigts.Sum();
+                WeightInbalance += Math.Abs(oldSum - newSum);
+
+
+                qrEdge.Nodes = newNodes;
+                qrEdge.Weights = newWeights;
+                qrEdge.OrderOfPrecision = Math.Min(qrEdge.OrderOfPrecision, givenRule.OrderOfPrecision);
+
+            }
+
+            // return
+            // ------
+            return qrEdge;
+
+        }
+
+        // Basically the same, but drop nodes, that are not located on the edge!
+        private QuadRule CombineQrNonConformal(QuadRule qrEdge, CellBoundaryQuadRule givenRule, int iFace, int iEdge, int jCell) {
+            int D = grd.SpatialDimension;
+            var volSplx = m_cellBndQF.RefElement;
+            int coD = D - 1;
+            Debug.Assert(this.RefElement.SpatialDimension == coD);
+
+            // extract edge rule
+            // -----------------
+
+            int i0 = 0, iE = 0;
+            for (int i = 0; i < iFace; i++)
+                i0 += givenRule.NumbersOfNodesPerFace[i];
+            iE = i0 + givenRule.NumbersOfNodesPerFace[iFace] - 1;
+
+            if (iE < i0) {
+                // rule is empty (measure is zero).
+
+                if (qrEdge == null) {
+                    QuadRule ret = new QuadRule();
+                    ret.OrderOfPrecision = int.MaxValue - 1;
+                    ret.Nodes = new NodeSet(this.RefElement, 1, Math.Max(1, D - 1));
+                    ret.Weights = MultidimensionalArray.Create(1);  // this is an empty rule, since the weight is zero!
+                    // (rules with zero nodes may cause problems at various places.)
+                    return ret;
+                } else {
+                    qrEdge.Nodes.Scale(0.5);
+                    qrEdge.Weights.Scale(0.5);
+                    return qrEdge;
+                }
+            }
+
+            //Debugger.Launch();
+
+            MultidimensionalArray NodesVol = givenRule.Nodes.ExtractSubArrayShallow(new int[] { i0, 0 }, new int[] { iE, D - 1 });
+            MultidimensionalArray Weigts = givenRule.Weights.ExtractSubArrayShallow(new int[] { i0 }, new int[] { iE }).CloneAs();
+            NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD);
+
+            // as before, nodes from cell transformed to face
+            volSplx.GetInverseFaceTrafo(iFace).Transform(NodesVol, Nodes);
+            Nodes.LockForever();
+
+            // get edge endpoints 
+            var EdgeNodes = this.RefElement.Vertices;
+            NodeSet FaceNodes = new NodeSet(this.RefElement, this.RefElement.Vertices.NoOfNodes, coD);
+            // Transform to cell
+            int trf;
+            if (grd.Edges.CellIndices[iEdge, 0] == jCell) {
+                trf = grd.Edges.Edge2CellTrafoIndex[iEdge, 0];
+            } else {
+                trf = grd.Edges.Edge2CellTrafoIndex[iEdge, 1];
+            }
+            var CellNodes = EdgeNodes.GetVolumeNodeSet(grd, trf);
+            // Transform to face
+            volSplx.GetInverseFaceTrafo(iFace).Transform(CellNodes, FaceNodes);
+
+            // build transformation from face to edge
+            var Trafo = AffineTrafo.FromPoints(FaceNodes, EdgeNodes);
+            double scale = Trafo.Matrix.Determinant();
+
+            // construct the NodeSet in edge local coordinates
+            NodeSet NodesEdge = new NodeSet(this.RefElement, Trafo.Transform(Nodes));
+
+            double[] NodesOnEdge = new double[0];
+            double[] WeightsOnEdge = new double[0];
+            int NoOfNodes = 0;
+            for (int i = 0; i < iE - i0 + 1; i++) {
+                // remove nodes, that are not located on this edge
+                double[] point = NodesEdge.ExtractSubArrayShallow(i, -1).To1DArray();
+                
+                double weight = Weigts[i] * scale;
+                if (this.RefElement.IsWithin(point)) {
+                    NodesOnEdge = NodesOnEdge.Concat(point).ToArray();
+                    WeightsOnEdge = WeightsOnEdge.Concat(weight).ToArray();
+                    NoOfNodes++;
+                }
+            }
+            // override the Node set with the "true" nodes located on the edge and in edge local coordinates
+            Nodes = new NodeSet(this.RefElement, MultidimensionalArray.CreateWrapper(NodesOnEdge, new int[] { NoOfNodes, this.RefElement.SpatialDimension }));
+            Weigts = MultidimensionalArray.CreateWrapper(WeightsOnEdge, new int[] { NoOfNodes });
             Nodes.LockForever();
 
             //Debug.Assert((Weigts.Sum() - grd.Grid.GridSimplex.EdgeSimplex.Volume).Abs() < 1.0e-6, "i've forgotten the gramian");

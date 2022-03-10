@@ -420,8 +420,37 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         TotalNoOfRoots += _roots[e].Length;
                     }
 
+                    // ==================
+                    // divide non-conformal line segments
+                    // ==================
+                    for (int e = 0; e < referenceLineSegments.Length; e++) {
+                        // check if line segment (i.e. face) contains hanging nodes
+                        int edg = grdDat.Cells.GetEdgesForFace(jCell, e, out _, out int[] FurtherEdges);
+                        if (!FurtherEdges.IsNullOrEmpty()) {
+                            var rootList = _roots[e].ToList();
+                            // if so add an additional (artificial) roots at the hanging nodes
+                            foreach (int edge in new int[] { edg }.Concat(FurtherEdges)) {
+                                var EdgeNodes = grdDat.Edges.GetRefElement(edge).Vertices;
+                                // Transform to cell
+                                int trf;
+                                if (grdDat.Edges.CellIndices[edge, 0] == jCell) {
+                                    trf = grdDat.Edges.Edge2CellTrafoIndex[edge, 0];
+                                } else {
+                                    trf = grdDat.Edges.Edge2CellTrafoIndex[edge, 1];
+                                }
+                                // transform edgerule to volume rule
+                                var CellNodes = EdgeNodes.GetVolumeNodeSet(grdDat, trf);                               
 
-
+                                for (int k = 0; k < CellNodes.NoOfNodes; k++) {
+                                    // Transform to referenceLineSegment
+                                    var LineNode = referenceLineSegments[e].GetSegmentCoordinateForPoint(CellNodes.ExtractSubArrayShallow(k, -1).To1DArray());
+                                    if (!rootList.Contains(LineNode))
+                                        rootList.Add(LineNode);                                    
+                                }
+                            }
+                            _roots[e] = rootList.OrderBy(s => s).ToArray();
+                        }
+                    }
 
                     // ============================
                     // create line measure
