@@ -83,15 +83,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
     }
 
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface ISolverFactory : IEquatable<ISolverFactory> {
 
-    public interface ISolverFactory  {
-
+        /// <summary>
+        /// Name/Description of the solver configuration
+        /// </summary>
         string Name { get; }
 
+        /// <summary>
+        /// short version of <see cref="Name"/>, e.g. to be used in plots or tables
+        /// </summary>
         string Shortname { get; }
 
-        ISolverSmootherTemplate CreateInstance();
+        /// <summary>
+        /// Creates an Instance of the respective solver
+        /// </summary>
+        ISolverSmootherTemplate CreateInstance(MultigridOperator level);
     }
+
+
 
     /// <summary>
     /// For certain solvers, a programmable termination criterion seems handy.
@@ -104,9 +117,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// - 1st argument: iteration index
         /// - 2nd argument: l2-Norm of residual of initial solution 
         /// - 3rd argument: l2-Norm of residual of solution in current iteration
-        /// - return value: true to continue, false to terminate
+        /// - return value, 1st item: true to continue, false to terminate
+        /// - return value, 2nd item: true for successful convergence (e.g. convergence criterion reached), false for failure (e.g. maximum number of iterations reached)
         /// </summary>
-        Func<int, double, double, bool> TerminationCriterion {
+        Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;
         }
@@ -119,10 +133,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public interface ISolverWithCallback : ISolverSmootherTemplate {
 
         /// <summary>
-        ///  - 1st argument: iteration index<br/>
-        ///  - 2nd argument: current solution<br/>
-        ///  - 3rd argument: current residual<br/>
-        ///  - 4th argument: the currently used operator<br/>
+        ///  - 1st argument: iteration index
+        ///  - 2nd argument: current solution
+        ///  - 3rd argument: current residual
+        ///  - 4th argument: the currently used operator
         /// </summary>      
         Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;

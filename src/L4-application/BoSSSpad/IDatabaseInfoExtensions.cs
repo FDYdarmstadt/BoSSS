@@ -108,7 +108,6 @@ namespace BoSSS.Foundation.IO {
             bool found;
             IGrid grid = grd;
             Guid GridGuid;
-
             if(!force) {
                 GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
                 if(found) {

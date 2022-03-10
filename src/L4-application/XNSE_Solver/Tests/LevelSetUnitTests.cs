@@ -428,10 +428,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver.ConvergenceCriterion = 1e-9;
-
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            
             // return
             // ======
 

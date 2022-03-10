@@ -25,7 +25,7 @@ namespace BoSSS.Solution.Control {
             this.NoOfMultigridLevels = 1000000;
         }
 
-
+        /*
         /// <summary>
         /// Linked to <see cref="LinearSolverConfig.NoOfMultigridLevels"/>.
         /// </summary>
@@ -38,12 +38,13 @@ namespace BoSSS.Solution.Control {
                 LinearSolver.NoOfMultigridLevels = value;
             }
         }
+        */
 
         /// <summary>
         /// Configuration of 'primary' linear solver, respectively preconditioner used for <see cref="NonLinearSolver"/>.
         /// </summary>
         [DataMember]
-        public LinearSolverConfig LinearSolver = new LinearSolverConfig();
+        public AdvancedSolvers.ISolverFactory LinearSolver = new AdvancedSolvers.DirectSolver.Config();
 
         /// <summary>
         /// Configuration of 'primary' nonlinear solver, if used in application

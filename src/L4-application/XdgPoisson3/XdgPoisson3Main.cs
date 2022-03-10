@@ -60,10 +60,8 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         static void Main(string[] args) {
             //InitMPI();
+            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
             //BoSSS.Application.XdgPoisson3.Tests.ScalingCircle2D(3);
-            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
-            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
-            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
             //throw new Exception("remove me");
 
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
@@ -192,12 +190,14 @@ namespace BoSSS.Application.XdgPoisson3 {
             base.TerminationKey = true;
             dt = 1.0;
 
-            this.Op.Solve(this.u.Mapping, MgConfig:this.OpConfig,
+            bool succ = this.Op.Solve(this.u.Mapping, MgConfig:this.OpConfig,
                 nsc: this.Control.NonLinearSolver, lsc: this.Control.LinearSolver,
                 MultigridSequence: base.MultigridSequence, 
                 verbose: true,
                 queryHandler: base.QueryHandler);
- 
+
+            if(!succ)
+                throw new ArithmeticException("solver did not converge");
 
             if (this.Control.ExcactSolSupported) {
                 this.uErr.Clear();

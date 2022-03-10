@@ -104,13 +104,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public double[] Xdummy = null;
 
         /// <summary>
-        /// masks for the Schwarz blocks, high order modes, only initialized if PMG is used, <see cref="UsePMGinBlocks"/>
+        /// masks for the Schwarz blocks, high order modes, only initialized if PMG is used, <see cref="Schwarz.UsePMGinBlocks"/>
         /// - index: Schwarz block
         /// </summary>
         BlockMask BMhiBlocks;
 
         /// <summary>
-        /// masks for the Schwarz blocks, low order modes, only initialized if PMG is used, <see cref="UsePMGinBlocks"/>
+        /// masks for the Schwarz blocks, low order modes, only initialized if PMG is used, <see cref="Schwarz.UsePMGinBlocks"/>
         /// - index: Schwarz block
         /// </summary>
         BlockMask BMloBlock;
@@ -145,10 +145,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         BlockMsrMatrix loModeBlock;
 
-        /// <summary>
-        /// experimental. LU Pivoting. Can be dismissed ...
-        /// </summary>
-        int[][] HighOrderBlocks_LUpivots;
+        ///// <summary>
+        ///// experimental. LU Pivoting. Can be dismissed ...
+        ///// </summary>
+        //int[][] HighOrderBlocks_LUpivots;
 
         private bool AnyHighOrderTerms {
             get {
@@ -189,8 +189,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Debug.Assert(lowMask != null);
             BMloBlock = lowMask;
             var HiMask = new BlockMask(HiSel, ExtMatrix);
-            Debug.Assert(HiMask.GetNoOfMaskedCells == lowMask.GetNoOfMaskedCells);
-            Debug.Assert(HiMask.GetNoOfMaskedCells == fullBlock._RowPartitioning.LocalNoOfBlocks);
+            Debug.Assert(HiMask.NoOfMaskedCells == lowMask.NoOfMaskedCells);
+            Debug.Assert(HiMask.NoOfMaskedCells == fullBlock._RowPartitioning.LocalNoOfBlocks);
 
             //Console.WriteLine("Testcode in Schwarz.");
             //Debug.Assert(HiMask.GetNoOfMaskedCells == BlockCellIdc.Count() || m_FullSolveOfCutcells); // Probably not fulfilled for IBM, there maybe emtpy cells, due to no species

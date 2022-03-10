@@ -575,19 +575,6 @@ namespace BoSSS.Application.XRheology_Solver {
                     // solver 
                     this.Control.NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.NonLinearSolver.MinSolverIterations; //m_BDF_Timestepper.config_NonLinearSolver.MinSolverIterations = (this.Control.Timestepper_LevelSetHandling == LevelSetHandling.Coupled_Iterative) ? 1 : this.Control.Solver_MinIterations;
 
-                    if (m_BDF_Timestepper.XdgSolverFactory.IsNewtonGmresType) {
-                        m_BDF_Timestepper.XdgSolverFactory.Selfmade_precond =
-                                            new Schwarz() {
-                                                m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
-                                                    NoOfPartsOnCurrentProcess = this.CurrentSolution.Count / 10000,
-                                                },
-                                                Overlap = 1,
-                                                CoarseSolver = new Schwarz.ClassicMG() { CoarseSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.MUMPS } }
-                                            };
-                    } else {
-                        //m_BDF_Timestepper.Config_linearSolver = new DirectSolver() { WhichSolver = this.Control.LinearSolver };
-                    }
-
                     //Console.WriteLine("noofpartsperprocess = {0}", this.CurrentSolution.Count / 10000);               
 
                 } else {

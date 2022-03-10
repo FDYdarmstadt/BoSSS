@@ -309,11 +309,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -666,13 +662,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -938,13 +929,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -1172,13 +1158,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -1395,13 +1376,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -1637,13 +1613,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ComputeEnergyProperties = false;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;

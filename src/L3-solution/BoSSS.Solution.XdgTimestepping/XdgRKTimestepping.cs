@@ -91,7 +91,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool useX,
             Control.NonLinearSolverConfig nonlinconfig,
-            Control.LinearSolverConfig linearconfig) : base(nonlinconfig, linearconfig) {
+            ISolverFactory linearconfig) 
+            : base(nonlinconfig, linearconfig) //
+        {
 
             // check args, set internals
             // -------------------------
@@ -586,16 +588,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             // solve the system
             // ================
 
-            NonlinearSolver nonlinSolver;
-            ISolverSmootherTemplate linearSolver;
-            GetSolver(out nonlinSolver, out linearSolver);
 
             bool success;
             if (RequiresNonlinearSolver) {
 
                 // Nonlinear Solver (Navier-Stokes)
                 // --------------------------------
-
+                var nonlinSolver = GetNonlinSolver();
                 success = nonlinSolver.SolverDriver(m_CurrentState, default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
 
             } else {
@@ -616,11 +615,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
 
                 // init linear solver
-                linearSolver.Init(mgOperator);
-
-                // try to solve the saddle-point system.
-                mgOperator.UseSolver(linearSolver, m_CurrentState, RHS);
-                success = linearSolver.Converged;
+                using(var linearSolver = GetLinearSolver(mgOperator)) {
+                    // try to solve the saddle-point system.
+                    mgOperator.UseSolver(linearSolver, m_CurrentState, RHS);
+                    success = linearSolver.Converged;
+                }
 
                 // 'revert' agglomeration
                 m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);

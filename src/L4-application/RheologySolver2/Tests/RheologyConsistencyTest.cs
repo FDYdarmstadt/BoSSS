@@ -82,9 +82,6 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.MaxSolverIterations = 20;
             C.NonLinearSolver.MinSolverIterations = 3;
             C.NonLinearSolver.ConvergenceCriterion = 1E-20;
-            C.LinearSolver.MaxSolverIterations = 20;
-            C.LinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.ConvergenceCriterion = 1E-13;
 
 
             //C.MaxIter = 20;

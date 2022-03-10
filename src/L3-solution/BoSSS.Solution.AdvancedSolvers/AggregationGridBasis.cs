@@ -806,8 +806,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Prolongates/injects a vector from the full grid (<see cref="BoSSS.Foundation.Grid.GridData"/>)
-        /// to the aggregated grid (<see cref="AggGrid"/>).
+        /// Prolongates/injects a vector from 
+        /// the aggregated grid (<see cref="AggGrid"/>)
+        /// to the full grid ((<see cref="AggGrid"/>, <see cref="AggregationGridData.AncestorGrid"/>))
         /// </summary>
         /// <param name="FullGridVector">output;</param>
         /// <param name="AggGridVector">input;</param>
@@ -865,7 +866,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <param name="rest">Output</param>
         /// <param name="mgMap"></param>
-        /// <param name="iFld">DG field index within <see cref="mgMap"/>.</param>
+        /// <param name="iFld">DG field index within <paramref name="mgMap"/>.</param>
         /// <remarks>
         /// Not intended for direct user interaction, mainly used by
         /// used by <see cref="MultigridMapping.FromOtherLevelMatrix(MultigridMapping)"/>
@@ -966,17 +967,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
             private set;
         }
 
+        /// <summary>
+        /// DG basis on the base grid (<see cref="AggGrid"/>, <see cref="AggregationGridData.AncestorGrid"/>)
+        /// </summary>
         public Basis DGBasis {
             get;
             private set;
         }
 
+        /// <summary>
+        /// Global maximum (i.e. maximum over all MPI processes) 
+        /// of degrees-of-freedom per cell
+        /// </summary>
         public virtual int MaximalLength {
             get {
                 return this.DGBasis.MaximalLength;
             }
         }
 
+        /// <summary>
+        /// Global maximum (i.e. maximum over all MPI processes) 
+        /// of degrees-of-freedom per cell
+        /// </summary>
         public virtual int MinimalLength {
             get {
                 return this.DGBasis.MinimalLength;
@@ -986,6 +998,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         int[] m_Lengths;
 
+        /// <summary>
+        /// Global (over all MPI processes) maximum number of degrees-of-freedom per cell for polynomial degree <paramref name="p"/>
+        /// </summary>
         public virtual int GetMaximalLength(int p) {
             Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
             if (DGBasis.MaximalLength == 0)
@@ -993,11 +1008,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return this.GetLength(0, p);
         }
 
+        /// <summary>
+        /// Global (over all MPI processes) maximum number of degrees-of-freedom per cell for polynomial degree <paramref name="p"/>
+        /// </summary>
         public virtual int GetMinimalLength(int p) {
             Debug.Assert(this.DGBasis.MaximalLength == this.DGBasis.MinimalLength);
             return this.GetLength(0, p);
         }
-        
+
+        /// <summary>
+        /// number of degrees-of-freedom for polynomial degree <paramref name="p"/> in cell <paramref name="jCell"/>
+        /// </summary>        
         public virtual int GetLength(int jCell, int p) {
             GetNp();
             if (m_Lengths[p] == 0)

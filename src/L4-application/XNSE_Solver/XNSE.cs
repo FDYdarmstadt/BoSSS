@@ -24,7 +24,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using MPI.Wrappers;
 using System.Threading;
 using System.Reflection;
 
@@ -73,8 +72,10 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
             //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest(2, Tests.TaylorCouette.Mode.TestIBM, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false, NonLinearSolverCode.Newton);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
             //NUnit.Framework.Assert.IsTrue(false, "remove me"); //*/
 
@@ -309,11 +310,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 configsLevel.Add(confMomConti);
             } else {
+                
                 // configurations for velocity
                 for (int d = 0; d < D; d++) {
                     var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
                         DegreeS = new int[] { pVel },
-                        //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
+                        //DegreeS = new int[] { Math.Max(1, pVel - iLevel) }, // p-multigrid reduction
                         mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                         VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
                     };
@@ -322,7 +324,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // configuration for pressure
                 var configPres = new MultigridOperator.ChangeOfBasisConfig() {
                     DegreeS = new int[] { pPrs },
-                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) }, // p-multigrid reduction
                     mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                     VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
                 };
@@ -513,7 +515,12 @@ namespace BoSSS.Application.XNSE_Solver {
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
 
-            if (this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature) BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
+            // testcode: delete if in master
+            //Console.WriteLine("!!!!!!!!!!!!!!!!! skipping IBM");
+            //return;
+
+            if (this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature) 
+                BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
 
             for (int d = 0; d < D; ++d) {
                 // so far only no slip!
@@ -567,9 +574,11 @@ namespace BoSSS.Application.XNSE_Solver {
                
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                //if (!success) throw new Exception($"Solver did not converge for time step {TimestepNo}");
-                Console.WriteLine($"Done with time step {TimestepNo}.");
+
+                Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
                 GC.Collect();
+                if(Control.FailOnSolverFail && !success)
+                    throw new ArithmeticException("Solver did not converge.");
 
                 return dt;
             }
@@ -729,11 +738,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 Console.WriteLine("=============== {0} ===============", "Linear Solver Configuration");
-                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.LinearSolver.SolverCode);
-                if (this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_mumps & this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_pardiso) {
-                    Console.WriteLine("TODO");
-                }
-
+                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.LinearSolver.Name);
+                
                 Console.WriteLine("=============== {0} ===============", "Nonlinear Solver Configuration");
                 Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.NonLinearSolver.SolverCode);
                 Console.WriteLine("     {0,-30}:{1}", "Convergence Criterion", this.Control.NonLinearSolver.ConvergenceCriterion);

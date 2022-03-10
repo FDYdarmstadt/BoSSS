@@ -324,13 +324,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -724,16 +719,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 20;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-6;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -1190,16 +1178,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 20;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-6;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -1584,16 +1564,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 20;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-6;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -1894,16 +1869,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.useSolutionParamUpdate = true;
@@ -2376,17 +2346,12 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            //C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 5;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-6;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -2665,16 +2630,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 40;
-            C.LinearSolver.MaxSolverIterations = 40;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-7;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.useSolutionParamUpdate = true;
@@ -2944,16 +2902,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 20;
-            C.LinearSolver.MaxSolverIterations = 20;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-6;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             //C.useSolutionParamUpdate = true;
@@ -3189,13 +3140,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -3513,15 +3459,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-6;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -3791,13 +3730,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -4049,16 +3983,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -4337,13 +4266,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -4611,13 +4535,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -4883,13 +4802,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 

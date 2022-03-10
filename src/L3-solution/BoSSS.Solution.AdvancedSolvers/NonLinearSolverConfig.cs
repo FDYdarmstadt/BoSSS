@@ -33,15 +33,15 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         Newton = 2,
 
-        /// <summary>
-        /// Mixed sequence of nonlinear solvers. Useful for example if one wishes to start a simulation with Picard and then change to Newton.
-        /// </summary>
-        NLSolverSequence = 4, 
+        ///// <summary>
+        ///// Mixed sequence of nonlinear solvers. Useful for example if one wishes to start a simulation with Picard and then change to Newton.
+        ///// </summary>
+        //NLSolverSequence = 4, 
 
-        /// <summary>
-        /// Overgiven solver to Solver Chooser object. Weisse bescheid ...
-        /// </summary>
-        selfmade = 999,
+        ///// <summary>
+        ///// Overgiven solver to Solver Chooser object. Weisse bescheid ...
+        ///// </summary>
+        //selfmade = 999,
     }
 
     /// <summary>

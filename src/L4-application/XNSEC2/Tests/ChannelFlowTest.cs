@@ -584,11 +584,8 @@ namespace BoSSS.Application.XNSEC {
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;

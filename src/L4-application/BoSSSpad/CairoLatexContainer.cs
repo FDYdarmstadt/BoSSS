@@ -291,7 +291,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// and converts the output to a SVG image, which can be previewed in Jupyter.
         /// </summary>
         /// <remarks>
-        /// Requires the following programmes to be correctly installed and in the PATH environment variable:
+        /// Requires the following programs to be correctly installed and in the PATH environment variable:
         /// - pdflatex
         /// - pdfcrop (if <paramref name="trimPage"/> is true)
         /// - pdf2svg https://github.com/dawbarton/pdf2svg (binaries for windows see: https://github.com/jalios/pdf2svg-windows)

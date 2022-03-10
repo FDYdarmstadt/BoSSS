@@ -414,10 +414,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             public override void Solve<U, V>(U X, V B, double[] Res, double[] Res_ext){
-                int coarseRows = coarseMask.GetNoOfMaskedRows;
+                int coarseRows = coarseMask.NoOfMaskedRows;
                 var bc = coarseMask.GetSubVec(Res_ext,Res); //Restriction
                 var xc = new double[coarseRows];
-                int extRows = coarseMask.GetNoOfMaskedRows;
+                int extRows = coarseMask.NoOfMaskedRows;
                 CoarseSolver.Solve(xc, bc); //Coarse correction
                 coarseMask.AccSubVec(xc, new double[extRows], X); //Prolongation
 
@@ -463,9 +463,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            public ISolverSmootherTemplate CoarseSolver = new DirectSolver() {
-                WhichSolver = DirectSolver._whichSolver.PARDISO
-            };
+            public ISolverSmootherTemplate CoarseSolver = new DirectSolver();
 
             public override void Dispose() {
                 CoarseSolver.Dispose();
@@ -522,6 +520,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             using (new FuncTrace()) {
+                if(object.ReferenceEquals(op, m_MgOp))
+                    return; // already initialized
+                else
+                    this.Dispose();
+
                 ResetStat();
                 // Without checking the matrix, the other criteria is not enough to determine if reusing is possible
                 // Init shall be a Init, so skip that ... 
@@ -729,7 +732,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             fullMask = new BlockMask(fullSel, ExtRows);
                         } catch (ArgumentException ex) {
                             // void cells, lead to empty selection error this is a fallback for this case
-                            if (fullMask == null || fullMask.GetNoOfMaskedCells == 0) {
+                            if (fullMask == null || fullMask.NoOfMaskedCells == 0) {
                                 //Console.WriteLine("Exception caught:" + ex.Message);
                                 RedList.Add(iPart);
                                 Console.WriteLine($"Warning: empty selection at proc{myMpiRank}/lvl{m_MgOp.LevelIndex}/swb{iPart}. You probably encountered a void cell! Block will be ignored ...");
@@ -801,7 +804,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
 
-                        int rows = BMfullBlocks[iPart].GetNoOfMaskedRows;
+                        int rows = BMfullBlocks[iPart].NoOfMaskedRows;
                         double[] druffdamit = rows.ForLoop<double>(i => 1.0);
 
                         BMfullBlocks[iPart].AccSubVec(druffdamit, XExchange.Vector_Ext, SolScale);
@@ -884,7 +887,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (NonOverlapMask == null) NonOverlapRestrictionInit();
             Debug.Assert(NonOverlapMask != null);
             var tmp = new double[X.ToArray().Length];
-            int extLen = BMfullBlocks[iBlock].GetNoOfMaskedRows;
+            int extLen = BMfullBlocks[iBlock].NoOfMaskedRows;
             BMfullBlocks[iBlock].AccSubVec(xi, new double[extLen], tmp);
             var xi_tmp = NonOverlapMask[iBlock].GetSubVec(tmp);
             NonOverlapMask[iBlock].AccSubVec(xi_tmp, X);
@@ -1557,7 +1560,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (this.CoarseSolver != null) {
                 this.CoarseSolver.Dispose();
-                this.CoarseSolver = null;
+                //this.CoarseSolver = null; // don't delete - we need this again for the next init
             }
         }
 

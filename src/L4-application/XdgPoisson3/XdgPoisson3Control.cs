@@ -36,7 +36,6 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// Ctor.
         /// </summary>
         public XdgPoisson3Control() {
-            base.LinearSolver.verbose = true;
             base.NoOfMultigridLevels = 10000;
             base.AgglomerationThreshold = 0.1;
         }
