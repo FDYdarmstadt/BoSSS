@@ -61,12 +61,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </summary>
         public GridData AncestorGrid {
             get {
-                if(ParentGrid is AggregationGridData) {
-                    GridData Ancestor = ((AggregationGridData)ParentGrid).AncestorGrid;
+                if(ParentGrid is AggregationGridData agd) {
+                    GridData Ancestor =agd.AncestorGrid;
                     Debug.Assert(this.iGeomCells.Count == Ancestor.iGeomCells.Count);
                     return Ancestor;
                 } else {
-                    return (GridData) ParentGrid;
+                    return (GridData) ParentGrid; // end of recursion
                 }
             }
         }
