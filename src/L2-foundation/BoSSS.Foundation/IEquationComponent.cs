@@ -522,16 +522,7 @@ namespace BoSSS.Foundation {
         /// values of parameters in OUT - cell; values are sorted according to <see cref="IEquationComponent.ParameterOrdering"/>;
         /// </summary>
         public double[] ParameterValuesOut;
-        
-        /// <summary>
-        /// 'cj' of IN - cell: see <see cref="Grid.GridData.CellData.cj"/>.
-        /// </summary>
-        public double cj_in;
-        
-        /// <summary>
-        /// 'cj' of OUT - cell: see <see cref="Grid.GridData.CellData.cj"/>.
-        /// </summary>
-        public double cj_out;
+                
 
         /// <summary>
         /// true if integrating over an edge that is on the boundary of the subgrid

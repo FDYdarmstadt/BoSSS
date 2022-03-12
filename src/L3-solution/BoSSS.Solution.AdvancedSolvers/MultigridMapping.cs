@@ -106,7 +106,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public Partitioning Partitioning {
             get;
-            private set;
+            //private set;
         }
 
         /// <summary>

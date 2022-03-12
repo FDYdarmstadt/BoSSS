@@ -643,7 +643,7 @@ namespace BoSSS.Foundation {
         /// </summary>
         /// <param name="iLocalExt">
         /// a local index on this processor; If this argument is not within the external range (greater or equal to
-        /// <see cref="NUpdate"/> and smaller than <see cref="Ntotal"/>), this method still works
+        /// <see cref="ILogicalCellData.NoOfLocalUpdatedCells"/> and smaller than <see cref="ILogicalCellData.Count"/>), this method still works
         /// </param>
         /// <param name="TargetProc">
         /// on exit, the process rank of the owner process of local external index <paramref name="iLocalExt"/>;
@@ -682,7 +682,7 @@ namespace BoSSS.Foundation {
         /// computes a local unique coordinate index ("local" means local on this processor);
         /// this index is unique over all fields (in this mapping), over all cells, over all basis functions, 
         /// but it's only locally (on this processor) valid.
-        /// A local index in the update range (smaller than <see cref="NUpdate"/>) can be converted into 
+        /// A local index in the update range (smaller than <see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>) can be converted into 
         /// a global index by adding <see cref="Partitioning.i0"/>.
         /// </summary>
         /// <param name="find">
