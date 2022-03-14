@@ -6,6 +6,7 @@ using BoSSS.Foundation.IO;
 using MPI.Wrappers;
 using System.IO;
 using NUnit.Framework;
+using System.Diagnostics;
 
 namespace HangingNodesTests {
 
@@ -16,19 +17,20 @@ namespace HangingNodesTests {
     [TestFixture]    
     public class Program {
         static void Main(string[] args) {
+            // mpiexec -n 2 dotnet HangingNodesTests.dll
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
 
-            double[] sizes = new double[] { 1e0 };
-            byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-            int[] phases = new int[] { 1, 2, 3 };
+            //double[] sizes = new double[] { 1e0 };
+            //byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+            //int[] phases = new int[] { 1, 2, 3 };
 
             // to test individual setups
-            //double[] sizes = new double[] { 1e0 };
-            //byte[] setup = new byte[] { 2 };
-            //int[] phases = new int[] { 3 };
+            double[] sizes = new double[] { 1e0 };
+            byte[] setup = new byte[] { 0 };
+            int[] phases = new int[] { 3 };
 
-            bool plot = false;
+            bool plot = true;
 
             csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
             csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
@@ -64,17 +66,26 @@ namespace HangingNodesTests {
                         var C = HangingNodesTests.Control.TestSkeleton(size);
                         HangingNodesTests.Control.SetAMR(C, size, s);
                         HangingNodesTests.Control.SetLevelSet(C, size, phase);
-                        HangingNodesTests.Control.SetParallel(C, procs);
+                        HangingNodesTests.Control.SetParallel(C, procs == 2 ? -procs : procs);
 
                         if (plot) {
                             C.ImmediatePlotPeriod = 1;
-                            C.SuperSampling = 3;
+                            C.SuperSampling = 3;                            
                         }
 
                         using (var solver = new XNSFE()) {
                             try {
                                 solver.Init(C);
                                 solver.RunSolverMode();
+                                if (plot) {
+                                    var MultiphaseAgglomerator = solver.LsTrk.GetAgglomerator(solver.LsTrk.SpeciesIdS.ToArray(), solver.QuadOrder(), C.AgglomerationThreshold);    
+                                    foreach(var spc in solver.LsTrk.SpeciesIdS) {
+                                        string spcName = solver.LsTrk.GetSpeciesName(spc);
+                                        var speciesAgglomerator = MultiphaseAgglomerator.GetAgglomerator(spc);
+                                        speciesAgglomerator.PlotAgglomerationPairs($"agglomerationPairs-{spcName}-MPI{rank}.txt", null, true);
+                                    }
+           
+                                }
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
                             } catch (Exception e) {
@@ -152,6 +163,34 @@ namespace HangingNodesTests {
                             MomentumRes.Add(-1.0);
                         }
                     }                    
+                }
+            }
+
+            if (procs == 2) {
+                foreach (double size in sizes) {
+                    foreach (byte s in setup) {
+                        string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs (transpose) : {3}", size, phase, s, procs);
+                        Description.Add(desc);
+                        var C = HangingNodesTests.Control.TestSkeleton(size);
+                        HangingNodesTests.Control.SetAMR(C, size, s);
+                        HangingNodesTests.Control.SetLevelSet(C, size, phase);
+                        HangingNodesTests.Control.SetParallel(C, -procs);
+
+                        using (var solver = new XNSFE()) {
+                            try {
+                                solver.Init(C);
+                                solver.RunSolverMode();
+                                MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
+                                TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
+                            } catch (Exception e) {
+                                Console.WriteLine(desc + " : failed");
+                                Console.WriteLine(e.Message);
+                                Console.WriteLine(e.StackTrace);
+                                TemperatureRes.Add(-1.0);
+                                MomentumRes.Add(-1.0);
+                            }
+                        }
+                    }
                 }
             }
 
