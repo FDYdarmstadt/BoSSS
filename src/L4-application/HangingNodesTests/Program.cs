@@ -95,19 +95,22 @@ namespace HangingNodesTests {
                                 TemperatureRes.Add(-1.0);
                                 MomentumRes.Add(-1.0);
                             }
-                        }
-                       
+                        }                       
                     }
                 }
             }
 
-            BoSSS.Solution.Application.FinalizeMPI();
             Console.WriteLine("Finished Hanging Nodes Test.");
             Console.WriteLine();
             Console.WriteLine("Results:");
             for(int i = 0; i < Description.Count; i++) {
                 Console.WriteLine(Description[i] + " : MomRes : {0}, TempRes : {1}", MomentumRes[i], TemperatureRes[i]);
             }
+
+            Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
+            Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
+
+            BoSSS.Solution.Application.FinalizeMPI();
         }
 
         [Test]
