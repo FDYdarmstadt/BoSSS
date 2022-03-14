@@ -199,8 +199,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Computes a grid partitioning (which cell should be on which processor)
         /// using the serial METIS library -- work is only done on MPi rank 0.
         /// </summary>
-        /// <param name="cellWeightsLocal">
-        /// If not null, defines the weight associted with each cell on the current process
+        /// <param name="ListofLocalCellWeights">
+        /// If not null, defines the weight associated with each cell on the current process
         /// </param>
         /// <param name="noOfPartitioningsToChooseFrom">
         /// Tells METIS to compute

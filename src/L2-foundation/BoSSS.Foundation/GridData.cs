@@ -937,6 +937,11 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </list>
         /// </param>
         /// <param name="jCell">local cell index of the cell to transform</param>
+        /// <param name="NewtonConvergence">
+        /// in the case of curved cells/isoparametic elements, where a Newton algorithm has to be used for the inverse transformation, 
+        /// diagnostic information whether the Newton algorithm has converged or not.
+        /// The index correlates with the vertex index in <paramref name="GlobalVerticesIn"/>.
+        /// </param>
         public void TransformGlobal2Local(MultidimensionalArray GlobalVerticesIn, MultidimensionalArray LocalVerticesOut, int jCell, bool[] NewtonConvergence) {
             int N = GlobalVerticesIn.GetLength(0); // number of nodes/points
             int D = SpatialDimension;

@@ -865,7 +865,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// simplex.
         /// </returns>
         /// <param name="Kref">
-        /// an edge reference element, must be one of <see cref="BoSSS.Foundation.Grid.GridData.EdgeData.EdgeRefElements"/>.
+        /// an edge reference element, must be one of <see cref="BoSSS.Foundation.Grid.IGeometricalEdgeData.EdgeRefElements"/>.
         /// </param>
         protected override IQuadRuleFactory<QuadRule> GetDefaultRuleFactory(IGridData gridData, RefElement Kref) {
             return new StandardQuadRuleFactory(Kref);
