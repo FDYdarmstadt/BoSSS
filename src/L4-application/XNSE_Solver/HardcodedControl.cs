@@ -2072,9 +2072,8 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("wall", "VelocityY", VelocityYex);
 
             //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
-            C.LinearSolver = new PTGconfig2() {
-                ConvergenceCriterion = 1e-9,
-                pMaxOfCoarseSolver = p - 1
+            C.LinearSolver = new PmgConfig() {
+                ConvergenceCriterion = 1e-9
             };
             
             C.LevelSet_ConvergenceCriterion = 1e-6;

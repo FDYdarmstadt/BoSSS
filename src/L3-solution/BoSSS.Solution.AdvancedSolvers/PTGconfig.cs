@@ -89,9 +89,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     }
 
+    /// <summary>
+    /// Orthonormalization (<see cref="OrthonormalizationMultigrid"/>) scheme with full p-multigrid (i.e. multigrid over DG polynomial degree) preconditioning.
+    /// In comparison to <see cref="PTGconfig"/>, where only two p-levels are used, this uses all available p-levels.
+    /// </summary>
+    public class PmgConfig : IterativeSolverConfig {
 
-    public class PTGconfig2 : PTGconfig {
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string Name => "Orthonormalization with p-multi-grid preconditioner";
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override string Shortname => "Ortho w pmG";
 
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
             //var precond = new LevelPmg();

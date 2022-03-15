@@ -67,6 +67,11 @@ namespace BoSSS.Solution.Control {
         /// a k-cycle (i.e. a tree of <see cref="AdvancedSolvers.OrthonormalizationMultigrid"/> solvers), with ILU-preconditioner (<see cref="AdvancedSolvers.CellILU"/>) at each level
         /// </summary>
         exp_Kcycle_ILU = 54,
+
+        /// <summary>
+        /// p-Multigrid (i.e. multigrid over DG polynomial degree), <see cref="AdvancedSolvers.PmgConfig"/>
+        /// </summary>
+        pMultigrid = 61,
     }
     
 
@@ -100,6 +105,9 @@ namespace BoSSS.Solution.Control {
                 
                 case LinearSolverCode.classic_cg:
                 return new AdvancedSolvers.MonkeySolver.Config() { WhichSolver = AdvancedSolvers.MonkeySolver._whichSolver.CG };
+
+                case LinearSolverCode.pMultigrid:
+                return new AdvancedSolvers.PmgConfig();
 
                 default:
                 throw new NotImplementedException("todo: " + config);
