@@ -32,7 +32,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
             if(artificialViscosity != 0) {
                 // we should not add the SIP form if it is not intended at all, i.e. if 'artificialViscosity == 0';
                 // since evaluation of SIP forms is quite costly; 
-                AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity, boundaryMap));
+                //AddComponent(new SIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, artificialViscosity));
+                AddComponent(new ParameterSIPForm(speciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, ZwoLevelSetSolver.VariableNames.ArtificialViscosity));
+                AddParameter(ZwoLevelSetSolver.VariableNames.ArtificialViscosity);
             }
 
             var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);

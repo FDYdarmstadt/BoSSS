@@ -13,14 +13,14 @@ using System.Threading.Tasks;
 
 
 namespace ZwoLevelSetSolver.SolidPhase {
-    class GradAGradBTForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
+    class GradATGradBForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
         protected double viscosity;
         string species;
         protected int d;
         protected string[] variableNames;
         public double PenaltySafety;
 
-        public GradAGradBTForm(string species, string[] variablesA, string[] variablesB, int d, double viscosity, double __PenaltySafety = 4.0) {
+        public GradATGradBForm(string species, string[] variablesA, string[] variablesB, int d, double viscosity, double __PenaltySafety = 4.0) {
             this.species = species;
             this.viscosity = viscosity;
             this.PenaltySafety = __PenaltySafety;
@@ -43,7 +43,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             for(int i = 0; i < D; i++) {
                 double GradUGradU = 0;
                 for(int j = 0; j < D; ++j) {
-                    GradUGradU += 0.5 * _Grad_uIN[d, j] * _Grad_uIN[D + i, j];
+                    GradUGradU += _Grad_uIN[j, d] * _Grad_uIN[D + j, i];
                 }
                 acc1 -= viscosity * GradUGradU * (_vIN) * inp.Normal[i];  // consistency term  
             }
@@ -104,8 +104,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             for(int i = 0; i < D; i++) {
                 double GradUGradU = 0;
                 for(int j = 0; j < D; ++j) {
-                    GradUGradU += 0.5 * _Grad_uIN[d, j] * _Grad_uIN[D + i, j];
-                    GradUGradU += 0.5 * _Grad_uOUT[d, j] * _Grad_uOUT[D + i, j];
+                    GradUGradU += 0.5 * _Grad_uIN[j, d] * _Grad_uIN[D + j, i];
+                    GradUGradU += 0.5 * _Grad_uOUT[j, d] * _Grad_uOUT[D + j, i];
                 }
                 acc1 -= viscosity * GradUGradU * (_vIN - _vOUT) * inp.Normal[i];  // consistency term  
             }
@@ -124,7 +124,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             for(int i = 0; i < D; ++i) {
                 double GradUGradU = 0;
                 for(int j = 0; j < D; ++j) {
-                    GradUGradU += GradU[d, j] * GradU[D + i, j];
+                    GradUGradU += GradU[j, d] * GradU[D + j, i];
                 }
                 acc += GradUGradU * GradV[i];
             }

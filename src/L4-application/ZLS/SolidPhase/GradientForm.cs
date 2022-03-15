@@ -7,20 +7,22 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
-    public class PressureGradientForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent {
+    public class GradientForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent {
         string species;
         int d;
+        string name;
 
-        public PressureGradientForm(string species, int d) {
+        public GradientForm(string species, int d, string name) {
             this.species = species;
             this.d = d;
+            this.name = name;
         }
 
         public TermActivationFlags VolTerms { 
             get { return TermActivationFlags.UxGradV; } 
         }
 
-        public IList<string> ArgumentOrdering => new string[] { BoSSS.Solution.NSECommon.VariableNames.Pressure};
+        public IList<string> ArgumentOrdering => new string[] { name};
 
         public IList<string> ParameterOrdering => new string[0];
 

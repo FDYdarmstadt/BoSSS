@@ -28,6 +28,11 @@ namespace ZwoLevelSetSolver {
             }
         }
 
+        public static void DivergenceByFlux(double alpha, XDGField target, XDGField[] source, LevelSetTracker lstrkr, string species) {
+            for(int d = 0; d < source.Length; d++)
+                DerivativeByFlux(alpha, target, source[d], lstrkr, d, species);
+        }
+
         public static void DerivativeByFlux(double alpha, XDGField target, XDGField source, LevelSetTracker lstrkr,  int d, string species) {
             int D = target.Basis.GridDat.SpatialDimension;
             if(d < 0 || d >= D)

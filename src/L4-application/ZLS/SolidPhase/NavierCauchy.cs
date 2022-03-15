@@ -37,8 +37,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 d, material.Density);
             AddComponent(convection);
             
-            //var pressure = new PressureGradientForm(SpeciesName, d);
-            //AddComponent(pressure);
+            var pressure = new GradientForm(SpeciesName, d, BoSSS.Solution.NSECommon.VariableNames.Pressure);
+            AddComponent(pressure);
+
             if(material.Lame2 != 0.0)
             {
                 var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
@@ -46,14 +47,13 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
                 var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
                 AddComponent(eulerAlmansi1);
-
-                //var gradUGradV = new GradAGradBForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D),
-                //    BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, -1, EulerAlamansiPenalty);
-                //AddComponent(gradUGradV);
-
-                //var gradUGradUT = new GradAGradBTForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D),
-                //    ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
-                //AddComponent(gradUGradUT);
+                
+                /*
+                var gradUGradUT = new GradATGradBForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D),
+                    ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
+                AddComponent(gradUGradUT);
+                */
+                
             }
             if(material.Viscosity != 0.0)
             {

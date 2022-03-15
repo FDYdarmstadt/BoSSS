@@ -140,6 +140,28 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// accumulates the divergence of vector field <paramref name="vec"/>
+        /// times <paramref name="alpha"/> to this field.
+        /// </summary>
+        /// <param name="alpha"></param>
+        /// <param name="vec"></param>
+        /// <param name="em"></param>
+        /// <remarks>
+        /// This method is based on <see cref="Derivative(double,DGField,int,CellMask)"/>;
+        /// </remarks>
+        public void Divergence<T>(double alpha, T[] vec, CellMask em = null) where T : DGField {
+            using (new FuncTrace()) {
+                if (vec.Length != GridDat.SpatialDimension)
+                    throw new ArgumentException(
+                        "wrong number of components in vector field.", "vec");
+
+                int D = GridDat.SpatialDimension;
+                for (int d = 0; d < D; d++)
+                    this.Derivative(alpha, vec[d], d, em);
+            }
+        }
+
+        /// <summary>
+        /// accumulates the divergence of vector field <paramref name="vec"/>
         /// times <paramref name="alpha"/>
         /// to this field.
         /// </summary>
@@ -150,6 +172,26 @@ namespace BoSSS.Foundation {
             SubGrid optionalSubGrid = null, SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) where T : DGField {
             using (new FuncTrace()) {
                 if (vec.Dim != GridDat.SpatialDimension)
+                    throw new ArgumentException("wrong number of components in vector field.", "vec");
+
+                int D = GridDat.SpatialDimension;
+                for (int d = 0; d < D; d++)
+                    this.DerivativeByFlux(alpha, vec[d], d, optionalSubGrid, bndMode);
+            }
+        }
+
+        /// <summary>
+        /// accumulates the divergence of vector field <paramref name="vec"/>
+        /// times <paramref name="alpha"/>
+        /// to this field.
+        /// </summary>
+        /// <remarks>
+        /// This method is based on <see cref="DerivativeByFlux"/>;
+        /// </remarks>
+        public void DivergenceByFlux<T>(double alpha, T[] vec,
+            SubGrid optionalSubGrid = null, SubGridBoundaryModes bndMode = SubGridBoundaryModes.OpenBoundary) where T : DGField {
+            using (new FuncTrace()) {
+                if (vec.Length != GridDat.SpatialDimension)
                     throw new ArgumentException("wrong number of components in vector field.", "vec");
 
                 int D = GridDat.SpatialDimension;

@@ -908,7 +908,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.Material = false;
 
             C.Material = new Beam();
-            C.Material.Viscosity = 0;
+            //C.Material.Viscosity = 0;
+            //C.Material.Lame2 = 0;
             #endregion
 
             // grid generation
@@ -1033,6 +1034,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.NonLinearSolver.MaxSolverIterations = 80;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.MaxSolverIterations = 50;
+            C.LinearSolver.MinSolverIterations = 1;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.ConvergenceCriterion = 1e-8;

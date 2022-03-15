@@ -180,14 +180,15 @@ namespace ZwoLevelSetSolver.Boundary {
 
             //Tension, consistency
             double fluidStress = 0.0;
-            double fluidStressSymmetry = 0.0;
+            double fluidStressT = 0.0;
+
             for(int i = 0; i < D; i++) {
                 fluidStress -= 1 * fluidViscosity * (_Grad_uIN[d, i]) * inp.Normal[i];
-                fluidStressSymmetry -= fluidViscosity * _Grad_vIN[i] * inp.Normal[i];
+                fluidStressT -= 1 * fluidViscosity * (_Grad_uIN[i, d]) * inp.Normal[i];
             }
 
-            return (1.0 * (pIn + fluidStress)) * (_vIN)
-                + 1.0 * (fluidStress + pIn) * (-_vOUT);
+            return 1.0 * (0.5 * (fluidStress + fluidStressT) + pIn ) * (_vIN)
+                + 1.0 * (0.5 * ( fluidStress + fluidStressT) + pIn) * (-_vOUT);
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
@@ -196,7 +197,7 @@ namespace ZwoLevelSetSolver.Boundary {
         }
     }
 
-    class InverseNeoHookeanNeumannForm : ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
+    class NonLinearNeoHookeanNeumannForm : ILevelSetForm, ISupportsJacobianComponent, ILevelSetEquationComponentCoefficient {
         int levelSetIndex;
         string solidSpecies;
         string fluidSpecies;
@@ -207,7 +208,7 @@ namespace ZwoLevelSetSolver.Boundary {
         double solidViscosity;
         double lame2;
 
-        public InverseNeoHookeanNeumannForm(string fluidSpecies, string solidSpecies, int d, int levelSetIndex, double fluidViscosity, double solidViscosity, double lame2) {
+        public NonLinearNeoHookeanNeumannForm(string fluidSpecies, string solidSpecies, int d, int levelSetIndex, double fluidViscosity, double solidViscosity, double lame2) {
             this.levelSetIndex = levelSetIndex;
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
@@ -266,24 +267,18 @@ namespace ZwoLevelSetSolver.Boundary {
         public IList<string> ParameterOrdering => new string[0];
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-
-            //pressure
-            double pOut = (_uOUT[2 * D]) * inp.Normal[d];
-
-        
-            double solidStress = 0.0;
-            double viscousStress = 0.0;
-            double viscousStressSymmetry = 0.0;
-
+            double acc1 = 0.0;
             for(int i = 0; i < D; i++) {
-                solidStress -= 1 * lame2 * (_Grad_uOUT[D + d, i]) * inp.Normal[i];
-                solidStress -= 1 * lame2 * (_Grad_uOUT[D + i, d]) * inp.Normal[i];
-
-                viscousStress -= 1 * solidViscosity * (_Grad_uOUT[d, i]) * inp.Normal[i];
+                double GradUGradU = 0;
+                for(int j = 0; j < D; ++j) {
+                    GradUGradU += 1 * _Grad_uOUT[j, d] * _Grad_uOUT[D + j, i];
+                }
+                acc1 -= lame2 * GradUGradU * ( - _vOUT) * inp.Normal[i];  // consistency term  
             }
-
-            return (1.0 * (pOut + solidStress + viscousStress)) * (_vIN)
-                + 1.0 * (pOut + solidStress + viscousStress) * (-_vOUT);
+            //double penalty = Math.Max(PenaltyIn(inp.jCellIn), PenaltyOut(inp.jCellOut));
+            //acc1 += (_uIN[d] - _uOUT[d]) * PenaltySafety * penalty * (_vIN - _vOUT) * viscosity;
+            //acc1 += (_uIN[D+d] - _uOUT[D+d]) * PenaltySafety * penalty * (_vIN - _vOUT) * viscosity;
+            return acc1;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

@@ -18,6 +18,8 @@ namespace ZwoLevelSetSolver
 
         public static string DisplacementPressure = "DisplacementPressure";
 
+        public static string ArtificialViscosity = "ArtificialViscosity";
+
         public static string[] DisplacementVector(int D)
         {
             if (D == 2)

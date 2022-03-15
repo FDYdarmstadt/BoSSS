@@ -20,12 +20,14 @@ namespace ZwoLevelSetSolver.Boundary {
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
             //Stress equality
-            //*
+            /*
             for(int i = 0; i < D; ++i) {
                 string velocity = BoSSS.Solution.NSECommon.VariableNames.Velocity_d(i);
                 AddVariableNames(velocity);
                 AddComponent(new BoundaryDivergenceVelocityForm( i, 1, fluidSpecies, solidSpecies));
             }
+            //*/
+            AddComponent(new ConvectionDivergenceBoundaryForm(D, 1, fluidSpecies, solidSpecies));
             //*/
             //AddSurfaceComponent(new SurfacePenaltyForm(BoSSS.Solution.NSECommon.VariableNames.Pressure, -100));
         }

@@ -32,7 +32,8 @@ namespace ZwoLevelSetSolver.Boundary {
                 solidSpecies));
             if (artificialViscosity != 0.0)
             {
-                AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, d, D, 1, artificialViscosity, fluidViscosity, material.Viscosity));
+                //AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, d, D, 1, artificialViscosity, fluidViscosity, material.Viscosity));
+                AddComponent(new ParameterSIPBoundaryForm(fluidSpecies, solidSpecies, d, D, 1, ZwoLevelSetSolver.VariableNames.ArtificialViscosity));
             }
             //AddSurfaceComponent(new SurfacePenaltyForm(ZwoLevelSetSolver.VariableNames.DisplacementComponent(d), -100));
         }

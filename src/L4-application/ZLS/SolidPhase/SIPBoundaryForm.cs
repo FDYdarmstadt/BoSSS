@@ -50,7 +50,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             for(int i = 0; i < D; i++) {
                 // = consistency terms
-                tension -= 0.5 * viscosity * (_Grad_uIN[0, i]) * inp.Normal[i];
+                tension -= viscosity * (_Grad_uIN[0, i]) * inp.Normal[i];
             }
 
             tension *= 1 * (_vIN);

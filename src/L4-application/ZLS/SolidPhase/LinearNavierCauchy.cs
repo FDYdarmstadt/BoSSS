@@ -35,7 +35,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddComponent(convection);
             //Console.WriteLine("##################### Rem: nix convection.");
             
-            var pressure = new PressureGradientForm(SpeciesName, d);
+            var pressure = new GradientForm(SpeciesName, d, BoSSS.Solution.NSECommon.VariableNames.Pressure);
             AddComponent(pressure);
             
             // laplacian of displacement:
