@@ -1,7 +1,7 @@
 clear
 
-polVel = dlmread('InitialValues/polarVelCase1.txt');
-radVel = dlmread('InitialValues/radialVelCase1.txt');
+polVel = dlmread('InitialValues/polarVelCase4.txt');
+radVel = dlmread('InitialValues/radialVelCase4.txt');
 
 rS = polVel(:,1);
 tS = polVel(:,2);
