@@ -21,6 +21,7 @@ using ilPSP;
 using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -42,6 +43,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     [Serializable]
     public class DropletMetricsLogging<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
 
+        /// <summary>
+        /// true if the droplet is axis symmetric
+        /// </summary>
+        public bool AxisSymmetric = false;
+
 
         /// <summary>
         /// filename
@@ -54,7 +60,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// </summary>
         protected override void WriteHeader(TextWriter textWriter) {
 
-            string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", "#timestep", "time", "theta0", "theta90x", "theta90y", "volume");
+            string header = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", "#timestep", "time", "northPole", "L", "Wx", "Wy", "volume");
             Log.WriteLine(header);
 
         }
@@ -99,7 +105,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 ).Execute();
 
 
-                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", TimestepNo, physTime, majorAxis[0], majorAxis[1], majorAxis[2], volume);
+                string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}", TimestepNo, physTime, majorAxis[0], majorAxis[1], majorAxis[2], majorAxis[3], volume);
                 Log.WriteLine(line);
                 Log.Flush();
             }
@@ -114,35 +120,76 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             MultidimensionalArray InterfacePoints = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
 
+            // droplet width W along x-Axis
+            double r_theta90x1 = 0.0;
+            double dist_xAxis_min1 = double.MaxValue;
+            double r_theta90x2 = 0.0;
+            double dist_xAxis_min2 = double.MaxValue;
+            // droplet width W along y-Axis
+            double r_theta90y1 = 0.0;
+            double dist_yAxis_min1 = double.MaxValue;
+            double r_theta90y2 = 0.0;
+            double dist_yAxis_min2 = double.MaxValue;
+            // droplet length L along z-Axis 
             double r_theta0 = 0.0;
-            double dist_zAxis_min = double.MaxValue;
-            double r_theta90x = 0.0;
-            double dist_xAxis_min = double.MaxValue;
-            double r_theta90y = 0.0;
-            double dist_yAxis_min = double.MaxValue;
+            double dist_zAxis_min1 = double.MaxValue;
+            double r_theta180 = 0.0;
+            double dist_zAxis_min2 = double.MaxValue;
+
             for(int i = 0; i < InterfacePoints.Lengths[0]; i++) {
                 double xCoord = InterfacePoints[i, 0];
                 double yCoord = InterfacePoints[i, 1];
                 double zCoord = InterfacePoints[i, 2];
 
+                // droplet width W along x-Axis
                 double dist_xAxis = Math.Sqrt(yCoord.Pow2() + zCoord.Pow2());
-                if(dist_xAxis < dist_xAxis_min && xCoord > 0.0) {
-                    dist_xAxis_min = dist_xAxis;
-                    r_theta90x = xCoord;
+                if(dist_xAxis < dist_xAxis_min1 && xCoord > r_theta90x2) {
+                    dist_xAxis_min1 = dist_xAxis;
+                    r_theta90x1 = xCoord;
                 }
+                if(!AxisSymmetric && dist_xAxis < dist_xAxis_min2 && xCoord < r_theta90x1) {
+                    dist_xAxis_min2 = dist_xAxis;
+                    r_theta90x2 = xCoord;
+                }
+
+
+                // droplet width W along y-Axis
                 double dist_yAxis = Math.Sqrt(xCoord.Pow2() + zCoord.Pow2());
-                if(dist_yAxis < dist_yAxis_min && yCoord > 0.0) {
-                    dist_yAxis_min = dist_yAxis;
-                    r_theta90y = yCoord;
+                if(dist_yAxis < dist_yAxis_min1 && yCoord > r_theta90y2) {
+                    dist_yAxis_min1 = dist_yAxis;
+                    r_theta90y1 = yCoord;
                 }
+                if(!AxisSymmetric && dist_yAxis < dist_yAxis_min2 && yCoord < r_theta90y1) {
+                    dist_yAxis_min2 = dist_yAxis;
+                    r_theta90y2 = yCoord;
+                }
+
+                // droplet length L along z-Axis 
                 double dist_zAxis = Math.Sqrt(xCoord.Pow2() + yCoord.Pow2());
-                if(dist_zAxis < dist_zAxis_min && zCoord > 0.0) {
-                    dist_zAxis_min = dist_zAxis;
+                if(dist_zAxis < dist_zAxis_min1 && zCoord > r_theta180) {
+                    dist_zAxis_min1 = dist_zAxis;
                     r_theta0 = zCoord;
                 }
+                if(dist_zAxis < dist_zAxis_min2 && zCoord < r_theta0) {
+                    dist_zAxis_min2 = dist_zAxis;
+                    r_theta180 = zCoord;
+                }  
+                
             }
 
-            return new double[] { r_theta0, r_theta90x, r_theta90y };
+            double Wx = r_theta90x1 - r_theta90x2;
+            if(Wx < 0)
+                throw new ArgumentOutOfRangeException("Droplet length Wx is negative");
+
+            double Wy = r_theta90y1 - r_theta90y2;
+            if(Wy < 0)
+                throw new ArgumentOutOfRangeException("Droplet length Wy is negative");
+
+            double L = r_theta0 - r_theta180;
+            if(L < 0)
+                throw new ArgumentOutOfRangeException("Droplet length L is negative");
+
+            return new double[] { r_theta0, L, Wx, Wy };
         }
 
         /// <summary>
@@ -154,27 +201,48 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             MultidimensionalArray InterfacePoints = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
 
             double r_theta0 = 0.0;
-            double r_theta90x = 0.0;
-            double dist_xAxis_min = double.MaxValue;
-            double dist_yAxis_min = double.MaxValue;
+            double r_theta180 = 0.0;
+            double r_theta90x1 = 0.0;
+            double r_theta90x2 = 0.0;
+            double dist_xAxis_min1 = double.MaxValue;
+            double dist_xAxis_min2 = double.MaxValue;
+            double dist_yAxis_min1 = double.MaxValue;
+            double dist_yAxis_min2 = double.MaxValue;
             for(int i = 0; i < InterfacePoints.Lengths[0]; i++) {
                 double xCoord = InterfacePoints[i, 0];
                 double yCoord = InterfacePoints[i, 1];
                 double zCoord = InterfacePoints[i, 2];
 
                 double dist_xAxis = Math.Sqrt(yCoord.Pow2() + zCoord.Pow2());
-                if(dist_xAxis < dist_xAxis_min && xCoord > 0.0) {
-                    dist_xAxis_min = dist_xAxis;
-                    r_theta90x = xCoord;
+                if(dist_xAxis < dist_xAxis_min1 && xCoord > r_theta90x2) {
+                    dist_xAxis_min1 = dist_xAxis;
+                    r_theta90x1 = xCoord;
                 }
+                if(dist_xAxis < dist_xAxis_min2 && xCoord < r_theta90x1) {
+                    dist_xAxis_min2 = dist_xAxis;
+                    r_theta90x2 = xCoord;
+                }
+
                 double dist_yAxis = Math.Sqrt(xCoord.Pow2() + zCoord.Pow2());
-                if(dist_yAxis < dist_yAxis_min && yCoord > 0.0) {
-                    dist_yAxis_min = dist_yAxis;
+                if(dist_yAxis < dist_yAxis_min1 && yCoord > r_theta180) {
+                    dist_yAxis_min1 = dist_yAxis;
                     r_theta0 = yCoord;
+                }
+                if(dist_yAxis < dist_yAxis_min2 && yCoord < r_theta0) {
+                    dist_yAxis_min2 = dist_yAxis;
+                    r_theta180 = yCoord;
                 }
             }
 
-            return new double[] { r_theta0, r_theta90x, 0.0};
+            double W = r_theta90x1 - r_theta90x2;
+            if(W < 0)
+                throw new ArgumentOutOfRangeException("Droplet length W is negative");
+
+            double L = r_theta0 - r_theta180;
+            if(L < 0)
+                throw new ArgumentOutOfRangeException("Droplet length L is negative");
+
+            return new double[] { r_theta0, L, W, 0.0};
         }
 
     }
