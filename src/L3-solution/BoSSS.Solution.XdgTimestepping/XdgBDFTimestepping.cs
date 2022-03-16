@@ -35,6 +35,7 @@ using NUnit.Framework;
 using BoSSS.Solution.Gnuplot;
 using System.IO;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.Queries;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -1620,22 +1621,30 @@ namespace BoSSS.Solution.XdgTimestepping {
                             //mgOperator.OperatorMatrix.SaveToTextFileSparse("C:\\tmp\\Bug2\\XNS.txt");
                             //throw new Exception("term");
 
-                            // init linear solver
-                            using(new BlockTrace("Slv Init", tr)) {
-                                linearSolver.Init(mgOperator);
-                            }
+                           
 
                             // try to solve the saddle-point system.
-                            using(new BlockTrace("Slv Iter", tr)) {
+                            using(new BlockTrace("Solver_Run", tr)) {
                                 mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                                 //mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
                             }
                             Console.WriteLine("solver success: " + linearSolver.Converged);
                             success = linearSolver.Converged;
 
+
+
                             // 'revert' agglomeration
                             Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                             m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+
+
+                            if(base.QueryHandler != null) {
+                                base.QueryHandler.ValueQuery(QueryHandler.Conv, linearSolver.Converged ? 1.0 : 0.0, true);
+                                base.QueryHandler.ValueQuery(QueryHandler.NoIter, linearSolver.ThisLevelIterations, true);
+                                base.QueryHandler.ValueQuery(QueryHandler.NoOfCells, this.m_LsTrk.GridDat.CellPartitioning.TotalLength, true);
+                                base.QueryHandler.ValueQuery(QueryHandler.NoIter, mgOperator.Mapping.TotalLength, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
+
+                            }
 
                         }
 
@@ -2039,6 +2048,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         protected override ISolverSmootherTemplate GetLinearSolver(MultigridOperator op) {
+            
+
             var linearSolver = base.GetLinearSolver(op);
             if(linearSolver is ISolverWithCallback swc) {
                 swc.IterationCallback += this.CustomIterationCallback;
