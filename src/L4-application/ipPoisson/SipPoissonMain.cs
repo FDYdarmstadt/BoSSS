@@ -60,7 +60,6 @@ namespace BoSSS.Application.SipPoisson {
             //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
             //FinalizeMPI();
             //return;
-
             
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();

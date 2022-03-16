@@ -104,7 +104,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// another constructor
         /// </summary>
-        public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix MassMatrix, double[] __ExactSolution, SolverFactory SF) {
+        public ConvergenceObserver(MultigridOperator muop, BlockMsrMatrix MassMatrix, double[] __ExactSolution, ISolverFactory SF) {
             m_SF = SF;
             Setup(muop, MassMatrix, __ExactSolution);
         }
@@ -160,7 +160,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             set;
         }
 
-        private SolverFactory m_SF;
+        private ISolverFactory m_SF;
 
         /// <summary>
         /// Used to compute an orthonormal decomposition 
@@ -685,10 +685,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private int[] Iterationcounter {
             get {
+                /*
                 if (m_SF.GetIterationcounter == null)
                     throw new ArgumentNullException("switch verbose mode on for the solver you like to plot! Iterationcounter is null!");
                 Debug.Assert(m_SF.GetIterationcounter.Length == 6);
                 return m_SF.GetIterationcounter;
+                */
+                throw new NotImplementedException();
             }
         }
 

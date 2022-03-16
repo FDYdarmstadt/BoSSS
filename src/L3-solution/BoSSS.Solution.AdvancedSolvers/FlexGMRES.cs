@@ -25,6 +25,7 @@ using BoSSS.Platform;
 using BoSSS.Platform.Utils;
 using System.Diagnostics;
 using MPI.Wrappers;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
     
@@ -49,20 +50,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultigridOperator m_mgop;
 
         public void Init(MultigridOperator op) {
-            var M = op.OperatorMatrix;
-            var MgMap = op.Mapping;
-            this.m_mgop = op;
+            using(var tr = new FuncTrace()) {
+                if(object.ReferenceEquals(op, this.m_mgop))
+                    return; // already initialized
+                else
+                    this.Dispose();
 
-            if(!M.RowPartitioning.Equals(MgMap.Partitioning))
-                throw new ArgumentException("Row partitioning mismatch.");
-            if(!M.ColPartition.Equals(MgMap.Partitioning))
-                throw new ArgumentException("Column partitioning mismatch.");
+                var M = op.OperatorMatrix;
+                var MgMap = op.Mapping;
+                this.m_mgop = op;
 
-            foreach(var pc in PrecondS) {
-                pc.Init(m_mgop);
+                if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Row partitioning mismatch.");
+                if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Column partitioning mismatch.");
+
+                foreach(var pc in PrecondS) {
+                    pc.Init(m_mgop);
+                }
             }
         }
-
 
         /// <summary>
         /// preconditioners used 
@@ -72,7 +79,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// ~
         /// </summary>
-        public Func<int, double, double, bool> TerminationCriterion {
+        public Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;
         }
@@ -81,7 +88,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ctor
         /// </summary>
         public FlexGMRES() {
-            TerminationCriterion = (iIter, r0, ri) => iIter <= 1;
+            TerminationCriterion = (iIter, r0, ri) => (iIter <= 1, true);
         }
 
 
@@ -134,7 +141,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.IterationCallback?.Invoke(iIter, X0.CloneAs(), R0.CloneAs(), this.m_mgop);
 
                 // termination condition
-                if (!TerminationCriterion(iIter, iter0_l2Residual, iter_l2Residual)) {
+                var term = TerminationCriterion(iIter, iter0_l2Residual, iter_l2Residual);
+                if (!term.bNotTerminate) {
+                    this.m_Converged = term.bSuccess;
                     break;
                 }
                                     
@@ -174,6 +183,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Vau.Add(W);
 
                     Debug.Assert(Vau.Count == Zed.Count + 1);
+
+                    //if (j >= 1) {
+                    //    var y = new double[j];
+                    //    H.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { j - 1, j - 1 }).Solve(y, W.GetSubVector(0, j));
+                    //    double[] Xtmp = X.ToArray();
+                    //    for (int ii = 0; ii < j; ii++) {
+                    //        Xtmp.AccV(y[ii], Vau[ii]);
+                    //    }
+                    //    double[] ztmp = new double[Xtmp.Length];
+                    //    ztmp.SetV(B);
+                    //    this.m_mgop.OperatorMatrix.SpMV(-1.0, Xtmp, 1.0, ztmp);
+                    //    IterationCallback?.Invoke(j, Xtmp, ztmp, this.m_mgop);
+                    //}
                 }
 
                 // compute minimized-Residual solution over 'Zed'-Vectors
@@ -252,7 +274,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public object Clone() {
-            throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
+            var clone = new FlexGMRES();
+            clone.TerminationCriterion = this.TerminationCriterion;
+            clone.MaxKrylovDim = this.MaxKrylovDim;
+            var tmp = new List<ISolverSmootherTemplate>();
+            foreach (ISolverSmootherTemplate precond in this.PrecondS) {
+                tmp.Add(precond.CloneAs());
+            }
+            clone.PrecondS = tmp.ToArray();
+            return clone;
         }
 
         public void Dispose() {

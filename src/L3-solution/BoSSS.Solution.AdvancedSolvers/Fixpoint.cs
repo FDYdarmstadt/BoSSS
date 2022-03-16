@@ -52,7 +52,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public double ConvCrit = 1e-9;
         
 
-        public ISolverSmootherTemplate m_LinearSolver;
+        public ISolverFactory m_LinearSolver;
 
         public string m_SessionPath;
 
@@ -78,6 +78,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         override public bool SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
             using (var tr = new FuncTrace()) {
+
+                if (this.ConvCrit <= 0)
+                    throw new ArgumentException($"Fixpoint iterator: convergence criterion set to {ConvCrit}: solver will most likely not converge!");
 
                 // initial guess and its residual
                 // ==============================
@@ -124,11 +127,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         NoOfIterations = Iteration_Count(NoOfIterations, ref NoOfCoupledIteration);
 
-                        this.m_LinearSolver.Init(this.CurrentLin);
-                        Correction.ClearEntries();
-                        if (Correction.Length != Residual.Length)
-                            Correction = new double[Residual.Length];
-                        this.m_LinearSolver.Solve(Correction, Residual);
+                        using(var linSlv = this.m_LinearSolver.CreateInstance(this.CurrentLin)) {
+                            Correction.ClearEntries();
+                            if(Correction.Length != Residual.Length)
+                                Correction = new double[Residual.Length];
+                            linSlv.Solve(Correction, Residual);
+                        }
 
                         // Residual may be invalid from now on...
                         Solution.AccV(UnderRelax, Correction);

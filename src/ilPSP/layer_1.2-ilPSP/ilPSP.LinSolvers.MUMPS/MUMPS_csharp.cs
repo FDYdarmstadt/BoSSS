@@ -514,8 +514,14 @@ namespace ilPSP.LinSolvers.MUMPS {
             get { return mumps_get_mapping; }
         }
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe delegate int* _MUMPS_GET_PIVNUL_LIST();
 
+        /// <summary>
+        /// see MUMS manual
+        /// </summary>
         public unsafe _MUMPS_GET_PIVNUL_LIST MUMPS_GET_PIVNUL_LIST {
             get { return mumps_get_pivnul_list; }
         }

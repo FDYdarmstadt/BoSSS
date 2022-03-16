@@ -27,7 +27,10 @@ using System.Collections.Generic;
 
 namespace BoSSS.Application.XNSEC {
 
-    internal class SteadyStateEvaporationTestXNSEC : IXNSECTest_Heat {
+    /// <summary>
+    /// Evaporation of a liquid phase containing only component "0" into a gas phase containing only component "1" in the bulk
+    /// </summary>
+    internal class SteadyStateEvaporationTestXNSEC_TwoChemicalComponents : IXNSECTest_Heat {
         public bool TestImmersedBoundary => false;
 
         /// <summary>
@@ -48,9 +51,181 @@ namespace BoSSS.Application.XNSEC {
         /// ctor..
         /// </summary>
         /// <param name="angle"></param>
-        public SteadyStateEvaporationTestXNSEC(double angle = 0.0) {
+        public SteadyStateEvaporationTestXNSEC_TwoChemicalComponents(double angle = 0.0) {
             this.angle = angle;
             this.ROT = AffineTrafo.Some2DRotation(angle);
+        }
+
+        public double mu_A => 1.0;
+
+        public double mu_B => 0.1;
+
+        public double Sigma => 1.0 * 0;
+
+        public double c_A => 1.0;
+
+        // has to be zero, because we do not want to include a convective contribution to heatflux and temperature profile
+        public double c_B => 1.0;
+
+        public double k_A => 1.0;
+
+        public double k_B => 0.1;
+
+        public double T_sat => 100.0;
+
+        public double h_vap => 100.0;
+        public bool CheckT => true;
+        public bool CheckE => false;
+        public int SpatialDimension => 2;
+        public double dt => 5e-4 * 1e100;
+        public double rho_A => 1.0;
+        public double rho_B => 0.1;
+        public bool Material => false;
+        public bool steady => true;
+        public bool IncludeConvection => false;
+        public int LevelsetPolynomialDegree => 2;
+        public double[] AcceptableL2Error => new double[] { 1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 1e-7 };
+        public double[] AcceptableResidual => new double[] { 1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 1e-7 };
+        public int NumberOfChemicalComponents => 2;
+        public bool ChemicalReactionTermsActive => false;
+        public bool EnableMassFractions => true;
+        public bool EnableTemperature => true;
+        public double[] GravityDirection => new double[] { 0, 0, 0 };
+        public double rhoD_A => 1.0;
+        public double rhoD_B => 1.0;
+        private double L = 1.0;
+         
+        public GridCommons CreateGrid(int Resolution) {
+            double[] Xnodes = GenericBlas.Linspace(0, L, Resolution * 1 + 3 + 1);
+            double[] Ynodes = GenericBlas.Linspace(0, L , Resolution + 1);
+            var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
+
+            grd.EdgeTagNames.Add(1, "ScalarDirichlet_PressureOutlet");
+            grd.EdgeTagNames.Add(2, "velocity_inlet_upper");
+
+            grd.DefineEdgeTags(delegate (double[] X) {
+                byte et = 0;
+                if (Math.Abs(X[1]) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[1] - L) <= 1.0e-8)
+                    et = 2;
+
+                return et;
+            });
+
+            return grd.Transform(ROT);
+        }
+
+        private double zi0 = 0.6;
+        private double qv = 10.0;
+
+        public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
+            double qv = 10.0;
+            var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
+
+            config.Add("ScalarDirichlet_PressureOutlet", new AppControl.BoundaryValueCollection());
+            config.Add("velocity_inlet_upper", new AppControl.BoundaryValueCollection());
+
+            config["ScalarDirichlet_PressureOutlet"].Evaluators.Add("Temperature", (X, t) => this.T_sat + (qv / this.k_B) * (zi0 - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0]));
+
+            config["velocity_inlet_upper"].Evaluators.Add("VelocityX#A", (X, t) => 0.1 * Math.Sin(angle));
+            config["velocity_inlet_upper"].Evaluators.Add("VelocityY#A", (X, t) => -0.1 * Math.Cos(angle));
+            config["velocity_inlet_upper"].Evaluators.Add("Temperature#A", (X, t) => this.T_sat);
+            if (EnableMassFractions) {
+                config["velocity_inlet_upper"].Evaluators.Add("MassFraction0", (X, t) => 1.0);
+                config["ScalarDirichlet_PressureOutlet"].Evaluators.Add("MassFraction1", (X, t) => 1.0);
+            }
+            return config;
+        }
+
+        public Func<double, double> GetE() => null;
+
+        public Func<double[], double> GetF(string species, int d) {
+            return (X => 0.0);
+        }
+
+        public Func<double[], double> GetQ(string species) {
+            return (X => 0.0);
+        }
+
+        public Func<double[], double, double> GetPhi() {
+            return (X, t) => zi0 - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0];
+        }
+
+        public Func<double[], double, double> GetPress(string species) {
+            double dp = -(qv / h_vap).Pow2() * (1 / this.rho_A - 1 / this.rho_B);
+            switch (species) {
+                case "A": { return (X, t) => 0.0 + dp; }
+                case "B": { return (X, t) => 0.0; }
+                default: { throw new ArgumentException(); }
+            }
+        }
+
+        public Func<double[], double, double> GetT(string species) {
+            throw new ArgumentException();
+        }
+
+        public Func<double[], double, double> GetTemperature(string species) {
+            switch (species) {
+                case "A": { return (X, t) => this.T_sat; }
+                case "B": { return (X, t) => this.T_sat + (qv / this.k_B) * (zi0 - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0]); }
+                default: { throw new ArgumentException(); }
+            }
+        }
+
+        public Func<double[], double, double> GetU(string species, int d) {
+            switch (species) {
+                case "A": { return (X, t) => d == 0 ? 0.1 * Math.Sin(angle) : d == 1 ? -0.1 * Math.Cos(angle) : throw new ArgumentException(); }
+                case "B": { return (X, t) => d == 0 ? 1.0 * Math.Sin(angle) : d == 1 ? -1.0 * Math.Cos(angle) : throw new ArgumentException(); }
+                default: { throw new ArgumentException(); }
+            }
+        }
+
+        public Func<double[], double, double> GetMassFractions(string species, int q) {
+            if (q == 0) {
+                switch (species) {
+                    case "A": { return (X, t) => 1.0; }
+                    case "B": { return (X, t) => 1.0 / 0.6 * X[1]; }
+                    default: { throw new ArgumentException(); }
+                }
+            } else if (q == 1) {
+                switch (species) {
+                    case "A": { return (X, t) => 0.0; }
+                    case "B": { return (X, t) => -1.0 / 0.6 * X[1] + 1; }
+                    default: { throw new ArgumentException(); }
+                }
+            } else {
+                throw new ArgumentOutOfRangeException();
+            }
+        }
+    }
+
+    internal class SteadyStateEvaporationTestXNSEC : IXNSECTest_Heat {
+        public bool TestImmersedBoundary => false;
+
+        /// <summary>
+        /// nix
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+        }
+
+        public Func<double[], double, double> GetPhi2U(int d) {
+            throw new NotImplementedException();
+        }
+
+        private double angle;
+        private AffineTrafo ROT;
+        private bool equaldensity;
+
+        /// <summary>
+        /// ctor..
+        /// </summary>
+        /// <param name="angle"></param>
+        public SteadyStateEvaporationTestXNSEC(double angle = 0.0, bool equalDensity = false) {
+            this.angle = angle;
+            this.ROT = AffineTrafo.Some2DRotation(angle);
+            this.equaldensity = equalDensity;
         }
 
         public double mu_A => 1.0;
@@ -67,7 +242,8 @@ namespace BoSSS.Application.XNSEC {
         public double k_A => 1.0;
 
         public double k_B => 0.1;
-
+        public double rhoD_A => 1.0;
+        public double rhoD_B => 1.0;
         public double T_sat => 100.0;
 
         public double h_vap => 100.0;
@@ -82,7 +258,7 @@ namespace BoSSS.Application.XNSEC {
 
         public double rho_A => 1.0;
 
-        public double rho_B => 0.1;
+        public double rho_B => equaldensity ? 1.0 : 0.1;
 
         public bool Material => false;
 
@@ -116,14 +292,12 @@ namespace BoSSS.Application.XNSEC {
             grd.EdgeTagNames.Add(1, "ScalarDirichlet_PressureOutlet");
             grd.EdgeTagNames.Add(2, "velocity_inlet_upper");
 
-
-
             grd.DefineEdgeTags(delegate (double[] X) {
                 byte et = 0;
                 if (Math.Abs(X[1]) <= 1.0e-8)
                     et = 1;
                 if (Math.Abs(X[1] - L) <= 1.0e-8)
-                    et = 2;  
+                    et = 2;
 
                 return et;
             });
@@ -149,9 +323,9 @@ namespace BoSSS.Application.XNSEC {
             config["velocity_inlet_upper"].Evaluators.Add("VelocityY#A", (X, t) => -0.1 * Math.Cos(angle));
             config["velocity_inlet_upper"].Evaluators.Add("Temperature#A", (X, t) => this.T_sat);
 
-            if (EnableMassFractions) { 
-            config["ScalarDirichlet_PressureOutlet"].Evaluators.Add("MassFraction0", (X, t) => 1.0);
-            config["velocity_inlet_upper"].Evaluators.Add("MassFraction1", (X, t) => 1.0);
+            if (EnableMassFractions) {
+                config["ScalarDirichlet_PressureOutlet"].Evaluators.Add("MassFraction0", (X, t) => 1.0);
+                config["velocity_inlet_upper"].Evaluators.Add("MassFraction1", (X, t) => 1.0);
             }
             return config;
         }
@@ -210,4 +384,162 @@ namespace BoSSS.Application.XNSEC {
             return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
         }
     }
+
+    /// <summary>
+    /// Evaporation of a liquid phase containing only component "0" into a gas phase containing only component "1" in the bulk
+    /// </summary>
+    internal class SteadyStateEvaporationTestXNSEC_MixtureFraction : IXNSECTest_MixtureFraction, IPrescribedMass {
+        public bool TestImmersedBoundary => false;
+
+        /// <summary>
+        /// nix
+        /// </summary>
+        public Func<double[], double, double> GetPhi2() {
+            throw new NotImplementedException(); // will never be called, as long as 'TestImmersedBoundary' == false;
+        }
+
+        public Func<double[], double, double> GetPhi2U(int d) {
+            throw new NotImplementedException();
+        }
+
+        private double angle;
+        private AffineTrafo ROT;
+
+        /// <summary>
+        /// ctor..
+        /// </summary>
+        /// <param name="angle"></param>
+        public SteadyStateEvaporationTestXNSEC_MixtureFraction(double angle = 0.0) {
+            this.angle = angle;
+            this.ROT = AffineTrafo.Some2DRotation(angle);
+        }
+
+        public double mu_A => 1.0;
+
+        public double mu_B => 0.1;
+
+        public double Sigma => 1.0 * 0;
+
+        public double c_A => 1.0;
+
+        // has to be zero, because we do not want to include a convective contribution to heatflux and temperature profile
+        public double c_B => 1.0;
+
+        public double k_A => 1.0;
+
+        public double k_B => 0.1;
+
+        public double T_sat => 100.0;
+
+        public double h_vap => 100.0;
+        public bool CheckT => true;
+        public bool CheckE => false;
+        public int SpatialDimension => 2;
+        public double dt => 5e-4 * 1e100;
+        public double rho_A => 1.0;
+        public double rho_B => 0.1;
+        public bool Material => false;
+        public bool steady => true;
+        public bool IncludeConvection => false;
+        public int LevelsetPolynomialDegree => 2;
+        public double[] AcceptableL2Error => new double[] { 1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 1e-7 };
+        public double[] AcceptableResidual => new double[] { 1e-7, 1e-7, 1e-7, 1e-7, 1e-7, 1e-7 };
+        public int NumberOfChemicalComponents => 2;
+        public bool ChemicalReactionTermsActive => false;
+        public bool EnableMassFractions => true;
+        public bool EnableTemperature => true;
+        public double[] GravityDirection => new double[] { 0, 0, 0 };
+        public double rhoD_A => 1.0;
+        public double rhoD_B => 1.0;
+        private double L = 1.0;
+
+        public GridCommons CreateGrid(int Resolution) {
+            double[] Xnodes = GenericBlas.Linspace(0, L, Resolution * 1 + 3 + 1);
+            double[] Ynodes = GenericBlas.Linspace(0, L, Resolution + 1);
+            var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
+
+            grd.EdgeTagNames.Add(1, "ScalarDirichlet_PressureOutlet");
+            grd.EdgeTagNames.Add(2, "velocity_inlet_upper");
+
+            grd.DefineEdgeTags(delegate (double[] X) {
+                byte et = 0;
+                if (Math.Abs(X[1]) <= 1.0e-8)
+                    et = 1;
+                if (Math.Abs(X[1] - L) <= 1.0e-8)
+                    et = 2;
+
+                return et;
+            });
+
+            return grd.Transform(ROT);
+        }
+
+        private double zi0 = 0.6;
+        private double qv = 10.0;
+
+        public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
+            double qv = 10.0;
+            var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
+
+            config.Add("ScalarDirichlet_PressureOutlet", new AppControl.BoundaryValueCollection());
+            config.Add("velocity_inlet_upper", new AppControl.BoundaryValueCollection());
+
+            config["ScalarDirichlet_PressureOutlet"].Evaluators.Add("Temperature", (X, t) => this.T_sat + (qv / this.k_B) * (zi0 - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0]));
+
+            config["velocity_inlet_upper"].Evaluators.Add("VelocityX#A", (X, t) => 0.1 * Math.Sin(angle));
+            config["velocity_inlet_upper"].Evaluators.Add("VelocityY#A", (X, t) => -0.1 * Math.Cos(angle));
+            config["velocity_inlet_upper"].Evaluators.Add("Temperature#A", (X, t) => this.T_sat);
+            if (EnableMassFractions) {
+                config["velocity_inlet_upper"].Evaluators.Add("MixtureFraction", (X, t) => 1.0);
+                config["ScalarDirichlet_PressureOutlet"].Evaluators.Add("MixtureFraction", (X, t) => 0.0);
+            }
+            return config;
+        }
+
+        public Func<double, double> GetE() => null;
+
+        public Func<double[], double> GetF(string species, int d) {
+            return (X => 0.0);
+        }
+
+        public Func<double[], double> GetQ(string species) {
+            return (X => 0.0);
+        }
+
+        public Func<double[], double, double> GetPhi() {
+            return (X, t) => zi0 - Math.Cos(angle) * X[1] + Math.Sin(angle) * X[0];
+        }
+
+        public Func<double[], double, double> GetPress(string species) {
+            double dp = -(qv / h_vap).Pow2() * (1 / this.rho_A - 1 / this.rho_B);
+            switch (species) {
+                case "A": { return (X, t) => 0.0 + dp; }
+                case "B": { return (X, t) => 0.0; }
+                default: { throw new ArgumentException(); }
+            }
+        }
+
+
+        public Func<double[], double, double> GetMixtureFraction(string species) {
+            switch (species) {
+                case "A": { return (X, t) => 1.0; }
+                case "B": { return (X, t) => 0.0; }
+                default: { throw new ArgumentException(); }
+            }
+        }
+
+        public Func<double[], double, double> GetU(string species, int d) {
+            switch (species) {
+                case "A": { return (X, t) => d == 0 ? 0.1 * Math.Sin(angle) : d == 1 ? -0.1 * Math.Cos(angle) : throw new ArgumentException(); }
+                case "B": { return (X, t) => d == 0 ? 1.0 * Math.Sin(angle) : d == 1 ? -1.0 * Math.Cos(angle) : throw new ArgumentException(); }
+                default: { throw new ArgumentException(); }
+            }
+        }
+
+        public Func<double[], double, double> GetPrescribedMassflux_Evaluator() {
+            return ((_3D)((t, x, y) => 1.0)).Convert_txy2Xt();
+        }
+    }
+
+
 }

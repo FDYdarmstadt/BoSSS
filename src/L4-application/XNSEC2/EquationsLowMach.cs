@@ -1,6 +1,8 @@
-﻿using BoSSS.Application.XNSFE_Solver;
+﻿using BoSSS.Application.XNSEC;
+using BoSSS.Application.XNSFE_Solver;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XheatCommon;
 using ilPSP;
@@ -10,7 +12,7 @@ using System;
 namespace BoSSS.Solution.XNSECommon {
 
     /// <summary>
-    /// Continuity equation for the Low-Mach equations, where density varies locally with temperature and concentrations in the bulk.
+    /// Continuity equation for the Low-Mach equations, where density varies locally with temperature and mass fractions in the bulk.
     /// </summary>
     public class LowMachContinuity : BulkEquation {
         private string speciesName;
@@ -22,7 +24,9 @@ namespace BoSSS.Solution.XNSECommon {
             XNSEC_OperatorConfiguration config,
             IncompressibleBoundaryCondMap BcMap,
             MaterialLaw EoS,
-            double dt) {
+            double dt,
+            Func<double[], double, double> ManSol,
+            NonLinearSolverCode NonLinSolverCode) {
             int NoOfChemicalSpecies = config.NoOfChemicalSpecies;
 
             codomainName = EquationNames.ContinuityEquation;
@@ -31,26 +35,51 @@ namespace BoSSS.Solution.XNSECommon {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.MassFractions(NoOfChemicalSpecies));
 
             speciesName = spcName;
-            double[] MolarMasses = new double[] { 2.0, 1.0, 1.0, 1.0, 1.0 };
 
-            for(int d = 0; d < D; ++d) {
-                var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifference(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
-                AddComponent(conti);
-            }
-
-            // manufactured solution
-            if(config.manSolSource_OK) {
-                var MS_Momentum = new BoSSS.Solution.XNSECommon.LowMach_ContiManSolution(spcName, -1, MolarMasses, PhysicsMode.Combustion, false, null);
-                AddComponent(MS_Momentum);
-            }
 
             //Temporal term contribution:
             //Implicit Euler:  d(rho) / dt = (rho ^ n_t - rho_(t - 1)) / delta t, n: newton iteration counter
-            if(!config.isSteady && config.timeDerivativeConti_OK) {
+            if (!config.isSteady && config.timeDerivativeConti_OK) {
                 var drho_dt = new BoSSS.Solution.XNSECommon.LowMach_TimeDerivativeConti(spcName, EoS, dt, NoOfChemicalSpecies);
                 AddComponent(drho_dt);
                 AddParameter("Density_t0");
             }
+
+            // Divergence term
+            // \/ . (\rho \vec{u})
+            if (NonLinSolverCode == NonLinearSolverCode.Newton) {
+                for (int d = 0; d < D; ++d) {
+                    var contiNewton = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifferenceNewton(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
+                    AddComponent(contiNewton);
+                }
+            } else if (NonLinSolverCode == NonLinearSolverCode.Picard) {
+                for (int d = 0; d < D; ++d) {
+                    var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifference(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
+                    AddComponent(conti);
+                }
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Temperature0);
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.MassFraction0_0);
+            } else {
+                throw new NotImplementedException("Not implemented non linear solver");
+            }
+
+            //for (int d = 0; d < D; ++d) {
+            //    if (NonLinSolverCode == NonLinearSolverCode.Newton) {
+            //        var contiNewton = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifferenceNewton(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
+            //        AddComponent(contiNewton);
+            //    } else if (NonLinSolverCode == NonLinearSolverCode.Picard) {
+            //        var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifference(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
+            //        AddComponent(conti);
+            //    }
+            //}
+
+            // manufactured solution
+            if (config.manSolSource_OK) {
+                var MS_conti = new BoSSS.Solution.XNSECommon.LowMach_ManSolution(spcName, ManSol);
+                AddComponent(MS_conti);
+            }
+
+       
         }
 
         public override string SpeciesName => speciesName;
@@ -62,6 +91,7 @@ namespace BoSSS.Solution.XNSECommon {
 
     public class InterfaceContinuityLowMach : SurfaceEquation {
         private string codomainName;
+
         public InterfaceContinuityLowMach(INSE_Configuration config, int D, LevelSetTracker LsTrk, bool isMaterialInterface) {
             codomainName = EquationNames.ContinuityEquation;
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
@@ -85,8 +115,7 @@ namespace BoSSS.Solution.XNSECommon {
         public override string CodomainName => codomainName;
     }
 
-
-        /// <summary>
+    /// <summary>
     /// same as <see cref="InterfaceContinuity_Evaporation"/> but using Newton solver compatible components
     /// </summary>
     public class InterfaceContinuity_Evaporation_Newton_LowMach : InterfaceContinuity_Evaporation {
@@ -160,11 +189,11 @@ namespace BoSSS.Solution.XNSECommon {
 
             // convective operator
             // ===================
-            if(physParams.IncludeConvection && config.isTransport) {
+            if (physParams.IncludeConvection && config.isTransport) {
                 var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton_LowMach(d, dimension, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName, EoS_A, EoS_B, NoOfChemicalSpecies);
                 AddComponent(conv);
             }
-            if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
+            if (isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
                 // if Moving mesh, we need the interface transport term somehow
 
                 throw new NotImplementedException("Something missing here.");
@@ -172,30 +201,30 @@ namespace BoSSS.Solution.XNSECommon {
 
             // pressure gradient
             // =================
-            if(config.isPressureGradient) {
+            if (config.isPressureGradient) {
                 var presLs = new Solution.XNSECommon.Operator.Pressure.PressureFormAtLevelSet(d, dimension);
                 AddComponent(presLs);
             }
 
             // viscous operator
             // ================
-            if(config.isViscous && (!(muA == 0.0) && !(muB == 0.0))) {
+            if (config.isViscous && (!(muA == 0.0) && !(muB == 0.0))) {
                 double penalty = dntParams.PenaltySafety;
-                switch(dntParams.ViscosityMode) {
+                switch (dntParams.ViscosityMode) {
                     case ViscosityMode.Standard:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, true));
-                    break;
+                        AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, true));
+                        break;
 
                     case ViscosityMode.TransposeTermMissing:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, false));
-                    break;
+                        AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, false));
+                        break;
 
                     case ViscosityMode.FullySymmetric:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d));
-                    break;
+                        AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d));
+                        break;
 
                     default:
-                    throw new NotImplementedException();
+                        throw new NotImplementedException();
                 }
             }
         }
@@ -204,7 +233,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// <summary>
     /// Low-Mach momentum equations in the bulk phase
     /// </summary>
-    public class LowMachNavierStokes : BulkEquation {
+    public class LowMachMomentumEquations : BulkEquation {
         private string speciesName;
         private string codomainName;
 
@@ -221,13 +250,15 @@ namespace BoSSS.Solution.XNSECommon {
         /// </param>
         /// <param name="boundaryMap"></param>
         /// <param name="config"></param>
-        public LowMachNavierStokes(
+        public LowMachMomentumEquations(
             string spcName,
             int d,
             int D,
             IncompressibleBoundaryCondMap boundaryMap,
             XNSEC_OperatorConfiguration config,
-            MaterialLaw EoS) {
+            MaterialLaw EoS,
+            Func<double[], double, double> ManSol,
+            NonLinearSolverCode NonLinSolverCode) {
             double Reynolds = config.Reynolds;
             double Froude = config.Froude;
             int NoOfChemicalSpecies = config.NoOfChemicalSpecies;
@@ -245,23 +276,25 @@ namespace BoSSS.Solution.XNSECommon {
             // Convective term
             // =================
 
-            if(config.physParams.IncludeConvection && config.isTransport) {
-                var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
-                AddComponent(conv);
-
-                //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
-                //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
+            if (config.physParams.IncludeConvection && config.isTransport) {
+                if (NonLinSolverCode == NonLinearSolverCode.Newton) {
+                    var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF_Newton(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
+                    AddComponent(conv);
+                } else if (NonLinSolverCode == NonLinearSolverCode.Picard) {
+                    var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
+                    AddComponent(conv);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D)[d]);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.Temperature0);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.MassFraction0_0);
+                }
             }
 
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.ThermodynamicPressure);
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Rho);
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Mu);
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.cp);
-
 
             // pressure gradient
             // =================
-            if(config.isPressureGradient) {
+            if (config.isPressureGradient) {
                 var pres = new Solution.XNSECommon.Operator.Pressure.PressureInSpeciesBulk(d, boundaryMap, spcName);
                 AddComponent(pres);
             }
@@ -271,7 +304,7 @@ namespace BoSSS.Solution.XNSECommon {
             var viscOption = ViscosityOption.VariableViscosityDimensionless;
             AddCoefficient("SlipLengths");
             AddCoefficient("Reynolds");
-            if(config.isViscous &&
+            if (config.isViscous &&
                 (spcName == "A" && !(config.physParams.mu_A == 0.0)) ||
                 (spcName == "B" && !(config.physParams.mu_B == 0.0))) {
                 var visc = new Solution.XNSECommon.Operator.Viscosity.LowMachViscosityInSpeciesBulk_AllTerms(spcName, penalty, d, D, boundaryMap, viscOption, 1, Reynolds, EoS);
@@ -279,9 +312,9 @@ namespace BoSSS.Solution.XNSECommon {
             }
             // Gravity
             //==================
-            if(gravityDirection.L2Norm() >0.0) { 
-            var gravityLowMach = new BoSSS.Solution.XNSECommon.LowMach_Gravity(spcName, gravityDirection, d, Froude, boundaryMap.PhysMode, EoS, NoOfChemicalSpecies);
-            AddComponent(gravityLowMach);
+            if (gravityDirection.L2Norm() > 0.0) {
+                var gravityLowMach = new BoSSS.Solution.XNSECommon.LowMach_Gravity(spcName, gravityDirection, d, Froude, boundaryMap.PhysMode, EoS, NoOfChemicalSpecies);
+                AddComponent(gravityLowMach);
             }
             // gravity & more general volume force
             // ================
@@ -303,11 +336,20 @@ namespace BoSSS.Solution.XNSECommon {
             // Manufactured Solutions source
             //=========================================
             string direction = d == 0 ? "x" : "y";
-            double[] MolarMasses = new double[] { 2.0, 1.0, 1.0, 1.0, 1.0 };
             bool rhoOne = false;
-            if(config.manSolSource_OK) {
-                var MS_Momentum = new BoSSS.Solution.XNSECommon.LowMach_MomentumManSolution(spcName, Reynolds, Froude, MolarMasses, direction, PhysicsMode.Combustion, rhoOne, null);
+
+            if (config.manSolSource_OK) {
+                var MS_Momentum = new BoSSS.Solution.XNSECommon.LowMach_ManSolution(spcName, ManSol);
+
                 AddComponent(MS_Momentum);
+            }
+
+            if (config.PlotAdditionalParameters) {
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Rho);
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Mu);
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.cp);
+                var conv = new BoSSS.Solution.NSECommon.DummyParameter();
+                AddComponent(conv);
             }
         }
 
@@ -362,7 +404,8 @@ namespace BoSSS.Solution.XNSECommon {
             double TRef,
             double cpRef,
             double dt,
-            BoSSS.Solution.NSECommon.SIPDiffusionTemperature.ThermalWallType myThermalWallType
+            BoSSS.Solution.NSECommon.SIPDiffusionTemperature.ThermalWallType myThermalWallType,
+            Func<double[], double, double> ManSol
             ) {
             int NoOfChemicalSpecies = config.NoOfChemicalSpecies;
             double Reynolds = config.Reynolds;
@@ -377,7 +420,7 @@ namespace BoSSS.Solution.XNSECommon {
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // Convection
-            if(config.getPhysParams.IncludeConvection) {
+            if (config.getPhysParams.IncludeConvection) {
                 var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustion_ScalarConvectionInSpeciesBulk_LLF(spcName, D, NoOfChemicalSpecies, boundaryMap, EoS, 0);
                 AddComponent(conv);
             }
@@ -386,16 +429,15 @@ namespace BoSSS.Solution.XNSECommon {
             var heatConduction = new BoSSS.Solution.XNSECommon.Operator.Viscosity.LowMachEnergyConductionBulk(spcName, penalty, boundaryMap, EoS, Reynolds, Prandtl, false, myThermalWallType);
             AddComponent(heatConduction);
 
-            if(config.includeReactionTerms) {
+            if (config.includeReactionTerms) {
                 var ReactionTerm = new BoSSS.Solution.XNSECommon.LowMach_HeatSource(spcName, HeatReleaseFactor, ReactionRateConstants, MolarMasses, EoS, TRef, cpRef, config.VariableReactionRateParameters);
                 AddComponent(ReactionTerm);
                 AddParameter("kReact");
-
             }
 
             //Temporal term contribution:
             //Implicit Euler:  -d(p0) / dt = -(p0^{n}_{t} - p0_(t - 1)) / delta t, n: newton iteration counter
-            if(!config.isSteady && config.timeDerivativeEnergyp0_OK) {
+            if (!config.isSteady && config.timeDerivativeEnergyp0_OK) {
                 //-(p0^{n}_{t} - p0_(t - 1)) / delta t
                 var dtp0_dt = new BoSSS.Solution.XNSECommon.LowMach_TimeDerivativep0(spcName, dt);
                 AddComponent(dtp0_dt);
@@ -406,10 +448,11 @@ namespace BoSSS.Solution.XNSECommon {
             AddParameter("dp0dt");
             // Manufactured Solutions source
             //=========================================
-            if(config.manSolSource_OK) {
+            if (config.manSolSource_OK) {
                 double Schmidt = Prandtl;
                 double[] StoichiometricCoefficients = null;
-                var MS_Energy = new BoSSS.Solution.XNSECommon.LowMach_ScalarManSolution(spcName, HeatReleaseFactor, Reynolds, Prandtl, Schmidt, StoichiometricCoefficients, ReactionRateConstants, MolarMasses, EoS, "Temperature", PhysicsMode.Combustion);
+                //var MS_Energy = new BoSSS.Solution.XNSECommon.LowMach_ScalarManSolution(spcName, HeatReleaseFactor, Reynolds, Prandtl, Schmidt, StoichiometricCoefficients, ReactionRateConstants, MolarMasses, EoS, "Temperature", PhysicsMode.Combustion);
+                var MS_Energy = new BoSSS.Solution.XNSECommon.LowMach_ManSolution(spcName, ManSol);
                 AddComponent(MS_Energy);
             }
         }
@@ -468,7 +511,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             // convective part
             // ================
-            if(thermParams.IncludeConvection) {
+            if (thermParams.IncludeConvection) {
                 Console.WriteLine("include heat convection");
                 DefineConvective(dimension, capA, capB, LFFA, LFFB, boundaryMap, config.isMovingMesh);
             }
@@ -521,7 +564,8 @@ namespace BoSSS.Solution.XNSECommon {
             int ChemicalSpeciesCounter,
             double[] ReactionRateConstants,
             double[] StoichiometricCoefficients,
-            double[] MolarMasses) {
+            double[] MolarMasses,
+            XNSEC_Control control) {
             double Reynolds = config.Reynolds;
             double Prandtl = config.Prandtl;
             double[] Lewis = config.Lewis;
@@ -537,7 +581,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             // Convection of species i
             //===============
-            if(config.getPhysParams.IncludeConvection) {
+            if (config.getPhysParams.IncludeConvection) {
                 var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustion_ScalarConvectionInSpeciesBulk_LLF(spcName, D, NoOfChemicalSpecies, boundaryMap, EoS, ChemicalSpeciesCounter + 1);
                 AddComponent(conv);
             }
@@ -549,21 +593,98 @@ namespace BoSSS.Solution.XNSECommon {
 
             // Mass source/sink term of species i
             //===================================
-            if(config.includeReactionTerms) {
+            if (config.includeReactionTerms) {
                 var massReaction_i = new BoSSS.Solution.XNSECommon.LowMach_MassFractionSource(spcName, ReactionRateConstants, StoichiometricCoefficients, MolarMasses, EoS, NoOfChemicalSpecies, ChemicalSpeciesCounter, 300, 1.0, config.VariableReactionRateParameters);
                 AddComponent(massReaction_i);
             }
 
-            if(config.manSolSource_OK) {
-                double Schmidt = Prandtl;
-                double HeatReleaseFactor = -10000; // not needed
-                var MS_Energy = new BoSSS.Solution.XNSECommon.LowMach_ScalarManSolution(spcName, HeatReleaseFactor, Reynolds, Prandtl, Schmidt, StoichiometricCoefficients, ReactionRateConstants, MolarMasses, EoS, "MassFraction", PhysicsMode.Combustion, ChemicalSpeciesCounter, true);
-                AddComponent(MS_Energy);
+            if (config.manSolSource_OK) {
+                Func<double[], double, double> MF;
+                switch (ChemicalSpeciesCounter) {
+                    case 0:
+                        MF = control.ManufacturedSolution_Species0;
+                        break;
+
+                    case 1:
+                        MF = control.ManufacturedSolution_Species1;
+                        break;
+
+                    case 2:
+                        MF = control.ManufacturedSolution_Species2;
+                        break;
+
+                    case 3:
+                        MF = control.ManufacturedSolution_Species3;
+                        break;
+
+                    default:
+                        MF = control.ManufacturedSolution_Species3;
+                        break;
+                }
+                var MS = new BoSSS.Solution.XNSECommon.LowMach_ManSolution(spcName, MF);
+                AddComponent(MS);
             }
         }
 
         public override string SpeciesName => speciesName;
         public override double MassScale => 1.0;
+        public override string CodomainName => codomainName;
+    }
+
+    public class MassFractionInterface_Evaporation : SurfaceEquation {
+        private string codomainName;
+        private string phaseA, phaseB;
+
+        public MassFractionInterface_Evaporation(
+            string phaseA,
+            string phaseB,
+            int dimension,
+            int chemicalComponentIndex,
+            XNSFE_OperatorConfiguration config) : base() {
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            codomainName = EquationNames.SpeciesMassBalanceName(chemicalComponentIndex);
+            PhysicalParameters physParams = config.getPhysParams;
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double capA = thermParams.rho_A;
+            double LFFA = dntParams.LFFA;
+            double rhoD_A = thermParams.k_A;
+
+            double capB = thermParams.rho_B;
+            double LFFB = dntParams.LFFB;
+            double rhoD_B = thermParams.k_B;
+
+            double InterfaceMassFraction = chemicalComponentIndex == 0 ? 1.0 : 0.0;  //TODO!!!!
+
+            // convective part
+            // ================
+            if (thermParams.IncludeConvection) {
+                AddComponent(new SpeciesConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, InterfaceMassFraction, thermParams, FirstSpeciesName, SecondSpeciesName, chemicalComponentIndex));
+            }
+
+            // viscous operator (laplace)
+            // ==========================
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                double penalty = dntParams.PenaltySafety;
+                var Visc = new MassDifusivityAtLevelSet_withMassflux(dimension, rhoD_A, rhoD_B, penalty, InterfaceMassFraction, chemicalComponentIndex, config.isMaterialAtContactLine);
+                AddComponent(Visc);
+            } else {
+                throw new NotImplementedException();
+            }
+
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.MassFraction_n(chemicalComponentIndex));
+
+            AddCoefficient("EvapMicroRegion");
+        }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
         public override string CodomainName => codomainName;
     }
 }

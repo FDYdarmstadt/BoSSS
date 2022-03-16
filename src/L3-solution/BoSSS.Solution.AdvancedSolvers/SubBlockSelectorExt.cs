@@ -168,6 +168,16 @@ namespace BoSSS.Solution.AdvancedSolvers
                 Debug.Assert(!m_map.IsInLocalRange(GlobIdx));
             }
         }
+
+        /// <summary>
+        /// true if no elements are selected;
+        /// Typically some phatological use case, e.g. very coarse meshes
+        /// </summary>
+        public bool IsEmpty {
+            get;
+            private set;
+        }
+
         private void SetThisShitUp(BlockMaskBase[] masks) {
             List<long> tmpOffsetList = new List<long>();
             List<int> tmpLengthList = new List<int>();
@@ -178,13 +188,14 @@ namespace BoSSS.Solution.AdvancedSolvers
                 tmpLengthList.AddRange(mask.GetAllSubMatrixCellLength());
                 tmpNi0.AddRange(mask.m_StructuredNi0.ToList());
             }
-            if(tmpOffsetList.Count == 0)
-                throw new ArgumentException("Nothing Selected. Mask is empty");
+            if (tmpOffsetList.Count == 0)
+                IsEmpty = true; // typically some phatological use case, e.g. very coarse meshes
+                //throw new ArgumentException("Nothing Selected. Mask is empty");
             Debug.Assert(tmpOffsetList != null);
             Debug.Assert(tmpLengthList != null);
             Debug.Assert(tmpNi0 != null);
-            Debug.Assert(tmpOffsetList.GroupBy(x => x).Any(g => g.Count() == 1));
-            Debug.Assert(tmpNi0.GroupBy(x => x).Any(g => g.Count() == 1));
+            Debug.Assert(IsEmpty || tmpOffsetList.GroupBy(x => x).Any(g => g.Count() == 1));
+            Debug.Assert(IsEmpty || tmpNi0.GroupBy(x => x).Any(g => g.Count() == 1));
 
             SubMatrixOffsets = tmpOffsetList;
             SubMatrixLen = tmpLengthList;
@@ -233,7 +244,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Gets number of blocks/cells covert by mask
         /// </summary>
-        public int GetNoOfMaskedCells {
+        public int NoOfMaskedCells {
             get {
                 if (m_includeExternalCells) {
                     return BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length;
@@ -246,7 +257,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Gets number of rows covert by mask
         /// </summary>
-        public int GetNoOfMaskedRows {
+        public int NoOfMaskedRows {
             get {
                 if (m_includeExternalCells) {
                     return BMLoc.LocalDOF + BMExt.LocalDOF;
@@ -811,6 +822,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             return _Sblocks;
         }
 
+        /// <summary>
+        /// global (i.e. across all MPI processors) indices of vector entries, resp. matrix rows and columns to select.
+        /// </summary>
         public long[] GlobalIndices {
             get {
                 List<long> tmp = new List<long>();

@@ -30,8 +30,8 @@ namespace BoSSS.Foundation.Grid {
         Undefined = 0,
 
         /// <summary>
-        /// Marks the region of the info in which the reference element index index (index
-        /// into <see cref="GridCommons.RefElements"/>) is encoded.
+        /// Marks the region of the info in which the reference element index 
+        /// (index into <see cref="IGeometricalCellsData.RefElements"/>) is encoded.
         /// </summary>
         RefElementIndex_Mask = 0x7, // binary: 0111
 

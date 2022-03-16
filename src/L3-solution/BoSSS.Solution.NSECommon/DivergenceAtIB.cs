@@ -66,6 +66,9 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
                 uBxN = 0.0;
             }
 
+            //if(cp.Parameters_IN.L2Norm() > 1.0e-10)
+            //    throw new Exception("nonzero vel at ib");
+
             double FlxNeg = -DirichletFlux(uAxN, uBxN); // flux on A-side
             return scale * FlxNeg * v_Neg;
         }

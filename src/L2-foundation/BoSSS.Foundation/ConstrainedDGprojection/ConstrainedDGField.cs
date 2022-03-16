@@ -54,7 +54,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="b"></param>
         public ConstrainedDGField(Basis b, ProjectionStrategy projectStrategy = ProjectionStrategy.globalOnly) {
             m_Basis = b;
             m_grd = (GridData)b.GridDat;
@@ -87,11 +86,11 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         ProjectionStrategy projectStrategy = ProjectionStrategy.globalOnly;
 
-        bool reduceLinearDependence = false;
+        //bool reduceLinearDependence = false;
 
         public List<DGField> ProjectionSnapshots = new List<DGField>();
 
-        int NoOfFixedPatches = 0;  // if < 1 the number of patches is determined by maxNoOfCoordinates
+        //int NoOfFixedPatches = 0;  // if < 1 the number of patches is determined by maxNoOfCoordinates
         int maxNoOfCoordinates = 10000;
 
 
@@ -100,9 +99,9 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
 
         /// <summary>
-        /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
+        /// Projects some DG field <paramref name="orgDGField"/> onto the internal, continuous representation
         /// </summary>
-        /// <param name="DGField">
+        /// <param name="orgDGField">
         /// input; unchanged on exit
         /// </param>
         /// <param name="mask"></param>
@@ -575,11 +574,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="mask"></param>
-        /// <param name="fixedBoundaryMask"></param>
+
         void ProjectDGFieldBase(CellMask mask, EdgeMask fixedBoundaryMask = null, bool IsLocal = false) {
 
             // ...
@@ -957,9 +952,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="numVCond"></param>
-        /// <param name="numECond"></param>
-        /// <returns></returns>
         private NodeSet getEdgeInterpolationNodes(int numVcond, int numEcond, int NoOfFixedVertices = 0) {
 
             int degree = m_Basis.Degree;
@@ -1317,12 +1309,12 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         bool useOpSolver = true;
         bool globalPrecond = false;
         bool usePatchwiseCorrection = true;
-        bool reduceLinearDependence = false;
+        //bool reduceLinearDependence = false;
 
         /// <summary>
-        /// Projects some DG field <paramref name="DGField"/> onto the internal, continuous representation
+        /// Projects some DG field <paramref name="orgDGField"/> onto the internal, continuous representation
         /// </summary>
-        /// <param name="DGField">
+        /// <param name="orgDGField">
         /// input; unchanged on exit
         /// </param>
         /// <param name="mask"></param>
@@ -2638,9 +2630,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="numVCond"></param>
-        /// <param name="numECond"></param>
-        /// <returns></returns>
         private NodeSet getEdgeInterpolationNodes(int numVcond, int numEcond, int[] edgeOrientation = null, int minNoFixedEdges = 0) {
 
             int degree = m_Basis.Degree;
@@ -3772,13 +3761,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         }
 
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="numVCond"></param>
-        /// <param name="numECond"></param>
-        /// <returns></returns>
         private NodeSet getEdgeInterpolationNodes(int numVcond, int numEcond, int[] edgeOrientation = null) {
 
             int degree = m_Basis.Degree;

@@ -24,6 +24,7 @@ using ilPSP.Utils;
 using BoSSS.Platform;
 using MPI.Wrappers;
 using BoSSS.Platform.Utils;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -80,57 +81,63 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ~
         /// </summary>
         public void Init(MultigridOperator op) {
-            BlockMsrMatrix M = op.OperatorMatrix;
-            var MgMap = op.Mapping;
-            this.m_MultigridOp = op;
-            
+            using(new FuncTrace()) {
+                if(object.ReferenceEquals(op, this.m_MultigridOp))
+                    return; // already initialized
+                else
+                    this.Dispose();
 
-            if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Row partitioning mismatch.");
-            if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Column partitioning mismatch.");
+                BlockMsrMatrix M = op.OperatorMatrix;
+                var MgMap = op.Mapping;
+                this.m_MultigridOp = op;
 
-            Mtx = M;
-            int L = M.RowPartitioning.LocalLength;
 
-            /*
-            diag = new double[L];
-            int i0 = Mtx.RowPartitioning.i0;
+                if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Row partitioning mismatch.");
+                if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
+                    throw new ArgumentException("Column partitioning mismatch.");
 
-            for(int i = 0; i < L; i++) {
-                diag[i] = Mtx[i0 + i, i0 + i];
-            }
-             */
+                Mtx = M;
+                int L = M.RowPartitioning.LocalLength;
 
-            //if (op.Mapping.MaximalLength != op.Mapping.MinimalLength)
-            //    // 'BlockDiagonalMatrix' should be completely replaced by 'BlockMsrMatrix'
-            //    throw new NotImplementedException("todo - Block Jacobi for variable block Sizes");
+                /*
+                diag = new double[L];
+                int i0 = Mtx.RowPartitioning.i0;
 
-            Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
-            invDiag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
-            int Jloc = MgMap.LocalNoOfBlocks;
-            long j0 = MgMap.FirstBlock;
-            MultidimensionalArray temp = null;
-            for (int j = 0; j < Jloc; j++) {
-                long jBlock = j + j0;
-                int Nblk = MgMap.GetBlockLen(jBlock);
-                long i0 = MgMap.GetBlockI0(jBlock);
+                for(int i = 0; i < L; i++) {
+                    diag[i] = Mtx[i0 + i, i0 + i];
+                }
+                 */
 
-                if (temp == null || temp.NoOfCols != Nblk)
-                    temp = MultidimensionalArray.Create(Nblk, Nblk);
+                //if (op.Mapping.MaximalLength != op.Mapping.MinimalLength)
+                //    // 'BlockDiagonalMatrix' should be completely replaced by 'BlockMsrMatrix'
+                //    throw new NotImplementedException("todo - Block Jacobi for variable block Sizes");
 
-                M.ReadBlock(i0, i0, temp);
-                Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
+                Diag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
+                invDiag = new BlockMsrMatrix(M._RowPartitioning, M._ColPartitioning);
+                int Jloc = MgMap.LocalNoOfBlocks;
+                long j0 = MgMap.FirstBlock;
+                MultidimensionalArray temp = null;
+                for(int j = 0; j < Jloc; j++) {
+                    long jBlock = j + j0;
+                    int Nblk = MgMap.GetBlockLen(jBlock);
+                    long i0 = MgMap.GetBlockI0(jBlock);
 
-                temp.InvertInPlace();
+                    if(temp == null || temp.NoOfCols != Nblk)
+                        temp = MultidimensionalArray.Create(Nblk, Nblk);
 
-                invDiag.AccBlock(i0, i0, 1.0, temp, 0.0);
-            }
+                    M.ReadBlock(i0, i0, temp);
+                    Diag.AccBlock(i0, i0, 1.0, temp, 0.0);
+
+                    temp.InvertInPlace();
+
+                    invDiag.AccBlock(i0, i0, 1.0, temp, 0.0);
+                }
 #if DEBUG
             invDiag.CheckForNanOrInfM(typeof(BlockJacobi).Name + ", computing diagonal inverse: ");
 #endif
+            }
         }
-
 
 
         /// <summary>

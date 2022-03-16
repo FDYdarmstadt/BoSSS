@@ -20,8 +20,9 @@ namespace BoSSS.Foundation {
     /// typically the comparison of a single-core vs. a parallel run, without using a BoSSS database
     /// </summary>
     public class TestingIO {
+        
         /// <summary>
-        /// Data file.
+        /// Data file in which the reference data for comparison is stored
         /// </summary>
         public string CSVfile {
             get;
@@ -30,8 +31,8 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// The number of MPI course for the reference computation, typically 1 (single core).
-        /// - (Reference mode): If the current MPI size is equal to this value, data from <see cref="CurrentData"/> is saved in file <paramref name="CSVfile"/> .
-        /// - (Comparison mode): If the current MPI size is different, data is loaded from file <paramref name="CSVfile"/> into <see cref="ReferenceData"/>
+        /// - (Reference mode): If the current MPI size is equal to this value, data from <see cref="CurrentData"/> is saved in file <see cref="CSVfile"/>.
+        /// - (Comparison mode): If the current MPI size is different, data is loaded from file <see cref="CSVfile"/> into <see cref="ReferenceData"/>
         /// </summary>
         public int ReferenceMPISize {
             get;
@@ -270,7 +271,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Difference between data in file and data in <paramref name="vec"/>
+        /// Difference between data in file and data in column <paramref name="Colname"/>
         /// </summary>
         public double[] LocError(string Colname) {
             

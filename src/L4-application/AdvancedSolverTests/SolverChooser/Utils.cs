@@ -10,8 +10,7 @@ using static BoSSS.Solution.AdvancedSolvers.MultigridOperator;
 
 namespace AdvancedSolverTests.SolverChooser
 {
-    class Utils
-    {
+    class Utils {
 
         public static MgoSolverPair CreateTestMGOperator(XDGusage UseXdg = XDGusage.all, int DGOrder = 2, MatrixShape MShape = MatrixShape.laplace, int Resolution = 4) {
             //MultigridOperator retMGOp;

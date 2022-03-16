@@ -39,9 +39,15 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
         [JsonProperty]
         double[][] Radius;
 
+        /// <summary>
+        /// polar velocity component, indexing correlates with <see cref="Radius"/>
+        /// </summary>
         [JsonProperty]
         double[][] PolarVel;
 
+        /// <summary>
+        /// radial velocity component, indexing correlates with <see cref="Radius"/>
+        /// </summary>
         [JsonProperty]
         double[][] RadialVel;
 
@@ -142,6 +148,7 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
             double radial2 = Interpolate(radius, Radius[i2][j_21], Radius[i2][j_22], RadialVel[i2][j_21], RadialVel[i2][j_22]);
             double v_radial = Interpolate(theta, Theta[i1], Theta[i2], radial1, radial2);
 
+
             //double Vxy = Math.Cos(theta)*v_radial
             //    + Math.Sin(theta)*v_theta;
             //double Vz = Math.Sin(theta)*v_radial
@@ -150,7 +157,7 @@ namespace BoSSS.Application.XNSE_Solver.SpecificSolutions {
                 + v_theta * Math.Cos(theta);
             double Vz = v_radial * Math.Cos(theta)
                 - v_theta * Math.Sin(theta);
-
+     
 
             var Vel = new Vector(Dx * Vxy, Dy * Vxy, Vz);
 

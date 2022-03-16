@@ -131,8 +131,8 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// compiles a cell mask from a chunk
         /// </summary>
-        /// <param name="parts">
-        /// a list of chunk
+        /// <param name="part">
+        /// a single, continuous range of cells (chunk)
         /// </param>
         /// <param name="grddat">
         /// the grid that this mask will be associated with;
@@ -613,9 +613,8 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// Obtain all edges adjacent to cells within this mask, on both sides of the edge.
-        /// This is a non-collective alternative to <see cref="SubGrid.Inner"/>
+        /// This is a non-collective alternative to <see cref="SubGrid.InnerEdgesMask"/>
         /// </summary>
-        /// <returns></returns>
         public EdgeMask GetAllInnerEdgesMask() {
 
             if(this.MaskType != MaskType.Logical)

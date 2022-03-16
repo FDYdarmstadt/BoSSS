@@ -106,7 +106,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public Partitioning Partitioning {
             get;
-            private set;
+            //private set;
         }
 
         /// <summary>
@@ -665,7 +665,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// basises (<see cref="UnsetteledCoordinateMapping.BasisS"/>).
         /// </summary>
         /// <param name="Fields">
-        /// Indices into <see cref="BasisS"/>
+        /// Indices into <see cref="AggBasis"/>
         /// </param>
         public long[] GetSubvectorIndices(params int[] Fields) {
             ilPSP.MPICollectiveWatchDog.Watch();
@@ -819,9 +819,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Returns global unique indices which correlate to a certain species and basises.
         /// </summary>
         /// <param name="Fields">
-        /// Indices into <see cref="BasisS"/>
+        /// Indices into <see cref="AggBasis"/>
         /// </param>
-        /// <param name="map">
+        /// <param name="Species">
         /// </param>
         /// <returns>a list of global (over all MPI processes) unique indices.</returns>
         public long[] GetSubvectorIndices(Foundation.XDG.SpeciesId Species, params int[] Fields) {

@@ -418,13 +418,13 @@ namespace BoSSS.Application.SipPoisson.Tests {
 
 
             for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = hS.LogLogRegression( errorS.GetColumn(i));
+                var slope = hS.LogLogRegressionSlope( errorS.GetColumn(i));
 
                 Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{slope}\t(Expecting: {ExpectedSlopes[i]})");
             }
 
             for (int i = 0; i < errorS.GetLength(1); i++) {
-                var slope = hS.LogLogRegression( errorS.GetColumn(i));
+                var slope = hS.LogLogRegressionSlope( errorS.GetColumn(i));
                 Assert.IsTrue(slope >= ExpectedSlopes[i], $"Convergence Slope of {Names[i]} is degenerate.");
             }
 

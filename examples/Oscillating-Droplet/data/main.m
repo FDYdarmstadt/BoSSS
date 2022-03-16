@@ -43,6 +43,9 @@ figure
 quiver(x, z, Vx, Vz);
 axis equal
 
+max(abs(Vx))
+max(abs(Vz))
+
 %plot(1:I,tS,'+',1:I,theta_rec,'o')
 
 figure

@@ -79,6 +79,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Update the basis to comply with the agglomeration
         /// </summary>
+        /// <remarks>
         /// See at Figure 6 in: 
         /// Kummer, F., Weber, J., and Smuda, M. (2021);
         /// BoSSS: A package for multigrid extended discontinuous Galerkin methods,

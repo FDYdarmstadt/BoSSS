@@ -31,17 +31,7 @@ namespace ilPSP {
     public class BlockPartitioning : Partitioning, IBlockPartitioning {
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="LocalLength"></param>
-        /// <param name="BlockI0"></param>
-        /// <param name="BlockLen"></param>
-        /// <param name="MpiComm"></param>
-        /// <param name="i0isLocal">
-        /// - If true, the indices in <paramref name="BlockI0"/> are assumed to be local indices
-        /// - otherwise, they are assumed to be global
-        /// </param>
+ 
         public BlockPartitioning(int LocalLength, IEnumerable<long> BlockI0, IEnumerable<int> BlockLen, MPI_Comm MpiComm, bool i0isLocal = false) : base(LocalLength, MpiComm) {
 
             //var enu_I0 = BlockI0.GetEnumerator();

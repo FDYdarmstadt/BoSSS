@@ -42,19 +42,87 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class DirectSolver : ISolverSmootherTemplate, ISolverWithCallback {
 
+        /// <summary>
+        /// 
+        /// </summary>
+        [Serializable]
+        public class Config : ISolverFactory {
+
+            /// <summary>
+            /// Switch between PARDISO and MUMPS.
+            /// </summary>
+            public _whichSolver WhichSolver = _whichSolver.PARDISO;
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public string Name => "Sparse direct solver " + WhichSolver.ToString();
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public string Shortname => WhichSolver.ToString();
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+                var instance = new DirectSolver();
+                instance.m_config = this;
+                instance.Init(level);
+                return instance;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public bool Equals(ISolverFactory other) {
+                return EqualsImpl(other);
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public override bool Equals(object obj) {
+                return EqualsImpl(obj);
+            }
+
+
+            public override int GetHashCode() {
+                return (int)(this.WhichSolver);
+            }
+
+            private bool EqualsImpl(object o) {
+                var other = o as Config;
+
+                return (this.WhichSolver == other.WhichSolver);
+            }
+
+
+            /// <summary>
+            /// If set to true, the solution returned by the direct solver is tested by computing the residual norm.
+            /// Currently, the default is true, since the direct solvers seem unreliable.
+            /// </summary>
+            public bool TestSolution {
+                get;
+                set;
+            } = true;
+        }
+
+
+        Config m_config = new Config();
 
         /// <summary>
-        /// Set the type of Parallelism to be used for the linear Solver.
-        /// You may define a comma separated list out of the following: "SEQ","MPI","OMP"
+        /// Solver configuration
         /// </summary>
-        public Parallelism SolverVersion = Parallelism.SEQ;
+        public Config config {
+            get {
+                return m_config;
+            }
+        }
 
-        /// <summary>
-        /// Switch between PARDISO and MUMPS.
-        /// </summary>
-        public _whichSolver WhichSolver = _whichSolver.PARDISO;
 
-       
+
         /// <summary>
         /// 
         /// </summary>
@@ -72,7 +140,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             /// <summary>
             /// Conversion to dense matrix, solution 
-            /// via LU-decomposition from LAPACK, see also <see cref="IMatrixExtensions.Solve{T}(T, double[], double[])"/>.
+            /// via LU-decomposition from LAPACK, see also <see cref="IMatrixExtensions.Solve{T, W}(T, W)"/>.
             /// Only suitable for small systems (less than 10000 DOF).
             /// </summary>
             Lapack,
@@ -89,6 +157,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public void Init(MultigridOperator op) {
             using(var tr = new FuncTrace()) {
+                if(object.ReferenceEquals(op, m_MultigridOp))
+                    return; // already initialized
+                else
+                    this.Dispose();
+
                 var Mtx = op.OperatorMatrix;
                 var MgMap = op.Mapping;
                 m_MultigridOp = op;
@@ -108,6 +181,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_Mtx = Mtx;
             }
         }
+    
 
         MultigridOperator m_MultigridOp;
 
@@ -183,24 +257,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         ISparseSolver GetSolver(IMutableMatrixEx Mtx) {
             ISparseSolver solver;
+
+            bool RunSerial = Mtx.MPI_Comm == csMPI.Raw._COMM.SELF;
             
-            switch(WhichSolver) {
+            
+            switch(config.WhichSolver) {
                 case _whichSolver.PARDISO:
                 bool CachingOn = false;
                 if (ActivateCaching != null) {
-                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, m_MultigridOp.LevelIndex, 0);
+                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, m_MultigridOp.LevelIndex);
                 }
                 
                 solver = new PARDISOSolver() {
                     CacheFactorization = CachingOn,
                     UseDoublePrecision = true,
-                    Parallelism = this.SolverVersion
+                    Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.OMP
                 };
                 break;
 
                 case _whichSolver.MUMPS:
                 solver = new MUMPSSolver() {
-                    Parallelism = this.SolverVersion
+                    Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.MPI
                 };
                 break;
 
@@ -238,26 +315,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             using(var tr = new FuncTrace()) {
                 B.CheckForNanOrInfV(true, true, true, typeof(DirectSolver).Name + ", RHS on entry: ");
                 
-                double[] Residual = this.TestSolution ? B.ToArray() : null;
+                double[] Residual = this.config.TestSolution ? B.ToArray() : null;
 
                 string SolverName = "NotSet";
                 
-                /*
-<<<<<<< HEAD
-                using(var solver = GetSolver(m_Mtx)) {
-                    Converged = false;
-                    SolverName = solver.GetType().FullName;
-                    //Console.Write("Direct solver run {0}, using {1} ... ", IterCnt, solver.GetType().Name);
-                    IterCnt++;
-                    solver.Solve(X, B);
-                    //Console.WriteLine("done.");
 
-                    if(solver is PARDISOSolver pslv) {
-                        m_UsedMemoryInLastCall = pslv.UsedMemory();
-                    }
-                    Converged = true;
-=======
-*/
                 {
                     if(m_Solver == null)
                         m_Solver = GetSolver(m_Mtx);
@@ -330,25 +392,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         int m_ThisLevelIterations;
 
-        bool m_TestSolution = true;
+        
 
-        public Func<int, int, int, bool> ActivateCaching {
+        /// <summary>
+        /// Instruction for delayed caching of the factorization of block solver.
+        /// Useful if memory peaks in linear solver tend to burst the memory.
+        /// - 1st int: number of iterations
+        /// - 2nd int: multigrid level
+        /// </summary>
+        public Func<int, int, bool> ActivateCaching {
             private get;
             set;
         }
 
-        /// <summary>
-        /// If set to true, the solution returned by the direct solver is tested by computing the residual norm.
-        /// Currently, the default is true, since the direct solvers seem unreliable.
-        /// </summary>
-        public bool TestSolution {
-            get {
-                return m_TestSolution;
-            }
-            set {
-                m_TestSolution = value;
-            }
-        }
+        
 
         public int IterationsInNested {
             get { return 0; }

@@ -87,7 +87,7 @@ namespace BoSSS.Solution.Control {
             this.Tags = new List<string>();
             this.m_InitialValues_Evaluators = new Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
-            this.NoOfMultigridLevels = 0;
+            //this.NoOfMultigridLevels = 0;
         }
 
         [Serializable]
@@ -101,15 +101,16 @@ namespace BoSSS.Solution.Control {
             }
         }
 
-
+        
         /// <summary>
-        /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
+        /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridSequence"/>.
         /// </summary>
         [DataMember]
         virtual public int NoOfMultigridLevels {
             get;
             set;
         }
+        
 
 
         /// <summary>

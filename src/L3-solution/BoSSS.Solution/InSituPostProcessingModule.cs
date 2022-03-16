@@ -52,25 +52,27 @@ namespace BoSSS.Solution {
         /// 
         /// </summary>
         virtual public void Setup(IApplication solverMain) {
+            
             if(m_Setupdone)
                 throw new NotSupportedException("Setup Routine may only be called once.");
             m_Setupdone = true;
 
             this.SolverMain = solverMain;
-            if(LogFileName != null) {
-                if(solverMain.CurrentSessionInfo.ID != null && !solverMain.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
-                    if(solverMain.MPIRank == 0) {
-                        this.Log = SolverMain.DatabaseDriver.FsDriver.GetNewLog(LogFileName, solverMain.CurrentSessionInfo.ID);
+            if (solverMain.MPIRank == 0) {
+                if (LogFileName != null) {
+                    if (solverMain.CurrentSessionInfo.ID != null && !solverMain.CurrentSessionInfo.ID.Equals(Guid.Empty)) {
+                        if (solverMain.MPIRank == 0) {
+                            this.Log = SolverMain.DatabaseDriver.FsDriver.GetNewLog(LogFileName, solverMain.CurrentSessionInfo.ID);
+                        } else {
+                            this.Log = new StreamWriter(Stream.Null);
+                        }
                     } else {
-                        this.Log = new StreamWriter(Stream.Null);
+                        this.Log = new StreamWriter(
+                            new FileStream(LogFileName + ".txt", FileMode.Create, FileAccess.Write, FileShare.Read));
                     }
-                } else {
-                    this.Log = new StreamWriter(
-                        new FileStream(LogFileName + ".txt", FileMode.Create, FileAccess.Write, FileShare.Read));
                 }
+                WriteHeader(this.Log);
             }
-            WriteHeader(this.Log);
-
         }
 
         /// <summary>
@@ -149,7 +151,8 @@ namespace BoSSS.Solution {
         /// writes an integer number to the current log
         /// </summary>
         protected void AppendToLog(int I) {
-            if(ColumnCounter > 0)
+            if (this.SolverMain.MPIRank != 0) return;
+            if (ColumnCounter > 0)
                 Log.Write(ColumnSeperator);
             Log.Write(I);
             ColumnCounter++;
@@ -159,7 +162,8 @@ namespace BoSSS.Solution {
         /// writes a string to the current log
         /// </summary>
         protected void AppendToLog(string s) {
-            if(ColumnCounter > 0)
+            if (this.SolverMain.MPIRank != 0) return;
+            if (ColumnCounter > 0)
                 Log.Write(ColumnSeperator);
             Log.Write(s);
             ColumnCounter++;
@@ -169,7 +173,8 @@ namespace BoSSS.Solution {
         /// appends a floating-point number to the current log
         /// </summary>
         protected void AppendToLog(double d) {
-            if(ColumnCounter > 0)
+            if (this.SolverMain.MPIRank != 0) return;
+            if (ColumnCounter > 0)
                 Log.Write(ColumnSeperator);
             Log.Write(d.ToStringDot());
             ColumnCounter++;
@@ -179,7 +184,8 @@ namespace BoSSS.Solution {
         /// writes an entire collection of floating-point values to the log
         /// </summary>
         protected void AppendToLog(IEnumerable<double> values) {
-            foreach(var d in values)
+            if (this.SolverMain.MPIRank != 0) return;
+            foreach (var d in values)
                 AppendToLog(d);
         }
 
