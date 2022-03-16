@@ -187,8 +187,8 @@ namespace ZwoLevelSetSolver.Boundary {
                 fluidStressT -= 1 * fluidViscosity * (_Grad_uIN[i, d]) * inp.Normal[i];
             }
 
-            return 1.0 * (0.5 * (fluidStress + fluidStressT) + pIn ) * (_vIN)
-                + 1.0 * (0.5 * ( fluidStress + fluidStressT) + pIn) * (-_vOUT);
+            return (fluidStress + pIn ) * (_vIN)
+                + (0.5 * ( fluidStress + fluidStressT) + pIn) * (-_vOUT);
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

@@ -22,12 +22,22 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
 
-
+            //*
             var convection = new NonLinearConvectionForm(speciesName,
                 ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d],
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
-                d, 1.0, boundaryMap);
+                1.0, boundaryMap);
             AddComponent(convection);
+            //*/
+            /*
+            var convection = new ParameterTransportForm(speciesName, 
+                ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d], 
+                BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D), 
+                D, 1.0);
+            AddComponent(convection);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+            AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D));
+            */
 
             if(artificialViscosity != 0) {
                 // we should not add the SIP form if it is not intended at all, i.e. if 'artificialViscosity == 0';

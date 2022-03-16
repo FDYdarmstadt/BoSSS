@@ -34,7 +34,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             var convection = new NonLinearConvectionForm(SpeciesName, 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
-                d, material.Density);
+                material.Density);
             AddComponent(convection);
             
             var pressure = new GradientForm(SpeciesName, d, BoSSS.Solution.NSECommon.VariableNames.Pressure);

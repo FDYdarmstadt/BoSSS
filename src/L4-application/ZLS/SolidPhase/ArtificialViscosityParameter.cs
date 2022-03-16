@@ -44,7 +44,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             parameter.Clear();
             //parameter.ProjectAbs(1.0, null, velocity);
             parameter.Divergence(1.0, velocity);
-            //XDGFieldDifferentiator.DivergenceByFlux(1.0, parameter, velocity, velocity[0].Basis.Tracker, "C");
+            XDGFieldDifferentiator.DivergenceByFlux(1.0, parameter, velocity, velocity[0].Basis.Tracker, "C");
             //parameter.AccConstant(0.001);
         }
 

@@ -66,7 +66,7 @@ namespace ZwoLevelSetSolver {
             // configuration for displacements
             for (int d = 0; d < D; d++) {
                 var configDisplacement = new MultigridOperator.ChangeOfBasisConfig() {
-                    DegreeS = new int[] { pDispl },
+                    DegreeS = new int[] { pDispl},
                     mode = MultigridOperator.Mode.IdMass,
                     VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.DisplacementVector(D)[d]) }
                 };
@@ -124,9 +124,13 @@ namespace ZwoLevelSetSolver {
 
             //lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, new DisplacementLaplace(D));
             /*
-            var displacement0 = new SinglePhaseFieldVariableCopy("C", NSEVariableNames.VelocityVector(D), VariableNames.Displacement0Vector(D));
+            var displacement0 = new SinglePhaseFieldVariableCopy("C", VariableNames.DisplacementVector(D), VariableNames.Displacement0Vector(D));
             opFactory.AddParameter(displacement0);
             lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, displacement0);
+
+            var velocity0 = new SinglePhaseFieldVariableCopy("C", NSEVariableNames.VelocityVector(D), NSEVariableNames.Velocity0Vector(D));
+            opFactory.AddParameter(velocity0);
+            lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, velocity0);
             //*/
         }
 
@@ -157,11 +161,11 @@ namespace ZwoLevelSetSolver {
             /*
             opFactory.AddEquation(new PressureViscosity("A", -0.001));
             opFactory.AddEquation(new PressureViscosity("B", -0.001));
-            opFactory.AddEquation(new PressureViscosity("C", -0.001));
+            //opFactory.AddEquation(new PressureViscosity("C", -0.001));
             opFactory.AddEquation(new PressureViscosityBoundary("A","C",D, -0.001));
             opFactory.AddEquation(new PressureViscosityBoundary("B", "C", D, -0.001));
-            opFactory.AddEquation(new PressureViscosityBoundary("C", "A", D, -0.001));
-            opFactory.AddEquation(new PressureViscosityBoundary("C", "B", D, -0.001));
+            //opFactory.AddEquation(new PressureViscosityBoundary("C", "A", D, -0.001));
+            //opFactory.AddEquation(new PressureViscosityBoundary("C", "B", D, -0.001));
             //*/
 
             //*
