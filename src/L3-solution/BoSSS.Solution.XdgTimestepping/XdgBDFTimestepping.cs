@@ -1642,7 +1642,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 base.QueryHandler.ValueQuery(QueryHandler.Conv, linearSolver.Converged ? 1.0 : 0.0, true);
                                 base.QueryHandler.ValueQuery(QueryHandler.NoIter, linearSolver.ThisLevelIterations, true);
                                 base.QueryHandler.ValueQuery(QueryHandler.NoOfCells, this.m_LsTrk.GridDat.CellPartitioning.TotalLength, true);
-                                base.QueryHandler.ValueQuery(QueryHandler.NoIter, mgOperator.Mapping.TotalLength, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
+                                base.QueryHandler.ValueQuery(QueryHandler.DOFs, mgOperator.Mapping.TotalLength, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
 
                             }
 

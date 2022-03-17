@@ -1286,9 +1286,9 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
-                    string command= $"set key font \",{this.LegendFont}\" ";
+                    string command = $"set key font \",{this.LegendFont}\" ";
 
-                    if ((this.LegendPosition != null) & (this.LegendAlignment != null))
+                    if ((this.LegendPosition != null) && (this.LegendAlignment != null))
                         System.Console.Error.WriteLine("legend position and legend alignment is set. Choose only one of them! Ignoring alignment ...");
 
                     if (this.LegendPosition != null) {
@@ -1338,7 +1338,7 @@ namespace BoSSS.Solution.Gnuplot {
                     if (this.LegendBox == true)
                         command += "box opaque ";
 
-                    System.Console.WriteLine(command);
+                    //System.Console.WriteLine(command);
                     gp.Cmd(command);
                 } else {
                     gp.Cmd("set key off");

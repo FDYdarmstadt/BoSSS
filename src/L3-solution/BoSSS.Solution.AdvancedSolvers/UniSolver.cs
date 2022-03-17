@@ -675,7 +675,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     G.queryHandler.ValueQuery(QueryHandler.Conv, Converged ? 1.0 : 0.0, true);
                     G.queryHandler.ValueQuery(QueryHandler.NoIter, NoOfIterations, true);
                     G.queryHandler.ValueQuery(QueryHandler.NoOfCells, G.gdat.CellPartitioning.TotalLength, true);
-                    G.queryHandler.ValueQuery(QueryHandler.NoIter, TotalDOF, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
+                    G.queryHandler.ValueQuery(QueryHandler.DOFs, TotalDOF, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
 
                     if(Solution.MaxTotalNoOfCoordinatesPerCell == Solution.MinTotalNoOfCoordinatesPerCell)
                         G.queryHandler.ValueQuery("BlockSize", Solution.MaxTotalNoOfCoordinatesPerCell, true);
