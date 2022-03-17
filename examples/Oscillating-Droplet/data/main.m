@@ -1,7 +1,7 @@
 clear
 
-polVel = dlmread('InitialValues/polarVelCase4.txt');
-radVel = dlmread('InitialValues/radialVelCase4.txt');
+polVel = dlmread('InitialValues/polarVelCase3.txt');
+radVel = dlmread('InitialValues/radialVelCase3.txt');
 
 rS = polVel(:,1);
 tS = polVel(:,2);
@@ -33,6 +33,9 @@ for i = 1:I
     %Vz(i) = -cos(theta)*vr + sin(theta)*vt ;
     
     % dino zrnic
+%     Vx(i) = vr*sin(theta) + vt*cos(theta);
+%     Vz(i) = vr*cos(theta) - vt*sin(theta); 
+
     Vx(i) = vr*sin(theta) + vt*cos(theta);
     Vz(i) = vr*cos(theta) - vt*sin(theta); 
 
