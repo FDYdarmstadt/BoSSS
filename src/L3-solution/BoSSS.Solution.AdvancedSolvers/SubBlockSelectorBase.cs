@@ -221,6 +221,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         protected Func<int, int, int, int, bool> m_ModeFilter = null;
 
         #region CellSelector
+        
         /// <summary>
         /// Selects all aggregation cell blocks
         /// </summary>
@@ -275,7 +276,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="global"></param>
         /// <returns></returns>
         public SubBlockSelectorBase CellSelector<V>(V ListOfCellIdx, bool global = false)
-            where V : IList<int>{
+            where V : IList<int> //
+        {
             int LocNoOfBlocks = m_NoLocalCells;
             long GlobNoOfBlocks = m_NoTotalCells;
 

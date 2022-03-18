@@ -12,7 +12,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
     /// <summary>
-    /// Recursive p-Multigrid on a single mesh level
+    /// Recursive p-Multigrid on a single mesh level;
+    /// this object os not a solver on its own, but it performs the restriction of the operator matrix
+    /// to a certain subset of cells and modes,
+    /// and applies the <see cref="LowerPSolver"/> onto it.
     /// </summary>
     public class PRestriction : ISubsystemSolver {
 
@@ -23,26 +26,41 @@ namespace BoSSS.Solution.AdvancedSolvers {
         class MgOperatorRestriction : IOperatorMappingPair {
 
 
-            public MgOperatorRestriction(IOperatorMappingPair Unrestricted, int[] RestrictedDeg) {
+            public MgOperatorRestriction(IOperatorMappingPair Unrestricted, int[] RestrictedDeg, Func<int[]> __GetCellRestriction, Func<BlockMsrMatrix> __GetExtRows, bool __MPIself) {
                 
                 var subBlock = new SubBlockSelector(Unrestricted.DgMapping);
+
+                if(__GetCellRestriction != null) {
+                    jLoc2Glob = __GetCellRestriction();
+                    subBlock.CellSelector(jLoc2Glob);
+                }
                 subBlock.SetModeSelector((int jCell, int iVar, int iSpc, int Deg) => Deg <= RestrictedDeg[iVar]);
 
+                m_MPIself = __MPIself;
                 m_RestrictedDeg = RestrictedDeg;
                 m_Unrestricted = Unrestricted;
-                m_Mask = new BlockMask(subBlock);
+                m_Mask = new BlockMask(subBlock, __GetExtRows?.Invoke());
             }
+
+            int[] jLoc2Glob = null;
 
             IOperatorMappingPair m_Unrestricted;
             BlockMask m_Mask;
             int[] m_RestrictedDeg;
+            bool m_MPIself;
 
             BlockMsrMatrix m_OperatorMatrix;
+
+            //Func<int[]> GetCellRestriction = null;
+            //Func<BlockMsrMatrix> GetExtRows = null;
 
             public BlockMsrMatrix OperatorMatrix {
                 get {
                     if(m_OperatorMatrix == null) {
-                        m_OperatorMatrix = m_Mask.GetSubBlockMatrix(m_Unrestricted.OperatorMatrix, m_Unrestricted.OperatorMatrix.MPI_Comm);
+                        if(!m_MPIself)
+                            m_OperatorMatrix = m_Mask.GetSubBlockMatrix(m_Unrestricted.OperatorMatrix, m_Unrestricted.OperatorMatrix.MPI_Comm);
+                        else
+                            m_OperatorMatrix = m_Mask.GetSubBlockMatrix_MpiSelf(m_Unrestricted.OperatorMatrix);
                     }
                     return m_OperatorMatrix;
                 }
@@ -60,7 +78,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         case 1: return p + 1;
                         case 2: return (p * p + 3 * p + 2) / 2;
                         case 3: return (p * p * p + 6 * p * p + 11 * p + 6) / 6;
-                        default: throw new Exception("wtf?Spacialdim=1,2,3 expected");
+                        default: throw new ArgumentOutOfRangeException("wtf?Spacialdim=1,2,3 expected");
                     }
                 }
 
@@ -93,11 +111,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 public int GetNoOfSpecies(int jCell) {
-                    return m_ownerHack.m_Unrestricted.DgMapping.GetNoOfSpecies(jCell);
+                    int _jCell = CellIdxTrafo(jCell);
+                    return m_ownerHack.m_Unrestricted.DgMapping.GetNoOfSpecies(_jCell);
+                }
+
+                private int CellIdxTrafo(int jCell) {
+                    int _jCell;
+                    if(m_ownerHack.jLoc2Glob != null)
+                        _jCell = m_ownerHack.jLoc2Glob[jCell];
+                    else
+                        _jCell = jCell;
+                    return _jCell;
                 }
 
                 public int GetSpeciesIndex(int jCell, SpeciesId SId) {
-                    return m_ownerHack.m_Unrestricted.DgMapping.GetSpeciesIndex(jCell, SId);
+                    int _jCell = CellIdxTrafo(jCell);
+                    return m_ownerHack.m_Unrestricted.DgMapping.GetSpeciesIndex(_jCell, SId);
                 }
 
                 public long GlobalUniqueIndex(int ifld, int jCell, int jSpec, int n) {
@@ -150,6 +179,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// Optional restriction to a subset of cells/matrix blocks
+        /// </summary>
+        public Func<int[]> GetCellRestriction = null;
+
+        /// <summary>
+        /// Matrix containing external rows, if <see cref="GetCellRestriction"/> provides external cells
+        /// </summary>
+        public Func<BlockMsrMatrix> GetExtRows = null;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public bool ResrictToMPIself = false;
+
+
         public int IterationsInNested {
             get {
                 return LowerPSolver?.IterationsInNested ?? 0;
@@ -192,7 +237,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(RestrictedDeg.Min() < 0)
                 throw new NotSupportedException("Cannot reduce DG Degree below 0.");
 
-            m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg);
+            m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows);
 
             if(LowerPSolver != null)
                 LowerPSolver.Init(m_MgOperatorRestriction);
@@ -225,7 +270,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 LowerPSolver.Dispose();
         }
 
-
+        /// <summary>
+        /// solver for the restricted system
+        /// </summary>
         public ISubsystemSolver LowerPSolver;
 
     }

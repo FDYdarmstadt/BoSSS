@@ -711,14 +711,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var RedList = new List<int>();
                 ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
+                for(int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     Debug.Assert(BlockCells != null);
                     int[] bc = BlockCells[iPart];
 
-                    BlockMask fullMask=null;
+                    BlockMask fullMask = null;
                     BlockMsrMatrix fullBlock;
 
-                    if (UsePMGinBlocks && AnyHighOrderTerms) {
+                    if(UsePMGinBlocks && AnyHighOrderTerms) {
                         // Init of level pmg block solvers
                         Levelpmgsolvers[iPart] = PTGFactory.CreateAndInit(bc.ToList(), out fullBlock, out fullMask);
                     } else {
@@ -728,12 +728,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var fullSel = new SubBlockSelector(MgMap);
                         fullSel.CellSelector(bc.ToList(), false);
 
-                        
+
                         try {
                             fullMask = new BlockMask(fullSel, ExtRows);
-                        } catch (ArgumentException ex) {
+                        } catch(ArgumentException ex) {
                             // void cells, lead to empty selection error this is a fallback for this case
-                            if (fullMask == null || fullMask.NoOfMaskedCells == 0) {
+                            if(fullMask == null || fullMask.NoOfMaskedCells == 0) {
                                 //Console.WriteLine("Exception caught:" + ex.Message);
                                 RedList.Add(iPart);
                                 Console.WriteLine($"Warning: empty selection at proc{myMpiRank}/lvl{m_MgOp.LevelIndex}/swb{iPart}. You probably encountered a void cell! Block will be ignored ...");
@@ -742,14 +742,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 throw ex;
                             }
                         }
-                        
+
 
                         fullBlock = fullMask.GetSubBlockMatrix_MpiSelf(Mop);
                         Debug.Assert(fullBlock.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF);
 
                         BlockMatrices[iPart] = fullBlock; // just used to calculate memory consumption
 
-                        InitializeDirSolver(iPart);
+                        InitDirectSolver(iPart);
 
                     }
                     BMfullBlocks[iPart] = fullMask;
@@ -930,12 +930,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         BlockLevelPmg[] Levelpmgsolvers;
 
+        
         /// <summary>
         /// In the case of P-multigrid for each level (<see cref="UsePMGinBlocks"/>), the matrices for the block
         /// - index: Schwarz block
         /// - content: matrix 
         /// </summary>
         protected BlockMsrMatrix[] BlockMatrices;
+        
 
         /// <summary>
         /// masks for the Schwarz blocks
@@ -992,13 +994,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             bool CachingActivated = IsCachingActivated(iPart);
             bool DoDelayedActivationOfCaching = ActivateCachingOfBlockMatrix(NoIter, m_MgOp.LevelIndex, iPart) && !CachingActivated;
             if (DoDelayedActivationOfCaching) {
-                InitializeDirSolver(iPart);
+                InitDirectSolver(iPart);
                 Debug.Assert(blockSolvers[iPart] != null);
             }
             return DoDelayedActivationOfCaching;
         }
 
-        private void InitializeDirSolver(int iPart) {
+        private void InitDirectSolver(int iPart) {
             if (blockSolvers[iPart] != null)
                 blockSolvers[iPart].Dispose();
 
