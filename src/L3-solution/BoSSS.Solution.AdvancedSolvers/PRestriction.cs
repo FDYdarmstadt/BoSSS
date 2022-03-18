@@ -237,7 +237,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(RestrictedDeg.Min() < 0)
                 throw new NotSupportedException("Cannot reduce DG Degree below 0.");
 
-            m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows);
+            m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows, this.ResrictToMPIself);
 
             if(LowerPSolver != null)
                 LowerPSolver.Init(m_MgOperatorRestriction);
