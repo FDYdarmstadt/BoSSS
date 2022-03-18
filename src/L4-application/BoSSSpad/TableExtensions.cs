@@ -424,7 +424,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Stores Table in JSON-File
+        /// Loads Table from JSON-File
         /// </summary>
         static public DataTable LoadFromFile(string filePath) {
             string s = File.ReadAllText(filePath);
