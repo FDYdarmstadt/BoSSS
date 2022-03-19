@@ -2039,9 +2039,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 g.DefineEdgeTags(delegate (double[] X) {
                     double x = X[0];
-                    //if(Math.Abs(x - (-1)) < 1e-8)
-                    //    return "pressure_outlet";
-                    return "wall"; // for the moment, ignore the Neumann boundary.
+                    if(Math.Abs(x - (-1)) < 1e-8)
+                        return "pressure_outlet";
+                    return "wall"; 
                 });
 
                 return g;
@@ -2075,6 +2075,10 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver = new PmgConfig() {
                 ConvergenceCriterion = 1e-9
             };
+            //C.LinearSolver = new OrthoMGSchwarzConfig() {
+            //    ConvergenceCriterion = 1e-9
+            //};
+
             
             C.LevelSet_ConvergenceCriterion = 1e-6;
 

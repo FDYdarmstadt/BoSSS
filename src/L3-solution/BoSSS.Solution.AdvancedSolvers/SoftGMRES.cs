@@ -384,7 +384,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if(!object.ReferenceEquals(_X, X))
                     _X.SetV(X);
-                B.SetV(z);
+                //B.SetV(z);
 
                 // Disposing should not be done here, 
                 // otherwise the Precond must be initialized very often.

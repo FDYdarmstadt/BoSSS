@@ -121,27 +121,52 @@ namespace BoSSS.Solution.AdvancedSolvers {
             
             ISubsystemSolver CreateLevelRecursive(int dgDeg, int iLevel) {
 
+                //Console.WriteLine($"Level {iLevel}, k{dgDeg}")
+
                 OrthonormalizationMultigrid createOMG() {
                     var coarseSolver = new PRestriction() {
                         LowerPSolver = CreateLevelRecursive(dgDeg - 1, iLevel + 1)
                     };
 
-                    var bj = new BlockJacobi() {
-                        NoOfIterations = 1,
+                    ISolverSmootherTemplate post;
 
-                    };
+                    //var bj = new BlockJacobi() {
+                    //    NoOfIterations = 1,
+
+                    //};
+
+                    //GMRES bringt nix als PC
+                    //var post = new SoftGMRES() {
+                    //    //Precond = bj
+                    //};
+                    //post.TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= 1, true);
+
+                    if(iLevel == 0) {
+                        post = new CellILU() {
+                            ILU_level = 0
+                        };
+                    } else {
+                        post = new BlockJacobi() {
+                            NoOfIterations = 1,
+                        };
+                    }
+
 
                     var omg = new OrthonormalizationMultigrid() {
                         //CoarserLevelSolver = loPsol,
                         PreSmoother = coarseSolver,
-                        PostSmoother = bj,
+                        PostSmoother = post,
                         //CoarserLevelSolver = loPsol
                     };
+                    omg.config.NoOfPostSmootherSweeps = 10;
                     return omg;
                 }
 
 
                 if(dgDeg <= 0) {
+
+                    Console.WriteLine("direct solver on level " + iLevel);
+
                     // ++++++++++++
                     // lowest level 
                     // ++++++++++++
@@ -202,7 +227,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // ++++++++++++
                     // finest level
                     // ++++++++++++
-                     var omg = createOMG();
+                    var omg = createOMG();
                     omg.TerminationCriterion = this.DefaultTermination;
                     return omg;
                 }
@@ -212,7 +237,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             var topLevel = CreateLevelRecursive(MinDeg, 0);
-            Console.WriteLine(topLevel.IterationsInNested);
+            topLevel.Init(level);
             return topLevel;            
         }
     }

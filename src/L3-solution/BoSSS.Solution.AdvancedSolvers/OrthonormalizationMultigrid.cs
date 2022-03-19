@@ -112,6 +112,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 instance.TerminationCriterion = base.DefaultTermination;
                 return instance;
             }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public int NoOfPostSmootherSweeps = 2;
         }
 
 
@@ -389,7 +394,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         List<(double, double, int)> Alphas = new List<(double, double, int)>();
 
-        void AddSol(ref double[] X) {
+        void AddSol(ref double[] X, string name) {
             using(var ft = new FuncTrace()) {
 
                 double FillXwithRandom(double[] __X, double[] __Mxx) {
@@ -453,8 +458,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // To ensure stability, we must start over with a re-scaled X!
                             // We have to re-scale what is remaining of X:
                             double Xnorm = X.MPI_L2Norm();
-                            Console.WriteLine("severe cancellation may have occurred, attempting re-orthonormalization; L = " + X.Length);
-                            ft.Info("severe cancellation may have occurred, norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + ")");
+                            Console.WriteLine("Orthonormalization: Severe cancellation may have occurred after " + name + ", attempting re-orthonormalization; L = " + X.Length);
+                            ft.Info("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + ")");
 
                             if(Xnorm < 1e-200) {
                                 // prohibits div by 0, if we got zero solution  
@@ -765,7 +770,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             PreSmoother.Solve(PreCorr, Res); // Vorglättung
 
                             // orthonormalization and residual minimization
-                            AddSol(ref PreCorr);
+                            AddSol(ref PreCorr, "presmooth");
                             resNorm = MinimizeResidual(X, Sol0, Res0, Res, 1);
 
                         }
@@ -829,7 +834,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                             // orthonormalization and residual minimization
-                            AddSol(ref vl);
+                            AddSol(ref vl, "coarsecor");
                             resNorm = MinimizeResidual(X, Sol0, Res0, Res, 2);
 
 
@@ -856,7 +861,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // post-smoother
                     // -------------
 
-                    for(int g = 0; g < 2; g++) { // doppelt hält besser
+                    for(int g = 0; g < config.NoOfPostSmootherSweeps; g++) { // doppelt hält besser
                                                  // Test: Residual on this level / already computed by 'MinimizeResidual' above
 
                         VerivyCurrentResidual(X, B, Res, iIter); // 
@@ -865,7 +870,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if(PostSmoother != null) {
                             double[] PostCorr = new double[L];
                             PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
-                            AddSol(ref PostCorr); //orthonormalization and residual minimization
+                            AddSol(ref PostCorr, "postsmooth" + g); //orthonormalization and residual minimization
                             resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
                         }
 
