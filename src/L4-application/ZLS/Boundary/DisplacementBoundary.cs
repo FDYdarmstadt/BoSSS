@@ -25,6 +25,7 @@ namespace ZwoLevelSetSolver.Boundary {
             this.solidSpecies = solidSpecies;
 
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             AddComponent(new InnerNonLinearSolidConvectionForm(ZwoLevelSetSolver.VariableNames.DisplacementVector(D), 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), 
                 1.0, d, 1, 

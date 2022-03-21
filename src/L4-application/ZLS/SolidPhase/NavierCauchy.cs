@@ -30,11 +30,19 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Pressure);
 
-            
+            /*
             var convection = new NonLinearConvectionForm(SpeciesName, 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
                 d, material.Density);
+            */
+            var convection = new ParameterTransportForm(speciesName,
+                ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d],
+                BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D),
+                D, material.Density);
+            AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d]);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+
             AddComponent(convection);
             
             var pressure = new GradientForm(SpeciesName, d, BoSSS.Solution.NSECommon.VariableNames.Pressure);
@@ -42,10 +50,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             if(material.Lame2 != 0.0)
             {
-                var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
+                var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 1);
                 AddComponent(eulerAlmansi0);
 
-                var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, EulerAlamansiPenalty);
+                var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 1);
                 AddComponent(eulerAlmansi1);
                 
                 /*
@@ -57,9 +65,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
             }
             if(material.Viscosity != 0.0)
             {
-                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
+                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1);
                 AddComponent(viscosity);
-                var viscosityT = new SIPTransposeForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
+                var viscosityT = new SIPTransposeForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1);
                 AddComponent(viscosityT);
             }
             

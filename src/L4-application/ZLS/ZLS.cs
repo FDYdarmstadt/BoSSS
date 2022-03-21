@@ -123,10 +123,14 @@ namespace ZwoLevelSetSolver {
 
 
             //lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, new DisplacementLaplace(D));
-            /*
-            var displacement0 = new SinglePhaseFieldVariableCopy("C", NSEVariableNames.VelocityVector(D), VariableNames.Displacement0Vector(D));
-            opFactory.AddParameter(displacement0);
-            lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, displacement0);
+            //*
+            var velocityO = new SinglePhaseFieldVariableCopy("C", NSEVariableNames.VelocityVector(D), NSEVariableNames.Velocity0Vector(D));
+            opFactory.AddParameter(velocityO);
+            lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, velocityO);
+
+            var displacementO = new SinglePhaseFieldVariableCopy("C", VariableNames.DisplacementVector(D), VariableNames.Displacement0Vector(D));
+            opFactory.AddParameter(displacementO);
+            lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, displacementO);
             //*/
         }
 
@@ -148,8 +152,8 @@ namespace ZwoLevelSetSolver {
                 } else {
                     opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
                     opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_A, Control.Material));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_B, Control.Material));
+                    //opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_A, Control.Material));
+                    //opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_B, Control.Material));
                     //opFactory.AddEquation(new ParameterDisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity));
                     //opFactory.AddEquation(new ParameterDisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity));
                 }
@@ -169,8 +173,8 @@ namespace ZwoLevelSetSolver {
                 opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
                 opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
             } else {
-                opFactory.AddEquation(new FluidSolidDisplacementContinuity("A", "C", D, Control.Material));
-                opFactory.AddEquation(new FluidSolidDisplacementContinuity("B", "C", D, Control.Material));
+                opFactory.AddEquation(new OnlyFluidContinuity("A", "C", D, Control.Material));
+                opFactory.AddEquation(new OnlyFluidContinuity("B", "C", D, Control.Material));
             }
             //*/
 

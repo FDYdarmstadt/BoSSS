@@ -133,7 +133,7 @@ namespace ZwoLevelSetSolver.Boundary {
         {
             //double flux = -_uOUT[1] *  _vOUT * inp.Normal[d];
             double flux = (_uIN[0]- _uOUT[0]) * _vIN * inp.Normal[d];
-            flux += scale *(_uIN[0]- _uOUT[0]) * -_vOUT * inp.Normal[d];
+            //flux += scale *(_uIN[0]- _uOUT[0]) * -_vOUT * inp.Normal[d];
             return flux;
         }
 

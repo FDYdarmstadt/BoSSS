@@ -22,11 +22,19 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
 
-
+            /*
             var convection = new NonLinearConvectionForm(speciesName,
                 ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d],
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
                 d, 1.0, boundaryMap);
+            */
+            var convection = new ParameterTransportForm(speciesName,
+                ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d],
+                BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D),
+                D, 1.0);
+            AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d]);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+
             AddComponent(convection);
 
             if(artificialViscosity != 0) {
