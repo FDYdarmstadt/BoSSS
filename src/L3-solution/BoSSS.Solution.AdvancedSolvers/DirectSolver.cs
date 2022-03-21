@@ -94,6 +94,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             private bool EqualsImpl(object o) {
                 var other = o as Config;
+                if (other == null)
+                    return false;
 
                 return (this.WhichSolver == other.WhichSolver);
             }
