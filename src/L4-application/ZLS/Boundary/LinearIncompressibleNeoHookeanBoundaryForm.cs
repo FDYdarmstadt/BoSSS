@@ -188,7 +188,7 @@ namespace ZwoLevelSetSolver.Boundary {
             }
 
             return (fluidStress + pIn ) * (_vIN)
-                + (0.5 * ( fluidStress + fluidStressT) + pIn) * (-_vOUT);
+                + ( fluidStress + pIn) * (-_vOUT);
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

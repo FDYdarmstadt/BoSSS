@@ -27,7 +27,7 @@ namespace ZwoLevelSetSolver.Boundary {
                 AddComponent(new BoundaryDivergenceVelocityForm( i, 1, fluidSpecies, solidSpecies));
             }
             //*/
-            AddComponent(new ConvectionDivergenceBoundaryForm(D, 1, fluidSpecies, solidSpecies));
+            
             //*/
             //AddSurfaceComponent(new SurfacePenaltyForm(BoSSS.Solution.NSECommon.VariableNames.Pressure, -100));
         }

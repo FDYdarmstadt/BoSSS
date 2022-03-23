@@ -170,8 +170,8 @@ namespace ZwoLevelSetSolver {
 
             //*
             if(false) {
-                opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
-                opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
+                //opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
+                //opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
             } else {
                 opFactory.AddEquation(new FluidSolidDisplacementContinuity("A", "C", D, Control.Material));
                 opFactory.AddEquation(new FluidSolidDisplacementContinuity("B", "C", D, Control.Material));

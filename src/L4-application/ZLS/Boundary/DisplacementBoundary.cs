@@ -43,6 +43,7 @@ namespace ZwoLevelSetSolver.Boundary {
             AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d]);
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
             */
+            AddComponent(new ConvectionDivergenceBoundaryForm(d, D, 1, fluidSpecies, solidSpecies, 10));
 
             if (artificialViscosity != 0.0)
             {

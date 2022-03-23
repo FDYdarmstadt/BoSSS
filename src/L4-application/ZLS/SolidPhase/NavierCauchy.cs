@@ -57,9 +57,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
             }
             if(material.Viscosity != 0.0)
             {
-                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
+                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1.0);
                 AddComponent(viscosity);
-                var viscosityT = new SIPTransposeForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity);
+                var viscosityT = new SIPTransposeForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1.0);
                 AddComponent(viscosityT);
             }
             

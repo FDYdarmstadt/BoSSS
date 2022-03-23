@@ -280,4 +280,5 @@ namespace ZwoLevelSetSolver.Boundary {
             return new IEquationComponent[] { JacobiComp };
         }
     }
+
 }
