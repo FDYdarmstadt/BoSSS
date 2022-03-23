@@ -151,12 +151,12 @@ namespace ZwoLevelSetSolver.Boundary {
         int D;
         double scale;
 
-        public ConvectionDivergenceBoundaryForm(int D, int iLevSet, string FluidSpc, string SolidSpecies) {
+        public ConvectionDivergenceBoundaryForm(int d, int D, int iLevSet, string FluidSpc, string SolidSpecies, double scale) {
             this.D = D;
             this.m_iLevSet = iLevSet;
             this.m_SolidSpecies = SolidSpecies;
             this.m_FluidSpc = FluidSpc;
-            variables = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(VariableNames.DisplacementVector(D));
+            variables = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(VariableNames.DisplacementComponent(d));
         }
 
 
@@ -200,13 +200,9 @@ namespace ZwoLevelSetSolver.Boundary {
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] Grad_pA, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] Grad_vA, double[] Grad_vB) {
             double acc = 0;
             for(int i = 0; i < D; i++) {
-                double t = 0;
-                for(int j = 0; j < D; ++j) {
-                    t = (_uOUT[j]) * ( _Grad_uOUT[D + i, j]);
-                }
-                acc += t * inp.Normal[i]; ;
+                acc += (_uOUT[i]) * ( _Grad_uOUT[D, i]);
             }
-            return -acc * (- _vOUT);
+            return scale * acc * (- _vOUT);
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

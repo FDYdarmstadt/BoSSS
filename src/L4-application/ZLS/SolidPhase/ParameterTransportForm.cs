@@ -11,6 +11,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace ZwoLevelSetSolver.SolidPhase {
+
+    //All boundaries are a Wall for now
     public class ParameterTransportForm : IVolumeForm, ISupportsJacobianComponent, IEdgeForm, ISpeciesFilter {
 
         string speciesName;
@@ -47,6 +49,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public string ValidSpecies => speciesName;
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uA, double _vIN, double[] _Grad_vA) {
+
+
             return 0.0; // inflow
         }
 
@@ -62,6 +66,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
             double a = (inp.Parameters_IN[0] - inp.Parameters_OUT[0]) * Math.Abs(VelocityAvg * inp.Normal);
             return rho * (0.5 * (inp.Parameters_IN[0] + inp.Parameters_OUT[0]) * (VelocityAvg * inp.Normal) + 0) * (_vIN - _vOUT);
+            }
+
+            return rho * ( 0.5 *  (inp.Parameters_IN[0]+ inp.Parameters_OUT[0]) * (VelocityAvg * inp.Normal) 
+                +(inp.Parameters_IN[0] - inp.Parameters_OUT[0]) * 1 * (VelocityAvg * inp.Normal)) * (_vIN - _vOUT);
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -72,6 +80,71 @@ namespace ZwoLevelSetSolver.SolidPhase {
             acc *= cpv.Parameters[0];
             acc *= rho;
             return -acc;
+        }
+    }
+
+    class ParameterTransportBoundaryForm : ILevelSetForm, ISupportsJacobianComponent {
+        int m_iLevSet;
+        double m_rho;
+        string m_FluidSpc;
+        string m_SolidSpecies;
+        string[] parameterNames;
+        int m_D;
+
+        public ParameterTransportBoundaryForm(string parameterName, string[] velocityNames, 
+            double rho, int _D, string FluidSpc, string SolidSpecies, int iLevSet) {
+            m_D = _D;
+            m_iLevSet = iLevSet;
+            m_SolidSpecies = SolidSpecies;
+            m_FluidSpc = FluidSpc;
+            m_rho = rho;
+            this.parameterNames = new string[] { parameterName }.Cat(velocityNames);
+        }
+
+        public IList<string> ArgumentOrdering {
+            get { return Array.Empty<string>(); }
+        }
+
+        public int LevelSetIndex {
+            get { return m_iLevSet; }
+        }
+
+        /// <summary>
+        /// Species ID of the solid
+        /// </summary>
+        public string PositiveSpecies {
+            get { return m_SolidSpecies; }
+        }
+
+        /// <summary>
+        /// Species ID of the fluid;
+        /// </summary>
+        public string NegativeSpecies {
+            get { return m_FluidSpc; }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.V;
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get { return parameterNames; }
+        }
+
+        public double InnerEdgeForm(ref CommonParams inp, double[] uIn, double[] uOut, double[,] Grad_uIN, double[,] Grad_uOut, double vIn, double vOut, double[] Grad_vIN, double[] Grad_vOUT) {
+
+            Vector VelocityOt = new Vector(inp.Parameters_OUT, 1, m_D);
+
+            return m_rho * (inp.Parameters_OUT[0]) * (VelocityOt * inp.Normal) * (-vOut);
+        }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
         }
     }
 }

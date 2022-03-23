@@ -34,15 +34,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             var convection = new NonLinearConvectionForm(SpeciesName, 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
-                d, material.Density);
-            */
-            var convection = new ParameterTransportForm(speciesName,
-                ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d],
-                BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D),
-                D, material.Density);
-            AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d]);
-            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
-
+                material.Density);
             AddComponent(convection);
             
             var pressure = new GradientForm(SpeciesName, d, BoSSS.Solution.NSECommon.VariableNames.Pressure);
@@ -65,9 +57,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
             }
             if(material.Viscosity != 0.0)
             {
-                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1);
+                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1.0);
                 AddComponent(viscosity);
-                var viscosityT = new SIPTransposeForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1);
+                var viscosityT = new SIPTransposeForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1.0);
                 AddComponent(viscosityT);
             }
             

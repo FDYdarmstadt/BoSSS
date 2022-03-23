@@ -31,6 +31,20 @@ namespace ZwoLevelSetSolver.Boundary {
                 1.0, d, 1, 
                 fluidSpecies, 
                 solidSpecies));
+            //*/
+            /*
+            AddComponent(new ParameterTransportBoundaryForm( ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d],
+                BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D),
+                1.0, D,
+                fluidSpecies,
+                solidSpecies,
+                1
+                ));
+            AddParameter(ZwoLevelSetSolver.VariableNames.Displacement0Vector(D)[d]);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(D));
+            */
+            AddComponent(new ConvectionDivergenceBoundaryForm(d, D, 1, fluidSpecies, solidSpecies, 10));
+
             if (artificialViscosity != 0.0)
             {
                 //AddComponent(new SolidTensionForm(fluidSpecies, solidSpecies, d, D, 1, artificialViscosity, fluidViscosity, material.Viscosity));

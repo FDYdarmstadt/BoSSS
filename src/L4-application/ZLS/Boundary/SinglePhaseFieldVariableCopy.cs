@@ -58,7 +58,7 @@ namespace ZwoLevelSetSolver.Boundary {
                 param.CopyFrom(((XDGField)DomainVarFields[fieldName]).GetSpeciesShadowField(species));
                 copy[d] = (paramName, param);
             }
-
+            Console.WriteLine("Called Constructor?!");
             return copy;
         }
     }

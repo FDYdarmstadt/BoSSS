@@ -55,7 +55,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         /// </param>
         /// <param name="d"></param>
         /// <param name="rho"></param>
-        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, int d, double rho) {
+        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, double rho) {
             this.speciesName = speciesName;
             this.variableNames = velocity.Cat(variableName);
             this.D = velocity.Length;
@@ -64,8 +64,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             this.parameternames = new string[] { };
         }
 
-        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, int d, double rho, IncompressibleMultiphaseBoundaryCondMap boundaryMap) 
-            : this(speciesName, variableName, velocity, d, rho) {
+        public NonLinearConvectionForm(string speciesName, string variableName, string[] velocity, double rho, IncompressibleMultiphaseBoundaryCondMap boundaryMap) 
+            : this(speciesName, variableName, velocity, rho) {
             this.boundaryMap = boundaryMap;
         }
 
@@ -171,7 +171,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         /// <param name="d"></param>
         /// <param name="rho"></param>
         public SolidNonLinearConvectionForm(string speciesName, string variableName, string[] velocity, int d, double rho)
-            : base(speciesName, variableName, velocity, d, rho) {
+            : base(speciesName, variableName, velocity, rho) {
         }
 
         public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uA, double _vIN, double[] _Grad_vA) {

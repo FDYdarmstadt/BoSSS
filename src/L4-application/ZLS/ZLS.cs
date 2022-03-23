@@ -66,7 +66,7 @@ namespace ZwoLevelSetSolver {
             // configuration for displacements
             for (int d = 0; d < D; d++) {
                 var configDisplacement = new MultigridOperator.ChangeOfBasisConfig() {
-                    DegreeS = new int[] { pDispl },
+                    DegreeS = new int[] { pDispl},
                     mode = MultigridOperator.Mode.IdMass,
                     VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.DisplacementVector(D)[d]) }
                 };
@@ -123,14 +123,14 @@ namespace ZwoLevelSetSolver {
 
 
             //lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, new DisplacementLaplace(D));
-            //*
-            var velocityO = new SinglePhaseFieldVariableCopy("C", NSEVariableNames.VelocityVector(D), NSEVariableNames.Velocity0Vector(D));
-            opFactory.AddParameter(velocityO);
-            lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, velocityO);
+            /*
+            var displacement0 = new SinglePhaseFieldVariableCopy("C", VariableNames.DisplacementVector(D), VariableNames.Displacement0Vector(D));
+            opFactory.AddParameter(displacement0);
+            lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, displacement0);
 
-            var displacementO = new SinglePhaseFieldVariableCopy("C", VariableNames.DisplacementVector(D), VariableNames.Displacement0Vector(D));
-            opFactory.AddParameter(displacementO);
-            lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, displacementO);
+            var velocity0 = new SinglePhaseFieldVariableCopy("C", NSEVariableNames.VelocityVector(D), NSEVariableNames.Velocity0Vector(D));
+            opFactory.AddParameter(velocity0);
+            lsUpdater.AddLevelSetParameter(ZwoLevelSetSolver.VariableNames.SolidLevelSetCG, velocity0);
             //*/
         }
 
@@ -170,8 +170,8 @@ namespace ZwoLevelSetSolver {
 
             //*
             if(false) {
-                opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
-                opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
+                //opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
+                //opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
             } else {
                 opFactory.AddEquation(new OnlyFluidContinuity("A", "C", D, Control.Material));
                 opFactory.AddEquation(new OnlyFluidContinuity("B", "C", D, Control.Material));
