@@ -106,7 +106,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 if(iLevel > 0) {
-                    Debugger.Launch();
                     ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
 
                 }
