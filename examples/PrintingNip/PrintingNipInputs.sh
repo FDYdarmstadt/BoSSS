@@ -3,6 +3,7 @@
 # change to script path
 path=$(dirname "$0")
 cd $path
+cd ./PrintingNip
 
 # clear file
 echo -n > ./Output/PrintingNipInputs.tex
