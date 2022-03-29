@@ -1660,22 +1660,28 @@ namespace BoSSS.Solution.XdgTimestepping {
 #if DEBUG
                     {
 
-                    this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true, out var dummy2);
+                        this.AssembleMatrixCallback(out BlockMsrMatrix checkSystem, out double[] checkAffine, out BlockMsrMatrix MaMa1, CurrentStateMapping.Fields.ToArray(), true, out var dummy2);
 
-                    double[] checkResidual = new double[checkAffine.Length];
-                    checkResidual.SetV(checkAffine, -1.0);
-                    checkSystem.SpMV(-1.0, m_Stack_u[0], +1.0, checkResidual);
+                        double[] checkResidual = new double[checkAffine.Length];
+                        checkResidual.SetV(checkAffine, -1.0);
+                        checkSystem.SpMV(-1.0, m_Stack_u[0], +1.0, checkResidual);
 
-                    double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
-                    double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
+                        Console.WriteLine("Norm of evaluated residual: " + base.Residuals.MPI_L2Norm());
+                        Console.WriteLine("Norm of reference residual: " + checkResidual.MPI_L2Norm());
 
-                    if(distL2 >= refL2 * 1.0e-5) {
-                        double __distL2 = GenericBlas.L2DistPow2(checkAffine, base.Residuals).MPISum().Sqrt();
+
+                        double distL2 = GenericBlas.L2DistPow2(checkResidual, base.Residuals).MPISum().Sqrt();
+                        double refL2 = (new double[] { GenericBlas.L2NormPow2(m_Stack_u[0]), GenericBlas.L2NormPow2(checkResidual), GenericBlas.L2NormPow2(base.Residuals) }).MPISum().Max().Sqrt();
+
+                        if(distL2 >= refL2 * 1.0e-5) {
+                            double __distL2 = GenericBlas.L2DistPow2(checkAffine, base.Residuals).MPISum().Sqrt();
+                        }
+
+                        Tecplot.Tecplot.PlotFields(base.Residuals.Fields, "resi", 0.0, 2);
+
+                        Assert.LessOrEqual(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
+
                     }
-
-                    Assert.LessOrEqual(distL2, refL2 * 1.0e-5, "Significant difference between linearized and non-linear evaluation.");
-                    
-                }
 #endif
 
 

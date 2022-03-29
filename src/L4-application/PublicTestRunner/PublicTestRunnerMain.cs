@@ -143,7 +143,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),
-                        typeof(HangingNodesTests.Program)
+                        typeof(HangingNodesTests.HangingNodesTestMain)
                     };
             }
         }
@@ -170,8 +170,8 @@ namespace PublicTestRunner {
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
                         (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4),
                         (typeof(MPITest.Program), 4),
-                        (typeof(HangingNodesTests.Program), 4),
-                        (typeof(HangingNodesTests.Program), 2),
+                        (typeof(HangingNodesTests.HangingNodesTestMain), 4),
+                        (typeof(HangingNodesTests.HangingNodesTestMain), 2),
                         (typeof(BoSSS.Application.SpecFEM.AllUpTest), 4),
                         (typeof(BoSSS.Application.Matrix_MPItest.AllUpTest), 4),
                         (typeof(BoSSS.Application.LoadBalancingTest.LoadBalancingTestMain), 4),

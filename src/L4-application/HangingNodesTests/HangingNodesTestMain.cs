@@ -15,7 +15,7 @@ namespace HangingNodesTests {
     /// This is a technical test specifically designed to varify the techniques used in the heated wall simulation for SFB1194 K26
     /// </summary>
     [TestFixture]    
-    public class Program {
+    public class HangingNodesTestMain {
         static void Main(string[] args) {
             // mpiexec -n 2 dotnet HangingNodesTests.dll
             Console.WriteLine("Starting Hanging Nodes Test!");

@@ -679,7 +679,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }, new CellQuadratureScheme());
 
-            // Cells Numbers - Local
+            // Cells Numbers - Global
             var CellNumbersGlob = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbersGlobal").SingleOrDefault();
             if (CellNumbersGlob == null) {
                 CellNumbersGlob = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbersGlobal");
@@ -689,8 +689,27 @@ namespace BoSSS.Solution.XdgTimestepping {
             CellNumbersGlob.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
                 int K = result.GetLength(1); // No nof Nodes
                 for (int j = 0; j < Len; j++) {
+                    long gidx = this.GridData.CellPartitioning.i0 + j0 + j;
                     for (int k = 0; k < K; k++) {
-                        result[j, k] = this.GridData.CellPartitioning.i0 + j0 + j;
+                        result[j, k] = gidx;
+                    }
+                }
+            }, new CellQuadratureScheme());
+
+
+            // GlobalID
+            var GlobalID = this.m_RegisteredFields.Where(s => s.Identification == "GlobalID").SingleOrDefault();
+            if (GlobalID == null) {
+                GlobalID = new SinglePhaseField(new Basis(this.GridData, 0), "GlobalID");
+                this.RegisterField(GlobalID);
+            }
+            GlobalID.Clear();
+            GlobalID.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                for (int j = 0; j < Len; j++) {
+                    long gid = this.GridData.iLogicalCells.GetGlobalID(j + j0); ;
+                    for (int k = 0; k < K; k++) {
+                        result[j, k] = gid;
                     }
                 }
             }, new CellQuadratureScheme());

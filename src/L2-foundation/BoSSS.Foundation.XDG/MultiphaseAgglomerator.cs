@@ -252,6 +252,13 @@ namespace BoSSS.Foundation.XDG {
                     );
 
                 var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs);
+
+                int myRank = lsTrk.GridDat.MpiRank;
+                foreach(var p in m_agglomeration.AggInfo.AgglomerationPairs) {
+                    Console.Error.WriteLine($"Rnk {myRank}, Spc {lsTrk.GetSpeciesName(spc)}: loc/gid {p.jCellSource}/{lsTrk.GridDat.iLogicalCells.GetGlobalID(p.jCellSource)} -> {p.jCellTarget}/{lsTrk.GridDat.iLogicalCells.GetGlobalID(p.jCellTarget)} (lv {p.AgglomerationLevel})");
+                }
+
+
                 this.DictAgglomeration.Add(spc, m_agglomeration);
             }
 
@@ -362,6 +369,8 @@ namespace BoSSS.Foundation.XDG {
                 MPICollectiveWatchDog.Watch();
                 //var mtxS = GetFrameMatrices(Matrix, RowMap, ColMap);
 
+                Console.WriteLine("ManipulateMatrixAndRHS .................. ");
+
                 if (Matrix == null && Rhs == null)
                     // nothing to do
                     return;
@@ -403,7 +412,7 @@ namespace BoSSS.Foundation.XDG {
                             CellMask spcMask = this.Tracker.Regions.GetSpeciesMask(Species);
 
                             MiniMapping rowMini = new MiniMapping(RowMap, Species, this.Tracker.Regions);
-                            BlockMsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask);
+                            BlockMsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask, this.Tracker.GetSpeciesName(Species));
                             if (LeftMul == null) {
                                 LeftMul = LeftMul_Species;
                             } else {
@@ -413,7 +422,7 @@ namespace BoSSS.Foundation.XDG {
 
                             if (!object.ReferenceEquals(LeftMul, RightMul) && RightMul != null) {
                                 MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
-                                BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask);
+                                BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask, this.Tracker.GetSpeciesName(Species));
 
                                 if (RightMul == null) {
                                     RightMul = RightMul_Species;
@@ -465,6 +474,8 @@ namespace BoSSS.Foundation.XDG {
 
                     LeftMul.SpMV(1.0, tmp, 0.0, Rhs);
                 }
+
+                Console.WriteLine("........................ ManipulateMatrixAndRHS ");
             }
         }
 
@@ -617,7 +628,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// The volume over cut cell surface ratio, i.e. \f$ \frac{ | K^X |}{ | \partial K^X | } \f$, for each agglomerated cut-cell $K^X$.
+        /// The volume over cut cell surface ratio, i.e. \f$ \frac{ | K^X |}{ | \partial K^X | } \f$, for each **agglomerated** cut-cell $K^X$.
         /// </summary>
         public Dictionary<SpeciesId, MultidimensionalArray> CellLengthScales {
             private set;
@@ -803,12 +814,33 @@ namespace BoSSS.Foundation.XDG {
                 this.CellVolumeFrac = new Dictionary<SpeciesId, MultidimensionalArray>();
                 this.CellSurface = new Dictionary<SpeciesId, MultidimensionalArray>();
                 this.CutCellVolumes = new Dictionary<SpeciesId, MultidimensionalArray>();
+                var LsChecker = new TestingIO(this.Tracker.GridDat, $"LevelSets-LenScale.abc", 1);
                 for (int iSpc = 0; iSpc < species.Length; iSpc++) {
                     SpeciesId spc = species[iSpc];
                     this.CellLengthScales.Add(spc, AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
                     this.CellVolumeFrac.Add(spc, CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
                     this.CellSurface.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
                     this.CutCellVolumes.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
+
+
+                    //for(int j = 0; j < J; j++) {
+                    //    Console.Error.WriteLine($"Rnk {this.Tracker.GridDat.MpiRank}, Spc {this.Tracker.GetSpeciesName(spc)} gid {this.Tracker.GridDat.iLogicalCells.GetGlobalID(j)}: {AggCellLengthScalesMda[j, iSpc]} = {CellLengthScalesMda[j, iSpc, 0]} {CellLengthScalesMda[j, iSpc, 1]} ");
+                    //}
+
+                    LsChecker.AddVector("LenScale-" + this.Tracker.GetSpeciesName(spc), this.CellLengthScales[spc].To1DArray().Take(J).Select(a => a.IsNaN() ? -99.1 : a));
+                    LsChecker.AddVector("Vol-" + this.Tracker.GetSpeciesName(spc), this.CutCellVolumes[spc].To1DArray().Take(J).Select(a => a.IsNaN() ? -99.2 : a));
+                    LsChecker.AddVector("Surf-" + this.Tracker.GetSpeciesName(spc), this.CellSurface[spc].To1DArray().Take(J).Select(a => a.IsNaN() ? -99.3 : a));
+
+                    this.CellLengthScales[spc].SetAll(0.1);
+                    this.CellVolumeFrac[spc].SetAll(0.1);
+                    this.CellSurface[spc].SetAll(0.1);
+                    this.CutCellVolumes[spc].SetAll(0.1);
+                }
+
+                LsChecker.DoIOnow();
+                var err = LsChecker.AllAbsErr();
+                foreach(var kv in err) {
+                    Console.WriteLine($"    Err {kv.Key} = {kv.Value}");
                 }
             }
         }
