@@ -399,6 +399,18 @@ namespace BoSSS.Foundation.XDG {
 
                     BitArray CycleDetection = new BitArray(JE, false);
                     BitArray MustDeletePair = new BitArray(JE, false);
+                    var CycleDetection_sets = new List<int>();
+
+                    void clear_CycleDetection() { // allows O(1) clearing
+                        foreach(int i in CycleDetection_sets)
+                            CycleDetection[i] = false;
+                        CycleDetection_sets.Clear();
+                    }
+                    void set_CycleDetection(int z) {
+                        CycleDetection_sets.Add(z);
+                        CycleDetection[z] = true;
+                    }
+
 
 
                     // reduce agglomeration levels locally
@@ -422,7 +434,7 @@ namespace BoSSS.Foundation.XDG {
                             continue;
 
                         if(jTarget < J && Cells2Aggpairs[jTarget] >= 0)
-                            CycleDetection.SetAll(false);
+                            clear_CycleDetection();
 
                         while(jTarget < J && Cells2Aggpairs[jTarget] >= 0) { // traverse the agglomeration chain to find its end...
                             //                                                  ... but only as log as the target cell is a local one.
@@ -441,7 +453,7 @@ namespace BoSSS.Foundation.XDG {
 
                                 break;
                             } else {
-                                CycleDetection[jTarget] = true;
+                                set_CycleDetection(jTarget);
                                 int nextPair = Cells2Aggpairs[jTarget];
 
                                 jTarget = AggPairs[nextPair].Item2;
@@ -520,7 +532,7 @@ namespace BoSSS.Foundation.XDG {
                             if(AggPairs[iPair].jSource < 0 || AggPairs[iPair].jTarget < 0)
                                 continue; // pair has been deleted
 
-                            CycleDetection.SetAll(false);
+                            clear_CycleDetection();
 
                             while(CurrentPairIndex >= 0) { // traverse the agglomeration chain...
                                 var CurrentPair = AggPairs[CurrentPairIndex];
@@ -544,7 +556,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     //throw new ArgumentException("Cycle in agglomeration graph (2).");
                                 } else {
-                                    CycleDetection[jAggSrc] = true;
+                                    set_CycleDetection(jAggSrc);
 
                                     // update level index
                                     int NextLevel = Math.Max(CurrentLevel + 1, LevelAtCells[jAggSrc]);
@@ -838,8 +850,8 @@ namespace BoSSS.Foundation.XDG {
                     foreach(var pair in this.AggInfo.AgglomerationPairs) {
                         iPair++;
 
-                        if(pair.AgglomerationLevel == AggLevel)
-                            Console.Error.WriteLine($"Rk {mpiRank}, Spc {SpeciesName}, Lv {AggLevel}of{this.AggInfo.MaxLevel}: {this.GridDat.iLogicalCells.GetGlobalID(pair.jCellSource)}->{this.GridDat.iLogicalCells.GetGlobalID(pair.jCellTarget)}");
+                        //if(pair.AgglomerationLevel == AggLevel)
+                        //    Console.Error.WriteLine($"Rk {mpiRank}, Spc {SpeciesName}, Lv {AggLevel}of{this.AggInfo.MaxLevel}: {this.GridDat.iLogicalCells.GetGlobalID(pair.jCellSource)}->{this.GridDat.iLogicalCells.GetGlobalID(pair.jCellTarget)}");
 
                         if(pair.OwnerRank4Target == mpiRank) {
                             var Aj = this.CouplingMtx.ExtractSubArrayShallow(iPair, -1, -1);

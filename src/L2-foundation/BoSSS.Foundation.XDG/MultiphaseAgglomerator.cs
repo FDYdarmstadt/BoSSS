@@ -230,19 +230,7 @@ namespace BoSSS.Foundation.XDG {
 
             // perform agglomeration
             foreach (var spc in this.SpeciesList) {
-                /*
-                IEnumerable<Tuple<int, int>> ai = FindAgglomeration(
-                    this.Tracker,
-                    spc,
-                    AgglomerationThreshold,
-                    this.NonAgglomeratedMetrics.CutCellVolumes[spc],
-                    this.NonAgglomeratedMetrics.CutEdgeAreas[spc],
-                    AgglomerateNewborn, AgglomerateDecased,
-                    ExceptionOnFailedAgglomeration,
-                    oldCcm != null ? oldCcm.Select(a => a.CutCellVolumes[spc]).ToArray() : null,
-                    oldTs__AgglomerationTreshold,
-                    NewbornAndDecasedThreshold);
-                */
+                
                                 
 
                 var aggAlg = new AgglomerationAlgorithm(this.Tracker, spc, CutCellsQuadOrder,
@@ -253,11 +241,10 @@ namespace BoSSS.Foundation.XDG {
 
                 var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs);
 
-                int myRank = lsTrk.GridDat.MpiRank;
-                foreach(var p in m_agglomeration.AggInfo.AgglomerationPairs) {
-                    Console.Error.WriteLine($"Rnk {myRank}, Spc {lsTrk.GetSpeciesName(spc)}: loc/gid {p.jCellSource}/{lsTrk.GridDat.iLogicalCells.GetGlobalID(p.jCellSource)} -> {p.jCellTarget}/{lsTrk.GridDat.iLogicalCells.GetGlobalID(p.jCellTarget)} (lv {p.AgglomerationLevel})");
-                }
-
+                //int myRank = lsTrk.GridDat.MpiRank;
+                //foreach(var p in m_agglomeration.AggInfo.AgglomerationPairs) {
+                //    Console.Error.WriteLine($"Rnk {myRank}, Spc {lsTrk.GetSpeciesName(spc)}: loc/gid {p.jCellSource}/{lsTrk.GridDat.iLogicalCells.GetGlobalID(p.jCellSource)} -> {p.jCellTarget}/{lsTrk.GridDat.iLogicalCells.GetGlobalID(p.jCellTarget)} (lv {p.AgglomerationLevel})");
+                //}
 
                 this.DictAgglomeration.Add(spc, m_agglomeration);
             }
@@ -369,8 +356,6 @@ namespace BoSSS.Foundation.XDG {
                 MPICollectiveWatchDog.Watch();
                 //var mtxS = GetFrameMatrices(Matrix, RowMap, ColMap);
 
-                Console.WriteLine("ManipulateMatrixAndRHS .................. ");
-
                 if (Matrix == null && Rhs == null)
                     // nothing to do
                     return;
@@ -475,7 +460,6 @@ namespace BoSSS.Foundation.XDG {
                     LeftMul.SpMV(1.0, tmp, 0.0, Rhs);
                 }
 
-                Console.WriteLine("........................ ManipulateMatrixAndRHS ");
             }
         }
 
