@@ -7,6 +7,8 @@ using MPI.Wrappers;
 using System.IO;
 using NUnit.Framework;
 using System.Diagnostics;
+using BoSSS.Foundation.XDG;
+using BoSSS.Foundation;
 
 namespace HangingNodesTests {
 
@@ -136,35 +138,31 @@ namespace HangingNodesTests {
 
 
         private static void CheckLengthScales(XNSFE solver) {
-            /*
-            for (int iSpc = 0; iSpc < species.Length; iSpc++) {
-                    SpeciesId spc = species[iSpc];
-                    this.CellLengthScales.Add(spc, AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
-                    this.CellVolumeFrac.Add(spc, CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
-                    this.CellSurface.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
-                    this.CutCellVolumes.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
 
+            var species = solver.LsTrk.SpeciesIdS.ToArray();
+            var Tracker = solver.LsTrk;
+            var agg = Tracker.GetAgglomerator(species, solver.QuadOrder(), solver.Control.AgglomerationThreshold);
+            int J = solver.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
-                    //for(int j = 0; j < J; j++) {
-                    //    Console.Error.WriteLine($"Rnk {this.Tracker.GridDat.MpiRank}, Spc {this.Tracker.GetSpeciesName(spc)} gid {this.Tracker.GridDat.iLogicalCells.GetGlobalID(j)}: {AggCellLengthScalesMda[j, iSpc]} = {CellLengthScalesMda[j, iSpc, 0]} {CellLengthScalesMda[j, iSpc, 1]} ");
-                    //}
+            var LsChecker = new TestingIO(solver.GridData, "CellMetrics.abc", 1);
+            for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                SpeciesId spc = species[iSpc];
+                string SpcName = Tracker.GetSpeciesName(spc);
 
-                    LsChecker.AddVector("LenScale-" + this.Tracker.GetSpeciesName(spc), this.CellLengthScales[spc].To1DArray().Take(J).Select(a => a.IsNaN() ? -99.1 : a));
-                    LsChecker.AddVector("Vol-" + this.Tracker.GetSpeciesName(spc), this.CutCellVolumes[spc].To1DArray().Take(J).Select(a => a.IsNaN() ? -99.2 : a));
-                    LsChecker.AddVector("Surf-" + this.Tracker.GetSpeciesName(spc), this.CellSurface[spc].To1DArray().Take(J).Select(a => a.IsNaN() ? -99.3 : a));
+                LsChecker.AddVector("LenScale-" + SpcName, agg.CellLengthScales[spc].To1DArray().Take(J).Select(a => double.IsNaN(a) ? -1.1 : a));
+                LsChecker.AddVector("Vol-" + SpcName, agg.CutCellVolumes[spc].To1DArray().Take(J).Select(a => double.IsNaN(a) ? -1.2 : a));
+                LsChecker.AddVector("Surf-" + SpcName, agg.CellSurface[spc].To1DArray().Take(J).Select(a => double.IsNaN(a) ? -1.3 : a));
+            }
 
-                    this.CellLengthScales[spc].SetAll(0.1);
-                    this.CellVolumeFrac[spc].SetAll(0.1);
-                    this.CellSurface[spc].SetAll(0.1);
-                    this.CutCellVolumes[spc].SetAll(0.1);
-                }
+            LsChecker.DoIOnow();
+            var err = LsChecker.AllRelErr();
+            foreach(var kv in err) {
+                Console.WriteLine($"    Cell Metric Comparison Error for {kv.Key} = {kv.Value}");
+            }
+            foreach(var kv in err) {
+                Assert.LessOrEqual(kv.Value, 1e-10, $"Cell Metric Comparison Error for {kv.Key} = {kv.Value}, this is to high!");
+            }
 
-                LsChecker.DoIOnow();
-                var err = LsChecker.AllAbsErr();
-                foreach(var kv in err) {
-                    Console.WriteLine($"    Err {kv.Key} = {kv.Value}");
-                }
-            */
         }
 
 
@@ -192,6 +190,7 @@ namespace HangingNodesTests {
                             solver.RunSolverMode();
                             MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                             TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
+                            CheckLengthScales(solver);
                         } catch (Exception e) {
                             Console.WriteLine(desc + " : failed");
                             Console.WriteLine(e.Message);
