@@ -12,7 +12,7 @@ namespace HangingNodesTests {
 
     /// <summary>
     /// Tests correct construction of quadrules for various setups, with hanging nodes, specially handled double cut cells and grid partitioning
-    /// This is a technical test specifically designed to varify the techniques used in the heated wall simulation for SFB1194 K26
+    /// This is a technical test specifically designed to verify the techniques used in the heated wall simulation for SFB1194 K26
     /// </summary>
     [TestFixture]    
     public class HangingNodesTestMain {
@@ -84,8 +84,8 @@ namespace HangingNodesTests {
                                         var speciesAgglomerator = MultiphaseAgglomerator.GetAgglomerator(spc);
                                         speciesAgglomerator.PlotAgglomerationPairs($"agglomerationPairs-{spcName}-MPI{rank}.txt", null, true);
                                     }
-           
                                 }
+                                CheckLengthScales(solver);
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
                             } catch (Exception e) {
@@ -133,6 +133,40 @@ namespace HangingNodesTests {
             byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
             RunTest(sizes, setup, 3);
         }
+
+
+        private static void CheckLengthScales(XNSFE solver) {
+            /*
+            for (int iSpc = 0; iSpc < species.Length; iSpc++) {
+                    SpeciesId spc = species[iSpc];
+                    this.CellLengthScales.Add(spc, AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
+                    this.CellVolumeFrac.Add(spc, CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
+                    this.CellSurface.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
+                    this.CutCellVolumes.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
+
+
+                    //for(int j = 0; j < J; j++) {
+                    //    Console.Error.WriteLine($"Rnk {this.Tracker.GridDat.MpiRank}, Spc {this.Tracker.GetSpeciesName(spc)} gid {this.Tracker.GridDat.iLogicalCells.GetGlobalID(j)}: {AggCellLengthScalesMda[j, iSpc]} = {CellLengthScalesMda[j, iSpc, 0]} {CellLengthScalesMda[j, iSpc, 1]} ");
+                    //}
+
+                    LsChecker.AddVector("LenScale-" + this.Tracker.GetSpeciesName(spc), this.CellLengthScales[spc].To1DArray().Take(J).Select(a => a.IsNaN() ? -99.1 : a));
+                    LsChecker.AddVector("Vol-" + this.Tracker.GetSpeciesName(spc), this.CutCellVolumes[spc].To1DArray().Take(J).Select(a => a.IsNaN() ? -99.2 : a));
+                    LsChecker.AddVector("Surf-" + this.Tracker.GetSpeciesName(spc), this.CellSurface[spc].To1DArray().Take(J).Select(a => a.IsNaN() ? -99.3 : a));
+
+                    this.CellLengthScales[spc].SetAll(0.1);
+                    this.CellVolumeFrac[spc].SetAll(0.1);
+                    this.CellSurface[spc].SetAll(0.1);
+                    this.CutCellVolumes[spc].SetAll(0.1);
+                }
+
+                LsChecker.DoIOnow();
+                var err = LsChecker.AllAbsErr();
+                foreach(var kv in err) {
+                    Console.WriteLine($"    Err {kv.Key} = {kv.Value}");
+                }
+            */
+        }
+
 
         private static void RunTest(double[] sizes, byte[] setup, int phase) {
 
@@ -185,6 +219,8 @@ namespace HangingNodesTests {
                                 solver.RunSolverMode();
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
+                                CheckLengthScales(solver);
+                                
                             } catch (Exception e) {
                                 Console.WriteLine(desc + " : failed");
                                 Console.WriteLine(e.Message);
