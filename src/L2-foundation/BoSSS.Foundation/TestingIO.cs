@@ -32,6 +32,7 @@ namespace BoSSS.Foundation {
     ///    to this IO object; 
     /// 3. Call <see cref="DoIOnow"/> th either save the current data or load the reference data 
     /// 4. Use functions such as <see cref="AllAbsErr"/>, <see cref="AllRelErr"/> to compute difference norms between reference and current data
+    /// </summary>
     public class TestingIO {
         
         /// <summary>

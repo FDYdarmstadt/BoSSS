@@ -87,7 +87,7 @@ namespace HangingNodesTests {
                                         speciesAgglomerator.PlotAgglomerationPairs($"agglomerationPairs-{spcName}-MPI{rank}.txt", null, true);
                                     }
                                 }
-                                CheckLengthScales(solver);
+                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
                             } catch (Exception e) {
@@ -137,14 +137,14 @@ namespace HangingNodesTests {
         }
 
 
-        private static void CheckLengthScales(XNSFE solver) {
+        private static void CheckLengthScales(XNSFE solver, string filename) {
 
             var species = solver.LsTrk.SpeciesIdS.ToArray();
             var Tracker = solver.LsTrk;
             var agg = Tracker.GetAgglomerator(species, solver.QuadOrder(), solver.Control.AgglomerationThreshold);
             int J = solver.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
-            var LsChecker = new TestingIO(solver.GridData, "CellMetrics.abc", 1);
+            var LsChecker = new TestingIO(solver.GridData, "CellMetrics-" + filename + ".abc", 1);
             for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                 SpeciesId spc = species[iSpc];
                 string SpcName = Tracker.GetSpeciesName(spc);
@@ -190,7 +190,7 @@ namespace HangingNodesTests {
                             solver.RunSolverMode();
                             MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                             TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                            CheckLengthScales(solver);
+                            CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
                         } catch (Exception e) {
                             Console.WriteLine(desc + " : failed");
                             Console.WriteLine(e.Message);
@@ -218,7 +218,7 @@ namespace HangingNodesTests {
                                 solver.RunSolverMode();
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                                CheckLengthScales(solver);
+                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
                                 
                             } catch (Exception e) {
                                 Console.WriteLine(desc + " : failed");
