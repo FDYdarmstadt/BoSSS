@@ -158,7 +158,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
 
         /// <summary>
-        /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
+        /// creates an initial aggregated grid which is in fact equivalent to <paramref name="gd"/>
         /// </summary>
         public static AggregationGridData ZeroAggregation(IGridData gd) {
             var g = gd.Grid;

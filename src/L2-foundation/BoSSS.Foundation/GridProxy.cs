@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.IO {
         #region IGridInfo Members
 
         /// <summary>
-        /// See <see cref="IGrid.NumberOfCells"/>
+        /// See <see cref="IGridInfo.NumberOfCells"/>
         /// </summary>
         public int NumberOfCells {
             get {
@@ -100,7 +100,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// See <see cref="IGrid.SpatialDimension"/>
+        /// See <see cref="IGridInfo.SpatialDimension"/>
         /// </summary>
         public int SpatialDimension {
             get {
@@ -121,7 +121,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// See <see cref="IGrid.CreationTime"/>
+        /// See <see cref="IDatabaseEntityInfo{T}.CreationTime"/>
         /// </summary>
         public DateTime CreationTime {
             get {
@@ -130,7 +130,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// See <see cref="IGrid.WriteTime"/>.
+        /// See <see cref="IDatabaseEntityInfo{T}.WriteTime"/>.
         /// </summary>
         /// <remarks>
         /// Note that writing to this property induces a call to
@@ -147,7 +147,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// See <see cref="IGrid.Name"/>.
+        /// See <see cref="IDatabaseEntityInfo{T}.Name"/>.
         /// </summary>
         /// <remarks>
         /// Note that writing to this property induces a call to
@@ -216,10 +216,8 @@ namespace BoSSS.Foundation.IO {
         #region IEquatable<IGridInfo> Members
 
         /// <summary>
-        /// See <see cref="IGrid.Equals(IGridInfo)"/>
+        /// ~
         /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
         public bool Equals(IGridInfo other) {
             if(other == null)
                 return false;

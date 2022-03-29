@@ -45,13 +45,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int TargetBlockSize = 10000;
 
 
-        /// <summary>
-        /// Sets the **maximum** number of Multigrid levels to be used.
-        /// The numbers of levels which are actually used is probably much less, and determined via <see cref="TargetBlockSize"/>.
-        /// Multigrid approach is used to get a preconditioner for Krylov solvers, e.g. GMRES.
-        /// </summary>
-        [DataMember]
-        public int NoOfMultigridLevels = 1000000;
+        ///// <summary>
+        ///// Sets the **maximum** number of Multigrid levels to be used.
+        ///// The numbers of levels which are actually used is probably much less, and determined via <see cref="TargetBlockSize"/>.
+        ///// Multigrid approach is used to get a preconditioner for Krylov solvers, e.g. GMRES.
+        ///// </summary>
+        //[DataMember]
+        //public int NoOfMultigridLevels = 1000000;
 
         ISolverSmootherTemplate KcycleMultiILU(MultigridOperator level) {
 
@@ -84,8 +84,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //};
 
                     var smoother1 = new CellILU() {
-                        ILU_level = iLevel == 0 ? 1 : 0 // ILU(2) already seems to be to expensive and not very beneficial for high DG degrees
-                        //                                 on coarse mesh levels, where cells have more and more neighbors, we can only afford IOU(0)
+                        ILU_level = iLevel == 0 ? 1 : 0 // Use ILU(1) on fine mesh and ILU(0) on all others, because:
+                        //                                 - ILU(2) already seems to be to expensive and not very beneficial for high DG degrees
+                        //                                 - on coarse mesh levels, where cells have more and more neighbors, we can only afford ILU(0)
                     };
 
 
@@ -105,7 +106,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 if(iLevel > 0) {
-                    Debugger.Launch();
                     ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
 
                 }
