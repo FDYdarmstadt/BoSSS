@@ -136,11 +136,63 @@ namespace HangingNodesTests {
             RunTest(sizes, setup, 3);
         }
 
+        [Test]
+        public static void SerialParallelLengthScaleComp() {
+             // to test individual setups
+            double size = 1e0;
+            byte s = 0;
+            int phase = 3;
+
+            bool plot = true;
+
+            csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int procs);
+            csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
+
+           
+
+            List<double> TemperatureRes = new List<double>();
+            List<double> MomentumRes = new List<double>();
+            List<string> Description = new List<string>();
+
+            {
+                string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs : {3}", size, phase, s, procs);
+                Description.Add(desc);
+                var C = HangingNodesTests.Control.TestSkeleton(size);
+                HangingNodesTests.Control.SetAMR(C, size, s);
+                HangingNodesTests.Control.SetLevelSet(C, size, phase);
+                HangingNodesTests.Control.SetParallel(C, procs == 2 ? -procs : procs);
+                if(plot) {
+                    C.ImmediatePlotPeriod = 1;
+                    C.SuperSampling = 3;
+                }
+
+                using(var solver = new XNSFE()) {
+
+                    solver.Init(C);
+                    solver.RunSolverMode();
+                    
+                    CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
+
+                    MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
+                    TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
+                }
+            }
+             
+            Console.WriteLine("Finished Hanging Nodes Test.");
+            Console.WriteLine();
+            Console.WriteLine("Results:");
+            for(int i = 0; i < Description.Count; i++) {
+                Console.WriteLine(Description[i] + " : MomRes : {0}, TempRes : {1}", MomentumRes[i], TemperatureRes[i]);
+            }
+
+            Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
+            Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
+        }
+
 
         private static void CheckLengthScales(XNSFE solver, string filename) {
 
-            return;
-            /*
+            
             var species = solver.LsTrk.SpeciesIdS.ToArray();
             var Tracker = solver.LsTrk;
             var agg = Tracker.GetAgglomerator(species, solver.QuadOrder(), solver.Control.AgglomerationThreshold);
@@ -164,7 +216,7 @@ namespace HangingNodesTests {
             foreach(var kv in err) {
                 Assert.LessOrEqual(kv.Value, 1e-10, $"Cell Metric Comparison Error for {kv.Key} = {kv.Value}, this is to high!");
             }
-            */
+            
         }
 
 
@@ -220,7 +272,7 @@ namespace HangingNodesTests {
                                 solver.RunSolverMode();
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
+                                //CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
                                 
                             } catch (Exception e) {
                                 Console.WriteLine(desc + " : failed");
