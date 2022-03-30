@@ -27,6 +27,7 @@ using BoSSS.Platform.LinAlg;
 using BoSSS.Foundation.Quadrature;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.XDG;
 
 namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
@@ -314,8 +315,233 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
     }
 
+    public class XPatchRecovery {
 
-    
+        /// <summary>
+        /// the domain on which the patch recovery is performed
+        /// </summary>
+        public CellMask Domain {
+            get;
+            private set;
+        }
+
+        LevelSetTracker levelSetTracker;
+
+        MassMatrixFactory.MassMatrixBlockContainer massMatrixBlocks;
+
+        public XPatchRecovery(Basis __bInput, Basis __bOutput, CellMask cm, LevelSetTracker levelSetTracker, SpeciesId species, bool RestrictToCellMask = true) {
+            this.m_bInput = __bInput;
+            this.m_bOutput = __bOutput;
+            this.levelSetTracker = levelSetTracker;
+            var GridDat = m_bInput.GridDat;
+
+            this.AggregateBasisTrafo = new MultidimensionalArray[GridDat.iLogicalCells.Count];
+            this.UpdateDomain(cm, species, RestrictToCellMask);
+        }
+
+
+        public void UpdateDomain(CellMask cm, SpeciesId species, bool RestrictToCellMask = true) {
+            var GridDat = m_bInput.GridDat;
+            int J = GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            this.Domain = cm;
+
+            int N = m_bOutput.Length;
+            MassMatrixFactory masser = levelSetTracker.GetXDGSpaceMetrics(new[] { species }, N + N).MassMatrixFactory;
+            massMatrixBlocks = masser.GetMassMatrixBlocks(m_bInput, species);
+
+            int[][] newStencils = new int[J][];
+
+            var Mask = cm.GetBitMaskWithExternal();
+            foreach (int jCell in cm.ItemEnum) {
+                int[] NeighCells, dummy;
+                GridDat.GetCellNeighbours(jCell, GetCellNeighbours_Mode.ViaVertices, out NeighCells, out dummy);
+
+                if (RestrictToCellMask == true) {
+                    NeighCells = NeighCells.Where(j => Mask[j]).ToArray();
+                }
+                Array.Sort(NeighCells);
+                int[] newStencil = ArrayTools.Cat(new int[] { jCell }, NeighCells);
+
+                ComputeAggregateBasis(jCell, NeighCells);
+
+                newStencils[jCell] = newStencil;
+            }
+
+            for (int j = 0; j < J; j++) {
+                if (newStencils[j] == null && this.AggregateBasisTrafo[j] != null)
+                    this.AggregateBasisTrafo[j] = null;
+
+                Debug.Assert((newStencils[j] == null) == (this.AggregateBasisTrafo[j] == null));
+                if (newStencils[j] != null)
+                    Debug.Assert(newStencils[j].Length == this.AggregateBasisTrafo[j].GetLength(0));
+            }
+
+
+            this.Stencils = newStencils;
+        }
+
+        void ComputeAggregateBasis(int jCell, int[] Stencil_jCells) {
+            // implementation notes: Fk, persönliche Notizen, 17oct13
+            // ------------------------------------------------------
+
+            int N = m_bOutput.Length;          // Basis dimension of 'g' in cell 'jCell'
+            int K = Stencil_jCells.Length + 1; // number of cells in stencil (including jCell itself);
+
+            
+
+            int[,] CellPairs = new int[K - 1, 2];
+            for (int k = 0; k < (K - 1); k++) {
+                CellPairs[k, 0] = jCell;
+                CellPairs[k, 1] = Stencil_jCells[k];
+            }
+
+            var ExPolMtx = MultidimensionalArray.Create(K, N, N);
+            if (K > 1)
+                m_bOutput.GetExtrapolationMatrices(CellPairs, ExPolMtx.ExtractSubArrayShallow(new int[] { 1, 0, 0 }, new int[] { K - 1, N - 1, N - 1 }), null);
+            for (int l = 0; l < N; l++) {
+                ExPolMtx[0, l, l] = 1.0;
+            }
+
+            var ExMassMtx = MultidimensionalArray.Create(K, N, N);
+
+            int cell;
+            for (int k = 0; k < K; ++k) {
+                if (k == 0) {
+                    cell = jCell;
+                } else {
+                    cell = Stencil_jCells[k - 1];
+                }
+
+                MultidimensionalArray mm;
+                int blockIndex = massMatrixBlocks.jSub2jCell.FirstIndexWhere(indx => indx == cell);
+                if(blockIndex < -12){
+                    mm = massMatrixBlocks.MassMatrixBlocks.ExtractSubArrayShallow(blockIndex, -1, -1);
+                } else {
+                    mm = MultidimensionalArray.CreateEye(N);
+                }
+                for (int l = 0; l < N; l++) { // over rows of mass matrix ...
+                    for(int m = 0; m < N; m++) { // over columns of mass matrix ...
+                        for (int i = 0; i < N; i++) {
+                            ExMassMtx[k, l, m] += mm[i, l] * ExPolMtx[k, i, m];
+                        }
+                    }
+                }
+            }
+
+            MultidimensionalArray MassMatrix = MultidimensionalArray.Create(N, N);
+            //MassMatrix.AccEye(1.0); // Mass matrix in jCell itself
+
+            //for(int k = 0; k < K; k++) { // over stencil members ...
+            //    for(int l = 0; l < N; l++) { // over rows of mass matrix ...
+            //        for(int m = 0; m < N; m++) { // over columns of mass matrix ...
+
+            //            double mass_lm = 0.0;
+
+            //            for(int i = 0; i < N; i++) {
+            //                mass_lm += ExPolMtx[k, i, m] * ExPolMtx[k, i, l];
+            //            }
+
+            //            MassMatrix[l, m] += mass_lm;
+            //        }
+            //    }
+            //}
+
+
+
+            MassMatrix.Multiply(1.0, ExMassMtx, ExPolMtx, 0.0, "lm", "kil", "kim");
+
+            MultidimensionalArray B = MultidimensionalArray.Create(N, N);
+            MassMatrix.SymmetricLDLInversion(B, default(double[]));
+
+
+            var CompositeBasis = MultidimensionalArray.Create(ExPolMtx.Lengths);
+            CompositeBasis.Multiply(1.0, ExPolMtx, B, 0.0, "imn", "imk", "kn");
+
+
+            //MassMatrix.InvertSymmetrical();
+            //this.InvMassMatrix[jCell] = MassMatrix;
+
+            this.AggregateBasisTrafo[jCell] = CompositeBasis;
+        }
+
+        int[][] Stencils;
+
+        /// <summary>
+        /// Basis transformation between the original DG basis and the aggregate DG basis.
+        /// Note that the aggregate Basis is also orthonormal.
+        /// </summary>
+        MultidimensionalArray[] AggregateBasisTrafo;
+
+        Basis m_bInput;
+        Basis m_bOutput;
+
+
+        /// <summary>
+        /// %
+        /// </summary>
+        /// <param name="output"></param>
+        /// <param name="input">input DG field; unchanged on </param>
+        public void Perform(ConventionalDGField output, ConventionalDGField input) {
+            if (!output.Basis.Equals(this.m_bOutput))
+                throw new ArgumentException("output basis mismatch");
+            if (!input.Basis.Equals(this.m_bInput))
+                throw new ArgumentException("output basis mismatch");
+
+            var GridDat = this.m_bOutput.GridDat;
+            int N = m_bOutput.Length;
+            int Nin = m_bInput.Length;
+            int J = GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+
+            double[] RHS = new double[N];
+            double[] f2 = new double[N];
+            double[] g1 = new double[N];
+            MultidimensionalArray Trf = MultidimensionalArray.Create(N, N);
+
+            input.MPIExchange();
+
+
+            for (int jCell = 0; jCell < J; jCell++) {
+                Debug.Assert((this.AggregateBasisTrafo[jCell] != null) == (this.Stencils[jCell] != null));
+
+                MultidimensionalArray ExPolMtx = this.AggregateBasisTrafo[jCell];
+
+                if (ExPolMtx != null) {
+                    int[] Stencil_jCells = this.Stencils[jCell];
+                    int K = Stencil_jCells.Length;
+                    Debug.Assert(Stencil_jCells[0] == jCell);
+
+                    RHS.ClearEntries();
+                    g1.ClearEntries();
+
+                    for (int k = 0; k < K; k++) {
+                        int jNeigh = Stencil_jCells[k];
+                        for (int n = Math.Min(input.Basis.Length, N) - 1; n >= 0; n--) {
+                            f2[n] = input.Coordinates[jNeigh, n];
+                        }
+
+                        for (int l = 0; l < N; l++) {
+                            double acc = 0;
+                            for (int i = 0; i < N; i++) {
+                                acc += ExPolMtx[k, i, l] * f2[i];
+                            }
+                            RHS[l] += acc;
+                        }
+                    }
+
+                    Trf.Clear();
+                    Trf.Acc(1.0, ExPolMtx.ExtractSubArrayShallow(0, -1, -1));
+
+                    Trf.GEMV(1.0, RHS, 0.0, g1);
+
+                    output.Coordinates.SetRow(jCell, g1);
+                }
+            }
+
+            output.MPIExchange();
+        }
+
+    }
+
     public class PatchRecovery {
 
         /// <summary>
