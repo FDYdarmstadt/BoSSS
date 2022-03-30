@@ -152,8 +152,8 @@ namespace ZwoLevelSetSolver {
                 } else {
                     opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
                     opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_A, Control.Material));
-                    opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_B, Control.Material));
+                    //opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_A, Control.Material));
+                    //opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_B, Control.Material));
                     //opFactory.AddEquation(new ParameterDisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity));
                     //opFactory.AddEquation(new ParameterDisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity));
                 }
@@ -161,11 +161,11 @@ namespace ZwoLevelSetSolver {
             /*
             opFactory.AddEquation(new PressureViscosity("A", -0.001));
             opFactory.AddEquation(new PressureViscosity("B", -0.001));
-            //opFactory.AddEquation(new PressureViscosity("C", -0.001));
+            opFactory.AddEquation(new PressureViscosity("C", -0.001));
             opFactory.AddEquation(new PressureViscosityBoundary("A","C",D, -0.001));
             opFactory.AddEquation(new PressureViscosityBoundary("B", "C", D, -0.001));
-            //opFactory.AddEquation(new PressureViscosityBoundary("C", "A", D, -0.001));
-            //opFactory.AddEquation(new PressureViscosityBoundary("C", "B", D, -0.001));
+            opFactory.AddEquation(new PressureViscosityBoundary("C", "A", D, -0.001));
+            opFactory.AddEquation(new PressureViscosityBoundary("C", "B", D, -0.001));
             //*/
 
             //*
@@ -173,8 +173,8 @@ namespace ZwoLevelSetSolver {
                 //opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
                 //opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
             } else {
-                opFactory.AddEquation(new FluidSolidDisplacementContinuity("A", "C", D, Control.Material));
-                opFactory.AddEquation(new FluidSolidDisplacementContinuity("B", "C", D, Control.Material));
+                opFactory.AddEquation(new OnlyFluidContinuity("A", "C", D, Control.Material));
+                opFactory.AddEquation(new OnlyFluidContinuity("B", "C", D, Control.Material));
             }
             //*/
 

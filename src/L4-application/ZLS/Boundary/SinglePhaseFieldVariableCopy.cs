@@ -55,7 +55,6 @@ namespace ZwoLevelSetSolver.Boundary {
                 Basis basis = new Basis(DomainVarFields.First().Value.GridDat, degree);
                 string paramName = parameterNames[d];
                 SinglePhaseField param = new SinglePhaseField(basis, paramName);
-
                 param.CopyFrom(((XDGField)DomainVarFields[fieldName]).GetSpeciesShadowField(species));
                 copy[d] = (paramName, param);
             }

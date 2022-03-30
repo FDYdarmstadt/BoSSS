@@ -31,7 +31,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     [Serializable]
     public class ContactPointRefiner : AMRLevelIndicatorWithLevelset {
 
-
         public override int[] DesiredCellChanges() {
 
             int J = GridData.CellPartitioning.LocalLength;

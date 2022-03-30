@@ -23,11 +23,11 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         int D;
 
-        public ParameterTransportForm(string speciesName, string parameterName, string[] velocityNames, int D, double rho) {
+        public ParameterTransportForm(string speciesName, string fieldName, string[] velocityNames, int D, double rho) {
             this.speciesName = speciesName;
             this.D = D;
             this.rho = rho;
-            this.parameternames = new string[] { parameterName }.Cat(velocityNames);
+            this.parameternames = new string[] { fieldName }.Cat(velocityNames);
         }
 
         public TermActivationFlags VolTerms {
@@ -54,9 +54,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             return 0.0; // inflow
         }
 
-        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
-        {
-            return new[] { this};
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new[] { this };
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
@@ -65,10 +64,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Vector VelocityIn = new Vector(inp.Parameters_IN, 1, D);
             Vector VelocityOt = new Vector(inp.Parameters_OUT, 1, D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
-            if(VelocityAvg * inp.Normal > 0) {
-                return rho  * inp.Parameters_IN[0] * (VelocityAvg * inp.Normal) * (_vIN - _vOUT);
-            } else {
-                return rho * inp.Parameters_OUT[0] * (VelocityAvg * inp.Normal) * (_vIN - _vOUT);
+            double a = (inp.Parameters_IN[0] - inp.Parameters_OUT[0]) * Math.Abs(VelocityAvg * inp.Normal);
+            return rho * (0.5 * (inp.Parameters_IN[0] + inp.Parameters_OUT[0]) * (VelocityAvg * inp.Normal) + 0) * (_vIN - _vOUT);
             }
 
             return rho * ( 0.5 *  (inp.Parameters_IN[0]+ inp.Parameters_OUT[0]) * (VelocityAvg * inp.Normal) 
@@ -77,8 +74,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
+            Vector Up = new Vector(cpv.Parameters, 1, D);
             for(int i = 0; i < D; i++)
-                acc += cpv.Parameters[1+i] * GradV[i];
+                acc += Up[i] * GradV[i];
             acc *= cpv.Parameters[0];
             acc *= rho;
             return -acc;
