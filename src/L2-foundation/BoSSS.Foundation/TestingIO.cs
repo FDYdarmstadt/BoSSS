@@ -17,7 +17,21 @@ namespace BoSSS.Foundation {
 
     /// <summary>
     /// Utility class for testing: Enables the comparison of calculations with different number of MPI cores, 
-    /// typically the comparison of a single-core vs. a parallel run, without using a BoSSS database
+    /// typically the comparison of a single-core vs. a parallel run, without using a BoSSS database.
+    /// 
+    /// E.g. assume that one would compare a serial run (i.e. 1 MPI core) with a parallel run (e.g. 4 MPI cores):
+    /// - one would first run the app with 1 core, next with 4 cores; note that any other comparison is also possible e.g. comparing a 3-core run to a 99 core run.
+    /// - if 1 core is the reference computation, <see cref="ReferenceMPISize"/> must be set to 1
+    /// - one can compare any numerical data (i.e. doubles) which can be correlated with cells of the mesh
+    /// - this triggers saving is the current number of MPI cores is 1 (i.e. the reference size), and loading of data otherwise.
+    /// - for runs which have a different number of MPI cores than the reference size, numeraical values will be compared.
+    /// 
+    /// The typical use-case of this class is as follows:
+    /// 1. Instantiate (<see cref="TestingIO.TestingIO(IGridData, string, int)"/>)
+    /// 2. Add Vectors, DG fields, etc. (<see cref="AddVector(string, IEnumerable{double})"/>, <see cref="AddDGField(ConventionalDGField)"/>, <see cref="AddColumn(string, ExecutionMask.ItemInfo)"/>)
+    ///    to this IO object; 
+    /// 3. Call <see cref="DoIOnow"/> th either save the current data or load the reference data 
+    /// 4. Use functions such as <see cref="AllAbsErr"/>, <see cref="AllRelErr"/> to compute difference norms between reference and current data
     /// </summary>
     public class TestingIO {
         
@@ -185,7 +199,9 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// 
+        /// Performs the IO operation:
+        /// - if current number of MPI processes is equal to <see cref="ReferenceMPISize"/>, data is written to file <see cref="CSVfile"/>
+        /// - otherwise, reference data is loaded
         /// </summary>
         public void DoIOnow() {
             if(GridDat.CellPartitioning.MpiSize == ReferenceMPISize) {

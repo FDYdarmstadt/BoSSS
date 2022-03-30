@@ -44,6 +44,7 @@
     <ProjectReference Include="..\ExternalBinding.CodeGen\ExternalBinding.CodeGen.csproj" />
     <ProjectReference Include="..\ExternalBinding\ExternalBinding.csproj" />
     <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj" />
+    <ProjectReference Include="..\HangingNodesTests\HangingNodesTests.csproj" />
     <ProjectReference Include="..\HilbertTest\HilbertTest.csproj" />
     <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj" />
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
