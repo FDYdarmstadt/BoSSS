@@ -124,7 +124,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
-                Degree = VelDegree,
+                Degree = VelDegree - 1,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
             });
             FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {

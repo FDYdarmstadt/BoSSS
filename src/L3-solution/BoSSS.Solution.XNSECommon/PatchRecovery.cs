@@ -422,31 +422,13 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                 for (int l = 0; l < N; l++) { // over rows of mass matrix ...
                     for(int m = 0; m < N; m++) { // over columns of mass matrix ...
                         for (int i = 0; i < N; i++) {
-                            ExMassMtx[k, l, m] += mm[i, l] * ExPolMtx[k, i, m];
+                            ExMassMtx[k, l, m] += mm[i, l] * ExPolMtx[k, i, m]; //(MM^T * A ), later we use (MM^T * A)^T = A^T * MM
                         }
                     }
                 }
             }
 
             MultidimensionalArray MassMatrix = MultidimensionalArray.Create(N, N);
-            //MassMatrix.AccEye(1.0); // Mass matrix in jCell itself
-
-            //for(int k = 0; k < K; k++) { // over stencil members ...
-            //    for(int l = 0; l < N; l++) { // over rows of mass matrix ...
-            //        for(int m = 0; m < N; m++) { // over columns of mass matrix ...
-
-            //            double mass_lm = 0.0;
-
-            //            for(int i = 0; i < N; i++) {
-            //                mass_lm += ExPolMtx[k, i, m] * ExPolMtx[k, i, l];
-            //            }
-
-            //            MassMatrix[l, m] += mass_lm;
-            //        }
-            //    }
-            //}
-
-
 
             MassMatrix.Multiply(1.0, ExMassMtx, ExPolMtx, 0.0, "lm", "kil", "kim");
 
@@ -455,7 +437,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
             var CompositeBasis = MultidimensionalArray.Create(ExPolMtx.Lengths);
-            CompositeBasis.Multiply(1.0, ExPolMtx, B, 0.0, "imn", "imk", "kn");
+            CompositeBasis.Multiply(1.0, ExMassMtx, B, 0.0, "imn", "imk", "kn");
 
 
             //MassMatrix.InvertSymmetrical();
