@@ -24,7 +24,7 @@ for filepath in ./Figures/Part1/*; do
         echo "\begin{figure}[H]" >> ./Output/PrintingNipInputs.tex
         echo "\centering" >> ./Output/PrintingNipInputs.tex
         echo "\caption{\detokenize{${stem}}}" >> ./Output/PrintingNipInputs.tex
-        echo "\resizebox{!}{0.4\textheight}{\input{./Figures/Part1/${stem}.tex}}" >> ./Output/PrintingNipInputs.tex
+        echo "\resizebox{!}{0.4\textheight}{\input{./PrintingNip/Figures/Part1/${stem}.tex}}" >> ./Output/PrintingNipInputs.tex
         echo "\end{figure}" >> ./Output/PrintingNipInputs.tex
     fi
 done
@@ -44,7 +44,7 @@ for filepath in ./Figures/Part2/*; do
         echo "\begin{figure}[H]" >> ./Output/PrintingNipInputs.tex
         echo "\centering" >> ./Output/PrintingNipInputs.tex
         echo "\caption{\detokenize{${stem}}}" >> ./Output/PrintingNipInputs.tex
-        echo "\resizebox{!}{0.4\textheight}{\input{./Figures/Part2/${stem}.tex}}" >> ./Output/PrintingNipInputs.tex
+        echo "\resizebox{!}{0.4\textheight}{\input{./PrintingNip/Figures/Part2/${stem}.tex}}" >> ./Output/PrintingNipInputs.tex
         echo "\end{figure}" >> ./Output/PrintingNipInputs.tex
     fi
 done
@@ -65,7 +65,7 @@ for filepath in ./Figures/Part3/*; do
         echo "\begin{figure}[H]" >> ./Output/PrintingNipInputs.tex
         echo "\centering" >> ./Output/PrintingNipInputs.tex
         echo "\caption{\detokenize{${stem}}}" >> ./Output/PrintingNipInputs.tex
-        echo "\resizebox{!}{0.4\textheight}{\input{./Figures/Part3/${stem}.tex}}" >> ./Output/PrintingNipInputs.tex
+        echo "\resizebox{!}{0.4\textheight}{\input{./PrintingNip/Figures/Part3/${stem}.tex}}" >> ./Output/PrintingNipInputs.tex
         echo "\end{figure}" >> ./Output/PrintingNipInputs.tex
     fi
 done
@@ -83,7 +83,7 @@ for filepath in ./Figures/Test/*; do
         echo "\begin{figure}[H]" >> ./Output/PrintingNipInputs.tex
         echo "\centering" >> ./Output/PrintingNipInputs.tex
         echo "\caption{\detokenize{${stem}}}" >> ./Output/PrintingNipInputs.tex
-        echo "\resizebox{!}{0.4\textheight}{\input{./Figures/Test/${stem}.tex}}" >> ./Output/PrintingNipInputs.tex
+        echo "\resizebox{!}{0.4\textheight}{\input{./PrintingNip/Figures/Test/${stem}.tex}}" >> ./Output/PrintingNipInputs.tex
         echo "\end{figure}" >> ./Output/PrintingNipInputs.tex
     fi
 done
