@@ -115,7 +115,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 return phaseInterface.Identification;
             }
 
-
             ICollection<ILevelSetParameter> lsParameters;
 
             public ICollection<ILevelSetParameter> LevelSetParameters {

@@ -86,7 +86,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // restore BDF time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, base.LsTrk, base.MultigridSequence, this.Operator);
+                Timestepping.DataRestoreAfterBalancing(L, CurrentState.Fields, CurrentResidual.Fields, Parameters, base.LsTrk, base.MultigridSequence, this.Operator);
             }
         }
 

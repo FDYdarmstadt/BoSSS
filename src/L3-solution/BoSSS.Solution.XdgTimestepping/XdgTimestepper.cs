@@ -931,6 +931,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         public void DataRestoreAfterBalancing(GridUpdateDataVaultBase L,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
+            IList<DGField> Parameters,
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence,
             ISpatialOperator abstractOperator) //
@@ -945,8 +946,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             if (this.m_JacobiXdgOperator != null)
                 this.m_JacobiXdgOperator = null;
 
-            Parameters = this.Operator.InvokeParameterFactory(Fields);
-            
+            //Parameters = this.Operator.InvokeParameterFactory(Fields);
+            this.Parameters = Parameters;
+
             if(m_BDF_Timestepper != null) {
                 m_BDF_Timestepper.DataRestoreAfterBalancing(L, Fields, this.Parameters, IterationResiduals, LsTrk, _MultigridSequence, abstractOperator);
             } else if(m_RK_Timestepper != null) {
