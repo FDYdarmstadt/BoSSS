@@ -743,9 +743,19 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         /// <summary>
         /// Computes the norm of jumps on the interior edges of the <paramref name="mask"/>
+        /// L2-error norm of the projected field against the initial discontinuous field 
         /// </summary>
         public (double jumpNorm, double L2err) CheckLocalProjection(out SinglePhaseField errField, CellMask mask = null, bool onInterProc = false) {
             return CheckLocalProjection(csMPI.Raw._COMM.WORLD, out errField, mask, onInterProc);
+        }
+
+        /// <summary>
+        /// Computes the norm of jumps on the interior edges of the <paramref name="mask"/>
+        /// </summary>
+        public double CheckLocalProjection(CellMask mask = null, bool onInterProc = false) {
+            SinglePhaseField errField;
+            (double jumpNorm, double L2err) = CheckLocalProjection(csMPI.Raw._COMM.WORLD, out errField, mask, onInterProc);
+            return jumpNorm;
         }
 
         /// <summary>
