@@ -2962,6 +2962,13 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
+        /// <see cref="ISpatialOperator.IsValidDomainDegreeCombination"/>
+        /// </summary>
+        public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable) {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
         /// Used by <see cref="_GetJacobiOperator(int)"/> to encalsulate the temporal operator
         /// of this operator (because of the ownership, the temporal operator cannot be reused).
         /// </summary>

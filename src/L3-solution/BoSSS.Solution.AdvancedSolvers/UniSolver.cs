@@ -577,7 +577,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     var MultigridOp = new MultigridOperator(G.AggBasisS, Solution,
                         opMtx, MassMatrix, G.MgConfig,
-                        op.DomainVar.Select(varName => op.FreeMeanValue[varName]).ToArray());
+                        op);
 
                     //SolverFactory SF = new SolverFactory(nsc, lsc);
                     //SF.GenerateLinear(out solver, G.AggBasisS, G.MgConfig);
@@ -760,7 +760,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var MultigridOp = new MultigridOperator(G.AggBasisS, Mapping,
                         Op_Matrix, MassMatrix, G.MgConfig,
-                        op.DomainVar.Select(varName => op.FreeMeanValue[varName]).ToArray());
+                        op);
 
             return MultigridOp.OperatorMatrix;
 

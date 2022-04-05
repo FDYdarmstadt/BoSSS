@@ -1728,8 +1728,12 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-
-
+        /// <summary>
+        /// <see cref="ISpatialOperator.IsValidDomainDegreeCombination"/>
+        /// </summary>
+        public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable) {
+            throw new NotImplementedException();
+        }
 
 
 

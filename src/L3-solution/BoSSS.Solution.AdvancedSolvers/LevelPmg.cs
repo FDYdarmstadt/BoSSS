@@ -36,12 +36,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public bool UseDiagonalPmg = true;
 
+            /*
             /// <summary>
             /// Hack, for the treatment of incompressible flows:
             /// - false (default): the D-th variable, where D is the spatial dimension (2 or 3), is assumed to be the pressure; the order is one lower than for velocity
             /// - true: no special treatment of individual variables
             /// </summary>
             public bool EqualOrder = false;
+            */
+
+
 
             /// <summary>
             /// If true, cell-local solvers will be used to approximate a solution to high-order modes
@@ -88,7 +92,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var other = o as Config;
 
                 return (this.UseDiagonalPmg == other.UseDiagonalPmg)
-                    && (this.EqualOrder == other.EqualOrder)
                     && (this.FullSolveOfCutcells == other.FullSolveOfCutcells)
                     && (this.OrderOfCoarseSystem == other.OrderOfCoarseSystem)
                     && (this.UseHiOrderSmoothing == other.UseHiOrderSmoothing);
@@ -203,10 +206,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             int D = this.m_op.GridData.SpatialDimension;
 
+            int[] lowDegs = op.DGpolynomialDegreeHierarchy.First(degS => degS.Max() == config.OrderOfCoarseSystem);
+            bool LowSelector(int iCell, int iVar, int iSpec, int pDeg) {
+                return pDeg <= lowDegs[iVar];
+            }
+
+
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
-            Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1); // containd the pressure hack
-            DGlowSelect.SetModeSelector(lowFilter);
+            //Func<int, int, int, int, bool> lowFilter = delegate (int iCell, int iVar, int iSpec, int pDeg) {
+            //    return pDeg <= (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1); // containd the pressure hack
+            //};
+            DGlowSelect.SetModeSelector(LowSelector);
 
             if (config.FullSolveOfCutcells)
                 ModifyLowSelector(DGlowSelect, op);
@@ -216,7 +227,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (config.UseHiOrderSmoothing && AnyHighOrderTerms) {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
-                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1);
+                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => !LowSelector(iCell, iVar, iSpec, pDeg);
+                //Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1);
                 //Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg >= 0;
                 DGhighSelect.SetModeSelector(highFilter);
 

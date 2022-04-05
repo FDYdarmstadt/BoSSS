@@ -25,12 +25,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public bool UseDiagonalPmg = true;
 
-        /// <summary>
-        /// Hack, for the treatment of incompressible flows:
-        /// - false (default): the D-th variable, where D is the spatial dimension (2 or 3), is assumed to be the pressure; the order is one lower than for velocity
-        /// - true: no special treatment of individual variables
-        /// </summary>
-        public bool EqualOrder = false;
+        ///// <summary>
+        ///// Hack, for the treatment of incompressible flows:
+        ///// - false (default): the D-th variable, where D is the spatial dimension (2 or 3), is assumed to be the pressure; the order is one lower than for velocity
+        ///// - true: no special treatment of individual variables
+        ///// </summary>
+        //public bool EqualOrder = false;
 
         /// <summary>
         /// If true, cell-local solvers will be used to approximate a solution to high-order modes
@@ -74,7 +74,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
             precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
             precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
-            precond.config.EqualOrder = this.EqualOrder;
 
             var templinearSolve = new SoftGMRES() {
                 MaxKrylovDim = MaxKrylovDim,
@@ -113,13 +112,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
             //precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
             //precond.config.EqualOrder = this.EqualOrder;
-            
 
+            
            
 
             int MinDeg = level.Degrees.Min();
             
             ISubsystemSolver CreateLevelRecursive(int dgDeg, int iLevel) {
+
+                //level.Mapping.
+
+                //long globalDOF;
+                //int localDOF;
+
 
                 //Console.WriteLine($"Level {iLevel}, k{dgDeg}")
 
@@ -163,7 +168,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                if(dgDeg <= 0) {
+                if(dgDeg <= 1) {
 
                     Console.WriteLine("direct solver on level " + iLevel);
 

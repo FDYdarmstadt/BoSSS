@@ -66,7 +66,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 m_OpMtx,
                 m_Mass,
                 OpConfig,
-                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray());
+                abstractOperator);
         }
 
         AggregationGridBasis[][] m_XAggB;
@@ -455,7 +455,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 m_OpMtx.CloneAs(),
                 m_Mass,
                 AlternativeOpConfig,
-                m_MultigridOp.FreeMeanValue.CloneAs());
+                m_MultigridOp.AbstractOperator);
 
         }
 

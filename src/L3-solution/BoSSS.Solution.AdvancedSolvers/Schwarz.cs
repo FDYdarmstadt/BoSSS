@@ -397,7 +397,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public class LowOrderTwoGrid : SchwarzMG {
 
-            public bool EqualOrder = false;
+            //public bool EqualOrder = false;
 
             public override void Init(MultigridOperator op, BlockMsrMatrix ExtRows) {
                 m_op = op;
@@ -405,7 +405,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int D = op.Mapping.GridData.SpatialDimension;
                 var coarseSelector = new SubBlockSelector(op.Mapping);
                 int OrderOfCoarseSystem = 1; // max order of low order system; pressure is k-1, if non-equalorder
-                Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
+                
+                
+                //Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
+                int[] lowDegs = op.DGpolynomialDegreeHierarchy.First(degS => degS.Max() == OrderOfCoarseSystem);
+                bool lowFilter(int iCell, int iVar, int iSpec, int pDeg) {
+                    return pDeg <= lowDegs[iVar];
+                }
                 coarseSelector.SetModeSelector(lowFilter);
                 coarseMask = new BlockMask(coarseSelector,ExtRows);
                 
