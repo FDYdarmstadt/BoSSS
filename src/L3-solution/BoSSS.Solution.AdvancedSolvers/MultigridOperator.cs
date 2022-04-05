@@ -385,7 +385,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISpatialOperator AbstractOperator {
             get {
                 if(m_AbstractOperator == null) {
-                    m_AbstractOperator = FinerLevel.AbstractOperator;
+                    m_AbstractOperator = FinerLevel?.AbstractOperator;
                 }
                 return m_AbstractOperator;
             }
