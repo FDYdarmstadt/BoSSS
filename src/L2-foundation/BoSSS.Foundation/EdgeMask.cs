@@ -122,6 +122,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="grddat">
         /// the grid that this mask will be associated with;
         /// </param>
+        /// <param name="mt"></param>
         public EdgeMask(IGridData grddat, Chunk part, MaskType mt = MaskType.Logical)
             : this(grddat, new Chunk[] { part }, mt) {
         }

@@ -568,7 +568,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// Variant of
-        /// <see cref="LxError(ScalarFunction, Func{double, double, double}, ICompositeQuadRule{QuadRule})"/>
+        /// <see cref="LxError(ScalarFunction, Func{double[], double, double, double}, ICompositeQuadRule{QuadRule}, int)"/>
         /// that computes the cell-local Lx norm (and does thus not include MPI
         /// communication)
         /// </summary>

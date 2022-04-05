@@ -65,6 +65,10 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         }
 
+        public override int GetHashCode() {
+            return 11;
+        }
+
     }
 
 
@@ -98,6 +102,11 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             } else
                 throw new ArgumentException("wrong type of object");
         }
+
+        public override int GetHashCode() {
+            return 33;
+        }
+
 
         //public void AddEdge(int jEdge) {
         //    if (edgeList.Count == 4)
@@ -272,7 +281,10 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 return (this.VerticeIndex - (int)obj) == 0;
             } else
                 throw new ArgumentException("wrong type of object");
+        }
 
+        public override int GetHashCode() {
+            return 77;
         }
 
     }

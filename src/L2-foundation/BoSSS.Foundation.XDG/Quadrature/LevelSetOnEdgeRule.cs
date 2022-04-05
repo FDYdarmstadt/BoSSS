@@ -100,22 +100,32 @@ namespace BoSSS.Foundation.XDG.Quadrature
             // inside or outside 
             // w.r.t. the edge that corresponds with face 
             int iEdge = grddat.Cells.GetEdgesForFace(jCell, SpecialFace, out int InOrOut, out int[] FurtherEdges);
-            if (FurtherEdges != null && FurtherEdges.Length > 0)
-            {
-                throw new NotSupportedException("Hanging node on a edge which coincides with the level set - this should be avoided.");
+            if (FurtherEdges != null && FurtherEdges.Length > 0) {
+                // throw new NotSupportedException("Hanging node on a edge which coincides with the level set - this should be avoided.");
+                // Console.WriteLine("Hanging node on a edge which coincides with the level set - this should be avoided.");
             }
-            int J = grddat.CellPartitioning.LocalLength;
+            int J = grddat.CellPartitioning.LocalLength;           
 
-            // surface rule
-            // ------------
+            // surface rule -- classification, using conformality of edges
+            // always use conformal cell, if both conformal choose lower global index
             bool EmptyOrFool; // true: full rule; false: empty rule
             {
                 int OtherCell = grddat.Edges.CellIndices[iEdge, InOrOut == 0 ? 1 : 0];
-                Debug.Assert(OtherCell != jCell);
-                Debug.Assert(grddat.Edges.CellIndices[iEdge, InOrOut] == jCell);
-                long jCellGlob = jCell + grddat.CellPartitioning.i0;
-                long OtherCellGlob = OtherCell < J ? OtherCell + grddat.CellPartitioning.i0 : grddat.Parallel.GlobalIndicesExternalCells[OtherCell - J];
-                EmptyOrFool = jCellGlob < OtherCellGlob;
+                bool jConform = InOrOut == 0 ? grddat.Edges.IsEdgeConformalWithCell1(iEdge) : grddat.Edges.IsEdgeConformalWithCell2(iEdge);
+                bool OtherConform = InOrOut == 0 ? grddat.Edges.IsEdgeConformalWithCell2(iEdge) : grddat.Edges.IsEdgeConformalWithCell1(iEdge);
+
+                // if both cell faces have no hanging nodes use globally lower index
+                if (jConform & OtherConform) {
+                    long jCellGlob = jCell + grddat.CellPartitioning.i0;
+                    long OtherCellGlob = OtherCell < J ? OtherCell + grddat.CellPartitioning.i0 : grddat.Parallel.GlobalIndicesExternalCells[OtherCell - J];
+                    EmptyOrFool = jCellGlob < OtherCellGlob;
+                } else if (jConform & !OtherConform) {
+                    EmptyOrFool = true; // this cells face consists of one edge only, empty rule
+                } else if (!jConform & OtherConform) {
+                    EmptyOrFool = false; // this cells face consists of more than one edge only, use full rule, so that each partial edge contains the rule of full degree!
+                } else {
+                    throw new NotSupportedException(String.Format("Error in cell {0}, {1}: Only one cell should have the hanging node.", jCell, OtherCell));
+                }
             }
 
             ChunkRulePair<QuadRule> surfaceRule;
