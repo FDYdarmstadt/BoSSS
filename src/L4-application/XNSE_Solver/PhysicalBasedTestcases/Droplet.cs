@@ -1350,7 +1350,41 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 "    return X.L2Norm() - R; " +
                 "} ");
 
-            C.InitialValues.Add("Phi", Phi2Init);
+            var Phi4Init = new Formula(
+                "Phi4",
+                false,
+                "using ilPSP.Utils; " +
+                "double Phi4(double[] X) { " +
+                "    (double theta, double phi) = SphericalHarmonics.GetAngular(X); " +
+                "    double R =    0.895131*SphericalHarmonics.MyRealSpherical(0, 0, theta, phi) " +
+                "                +      0.7*SphericalHarmonics.MyRealSpherical(2, 0, theta, phi); " +
+                "    return X.L2Norm() - R; " +
+                "}");
+
+            var Phi5Init = new Formula(
+                "Phi5",
+                false,
+                "using ilPSP.Utils; " +
+                "double Phi5(double[] X) { " +
+                "    (double theta, double phi) = SphericalHarmonics.GetAngular(X); " +
+                "    double R =    0.930122*SphericalHarmonics.MyRealSpherical(0, 0, theta, phi) " +
+                "                +      0.7*SphericalHarmonics.MyRealSpherical(3, 0, theta, phi); " +
+                "    return X.L2Norm() - R; " +
+                "} ");
+
+            var Phi6Init = new Formula(
+                "Phi6",
+                false,
+                "using ilPSP.Utils; " +
+                "double Phi6(double[] X) { " +
+                "    (double theta, double phi) = SphericalHarmonics.GetAngular(X); " +
+                "    double R =    0.943440*SphericalHarmonics.MyRealSpherical(0, 0, theta, phi) " +
+                "                +      0.7*SphericalHarmonics.MyRealSpherical(4, 0, theta, phi); " +
+                "    return X.L2Norm() - R; " +
+                "} ");
+
+
+            C.InitialValues.Add("Phi", Phi6Init);
 
             //// restart
             //Guid restartID = new Guid("78808235-9904-439c-a4e5-d32a97eee5f5");
