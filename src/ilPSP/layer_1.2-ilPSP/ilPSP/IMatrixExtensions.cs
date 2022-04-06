@@ -2379,18 +2379,20 @@ namespace ilPSP {
             int L = M.NoOfCols;
             unsafe {
                 int iBuf;
-                double[] _this_Entries;
-                int BufOffset;
-                if (M is MultidimensionalArray) {
-                    var Mda = (M as MultidimensionalArray);
-                    _this_Entries = Mda.Storage;
-                    iBuf = -1;
-                    BufOffset = Mda.Index(0, 0);
-                } else {
-                    _this_Entries = TempBuffer.GetTempBuffer(out iBuf, L * L);
-                    BufOffset = 0;
-                }
+                //double[] _this_Entries;
+                //int BufOffset;
+                //if (M is MultidimensionalArray Mda && Mda.IsContinious) {
+                //    _this_Entries = Mda.Storage; // fk, 06apr22: does not work, because MultidimensionalArray is in C-order
+                //    iBuf = -1;
+                //    BufOffset = Mda.Index(0, 0);
+                //} else {
+                //    _this_Entries = TempBuffer.GetTempBuffer(out iBuf, L * L);
+                //    BufOffset = 0;
+                //}
 
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out iBuf, L * L);
+                int BufOffset = 0;
+                
                 Array.Copy(b, x, x.Length);
 
                 fixed (int* ipiv = _ipiv) {
@@ -2416,6 +2418,7 @@ namespace ilPSP {
                     TempBuffer.FreeTempBuffer(iBuf);
             }
         }
+
 
 
         /// <summary>
