@@ -233,15 +233,29 @@ namespace BoSSS.Solution.AdvancedSolvers {
             this.Dispose();
             this.ResetStat();
 
-            int[] RestrictedDeg = op.DgMapping.DgDegree.Select(p => p - 1).ToArray();
+            //int[] RestrictedDeg = op.DgMapping.DgDegree.Select(p => p - 1).ToArray();
+            if (RestrictedDeg == null)
+                throw new NotSupportedException("'RestrictedDeg' must be initialized before this object can be used.");
+            if (RestrictedDeg.Length != op.DgMapping.NoOfVariables)
+                throw new NotSupportedException("Configuration Error: length of 'RestrictedDeg' must match number of variables.");
             if(RestrictedDeg.Min() < 0)
                 throw new NotSupportedException("Cannot reduce DG Degree below 0.");
+            for(int iVar = 0; iVar < op.DgMapping.NoOfVariables; iVar++) {
+                if(RestrictedDeg[iVar] > op.DgMapping.DgDegree[iVar])
+                    throw new NotSupportedException($"Configuration Error: 'RestrictedDeg[{iVar}] == {RestrictedDeg[iVar]}' but the maximum supported degree for the respective variable is {op.DgMapping.DgDegree[iVar]}..");
+            }
 
             m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows, this.ResrictToMPIself);
 
             if(LowerPSolver != null)
                 LowerPSolver.Init(m_MgOperatorRestriction);
         }
+
+        /// <summary>
+        /// DG polynomial degrees in the restricted system
+        /// </summary>
+        public int[] RestrictedDeg;
+
 
         public void ResetStat() {
             if(LowerPSolver != null)

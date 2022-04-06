@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ilPSP;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -116,9 +117,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             
            
 
-            int MinDeg = level.Degrees.Min();
+            int[][] DegreeHierarchy = level.DGpolynomialDegreeHierarchy;
             
-            ISubsystemSolver CreateLevelRecursive(int dgDeg, int iLevel) {
+            ISubsystemSolver CreateLevelRecursive(int iLevel) {
 
                 //level.Mapping.
 
@@ -130,7 +131,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 OrthonormalizationMultigrid createOMG() {
                     var coarseSolver = new PRestriction() {
-                        LowerPSolver = CreateLevelRecursive(dgDeg - 1, iLevel + 1)
+                        RestrictedDeg = DegreeHierarchy[iLevel].CloneAs(),
+                        LowerPSolver = CreateLevelRecursive(iLevel + 1)
                     };
 
                     ISolverSmootherTemplate post;
@@ -168,7 +170,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                if(dgDeg <= 1) {
+                if(iLevel >= DegreeHierarchy.Length - 1) {
 
                     Console.WriteLine("direct solver on level " + iLevel);
 
@@ -186,7 +188,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     var gmRes = new SoftGMRES();
                     gmRes.TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= 4, true);
-                    gmRes.Precond = CreateLevelRecursive(dgDeg - 1, iLevel + 1);
+                    gmRes.Precond = CreateLevelRecursive(iLevel + 1);
                     return gmRes;
 
                 } else if(iLevel >= 1) { 
@@ -241,7 +243,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
 
-            var topLevel = CreateLevelRecursive(MinDeg, 0);
+            var topLevel = CreateLevelRecursive(0);
             topLevel.Init(level);
             return topLevel;            
         }

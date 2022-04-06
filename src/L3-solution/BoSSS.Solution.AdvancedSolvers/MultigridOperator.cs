@@ -442,11 +442,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (this.AbstractOperator == null) {
                         m__FreeMeanValue = new bool[BaseGridProblemMapping.BasisS.Count];
                     } else {
-                        bool[] FreeMeanValue = AbstractOperator.DomainVar.Select(varName => AbstractOperator.FreeMeanValue[varName]).ToArray();
-                        if (FreeMeanValue.Length != BaseGridProblemMapping.BasisS.Count)
-                            throw new ArgumentException();
+                        m__FreeMeanValue = AbstractOperator.DomainVar.Select(varName => AbstractOperator.FreeMeanValue[varName]).ToArray();   
                     }
-                    m__FreeMeanValue = FreeMeanValue;
                 }
                 return m__FreeMeanValue;
             }
