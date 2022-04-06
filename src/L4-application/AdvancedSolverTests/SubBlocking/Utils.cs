@@ -25,8 +25,8 @@ namespace AdvancedSolverTests.SubBlocking
 
     internal class TestMask : BlockMask {
         public TestMask(SubBlockSelector SBS, BlockMsrMatrix ExtRows) : base(SBS, ExtRows){
-            Global_IList_LocalCells = base.GlobalIList_Internal.ToArray();
-            Global_IList_ExternalCells = base.GlobalIList_External.ToArray();
+            Global_IList_LocalCells = base.GlobalIndices_Internal.ToArray();
+            Global_IList_ExternalCells = base.GlobalIndices_External.ToArray();
         }
 
         public long[] Global_IList_ExternalCells;

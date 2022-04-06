@@ -945,8 +945,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         totNoOfSpeciesInSelection += NoOfSpecies[iLoc][iVar];
                         if (!SpecInstruction(jLoc, iVar, iSpc))
                             continue;
-                        long GlobalOffset = m_map.GlobalUniqueIndex(iVar, jLoc, iSpc, 0);
+                        //long GlobalOffset = m_map.GlobalUniqueIndex(iVar, jLoc, iSpc, 0);
                         int LocalOffset = m_map.LocalUniqueIndex(iVar, jLoc, iSpc, 0);
+                        long GlobalOffset = LocalOffset + m_map.i0;
+                        Debug.Assert(GlobalOffset == m_map.GlobalUniqueIndex(iVar, jLoc, iSpc, 0));
                         var tmpMod = new List<extNi0>();
 
                         // loop over polynomial degrees...
@@ -959,10 +961,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 SubOffset += ModeLength;
 
                                 // Fill int lists
-                                for (int i = 0; i < newNi0.N; i++) {
-                                    Globalint.Add(newNi0.Gi0 + i);
-                                    Localint.Add(newNi0.Li0 + i);
-                                    SubBlockIdx.Add(newNi0.Si0 + i);
+                                for (int m = 0; m < newNi0.N; m++) {
+                                    Globalint.Add(newNi0.Gi0 + m);
+                                    Localint.Add(newNi0.Li0 + m);
+                                    SubBlockIdx.Add(newNi0.Si0 + m);
                                     MaskLen++;
                                 }
 
@@ -986,10 +988,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             int NumOfNi0 = 0;
 #if DEBUG
-            for (int iCell=0; iCell < tmpStructNi0.Length; iCell++){
-                for(int iVar=0; iVar < tmpStructNi0[iCell].Length; iVar++){
-                    for(int iSpc=0; iSpc < tmpStructNi0[iCell][iVar].Length; iSpc++){
-                        NumOfNi0+=tmpStructNi0[iCell][iVar][iSpc].Length;
+            for(int iCell = 0; iCell < tmpStructNi0.Length; iCell++) {
+                for(int iVar = 0; iVar < tmpStructNi0[iCell].Length; iVar++) {
+                    for(int iSpc = 0; iSpc < tmpStructNi0[iCell][iVar].Length; iSpc++) {
+                        NumOfNi0 += tmpStructNi0[iCell][iVar][iSpc].Length;
                     }
                 }
             }

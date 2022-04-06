@@ -47,7 +47,7 @@ namespace AdvancedSolverTests.SubBlocking
                 stw.Start();
                 var mask = new BlockMask(selector, null);
                 stw.Stop();
-                long[] GlobalIdxMask_loc = mask.GlobalIList_Internal.ToArray();
+                long[] GlobalIdxMask_loc = mask.GlobalIndices_Internal.ToArray();
 
                 //Assert --- Idx lists are of same length
                 Assert.IsTrue(GlobalIdxMap_loc.Length == GlobalIdxMask_loc.Length);
@@ -209,7 +209,7 @@ namespace AdvancedSolverTests.SubBlocking
                 //var extractOnes = mask.GetSubBlockMatrix(Ones, false, coup[0], coup[1]);
                 var Mext = mask.GetSubBlockMatrix(M, false, coup[0], coup[1]);
                 stw.Stop();
-                var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(), true);
+                var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIndices_Internal.ToArray(), true);
                 Mext.Acc(-1.0, Mquad);
 
                 //Assert --- Mext conains only diagonal blocks of M
@@ -246,7 +246,7 @@ namespace AdvancedSolverTests.SubBlocking
                 var Mext = mask.GetSubBlockMatrix_MpiSelf(M);
                 stw.Stop();
 
-                var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(), true);
+                var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIndices_Internal.ToArray(), true);
                 Mext.Acc(-1.0, Mquad);
 
                 //Assert --- Mext conains only diagonal blocks of M

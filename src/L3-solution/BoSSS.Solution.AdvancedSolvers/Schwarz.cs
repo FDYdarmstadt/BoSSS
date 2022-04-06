@@ -1364,8 +1364,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             long LocalI0 = MopMap.i0;
             for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
-                BlkIdx_gI_lR[iPart] = BMs[iPart].GlobalIList_Internal;
-                BlkIdx_gI_eR[iPart] = BMs[iPart].GlobalIList_External;
+                BlkIdx_gI_lR[iPart] = BMs[iPart].GlobalIndices_Internal;
+                BlkIdx_gI_eR[iPart] = BMs[iPart].GlobalIndices_External;
                 var locallist = new List<int>();
                 var extlist = new List<int>();
                 foreach (int lIdx in BlkIdx_gI_lR[iPart]) {

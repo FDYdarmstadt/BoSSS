@@ -883,7 +883,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// This is provided for testing or if you know what you are doing!
         /// </summary>
-        public List<long> GlobalIList_Internal {
+        public List<long> GlobalIndices_Internal {
             get {
                 return BMLoc.m_GlobalMask;
             }
@@ -892,7 +892,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// This is provided for testing or if you know what you are doing!
         /// </summary>
-        public List<long> GlobalIList_External {
+        public List<long> GlobalIndices_External {
             get {
                 return BMExt.m_GlobalMask;
             }

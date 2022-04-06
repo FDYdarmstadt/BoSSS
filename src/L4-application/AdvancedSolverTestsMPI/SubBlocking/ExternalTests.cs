@@ -354,7 +354,7 @@ namespace AdvancedSolverTests.SubBlocking {
 
                 //Act --- project Res_i onto Res_g and Res_g=M_ext*vec_ext-Res_g
                 double[] Res_g = mask.GetSubVec(Res_ext);
-                var qM_ext = M_ext.ConvertToQuadraticBMsr(mask.GlobalIList_External.ToArray(), false);
+                var qM_ext = M_ext.ConvertToQuadraticBMsr(mask.GlobalIndices_External.ToArray(), false);
                 qM_ext.SpMV(1.0, vec_ex.Vector_Ext, -1.0, Res_g);
 
                 if(map.MpiRank == 0) {
@@ -663,7 +663,7 @@ namespace AdvancedSolverTests.SubBlocking {
                 stw.Start();
                 var mask = new BlockMask(selector, dummy);
                 stw.Stop();
-                long[] GlobalIdxMask_ext = mask.GlobalIList_External.ToArray();
+                long[] GlobalIdxMask_ext = mask.GlobalIndices_External.ToArray();
 
                 //Assert --- Idx lists are of same length
                 Assert.IsTrue(GlobalIdxMap_ext.Length == GlobalIdxMask_ext.Length);

@@ -41,8 +41,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_Unrestricted = Unrestricted;
                 m_Mask = new BlockMask(subBlock, __GetExtRows?.Invoke());
 
-                var idx = m_Mask.GlobalIndices;
-                for(int i = 1; i < idx.Length; i++) {
+                var idx = m_Mask.GlobalIndices_Internal;
+                for(int i = 1; i < idx.Count; i++) {
                     if (idx[i - 1] >= idx[i])
                         throw new Exception("ghdshj: " + Unrestricted.GetType());
                 }
@@ -154,6 +154,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     int NoOfSpc = this.GetNoOfSpecies(jCell);
                     for(int i = 0; i < ifld; i++)
                         ret += GetNp(this.m_ownerHack.m_RestrictedDeg[i]) * NoOfSpc;
+                    if(iSpec > 0)
+                        ret += GetNp(this.m_ownerHack.m_RestrictedDeg[ifld]) * iSpec;
                     ret += n;
                     return ret;
                 }
