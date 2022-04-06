@@ -577,13 +577,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     var MultigridOp = new MultigridOperator(G.AggBasisS, Solution,
                         opMtx, MassMatrix, G.MgConfig,
-                        op.DomainVar.Select(varName => op.FreeMeanValue[varName]).ToArray());
+                        op);
 
                     //SolverFactory SF = new SolverFactory(nsc, lsc);
                     //SF.GenerateLinear(out solver, G.AggBasisS, G.MgConfig);
                     var Solver_Init = new BlockTrace("Solver_Init", tr);
                     using (ISolverSmootherTemplate solver = lsc.CreateInstance(MultigridOp)) {
                         Solver_Init.Dispose();
+
+                        if(solver is ISolverWithCallback cl) {
+                            cl.IterationCallback = delegate (int iIter, double[] X, double[] Res, MultigridOperator _) {
+                                double ResNorm = Res.MPI_L2Norm();
+                                Console.WriteLine($"{iIter} {ResNorm:0.##e-00}");
+                            };
+                        }
 
 
                         solverSetup.Stop();
@@ -616,7 +623,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             TotalDOF = MultigridOp.Mapping.TotalLength;
                         }
                         solverIteration.Stop();
-                        tr.Info("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
+                        tr.Info("done. (" + solverIteration.Elapsed.TotalSeconds + " sec, " + NoOfIterations + " iter)");
                         
 
 
@@ -760,7 +767,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             var MultigridOp = new MultigridOperator(G.AggBasisS, Mapping,
                         Op_Matrix, MassMatrix, G.MgConfig,
-                        op.DomainVar.Select(varName => op.FreeMeanValue[varName]).ToArray());
+                        op);
 
             return MultigridOp.OperatorMatrix;
 

@@ -615,7 +615,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
                         System, MaMa,
                         this.Config_MultigridOperator,
-                        opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
+                        opi);
 
                     // init linear solver
                     using (var linearSolver = GetLinearSolver(mgOperator)) {

@@ -40,7 +40,7 @@ namespace BoSSS.Application.XNSEC {
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
             C.NonLinearSolver.verbose = true;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
             if(dt < 0) {
                 C.TimesteppingMode = AppControl._TimesteppingMode.Steady;

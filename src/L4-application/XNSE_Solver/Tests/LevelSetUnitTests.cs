@@ -428,7 +428,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             
             // return
             // ======
