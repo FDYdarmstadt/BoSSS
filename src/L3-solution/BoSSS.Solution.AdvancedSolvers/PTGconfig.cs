@@ -6,7 +6,7 @@ using System.Runtime.Serialization;
 using System.Text;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-    
+
     /// <summary>
     /// GMRES with p-two-grid preconditioner (<see cref="LevelPmg"/>).
     /// 
@@ -106,6 +106,151 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public override string Shortname => "Ortho w pmG";
 
+        /*
+        public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+            //var precond = new LevelPmg();
+            //precond.config.UseHiOrderSmoothing = false;
+            //precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
+            //precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
+            //precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
+            //precond.config.EqualOrder = this.EqualOrder;
+
+
+
+
+            int MinDeg = level.Degrees.Min();
+
+            ISubsystemSolver CreateLevelRecursive(int dgDeg, int iLevel) {
+
+                //level.Mapping.
+
+                //long globalDOF;
+                //int localDOF;
+
+
+                //Console.WriteLine($"Level {iLevel}, k{dgDeg}")
+
+                OrthonormalizationMultigrid createOMG() {
+                    var coarseSolver = new PRestriction() {
+                        RestrictedDeg = new int[] { dgDeg - 1},
+                        LowerPSolver = CreateLevelRecursive(dgDeg - 1, iLevel + 1)
+                    };
+
+                    ISolverSmootherTemplate post;
+
+                    //var bj = new BlockJacobi() {
+                    //    NoOfIterations = 1,
+
+                    //};
+
+                    //GMRES bringt nix als PC
+                    //var post = new SoftGMRES() {
+                    //    //Precond = bj
+                    //};
+                    //post.TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= 1, true);
+
+                    if (iLevel == 0) {
+                        post = new CellILU() {
+                            ILU_level = 0
+                        };
+                    } else {
+                        post = new BlockJacobi() {
+                            NoOfIterations = 1,
+                        };
+                    }
+
+
+                    var omg = new OrthonormalizationMultigrid() {
+                        //CoarserLevelSolver = loPsol,
+                        PreSmoother = coarseSolver,
+                        PostSmoother = post,
+                        //CoarserLevelSolver = loPsol
+                    };
+                    omg.config.NoOfPostSmootherSweeps = 10;
+                    return omg;
+                }
+
+
+                if (dgDeg <= 1) {
+
+                    Console.WriteLine("direct solver on level " + iLevel);
+
+                    // ++++++++++++
+                    // lowest level 
+                    // ++++++++++++
+                    var s = new DirectSolver();
+                    s.config.TestSolution = false;
+                    s.ActivateCaching = (a, b) => true;
+                    return s;
+                } else if (iLevel >= 2) {
+                    // +++++++++++++++++++++++++++
+                    // intermediate level / coarse
+                    // +++++++++++++++++++++++++++
+
+                    var gmRes = new SoftGMRES();
+                    gmRes.TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= 4, true);
+                    gmRes.Precond = CreateLevelRecursive(dgDeg - 1, iLevel + 1);
+                    return gmRes;
+
+                } else if (iLevel >= 1) {
+                    // +++++++++++++++++++++++++++
+                    // intermediate level / fine
+                    // +++++++++++++++++++++++++++
+
+
+                    var omg = createOMG();
+
+
+                    //omg.config.MinSolverIterations = 4;
+                    //omg.config.MaxSolverIterations = 4;
+
+
+
+                    (bool bNotTerminate, bool bSuccess) SubLevelTermination(int iter, double R0_l2, double R_l2) {
+                        double reduction = iLevel >= 2 ? 1e-2 : 1e-2;
+                        int limit = iLevel >= 2 ? 4 : 100;
+
+                        if (iter <= 1)
+                            return (true, false); // keep running
+
+                        if (R_l2 < R0_l2 * reduction) {
+                            //Console.WriteLine("succ " + iter + " iterations");
+                            return (false, true); // success
+                        }
+
+
+                        if (iter > limit) {
+                            //Console.WriteLine("running of iterations before sufficient residual reduction");
+                            return (false, false); // fail
+                        }
+
+
+                        return (true, false); // keep running
+                    }
+
+                    omg.TerminationCriterion = SubLevelTermination;
+                    return omg;
+
+                } else {
+                    // ++++++++++++
+                    // finest level
+                    // ++++++++++++
+                    var omg = createOMG();
+                    omg.TerminationCriterion = this.DefaultTermination;
+                    return omg;
+                }
+
+
+            }
+
+
+            var topLevel = CreateLevelRecursive(MinDeg, 0);
+            topLevel.Init(level);
+            return topLevel;
+        }
+        */
+
+        
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
             //var precond = new LevelPmg();
             //precond.config.UseHiOrderSmoothing = false;
@@ -127,11 +272,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //int localDOF;
 
 
-                //Console.WriteLine($"Level {iLevel}, k{dgDeg}")
+               
 
                 OrthonormalizationMultigrid createOMG() {
+
+                    Console.WriteLine("OrthoMG solver on level " + iLevel + ", restricting to Degree " + DegreeHierarchy[iLevel + 1].ToConcatString("[", ",", "]"));
+
+
                     var coarseSolver = new PRestriction() {
-                        RestrictedDeg = DegreeHierarchy[iLevel].CloneAs(),
+                        RestrictedDeg = DegreeHierarchy[iLevel + 1].CloneAs(),
                         LowerPSolver = CreateLevelRecursive(iLevel + 1)
                     };
 
@@ -186,6 +335,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // intermediate level / coarse
                     // +++++++++++++++++++++++++++
 
+                    Console.WriteLine("GMRES solver on level " + iLevel);
+
                     var gmRes = new SoftGMRES();
                     gmRes.TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= 4, true);
                     gmRes.Precond = CreateLevelRecursive(iLevel + 1);
@@ -198,11 +349,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                     var omg = createOMG();
-
-
-                    //omg.config.MinSolverIterations = 4;
-                    //omg.config.MaxSolverIterations = 4;
-
 
 
                     (bool bNotTerminate, bool bSuccess) SubLevelTermination(int iter, double R0_l2, double R_l2) {
@@ -219,7 +365,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                         if(iter > limit) {
-                            //Console.WriteLine("running of iterations before sufficient residual reduction");
+                            //Console.WriteLine("running out of iterations before sufficient residual reduction");
                             return (false, false); // fail
                         }
 
@@ -247,5 +393,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             topLevel.Init(level);
             return topLevel;            
         }
+    
+        //*/
     }
 }

@@ -21,7 +21,7 @@ namespace BoSSS.Application.XNSEC {
             C.rhoOne = true;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.DbPath = null;// @"C:\Databases\BoSSS_DB";
             C.savetodb = false;
             C.ChemicalReactionActive = false;

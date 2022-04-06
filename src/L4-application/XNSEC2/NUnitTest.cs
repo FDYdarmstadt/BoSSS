@@ -491,7 +491,7 @@ namespace BoSSS.Application.XNSEC {
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             bool constantDensity,
-            int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.classic_pardiso) {
+            int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {
             XNSEC_Control C = new XNSEC_Control();
             int D = tst.SpatialDimension;
             int NoChemSpc = tst.NumberOfChemicalComponents;
@@ -631,7 +631,7 @@ namespace BoSSS.Application.XNSEC {
         XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
         SurfaceStressTensor_IsotropicMode SurfTensionMode,
         bool constantDensity,
-        int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.classic_pardiso) {
+        int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {
             XNSEC_Control C = new XNSEC_Control();
             int D = tst.SpatialDimension;
             int NoChemSpc = tst.NumberOfChemicalComponents;

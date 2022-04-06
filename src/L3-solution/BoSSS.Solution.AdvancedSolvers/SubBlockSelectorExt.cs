@@ -338,7 +338,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     GlobalIdxExtRows[iGlob] += ExtRowsTmp._RowPartitioning.i0;
                     Debug.Assert(ExtRowsTmp._RowPartitioning.IsInLocalRange(GlobalIdxExtRows[iGlob]));
                 }
-                
+
                 //add local Block ...
                 source.WriteSubMatrixTo(target, BMLoc.m_GlobalMask, default(long[]), BMLoc.m_GlobalMask, default(long[]));
 
@@ -350,6 +350,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             } else {
                 BlockPartitioning localBlocking = new BlockPartitioning(BMLoc.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF, i0isLocal: true);
                 target = new BlockMsrMatrix(localBlocking);
+                BMLoc.m_GlobalMask.SaveToTextFile("mask-" + BMLoc.m_GlobalMask.Count + ".txt");
                 source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(long[]), BMLoc.m_GlobalMask, default(long[]));
             }
             Debug.Assert(target != null);

@@ -585,6 +585,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     using (ISolverSmootherTemplate solver = lsc.CreateInstance(MultigridOp)) {
                         Solver_Init.Dispose();
 
+                        if(solver is ISolverWithCallback cl) {
+                            cl.IterationCallback = delegate (int iIter, double[] X, double[] Res, MultigridOperator _) {
+                                double ResNorm = Res.MPI_L2Norm();
+                                Console.WriteLine($"{iIter} {ResNorm:0.##e-00}");
+                            };
+                        }
+
 
                         solverSetup.Stop();
                         tr.Info("done. (" + solverSetup.Elapsed.TotalSeconds + " sec)");
@@ -616,7 +623,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             TotalDOF = MultigridOp.Mapping.TotalLength;
                         }
                         solverIteration.Stop();
-                        tr.Info("done. (" + solverIteration.Elapsed.TotalSeconds + " sec)");
+                        tr.Info("done. (" + solverIteration.Elapsed.TotalSeconds + " sec, " + NoOfIterations + " iter)");
                         
 
 

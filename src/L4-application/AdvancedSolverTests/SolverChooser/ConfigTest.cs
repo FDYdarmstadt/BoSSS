@@ -61,7 +61,7 @@ namespace AdvancedSolverTests.SolverChooser
 
                 //Arrange --- get test linear Solver to set in NLsolver
                 ISolverSmootherTemplate LinSolver = null;
-                LinearSolverCode[] LinTestcandidates = { LinearSolverCode.classic_pardiso, LinearSolverCode.exp_gmres_levelpmg }; // in order to test the GMRES variants of the NL solver
+                LinearSolverCode[] LinTestcandidates = { LinearSolverCode.direct_pardiso, LinearSolverCode.exp_gmres_levelpmg }; // in order to test the GMRES variants of the NL solver
 
                 //Act and Assert
                 foreach(var lincode in LinTestcandidates) {
