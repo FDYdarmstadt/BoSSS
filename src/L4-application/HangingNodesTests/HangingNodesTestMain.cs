@@ -138,6 +138,8 @@ namespace HangingNodesTests {
 
         [Test]
         public static void SerialParallelLengthScaleComp() {
+            // --test=HangingNodesTests.HangingNodesTestMain.SerialParallelLengthScaleComp
+
              // to test individual setups
             double size = 1e0;
             byte s = 0;
