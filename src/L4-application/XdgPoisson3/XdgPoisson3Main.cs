@@ -60,7 +60,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// </summary>
         static void Main(string[] args) {
             InitMPI();
-            BoSSS.Application.XdgPoisson3.Tests.ScalingCircle2D(3);
+            //BoSSS.Application.XdgPoisson3.Tests.ScalingCircle2D(3);
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);

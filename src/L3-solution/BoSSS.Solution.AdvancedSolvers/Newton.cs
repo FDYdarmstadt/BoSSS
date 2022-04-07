@@ -642,54 +642,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var solver = this.Precond;
                 solver.Init(CurrentLin);
-                //CurrentLin.OperatorMatrix.SaveToTextFileSparse("newtonMat_numberofCellsX="+ this.CurrentLin.GridData.Grid.NumberOfCells/3 +"_t=01_P=" + this.CurrentLin.Degrees.First() + "_it=" +  itc +".txt");
-                
-                //var Eigen = CurrentLin.OperatorMatrix.MinimalEigen();
-                //DGField[] EigenVect_DG = CurrentLin.ProlongateSolToDg(Eigen.V, "Eigen-");
-                //Tecplot.Tecplot.PlotFields(EigenVect_DG, "EigenSol", Eigen.lambdaMin, 2);
-
-                //SubBlockSelector sbs = new SubBlockSelector(CurrentLin.Mapping);
-                //sbs.VariableSelector(0);
-                //var lMask = new BlockMask(sbs);
-                //var KontiMtx = lMask.GetSubBlockMatrix(CurrentLin.OperatorMatrix);
-                //var EigenKonti = KontiMtx.MinimalEigen();
-                //double[] FullVector = new double[CurrentLin.Mapping.LocalLength];
-                //FullVector.AccVi64(1.0, EigenKonti.V, acc_index: lMask.GlobalIndices, b_index:default(long[]), acc_index_shift: CurrentLin.Mapping.i0);
-                //DGField[] EigenVect_Konti_DG= CurrentLin.ProlongateSolToDg(FullVector, "EigenKonti-");
-                //Tecplot.Tecplot.PlotFields(EigenVect_Konti_DG, "EigenKonti", EigenKonti.lambdaMin, 2);
-
-                //SubBlockSelector sbs2 = new SubBlockSelector(CurrentLin.Mapping);
-                //sbs2.VariableSelector(1);
-                //var lMask2 = new BlockMask(sbs2);
-                //var KontiMomXMtx = lMask2.GetSubBlockMatrix(CurrentLin.OperatorMatrix);
-                //var EigenKontiMomX = KontiMomXMtx.MinimalEigen();
-                //double[] FullVector2 = new double[CurrentLin.Mapping.LocalLength];
-                //FullVector.AccVi64(1.0, EigenKontiMomX.V, acc_index: lMask2.GlobalIndices, b_index: default(long[]), acc_index_shift: CurrentLin.Mapping.i0);
-                //DGField[] EigenKontiMomX_DG = CurrentLin.ProlongateSolToDg(FullVector2, "EigenKontiMomX-");
-                //Tecplot.Tecplot.PlotFields(EigenKontiMomX_DG, "EigenKontiMomX", EigenKontiMomX.lambdaMin, 2);
-
-                //SubBlockSelector sbs3 = new SubBlockSelector(CurrentLin.Mapping);
-                //sbs3.VariableSelector(2);
-                //var lMask3 = new BlockMask(sbs3);
-                //var KontiMomXMomYMtx = lMask3.GetSubBlockMatrix(CurrentLin.OperatorMatrix);
-                //var EigenKontiMomXMomY = KontiMomXMomYMtx.MinimalEigen();
-                //double[] FullVector3 = new double[CurrentLin.Mapping.LocalLength];
-                //FullVector.AccVi64(1.0, EigenKontiMomXMomY.V, acc_index: lMask3.GlobalIndices, b_index: default(long[]), acc_index_shift: CurrentLin.Mapping.i0);
-                //DGField[] EigenKontiMomXMomY_DG = CurrentLin.ProlongateSolToDg(FullVector3, "EigenKontiMomXMomY-");
-                //Tecplot.Tecplot.PlotFields(EigenKontiMomXMomY_DG, "EigenKontiMomXMomY", EigenKontiMomXMomY.lambdaMin, 2);
-
-                //SubBlockSelector sbs4 = new SubBlockSelector(CurrentLin.Mapping);
-                //sbs3.VariableSelector(3);
-                //var lMask4 = new BlockMask(sbs4);
-                //var KontiMomXMomYEnergyMtx = lMask4.GetSubBlockMatrix(CurrentLin.OperatorMatrix);
-                //var EigenKontiMomXMomYEnergy = KontiMomXMomYEnergyMtx.MinimalEigen();
-                //double[] FullVector4 = new double[CurrentLin.Mapping.LocalLength];
-                //FullVector.AccVi64(1.0, EigenKontiMomXMomYEnergy.V, acc_index: lMask4.GlobalIndices, b_index: default(long[]), acc_index_shift: CurrentLin.Mapping.i0);
-                //DGField[] EigenKontiMomXMomYEnergy_DG = CurrentLin.ProlongateSolToDg(FullVector4, "EigenKontiMomXMomYEnergy-");
-                //Tecplot.Tecplot.PlotFields(EigenKontiMomXMomYEnergy_DG, "EigenKontiMomXMomYEnergy", EigenKontiMomXMomYEnergy.lambdaMin, 2);
-
-
-
                 step.ClearEntries();
                 var check = CurRes.CloneAs();
                 solver.ResetStat();

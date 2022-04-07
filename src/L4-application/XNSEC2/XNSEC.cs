@@ -69,9 +69,8 @@ namespace BoSSS.Application.XNSEC {
             //Console.WriteLine("tests passed!!!!!!!!!!!");
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
-            NUnitTest.ViscosityJumpTest(3, 1, 0.0, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-
-            Console.WriteLine("tests passed!!!!!!!!!!!");
+            //NUnitTest.ViscosityJumpTest(2, 2, 0.0, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //Console.WriteLine("tests passed!!!!!!!!!!!");
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
             //NUnitTest.CavityNaturalConvectionTest_Homotopy(); //TODO
             //   NUnitTest.CavityNaturalConvection_AMR_eachNewtonIteration();TODO
