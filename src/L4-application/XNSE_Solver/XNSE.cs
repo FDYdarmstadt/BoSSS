@@ -102,57 +102,6 @@ namespace BoSSS.Application.XNSE_Solver {
         public override void Init(AppControl control) {
 
 
-            Console.WriteLine("==========================================================");
-            Console.WriteLine("==========================================================");
-            Console.WriteLine("==========================================================");
-            Console.WriteLine("==========================================================");
-
-            int Np = 8;
-            var A = MultidimensionalArray.Create(Np, Np);
-            var A2 = A.CloneAs();
-            Random rnd = new Random();
-            for (int n = 0; n < Np; n++) {
-                for (int m = 0; m < Np; m++) {
-                    var a = rnd.NextDouble();
-                    A2[n, m] += a;
-                }
-            }
-            //A2[0, 0] = 1; A2[0, 1] = 2; A2[0, 2] = 0;
-            //A2[1, 0] = 1; A2[1, 1] = 1; A2[1, 2] = 1;
-            //A2[2, 0] = 1; A2[2, 1] = 0; A2[2, 2] = 0;
-            //A2.SaveToStream(Console.Out);
-
-            double[] b = new double[Np];
-            for(int i = 0; i < Np; i++)
-                b[i] = 1.0;
-
-            // ========
-            double[] x2 = new double[Np];
-            A2.Solve(x2, b);
-            // --
-            int[] ipiv = new int[Np];
-            double[] x = new double[Np];
-            A.Set(A2);
-            A.FactorizeLU(ipiv);
-            //A.SaveToStream(Console.Out);
-            A.BacksubsLU(ipiv, x, b);
-            // ========
-            var test1 = b.CloneAs();
-            A2.GEMV(-1, x, 1.0, test1);
-            Console.WriteLine("LU probe: " + test1.L2Norm());
-            // --
-            var test2 = b.CloneAs();
-            A2.GEMV(-1, x2, 1.0, test2);
-            Console.WriteLine("Slvprobe: " + test2.L2Norm());
-            // ========
-            Console.WriteLine("==========================================================");
-            Console.WriteLine("==========================================================");
-            Console.WriteLine("==========================================================");
-            Console.WriteLine("==========================================================");
-
-
-
-
             base.Init(control);
             var ctrl = (control as XNSE_Control);
             if(ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count()<=0)

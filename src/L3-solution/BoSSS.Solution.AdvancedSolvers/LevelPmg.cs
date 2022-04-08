@@ -36,17 +36,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public bool UseDiagonalPmg = true;
 
-            /*
-            /// <summary>
-            /// Hack, for the treatment of incompressible flows:
-            /// - false (default): the D-th variable, where D is the spatial dimension (2 or 3), is assumed to be the pressure; the order is one lower than for velocity
-            /// - true: no special treatment of individual variables
-            /// </summary>
-            public bool EqualOrder = false;
-            */
-
-
-
+      
             /// <summary>
             /// If true, cell-local solvers will be used to approximate a solution to high-order modes
             /// </summary>
@@ -186,29 +176,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /*
-        void TestScheisse(string a) {
-            int NoOfBlocks = HighOrderBlocks_LU.Length;
-            for (int jLoc = 0; jLoc < NoOfBlocks; jLoc++) {
-                int len = HighOrderBlocks_LU[jLoc].NoOfRows;
-                
-
-                double[] x_hi = new double[len], b_f = new double[len];
-                b_f[2] = 3.0;
-                HighOrderBlocks_LU[jLoc].BacksubsLU(HighOrderBlocks_LUpivots[jLoc], x_hi, b_f);
-                var test1 = b_f.CloneAs();
-                HighOrderBlocks[jLoc].GEMV(-1, x_hi, 1.0, test1);
-                Console.WriteLine(a + jLoc + "of" + NoOfBlocks + " LU probe: " + test1.L2Norm());
-
-                double[] x_hi_2 = HighOrderBlocks[jLoc].Solve(b_f);
-                var test2 = b_f.CloneAs();
-                HighOrderBlocks[jLoc].GEMV(-1, x_hi_2, 1.0, test2);
-                Console.WriteLine(a + jLoc + "of" + NoOfBlocks + " Solve probe: " + test2.L2Norm());
-
-                Console.WriteLine(a + jLoc + "of" + NoOfBlocks + " Err = " + x_hi.L2Distance(x_hi_2));
-            }
-        }
-        */
+   
 
         /// <summary>
         /// 
@@ -273,41 +241,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     for (int jLoc = 0; jLoc < NoOfBlocks; jLoc++) {
                         int len = HighOrderBlocks_LU[jLoc].NoOfRows;
                         HighOrderBlocks_LUpivots[jLoc] = new int[len];
-
                         HighOrderBlocks_LU[jLoc].FactorizeLU(HighOrderBlocks_LUpivots[jLoc]);
-                       
-                        /*
-                        
-                        double[] x_hi = new double[len], b_f = new double[len];
-                        b_f[2] = 3.0;
-                        HighOrderBlocks_LU[jLoc].BacksubsLU(HighOrderBlocks_LUpivots[jLoc], x_hi, b_f);
-                        var test1 = b_f.CloneAs();
-                        HighOrderBlocks[jLoc].GEMV(-1, x_hi, 1.0, test1);
-                        Console.WriteLine("LU probe: " + test1.L2Norm());
-
-                        double[] x_hi_2 = HighOrderBlocks[jLoc].Solve(b_f);
-                        var test2 = b_f.CloneAs();
-                        HighOrderBlocks[jLoc].GEMV(-1, x_hi_2, 1.0, test2);
-                        Console.WriteLine("Solve probe: " + test2.L2Norm());
-
-                        Console.WriteLine("Err = " + x_hi.L2Distance(x_hi_2));
-                        */
                     }
 
-
-                    
-
-
-                    //for (int jLoc = 0; jLoc < NoOfBlocks; jLoc++) {
-                    //    int len = HighOrderBlocks_LU[jLoc].NoOfRows;
-
-                    //    double[] x_hi = new double[len], b_f = new double[len];
-                    //    b_f[2] = 3.0;
-                    //    HighOrderBlocks_LU[jLoc].BacksubsLU(HighOrderBlocks_LUpivots[jLoc], x_hi, b_f);
-
-                    //    double[] x_hi_2 = HighOrderBlocks_LU[jLoc].Solve(b_f);
-                    //    Console.WriteLine("Err2 = " + x_hi.L2Distance(x_hi_2));
-                    //}
                 } else {
                     P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix, csMPI.Raw._COMM.SELF);
 
@@ -476,32 +412,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 var x_hi = new double[NpTotHi];
 
                                 double[] b_f = hMask.GetSubVecOfCell(Res_f, j);
-                                var b_f_2 = b_f.CloneAs();
                                 Debug.Assert(b_f.Length == NpTotHi);
                                 HighOrderBlocks_LU[j].BacksubsLU(HighOrderBlocks_LUpivots[j], x_hi, b_f);
-                                
-                                /*
-
-                                var x_hi_2 = HighOrderBlocks[j].Solve(b_f_2);
-                                 //double err = x_hi_2.L2Distance(x_hi);
-                                //Console.WriteLine("err = " + err);
-                                x_hi.SetV(x_hi_2);
-
-
-                                var test1 = b_f.CloneAs();
-                                HighOrderBlocks[j].GEMV(-1, x_hi, 1.0, test1);
-                                Console.WriteLine("LU probe: " + test1.L2Norm());
-
-                                var test2 = b_f.CloneAs();
-                                HighOrderBlocks[j].GEMV(-1, x_hi_2, 1.0, test2);
-                                Console.WriteLine("Solve probe: " + test2.L2Norm());
-
-                                Console.WriteLine("Err = " + x_hi.L2Distance(x_hi_2));
-                                */
-
                                 hMask.AccSubVecOfCell(x_hi, j, x_in_out);
                             }
-
                         }
                     } else {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
