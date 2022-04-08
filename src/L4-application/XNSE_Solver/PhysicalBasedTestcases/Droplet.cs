@@ -1041,7 +1041,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 8, bool useAMR = true) {
+        public static XNSE_Control OscillatingDroplet3D(int p = 3, int kelem = 7, bool useAMR = true) {
 
             XNSE_Control C = new XNSE_Control();
             //C.ImmediatePlotPeriod = 1;
@@ -1172,7 +1172,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             double Lscale = 1.0;
             double L = 6.0 * Lscale;
-            double L_drop = 2.0 * Lscale;
+            double L_drop = 3.0 * Lscale;
 
             if (!quarterDomain) {
                 C.GridFunc = delegate () {
@@ -1384,7 +1384,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 "} ");
 
 
-            C.InitialValues.Add("Phi", Phi6Init);
+            C.InitialValues.Add("Phi", Phi2Init);
 
             //// restart
             //Guid restartID = new Guid("78808235-9904-439c-a4e5-d32a97eee5f5");
@@ -1434,7 +1434,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
 
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 2;
@@ -1478,11 +1478,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.TimesteppingMode = compMode;
 
             if (compMode == AppControl._TimesteppingMode.Transient) {
-                double dt = 1e-3;
+                double dt = 5e-3;
                 C.dtMax = dt;
                 C.dtMin = dt;
                 C.Endtime = 1000;
-                C.NoOfTimesteps = 1; // 1000;
+                C.NoOfTimesteps = 1000; // 1000;
                 C.saveperiod = 1;
             }
 
