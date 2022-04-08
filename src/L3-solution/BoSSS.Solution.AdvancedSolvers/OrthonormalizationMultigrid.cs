@@ -494,6 +494,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        int cnt = 0;
+
         /// <summary>
         /// Residual minimization in the space spanned by <see cref="SolHistory"/>/<see cref="MxxHistory"/>
         /// </summary>
@@ -540,9 +542,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BLAS.daxpy(L, alpha_i, SolHistory[i], 1, outX, 1); // accumulate solution correction...
                 BLAS.daxpy(L, -alpha_i, MxxHistory[i], 1, outRes, 1); // ...and its effect on the residual
 
-                double xNorm = outX.MPI_L2Norm();
-                if(m_MgOperator is MultigridOperator mgop && mgop.LevelIndex == 0) // prevent to much info dropping from lower levels
+                double ResNorm = outRes.MPI_L2Norm();
+                if (ResNorm > oldResiNorm)
+                    throw new ArithmeticException("residual increase.");
+                
+
+                if (m_MgOperator is MultigridOperator mgop && mgop.LevelIndex == 0) {
+                    // prevent to much info dropping from lower levels
+                    double xNorm = outX.MPI_L2Norm();
                     ft.Info("|x|: " + xNorm + ", last alpha was " + alpha_i);
+
+                    //var iterSol = mgop.ProlongateRhsToDg(outX, "Sol");
+                    //Tecplot.Tecplot.PlotFields(iterSol, "itersol-" + cnt, 0, 2);
+                    Console.WriteLine("residual: " + cnt + "    " + ResNorm);
+                    cnt++;
+                }
+                
 
 
                 /*
@@ -569,7 +584,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 */
 
 
-                double ResNorm = outRes.MPI_L2Norm();
+
+                
                 Alphas.Add((alpha_i, oldResiNorm / ResNorm, id));
                 return ResNorm;
             }

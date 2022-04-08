@@ -438,12 +438,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     long[] colBlocks = Mtx.GetOccupiedRowBlockIndices(i);
                     foreach(long j in colBlocks) { // loop over block columns
-                        var Blk = Mtx.GetBlock(j, i);
-                        if(Blk.L2Norm() > 0) {
+                        var Blk = Mtx.GetBlock(i, j);
+                        if(!Blk.IsZeroValued()) {
                             //lev[i, j] = 0;
                             ILU0_pattern[i, j] = 1;
                         } else {
+                            /*
+                             * seems to hapen sometimes in the XDG case
+                             * 
+                             * 
+                            int RowType = Mtx._RowPartitioning.GetBlockType(i);
+                            int ColType = Mtx._ColPartitioning.GetBlockType(j);
+                            int[] rowI0s = Mtx._RowPartitioning.GetSubblk_i0(RowType);
+                            int[] colI0s = Mtx._ColPartitioning.GetSubblk_i0(ColType);
+                            int[] rowLns = Mtx._RowPartitioning.GetSubblkLen(RowType);
+                            int[] colLns = Mtx._ColPartitioning.GetSubblkLen(ColType);
+                            int II = Mtx._RowPartitioning.GetBlockLen(i);
+                            int JJ = Mtx._RowPartitioning.GetBlockLen(j);
+
                             tr.Info("Mem occupied, but the block is 0");
+                            */
                         }
                     }
                 }

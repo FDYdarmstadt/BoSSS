@@ -2796,8 +2796,8 @@ namespace BoSSS.Foundation {
                                     continue; // external cell; should be treated on other proc.
 
 
-                                int i0Row = domMap.LocalUniqueCoordinateIndex(0, jRow, 0);
-                                int iERow = domMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
+                                int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
+                                int iERow = codMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
 
                                 var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow, iECol - i0Col });
 
