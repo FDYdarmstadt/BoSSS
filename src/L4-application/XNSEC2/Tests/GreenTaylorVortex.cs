@@ -17,7 +17,7 @@ namespace BoSSS.Application.XNSEC {
         /// NUnit test
         /// </summary>
         static public XNSEC_Control NUnitUnsteadyTaylorVortex() {
-            var C = UnsteadyTaylorVortex(2, 10,0.1,3,null,1.0);
+            var C = UnsteadyTaylorVortex(3, 10,0.1,3,null,1.0);
             //var C = UnsteadyTaylorVortex(1, 5);
 
             C.rhoOne = false;
@@ -86,13 +86,13 @@ namespace BoSSS.Application.XNSEC {
             C.timeDerivativeConti_OK = false;
             C.timeDerivativeEnergyp0_OK = false;
             C.PhysicalParameters.IncludeConvection = true;
-            C.EnableTemperature = true;
-            C.EnableMassFractions = true;
+            C.EnableTemperature = false;
+            C.EnableMassFractions = false;
 
             // Parameters
             // ==============
             C.AnalyticsolutionSwitch = true;
-            C.Reynolds = 100.0;
+            C.Reynolds = 10.0;
             C.Prandtl = 1.0;
             C.Schmidt = 1.0;
             C.PenaltyViscMomentum = 1.0;
