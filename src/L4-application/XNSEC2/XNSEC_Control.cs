@@ -19,6 +19,53 @@ namespace BoSSS.Application.XNSEC {
         public override Type GetSolverType() {
             return typeof(XNSEC_MixtureFraction);
         }
+
+
+        /// <summary>
+        /// Sets the DG polynomial degree
+        /// </summary>
+        /// <param name="DGp">Degree for velocity; pressure  will be one order lower.</param>
+        public override void SetDGdegree(int DGp) {
+            if (DGp < 1)
+                throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
+
+            base.FieldOptions.Clear();
+            //base.SetDGdegree(DGp);
+
+
+            FieldOptions.Add("Velocity*", new FieldOpts() {
+                Degree = DGp,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
+                Degree = DGp - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
+                Degree = Math.Max(2, DGp),
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetCGidx(1), new FieldOpts() {
+                Degree = Math.Max(2, DGp),
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            //FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
+            //    Degree = Math.Max(2, p) * 2,
+            //    SaveToDB = SaveCurvature
+            //});
+
+            FieldOptions.Add(VariableNames.MixtureFraction, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add(VariableNames.Rho, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add(VariableNames.cp, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+        }
+
     }
 
     /// <summary>
@@ -181,6 +228,12 @@ namespace BoSSS.Application.XNSEC {
             for (int i = 0; i < this.NumberOfChemicalSpecies; i++) {
                 FieldOptions.Add(VariableNames.MassFraction_n(i), new FieldOpts() { Degree = this.EnableMassFractions? DGp : 0, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             }
+
+
+
+
+
+
 
             FieldOptions.Add(VariableNames.MixtureFraction, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             FieldOptions.Add(VariableNames.Rho, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });

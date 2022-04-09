@@ -30,7 +30,7 @@ namespace NSE_SIMPLE.LowMach {
 
     public static class ControlExamples {
 
-        public static LowMachSIMPLEControl SteadyCouetteFlowWithTemperatureGradient(int dgDegree, int resolutions, string dbpath = null) {
+        public static LowMachSIMPLEControl SteadyCouetteFlowWithTemperatureGradient(int dgDegree, int nCells, string dbpath = null) {
             LowMachSIMPLEControl c = new LowMachSIMPLEControl();
 
             if(dbpath == null) {
@@ -44,9 +44,10 @@ namespace NSE_SIMPLE.LowMach {
 
 
 
-            double h = Math.Pow(2, -resolutions + 1); // cell length
-            double cells = 1 / h;
-            int nCells = (int)cells;
+            //double h = Math.Pow(2, -resolutions + 1); // cell length
+            //double cells = 1 / h;
+            //int nCells = (int)cells;
+
 
             Func<double[], byte> GridEdgeTagFunc = delegate (double[] X) {
                 double x = X[0];
@@ -187,6 +188,11 @@ namespace NSE_SIMPLE.LowMach {
 
             c.PressureReferencePoint = new double[] { 0.0, 0.5 };
             c.PressureMeanValue = 0.0;
+
+
+
+
+
 
             c.PredictorApproximation = PredictorApproximations.BlockDiagonal;
             c.PressureStabilizationScaling = 0.0;

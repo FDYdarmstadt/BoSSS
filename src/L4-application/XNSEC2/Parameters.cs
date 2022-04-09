@@ -36,7 +36,7 @@ namespace BoSSS.Application.XNSEC {
             //var grd = DomainVarFields[VariableNames.Temperature].GridDat;
             //     var b = new Basis(grd, 0); // polynomial degree zero
             //var ThermodynamicPressure = new SinglePhaseField(b, ThermodynamicPressureName); // Should i define it as singlephasefield or XDGfield?
-            var ThermodynamicPressure = new XDGField((XDGBasis)DomainVarFields[VariableNames.Temperature].Basis, ThermodynamicPressureName);
+            var ThermodynamicPressure = new XDGField((XDGBasis)DomainVarFields[VariableNames.VelocityX].Basis, ThermodynamicPressureName);
             ThermodynamicPressure0[0] = (ThermodynamicPressureName, ThermodynamicPressure);
 
             if(!m_EoS.IsInitialized) {
@@ -53,7 +53,6 @@ namespace BoSSS.Application.XNSEC {
 
         private void ThermodynamicPressureUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             XDGField ThermodynamicPressure = (XDGField)ParameterVarFields[VariableNames.ThermodynamicPressure];
-            XDGField Temperature = (XDGField)DomainVarFields[VariableNames.Temperature];
             ThermodynamicPressure.Clear();
 
             double p0;
@@ -64,7 +63,8 @@ namespace BoSSS.Application.XNSEC {
                 break;
 
                 case ThermodynamicPressureMode.MassDetermined:
-                p0 = m_EoS.GetMassDeterminedThermodynamicPressure(m_initialMass, Temperature);
+                    XDGField Temperature = (XDGField)DomainVarFields[VariableNames.Temperature];
+                    p0 = m_EoS.GetMassDeterminedThermodynamicPressure(m_initialMass, Temperature);
                 //Console.WriteLine("Calculated Thermodynamic Pressure: " + p0);
                 //m_EoS.ThermodynamicPressure.Current.Clear();
                 //m_EoS.ThermodynamicPressure.Current.AccConstant(p0);
@@ -297,73 +297,64 @@ namespace BoSSS.Application.XNSEC {
             //Console.WriteLine(integralTotal);
         }
     }
-
-    internal class Density_t0 : ParameterS/*, ILevelSetParameter*/ {
+    /// <summary>
+    /// rho_t-2
+    /// </summary>
+    internal class Density_t00 : ParameterS/*, ILevelSetParameter*/ {
         private string paramName;
-        private int m_NumberOfChemicalSpecies;
-        private MaterialLaw_MultipleSpecies m_EoS;
+        private MaterialLaw m_EoS;
 
-        public Density_t0(int NumberOfChemicalSpecies, MaterialLaw_MultipleSpecies EoS) {
-            paramName = "Density_t0";
-            m_NumberOfChemicalSpecies = NumberOfChemicalSpecies;
+        public Density_t00(int NumberOfChemicalSpecies, MaterialLaw EoS) {
+            paramName = "Density_t00";
             m_EoS = EoS;
         }
 
         public override IList<string> ParameterNames => new string[] { paramName };
 
-        //public void LevelSetParameterUpdate(DualLevelSet levelSet, double time, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-        //    string[] Fields = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(m_NumberOfChemicalSpecies));
-        //    XDGField[] allFields = new XDGField[Fields.Length];
-        //    for(int i = 0; i < Fields.Length; i++) {
-        //        allFields[i] = (XDGField)DomainVarFields[Fields[i]].CloneAs();
-        //    }
-
-        //    XDGField rhoOldTimeStep = (XDGField)ParameterVarFields[paramName];
-
-        //    var p0Field = (XDGField)ParameterVarFields[VariableNames.ThermodynamicPressure];
-        //    double p0 = p0Field.GetSpeciesShadowField("A").GetMeanValueTotal(null); // should already contain the "correct" value from the last timestep...
-
-        //    //if(p0 <= 0)
-        //    //    Console.WriteLine("??");
-
-        //    //rhoOldTimeStep.Clear();
-        //    //rhoOldTimeStep.GetSpeciesShadowField("A").ProjectField(1.0,
-        //    //                   delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
-        //    //                       int K = result.GetLength(1);
-        //    //                       MultidimensionalArray tempT = MultidimensionalArray.Create(Len, K);
-        //    //                       var tempMFs = new MultidimensionalArray[m_NumberOfChemicalSpecies];
-
-        //    //                       allFields[0].GetSpeciesShadowField("A").Evaluate(j0, Len, NS, tempT);
-        //    //                       for(int i = 0; i < m_NumberOfChemicalSpecies; i++) {
-        //    //                           tempMFs[i] = MultidimensionalArray.Create(Len, K);
-        //    //                           allFields[i + 1].GetSpeciesShadowField("A").Evaluate(j0, Len, NS, tempMFs[i]);
-        //    //                       }
-
-        //    //                       for(int j = 0; j < Len; j++) {
-        //    //                           for(int k = 0; k < K; k++) {
-        //    //                               double[] densityArguments = new double[1 + m_NumberOfChemicalSpecies];
-        //    //                               densityArguments[0] = tempT[j, k];
-        //    //                               for(int i = 0; i < m_NumberOfChemicalSpecies; i++) {
-        //    //                                   densityArguments[i + 1] = tempMFs[i][j, k];
-        //    //                               }
-        //    //                               result[j, k] = m_EoS.GetDensity(p0, densityArguments);
-        //    //                           }
-        //    //                       }
-        //    //                   }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
-
-        //    double min; double max;
-        //    rhoOldTimeStep.GetSpeciesShadowField("A").GetExtremalValues(out min, out max);
-
-        //    //XDGField rhoOld = (XDGField)ParameterVarFields[paramName];
-        //    //XDGField rho = (XDGField)ParameterVarFields[VariableNames.Rho];
-        //    //rhoOld = rho.CloneAs();
-        //}
 
         public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var density = new (string, DGField)[1];
-            var temperature = (XDGField)DomainVarFields[VariableNames.Temperature]; // use same basis as Temperature field =================> is this correct?
-            //ConventionalDGField densityField = new SinglePhaseField(temperature.Basis.NonX_Basis, paramName);
-            var densityField = new XDGField(temperature.Basis, paramName);
+            XDGField field;
+            if (m_EoS is MaterialLawMixtureFractionNew) {
+                field = (XDGField)DomainVarFields[VariableNames.MixtureFraction]; // use same basis as Temperature field =================> is this correct?
+            } else {
+                field = (XDGField)DomainVarFields[VariableNames.Temperature]; // use same basis as Temperature field =================> is this correct?
+            }
+
+            var densityField = new XDGField(field.Basis, paramName);
+
+            density[0] = (paramName, densityField);
+            return density;
+        }
+
+        public override DelParameterFactory Factory => ParameterFactory;
+    }
+
+    /// <summary>
+    /// rho_t-1
+    /// </summary>
+    internal class Density_t0 : ParameterS/*, ILevelSetParameter*/ {
+        private string paramName;
+        private MaterialLaw m_EoS;
+
+        public Density_t0(int NumberOfChemicalSpecies, MaterialLaw EoS) {
+            paramName = "Density_t0";
+            m_EoS = EoS;
+        }
+
+        public override IList<string> ParameterNames => new string[] { paramName };
+
+
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            var density = new (string, DGField)[1];
+            XDGField field;
+            if (m_EoS is MaterialLawMixtureFractionNew) {
+                field = (XDGField)DomainVarFields[VariableNames.MixtureFraction]; // use same basis as Temperature field =================> is this correct?
+            } else {
+                field = (XDGField)DomainVarFields[VariableNames.Temperature]; // use same basis as Temperature field =================> is this correct?
+            }
+
+            var densityField = new XDGField(field.Basis, paramName);
 
             density[0] = (paramName, densityField);
             return density;
@@ -407,16 +398,16 @@ namespace BoSSS.Application.XNSEC {
             // obtain density arguments
             var Temperature = (XDGField)DomainVarFields[VariableNames.Temperature];
             var massfractions = new XDGField[m_NumberOfChemicalComponents];
-            for(int i = 0; i < m_NumberOfChemicalComponents; i++) {
+            for (int i = 0; i < m_NumberOfChemicalComponents; i++) {
                 massfractions[i] = (XDGField)DomainVarFields[VariableNames.MassFraction_n(i)];
             }
             rho.Clear();
 
             string[] species = new string[] { "A", "B" };
 
-            foreach(var sp in species) {
-                MaterialLaw EoS = sp == "A" ? m_EoS_A : m_EoS_B;               
-                   
+            foreach (var sp in species) {
+                MaterialLaw EoS = sp == "A" ? m_EoS_A : m_EoS_B;
+
 
                 rho.GetSpeciesShadowField(sp).ProjectField(1.0,
                    delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
@@ -425,16 +416,16 @@ namespace BoSSS.Application.XNSEC {
                        var tempMFs = new MultidimensionalArray[m_NumberOfChemicalComponents];
 
                        Temperature.GetSpeciesShadowField(sp).Evaluate(j0, Len, NS, tempT);
-                       for(int i = 0; i < m_NumberOfChemicalComponents; i++) {
+                       for (int i = 0; i < m_NumberOfChemicalComponents; i++) {
                            tempMFs[i] = MultidimensionalArray.Create(Len, K);
                            massfractions[i].GetSpeciesShadowField(sp).Evaluate(j0, Len, NS, tempMFs[i]);
                        }
-                       for(int j = 0; j < Len; j++) {
-                           for(int k = 0; k < K; k++) {
+                       for (int j = 0; j < Len; j++) {
+                           for (int k = 0; k < K; k++) {
                                double[] densityArguments = new double[1 + m_NumberOfChemicalComponents];
                                densityArguments[0] = tempT[j, k];
 
-                               for(int i = 0; i < m_NumberOfChemicalComponents; i++) {
+                               for (int i = 0; i < m_NumberOfChemicalComponents; i++) {
                                    densityArguments[1 + i] = tempMFs[i][j, k];
                                }
 
@@ -446,6 +437,74 @@ namespace BoSSS.Application.XNSEC {
         }
     }
 
+
+    /// <summary>
+    ///
+    /// </summary>
+    internal class DensityMF : ParameterS {
+        public override IList<string> ParameterNames => new string[] { paramName };
+
+        public override DelParameterFactory Factory => DensityFactory;
+        private string paramName;
+
+        private MaterialLaw m_EoS_A;
+        private MaterialLaw m_EoS_B;
+        private int m_NumberOfChemicalComponents;
+
+        public DensityMF(MaterialLaw EoS_A, MaterialLaw EoS_B, int NumberOfChemicalComponents) {
+            paramName = VariableNames.Rho;
+            m_EoS_A = EoS_A;
+            m_EoS_B = EoS_B;
+            m_NumberOfChemicalComponents = NumberOfChemicalComponents;
+        }
+
+        private (string, DGField)[] DensityFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+            var density = new (string, DGField)[1];
+            var MixtureFraction = (XDGField)DomainVarFields[VariableNames.MixtureFraction]; 
+            var densityField = new XDGField(MixtureFraction.Basis, VariableNames.Rho);
+            density[0] = (paramName, densityField);
+            return density;
+        }
+
+        public override DelPartialParameterUpdate Update => DensityUpdate;
+
+        private void DensityUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+            var rho = (XDGField)ParameterVarFields[VariableNames.Rho];
+            // obtain density arguments
+            var MixtureFraction = (XDGField)DomainVarFields[VariableNames.MixtureFraction];
+        
+            rho.Clear();
+
+            string[] species = new string[] { "A", "B" };
+
+            foreach (var sp in species) {
+                MaterialLaw EoS = sp == "A" ? m_EoS_A : m_EoS_B;
+
+
+                rho.GetSpeciesShadowField(sp).ProjectField(1.0,
+                   delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                       int K = result.GetLength(1);
+                       MultidimensionalArray tempZ = MultidimensionalArray.Create(Len, K);
+
+                       MixtureFraction.GetSpeciesShadowField(sp).Evaluate(j0, Len, NS, tempZ);
+               
+                       for (int j = 0; j < Len; j++) {
+                           for (int k = 0; k < K; k++) {
+                               double[] densityArguments = new double[1];
+                               densityArguments[0] = tempZ[j, k];
+
+                           
+
+                               result[j, k] = EoS.getDensityFromZ(densityArguments[0]);
+                           }
+                       }
+                   }, new Foundation.Quadrature.CellQuadratureScheme(true, null));
+            }
+        }
+    }
+
+
+
     /// <summary>
     ///
     /// </summary>
@@ -456,16 +515,21 @@ namespace BoSSS.Application.XNSEC {
         private string paramName;
 
         private MaterialLaw_MultipleSpecies m_EoS;
-
-        public ReactionRate(MaterialLaw_MultipleSpecies EoS) {
+        double Ta;
+        double Da;
+        public ReactionRate(MaterialLaw_MultipleSpecies EoS, double[] ReactionRateConstants) {
             paramName = "kReact";
             m_EoS = EoS;
+            Da = ReactionRateConstants[0];
+            Ta = ReactionRateConstants[1];
         }
 
         private (string, DGField)[] ReactionRateFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             var kReact = new (string, DGField)[1];
             var temperature = (XDGField)DomainVarFields[VariableNames.Temperature]; // use same basis as Temperature field
 
+
+            var b = new Basis(temperature.GridDat, temperature.Basis.Degree *4); // polynomial degree zero
             var kReactField = new XDGField(temperature.Basis, paramName);
             kReact[0] = (paramName, kReactField);
             return kReact;
@@ -481,7 +545,6 @@ namespace BoSSS.Application.XNSEC {
             var MassFraction2 = (XDGField)DomainVarFields[VariableNames.MassFraction2];
             var MassFraction3 = (XDGField)DomainVarFields[VariableNames.MassFraction3];
             string sp = "A";//....
-            double Ta = 0.2;
             // obtain density arguments
             kReact.GetSpeciesShadowField(sp).ProjectField(1.0,
                                 delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
@@ -506,8 +569,8 @@ namespace BoSSS.Application.XNSEC {
                                             double _Y2 = Y2[j, k];
                                             double _Y3 = Y3[j, k];
                                             double rho = m_EoS.GetDensity(new double[] { Temp, _Y0, _Y1, _Y2, _Y3 });
-                                            double TA = m_EoS.m_ChemModel.getTa(_Y0, _Y1);
-                                            result[j, k] = Math.Exp(-(TA/300) / Temp ) * (rho * _Y0 / m_EoS.MolarMasses[0]) * (rho * _Y1 / m_EoS.MolarMasses[1]);
+                                            //double TA = m_EoS.m_ChemModel.getTa(_Y0, _Y1);
+                                            result[j, k] = Da*Math.Exp(-Ta / Temp ) * (rho * _Y0 / m_EoS.MolarMasses[0]) * (rho * _Y1 / m_EoS.MolarMasses[1]);
                                             //result[j, k] = (rho * _Y0 / m_EoS.MolarMasses[0]) * (rho * _Y1 / m_EoS.MolarMasses[1]);
 
                                         }

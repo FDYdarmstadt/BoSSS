@@ -17,7 +17,7 @@ namespace BoSSS.Application.XNSEC {
         /// NUnit test
         /// </summary>
         static public XNSEC_Control NUnitUnsteadyTaylorVortex() {
-            var C = UnsteadyTaylorVortex(2, 7);
+            var C = UnsteadyTaylorVortex(2, 10,0.1,3,null,1.0);
             //var C = UnsteadyTaylorVortex(1, 5);
 
             C.rhoOne = false;
@@ -26,23 +26,21 @@ namespace BoSSS.Application.XNSEC {
             C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.DbPath = null;// @"C:\Databases\BoSSS_DB";
             C.savetodb = false;
-            C.ChemicalReactionActive = false;
-            C.UseSelfMadeTemporalOperator = true;
-            C.timeDerivativeConti_OK = false;
-            C.timeDerivativeEnergyp0_OK = false;
-            C.PhysicalParameters.IncludeConvection = true;
-            C.EnableTemperature = true;
-            C.EnableMassFractions = true;
-            C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.BDF3;
+         
             //C.NonLinearSolver.Globalization = Solution.AdvancedSolvers.Newton.GlobalizationOption.LineSearch;
             return C;
         }
 
         // Valid for incompressible
-        static public XNSEC_Control UnsteadyTaylorVortex(int DGp = 3, int ncells = 10) {
+        static public XNSEC_Control UnsteadyTaylorVortex(int DGp = 3, int ncells = 10, double dt = 1e-1, int bdfOrder = 1, string dbPath = null, double finaltime = 1.0) {
             XNSEC_Control C = new XNSEC_Control();
-
             C.savetodb = false;
+            
+            if (dbPath != null) {
+                C.DbPath = dbPath;
+                C.savetodb = true;
+            }
+            
             C.ProjectName = "Unsteady_LowMach Taylor vortex";
             C.ProjectDescription = "NUnitTest for UnsteadyLowMach";
 
@@ -51,26 +49,50 @@ namespace BoSSS.Application.XNSEC {
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.physicsMode = PhysicsMode.Combustion;
-            C.Endtime = 1e-1 * 10;
-            C.dtFixed = 1e-1;
+            C.Endtime = finaltime;
+            C.dtFixed = dt;
             C.NumberOfChemicalSpecies = 1;
             C.SetDGdegree(DGp);
             C.GravityDirection = new double[] { 0.0, 0.0, 0.0 };
             C.PhysicalParameters.IncludeConvection = true;
 
-            //C.EnableTemperature = false; // T=1
-            //C.EnableMassFractions = false; // Y_0 = 1
-            //C.rhoOne = true;
+            switch (bdfOrder) {
+                case 1:
+                    C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.ImplicitEuler;
+                    break;
+                case 2:
+                    C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.BDF2;
+                    break;
+                case 3:
+                    C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.BDF3;
+                    break;
+                case 4:
+                    C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.BDF4;
+                    break;
+                default:
+                    C.TimeSteppingScheme = Solution.XdgTimestepping.TimeSteppingScheme.BDF3;
+                    break;
+
+                    
+            }
 
             C.NoOfTimesteps = int.MaxValue;
             C.MatParamsMode = MaterialParamsMode.Constant;
             C.ThermodynamicPressureMode = ThermodynamicPressureMode.Constant;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient; // Unsteady simulation...
 
+            C.ChemicalReactionActive = false;
+            C.UseSelfMadeTemporalOperator = false;
+            C.timeDerivativeConti_OK = false;
+            C.timeDerivativeEnergyp0_OK = false;
+            C.PhysicalParameters.IncludeConvection = true;
+            C.EnableTemperature = true;
+            C.EnableMassFractions = true;
+
             // Parameters
             // ==============
             C.AnalyticsolutionSwitch = true;
-            C.Reynolds = 10.0;
+            C.Reynolds = 100.0;
             C.Prandtl = 1.0;
             C.Schmidt = 1.0;
             C.PenaltyViscMomentum = 1.0;
