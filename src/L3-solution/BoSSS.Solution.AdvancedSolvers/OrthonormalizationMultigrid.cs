@@ -973,7 +973,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //var iterSol = mgop.ProlongateRhsToDg(outX, "Sol");
                     //Tecplot.Tecplot.PlotFields(iterSol, "itersol-" + cnt, 0, 2);
-                    Console.WriteLine("residual: " + cnt + "    " + ResNorm);
+                    //Console.WriteLine("residual: " + cnt + "    " + ResNorm);
                     cnt++;
                 }
 
