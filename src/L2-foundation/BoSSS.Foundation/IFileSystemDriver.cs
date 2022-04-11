@@ -72,16 +72,14 @@ namespace BoSSS.Foundation.IO {
         void CreateSessionDirectory(Guid _SessionGuid);
 
         /// <summary>
-        /// a stream to serialize grid objects (objects/classes derived from 
-        /// <see cref="BoSSS.Foundation.Grid.GridCommons"/>);
+        /// a stream to serialize grid objects (objects/classes derived from <see cref="BoSSS.Foundation.Grid.Classic.GridCommons"/>);
         /// </summary>
         /// <param name="create">
         /// true for a write stream, false for a read stream
         /// </param>
         /// <param name="gridGuid">
-        /// The id of the grid (see
-        /// <see cref="BoSSS.Foundation.Grid.GridCommons.GridGuid"/>); If
-        /// <paramref name="create"/> is true, the caller ensures that it is a
+        /// The id of the grid (see <see cref="IDatabaseEntityInfo{T}.ID"/>);
+        /// If <paramref name="create"/> is true, the caller ensures that it is a
         /// newly created Guid. Otherwise, if <paramref name="create"/> is
         /// false and no field-state with specified Guid exists in the
         /// database, some exception should be thrown. The caller (some method

@@ -1443,7 +1443,6 @@ namespace BoSSS.Solution {
 
         /// <summary>
         /// Multigrid levels, sorted from fine to coarse, i.e. the 0-th entry contains the finest grid.
-        /// The number of levels is controlled by <see cref="Control.LinearSolverConfig.NoOfMultigridLevels"/>.
         /// </summary>
         public AggregationGridData[] MultigridSequence {
             get;

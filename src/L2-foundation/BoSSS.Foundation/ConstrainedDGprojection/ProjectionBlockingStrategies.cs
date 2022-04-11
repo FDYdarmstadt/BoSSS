@@ -43,16 +43,15 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// Returns lists which form the blocks of the additive-Schwarz domain decomposition.
         /// </summary>
-        /// <param name="op"></param>
         /// <returns>
         /// - outer enumeration: corresponds to domain-decomposition blocks
         /// - inner index: indices within the sub-blocks
-        /// - content: local cell indices which form the respective additive-Schwarz block (<see cref="MultigridOperator"/>
+        /// - content: local cell indices which form the respective additive-Schwarz block 
         /// </returns>
         abstract internal IEnumerable<List<int>> GetBlocking(GridData grdDat, CellMask mask);
 
         /// <summary>
-        /// Number of blocs returned by <see cref="GetBlocking(MultigridOperator)"/>
+        /// Number of blocs returned by <see cref="GetBlocking"/>
         /// </summary>
         internal abstract int GetNoOfBlocks();
     }
