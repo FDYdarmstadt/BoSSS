@@ -682,6 +682,7 @@ namespace BoSSS.Foundation.XDG {
 
                         foreach(int j in cm.ItemEnum) { // loop over cells...
                             for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
+                                Debugger.Launch();
                                 int N = NjFunc(j, gamma);
                                 long i0 = i0Func(j, gamma);
 
