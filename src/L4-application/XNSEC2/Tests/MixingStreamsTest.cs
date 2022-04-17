@@ -162,15 +162,15 @@ namespace BoSSS.Application.XNSEC {
             return C;
         }
 
-        static public XNSEC_MF_Control MixingLayerTests_MixtureFraction(int DGp = 1, int meshScaling = 8, double dt = 1.0, string dbPath = @"C:\Databases\BoSSS_DB") {
+        static public XNSEC_MF_Control MixingLayerTests_MixtureFraction(int DGp = 1, int meshScaling = 10, double dt = -1.0, string dbPath = @"C:\Databases\BoSSS_DB") {
             XNSEC_MF_Control C = new XNSEC_MF_Control();
 
             // Solver configuration
             // ==============
 
             C.physicsMode = PhysicsMode.MixtureFraction;
-            C.MatParamsMode = MaterialParamsMode.Sutherland;
-            C.rhoOne = false;
+            C.MatParamsMode = MaterialParamsMode.Constant;
+            C.rhoOne = true;
             C.ChemicalReactionActive = false;
             C.GravityDirection[1] = 0.0; // no gravity
 
@@ -222,34 +222,35 @@ namespace BoSSS.Application.XNSEC {
                 //5: Wall lower
 
                 //Inlet oxidizer
-                if (Math.Abs(x - 0) < 1e-8)
+                if (Math.Abs(x - 0) <=1e-8 && (y - 0.0 >= 1e-8) )
                     return 1;
 
                 //upper Wall
-                if (Math.Abs(y - 0.1) < 1e-8 && (Math.Abs(x - 0.1) < 0.1 + 1e-8 || Math.Abs(x - 0.65) < 0.35 + 1e-8))
+                if (Math.Abs(y - 0.1) <= 1e-8)
+                    return 2;
+                //lower Wall
+                if (Math.Abs(y - (-0.1)) <= 1e-8)
                     return 2;
 
                 //Inlet fuel
-                if (Math.Abs(y - 0.1) < 1e-8 && Math.Abs(x - 0.25) < 0.05 + 1e-8)
+                if (Math.Abs(x - 0) <= 1e-8 && (y - 0.0 <= 1e-8))
                     return 3;
 
                 //Outlet
-                if (Math.Abs(x - 1) < 1e-8)
+                if (Math.Abs(x - 0.5) <= 1e-8)
                     return 4;
 
-                //lower Wall
-                if (Math.Abs(y - (-0.1)) < 1e-8)
-                    return 2;
+           
                 else throw new ArgumentOutOfRangeException();
             };
 
             C.GridFunc = delegate {
-                var _xNodes = GenericBlas.Linspace(0, 1, 2 * meshScaling + 1);
+                var _xNodes = GenericBlas.Linspace(0, 0.5, 2 * meshScaling + 1);
                 var _yNodes = GenericBlas.Linspace(-0.1, 0.1, meshScaling + 1);
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
                 grd.EdgeTagNames.Add(1, "Velocity_Inlet_O2");
                 //grd.EdgeTagNames.Add(2, "Wall_upper");
-                grd.EdgeTagNames.Add(2, "NoSlipNeumann");
+                grd.EdgeTagNames.Add(2, "wall");
                 grd.EdgeTagNames.Add(3, "Velocity_Inlet_CH4");
                 grd.EdgeTagNames.Add(4, "Pressure_Outlet");
                 grd.DefineEdgeTags(GridEdgeTagFunc);
@@ -259,26 +260,11 @@ namespace BoSSS.Application.XNSEC {
             // initial values
             // ==============
 
-            // Solution is given in polar coordinates (r,phi) around center (0,0)
-            Func<double[], double> r = X => Math.Sqrt(X[0] * X[0] + X[1] * X[1]);
-            Func<double[], double> phi = X => Math.Atan2(X[1], X[0]);
-
-
-            // Velocity components and energy
-            Func<double[], double> uAbsInitial = X => r(X) * Math.Exp(0.5 * (1.0 - r(X) * r(X)));
-            //Func<double[], double> uInitial = X => 1.0 - Math.Sin(phi(X)) * uAbsInitial(X);
-            //Func<double[], double> vInitial = X => Math.Cos(phi(X)) * uAbsInitial(X);
-
-            double xpos = 1.0;
-            double vortexstrength = 0.5;
-            Func<double[], double> uInitial = X => 1.0 - Math.Sin(Math.Atan2(X[1], (X[0] - xpos))) * Math.Sqrt((X[0] - xpos) * (X[0] - xpos) + X[1] * X[1]) * Math.Exp(vortexstrength * (1.0 - (Math.Sqrt((X[0] - xpos) * (X[0] - xpos) + X[1] * X[1]) * Math.Sqrt((X[0] - xpos) * (X[0] - xpos) + X[1] * X[1])))  );
-            Func<double[], double> vInitial = X => Math.Cos(Math.Atan2(X[1], (X[0] - xpos))) * Math.Sqrt((X[0] - xpos) * (X[0] - xpos) + X[1] * X[1]) * Math.Exp(vortexstrength * (1.0 - (Math.Sqrt((X[0] - xpos) * (X[0] - xpos) + X[1] * X[1]) * Math.Sqrt((X[0] - xpos) * (X[0] - xpos) + X[1] * X[1]))));
-
 
 
             C.InitialValues_Evaluators.Add(VariableNames.Pressure, X => 0.0);
-            C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(0), uInitial);
-            C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(1), vInitial);
+            C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(0), X => 0.0);
+            C.InitialValues_Evaluators.Add(VariableNames.Velocity_d(1), X => 0.0);
             C.InitialValues_Evaluators.Add(VariableNames.MixtureFraction, X => 1.0);
 
         
@@ -295,19 +281,23 @@ namespace BoSSS.Application.XNSEC {
             double airProportion = 1.0;
             double velMult = 0.3;
 
-            C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.Velocity_d(0), (X, t) => 1.0 - 100 * Math.Pow(X[1], 2));
+            C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.Velocity_d(0), (X, t) => 1.0);
             C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.Velocity_d(1), (X, t) => 0);
             C.AddBoundaryValue("Velocity_Inlet_O2", VariableNames.MixtureFraction, (X, t) => 0.0);
-       
 
-            C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.Velocity_d(0), (X, t) => 0);
-            C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.Velocity_d(1), (X, t) => -1.0 * velMult * (1 - 1.0 / Math.Pow(0.05, 2) * Math.Pow(X[0] - 0.25, 2)));
+
+            C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.Velocity_d(0), (X, t) => 1.0);
+            C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.Velocity_d(1), (X, t) => 0);
             C.AddBoundaryValue("Velocity_Inlet_CH4", VariableNames.MixtureFraction, (X, t) => 1.0);
+
+
+            C.AddBoundaryValue("wall", VariableNames.Velocity_d(0), (X, t) => 1.0);
+            C.AddBoundaryValue("wall", VariableNames.Velocity_d(1), (X, t) => 0);
+            //C.AddBoundaryValue("wall", VariableNames.MixtureFraction, (X, t) => 1.0);
 
 
             //C.AddBoundaryValue("Wall_upper", VariableNames.Temperature, (X, t) => 1.0);
             //C.AddBoundaryValue("Wall_lower", VariableNames.Temperature, (X, t) => 1.0);
-            C.AddBoundaryValue("NoSlipNeumann");
 
             C.AddBoundaryValue("Pressure_Outlet");
 
