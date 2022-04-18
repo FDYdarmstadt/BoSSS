@@ -130,6 +130,9 @@ namespace BoSSS.Solution.Statistic {
                     DGFieldComparisonEmbedded.ComputeErrors_L2(FieldsToCompare, timestepS, out GridRes, out __DOFs, out Errors, out timestepIds);
                     return;
 
+                    case NormType.L2noMean_embedded:
+                    DGFieldComparisonEmbedded.ComputeErrors_L2noMean(FieldsToCompare, timestepS, out GridRes, out __DOFs, out Errors, out timestepIds);
+                    return;
 
                     default:
                     throw new NotImplementedException();

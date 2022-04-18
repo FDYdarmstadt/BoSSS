@@ -43,6 +43,7 @@ namespace BoSSS.Solution.XNSECommon {
                 var drho_dt = new BoSSS.Solution.XNSECommon.LowMach_TimeDerivativeConti(spcName, EoS, dt, NoOfChemicalSpecies);
                 AddComponent(drho_dt);
                 AddParameter("Density_t0");
+                AddParameter("Density_t00");
             }
 
             // Divergence term
