@@ -141,8 +141,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BLAS.daxpy(L, -alpha_i, MxxHistory[i], 1, outRes, 1); // ...and its effect on the residual
 
                 double ResNorm = outRes.MPI_L2Norm();
-                if (ResNorm > oldResiNorm)
-                    throw new ArithmeticException("residual increase.");
+                double tol = Math.Max(ResNorm, oldResiNorm) * 0.2;
+                tol = Math.Max(tol, 1.0e-7);
+                if (ResNorm > oldResiNorm + tol)
+                    throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm/oldResiNorm}");
 
                 /*
                 if (m_MgOperator is MultigridOperator mgop && mgop.LevelIndex == 0) {

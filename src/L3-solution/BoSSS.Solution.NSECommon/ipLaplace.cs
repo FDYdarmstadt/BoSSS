@@ -133,7 +133,7 @@ namespace BoSSS.Solution.NSECommon {
             
             double mu = m_penalty_base*m_penalty_deg * cj_in;
             if(jCellOut >= 0) {
-                double cj_out = LengthScales[jCellOut];
+                double cj_out = 1.0/LengthScales[jCellOut];
                 mu = Math.Max(mu, m_penalty_base*m_penalty_deg * cj_out);
             }
             if(mu.IsNaNorInf())
