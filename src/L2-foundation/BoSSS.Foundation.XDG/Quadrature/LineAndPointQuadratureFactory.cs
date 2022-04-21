@@ -423,11 +423,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     // ==================
                     // divide non-conformal line segments
                     // ==================
+                    double[][] subdivisions = new double[referenceLineSegments.Length][]; // collect the endpoint of edges for additional subdivisions of the subsegment in a different array, to not mess up the point measures
                     for (int e = 0; e < referenceLineSegments.Length; e++) {
                         // check if line segment (i.e. face) contains hanging nodes
                         int edg = grdDat.Cells.GetEdgesForFace(jCell, e, out _, out int[] FurtherEdges);
+                        var rootList = _roots[e].ToList();
                         if (!FurtherEdges.IsNullOrEmpty()) {
-                            var rootList = _roots[e].ToList();
                             // if so add an additional (artificial) roots at the hanging nodes
                             foreach (int edge in new int[] { edg }.Concat(FurtherEdges)) {
                                 var EdgeNodes = grdDat.Edges.GetRefElement(edge).Vertices;
@@ -444,19 +445,19 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 for (int k = 0; k < CellNodes.NoOfNodes; k++) {
                                     // Transform to referenceLineSegment
                                     var LineNode = referenceLineSegments[e].GetSegmentCoordinateForPoint(CellNodes.ExtractSubArrayShallow(k, -1).To1DArray());
-                                    if (!rootList.Contains(LineNode))
+                                    if (!rootList.Any(r => r.ApproxEqual(LineNode, AbsTol: BLAS.MachineEps * 1e3)))
                                         rootList.Add(LineNode);                                    
                                 }
                             }
-                            _roots[e] = rootList.OrderBy(s => s).ToArray();
                         }
+                        subdivisions[e] = rootList.OrderBy(s => s).ToArray();
                     }
 
                     // ============================
                     // create line measure
                     // ============================
                     bool LineMeasureEmptyOrFull = false;
-                    List<LineSegment>[] ActiveSegments = new List<LineSegment>[_roots.Length];
+                    List<LineSegment>[] ActiveSegments = new List<LineSegment>[subdivisions.Length];
                     double nodesSum = 0;
                     {
                         double Fullsum = 0;
@@ -464,7 +465,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             ActiveSegments[e] = new List<LineSegment>();
                             LineSegment referenceSegment = referenceLineSegments[e];
                             double edgeDet = EdgeToVolumeTransformationDeterminants[e];
-                            double[] roots = _roots[e];
+                            double[] roots = subdivisions[e];
                             Fullsum += referenceSegment.Length*edgeDet;
                             LineSegment[] subSegments = referenceSegment.Split(roots);
 
