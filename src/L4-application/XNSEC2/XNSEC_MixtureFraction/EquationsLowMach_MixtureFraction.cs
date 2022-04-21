@@ -20,7 +20,8 @@ namespace BoSSS.Solution.XNSECommon {
             string spcName,
             XNSEC_OperatorConfiguration config,
             IncompressibleBoundaryCondMap BcMap,
-            MaterialLaw EoS) {
+            MaterialLaw EoS, 
+            double dt) {
             int NoOfChemicalSpecies = config.NoOfChemicalSpecies;
 
             codomainName = EquationNames.ContinuityEquation;
@@ -32,6 +33,20 @@ namespace BoSSS.Solution.XNSECommon {
                 var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifferenceNewton(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
                 AddComponent(conti);
             }
+
+
+            //Temporal term contribution:
+            //Implicit Euler:  d(rho) / dt = (rho ^ n_t - rho_(t - 1)) / delta t, n: newton iteration counter
+            if (!config.isSteady && config.timeDerivativeConti_OK) {
+                var drho_dt = new BoSSS.Solution.XNSECommon.LowMach_TimeDerivativeConti(spcName, EoS, dt, NoOfChemicalSpecies);
+                AddComponent(drho_dt);
+                AddParameter("Density_t0");
+                AddParameter("Density_t00");
+
+            }
+
+
+
         }
 
         public override string SpeciesName => speciesName;
@@ -97,6 +112,7 @@ namespace BoSSS.Solution.XNSECommon {
 
             var pres = new Solution.XNSECommon.Operator.Pressure.PressureInSpeciesBulk(d, boundaryMap, spcName);
             AddComponent(pres);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.ThermodynamicPressure);
 
             // viscous operator
             // ================
@@ -109,6 +125,14 @@ namespace BoSSS.Solution.XNSECommon {
             //==================
             var gravity = new BoSSS.Solution.XNSECommon.LowMach_Gravity(spcName, gravityDirection, d, Froude, boundaryMap.PhysMode, EoS, NoOfChemicalSpecies);
             AddComponent(gravity);
+
+            if (config.PlotAdditionalParameters) {
+                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Rho);
+
+                var conv = new BoSSS.Solution.NSECommon.DummyParameter(1);
+                AddComponent(conv);
+            }
+
         }
 
         public override string SpeciesName => speciesName;

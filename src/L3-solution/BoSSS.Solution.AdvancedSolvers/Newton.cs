@@ -68,7 +68,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// If, for a specific homotopy parameter value, Newton does not converges successfully,
         /// (within this number of iterations) a roll-back to the last solution is done and the step with is reduced
         /// </summary>
-        public int HomotopyStepLongFail = 1;
+        public int HomotopyStepLongFail = 20;
 
         /// <summary>
         /// Convergence criterion for nonlinear iteration;

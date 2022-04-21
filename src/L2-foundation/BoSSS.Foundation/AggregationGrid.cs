@@ -526,8 +526,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </summary>
         /// <remarks>
         /// indices into this list are the
-        /// <see cref="GridData.EdgeData.EdgeTags"/> minus
-        /// <see cref="FIRST_PERIODIC_BC_TAG"/>
+        /// <see cref="IGeometricalEdgeData.EdgeTags"/> minus <see cref="Classic.GridCommons.FIRST_PERIODIC_BC_TAG"/>
         /// </remarks>
         public IList<AffineTrafo> PeriodicTrafo {
             get {

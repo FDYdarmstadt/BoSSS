@@ -1017,7 +1017,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         }
 
         /// <summary>
-        /// Returns a complete basis of orthonormal polynomials up to degree <see cref="MaxDeg"/>.
+        /// Returns a complete basis of orthonormal polynomials up to degree <paramref name="MaxDeg"/>.
         /// </summary>
         public PolynomialList GetOrthonormalPolynomials(int MaxDeg) {
             if(MaxDeg < 0 || MaxDeg > this.HighestSupportedPolynomialDegree) {

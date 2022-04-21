@@ -105,7 +105,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             }
 
             bool jSpecial = false;
-            if (jCell >= 0) {
+            if (jCell >= 0 && jCell < grddat.Cells.NoOfLocalUpdatedCells) {
                 if (CoIncFaces[jCell] == null)
                     return iSpecial;                
                 foreach (var t in CoIncFaces[jCell]) {
@@ -113,35 +113,54 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                         jSpecial = true; // jetzt geht der Spass los!
                 }
             } else {
-                jSpecial = true;
+                jSpecial = true; // local boundary edge, act as if other cell is special
             }
             return iSpecial | jSpecial; // if either neighbor cell is a special we want to employ the special treatment
         }
 
+        ///// <summary>
+        ///// return the edge index, for the special edge in a certain cell and the corresponding Edge2CellTrafoIndex
+        ///// </summary>
+        //public (int iEdge, int e2ctrfindex) GetSpecialEdge(int i) {
+        //    (int iLevSet, int iFace)[][] CoIncFaces = levelSetData[0].Region.m_LevSetCoincidingFaces;
+        //    if (CoIncFaces == null)
+        //        return (-1, -1);
+        //    if (CoIncFaces[i] == null)
+        //        return (-1, -1);
+
+        //    foreach (var t in CoIncFaces[i]) {
+        //        if (t.iLevSet == iLevSet) {
+        //            int iEdge = grddat.CellToEdge(i, t.iFace);
+        //            int trf;
+        //            if (grddat.iGeomEdges.CellIndices[iEdge, 0] == i) {
+        //                trf = grddat.iGeomEdges.Edge2CellTrafoIndex[iEdge, 0];
+        //            } else {
+        //                trf = grddat.iGeomEdges.Edge2CellTrafoIndex[iEdge, 1];
+        //            }
+        //            return (iEdge, trf); // jetzt geht der Spass los!
+        //        }
+        //    }
+
+        //    return (-1, -1);
+        //}
+
         /// <summary>
-        /// return the edge index, for the special edge in a certain cell and the corresponding Edge2CellTrafoIndex
+        /// return the face index, for the special face in a certain cell
         /// </summary>
-        public (int iEdge, int e2ctrfindex) GetSpecialEdge(int i) {
+        public int GetSpecialFace(int i) {
             (int iLevSet, int iFace)[][] CoIncFaces = levelSetData[0].Region.m_LevSetCoincidingFaces;
             if (CoIncFaces == null)
-                return (-1, -1);
+                return -1;
             if (CoIncFaces[i] == null)
-                return (-1, -1);
+                return -1;
 
             foreach (var t in CoIncFaces[i]) {
                 if (t.iLevSet == iLevSet) {
-                    int iEdge = grddat.CellToEdge(i, t.iFace);
-                    int trf;
-                    if (grddat.iGeomEdges.CellIndices[iEdge, 0] == i) {
-                        trf = grddat.iGeomEdges.Edge2CellTrafoIndex[iEdge, 0];
-                    } else {
-                        trf = grddat.iGeomEdges.Edge2CellTrafoIndex[iEdge, 1];
-                    }
-                    return (iEdge, trf); // jetzt geht der Spass los!
+                    return t.iFace; // jetzt geht der Spass los!
                 }
             }
 
-            return (-1, -1);
+            return -1;
         }
     }    
 }

@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
@@ -161,7 +162,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var resFields = InstantiateResidualFields();
             CurrentResidualVector = new CoordinateVector(resFields);
             foreach(var f in resFields) {
-                base.RegisterField(f/*,IOListOption.Always*/);
+                base.RegisterField(f, IOListOption.Always);
             }
 
             CreateAdditionalFields();
@@ -661,6 +662,58 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Plot using Tecplot
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+
+            // Cells Numbers - Local
+            var CellNumbers = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbers").SingleOrDefault();
+            if (CellNumbers == null) {
+                CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbers");
+                this.RegisterField(CellNumbers);
+            }
+            CellNumbers.Clear();
+            CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < K; k++) {
+                        result[j, k] = j0 + j;
+                    }
+                }
+            }, new CellQuadratureScheme());
+
+            // Cells Numbers - Global
+            var CellNumbersGlob = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbersGlobal").SingleOrDefault();
+            if (CellNumbersGlob == null) {
+                CellNumbersGlob = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbersGlobal");
+                this.RegisterField(CellNumbersGlob);
+            }
+            CellNumbersGlob.Clear();
+            CellNumbersGlob.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                for (int j = 0; j < Len; j++) {
+                    long gidx = this.GridData.CellPartitioning.i0 + j0 + j;
+                    for (int k = 0; k < K; k++) {
+                        result[j, k] = gidx;
+                    }
+                }
+            }, new CellQuadratureScheme());
+
+
+            // GlobalID
+            var GlobalID = this.m_RegisteredFields.Where(s => s.Identification == "GlobalID").SingleOrDefault();
+            if (GlobalID == null) {
+                GlobalID = new SinglePhaseField(new Basis(this.GridData, 0), "GlobalID");
+                this.RegisterField(GlobalID);
+            }
+            GlobalID.Clear();
+            GlobalID.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                for (int j = 0; j < Len; j++) {
+                    long gid = this.GridData.iLogicalCells.GetGlobalID(j + j0); ;
+                    for (int k = 0; k < K; k++) {
+                        result[j, k] = gid;
+                    }
+                }
+            }, new CellQuadratureScheme());
+
             if (PlotShadowfields) {
                 List<DGField> Fields2Plot = new List<DGField>();
                 foreach (var field in this.m_RegisteredFields) {

@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.Grid.Classic {
 
     /// <summary>
-    /// Mapping of an old to a new grid under adaptive mesh refinement (see <see cref="GridData.Adapt(IEnumerable{int}, IEnumerable{int[]})"/>.
+    /// Mapping of an old to a new grid under adaptive mesh refinement (see <see cref="GridData.Adapt"/>.
     /// </summary>
     public class GridCorrelation {
 
@@ -227,7 +227,6 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="TargetMappingIndex"></param>
         /// <param name="outputPartitioning">
         /// Partitioning of the new grid, resp the return array.
         /// </param>
@@ -333,7 +332,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
         /// <summary>
-        /// Data structure used in <see cref="GetTargetMappingIndex(int[][], IPartitioning)"/>.
+        /// Data structure used in <see cref="GetTargetMappingIndex"/>.
         /// </summary>
         [Serializable]
         class GetTargetMapping_Helper {

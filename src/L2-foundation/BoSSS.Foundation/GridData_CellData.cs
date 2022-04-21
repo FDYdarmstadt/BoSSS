@@ -773,7 +773,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
             
             /// <summary>
-            /// Cell type for cell <paramref name="jCell"/>.
+            /// Cell type for cell <paramref name="j"/>.
             /// </summary>
             public CellType GetCellType(int j) {
                 int iType = (((int)(InfoFlags[j])) & ((int)(CellInfo.CellType_Mask))) >> 8;

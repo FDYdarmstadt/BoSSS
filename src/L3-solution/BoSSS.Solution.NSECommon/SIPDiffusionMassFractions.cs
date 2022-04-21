@@ -21,17 +21,17 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="BcMap"></param>
         /// <param name="EoS"></param>
         /// <param name="Reynolds"></param>
-        /// <param name="Schmidt"></param>
+        /// <param name="Prandtl"></param>
         /// <param name="prefactor"></param>
         /// <param name="prmsOK"></param>
         /// <param name="massFractionComponent"></param>
         /// <param name="numOfSpecies"></param>
-        public SIPDiffusionMassFractions(double PenaltyBase, IncompressibleBoundaryCondMap BcMap, MaterialLaw EoS, double Reynolds, double Schmidt, double[] Lewis, int massFractionComponent, int numOfSpecies) : base(PenaltyBase,  false, massFractionComponent + 1) {
+        public SIPDiffusionMassFractions(double PenaltyBase, IncompressibleBoundaryCondMap BcMap, MaterialLaw EoS, double Reynolds, double Prandtl, double[] Lewis, int massFractionComponent, int numOfSpecies) : base(PenaltyBase,  false, massFractionComponent + 1) {
             this.EoS = EoS;
             this.numOfSpecies = numOfSpecies;
             this.BcMap = BcMap;
             this.m_reynolds = Reynolds;
-            this.m_schmidt = Schmidt;
+            this.m_prandtl = Prandtl;
             this.m_lewis = Lewis;
         }
 
@@ -57,7 +57,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Schmidt number
         /// </summary>
-        double m_schmidt;
+        double m_prandtl;
 
         /// <summary>
         /// Components Lewis numbers
@@ -115,7 +115,7 @@ namespace BoSSS.Solution.NSECommon {
 
             int massfractionIndex = this.i - 1;
             double Lewis = m_lewis[massfractionIndex];
-            double res = rhoDAd / (m_reynolds * m_schmidt * Lewis);
+            double res = rhoDAd / (m_reynolds * m_prandtl * Lewis);
             return res;
         }
 
