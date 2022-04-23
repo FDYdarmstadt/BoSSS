@@ -198,7 +198,7 @@ namespace BoSSS.Solution.NSECommon {
 
             switch (id) {
                 case VariableNames.Temperature:
-                    res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
+                    res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 /*/ cp*/ * zst * (1 - Z) / (1 - zst);
                     break;
 
                 case VariableNames.MassFraction0:
@@ -239,7 +239,7 @@ namespace BoSSS.Solution.NSECommon {
             double res;
             switch (id) {
                 case VariableNames.Temperature:
-                    res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
+                    res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 /*/ cp */* Z;
                     break;
 
                 case VariableNames.MassFraction0:

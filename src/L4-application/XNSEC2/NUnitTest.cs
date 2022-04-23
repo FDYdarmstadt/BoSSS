@@ -235,10 +235,10 @@ namespace BoSSS.Application.XNSEC {
                 double err_v = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityY];
                 double err_p = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.Pressure];
                 double err_T = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.Temperature];
-                double thres_u = 9e-6;
-                double thres_v = 6e-5;
+                double thres_u = 2e-5;
+                double thres_v = 3e-5;
                 double thres_p = 0.09;
-                double thres_T = 6e-6;
+                double thres_T = 6e-5;
 
                 Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
                 Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");

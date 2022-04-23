@@ -282,7 +282,7 @@ namespace BoSSS.Solution.Gnuplot {
         public bool LogY2;
 
         /// <summary>
-        /// y-range minimum, optional 
+        /// x-range minimum, optional 
         /// </summary>
         [DataMember]
         public double? XrangeMin = null;
