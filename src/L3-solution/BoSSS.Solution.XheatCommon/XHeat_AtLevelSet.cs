@@ -1392,7 +1392,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         //LevelSetTracker m_LsTrk;
         string phaseA, phaseB;
-        public ConductivityAtLevelSet_material(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat, string phaseA, string phaseB, int iLevSet = 0) {
+        public ConductivityAtLevelSet_material(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat, string phaseA, string phaseB, int iLevSet = 0, IBM_ThermalBoundaryType bndTyp = IBM_ThermalBoundaryType.NoSlip) {
             this.kA = _kA;
             this.kB = _kB;
             this.m_penalty_base = _penalty;
@@ -1405,9 +1405,10 @@ namespace BoSSS.Solution.XheatCommon {
             this.Tsat = _Tsat;
             this.iLevSet = iLevSet;
             //m_LsTrk = lstrk;
-
+            this.bndTyp = bndTyp;
         }
 
+        IBM_ThermalBoundaryType bndTyp;
         double kA;
         double kB;
 
@@ -1438,24 +1439,41 @@ namespace BoSSS.Solution.XheatCommon {
             Debug.Assert(Grad_uA.GetLength(1) == m_D);
             Debug.Assert(Grad_uB.GetLength(1) == m_D);
 
-            double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
-            for (int d = 0; d < m_D; d++) {
-                Grad_uA_xN += Grad_uA[0, d] * N[d];
-                Grad_uB_xN += Grad_uB[0, d] * N[d];
-                Grad_vA_xN += Grad_vA[d] * N[d];
-                Grad_vB_xN += Grad_vB[d] * N[d];
-            }
-
-            double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
-            double wPenalty = (Math.Abs(kA) > Math.Abs(kB)) ? kA : kB;
-
             double Ret = 0.0;
+            switch (bndTyp) {
+                case IBM_ThermalBoundaryType.NoSlip: {
+                        double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
+                        for (int d = 0; d < m_D; d++) {
+                            Grad_uA_xN += Grad_uA[0, d] * N[d];
+                            Grad_uB_xN += Grad_uB[0, d] * N[d];
+                            Grad_vA_xN += Grad_vA[d] * N[d];
+                            Grad_vB_xN += Grad_vB[d] * N[d];
+                        }
 
-            Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
-            Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
+                        double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
+                        double wPenalty = (Math.Abs(kA) > Math.Abs(kB)) ? kA : kB;
 
-            Ret += pnlty * wPenalty * (uA[0] - uB[0]) * (vA - vB); // penalty term
 
+                        Ret -= 0.5 * (kA * Grad_uA_xN + kB * Grad_uB_xN) * (vA - vB);                           // consistency term
+                        Ret -= 0.5 * (kA * Grad_vA_xN + kB * Grad_vB_xN) * (uA[0] - uB[0]);                     // symmetry term
+
+                        Ret += pnlty * wPenalty * (uA[0] - uB[0]) * (vA - vB); // penalty term
+                        break;
+                    }
+                case IBM_ThermalBoundaryType.ThermalSlip: {
+                        double ls = Lslip[inp.jCellIn];
+
+                        if (ls == 0.0)
+                            goto case IBM_ThermalBoundaryType.NoSlip;
+
+                        // robin b.c.
+                        // +++++++++++++++++++++
+                        Ret += 0.5 * kA / ls * (uA[0] - uB[0]) * (vA - 0.0); // half the slip length from bot sides
+                        Ret += 0.5 * kB * (kA/kB) / ls * (uA[0] - uB[0]) * (0.0 - vB); // sliplength defined from A-side, we want the Heatfluxes to be continuous, therefore we need kA/kB
+
+                        break;
+                    }
+            }
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
             return Ret;
@@ -1463,6 +1481,10 @@ namespace BoSSS.Solution.XheatCommon {
 
         BitArray evapMicroRegion;
 
+        /// <summary>
+        /// slip-length for the thermal slip B.C.
+        /// </summary>
+        protected MultidimensionalArray Lslip;
 
         /// <summary>
         /// base multiplier for the penalty computation
@@ -1523,6 +1545,11 @@ namespace BoSSS.Solution.XheatCommon {
 
             if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
                 evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+            if (csA.UserDefinedValues != null) {
+                if (csA.UserDefinedValues.Keys.Contains("ThermalSlipLengths"))
+                    Lslip = (MultidimensionalArray)csA.UserDefinedValues["ThermalSlipLengths"];
+            }
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {

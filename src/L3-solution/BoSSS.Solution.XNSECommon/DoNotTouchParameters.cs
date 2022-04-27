@@ -137,6 +137,38 @@ namespace BoSSS.Solution.XNSECommon {
     }
 
     /// <summary>
+    /// Options for the localization of the slip-region for the generalized navier-slip boundary condition
+    /// </summary>
+    public enum ThermalSlip_Localization {
+
+        /// <summary>
+        /// GNBC on the whole boundary
+        /// </summary>
+        Bulk = 0,
+
+        /// <summary>
+        /// GNBC localized to the nearband boundary, elsewhere velocity inlet
+        /// </summary>
+        Nearband = 1,
+
+        /// <summary>
+        /// only the contact line part of GNBC
+        /// </summary>
+        ContactLine = 2,
+
+        /// <summary>
+        /// prescribed prescription of the slip length
+        /// </summary>
+        Prescribed = 3,
+
+        /// <summary>
+        /// write sliplengh for each cell
+        /// </summary>
+        Everywhere = 4
+
+    }
+
+    /// <summary>
     /// Options for the boundary type of the immersed boundary
     /// </summary>
     public enum IBM_BoundaryType {
@@ -154,7 +186,23 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// Freeslip boundary, (with cl handling)
         /// </summary>
-        FreeSlip = 2,
+        FreeSlip = 2
+    }
+
+    /// <summary>
+    /// Options for the boundary type of the immersed boundary
+    /// </summary>
+    public enum IBM_ThermalBoundaryType {
+
+        /// <summary>
+        /// No Slip boundary
+        /// </summary>
+        NoSlip = 0,
+
+        /// <summary>
+        /// Slip
+        /// </summary>
+        ThermalSlip = 1
     }
 
     /// <summary>
@@ -374,10 +422,22 @@ namespace BoSSS.Solution.XNSECommon {
         public NavierSlip_SlipLength GNBC_SlipLength = NavierSlip_SlipLength.Prescribed_Beta;
 
         /// <summary>
+        /// See <see cref="NavierSlip_Localization"/>
+        /// </summary>
+        [DataMember]
+        public ThermalSlip_Localization ThermalSlip_Localization = ThermalSlip_Localization.Everywhere;
+
+        /// <summary>
         /// See <see cref="IBM_BoundaryType"/>
         /// </summary>
         [DataMember]
         public IBM_BoundaryType IBM_BoundaryType = IBM_BoundaryType.NoSlip;
+
+        /// <summary>
+        /// See <see cref="IBM_ThermalBoundaryType"/>
+        /// </summary>
+        [DataMember]
+        public IBM_ThermalBoundaryType IBM_ThermalBoundaryType = IBM_ThermalBoundaryType.NoSlip;
 
         //viscoelastic LDG stuff:
         //=========================

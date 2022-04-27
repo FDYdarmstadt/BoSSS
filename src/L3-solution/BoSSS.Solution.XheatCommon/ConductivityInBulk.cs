@@ -234,6 +234,20 @@ namespace BoSSS.Solution.XheatCommon {
                         //Acc -= kA * (_uA[0] - g_D) * (_vA - 0) * pnlty;
                         break;
                     }
+                case ThermalBcType.TemperatureSlip: {
+
+                        double ls = Lslip[inp.jCellIn];
+
+                        if (ls == 0.0)
+                            goto case ThermalBcType.ConstantTemperature;
+
+                        // robin b.c.
+                        // +++++++++++++++++++++
+                        double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag);
+                        Acc -= kA / ls * (_uA[0] - g_D) * _vA;
+                        Acc *= this.m_alpha;
+                        break;
+                    }
                 default:
                     throw new NotImplementedException();
             }
@@ -284,7 +298,10 @@ namespace BoSSS.Solution.XheatCommon {
             }
         }
 
-
+        /// <summary>
+        /// slip-length for the thermal slip B.C.
+        /// </summary>
+        protected MultidimensionalArray Lslip;
 
         /// <summary>
         /// Update of penalty length scales.
@@ -303,7 +320,10 @@ namespace BoSSS.Solution.XheatCommon {
             m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
 
             cj = cs.CellLengthScales;
-
+            if (cs.UserDefinedValues != null) {
+                if (cs.UserDefinedValues.Keys.Contains("ThermalSlipLengths"))
+                    Lslip = (MultidimensionalArray)cs.UserDefinedValues["ThermalSlipLengths"];                
+            }
             //Lslip = (MultidimensionalArray)cs.UserDefinedValues["SlipLengths"];
         }
 

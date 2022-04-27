@@ -558,7 +558,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (var f = new FuncTrace()) {
-                if ((int)this.Control.TimeSteppingScheme >= 100) {
+                if ((int)this.Control.TimeSteppingScheme >= 100 && this.Control.TimesteppingMode != AppControl._TimesteppingMode.Steady) {
                     
                     // this is a RK scheme, set here the maximum 
                     dt = this.GetTimestep();
