@@ -174,7 +174,7 @@ namespace BoSSS.Application.XNSEC {
                     LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
                     LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
 
-                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", RefMPIsize);
+                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", true, RefMPIsize);
                     projCheck.AddDGField(PhiDG);
                     projCheck.AddDGField(PhiCG);
                     projCheck.DoIOnow();

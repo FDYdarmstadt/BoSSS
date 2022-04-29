@@ -119,7 +119,7 @@ namespace HangingNodesTests {
 
             if(setup != 0 && setup < 16)
                 ctrl.AdaptiveMeshRefinement = true;
-
+            
             double L = size;
             if((setup & 1) != 0) {
                 ctrl.activeAMRlevelIndicators.Add(new BoSSS.Solution.AMRLevelIndicatorLibrary.AMRInBoundingBox(new BoundingBox(new double[,] { { -L, -L }, { 0, 0 } })) { maxRefinementLevel = 1 });
@@ -133,7 +133,7 @@ namespace HangingNodesTests {
             if ((setup & 8) != 0) {
                 ctrl.activeAMRlevelIndicators.Add(new BoSSS.Solution.AMRLevelIndicatorLibrary.AMRInBoundingBox(new BoundingBox(new double[,] { { 0, 0 }, { L, L } })) { maxRefinementLevel = 1 });
             }
-
+            
             ctrl.AMR_startUpSweeps = (new int[] { 1 }).Max();
         }
 

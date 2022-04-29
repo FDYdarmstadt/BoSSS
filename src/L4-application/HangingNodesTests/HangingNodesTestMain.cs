@@ -23,6 +23,10 @@ namespace HangingNodesTests {
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
 
+            double[] sizes = new double[] { 1e0 };
+            byte[] setup = new byte[] { 3 };
+            RunTest(sizes, setup, 1);
+            /*
             //double[] sizes = new double[] { 1e0 };
             //byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
             //int[] phases = new int[] { 1, 2, 3 };
@@ -112,9 +116,13 @@ namespace HangingNodesTests {
             Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
             Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
 
+            */
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
+        /// <summary>
+        /// single phase
+        /// </summary>
         [Test]
         public static void Test1Phase() {
             double[] sizes = new double[] { 1e0, 1e-3 };
@@ -122,6 +130,9 @@ namespace HangingNodesTests {
             RunTest(sizes, setup, 1);
         }
 
+        /// <summary>
+        /// two phases (e.g. air and water)
+        /// </summary>
         [Test]
         public static void Test2Phase() {
             double[] sizes = new double[] { 1e0, 1e-3 };
@@ -129,6 +140,9 @@ namespace HangingNodesTests {
             RunTest(sizes, setup, 2);
         }
 
+        /// <summary>
+        /// three phases 
+        /// </summary>
         [Test]
         public static void Test3Phase() {
             double[] sizes = new double[] { 1e0, 1e-3 };
@@ -200,7 +214,7 @@ namespace HangingNodesTests {
             var agg = Tracker.GetAgglomerator(species, solver.QuadOrder(), solver.Control.AgglomerationThreshold);
             int J = solver.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
-            var LsChecker = new TestingIO(solver.GridData, "CellMetrics-" + filename + ".abc", 1);
+            var LsChecker = new TestingIO(solver.GridData, "CellMetrics-" + filename + ".abc", false, 1);
             for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                 SpeciesId spc = species[iSpc];
                 string SpcName = Tracker.GetSpeciesName(spc);
@@ -213,10 +227,12 @@ namespace HangingNodesTests {
             LsChecker.DoIOnow();
             var err = LsChecker.AllRelErr();
             foreach(var kv in err) {
-                Console.WriteLine($"    Cell Metric Comparison Error for {kv.Key} = {kv.Value}");
+                if(kv.Key != "GlobalID")
+                    Console.WriteLine($"    Cell Metric Comparison Error for {kv.Key} = {kv.Value}");
             }
             foreach(var kv in err) {
-                Assert.LessOrEqual(kv.Value, 1e-10, $"Cell Metric Comparison Error for {kv.Key} = {kv.Value}, this is to high!");
+                if(kv.Key != "GlobalID")
+                    Assert.LessOrEqual(kv.Value, 1e-10, $"Cell Metric Comparison Error for {kv.Key} = {kv.Value}, this is to high!");
             }
             
         }
@@ -241,19 +257,19 @@ namespace HangingNodesTests {
                     HangingNodesTests.Control.SetParallel(C, procs);
 
                     using (var solver = new XNSFE()) {
-                        try {
+                        //try {
                             solver.Init(C);
                             solver.RunSolverMode();
                             MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                             TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
                             CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
-                        } catch (Exception e) {
+                        /*} catch (Exception e) {
                             Console.WriteLine(desc + " : failed");
                             Console.WriteLine(e.Message);
                             Console.WriteLine(e.StackTrace);
                             TemperatureRes.Add(-1.0);
                             MomentumRes.Add(-1.0);
-                        }
+                        }*/
                     }                    
                 }
             }
@@ -274,7 +290,7 @@ namespace HangingNodesTests {
                                 solver.RunSolverMode();
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                                //CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
+                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
                                 
                             } catch (Exception e) {
                                 Console.WriteLine(desc + " : failed");
