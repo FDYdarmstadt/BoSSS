@@ -945,10 +945,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         totNoOfSpeciesInSelection += NoOfSpecies[iLoc][iVar];
                         if (!SpecInstruction(jLoc, iVar, iSpc))
                             continue;
-                        //long GlobalOffset = m_map.GlobalUniqueIndex(iVar, jLoc, iSpc, 0);
                         int LocalOffset = m_map.LocalUniqueIndex(iVar, jLoc, iSpc, 0);
-                        long GlobalOffset = LocalOffset + m_map.i0;
-                        Debug.Assert(GlobalOffset == m_map.GlobalUniqueIndex(iVar, jLoc, iSpc, 0));
+                        long GlobalOffset = m_map.GlobalUniqueIndex(iVar, jLoc, iSpc, 0);
                         var tmpMod = new List<extNi0>();
 
                         // loop over polynomial degrees...

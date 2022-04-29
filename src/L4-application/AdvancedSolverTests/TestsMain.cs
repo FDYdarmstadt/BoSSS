@@ -32,7 +32,7 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.Solver.mklILU.CompareFactorization();
             //AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
             //AdvancedSolverTests.Solver.mklILUtest.CompareFactorization();
-            AdvancedSolverTests.SubBlocking.LocalTests.SubSelection(SelectionType.all_combined);
+            //AdvancedSolverTests.SubBlocking.LocalTests.SubSelection(SelectionType.all_combined);
         }
 
     }
