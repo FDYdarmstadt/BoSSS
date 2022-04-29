@@ -115,15 +115,15 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
             double length = Math.Sqrt(supportVector[0].Pow2() + supportVector[1].Pow2());
             double CosT = supportVector[0] / length;
             double SinT = supportVector[1] / length;
             Vector SupportPoint = new Vector(SpatialDim);
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
-            SupportPoint[0] = CosT * m_Radius + Position[0];
-            SupportPoint[1] = SinT * m_Radius + Position[1];
+            SupportPoint[0] = CosT * (m_Radius + tolerance) + Position[0];
+            SupportPoint[1] = SinT * (m_Radius + tolerance) + Position[1];
             if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
                 throw new ArithmeticException("Error trying to calculate point0 Value:  " + SupportPoint[0] + " point1 " + SupportPoint[1]);
             return SupportPoint;

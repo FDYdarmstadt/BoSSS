@@ -601,7 +601,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="dt"></param>
         protected virtual Vector CalculateParticlePosition(double dt) {
             using (new FuncTrace()) {
-                Vector position = Position[1] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 3;
+                Vector position = Position[1] + (5 * TranslationalVelocity[0] + 8 * TranslationalVelocity[1] - TranslationalVelocity[2]) * dt / 12;
                 Aux.TestArithmeticException(position, "particle position");
                 return position;
             }
@@ -613,7 +613,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="dt"></param>
         protected virtual double CalculateParticleAngle(double dt) {
             using (new FuncTrace()) {
-                double angle = Angle[1] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 3;
+                double angle = Angle[1] + (5 * RotationalVelocity[0] + 8 * RotationalVelocity[1] - RotationalVelocity[2]) * dt / 12;
                 Aux.TestArithmeticException(angle, "particle angle");
                 return angle;
             }
@@ -625,7 +625,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="dt"></param>
         protected virtual Vector CalculateParticlePositionDuringCollision(double dt) {
             using (new FuncTrace()) {
-                Vector position = Position[0] + (TranslationalVelocity[0] + 4 * TranslationalVelocity[1] + TranslationalVelocity[2]) * dt / 3;
+                Vector position = Position[0] + (5 * TranslationalVelocity[0] + 8 * TranslationalVelocity[1] - TranslationalVelocity[2]) * dt / 12;
                 Aux.TestArithmeticException(position, "particle position");
                 return position;
             }
@@ -637,7 +637,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="dt"></param>
         protected virtual double CalculateParticleAngleDuringCollision(double dt) {
             using (new FuncTrace()) {
-                double angle = Angle[0] + (RotationalVelocity[0] + 4 * RotationalVelocity[1] + RotationalVelocity[2]) * dt / 3;
+                double angle = Angle[0] + (5 * RotationalVelocity[0] + 8 * RotationalVelocity[1] - RotationalVelocity[2]) * dt / 12;
                 Aux.TestArithmeticException(angle, "particle angle");
                 return angle;
             }
@@ -649,7 +649,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="dt">Time-step</param>
         protected virtual Vector CalculateTranslationalVelocity(double dt) {
             using (new FuncTrace()) {
-                Vector translationalVelocity = TranslationalVelocity[1] + (TranslationalAcceleration[0] + 4 * TranslationalAcceleration[1] + TranslationalAcceleration[2]) * dt / 3;
+                Vector translationalVelocity = TranslationalVelocity[1] + (5 * TranslationalAcceleration[0] + 8 * TranslationalAcceleration[1] - TranslationalAcceleration[2]) * dt / 12;
                 Aux.TestArithmeticException(translationalVelocity, "particle translational velocity");
                 return translationalVelocity;
             }
@@ -661,7 +661,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="dt">Time-step</param>
         protected virtual double CalculateAngularVelocity(double dt) {
             using (new FuncTrace()) {
-                double rotationalVelocity = RotationalVelocity[1] + (RotationalAcceleration[0] + 4 * RotationalAcceleration[1] + RotationalAcceleration[2]) * dt / 3;
+                double rotationalVelocity = RotationalVelocity[1] + (5 * RotationalAcceleration[0] + 8 * RotationalAcceleration[1] - RotationalAcceleration[2]) * dt / 12;
                 Aux.TestArithmeticException(rotationalVelocity, "particle rotational velocity");
                 return rotationalVelocity;
             }

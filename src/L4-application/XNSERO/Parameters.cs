@@ -183,7 +183,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             if (X.Length > 2)
                 throw new NotImplementedException("Rigid object solver only for 2D");
             for (int p = 0; p < Particles.Length; p++) {
-                if (Particles[p].Contains(X, 2 * Tolerance)) {
+                if (Particles[p].Contains(X, 2 * Tolerance) && Particles[p].ActiveStress != 0) {
                     switch (CurrentDimension) {
                         case 0:
                         OrientationFunction = Math.Cos(Particles[p].Motion.GetAngle(1));

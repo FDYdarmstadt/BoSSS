@@ -131,7 +131,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
             Aux.TestArithmeticException(supportVector, "vector in calc of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");

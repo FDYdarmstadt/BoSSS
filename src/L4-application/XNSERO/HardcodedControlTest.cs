@@ -62,7 +62,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false,0);
             particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4, new double[] { 1.0, 0.0 }, 0, 0, new double[] { 0, 0 }, 0));
             particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4, new double[] { -1.0, 0.0 }, 0, 0, new double[] { 0, 0 }, 0));
-            C.SetParticles(particles);
+            C.SetParticles(particles,C.dtFixed);
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             double levelSet0(double[] X) => X[0];
             C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), levelSet0);

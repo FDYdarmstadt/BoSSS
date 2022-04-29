@@ -130,9 +130,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
             Aux = new Auxillary();
-            Aux.TestArithmeticException(supportVector, "vector in calc of support point");
+            Aux.TestArithmeticException(supportVector, "vector in calculation of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
@@ -144,11 +144,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             Vector position = new Vector(Position);
 
             double[,] rotMatrix = new double[2, 2];
-            rotMatrix[0, 0] = (m_Length + 0.15
-                ) * orientation[0];
-            rotMatrix[0, 1] = (-m_Thickness - 0.15) * orientation[1];
-            rotMatrix[1, 0] = (m_Length + 0.15) * orientation[1];
-            rotMatrix[1, 1] = (m_Thickness + 0.15) * orientation[0];
+            rotMatrix[0, 0] = (m_Length + tolerance) * orientation[0];
+            rotMatrix[0, 1] = (-m_Thickness - tolerance) * orientation[1];
+            rotMatrix[1, 0] = (m_Length + tolerance) * orientation[1];
+            rotMatrix[1, 1] = (m_Thickness + tolerance) * orientation[0];
             double[,] transposeRotMatrix = rotMatrix.CloneAs();
             transposeRotMatrix[0, 1] = rotMatrix[1, 0];
             transposeRotMatrix[1, 0] = rotMatrix[0, 1];

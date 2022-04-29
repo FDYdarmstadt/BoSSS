@@ -249,7 +249,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="supportVector"></param>
         /// <param name="SubParticleID">between 0 and <see cref="NoOfSubParticles"/>, i guess</param>
         /// <param name="Position"></param>
-        public virtual Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID) {
+        public virtual Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
             int spatialDim = Position.Dim;
             Vector currentSupportPoint = new Vector(spatialDim);
             if (Angle.Dim > 1)

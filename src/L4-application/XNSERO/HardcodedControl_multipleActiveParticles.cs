@@ -108,13 +108,13 @@ namespace BoSSS.Application.XNSERO_Solver {
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
-            string ID = "8ad19f8a-a11f-4aea-aa03-43b85ed0b17e";
+            string ID = "e0e6369b-2b54-45ec-a2b8-bd323c819568";
             Guid SID = new Guid(ID);
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("1"));
-            int timestep = 2430;
+            int timestep = 12132;
             C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
             C.IsRestart = true;
-            string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\8ad19f8a-a11f-4aea-aa03-43b85ed0b17e";
+            string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\e0e6369b-2b54-45ec-a2b8-bd323c819568";
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -131,13 +131,11 @@ namespace BoSSS.Application.XNSERO_Solver {
             double activeStress = 1e1;
             double nextParticleDistance = particleLength * 3;
             double domainLength = nextParticleDistance * noOfParticles;
-            List<string> boundaryValues = new List<string> {
-                "Wall"
-            };
+            List<string> boundaryValues = new() {  "Wall" };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(domainLength, domainLength, cellsPerUnitLength, false, false);
-            C.minDistanceThreshold = 1 / cellsPerUnitLength*1.5;
-            C.CoefficientOfRestitution = 0.5;
+            C.minDistanceThreshold = 1 / cellsPerUnitLength;
+            C.CoefficientOfRestitution = 1;
             InitializeMotion motion = new(particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2 ;
             int j = 0;
@@ -152,18 +150,26 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
                 j += 1;
             }
+            particles.Clear();
+            for (int i = 0; i < 211; i++) {
+                particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { 0, 0 }, 0, activeStress));
+            }
+            particles.Add(new Particle_Ellipsoid(motion, 1, 1, new double[] { 0, 0 }, 0, 0));
+            //particles = C.LoadParticlesOnRestart(PathToOldSessionDir, particles, timestep);
+            //Console.WriteLine("particle length " + particles.Count);
+            //for (int i = particles.Count() - 1; i >= 0; i--) {
+            //    if (particles[i].Motion.GetPosition().Abs() < 1.5)
+            //        particles.RemoveAt(i);
+            //}
             C.SetParticles(particles,1e-2, C.IsRestart, PathToOldSessionDir, timestep);
+            C.WallPositionPerDimension[0][0] = -domainLength / 2;
+            C.WallPositionPerDimension[0][1] = domainLength / 2;
+            C.WallPositionPerDimension[1][0] = -domainLength / 2;
+            C.WallPositionPerDimension[1][1] = domainLength / 2;
             C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.4;
-            //C.LinearSolver.NoOfMultigridLevels = 2;
-            //C.NoOfMultigridLevels = 2;
-            //C.LinearSolver.MinSolverIterations = 1;
             C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
-            //C.LinearSolver.TargetBlockSize = 10000;
-            //C.LinearSolver.verbose = true;
             C.UseSchurBlockPrec = true;
-            //C.LinearSolver.pMaxOfCoarseSolver = 1;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;

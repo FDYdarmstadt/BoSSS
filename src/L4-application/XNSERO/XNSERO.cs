@@ -31,6 +31,7 @@ namespace BoSSS.Application.XNSERO_Solver {
     /// - successor of the old IBM+FSI solver <see cref="IBM_SolverMain"/> and <see cref="FSI_SolverMain"/>, 
     ///   which were mainly used for PhD thesis of D. Krause and B. Deußen and TRR146.
     /// - see also: Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization, F. Kummer, IJNME 109 (2), 2017. 
+    /// - Phoretic field is used by B. Liebchen (TRR146)
     /// </remarks>
     public class XNSERO : XNSE<XNSERO_Control> {
         /// <summary>
@@ -58,16 +59,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// An array of all particles (rigid objects). Particles are only added at the initialization of the simulation. 
         /// </summary>
-        public Particle[] Particles { get => Control.Particles; }
+        public Particle[] Particles => Control.Particles;
 
         /// <summary>
         /// Spatial dimension
         /// </summary>
-        private int SpatialDimension {
-            get {
-                return GridData.SpatialDimension;
-            }
-        }
+        private int SpatialDimension => GridData.SpatialDimension;
 
         /// <summary>
         /// Fluid viscosity
@@ -123,7 +120,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         private readonly Auxillary Auxillary = new();
 
-
         /// <summary>
         /// Saves the physical data of all particles
         /// </summary>
@@ -132,17 +128,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Prevents the creation of multiple log files
         /// </summary>
-        bool CreatedLogger = false;
+        private bool CreatedLogger = false;
 
         /// <summary>
         /// Particles are sorted into an R-tree to improve calculation of collisions
         /// </summary>
-        readonly RTree CollisionTree = new(2, 0.05);
+        private readonly RTree CollisionTree = new(2, 0.1);
 
         /// <summary>
         /// Prevents multiple initializations of <see cref="CollisionTree"/>
         /// </summary>
-        bool treeInitialized = false;
+        private bool treeInitialized = false;
 
         /// <summary>
         /// Provides information about the particle (rigid object) level set function to the level-set-updater.
@@ -157,7 +153,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Tested by <see cref="TestProgram.TestRigidLevelSetProjection"/>
         /// </remarks>
         protected override RigidObjectLevelSet SetRigidLevelSet(Basis Basis, string Name) {
-            Func<double[], double, double>[] ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
+            var ParticleLevelSet = new Func<double[], double, double>[Particles.Length];
             for (int i = 0; i < ParticleLevelSet.Length; i++) {
                 ParticleLevelSet[i] = Particles[i].LevelSetFunction;
             }
@@ -182,13 +178,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         protected override void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             if (Control.UseAveragedEquations) {
                 XNSE_OperatorConfiguration config = new(Control);
+
                 // === mass equations === //
                 DefineContinuityEquation(opFactory, config, D);
 
                 // === momentum equations === //
                 for (int d = 0; d < D; ++d) {
                     DefineMomentumEquation(opFactory, config, d, D);
-
                     // Add additional volume forces
                     if (config.isVolForce) {
                         var VolForceA = VolumeForce.CreateFrom("A", d, D, Control, Control.GetVolumeForce("A", d));
@@ -197,11 +193,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                         opFactory.AddParameter(VolForceB);
                     }
                 }
-
-                
             } else {
+                // NS 
                 base.DefineSystem(D, opFactory, lsUpdater);
-
+                // Phoretic field
                 if (Control.UsePhoreticField) {
                     opFactory.AddEquation(new Equations.PhoreticFieldBulk());
                 }
@@ -214,7 +209,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="opFactory"></param>
         /// <param name="config"></param>
         /// <param name="D">Spatial dimension (2 or 3)</param>
-        virtual protected void DefineContinuityEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int D) {
+        protected override void DefineContinuityEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int D) {
             opFactory.AddEquation(new Continuity("A", config, D, boundaryMap));
             opFactory.AddEquation(new Continuity("B", config, D, boundaryMap));
             opFactory.AddEquation(new InterfaceContinuity("A", "B", config, D, config.isMatInt));
@@ -330,37 +325,32 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="dt"></param>
         /// <returns></returns>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            Stopwatch stopWatch = new();
-            stopWatch.Start();
             dt = GetTimestep();
             Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+
             if (!CreatedLogger) {
                 CreatedLogger = true;
                 CreatePhysicalDataLogger();
             }
+
             InitializeParticlesNewTimestep(dt);
             if (TimestepNo - 1 % 10 == 0 || !treeInitialized) {
                 CollisionTree.InitializeTree(Particles, dt);
                 treeInitialized = true;
-                Console.WriteLine("Tree initialized");
             } else {
-                Console.WriteLine("Update tree");
                 CollisionTree.UpdateTree(Particles, dt);
-                Console.WriteLine("Tree updated");
             }
-            Console.WriteLine("Start MPI Check");
             Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
-            Console.WriteLine("MPI Check finished, starting solver");
+
             Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-            Console.WriteLine("Solver finished, starting collision procedure.");
+
             CalculateCollision(Particles, dt);
+
             if (!AllParticlesFixed)
                 CalculateParticlePositionAndAngle(Particles, dt);
+
             LogPhysicalData(phystime, TimestepNo);
             Console.WriteLine($"done with time step {TimestepNo}");
-            TimeSpan ts = stopWatch.Elapsed;
-            string elapsedTime = String.Format("{0:00}:{1:00}:{2:00}.{3:00}", ts.Hours, ts.Minutes, ts.Seconds, ts.Milliseconds / 10);
-            Console.WriteLine("RunTime per time-step" + elapsedTime);
             return dt;
         }
 
@@ -402,7 +392,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                 int[][] potentialCollisionPartners = new int[Particles.Length][];
                 for (int p = 0; p < Particles.Length; p++) {
                     Particles[p].IsCollided = false;
-                    //potentialCollisionPartners[p] = tree.SearchForOverlap(Particles[p], p).ToArray();
                 }
                 ParticleCollision Collision = new(MaxGridLength, CoefficientOfRestitution, dt, Control.WallPositionPerDimension, Control.BoundaryIsPeriodic, 0, DetermineOnlyOverlap);
                 Collision.Calculate(Particles, CollisionTree);
@@ -414,7 +403,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="Particles"></param>
         /// <param name="dt"></param>
-        private void CalculateParticlePositionAndAngle(Particle[] Particles, double dt) {
+        private static void CalculateParticlePositionAndAngle(Particle[] Particles, double dt) {
             foreach (Particle p in Particles) {
                 p.Motion.UpdateParticlePositionAndAngle(dt);
             }
@@ -457,7 +446,6 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 var configPres = new MultigridOperator.ChangeOfBasisConfig() {
                     DegreeS = new int[] { pVel },
-                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
                     mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                     VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Phoretic) }
                 };

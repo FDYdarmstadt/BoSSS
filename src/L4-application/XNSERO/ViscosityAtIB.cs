@@ -39,7 +39,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             this.m_FluidSpc = FluidSpc;
             this.m_UsePhoretic = UsePhoretic;
             this.AllParticles = AllParticles;
-            this.activeStress = AllParticles[0].ActiveStress;//Assuming every particle has the same active stress, which is always the case in the current implementation of XNSERO.
+            this.activeStress = AllParticles[0].ActiveStress;
         }
         readonly int m_iLevSet;
         readonly string m_FluidSpc;
@@ -47,7 +47,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         readonly int Component;
         readonly int m_D;
         readonly bool m_UsePhoretic;
-        readonly double activeStress;
+        double activeStress;
 
         /// <summary>
         /// Viskosity in species A
@@ -212,7 +212,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                 throw new Exception("X is null or empty");
             if(inp.X.Abs() < 0)
                 throw new ArithmeticException("invalid length of position vector");
-
 
             Vector uAFict = new Vector(inp.Parameters_IN[0], inp.Parameters_IN[1]);
             //Vector activeStressVector = new Vector(inp.Parameters_IN[2], inp.Parameters_IN[3]);

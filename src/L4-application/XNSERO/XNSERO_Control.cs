@@ -23,7 +23,6 @@ namespace BoSSS.Application.XNSERO_Solver {
     public class XNSERO_Control : XNSE_Control {
 
         public XNSERO_Control() {
-            //Debugger.Launch();
             base.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             // Set default values to LevelSet (one can still overwrite those)
@@ -47,7 +46,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             SessionName = projectName;
             ProjectDescription = projectDescription;
             if(tags != null) {
-                for(int i = 0; i < tags.Count(); i++) {
+                for(int i = 0; i < tags.Count; i++) {
                     Tags.Add(tags[i]);
                 }
             }
@@ -331,34 +330,29 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <returns></returns>
         public Vector GetGravity() => Gravity;
 
-        /*
-        /// <summary>
-        /// See <see cref="LevelSetHandling"/>, Lie-Splitting with iterative coupling by default.
-        /// </summary>
-        [DataMember]
-        public override LevelSetHandling Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-        */
-
         public void SetParticles(List<Particle> ParticleList, double dt, bool IsRestart = false, string PathToOldSessionDir = "", int timestep=0) {
             if (IsRestart) {
                 ParticleList= LoadParticlesOnRestart(PathToOldSessionDir, ParticleList, timestep);
             }
+
             Particles = ParticleList.ToArray();
+
             // Initialize particle level-set
             double levelSet(double[] X) {
                 double levelSetFunction = int.MinValue;
-                for(int p = 0; p < Particles.Count(); p++) {
+                for(int p = 0; p < Particles.Length; p++) {
                     Particle currentParticle = Particles[p];
                     if(levelSetFunction < currentParticle.LevelSetFunction(X, 0))
                         levelSetFunction = currentParticle.LevelSetFunction(X, 0);
                 }
                 return levelSetFunction;
             }
+
             InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), levelSet);
             Option_LevelSetEvolution2 = Solution.LevelSetTools.LevelSetEvolution.RigidObject;
 
-            CollisionTree = new(SpatialDimension, 0.05);
-            CollisionTree.InitializeTree(Particles, dt);
+            //CollisionTree = new(SpatialDimension, 0.05);
+            //CollisionTree.InitializeTree(Particles, dt);
 
             Console.WriteLine("Simulation with " + Particles.Length + " particles");
         }
@@ -400,7 +394,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         [DataMember]
         public bool UseAveragedEquations = false;
 
-        public static List<Particle> LoadParticlesOnRestart(string pathToOldSessionDir, List<Particle> ParticleList, int timestep=0) {
+        public List<Particle> LoadParticlesOnRestart(string pathToOldSessionDir, List<Particle> ParticleList, int timestep=0) {
             string pathToPhysicalData = Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
 
             int historyLength = 3;

@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 namespace BoSSS.Application.XNSERO_Solver {
-    class RTree {
+    public class RTree {
 
         private readonly int SpatialDimension;
         private readonly int MaxEntriesPerNode = 4;
@@ -365,7 +365,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// MBR = minimal bounding rectangle
         /// </summary>
-        public MinimalBoundingRectangle CalculateParticleMBR(Particle Particle, double Timestep, Vector Origin) {
+        private MinimalBoundingRectangle CalculateParticleMBR(Particle Particle, double Timestep, Vector Origin) {
             Vector[] vertices = new Vector[2];
             for (int i = 0; i < 2; i++)
                 vertices[i] = new Vector(SpatialDimension);
