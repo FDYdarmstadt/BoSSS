@@ -28,7 +28,7 @@ namespace BoSSS.Foundation {
     /// - for runs which have a different number of MPI cores than the reference size, numeraical values will be compared.
     /// 
     /// The typical use-case of this class is as follows:
-    /// 1. Instantiate (<see cref="TestingIO.TestingIO(IGridData, string, int)"/>)
+    /// 1. Instantiate (<see cref="TestingIO.TestingIO(IGridData, string, bool, int)"/>)
     /// 2. Add Vectors, DG fields, etc. (<see cref="AddVector(string, IEnumerable{double})"/>, <see cref="AddDGField(ConventionalDGField)"/>, <see cref="AddColumn(string, ExecutionMask.ItemInfo)"/>)
     ///    to this IO object; 
     /// 3. Call <see cref="DoIOnow"/> th either save the current data or load the reference data 
