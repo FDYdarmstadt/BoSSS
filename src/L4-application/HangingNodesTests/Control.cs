@@ -25,6 +25,9 @@ namespace HangingNodesTests {
         static public XNSFE_Control TestSkeleton(double size) {
             var ctrl = new XNSFE_Control();
 
+            //ctrl.SuperSampling = 0;
+            //ctrl.ImmediatePlotPeriod = 1;
+
             ctrl.SetDGdegree(2);           
 
             double L = size;

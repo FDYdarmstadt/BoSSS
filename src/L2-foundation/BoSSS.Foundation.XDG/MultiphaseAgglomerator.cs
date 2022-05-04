@@ -605,7 +605,6 @@ namespace BoSSS.Foundation.XDG {
 
                 CenterOfGravity.Storage.MPIExchange(this.Tracker.GridDat);
 
-
                 var SpeciesName = this.Tracker.GetSpeciesName(Species);
                 this.DictAgglomeration[Species].PlotAgglomerationPairs(SpeciesName + "-" + basename + ".csv", CenterOfGravity);
             }
