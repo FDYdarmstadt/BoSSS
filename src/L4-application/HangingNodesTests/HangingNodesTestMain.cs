@@ -9,6 +9,7 @@ using NUnit.Framework;
 using System.Diagnostics;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation;
+using ilPSP;
 
 namespace HangingNodesTests {
 
@@ -222,12 +223,30 @@ namespace HangingNodesTests {
         /// </remarks>
         private static void CheckLengthScales(XNSFE solver, string filename) {
 
+
+            
             var species = solver.LsTrk.SpeciesIdS.ToArray();
             var Tracker = solver.LsTrk;
             var agg = Tracker.GetAgglomerator(species, solver.QuadOrder(), solver.Control.AgglomerationThreshold);
             int J = solver.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
-            //agg.PlotAgglomerationPairs("aggP" + Tracker.GridDat.MpiRank + "of" + Tracker.GridDat.MpiSize);
+            /*
+            int MPIsize = solver.MPISize;
+            int jCellStrange = -1;
+            long gidStrange;
+            if(MPIsize == 1) {
+                gidStrange = 34;
+            } else if(MPIsize == 2) {
+                gidStrange = 46;
+            } else {
+                throw new NotSupportedException();
+            }
+            jCellStrange = solver.GridData.CurrentGlobalIdPermutation.Values.IndexWhere(gid => gid == gidStrange);
+
+            if(jCellStrange >= 0) {
+                Console.Error.WriteLine($"Cell gid={gidStrange}, X={solver.GridData.iLogicalCells.GetCenter(jCellStrange)}, locIdx={jCellStrange} @ rnk{solver.MPIRank}, surf = {agg.NonAgglomeratedMetrics.CellSurface[Tracker.GetSpeciesId("B")][jCellStrange]}");
+            }
+            */
 
             var LsChecker = new TestingIO(solver.GridData, "CellMetrics-" + filename + ".abc", false, 1);
             for(int iSpc = 0; iSpc < species.Length; iSpc++) {
@@ -266,10 +285,10 @@ namespace HangingNodesTests {
                 foreach (byte s in setup) {
                     string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs : {3}", size, phase, s, procs);
                     Description.Add(desc);
-                    var C = HangingNodesTests.Control.TestSkeleton(size);
-                    HangingNodesTests.Control.SetAMR(C, size, s);
-                    HangingNodesTests.Control.SetLevelSet(C, size, phase);
-                    HangingNodesTests.Control.SetParallel(C, procs);
+                    var C = Control.TestSkeleton(size);
+                    Control.SetAMR(C, size, s);
+                    Control.SetLevelSet(C, size, phase);
+                    Control.SetParallel(C, procs);
 
                     using (var solver = new XNSFE()) {
                         try {
@@ -294,10 +313,10 @@ namespace HangingNodesTests {
                     foreach (byte s in setup) {
                         string desc = String.Format("Size : {0}, Phases : {1}, Setup : {2}, Procs (transpose) : {3}", size, phase, s, procs);
                         Description.Add(desc);
-                        var C = HangingNodesTests.Control.TestSkeleton(size);
-                        HangingNodesTests.Control.SetAMR(C, size, s);
-                        HangingNodesTests.Control.SetLevelSet(C, size, phase);
-                        HangingNodesTests.Control.SetParallel(C, -procs);
+                        var C = Control.TestSkeleton(size);
+                        Control.SetAMR(C, size, s);
+                        Control.SetLevelSet(C, size, phase);
+                        Control.SetParallel(C, -procs);
 
                         using (var solver = new XNSFE()) {
                             try {

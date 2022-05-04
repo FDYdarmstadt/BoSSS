@@ -540,7 +540,7 @@ namespace BoSSS.Application.SipPoisson {
             //R.ImmediatePlotPeriod = 1;
             //R.SuperSampling = 2;
 
-            R.LinearSolver = LinearSolverCode.exp_Kcycle_ILU.GetConfig();
+            R.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
             return R;
         }
 

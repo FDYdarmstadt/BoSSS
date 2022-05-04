@@ -39,6 +39,8 @@ namespace AdvancedSolverTests.SolverChooser
 
                 //Act and Assert
                 foreach(LinearSolverCode code in lincodes) {
+                    
+
                     Assert.DoesNotThrow(() => code.GetConfig().CreateInstance(O.MGOp), "", null);
                     Assert.IsNotNull(code.GetConfig().CreateInstance(O.MGOp));
                 }

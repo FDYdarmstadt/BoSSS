@@ -367,7 +367,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver = LinearSolverCode.pMultigrid.GetConfig();
+            R.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             R.AgglomerationThreshold = 0.0;
             R.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
