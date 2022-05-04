@@ -28,7 +28,7 @@ namespace AdvancedSolverTests.SolverChooser
 
 
             //Arrange --- Multigrid stuff
-            using(var O = Utils.CreateTestMGOperator(Resolution: 10)) {
+            using(var O = Utils.CreateTestMGOperator(Resolution: 10, DGOrder: 3)) {
                 AggregationGridData[] seq = O.MGSeq;
                 var MGO = O.MGOp;
                 var changeofbasisis = Utils.GetAllMGConfig(MGO);
@@ -49,7 +49,7 @@ namespace AdvancedSolverTests.SolverChooser
         public static void TestNonLinearSolverConfigurations() {
 
             //Arrange --- get test multigrid operator stuff
-            using(var O = Utils.CreateTestMGOperator(Resolution: 10)) {
+            using(var O = Utils.CreateTestMGOperator(Resolution: 10, DGOrder: 3)) {
                 var MGO = O.MGOp;
                 var map = MGO.Mapping;
                 var changeofbasisis = Utils.GetAllMGConfig(MGO);
@@ -60,7 +60,6 @@ namespace AdvancedSolverTests.SolverChooser
                 NonlinearSolver NLsolver = null;
 
                 //Arrange --- get test linear Solver to set in NLsolver
-                ISolverSmootherTemplate LinSolver = null;
                 LinearSolverCode[] LinTestcandidates = { LinearSolverCode.direct_pardiso, LinearSolverCode.exp_gmres_levelpmg }; // in order to test the GMRES variants of the NL solver
 
                 //Act and Assert
@@ -81,7 +80,6 @@ namespace AdvancedSolverTests.SolverChooser
 
                         Assert.IsNotNull(NLsolver);
                     }
-                    Console.WriteLine("====");
                 }
             }
         }

@@ -198,7 +198,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             int D = this.m_op.GridData.SpatialDimension;
 
-            int[] lowDegs = op.DGpolynomialDegreeHierarchy.First(degS => degS.Max() == config.OrderOfCoarseSystem);
+            int[] lowDegs = op.GetBestFitLowOrder(config.OrderOfCoarseSystem);
             bool LowSelector(int iCell, int iVar, int iSpec, int pDeg) {
                 return pDeg <= lowDegs[iVar];
             }

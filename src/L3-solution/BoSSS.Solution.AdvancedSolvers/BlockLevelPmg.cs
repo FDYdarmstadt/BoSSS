@@ -174,7 +174,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var lowSel = new SubBlockSelector(op.Mapping);
             lowSel.CellSelector(BlockCellIdc, false);
 
-            int[] lowDegs = op.DGpolynomialDegreeHierarchy.First(degS => degS.Max() == m_pLow);
+            int[] lowDegs = op.GetBestFitLowOrder(m_pLow);
             bool LowSelector(int iCell, int iVar, int iSpec, int pDeg) {
                 return pDeg <= lowDegs[iVar];
             }

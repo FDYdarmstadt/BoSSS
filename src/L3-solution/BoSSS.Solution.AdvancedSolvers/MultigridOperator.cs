@@ -392,6 +392,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+        /// <summary>
+        /// "Best Fit" of DG orders for a specific low order degree; 
+        /// </summary>
+        /// <remarks>
+        /// Intended to be used by p-multigrid methods to select the low order degree;
+        /// Designed to always give some result, in order to be forgiving w.r.t. user configuration errors, i.e. to avoid exceptions.
+        /// </remarks>
+        public int[] GetBestFitLowOrder(int pLow) {
+            var _degs = DGpolynomialDegreeHierarchy;
+
+            int pBestDist = int.MaxValue;
+            int iBest = -1;
+            for(int i = 0; i < _degs.Length; i++) {
+                int pMax = _degs[i].Max();
+
+                if(pMax == pLow)
+                    return _degs[i];
+
+                int pdist = Math.Abs(pLow - pMax);
+                if(pdist <= pBestDist) {
+                    pBestDist = pdist;
+                    iBest = i;
+                }
+            }
+
+            return _degs[iBest];
+        }
+
+
+
         int[][] m_DGpolynomialDegreeHierarchy;
 
         /// <summary>
@@ -400,15 +430,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int[][] DGpolynomialDegreeHierarchy {
             get {
                 if(m_DGpolynomialDegreeHierarchy == null) {
-                    if (AbstractOperator == null)
-                        throw new NotSupportedException();
+                    if(AbstractOperator == null) {
+                        //throw new NotSupportedException("no abstract operator available - unable to specify Degree hierarchy");
+                    }
 
                     var tmp = new List<int[]>();
                     var degS = this.Degrees;
                     tmp.Add(degS);
 
-                    if (!AbstractOperator.IsValidDomainDegreeCombination(degS, degS)) {
-                        throw new ArgumentException($"DG degree combiation [{degS.ToConcatString("", ", ", "")}] is reported to be illegal for DG operator");
+                    if (AbstractOperator != null && !AbstractOperator.IsValidDomainDegreeCombination(degS, degS)) {
+                        throw new ArgumentException($"DG degree combination [{degS.ToConcatString("", ", ", "")}] is reported to be illegal for DG operator");
                     }
 
                     int pMax = degS.Max();
@@ -416,7 +447,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         int[] degS_red = degS.Select(p => p - red).ToArray();
                         if (degS_red.Min() < 0)
                             break;
-                        if (!AbstractOperator.IsValidDomainDegreeCombination(degS_red, degS_red))
+                        if (AbstractOperator != null && !AbstractOperator.IsValidDomainDegreeCombination(degS_red, degS_red))
                             break;
                         tmp.Add(degS_red);
                     }

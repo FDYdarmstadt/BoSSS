@@ -143,6 +143,7 @@ namespace AdvancedSolverTests.SubBlocking {
             [Values(MatrixShape.full_var_spec, MatrixShape.full_var, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape,
             [Values(4)] int Res
             ) {
+            // --test=AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
             if(MPISize <= 1) {

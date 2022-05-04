@@ -408,7 +408,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 
                 
                 //Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
-                int[] lowDegs = op.DGpolynomialDegreeHierarchy.First(degS => degS.Max() == OrderOfCoarseSystem);
+                int[] lowDegs = op.GetBestFitLowOrder(OrderOfCoarseSystem);;
                 bool lowFilter(int iCell, int iVar, int iSpec, int pDeg) {
                     return pDeg <= lowDegs[iVar];
                 }
