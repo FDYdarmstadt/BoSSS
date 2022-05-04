@@ -148,7 +148,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", X => 1.0);
             R.InitialValues_Evaluators.Add("Tex", X => 1.0 / 6.0 * (X[0]*X[0]+ X[1] * X[1] + X[2]*X[2]) + 5.0/6.0);
             R.ExactSolution_provided = true;
-            R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            R.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             R.SuperSampling = 2;
             
             R.GridFunc = delegate () {
@@ -516,7 +516,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", exRhs);
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
-            R.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            R.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             
             R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, 1, xRes + 1);
@@ -540,7 +540,7 @@ namespace BoSSS.Application.SipPoisson {
             //R.ImmediatePlotPeriod = 1;
             //R.SuperSampling = 2;
 
-            R.LinearSolver = LinearSolverCode.exp_Kcycle_ILU.GetConfig();
+            R.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
             return R;
         }
 
@@ -579,7 +579,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", exRhs);
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
-            R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            R.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(0, 1, xRes + 1);

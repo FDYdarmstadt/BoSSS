@@ -19,6 +19,8 @@ using BoSSS.Platform.LinAlg;
 using System.Diagnostics;
 using ilPSP;
 using ilPSP.Utils;
+using System.Linq;
+using MPI.Wrappers;
 
 namespace BoSSS.Platform.Utils.Geom {
 
@@ -138,6 +140,22 @@ namespace BoSSS.Platform.Utils.Geom {
         /// the upper bound of the bounding box
         /// </summary>
         public double[] Max;
+
+        
+        /// <summary>
+        /// takes minimum/maximum of <see cref="Min"/>/<see cref="Max"/> over all MPI processors in the communicator <paramref name="comm"/>
+        /// </summary>
+        public void MPIsync(MPI_Comm comm) {
+            Min = Min.MPIMin();
+            Max = Max.MPIMax(comm);
+        }
+
+        /// <summary>
+        /// takes minimum/maximum of <see cref="Min"/>/<see cref="Max"/> over all MPI processors in the world communicator
+        /// </summary>
+        public void MPIsync() {
+            MPIsync(csMPI.Raw._COMM.WORLD);
+        }
 
 
         /// <summary>
