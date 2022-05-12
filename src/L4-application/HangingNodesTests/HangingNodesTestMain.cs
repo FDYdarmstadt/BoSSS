@@ -23,10 +23,6 @@ namespace HangingNodesTests {
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
 
-            //double[] sizes = new double[] { 1e0 };
-            //byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-            //int[] phases = new int[] { 1, 2, 3 };
-
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
             byte[] setup = new byte[] { 0 };
@@ -111,7 +107,7 @@ namespace HangingNodesTests {
 
             Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
             Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
-
+            */
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -139,8 +135,7 @@ namespace HangingNodesTests {
 
         private static void CheckLengthScales(XNSFE solver, string filename) {
 
-            return;
-            /*
+            
             var species = solver.LsTrk.SpeciesIdS.ToArray();
             var Tracker = solver.LsTrk;
             var agg = Tracker.GetAgglomerator(species, solver.QuadOrder(), solver.Control.AgglomerationThreshold);
@@ -164,7 +159,7 @@ namespace HangingNodesTests {
             foreach(var kv in err) {
                 Assert.LessOrEqual(kv.Value, 1e-10, $"Cell Metric Comparison Error for {kv.Key} = {kv.Value}, this is to high!");
             }
-            */
+            
         }
 
 
