@@ -38,7 +38,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Wrapper around the monkey solver (supports GPU acceleration).
     /// </summary>
-    public class MonkeySolver : ISolverSmootherTemplate {
+    public class MonkeySolver : ISubsystemSolver {
 
         /// <summary>
         /// 
@@ -93,22 +93,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
+
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+        void InitImpl(IOperatorMappingPair op) {
             using (var tr = new FuncTrace()) {
                 var Mtx = op.OperatorMatrix;
-                var MgMap = op.Mapping;
+                var MgMap = op.DgMapping;
                 m_MultigridOp = op;
 
-                if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if (!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if (!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 m_Mtx = Mtx;
             }
         }
 
-        MultigridOperator m_MultigridOp;
+        IOperatorMappingPair m_MultigridOp;
 
         
         ISparseSolverExt GetSolver(IMutableMatrixEx Mtx) {

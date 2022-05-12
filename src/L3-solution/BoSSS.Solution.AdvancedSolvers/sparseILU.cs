@@ -35,7 +35,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Parallel ILU from HYPRE library
     /// </summary>
-    public class sparseILU : ISolverSmootherTemplate, ISolverWithCallback, IDisposable {
+    public class sparseILU : ISubsystemSolver, IDisposable {
 
         public int IterationsInNested {
             get { return 0; }
@@ -65,8 +65,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private int FillInLevel {
             get {
-                int D = m_mgop.Mapping.AggGrid.SpatialDimension;
-                switch (D) {
+                int D = m_mgop.DgMapping.SpatialDimension;
+                switch(D) {
                     case 1:
                     case 2:
                     return 2;
@@ -99,14 +99,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
+
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+        void InitImpl(IOperatorMappingPair op) {
             var Mtx = op.OperatorMatrix;
-            var MgMap = op.Mapping;
+            var MgMap = op.DgMapping;
             this.m_mgop = op;
 
-            if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+            if (!Mtx.RowPartitioning.EqualsPartition(MgMap))
                 throw new ArgumentException("Row partitioning mismatch.");
-            if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+            if (!Mtx.ColPartition.EqualsPartition(MgMap))
                 throw new ArgumentException("Column partitioning mismatch.");
 
 
@@ -143,7 +151,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         ISparseSolver m_ILU_Solver;
         BlockMsrMatrix m_ILUmatrix;
-        MultigridOperator m_mgop;
+        IOperatorMappingPair m_mgop;
         bool m_LocalPrecond = false;
         Library m_lib = Library.Intel_MKL;
 

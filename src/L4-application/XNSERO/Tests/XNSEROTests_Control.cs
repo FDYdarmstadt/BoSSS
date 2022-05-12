@@ -150,7 +150,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AgglomerationThreshold = 0.1;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 5;
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             C.NonLinearSolver.ConvergenceCriterion = 1e-12;
 
             // Timestepping
@@ -175,7 +175,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             var C = TestParticleInShearFlow(k);
             C.UsePhoreticField = true;
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             C.NonLinearSolver.ConvergenceCriterion = 1e-12;
             return C;
         }
@@ -224,7 +224,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // ====================
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AgglomerationThreshold = 0.1;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 3;
 
