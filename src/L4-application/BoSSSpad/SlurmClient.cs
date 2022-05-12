@@ -150,6 +150,22 @@ namespace BoSSS.Application.BoSSSpad {
         /// Empty constructor for de-serialization
         /// </summary>
         private SlurmClient() : base() {
+        
+            base.RuntimeLocation = "linux/amd64-openmpi";
+        }
+
+
+        /// <summary>
+        /// Since this is specific for MS Windows systems, it defaults to `linux/amd64-openmpi`
+        /// </summary>
+        public override string RuntimeLocation {
+            get {
+                if(base.RuntimeLocation != null)
+                    return base.RuntimeLocation;
+                else
+                    return "linux/amd64-openmpi";
+            }
+            set => base.RuntimeLocation = value;
         }
 
         /// <summary>

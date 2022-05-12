@@ -1727,9 +1727,9 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // deploy runtime
                 using (new BlockTrace("DEPLOY_RUNTIME", tr)) {
-                    if (AssignedBatchProc.DeployRuntime) {
+                    if (AssignedBatchProc.DeployRuntime == true) {
                         string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
-                        string BosssBinNative = Path.Combine(BosssInstall, "bin", Path.Combine("native", "win"));
+                        string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", AssignedBatchProc.RuntimeLocation);
                         MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, DeployDir, "amd64");
                         Console.WriteLine("   copied 'amd64' runtime.");
                     }

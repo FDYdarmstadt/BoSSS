@@ -108,11 +108,7 @@ namespace HangingNodesTests {
 
             Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
             Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
-<<<<<<< HEAD
-=======
 
->>>>>>> experimentalGitlab/master
-            */
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -213,11 +209,6 @@ namespace HangingNodesTests {
         /// - instead, we must compare cell values based on the location  code (<see cref="BoSSS.Platform.Utils.Geom.GeomBinTreeBranchCode"/>).
         /// </remarks>
         private static void CheckLengthScales(XNSFE solver, string filename) {
-
-<<<<<<< HEAD
-=======
-
->>>>>>> experimentalGitlab/master
             
             var species = solver.LsTrk.SpeciesIdS.ToArray();
             var Tracker = solver.LsTrk;

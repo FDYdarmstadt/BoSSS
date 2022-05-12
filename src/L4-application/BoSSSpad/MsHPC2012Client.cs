@@ -150,6 +150,22 @@ namespace BoSSS.Application.BoSSSpad {
             if(System.Environment.OSVersion.Platform != PlatformID.Win32NT) {
                 throw new NotSupportedException($"The {typeof(MsHPC2012Client).Name} is only supported on MS Windows, but your current platform seems to be {System.Environment.OSVersion.Platform}.");
             }
+
+            base.RuntimeLocation = "win\\amd64";
+        }
+
+
+        /// <summary>
+        /// Since this is specific for MS Windows systems, it defaults to `win\amd64`
+        /// </summary>
+        public override string RuntimeLocation {
+            get {
+                if(base.RuntimeLocation != null)
+                    return base.RuntimeLocation;
+                else
+                    return "win\\amd64";
+            }
+            set => base.RuntimeLocation = value;
         }
 
         /// <summary>
@@ -177,6 +193,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             base.DeploymentBaseDirectory = DeploymentBaseDirectory;
             base.DeployRuntime = DeployRuntime;
+            base.RuntimeLocation = "win\\amd64";
 
 
             this.Username = Username;

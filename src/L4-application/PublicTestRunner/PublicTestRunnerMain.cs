@@ -713,10 +713,18 @@ namespace PublicTestRunner {
 
                 // deployment of native libraries
                 DirectoryInfo NativeOverride;
-                if(!bpc.DeployRuntime) {
+                if(bpc.DeployRuntime == false) {
+                    //
+                    // DeployRuntime is false: 
+                    // this means that no copy occurs for the **individual** jobs
+                    // Therefore, we copy it centrally, at once
+                    //
                     NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_amd64"));
                     NativeOverride.Create();
-                    MetaJobMgrIO.CopyDirectoryRec(ilPSP.Environment.NativeLibraryDir, NativeOverride.FullName, null);
+
+                    string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
+                    string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", bpc.RuntimeLocation);
+                    MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, NativeOverride.FullName, null);
                 } else {
                     NativeOverride = null;
                 }
