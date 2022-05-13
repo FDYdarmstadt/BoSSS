@@ -587,7 +587,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// 
         /// </summary>
-        private (int id, JobState state)[] ListJobs() {
+        private (int id, JobState state)[] _ListJobs() {
 
 
             string user = this.Username;
@@ -665,7 +665,7 @@ namespace BoSSS.Application.BoSSSpad {
                 str.Write("mpiexec ");
                 if(!base.DotnetRuntime.IsEmptyOrWhite())
                     str.Write(base.DotnetRuntime + " ");
-                str.Write(Path.GetFileName(myJob.EntryAssembly.Location));
+                str.Write(myJob.EntryAssemblyName);
                 foreach(string arg in myJob.CommandLineArguments) {
                     str.Write(" ");
                     str.Write(arg);
@@ -682,8 +682,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             string Nodes = "";
-            if (this.ComputeNodes != null)
-            {
+            if(this.ComputeNodes != null) {
                 Nodes = ComputeNodes.ToConcatString("", ",", "");
             }
 

@@ -76,7 +76,7 @@ namespace BoSSS.Application.XNSEC {
             C.PenaltyViscMomentum = 4.0;
             C.PenaltyHeatConduction = 4.0;
 
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
             // Grid declaration
             // ===============
             double h = Math.Pow(2, -nCellsMult + 1); // cell length
@@ -190,7 +190,7 @@ namespace BoSSS.Application.XNSEC {
             C.savetodb = true;
             C.DbPath = @"C:\Databases\BoSSS_DB";
             C.ChemicalReactionActive = false;
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
             return C;
         }
 
@@ -238,7 +238,7 @@ namespace BoSSS.Application.XNSEC {
             C.PenaltyViscMomentum = 4.0;
             C.PenaltyHeatConduction = 4.0;
 
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
             // Grid declaration
             // ===============
             double h = Math.Pow(2, -nCellsMult + 1); // cell length
@@ -389,7 +389,7 @@ namespace BoSSS.Application.XNSEC {
 
             int D = 2;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
             // basic database options
             // ======================
 
@@ -584,11 +584,8 @@ namespace BoSSS.Application.XNSEC {
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
@@ -711,7 +708,7 @@ namespace BoSSS.Application.XNSEC {
             C.PenaltyViscMomentum = 4.0;
             C.PenaltyHeatConduction = 4.0;
 
-            C.ImmediatePlotPeriod = 1;
+            //C.ImmediatePlotPeriod = 1;
             // Grid declaration
             // ===============
             double h = Math.Pow(2, -nCellsMult + 1); // cell length

@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,14 +26,16 @@ using System.Security;
 
 namespace ilPSP.LinSolvers.ILU {
 
+#pragma warning disable 1591
 
-    [SuppressUnmanagedCodeSecurity]
     /// <summary>
-    /// wrapper for loading the PARDISO solver from the Intel MKL libraries
+    /// raw function wrapper for loading the ILU pre-conditioner from the Intel MKL libraries,
+    /// see https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/sparse-solver-routines/precondition-based-on-incomplete-lu-factorization.html
     /// </summary>
     /// <remarks>
-    /// Licensing: despite being closed software, PARDISO form Intel MKL can be redistributed.
+    /// Licensing: despite being closed software, Intel MKL can be redistributed.
     /// </remarks>
+    [SuppressUnmanagedCodeSecurity]
     public class Wrapper_MKL : DynLibLoader {
 
         /// <summary>

@@ -38,7 +38,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// creates a new basis, with a nonstandard polynomial set
         /// </summary>
-        /// <param name="grd">the <see cref="GridData"/> that stores grid information</param>
+        /// <param name="_grd">the <see cref="GridData"/> that stores grid information</param>
         /// <param name="degree">highest polynomial degree of basis polynomials</param>
         /// <param name="polys">List of polynomials</param>
         public Basis(IGridData _grd, int degree, List<PolynomialList> polys) {
@@ -91,7 +91,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// the DG basis functions for the reference elements
         /// <list type="bullet">
-        ///     <item>1st index: reference element index (see <see cref="BoSSS.Foundation.Grid.GridCommons.RefElements"/>)</item>
+        ///     <item>1st index: reference element index (see <see cref="BoSSS.Foundation.Grid.IGeometricalCellsData.RefElements"/>)</item>
         ///     <item>2nd index: Polynomial index</item>
         /// </list>
         /// </summary>
@@ -133,7 +133,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// From origin basis to destination basis $` T = <B_i,B_j>^-1 <B_j, P_k> = M^-1*S `$
+        /// From origin basis to destination basis $` T = \langle B_i,B_j \rangle^{-1} \langle B_j, P_k \rangle = M^{-1} \cdot S $`
         /// </summary>
         protected virtual void ConstructTransform() {
             var Krefs = ((GridCommons)m_origin.GridDat.Grid).RefElements;
@@ -185,7 +185,7 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// From destination basis to origin basis: $` T = <P_i,P_j>^-1 <P_j, B_k> `$
+        /// From destination basis to origin basis: $` T = \langle P_i,P_j \rangle^{-1} \langle P_j, B_k \rangle $`
         /// </summary>
         protected virtual void ConstructInverseTransform() {
             var Krefs = ((GridCommons)m_origin.GridDat.Grid).RefElements;

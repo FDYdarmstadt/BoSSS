@@ -55,10 +55,6 @@ namespace BoSSS.Foundation.IO {
         /// <param name="fields">
         /// The fields associated with this time-step.
         /// </param>
-        /// <param name="storageID">
-        /// <see cref="Guid"/> of the storage vector containing the serialized
-        /// information stored in this object.
-        /// </param>
         public TimestepInfo(
             double physTime, ISessionInfo session, TimestepNumber TimestepNo, IEnumerable<DGField> fields) {
 

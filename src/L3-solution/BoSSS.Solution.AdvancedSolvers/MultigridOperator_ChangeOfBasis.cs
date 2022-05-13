@@ -38,7 +38,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public class ChangeOfBasisConfig : ICloneable {
 
             /// <summary>
-            /// a list of variable indices -- given by mapping <see cref="map"/> -- onto which this configuartion item applies.
+            /// a list of variable indices onto which this configuration item applies.
             /// </summary>
             public int[] VarIndex;
 
@@ -155,6 +155,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         R[iVar] = deg;
                     }
                 }
+
+                if (AbstractOperator != null) {
+                    if (!AbstractOperator.IsValidDomainDegreeCombination(R, R)) {
+                        throw new ArgumentException($"DG degree combiation [{R.ToConcatString("", ", ", "")}] is reported to be illegal for DG operator");
+                    }
+                }
+
                 return R;
             }
         }

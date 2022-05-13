@@ -62,7 +62,8 @@ namespace BoSSS.Foundation.IO {
                         a = System.Reflection.Assembly.GetExecutingAssembly();
                     }
 
-                    string appdir = Path.GetDirectoryName(a.Location);
+                    //string appdir = Path.GetDirectoryName(a.Location);
+                    string appdir = Directory.GetCurrentDirectory();
 
                     UnZippedDirectory = Path.Combine(appdir, "bosss_db_tmp");
                     if(Directory.Exists(UnZippedDirectory)) {

@@ -25,13 +25,14 @@
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <DocumentationFile></DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <UseVSHostingProcess>true</UseVSHostingProcess>
-    <DocumentationFile>bin\Release\ilPSP.XML</DocumentationFile>
+    <DocumentationFile></DocumentationFile>
     <NoWarn>1591</NoWarn>
     <WarningLevel>5</WarningLevel>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

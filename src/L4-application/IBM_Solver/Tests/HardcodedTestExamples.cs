@@ -145,15 +145,12 @@ namespace BoSSS.Application.IBM_Solver {
             // misc. solver options
             // ====================
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;
-            C.LinearSolver.MaxKrylovDim = 20;
-            C.LinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-            C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Timestepping
             // ============
@@ -171,120 +168,6 @@ namespace BoSSS.Application.IBM_Solver {
 
             return C;
         }
-
-        static public IBM_Control ChannelFlow(int k = 2, bool periodic = false, bool pardiso = false ,int xCells = 10, int yCells = 10) {
-            IBM_Control C = new IBM_Control();
-
-            // Solver Options
-            C.NoOfTimesteps = 100;
-            C.LinearSolver.MaxSolverIterations = 50;
-            C.NonLinearSolver.MaxSolverIterations = 50;
-            C.savetodb = false;
-            C.ProjectName = "ChannelFlow";
-
-            // Calculate Navier-Stokes? 
-            C.PhysicalParameters.IncludeConvection = true;
-
-            // Timestepper
-            C.FixedStreamwisePeriodicBC = periodic;
-            C.SrcPressureGrad = new double[] { -0.1, 0 };
-
-            if (pardiso) {
-                C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            } else {
-                C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-            }
-            C.Timestepper_Scheme = IBM_Control.TimesteppingScheme.ImplicitEuler;
-            double dt = 1E20;
-            C.dtMax = dt;
-            C.dtMin = dt;
-            C.Endtime = 60;
-            C.NoOfTimesteps = 1;
-
-            // Physical values
-            C.PhysicalParameters.rho_A = 1;
-
-            // 1/Re
-            C.PhysicalParameters.mu_A = 1.0 / 20;
-
-
-            // Create Fields
-            C.SetDGdegree(k);
-
-            // Create Grid
-            C.GridFunc = delegate {
-                var _xNodes = GenericBlas.Linspace(0, 10, 21);
-                var _yNodes = GenericBlas.Linspace(-1, 1, 11);
-
-                var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, Foundation.Grid.RefElements.CellType.Square_Linear, periodicX: periodic);
-
-                if (!periodic) {
-                    grd.EdgeTagNames.Add(1, "Velocity_inlet");
-                    grd.EdgeTagNames.Add(4, "Pressure_Outlet");
-                }
-
-                grd.EdgeTagNames.Add(2, "Wall_bottom");
-                grd.EdgeTagNames.Add(3, "Wall_top");
-
-                grd.DefineEdgeTags(delegate (double[] _X) {
-                    var X = _X;
-                    double x = X[0];
-                    double y = X[1];
-
-                    if (Math.Abs(y - (-1)) < 1.0e-6)
-                        // bottom
-                        return 2;
-
-                    if (Math.Abs(y - (+1)) < 1.0e-6)
-                        // top
-                        return 3;
-
-                    if (!periodic) {
-                        if (Math.Abs(x - (0)) < 1.0e-6)
-                            // left
-                            return 1;
-
-                        if (Math.Abs(x - (10)) < 1.0e-6)
-                            // right
-                            return 4;
-                    }
-                    throw new ArgumentOutOfRangeException();
-                });
-
-                Console.WriteLine("2D Channel Flow");
-
-                return grd;
-            };
-
-
-            Func<double[], double, double> VelocityX = (X,t) => (1 - (X[1] * X[1]));
-            Func<double[], double, double> VelocityY = (X, t) => 0;
-            Func<double[], double, double> Pressure = (X, t) => 0;
-
-
-            C.ExSol_Velocity_Evaluator = new Func<double[], double, double>[] { VelocityX, VelocityY };
-
-            //Func<double[], double, double> Velocity = new  Func<double[], double, double>;
-            //C.ExSol_Velocity[0] = (X, t) => (1 - (X[1] * X[1]));
-            //C.ExSol_Velocity["A"][1] = (X, t) => (1 - (X[1] * X[1]));
-            //C.ExSol_Pressure["A"] = (X, t) => 0;
-
-            if (!periodic) {
-                C.AddBoundaryValue("Velocity_inlet", "VelocityX", X => 1 - X[1] * X[1]);
-                C.AddBoundaryValue("Pressure_Outlet");
-            }
-
-            C.AddBoundaryValue("Wall_bottom");
-            C.AddBoundaryValue("Wall_top");
-
-            // Set Initial Conditions
-            C.InitialValues_Evaluators.Add("VelocityX", X => 0);
-            C.InitialValues_Evaluators.Add("VelocityY", X => 0);
-            C.InitialValues_Evaluators.Add("Phi", X => -1);
-
-            return C;
-        }
-
 
     }
 }

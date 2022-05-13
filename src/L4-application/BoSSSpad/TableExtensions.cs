@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.IO;
 using BoSSS.Solution.Gnuplot;
+using ilPSP;
 using ilPSP.Utils;
 using Newtonsoft.Json;
 using System;
@@ -38,6 +39,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static DataTable GetSessionTable(this IEnumerable<ISessionInfo> sessions, Tuple<string, Func<ISessionInfo, object>>[] AdditionalColums = null) {
 
+            //Debugger.Launch();
+
             Dictionary<string, object[]> Ret = new Dictionary<string, object[]>();
 
             for (int iSess = 0; iSess < sessions.Count(); iSess++) {
@@ -56,8 +59,20 @@ namespace BoSSS.Application.BoSSSpad {
                         } catch(Exception) {
                             val = null;
                         }
-                        kq.Add(new KeyValuePair<string, object>(t.Item1, val));
+
+                        if (kq.Where(kv => kv.Key == t.Item1).Count() > 0) {
+                            string addInfo;
+                            try {
+                                addInfo = $": '{t.Item1}' == {SS.KeysAndQueries[t.Item1]}";
+                            } catch(Exception) {
+                                addInfo = "";
+                            }
+                            throw new NotSupportedException($"Name of additional column '{t.Item1}' is not unique; it already appears in the 'KeysAndQueries' of session '{SS.ToString()}'{addInfo}.");
+                        } else {
+                            kq.Add(new KeyValuePair<string, object>(t.Item1, val));
+                        }
                     }
+
                 }
 
 
@@ -423,7 +438,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Stores Table in JSON-File
+        /// Loads Table from JSON-File
         /// </summary>
         static public DataTable LoadFromFile(string filePath) {
             string s = File.ReadAllText(filePath);
@@ -960,7 +975,8 @@ namespace BoSSS.Application.BoSSSpad {
                 int J = Tab.Columns.Count;
                 for (int i = 0; i < L; i++) {
                     DataRow orgRow = Tab.Rows[i];
-                    Dictionary<string, object> orgRowAsDict = new Dictionary<string, object>();
+                    Dictionary<string, object> orgRowAsDict = new Dictionary<string, object>(
+                        FuncEqualityComparerExtensions.ToEqualityComparer((string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)));
                     foreach (string ColName in ColNames) {
                         object obj_ColName = orgRow[ColName];
                         if (obj_ColName == DBNull.Value) {

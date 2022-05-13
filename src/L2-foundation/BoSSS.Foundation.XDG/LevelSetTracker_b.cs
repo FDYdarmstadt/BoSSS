@@ -85,6 +85,13 @@ namespace BoSSS.Foundation.XDG {
             return hs;
         }
 
+        /// <summary>
+        /// Cut Cell and Cut Edge metrics before agglomeration
+        /// </summary>
+        public XDGSpaceMetrics GetXDGSpaceMetrics(SpeciesId Spc, int CutCellsQuadOrder, int HistoryIndex = 1) {
+            return GetXDGSpaceMetrics(new SpeciesId[] { Spc }, CutCellsQuadOrder, HistoryIndex);
+        }
+
 
         /// <summary>
         /// Cut Cell and Cut Edge metrics before agglomeration
@@ -103,7 +110,7 @@ namespace BoSSS.Foundation.XDG {
             //throw new NotImplementedException("todo");
             var dict = m_XDGSpaceMetricsHistory[HistoryIndex];
             var key = Tuple.Create(_Spc, this.CutCellQuadratureType, CutCellsQuadOrder);
-            if(!dict.ContainsKey(key)) {
+            if (!dict.ContainsKey(key)) {
                 dict.Add(key,
                     new XDGSpaceMetrics(this,
                         GetXQuadFactoryHelper(CutCellsQuadType, HistoryIndex),
@@ -120,13 +127,18 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="Spc"></param>
-        /// <param name="CutCellsQuadOrder"></param>
+        /// <param name="Spc">all species, for which agglomeration should be performed</param>
+        /// <param name="CutCellsQuadOrder">
+        /// cut-cell quadrature order for the quadrature rule that is used to determine cell volumes;
+        /// this should typically be the same order which is used to evaluate the XDG operator matrix.
+        /// </param>
         /// <param name="__AgglomerationTreshold">
         /// Volume fraction, which triggers cell agglomeration;
         /// see <see cref="MultiphaseCellAgglomerator.AgglomerationThreshold"/></param>
         /// <param name="oldTs__AgglomerationTreshold">
-        /// Agglomeration thresholds for   _previous_ timesteps, correlates with <paramref name="oldCcm"/>.
+        /// Agglomeration thresholds for   _previous_ timesteps.
+        /// The number of entries in this array determines how many previous timesteps are considered
+        /// (<see cref="LevelSetTracker.HistoryLength"/>).
         /// </param>
         /// <param name="AgglomerateNewborn">
         /// 'Newborn' cut-cells 
@@ -140,7 +152,7 @@ namespace BoSSS.Foundation.XDG {
         /// any cell which should be agglomerated, if no neighbour is found.
         /// </param>
         /// <param name="NewbornAndDecasedThreshold">
-        /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewbornAndDeceased"/>;
+        /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
         /// </param>        
         /// <returns></returns>
         public MultiphaseCellAgglomerator GetAgglomerator(
@@ -150,7 +162,7 @@ namespace BoSSS.Foundation.XDG {
             double[] oldTs__AgglomerationTreshold = null,
             double NewbornAndDecasedThreshold = 1.0e-6
             ) {
-
+            
             return new MultiphaseCellAgglomerator(this, Spc, CutCellsQuadOrder,
                 __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold);
         }

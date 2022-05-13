@@ -759,7 +759,7 @@ namespace BoSSS.Application.MultigridTest
         [Test]
         public static void XDG_MatrixPolynomialRestAndPrlgTest(
 #if DEBUG
-            [Values(0, 1)] int p,
+            [Values(0)] int p,
 #else
             [Values(0, 1, 2, 3)] int p,
 #endif
@@ -873,7 +873,7 @@ namespace BoSSS.Application.MultigridTest
         [Test]
         public static void XDG_MatrixPolynomialRestAndPrlgTest_2(
 #if DEBUG
-            [Values(0, 1)] int p,
+            [Values(0)] int p,
 #else
             [Values(0, 1, 2, 3)] int p,
 #endif     

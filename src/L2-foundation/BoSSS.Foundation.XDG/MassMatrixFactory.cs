@@ -45,9 +45,10 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        public MassMatrixFactory(XDGSpaceMetrics __XDGSpaceMetrics) {
+        internal MassMatrixFactory(XDGSpaceMetrics __XDGSpaceMetrics) {
             XDGSpaceMetrics = __XDGSpaceMetrics;
-            this.MaxBasis = new Basis(XDGSpaceMetrics.GridDat, XDGSpaceMetrics.CutCellQuadOrder / 2);
+            //this.MaxBasis = new Basis(XDGSpaceMetrics.GridDat, XDGSpaceMetrics.CutCellQuadOrder / 2); // bad choice;
+            this.MaxBasis = new Basis(XDGSpaceMetrics.GridDat, 1);
         }
 
         /*
@@ -121,9 +122,6 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// <param name="inverse">
         /// Return the inverse mass matrix.
-        /// </param>
-        /// <param name="agg">
-        /// Required if an agglomerated Mass matrix is requested.
         /// </param>
         public BlockMsrMatrix GetMassMatrix(UnsetteledCoordinateMapping mapping, IDictionary<SpeciesId, IEnumerable<double>> alpha = null, bool inverse = false) {
             if (alpha == null) {
@@ -259,7 +257,7 @@ namespace BoSSS.Foundation.XDG {
         public void AccMassMatrix<T>(T M, UnsetteledCoordinateMapping mapping, IDictionary<SpeciesId, IEnumerable<double>> _alpha, bool inverse = false)
             where T : IMutableMatrixEx //
         {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 var _basisS = mapping.BasisS.ToArray();
                 var ctx = _basisS[0].GridDat;
                 int J = ctx.iLogicalCells.NoOfLocalUpdatedCells;
@@ -278,6 +276,8 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 LevelSetTracker.LevelSetRegions regions = null;// XDGSpaceMetrics.LevelSetRegions;
+
+                tr.Info("Requesting Mass Matrix for degrees " + mapping.BasisS.Select(b => b.Degree).ToConcatString("", ", ", ";"));
 
 
                 // compute the Mass-Blocks for the cut cells...
@@ -389,28 +389,31 @@ namespace BoSSS.Foundation.XDG {
         }
 
         private void UpdateBlocks(int _MaxDeg, IEnumerable<SpeciesId> RequestedSpecies) {
-            if (MassBlocks == null)
-                MassBlocks = new Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer>();
+            using (var tr = new FuncTrace()) {
+                if (MassBlocks == null)
+                    MassBlocks = new Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer>();
 
-            // ..., but only once: for the Basis with highest Polynomial Degree
-            if (_MaxDeg > this.MaxBasis.Degree) {
-                MassBlocks.Clear();
-                this.MaxBasis = new Basis(this.MaxBasis.GridDat, _MaxDeg);
-            }
+                // ..., but only once: for the Basis with highest Polynomial Degree
+                if (_MaxDeg > this.MaxBasis.Degree) {
+                    tr.Info("Mass Matrix requested for degree: " + _MaxDeg);
+                    MassBlocks.Clear();
+                    this.MaxBasis = new Basis(this.MaxBasis.GridDat, _MaxDeg);
+                } else {
+                    tr.Info("Mass Matrix for basis of degree: " + this.MaxBasis.Degree);
+                }
+                Basis nonXbasis = this.MaxBasis;
 
-            Basis nonXbasis = this.MaxBasis;
-
-            // compute Blocks
-            {
-                var SpeciesToDo = RequestedSpecies.Except(MassBlocks.Keys);
-                if (SpeciesToDo.Count() > 0) {
-                    // only for species that we haven't done/cached yet
-                    Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer> _MassBlocks;
-                    ComputeMassMatrixBlocks(SpeciesToDo, out _MassBlocks, nonXbasis, this.XDGSpaceMetrics); // m_quadorder, m_LsTrk, this.m_agglomerator, MomentFittingVariant);
-                    this.MassBlocks.AddRange(_MassBlocks);
+                // compute Blocks
+                {
+                    var SpeciesToDo = RequestedSpecies.Except(MassBlocks.Keys);
+                    if (SpeciesToDo.Count() > 0) {
+                        // only for species that we haven't done/cached yet
+                        Dictionary<SpeciesId, MassMatrixFactory.MassMatrixBlockContainer> _MassBlocks;
+                        ComputeMassMatrixBlocks(SpeciesToDo, out _MassBlocks, nonXbasis, this.XDGSpaceMetrics); // m_quadorder, m_LsTrk, this.m_agglomerator, MomentFittingVariant);
+                        this.MassBlocks.AddRange(_MassBlocks);
+                    }
                 }
             }
-
 
         }
 
@@ -473,6 +476,7 @@ namespace BoSSS.Foundation.XDG {
                 Result = new Dictionary<SpeciesId, MassMatrixBlockContainer>();
                 var schemeHelper = homie.XQuadSchemeHelper;
                 int Nnx = b.Length;
+                tracer.Info("Mass Matrix order: " + b.Degree + " -> dim = " + b.Length);
 
                 int quadorder = homie.CutCellQuadOrder;
 
@@ -538,6 +542,20 @@ namespace BoSSS.Foundation.XDG {
                         delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
                             // Del_Evaluate
                             // ~~~~~~~~~~~~~
+                            /*
+                            if(QR.Nodes.NoOfNodes > 10000) {
+                                var phi = homie.Tracker.LevelSets[0] as SinglePhaseField;
+                                Console.WriteLine("Rule with: " + QR.NoOfNodes + " nodes");
+                                for(int j = i0; j < i0+Length; j++) {
+                                    Console.WriteLine("in cell: " + j);
+                                    Console.WriteLine(homie.Tracker.GridDat.Grid.Cells[j].ToString());
+                                    homie.Tracker.GridDat.Grid.Cells[j].TransformationParams.SaveToStream(Console.Out);
+                                    Console.WriteLine("Degree of Level-Set: " + phi.Basis.Degree);
+                                    Console.WriteLine("DG coordinates: " + phi.Coordinates.GetRow(j).ToConcatString("", ", ", ";"));
+                                }
+                            }
+                            */
+
                             var BasisVal = b.CellEval(QR.Nodes, i0, Length);
                             EvalResult.Multiply(1.0, BasisVal, BasisVal, 0.0, "ikmn", "ikm", "ikn");
 

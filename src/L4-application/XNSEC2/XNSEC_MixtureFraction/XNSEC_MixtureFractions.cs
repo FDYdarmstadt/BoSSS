@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation.XDG.OperatorFactory;
+﻿using BoSSS.Application.XNSFE_Solver;
+using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
@@ -32,22 +33,46 @@ namespace BoSSS.Application.XNSEC {
             //================================
             opFactory.AddEquation(new LowMachMixtureFraction("A", D, boundaryMap, config, EoS_A));
             opFactory.AddEquation(new LowMachMixtureFraction("B", D, boundaryMap, config, EoS_B));
+            opFactory.AddParameter(new ThermodynamicPressure(Control.InitialMass, Control.ThermodynamicPressureMode, EoS_A));
+
         }
 
         protected override void DefineMomentumEquations(OperatorFactory opFactory, XNSEC_OperatorConfiguration config, int d, int D, LevelSetUpdater lsUpdater) {
             opFactory.AddEquation(new LowMachNavierStokes_MixtureFractions("A", d, D, boundaryMap, config, EoS_A));
             opFactory.AddEquation(new LowMachNavierStokes_MixtureFractions("B", d, D, boundaryMap, config, EoS_B));
             opFactory.AddEquation(new NSEInterface_Newton("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
+            if (config.isEvaporation) {
+                opFactory.AddEquation(new InterfaceNSE_Evaporation_Newton("A", "B", D, d, config));
+            }
         }
 
         protected override void DefineContinuityEquation(OperatorFactory opFactory, XNSEC_OperatorConfiguration config, int D, LevelSetUpdater lsUpdater) {
-            opFactory.AddEquation(new LowMachContinuity_MixtureFractions(D, "A", config, boundaryMap, EoS_A));
-            opFactory.AddEquation(new LowMachContinuity_MixtureFractions(D, "B", config, boundaryMap, EoS_B));
+            opFactory.AddEquation(new LowMachContinuity_MixtureFractions(D, "A", config, boundaryMap, EoS_A, Control.dtFixed));
+            opFactory.AddEquation(new LowMachContinuity_MixtureFractions(D, "B", config, boundaryMap, EoS_B, Control.dtFixed));
             opFactory.AddEquation(new InterfaceContinuityLowMach(config, D, LsTrk, config.isMatInt));
+            //=== evaporation extension === //
+            if (config.isEvaporation) {
+                opFactory.AddEquation(new InterfaceContinuity_Evaporation_Newton_LowMach("A", "B", D, config));
+            }
+            if (Control.timeDerivativeConti_OK) {
+                var rho0 = new Density_t0(config.NoOfChemicalSpecies, (MaterialLaw_MultipleSpecies)EoS_A);
+                opFactory.AddParameter(rho0);
+                var rho00 = new Density_t00(config.NoOfChemicalSpecies, (MaterialLaw_MultipleSpecies)EoS_A);
+                opFactory.AddParameter(rho00);
+            }
+
+
         }
 
         override protected void DefineAditionalParameters(OperatorFactory opFactory, XNSEC_OperatorConfiguration config, int D, LevelSetUpdater lsUpdater, int quadOrder) {
-            // No parameters
+            // ============================== //
+            // === additional parameters === //
+            // ============================= //
+            if (config.PlotAdditionalParameters) {
+                opFactory.AddParameter(new DensityMF(EoS_A, EoS_B, config.NoOfChemicalSpecies));
+                //opFactory.AddParameter(new Viscosity(EoS_A, EoS_B));
+                //opFactory.AddParameter(new HeatCapacity(EoS_A, EoS_B));
+            }
         }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {

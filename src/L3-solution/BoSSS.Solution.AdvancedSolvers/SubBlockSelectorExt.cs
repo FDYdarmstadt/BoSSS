@@ -24,7 +24,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// ctor
         /// </summary>
         /// <param name="map"></param>
-        public SubBlockSelector(MultigridMapping map) : base(map) { }
+        public SubBlockSelector(ICoordinateMapping map) : base(map) { }
     }
 
 
@@ -76,11 +76,11 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         private class BlockMaskExt : BlockMaskBase {
 
-            public BlockMaskExt(SubBlockSelector SBS, int LocMaskOffset) : base(SBS, SBS.GetMapping.MPI_Comm) {
+            public BlockMaskExt(SubBlockSelector SBS, int LocMaskOffset) : base(SBS, SBS.Mapping.MPI_Comm) {
                 
                 // must be set before mask generation
                 m_LocOffset = LocMaskOffset;
-                m_extLocLen = m_map.GetLocalLength_Ext();
+                m_extLocLen = GetLocalLength_Ext(SBS.Mapping);
 
                 base.GenerateAllMasks();
                 foreach (int idx in this.m_GlobalMask) {
@@ -88,7 +88,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
 
                 int LL = m_map.LocalLength;
-                int jMax = m_map.AggGrid.iLogicalCells.Count - 1;
+                int jMax = m_map.LocalCellCount - 1;
                 int LE = m_map.LocalUniqueIndex(0, jMax, 0) + m_map.GetLength(jMax);
 
                 foreach (int idx in this.m_LocalMask) {
@@ -97,18 +97,41 @@ namespace BoSSS.Solution.AdvancedSolvers
                 }
             }
 
+
+            /// <summary>
+            /// Gets DOF of ghost cells available on this proc
+            /// </summary>
+            /// <returns>DOF of ghost cells available on this proc
+            /// </returns>
+            static public int GetLocalLength_Ext(ICoordinateMapping cm) {
+                int Jup = cm.NoOfLocalUpdatedCells;
+                int Jtt = cm.LocalCellCount;
+                int Len = 0;
+                for(int j = Jup; j < Jtt; j++)
+                    Len += cm.GetLength(j);
+
+                //int[] LocCellIdxExt = this.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + Locoffset);
+                //foreach(int jCell in LocCellIdxExt) {
+                //    for(int fld = 0; fld < NoOfVariables; fld++) {
+                //        Len += this.AggBasis[fld].GetLength(jCell, this.DgDegree[fld]);
+                //    }
+                //}
+                return Len;
+            }
+            
+
             private int m_LocOffset;
             private int m_extLocLen;
 
             protected override int m_NoOfCells {
                 get {
-                    return m_map.AggGrid.iLogicalCells.NoOfExternalCells;
+                    return m_map.NoOfExternalCells;
                 }
             }
 
             protected override int m_CellOffset {
                 get {
-                    return m_map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+                    return m_map.NoOfLocalUpdatedCells;
                 }
             }
 
@@ -142,7 +165,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="sbs">sub block selection defined by dev</param>
         /// <param name="ExtRows">external rows collected from other MPI-processes on this proc</param>
         public BlockMask(SubBlockSelector sbs, BlockMsrMatrix ExtRows = null) {
-            m_map = sbs.GetMapping;
+            m_map = sbs.Mapping;
             m_ExtRows = ExtRows;
             m_includeExternalCells = (ExtRows != null) && m_map.MpiSize > 1;
             BMLoc = new BlockMaskLoc(sbs);
@@ -168,6 +191,16 @@ namespace BoSSS.Solution.AdvancedSolvers
                 Debug.Assert(!m_map.IsInLocalRange(GlobIdx));
             }
         }
+
+        /// <summary>
+        /// true if no elements are selected;
+        /// Typically some phatological use case, e.g. very coarse meshes
+        /// </summary>
+        public bool IsEmpty {
+            get;
+            private set;
+        }
+
         private void SetThisShitUp(BlockMaskBase[] masks) {
             List<long> tmpOffsetList = new List<long>();
             List<int> tmpLengthList = new List<int>();
@@ -178,13 +211,14 @@ namespace BoSSS.Solution.AdvancedSolvers
                 tmpLengthList.AddRange(mask.GetAllSubMatrixCellLength());
                 tmpNi0.AddRange(mask.m_StructuredNi0.ToList());
             }
-            if(tmpOffsetList.Count == 0)
-                throw new ArgumentException("Nothing Selected. Mask is empty");
+            if (tmpOffsetList.Count == 0)
+                IsEmpty = true; // typically some phatological use case, e.g. very coarse meshes
+                //throw new ArgumentException("Nothing Selected. Mask is empty");
             Debug.Assert(tmpOffsetList != null);
             Debug.Assert(tmpLengthList != null);
             Debug.Assert(tmpNi0 != null);
-            Debug.Assert(tmpOffsetList.GroupBy(x => x).Any(g => g.Count() == 1));
-            Debug.Assert(tmpNi0.GroupBy(x => x).Any(g => g.Count() == 1));
+            Debug.Assert(IsEmpty || tmpOffsetList.GroupBy(x => x).Any(g => g.Count() == 1));
+            Debug.Assert(IsEmpty || tmpNi0.GroupBy(x => x).Any(g => g.Count() == 1));
 
             SubMatrixOffsets = tmpOffsetList;
             SubMatrixLen = tmpLengthList;
@@ -213,6 +247,10 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         List<int> SubMatrixLen;
 
+
+        /// <summary>
+        /// inter-process communication of matrix rows
+        /// </summary>
         bool m_includeExternalCells;
 
         /// <summary>
@@ -221,9 +259,9 @@ namespace BoSSS.Solution.AdvancedSolvers
         extNi0[][][][] StructuredNi0;
 
         /// <summary>
-        /// <see cref="MultigridMapping"/>, which this mask is based upon
+        /// <see cref="ICoordinateMapping"/>, which this mask is based upon
         /// </summary>
-        MultigridMapping m_map;
+        ICoordinateMapping m_map;
 
         /// <summary>
         /// external rows, which correspond to ghost cells, overgiven in cctor
@@ -233,7 +271,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Gets number of blocks/cells covert by mask
         /// </summary>
-        public int GetNoOfMaskedCells {
+        public int NoOfMaskedCells {
             get {
                 if (m_includeExternalCells) {
                     return BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length;
@@ -246,7 +284,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Gets number of rows covert by mask
         /// </summary>
-        public int GetNoOfMaskedRows {
+        public int NoOfMaskedRows {
             get {
                 if (m_includeExternalCells) {
                     return BMLoc.LocalDOF + BMExt.LocalDOF;
@@ -261,8 +299,8 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// If you just want to get the <see cref="BlockMsrMatrix"/>, which corresponds to this <see cref="BlockMask"/>.
         /// This is the method to choose!
         /// </summary>
-        /// <returns>submatrix on MPI_Comm.SELF</returns>
-        public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source) {
+        /// <returns>sub-matrix on <see cref="IMPI_CommConstants.SELF"/></returns>
+        public BlockMsrMatrix GetSubBlockMatrix_MpiSelf(BlockMsrMatrix source) {
             return GetSubBlockMatrix(source, csMPI.Raw._COMM.SELF);
         }
 
@@ -270,7 +308,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// If you just want to get the <see cref="BlockMsrMatrix"/>, which corresponds to this <see cref="BlockMask"/>.
         /// This is the method to choose! In addition, MPI communicator can be defined via <paramref name="comm"/>.
         /// </summary>
-        /// <returns>submatrix on <paramref name="comm"/></returns>
+        /// <returns>sub-matrix on <paramref name="comm"/></returns>
         public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source, MPI_Comm comm) {
             if (source == null)
                 throw new ArgumentNullException();
@@ -300,7 +338,7 @@ namespace BoSSS.Solution.AdvancedSolvers
                     GlobalIdxExtRows[iGlob] += ExtRowsTmp._RowPartitioning.i0;
                     Debug.Assert(ExtRowsTmp._RowPartitioning.IsInLocalRange(GlobalIdxExtRows[iGlob]));
                 }
-                
+
                 //add local Block ...
                 source.WriteSubMatrixTo(target, BMLoc.m_GlobalMask, default(long[]), BMLoc.m_GlobalMask, default(long[]));
 
@@ -312,6 +350,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             } else {
                 BlockPartitioning localBlocking = new BlockPartitioning(BMLoc.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF, i0isLocal: true);
                 target = new BlockMsrMatrix(localBlocking);
+                BMLoc.m_GlobalMask.SaveToTextFile("mask-" + BMLoc.m_GlobalMask.Count + ".txt");
                 source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(long[]), BMLoc.m_GlobalMask, default(long[]));
             }
             Debug.Assert(target != null);
@@ -321,8 +360,8 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// Get array of diagonal cell-blocks covert by <see cref="BlockMask"/>. With the ignore flags,
         /// coupling blocks can be left out (e.g. blocks containing level-set).
-        /// - index i : block of i-th cell within mask (note: if some cell selection specified, i corresponds not to local cell index)
-        /// - content : matrix corresponding to masking
+        /// - index i: block of i-th cell within mask (note: if some cell selection specified, i corresponds not to local cell index)
+        /// - content: matrix corresponding to masking
         /// </summary>
         /// <param name="source">matrix to apply masking to</param>
         /// <param name="ignoreVarCoupling">flag to ignore variable coupling</param>
@@ -413,7 +452,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// Get SubMatrix corresponding to this <see cref="BlockMask"/>.
         /// With the ignore flags, coupling blocks can be left out (e.g. blocks containing level-set).
         /// If <paramref name="ignoreCellCoupling"/> is set true, only diagonal blocks are considered.
-        /// Probably slower than <see cref="GetSubBlockMatrix(BlockMsrMatrix)"/>.
+        /// Probably slower than <see cref="GetSubBlockMatrix_MpiSelf(BlockMsrMatrix)"/>.
         /// </summary>
         /// <remarks>
         /// If you are using <paramref name="ignoreCellCoupling"/>, you may dismiss coupling with other cells.
@@ -719,6 +758,10 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="map">Multigrid mapping</param>
         /// <param name="M">matrix distributed according to <paramref name="map"/></param>
         /// <returns></returns>
+        /// <remarks>
+        /// Exchange of matrix rows between MPI processors is implemented using multiplication with a permutation matrix.
+        /// In this way, the MPI-communication routines of <see cref="BlockMsrMatrix.Multiply(BlockMsrMatrix, BlockMsrMatrix)"/> can be re-used.
+        /// </remarks>
         public static BlockMsrMatrix GetAllExternalRows(MultigridMapping map, BlockMsrMatrix M) {
             using(new FuncTrace()) {
                 var extcells = map.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + map.LocalNoOfBlocks);
@@ -749,11 +792,9 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// 
         /// </summary>
-        public static int GetLocalAndExternalDOF(MultigridMapping map) {
-            int eCell = map.LocalNoOfBlocks + map.AggGrid.iLogicalCells.NoOfExternalCells - 1;
-            int eVar = map.AggBasis.Length - 1;
-            int eN = map.AggBasis[eVar].GetLength(eCell, map.DgDegree[eVar]) - 1;
-            return map.LocalUniqueIndex(eVar, eCell, eN) + 1;
+        public static int GetLocalAndExternalDOF(ICoordinateMapping map) {
+            int eCell = map.LocalNoOfBlocks + map.NoOfExternalCells - 1;
+            return map.LocalUniqueIndex(0, eCell, 0) + map.GetLength(eCell);
         }
 
         #region stuff for Operator Testing
@@ -811,6 +852,9 @@ namespace BoSSS.Solution.AdvancedSolvers
             return _Sblocks;
         }
 
+        /// <summary>
+        /// global (i.e. across all MPI processors) indices of vector entries, resp. matrix rows and columns to select.
+        /// </summary>
         public long[] GlobalIndices {
             get {
                 List<long> tmp = new List<long>();
@@ -839,7 +883,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// This is provided for testing or if you know what you are doing!
         /// </summary>
-        public List<long> GlobalIList_Internal {
+        public List<long> GlobalIndices_Internal {
             get {
                 return BMLoc.m_GlobalMask;
             }
@@ -848,7 +892,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// This is provided for testing or if you know what you are doing!
         /// </summary>
-        public List<long> GlobalIList_External {
+        public List<long> GlobalIndices_External {
             get {
                 return BMExt.m_GlobalMask;
             }

@@ -32,7 +32,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// Evaluation or linearization/matrix assembly of the operator;
-    /// this delegate is, so-to-say, the connection between the used <see cref="ISpatialOperator"/> and its evaluation
+    /// this delegate is, so-to-say, the connection between the used <see cref="ISpatialOperator"/> and its evaluation/linearization,
+    /// which can be used to build a <see cref="MultigridOperator"/>
     /// </summary>
     /// <param name="Matrix"></param>
     /// <param name="Affine"></param>
@@ -47,6 +48,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <param name="OberFrickelHack">
     /// the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
     /// </param>
+    /// <remarks>
+    /// As a recipe, this function does:
+    /// 1. compute linearization/evaluation at the current state , i.e. 
+    /// 1.1 in the case of `Linearization == true`,
+    ///     compute the operator matrix (<see cref="ISpatialOperator.LinearizationHint"/>, <see cref="ISpatialOperator.GetMatrixBuilder"/>, <see cref="ISpatialOperator.GetJacobiOperator"/>, <see cref="ISpatialOperator.GetFDJacobianBuilder"/>)
+    /// 1.2 in the case of `Linearization == false`,
+    ///     evaluate the operator (<see cref="ISpatialOperator.GetEvaluatorEx"/>)
+    /// 2. add timestepping terms (<see cref="ISpatialOperator.TemporalOperator"/>), also depending on the actual timestepping scheme (e.g. BDF or Runge-Kutta)
+    /// 3. Compute the mass matrix
+    /// 4. perform the agglomeration (<see cref="LevelSetTracker.GetAgglomerator"/>
+    /// </remarks>
     public delegate void OperatorEvalOrLin(out BlockMsrMatrix Matrix, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization, out ISpatialOperator OberFrickelHack);
               
 
@@ -179,10 +191,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         
         /// <summary>
-        /// Preconditioner/solver for the linearized problem
+        /// Preconditioner/solver configuration for the linearized problem
         /// </summary>
-        public ISolverSmootherTemplate Precond;
-        
+        public ISolverFactory PrecondConfig;
+
+
+
 
 
         /// <summary>
@@ -336,7 +350,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             CurrentLin = new MultigridOperator(this.m_AggBasisSeq, this.ProblemMapping,
                 OpMtxRaw.CloneAs(), MassMtxRaw,
                 this.m_MultigridOperatorConfig,
-                AbstractOperator.DomainVar.Select(varName => AbstractOperator.FreeMeanValue[varName]).ToArray()); 
+                AbstractOperator); 
 
             
 

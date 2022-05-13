@@ -30,16 +30,26 @@ namespace ilPSP.LinSolvers.MUMPS {
     /// MUMPS parameter ICNTL(11)
     /// </summary>
     public enum MUMPSStatistics {
+        /// <summary>
+        /// 
+        /// </summary>
         NoErrorAnalysis = 0,
 
         /// <summary>
-        /// includ
+        /// 
         /// </summary>
         AllStatistics = 1,
 
+        /// <summary>
+        /// 
+        /// </summary>
         MainStatistics = 2
     }
 
+    /// <summary>
+    /// Wrapper class around MUMPS, 
+    /// see http://mumps.enseeiht.fr/
+    /// </summary>
     public class MUMPSSolver : ISparseSolver, IDisposable {
 
         MUMPS_csharp.DMUMPS_STRUC_CS mumps_par = new MUMPS_csharp.DMUMPS_STRUC_CS();
@@ -77,8 +87,6 @@ namespace ilPSP.LinSolvers.MUMPS {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="verbose"></param>
-        /// <param name="MPI"></param>
         public MUMPSSolver(bool verbose = false) {
             this.verbose = verbose;
         }
@@ -103,6 +111,9 @@ namespace ilPSP.LinSolvers.MUMPS {
 
         MUMPS_csharp MUMPS_csharp;
 
+        /// <summary>
+        /// <see cref="ISparseSolver.DefineMatrix"/>
+        /// </summary>
         public void DefineMatrix(IMutableMatrixEx M) {
             if(m_MumpsMatrix != null)
                 throw new NotSupportedException("solver can only be initialized once");
@@ -117,12 +128,18 @@ namespace ilPSP.LinSolvers.MUMPS {
             this.m_MPI_Comm = m_OrgMatrix.MPI_Comm;
         }
 
+        /// <summary>
+        /// <see cref="ISparseSolver.Solve{Tunknowns, Trhs}"/>
+        /// </summary>
         public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
             where Tunknowns : IList<double>
             where Trhs : IList<double> {
             return Solve<double[], Tunknowns, Trhs>(1.0, null, x, rhs);
         }
 
+        /// <summary>
+        /// <see cref="ISparseSolverExt.Solve{Tdiag, Tunknowns, Trhs}"/>
+        /// </summary>
         public SolverResult Solve<Tdiag, Tunknowns, Trhs>(double Scale, Tdiag d, Tunknowns x, Trhs rhs)
             where Tdiag : System.Collections.Generic.IList<double>
             where Tunknowns : System.Collections.Generic.IList<double>
@@ -490,13 +507,20 @@ namespace ilPSP.LinSolvers.MUMPS {
 
         }
 
+        /// <summary>
+        /// Disposing/release of internal data structures
+        /// </summary>
         ~MUMPSSolver() {
             this.Dispose();
         }
 
         #region IDisposable Support
 
-        // This code added to correctly implement the disposable pattern.
+        
+        
+        /// <summary>
+        /// Disposing/release of internal data structures
+        /// </summary>
         public void Dispose() {
             m_MumpsMatrix = null;
             m_OrgMatrix = null;

@@ -128,7 +128,7 @@ namespace BoSSS.Application.XNSEC {
 
         //    C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
         //    C.NonLinearSolver.verbose = true;
-        //    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+        //    C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
 
         //    C.NonLinearSolver.ConvergenceCriterion = 1e-8;
         //    C.LinearSolver.ConvergenceCriterion = 1e-8;
@@ -311,7 +311,7 @@ namespace BoSSS.Application.XNSEC {
         //    //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
         //    C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
         //    C.NonLinearSolver.verbose = true;
-        //    C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+        //    C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
 
         //    C.NonLinearSolver.ConvergenceCriterion = 1e-8;
         //    C.LinearSolver.ConvergenceCriterion = 1e-8;

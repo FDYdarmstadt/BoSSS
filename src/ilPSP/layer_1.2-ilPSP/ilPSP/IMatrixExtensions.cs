@@ -415,6 +415,17 @@ namespace ilPSP {
             return Dmin;
         }
 
+        /// <summary>
+        /// From matrix <paramref name="M"/> to <paramref name="buffer"/>
+        /// </summary>
+        /// <param name="M">input matrix</param>
+        /// <param name="buffer">
+        /// output;
+        /// </param>
+        /// <param name="BufferInFortranOrder">
+        /// - true:  <paramref name="buffer"/> will be witten in FORTRAN order (column-wise)
+        /// - false:  <paramref name="buffer"/> will be witten in C order (row-wise)
+        /// </param>
         static unsafe void CopyToUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
 #if DEBUG
             if(M.GetType().IsValueType)
@@ -440,6 +451,17 @@ namespace ilPSP {
             }
         }
 
+        /// <summary>
+        /// From <paramref name="buffer"/> to matrix <paramref name="M"/>
+        /// </summary>
+        /// <param name="M">output matrix</param>
+        /// <param name="buffer">
+        /// output;
+        /// </param>
+        /// <param name="BufferInFortranOrder">
+        /// - true: <paramref name="buffer"/> will be read in FORTRAN order (column-wise)
+        /// - false: <paramref name="buffer"/> will be read in C order (row-wise)
+        /// </param>
         static unsafe void CopyFromUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
             int I = M.NoOfRows, J = M.NoOfCols;
 
@@ -2182,6 +2204,15 @@ namespace ilPSP {
 
         //static public Stopwatch DGETRF_stopwatch;// = new Stopwatch();
 
+        static public double[] Solve<T,W>(this T M, W b)
+            where T : IMatrix
+            where W : IList<double> //
+        {
+            double[] x = new double[b.Count];
+            M.Solve(x, b);
+            return x;
+        }
+
         /// <summary>
         /// Solves the linear equation system:
         /// 
@@ -2190,23 +2221,31 @@ namespace ilPSP {
         /// <param name="x">On exit, the solution of the equation system.</param>
         /// <param name="b">Right-hand-side of the equation system.</param>
         /// <param name="M">General quadratic, non-singular matrix.</param>
-        static public void Solve<T>(this T M, double[] x, double[] b) where T : IMatrix {
+        static public void Solve<T,V,W>(this T M, V x, W b) 
+            where T : IMatrix
+            where V : IList<double>
+            where W : IList<double>
+        {
             if (M.NoOfRows != M.NoOfCols)
                 throw new ApplicationException("Cannot solve nonquadratic matrix.");
-            if (x.Length != M.NoOfCols)
+            if (x.Count != M.NoOfCols)
                 throw new ArgumentException("length of x must be equal to number of columns");
-            if (b.Length != M.NoOfRows)
+            if (b.Count != M.NoOfRows)
                 throw new ArgumentException("length of b must be equal to number of rows");
             unsafe {
 
                 int L = M.NoOfCols;
 
-                Array.Copy(b, x, x.Length);
+                double[] _x = x as double[];
+                if(_x == null) {
+                    _x = new double[x.Count];
+                }
+                _x.SetV(b);
 
                 int* ipiv = stackalloc int[L];
                 int i0;
                 double[] _this_Entries = TempBuffer.GetTempBuffer(out i0, L * L);
-                fixed (double* this_Entries = _this_Entries) {
+                fixed (double* this_Entries = _this_Entries, p_x = _x) {
 
                     CopyToUnsafeBuffer(M, this_Entries, true);
 
@@ -2228,13 +2267,16 @@ namespace ilPSP {
                     //         TRANS, N, NRHS, A,            LDA, IPIV, B, LDB
                     char transp = 'N';
                     int eins = 1;
-                    LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, x, ref L, out info);
+                    LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, p_x, ref L, out info);
                     if(info != 0) {
                         TempBuffer.FreeTempBuffer(i0);
                         throw new ArithmeticException("LAPACK dgetrs info: " + info);
                     }
                 }
                 TempBuffer.FreeTempBuffer(i0);
+
+                if(!object.ReferenceEquals(x, _x))
+                    x.SetV(_x);
             }
         }
 
@@ -2359,30 +2401,40 @@ namespace ilPSP {
             int L = M.NoOfCols;
             unsafe {
                 int iBuf;
-                double[] _this_Entries;
-                int BufOffset;
-                if (M is MultidimensionalArray) {
-                    var Mda = (M as MultidimensionalArray);
-                    _this_Entries = Mda.Storage;
-                    iBuf = -1;
-                    BufOffset = Mda.Index(0, 0);
-                } else {
-                    _this_Entries = TempBuffer.GetTempBuffer(out iBuf, L * L);
-                    BufOffset = 0;
-                }
 
-                Array.Copy(b, x, x.Length);
+                //double[] _this_Entries;
+                //int BufOffset;
+                //if (M is MultidimensionalArray Mda && Mda.IsContinious) {
+                //    _this_Entries = Mda.Storage; // fk, 06apr22: does not work, because MultidimensionalArray is in C-order
+                //    iBuf = -1;
+                //    BufOffset = Mda.Index(0, 0);
+                //} else {
+                //    _this_Entries = TempBuffer.GetTempBuffer(out iBuf, L * L);
+                //    BufOffset = 0;
+                //}
 
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out iBuf, L * L);
+                int BufOffset = 0;
+
+               
                 fixed (int* ipiv = _ipiv) {
+
+                    double* xx = stackalloc double[L + 2];
+                    for (int i = 0; i < L; i++) {
+                        xx[i + 1] = b[i];
+                    }
+                    xx[0] = 123.456;
+                    xx[L + 1] = -987.76;
+
                     fixed (double* __this_Entries = _this_Entries) {
 
                         double* this_Entries = __this_Entries + BufOffset;
                         if(iBuf >= 0)
-                            CopyFromUnsafeBuffer(M, this_Entries, true);
+                            CopyToUnsafeBuffer(M, this_Entries, true);
 
                         char transp = 'N';
                         int eins = 1;
-                        LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, x, ref L, out int info);
+                        LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, xx + 1, ref L, out int info);
                         if (info != 0) {
                             if(iBuf >= 0)
                                 TempBuffer.FreeTempBuffer(iBuf);
@@ -2390,12 +2442,22 @@ namespace ilPSP {
                         }
 
                     }
+
+
+                    if (xx[0] != 123.456 || xx[L + 1] != -987.76)
+                        throw new MemberAccessException("LAPACK.DGETRS accessed memory that it should not touch");
+                    for (int i = 0; i < L; i++) {
+                        x[i] = xx[i + 1];
+                    }
+
                 }
+
 
                 if (iBuf >= 0)
                     TempBuffer.FreeTempBuffer(iBuf);
             }
         }
+
 
 
         /// <summary>

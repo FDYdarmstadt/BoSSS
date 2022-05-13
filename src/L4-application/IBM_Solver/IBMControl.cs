@@ -36,13 +36,7 @@ namespace BoSSS.Application.IBM_Solver {
         /// Ctor.
         /// </summary>
         public IBM_Control() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
-            //shift of Solver Information
-            base.LinearSolver.MaxKrylovDim = 30; //MaxKrylovDim
-            base.LinearSolver.MaxSolverIterations = 2000; //MaxSolverIterations
-            base.LinearSolver.MinSolverIterations = 2; //MinSolverIterations
-            base.LinearSolver.ConvergenceCriterion = 1.0e-8; //Solver_ConvergenceCriterion
-            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
+            base.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); //public LinearSolverCodes LinearSolve = LinearSolverCodes.classic_mumps;
             base.NonLinearSolver.MaxSolverIterations = 2000; //MaxSolverIterations
             base.NonLinearSolver.MinSolverIterations = 2; //MinSolverIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-8; //Solver_ConvergenceCriterion

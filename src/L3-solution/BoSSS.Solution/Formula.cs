@@ -280,7 +280,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Vectorized evaluation
         /// </summary>
-        public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+        public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
             NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
         }
     }

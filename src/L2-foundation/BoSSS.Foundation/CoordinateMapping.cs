@@ -134,7 +134,7 @@ namespace BoSSS.Foundation {
         /// computes a local unique coordinate index ("local" means local on this processor);
         /// this index is unique over all fields (in this mapping), over all cells, over all basis functions, 
         /// but it's only locally (on this processor) valid.
-        /// A local index in the update range (smaller than <see cref="UnsetteledCoordinateMapping.LocalLength"/>) can be converted into 
+        /// A local index in the update range (smaller than <see cref="ilPSP.Partitioning.LocalLength"/>) can be converted into 
         /// a global index by adding <see cref="ilPSP.Partitioning.i0"/>.
         /// </summary>
         /// <param name="f">the field</param>

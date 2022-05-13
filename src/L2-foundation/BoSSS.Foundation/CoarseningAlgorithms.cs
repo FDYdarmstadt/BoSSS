@@ -78,8 +78,20 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     if (aggGrids.Count >= MaxDepth)
                         break;
 
+                    // simple coarsening
+                    var grid2coarsen = aggGrids.Last();
+                    var grid = Coarsen(grid2coarsen, (int)(Math.Pow(2, D)));
 
-                    AggregationGridData grid = Coarsen(aggGrids.Last(), (int)(Math.Pow(2, D)));
+                    // repeat coarsening if size reduction not sufficient
+                    double aimred = 1 / (Math.Pow(2, D)) * 2; // half of the potentially possible reduction
+                    for (int iCoarsen = 0; iCoarsen < 1; iCoarsen++) {
+                        double actualred = (double)grid.CellPartitioning.LocalLength / (double)aggGrids.Last().CellPartitioning.LocalLength;
+                        if ((actualred < aimred).MPIAnd()) break;
+                        grid2coarsen = grid;
+                        grid = Coarsen(grid2coarsen, (int)(Math.Pow(2, D)));
+                        grid.MergeWithPartentGrid(grid2coarsen); // merge with intermediate AggGrid
+                    }
+
                     //var grid = ZeroAggregation(aggGrids.Last());
 
                     int Jloc = grid.CellPartitioning.LocalLength;
@@ -119,19 +131,19 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                     Debug.Assert(C2F.Length == JCoarse);
                     for (int jC = 0; jC < JCoarse; jC++) {
                         foreach (int jF in C2F[jC]) {
-                            Debug.Assert(testMarker[jF] == false);
+                            Debug.Assert(testMarker[jF] == false,$"cell {jF} already appears in coarse grid: agglomerated to cell {jC}!");
                             testMarker[jF] = true;
                         }
                     }
                     for (int jF = 0; jF < JFine; jF++) {
-                        Debug.Assert(testMarker[jF] == true);
+                        Debug.Assert(testMarker[jF] == true,$"cell {jF} of fine grid was not agglomerated");
                     }
 
                     // test the fine-to-coarse mapping
                     int[] F2C = aggGrids[iLevel + 1].jCellFine2jCellCoarse;
                     Debug.Assert(F2C.Length == JFine);
                     for (int jF = 0; jF < JFine; jF++) {
-                        Debug.Assert(C2F[F2C[jF]].Contains(jF));
+                        Debug.Assert(C2F[F2C[jF]].Contains(jF),"");
                     }
 
 #endif
@@ -143,8 +155,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
 
+
+
         /// <summary>
-        /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
+        /// creates an initial aggregated grid which is in fact equivalent to <paramref name="gd"/>
         /// </summary>
         public static AggregationGridData ZeroAggregation(IGridData gd) {
             var g = gd.Grid;

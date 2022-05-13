@@ -95,9 +95,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// implementation of the CG algorithm
         /// </summary>
-        /// <param name="_x"></param>
-        /// <param name="_R"></param>
-        /// <param name="stats"></param>
         public void Solve<Vec1, Vec2>(Vec1 _x, Vec2 _R)
             where Vec1 : IList<double>
             where Vec2 : IList<double> //
@@ -128,7 +125,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ==============
                 GenericBlas.dswap(L, x, 1, P, 1);
                 m_Matrix.SpMV(-1.0, P, 1.0, R);
-                IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), R.CloneAs(), this.m_MgOp);
+                IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), R.CloneAs(), this.m_MgOp as MultigridOperator);
 
                 GenericBlas.dswap(L, x, 1, P, 1);
                 if (Precond != null) {
@@ -181,7 +178,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     R.AccV(-lambda, V);
 
                     if (IterationCallback != null) {
-                        IterationCallback(NoOfIterations, x.CloneAs(), R.CloneAs(), this.m_MgOp);
+                        IterationCallback(NoOfIterations, x.CloneAs(), R.CloneAs(), this.m_MgOp as MultigridOperator);
                     }
 
                     if (Precond != null) {
@@ -212,64 +209,70 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        MultigridOperator m_MgOp;
-        BlockMsrMatrix m_Matrix;
+        IOperatorMappingPair m_MgOp;
+        BlockMsrMatrix m_Matrix => m_MgOp.OperatorMatrix;
 
 
         /// <summary>
         /// ~
         /// </summary>
         public void Init(MultigridOperator op) {
-            using (new FuncTrace()) {
-                var M = op.OperatorMatrix;
-                var MgMap = op.Mapping;
-                this.m_MgOp = op;
+            using(new FuncTrace()) {
+                using(new FuncTrace()) {
+                    if(object.ReferenceEquals(op, this.m_MgOp))
+                        return; // already initialized
+                    else
+                        this.Dispose(); // must re-initialize
 
-                if (!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
-                    throw new ArgumentException("Row partitioning mismatch.");
-                if (!M.ColPartition.EqualsPartition(MgMap.Partitioning))
-                    throw new ArgumentException("Column partitioning mismatch.");
+                    var M = op.OperatorMatrix;
+                    var MgMap = op.DgMapping;
+                    this.m_MgOp = op;
 
-                this.m_Matrix = M;
-                /*
-                int n = m_Matrix.RowPartitioning.LocalLength;
-                if(n > 50000) {
-                    var _Matrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(M.ToMsrMatrix());
+                    if(!M.RowPartitioning.EqualsPartition(MgMap))
+                        throw new ArgumentException("Row partitioning mismatch.");
+                    if(!M.ColPartition.EqualsPartition(MgMap))
+                        throw new ArgumentException("Column partitioning mismatch.");
 
-                    double[] xTest = new double[n];
-                    double[] bTest = new double[n];
-                    Random r = new Random(123);
-                    for(int i = 0; i < n; i++) {
-                        xTest[i] = r.NextDouble();
-                        bTest[i] = r.NextDouble();
+                    //this.m_Matrix = M;
+                    /*
+                    int n = m_Matrix.RowPartitioning.LocalLength;
+                    if(n > 50000) {
+                        var _Matrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(M.ToMsrMatrix());
+
+                        double[] xTest = new double[n];
+                        double[] bTest = new double[n];
+                        Random r = new Random(123);
+                        for(int i = 0; i < n; i++) {
+                            xTest[i] = r.NextDouble();
+                            bTest[i] = r.NextDouble();
+                        }
+
+
+                        double[] b1 = bTest.CloneAs();
+                        double[] x1 = bTest.CloneAs();
+                        Stopwatch monkey = new Stopwatch();
+                        monkey.Start();
+                        for (int i = 0; i < 100; i++)
+                            _Matrix.SpMV(1.0, x1, -0.1, b1);
+                        monkey.Stop();
+
+                        double[] b2 = bTest.CloneAs();
+                        double[] x2 = bTest.CloneAs();
+                        Stopwatch block = new Stopwatch();
+                        block.Start();
+                        for (int i = 0; i < 100; i++)
+                            m_Matrix.SpMV(1.0, x1, -0.1, b1);
+                        block.Stop();
+
+                        Console.WriteLine("SPMV monkey:    " + monkey.Elapsed.TotalSeconds);
+                        Console.WriteLine("SPMV block MSR: " + block.Elapsed.TotalSeconds);
                     }
-
-
-                    double[] b1 = bTest.CloneAs();
-                    double[] x1 = bTest.CloneAs();
-                    Stopwatch monkey = new Stopwatch();
-                    monkey.Start();
-                    for (int i = 0; i < 100; i++)
-                        _Matrix.SpMV(1.0, x1, -0.1, b1);
-                    monkey.Stop();
-
-                    double[] b2 = bTest.CloneAs();
-                    double[] x2 = bTest.CloneAs();
-                    Stopwatch block = new Stopwatch();
-                    block.Start();
-                    for (int i = 0; i < 100; i++)
-                        m_Matrix.SpMV(1.0, x1, -0.1, b1);
-                    block.Stop();
-
-                    Console.WriteLine("SPMV monkey:    " + monkey.Elapsed.TotalSeconds);
-                    Console.WriteLine("SPMV block MSR: " + block.Elapsed.TotalSeconds);
+                    */
+                    if(Precond != null)
+                        Precond.Init(op);
                 }
-                */
-                if (Precond != null)
-                    Precond.Init(op);
             }
         }
-
         public int IterationsInNested {
             get {
                 if(this.Precond != null)
@@ -314,7 +317,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
-            throw new NotImplementedException();
+            Precond.Dispose();
         }
 
         public long UsedMemory() {

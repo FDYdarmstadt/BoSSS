@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
+    <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj" />
+    <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj" />
+    <ProjectReference Include="..\XNSFE_Solver\XNSFE_Solver.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>

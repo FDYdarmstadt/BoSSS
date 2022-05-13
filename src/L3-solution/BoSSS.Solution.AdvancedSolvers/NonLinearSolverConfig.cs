@@ -33,21 +33,21 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         Newton = 2,
 
-        /// <summary>
-        /// Mixed sequence of nonlinear solvers. Useful for example if one wishes to start a simulation with Picard and then change to Newton.
-        /// </summary>
-        NLSolverSequence = 4, 
+        ///// <summary>
+        ///// Mixed sequence of nonlinear solvers. Useful for example if one wishes to start a simulation with Picard and then change to Newton.
+        ///// </summary>
+        //NLSolverSequence = 4, 
 
-        /// <summary>
-        /// Overgiven solver to Solver Chooser object. Weisse bescheid ...
-        /// </summary>
-        selfmade = 999,
+        ///// <summary>
+        ///// Overgiven solver to Solver Chooser object. Weisse bescheid ...
+        ///// </summary>
+        //selfmade = 999,
     }
 
     /// <summary>
     /// User-Options for nonlinear solver configuration; 
     /// </summary>
-    public class NonLinearSolverConfig : ICloneable, IEquatable<NonLinearSolverConfig>{
+    public class NonLinearSolverConfig : IEquatable<NonLinearSolverConfig>{
 
         /// <summary>
         /// This will print out more information about iterations.
@@ -97,6 +97,14 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public int constantNewtonIterations = 1;
 
+
+        /// <summary>
+        ///  If, for a specific homotopy parameter value, Newton does not converges successfully,
+        /// (within this number of iterations) a roll-back to the last solution is done and the step with is reduced
+        /// </summary>
+        [DataMember]
+        public int HomotopyStepLongFail = 20;
+
         /*
         /// <summary>
         /// Prints the step reduction factor of the newton backtracking method
@@ -109,24 +117,6 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public GlobalizationOption Globalization = GlobalizationOption.Dogleg;
-
-        /// <summary>
-        /// Clones the NonLinearConfig
-        /// </summary>
-        /// <returns></returns>
-        public object Clone() {
-            var clone = new NonLinearSolverConfig() {
-                constantNewtonIterations = this.constantNewtonIterations,
-                ConvergenceCriterion = this.ConvergenceCriterion,
-                MaxSolverIterations = this.MaxSolverIterations,
-                MinSolverIterations = this.MinSolverIterations,
-                SolverCode = this.SolverCode,
-                UnderRelax = this.UnderRelax,
-                Globalization = this.Globalization,
-                verbose = this.verbose
-        };
-            return clone;
-        }
 
         /// <summary>
         /// Compares value not reference!
@@ -144,7 +134,8 @@ namespace BoSSS.Solution.Control {
                 this.SolverCode == compareto.SolverCode &&
                 this.UnderRelax == compareto.UnderRelax &&
                 this.Globalization == compareto.Globalization &&
-                this.verbose == compareto.verbose;
+                this.verbose == compareto.verbose &&
+                this.HomotopyStepLongFail == compareto.HomotopyStepLongFail;
         }
     }
 }

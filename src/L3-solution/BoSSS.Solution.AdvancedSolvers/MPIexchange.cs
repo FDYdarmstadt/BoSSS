@@ -280,7 +280,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         int Len = Para.RcvCommListsNoOfItems[pOrigin];
 
                         IntPtr insertAddr;
-                        RcvBufferPin[i] = GCHandle.Alloc(RcvBuffer[i]);
+                        RcvBufferPin[i] = GCHandle.Alloc(RcvBuffer[i], GCHandleType.Pinned);
                         insertAddr = Marshal.UnsafeAddrOfPinnedArrayElement(RcvBuffer[i], 0);
                         
                         // MPI receive
@@ -578,7 +578,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         int pOrigin = rvcProc[i];
                         int Len = Para.RcvCommListsNoOfItems[pOrigin];
 
-                        RcvBufferPin[i] = GCHandle.Alloc(RcvBuffer[i]);
+                        RcvBufferPin[i] = GCHandle.Alloc(RcvBuffer[i], GCHandleType.Pinned);
                         IntPtr insertAddr = Marshal.UnsafeAddrOfPinnedArrayElement(RcvBuffer[i], 0);
                         
                         // MPI receive

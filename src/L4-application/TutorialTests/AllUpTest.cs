@@ -21,6 +21,7 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -56,6 +57,8 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__BoundaryAndInitialData() {
             // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
+            NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
+            NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
             RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
         }
 
@@ -94,6 +97,7 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("ue2Basics/ue2Basics.ipynb")]
         [Test]
         static public void Run__ue2Basics() {
+            //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__ue2Basics
             RunWorksheet("ue2Basics/ue2Basics.ipynb");
         }
 
@@ -168,6 +172,8 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
         [Test]
         static public void Run__convStudy() {
+            NotebookRunner.DeleteDatabase("ConvStudyTutorial");
+            NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
             RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
         }
 #endif
@@ -220,14 +226,20 @@ namespace BoSSS.Application.TutorialTests {
 
             // locate script
             string TexFileName = NotebookPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
-            string FullTexName;
+            string WorksheetName;
             if (!File.Exists(TexFileName)) {
-                FullTexName = LocateFile(NotebookPartialPath).Single();
+                WorksheetName = LocateFile(NotebookPartialPath).Single();
             } else {
-                FullTexName = TexFileName;
+                WorksheetName = TexFileName;
             }
 
-            Assert.IsTrue(File.Exists(FullTexName), "unable to find source: " + FullTexName);
+            Assert.IsTrue(File.Exists(WorksheetName), "unable to find source: " + WorksheetName);
+
+            if(Directory.GetFiles(Path.GetDirectoryName(Path.GetFullPath(WorksheetName)), Path.GetFileName(typeof(BoSSSpadMain).Assembly.Location)).Length <= 0) {
+                typeof(BoSSSpadMain).Assembly.DeployAt(new DirectoryInfo(Path.GetDirectoryName(Path.GetFullPath(WorksheetName))));
+            }
+
+
 
             // start the minibatchprocessor which is used internally
             OneTimeSetUp();
@@ -238,17 +250,17 @@ namespace BoSSS.Application.TutorialTests {
             try {
                 // run test:
                 string mode;
-                if(Path.GetExtension(FullTexName).Equals(".tex", StringComparison.InvariantCultureIgnoreCase))
+                if(Path.GetExtension(WorksheetName).Equals(".tex", StringComparison.InvariantCultureIgnoreCase))
                     mode = "--texbatch";
                 else
                     mode = "--JupyterBatch";
 
                 
-                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, FullTexName });
+                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
 
-                Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", FullTexName, ErrCount);
-                Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
-                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
+                Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", WorksheetName, ErrCount);
+                Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
+                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
             } finally {
                 // shutting down the local mini batch processor:
                 OneTimeTearDown();
@@ -367,8 +379,7 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary>
-        /// Deletes all deployments matchin the search patter <paramref name="Directory"/>
-        /// 
+        /// Deletes all deployments matchin the search patter <paramref name="DirectoryWildCard"/>
         /// </summary>
         public static void DeleteDeployments(string DirectoryWildCard) {
 
@@ -379,7 +390,14 @@ namespace BoSSS.Application.TutorialTests {
                     var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
                     foreach(var d in deplDirs) {
                         Console.WriteLine("Deleting deployment: " + d.FullName);
-                        d.Delete(true);
+                        try {
+                            // we can be forgiving on deletion of old deployments; 
+                            // an old deployment will not harm or influence the worksheet execution
+                            // (for an old database, it's a different story!
+                            d.Delete(true);
+                        } catch (Exception e) {
+                            Console.Error.WriteLine($"{e.GetType()} during deletion of {d.FullName}: {e.Message}.");
+                        }
                     }
                 } else {
                     Console.WriteLine("Warning: missing directory: " + localBaseDir.FullName);

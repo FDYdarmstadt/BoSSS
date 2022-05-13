@@ -159,16 +159,6 @@ namespace BoSSS.Solution.XNSECommon {
                     AddComponent(Visc2);
 
 
-                    //if (dntParams.UseGhostPenalties) {
-                    //    var Visc1Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUTerm(
-                    //        penalty, 0.0,
-                    //        boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
-                    //    var Visc2Penalty = new Solution.XNSECommon.Operator.Viscosity.ViscosityInSpeciesBulk_GradUtranspTerm(
-                    //        penalty, 0.0,
-                    //        boundaryMap, spcName, spcId, d, D, physParams.mu_A, physParams.mu_B);
-                    //    AddGhostComponent(Visc1Penalty);
-                    //    AddGhostComponent(Visc2Penalty);
-                    //}
                     break;
                 }
                 case ViscosityMode.Viscoelastic: {
@@ -234,7 +224,6 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="d">
         /// Momentum component index
         /// </param>
-        /// <param name="LsTrk"></param>
         /// <param name="D">
         /// Spatial dimension
         /// </param>
@@ -294,6 +283,9 @@ namespace BoSSS.Solution.XNSECommon {
                 AddComponent(src);
                 var flx = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_Edge(d, BcMap, spcName, rhoSpc, -1, false);
                 AddComponent(flx);
+
+                ////AddComponent(new PressureStabilizationInBulk(-1.0, 1 / physParams.mu_A, 1 / physParams.mu_B, spcName));
+                ////AddComponent(new ArtificalPressure(4.0,BcMap,0.0625));//.125
             }
         }
 
@@ -329,6 +321,7 @@ namespace BoSSS.Solution.XNSECommon {
             // set components
             var divPen = new Solution.XNSECommon.Operator.Continuity.DivergenceAtLevelSet(D, rhoA, rhoB, isMaterialInterface, -1, false);
             AddComponent(divPen);
+            //AddComponent(new PressureStabilizationAtLevelSet(1.0, physParams.reynolds_A, physParams.reynolds_B));
         }
 
         public override string FirstSpeciesName => phaseA;
@@ -848,6 +841,10 @@ namespace BoSSS.Solution.XNSECommon {
         string codomainName;
 
         //Methode aus der XNSF_OperatorFactory
+
+        /// <summary>
+        /// 
+        /// </summary>
         public ImmersedBoundaryContinuity(string fluidPhase, string solidPhase, int iLevSet, INSE_Configuration config, int D) {
             codomainName = EquationNames.ContinuityEquation;
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));

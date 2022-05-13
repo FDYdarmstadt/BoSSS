@@ -779,7 +779,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="QuadratureScheme{S, T}.GetDefaultRuleFactory"/>
         /// </param>
         /// <param name="elem">
-        /// reference element, must be one of <see cref="BoSSS.Foundation.Grid.GridCommons.RefElements"/>
+        /// reference element, must be one of <see cref="IGeometricalCellsData.RefElements"/>
         /// </param>
         /// <returns>
         /// An instance of <see cref="StandardQuadRuleFactory"/> for the volume
@@ -865,7 +865,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// simplex.
         /// </returns>
         /// <param name="Kref">
-        /// an edge reference element, must be one of <see cref="BoSSS.Foundation.Grid.GridData.EdgeData.EdgeRefElements"/>.
+        /// an edge reference element, must be one of <see cref="BoSSS.Foundation.Grid.IGeometricalEdgeData.EdgeRefElements"/>.
         /// </param>
         protected override IQuadRuleFactory<QuadRule> GetDefaultRuleFactory(IGridData gridData, RefElement Kref) {
             return new StandardQuadRuleFactory(Kref);
@@ -931,7 +931,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="QuadratureScheme{S, T}.GetDefaultRuleFactory"/>
         /// </param>
         /// <param name="elem">
-        /// reference element, must be one of <see cref="BoSSS.Foundation.Grid.GridCommons.RefElements"/>
+        /// reference element, must be one of <see cref="IGeometricalCellsData.RefElements"/>
         /// </param>
         /// <returns>
         /// An instance of <see cref="CellBoundaryFromEdgeRuleFactory{T}"/>

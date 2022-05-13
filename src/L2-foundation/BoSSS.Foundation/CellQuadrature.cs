@@ -156,7 +156,7 @@ namespace BoSSS.Foundation.Quadrature {
 
         /// <summary>
         /// Index of the current rule's reference element into
-        /// <see cref="BoSSS.Foundation.Grid.GridCommons.RefElements"/>.
+        /// <see cref="IGeometricalCellsData.RefElements"/>.
         /// </summary>
         public override int CurrentRuleRefElementIndex {
             get {

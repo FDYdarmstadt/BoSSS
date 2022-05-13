@@ -25,6 +25,68 @@ using BoSSS.Solution.Utils;
 namespace BoSSS.Solution.NSECommon {
 
 
+
+ /// <summary>
+ /// Helper class for including spatial-variable source terms 
+ /// Useful for inclusion of manufactured solutions.
+ /// </summary>
+    public class RHSManuSource : IVolumeForm, ISupportsJacobianComponent, IEquationComponentCoefficient {
+
+        Func<double[], double, double> sourceFunc;
+
+        /// <summary>
+        /// Ctor.
+        /// </summary>
+        public RHSManuSource(Func<double[], double, double> _sourceFunc ) {
+            this.sourceFunc = _sourceFunc;
+        }
+
+
+        /// <summary>
+        /// None
+        /// </summary>
+        public IList<string> ArgumentOrdering {
+            get { return new string[0]; }
+        }
+
+        /// <summary>
+        /// None
+        /// </summary>
+        public IList<string> ParameterOrdering {
+            get { return null; }
+        }
+
+
+        /// <summary>
+        /// None
+        /// </summary>
+        public TermActivationFlags VolTerms {
+            get {
+                return TermActivationFlags.AllOn;
+            }
+        }
+
+        double time;
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            if (cs.UserDefinedValues.Keys.Contains("time"))
+                time = (double)cs.UserDefinedValues["time"];
+        }
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
+
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+            double t = 0.0;            
+            return this.sourceFunc(cpv.Xglobal, t) * V;
+        }
+    }
+
+
+
     /// <summary>
     /// Auxillary class to compute a source term from a manufactured solution for the continuity equation.
     /// Current implementation only supports 2D flows.

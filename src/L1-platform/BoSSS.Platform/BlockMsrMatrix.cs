@@ -56,8 +56,6 @@ namespace ilPSP.LinSolvers {
         /// <summary>
         /// converts an arbitrary mutable matrix to an <see cref="BlockMsrMatrix"/>.
         /// </summary>
-        /// <param name="M"></param>
-        /// <returns></returns>
         static public BlockMsrMatrix ToBlockMsrMatrix(this IMutableMatrixEx M, IBlockPartitioning rowmap, IBlockPartitioning colmap) {
             using (new FuncTrace()) {
 
@@ -84,9 +82,6 @@ namespace ilPSP.LinSolvers {
                 return R;
             }
         }
-
-
-        
 
         /// <summary>
         /// Adds <paramref name="factor"/> to all diagonal entries of <paramref name="M"/>.
@@ -118,6 +113,50 @@ namespace ilPSP.LinSolvers {
                 }
             }
         }
+
+
+        /// <summary>
+        /// Extraction of a block from a <see cref="BlockMsrMatrix"/>;
+        /// 
+        /// This is a convenience routine, which
+        /// causes memory allocation, and therefore impacts performance slughtly negatively.
+        /// For best performance, use <see cref="BlockMsrMatrix.ReadBlock"/> instead.
+        /// </summary>
+        static public MultidimensionalArray GetBlock(this BlockMsrMatrix M, long iBlk, long jBlk) {
+            var rpart = M._RowPartitioning;
+            var cpart = M._ColPartitioning;
+            int _sz_i = rpart.GetBlockLen(iBlk);
+            int _sz_j = cpart.GetBlockLen(jBlk);
+            long _idx_i = rpart.GetBlockI0(iBlk);
+            long _idx_j = cpart.GetBlockI0(jBlk);
+            var ret = MultidimensionalArray.Create(_sz_i, _sz_j);
+            M.ReadBlock(_idx_i, _idx_j, ret);
+            return ret;
+        }
+
+        /// <summary>
+        /// Setting a block from a <see cref="BlockMsrMatrix"/>;
+        /// 
+        /// This is a convenience routine, which
+        /// causes memory allocation, and therefore impacts performance slughtly negatively.
+        /// For best performance, use <see cref="BlockMsrMatrix.AccBlock(long, long, double, MultidimensionalArray, double)"/> instead.
+        /// </summary>
+        public static void SetBlock(this BlockMsrMatrix M, MultidimensionalArray Blk, long iBlk, long jBlk) {
+            var rpart = M._RowPartitioning;
+            var cpart = M._ColPartitioning;
+            int _sz_i = rpart.GetBlockLen(iBlk);
+            int _sz_j = cpart.GetBlockLen(jBlk);
+            if(_sz_i != Blk.NoOfRows)
+                throw new ArgumentException();
+            if(_sz_j != Blk.NoOfCols)
+                throw new ArgumentException();
+            long _idx_i = rpart.GetBlockI0(iBlk);
+            long _idx_j = cpart.GetBlockI0(jBlk);
+
+            M.AccBlock(_idx_i, _idx_j, 1.0, Blk, 0.0); // last entry 0.0 will also clear NAN, INF, etc.
+        }
+
+
 
     }
 
@@ -1348,7 +1387,9 @@ namespace ilPSP.LinSolvers {
         /// <param name="j0">Column offset.</param>
         /// <param name="alpha">Scaling factor for the accumulation operation.</param>
         /// <param name="Block">Block to accumulate.</param>
-        /// <param name="beta">Scaling applied to this matrix before accumulation</param>
+        /// <param name="beta">Scaling applied to this matrix before accumulation;
+        /// Note: if set to 0.0, this will also clear NAN's, etc.
+        /// </param>
         public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta) {
             if(Block.Dimension != 2)
                 throw new ArgumentException("Expecting a 2D array.");
@@ -1362,6 +1403,9 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Column index out of range.");
             if(j0 + J > this.ColPartition.TotalLength)
                 throw new ArgumentException("Column index out of range.");
+            if(I <= 0 || J <= 0)
+                return;
+
 
 #if DEBUG_EXTENDED
             BitArray bTouch = new BitArray(I * J);
@@ -1397,7 +1441,10 @@ namespace ilPSP.LinSolvers {
                                 bTouch[(i + iw) * J + j + jw] = true;
 #endif
                                 int StorageIdx = Offset + (iSblk + iw) * CI + (jSblk + jw) * CJ;
-                                Storage[StorageIdx] = Storage[StorageIdx] * beta + alpha * Block[i + iw, j + jw];
+                                if(beta == 0.0)
+                                    Storage[StorageIdx] = alpha * Block[i + iw, j + jw];
+                                else
+                                    Storage[StorageIdx] = Storage[StorageIdx] * beta + alpha * Block[i + iw, j + jw];
                             }
                         }
                     } else {
@@ -1449,6 +1496,8 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Column index out of range.");
             if(j0 + J > this.ColPartition.TotalLength)
                 throw new ArgumentException("Column index out of range.");
+            if(I <= 0 || J <= 0)
+                return;
 
 #if DEBUG_EXTENDED
             BitArray bTouch = new BitArray(I * J);
@@ -1556,6 +1605,8 @@ namespace ilPSP.LinSolvers {
                 throw new ArgumentException("Column index out of range.");
             if(j0 + J > this.ColPartition.TotalLength)
                 throw new ArgumentException("Column index out of range.");
+            if(I <= 0 || J <= 0)
+                return;
 
 #if DEBUG_EXTENDED
             BitArray bTouch = new BitArray(I * J);
@@ -1686,7 +1737,7 @@ namespace ilPSP.LinSolvers {
         /// <param name="iBlkLoc">On exit, local (on this MPI process) block index.</param>
         /// <param name="i0">Global start index of the block</param>
         /// <param name="iLoc">Index within block.</param>
-        /// <param name="BlkT">Block type, see <see cref="BlockPartitioning.GetBlockType(int)"/>, resp. <see cref="BlockPartitioning.Subblk_i0"/>, <see cref="BlockPartitioning.SubblkLen"/>.</param>
+        /// <param name="BlkT">Block type, see <see cref="IBlockPartitioning.GetBlockType"/></param>
         /// <param name="Sblk_idx">Sub block index.</param>
         /// <param name="i0_Sblk">First block index in sub block.</param>
         /// <param name="ISblk">Size/length of sub block</param>
@@ -1993,7 +2044,7 @@ namespace ilPSP.LinSolvers {
         }
 
         /// <summary>
-        /// Common implementation for <see cref="GetRow(int, ref int[], ref double[])"/> and <see cref="GetOccupiedColumnIndices(int, ref int[])"/>.
+        /// Common implementation for <see cref="GetRow"/> and <see cref="GetOccupiedColumnIndices"/>.
         /// </summary>
         int GetRowInternal(long i, ref long[] ColumnIndices, ref double[] Values, bool NoValues) {
             Debug.Assert(m_RowPartitioning.IsInLocalRange(i));
@@ -3012,13 +3063,13 @@ namespace ilPSP.LinSolvers {
         /// <param name="alpha">
         /// scaling factor
         /// </param>
-        /// <param name="RowIndicesSource">Row indices into this matrix, in the local range (<see cref="IPartitioning.IsInLocalRange(int)"/>).</param>
+        /// <param name="RowIndicesSource">Row indices into this matrix, in the local range (<see cref="IPartitioning.IsInLocalRange"/>).</param>
         /// <param name="RowIndicesTarget">
         /// if null is specified, this array is assumed to be
         /// {0,1, ... , <paramref name="RowIndicesSource"/>.Length-1]};
         /// </param>
         /// <param name="ColumnIndicesSource">
-        /// Column indices into this matrix, in the local range (<see cref="IPartitioning.IsInLocalRange(int)"/>).
+        /// Column indices into this matrix, in the local range (<see cref="IPartitioning.IsInLocalRange"/>).
         /// </param>
         /// <param name="ColIndicesTarget">
         /// if null is specified, this array is assumed to be
@@ -3033,7 +3084,7 @@ namespace ilPSP.LinSolvers {
         /// </param>
         /// <param name="ExternalColIndicesTarget"></param>
         /// <param name="ExternalColumnIndicesSource">
-        /// Additional/optional row indices into this matrix in the external range (<see cref="IPartitioning.IsInLocalRange(int)"/> evaluates to false).
+        /// Additional/optional row indices into this matrix in the external range (<see cref="IPartitioning.IsInLocalRange"/> evaluates to false).
         /// These are not exchanged over MPI.
         /// </param>
         /// <remarks>
@@ -3961,6 +4012,42 @@ namespace ilPSP.LinSolvers {
 
         #endregion
 
+        /// <summary>
+        /// Returns the block-column index of all non-zero blocks in block-row <paramref name="iBlk"/>
+        /// </summary>
+        /// <param name="alsoExternal">
+        /// True: also return block indices in the external range 
+        /// (<see cref="IBlockPartitioning.FirstBlock"/>, <see cref="IBlockPartitioning.LocalNoOfBlocks"/>), 
+        /// i.e. coupling with other MPI processors
+        /// </param>
+        /// <param name="iBlk">row block index in the local range</param>
+        public long[] GetOccupiedRowBlockIndices(long iBlk, bool alsoExternal = false) {
+            var part = this._RowPartitioning;
+            if(part.GetBlockLen(iBlk) <= 0)
+                return new long[0];
+
+            int iBlkLoc = (int)(iBlk - part.FirstBlock);
+
+            if(alsoExternal == true)
+                throw new NotSupportedException("Todo; I'm not sure how to handle this; ");
+
+            var RowDict = this.m_BlockRows[iBlkLoc];
+            if(RowDict == null)
+                return new long[0];
+
+            List<long> ret = new List<long>();
+            foreach(var kv in RowDict) {
+                long jBlk = kv.Key;
+                BlockEntry block = kv.Value;
+                if(!block.IsEmpty) {
+                    ret.Add(jBlk);
+                }
+            }
+
+            return ret.ToArray();
+        }
+
+
         #region MatrixMatrixMult
 
         struct Multiply_Helper_1 {
@@ -4576,7 +4663,7 @@ namespace ilPSP.LinSolvers {
           
 
             /// <summary>
-            /// <paramref name="C"/> = <paramref name="AscaleM_left"/>*<paramref name="A"/> + <paramref name="B"/>
+            /// <paramref name="C"/> = <paramref name="_AscaleM_left"/>*<paramref name="A"/> + <paramref name="B"/>
             /// </summary>
             /// <param name="C">Output; the merge of <paramref name="A"/> and <paramref name="B"/></param>
             /// <param name="A">First Input.</param>
@@ -5657,9 +5744,9 @@ namespace ilPSP.LinSolvers {
         /// </param>
         /// <param name="Subblocks">
         /// Whether the blocks or sub-blocks should be inverted.
-        /// - false: inversion of (full) blocks, as defined by <see cref="IBlockPartitioning.GetBlockI0(int)"/> and <see cref="IBlockPartitioning.GetBlockLen(int)"/>.
+        /// - false: inversion of (full) blocks, as defined by <see cref="IBlockPartitioning.GetBlockI0"/> and <see cref="IBlockPartitioning.GetBlockLen"/>.
         /// - true: sub-block inversion, sub-blocks are defined by the <see cref="IBlockPartitioning"/>, 
-        ///    see especially <see cref="IBlockPartitioning.GetBlockType(int)"/>, <see cref="IBlockPartitioning.GetSubblk_i0(int)(int)"/> and <see cref="IBlockPartitioning.GetSubblkLen(int)(int)"/>
+        ///    see especially <see cref="IBlockPartitioning.GetBlockType"/>, <see cref="IBlockPartitioning.GetSubblk_i0"/> and <see cref="IBlockPartitioning.GetSubblkLen"/>
         /// </param>
         /// <param name="ignoreEmptyBlocks"></param>
         /// <param name="SymmetricalInversion">

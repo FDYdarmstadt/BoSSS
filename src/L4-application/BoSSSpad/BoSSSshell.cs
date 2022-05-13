@@ -199,8 +199,19 @@ namespace BoSSS.Application.BoSSSpad {
         /// Sets Text Formatter for objects of specific type
         /// </summary>
         public static void AddObjectFormatter<T>(Func<T, string> optValFormatter = null) {
-            Formatter.SetPreferredMimeTypesFor(typeof(T), "text/plain");
-  
+            Type t = typeof(T);
+
+            try {
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
+            } catch (NullReferenceException) {
+                Console.WriteLine("Trying alternative method");
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
+            }
+
             Formatter.Register(
                 type: typeof(T),
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -220,7 +231,20 @@ namespace BoSSS.Application.BoSSSpad {
         /// text formatting of data tables
         /// </summary>
         public static void AddTableFormatter() {
-            Formatter.SetPreferredMimeTypesFor(typeof(System.Data.DataTable), "text/plain");
+
+            var t = typeof(System.Data.DataTable);
+
+            try {
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
+            } catch (NullReferenceException) {
+                Console.WriteLine("Trying alternative method");
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
+            }
+
             Formatter.Register(
                 type: typeof(System.Data.DataTable),
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -236,7 +260,17 @@ namespace BoSSS.Application.BoSSSpad {
         public static void AddDictFormatter<KeyType, ValType>(Func<ValType, string> optKeyFormatter = null, Func<ValType, string> optValFormatter = null) {
             var t = typeof(IDictionary<KeyType, ValType>);
 
-            Formatter.SetPreferredMimeTypesFor(t, "text/plain");
+            try {
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
+            } catch (NullReferenceException) {
+                Console.WriteLine("Trying alternative method");
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
+            }
+
             Formatter.Register(
                 type: t,
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -270,7 +304,17 @@ namespace BoSSS.Application.BoSSSpad {
         public static void AddEnumFormatter<ValType>(Func<ValType, string> optValFormatter = null) {
             var t = typeof(IEnumerable<ValType>);
 
-            Formatter.SetPreferredMimeTypesFor(t, "text/plain");
+            try {
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
+            } catch (NullReferenceException) {
+                Console.WriteLine("Trying alternative method");
+                Type AltFormatter = typeof(Formatter);
+                MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
+                AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
+            }
+
             Formatter.Register(
                 type: t,
                 formatter: (object obj, System.IO.TextWriter writer) => {
@@ -285,7 +329,7 @@ namespace BoSSS.Application.BoSSSpad {
                         else
                             valString = v != null ? optValFormatter(v) : "NULL";
 
-                        writer.WriteLine("#" + i + ": " + v.ToString());
+                        writer.WriteLine("#" + i + ": " + valString);
                         i++;
                     }
                 });
@@ -927,23 +971,38 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             executionQueues.AddRange(bpc.AllQueues);
+            try {
+                defaultQueue = bpc.AllQueues[bpc.DefaultQueueIndex];
+            } catch (IndexOutOfRangeException iore) {
+                Console.Error.WriteLine($"Batch processor configuration (see file ~/.BoSSS/etc/BatchProcessorConfig.json): DefaultQueueIndex={bpc.DefaultQueueIndex}, seems out-of-range, defaulting to 0-th entry. ({iore.Message})");
+                defaultQueue = bpc.AllQueues[0];
+            }
             //foreach (var q in bpc.AllQueues)
             //    _ = q.AllowedDatabases;
 
         }
 
         /// <summary>
-        /// Default execution queue, used mainly by worksheets in the Continuous Integration Workflow;
+        /// Default execution queue. 
+        /// - globally, can specified by the <see cref="BatchProcessorConfig.DefaultQueueIndex"/> in configuration file `~/.BoSSS/etc/BatchProcessorConfig.json`
+        /// - can be overwritten for each project using the file `~/.BoSSS/etc/DefaultQueuesProjectOverride.txt`
         /// </summary>
         public static BatchProcessorClient GetDefaultQueue() {
-            // quick hack 
-            if (ilPSP.Environment.MPIEnv.Hostname.Contains("fdygitrunner", StringComparison.InvariantCultureIgnoreCase))
-                return ExecutionQueues[2];
-            if (ilPSP.Environment.MPIEnv.Hostname.Contains("jenkins-linux", StringComparison.InvariantCultureIgnoreCase))
-                return ExecutionQueues[1];
+            ReloadExecutionQueues();
 
+            if(!wmg.CurrentProject.IsEmptyOrWhite()) {
+                string overrideName = BatchProcessorConfig.GetDefaultBatchnameForProject(wmg.CurrentProject);
+                if(overrideName != null) {
+                    foreach(var q in executionQueues) {
+                        if(q.Name.Equals(overrideName, StringComparison.InvariantCultureIgnoreCase)) {
+                            return q;
+                        }
+                    }
 
-            return ExecutionQueues[0];
+                }
+            }
+
+            return defaultQueue;
         }
 
 
@@ -961,6 +1020,8 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         internal static List<BatchProcessorClient> executionQueues = null;
+
+        internal static BatchProcessorClient defaultQueue = null;
 
         /// <summary>
         /// Adds an entry to <see cref="ExecutionQueues"/>.
