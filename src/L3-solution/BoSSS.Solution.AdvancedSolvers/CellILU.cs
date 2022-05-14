@@ -267,7 +267,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         continue; // cell i is empty
 
                     var invAkk = A.GetBlock(k, k);
-                    invAkk.InvertInPlace();
+                    try {
+                        invAkk.InvertInPlace();
+                    } catch(ArithmeticException ae) {
+                        Console.Error.WriteLine(ae.GetType() + ": " + ae.Message);
+                        continue;
+                        //A.GetBlock(k, k).SaveToStream(Console.Error);
+                        //A.GetBlock(k, k).SaveToTextFile("C:\\tmp\\ae13.txt");
+                        //throw ae;
+                    }
 
                     long[] occColumn_k = ILUpT.GetOccupiedColumnIndices(k);
                     foreach(long i in occColumn_k) { 

@@ -961,6 +961,7 @@ namespace PublicTestRunner {
                                     using(new BlockTrace("copy_nunit_xml_result", trr)) {
                                         try {
                                             string[] sourceFiles = Directory.GetFiles(jj.job.LatestDeployment.DeploymentDirectory.FullName, "result-*.xml");
+                                            sourceFiles = sourceFiles.Cat(Directory.GetFiles(jj.job.LatestDeployment.DeploymentDirectory.FullName, "*.html")); // output of jupyter notebooks
 
                                             foreach(var orig in sourceFiles) {
                                                 string n = Path.GetFileName(orig);
@@ -972,7 +973,7 @@ namespace PublicTestRunner {
                                             returnCode--;
                                         }
                                     }
-                                    // delete deploy directory directory
+                                    // delete deploy directory
                                     using(new BlockTrace("delete_deploy_dir", trr)) {
                                         if(s == JobStatus.FinishedSuccessful) {
                                             try {

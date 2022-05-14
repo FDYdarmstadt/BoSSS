@@ -119,7 +119,7 @@ namespace ilPSP.LinSolvers {
         /// Extraction of a block from a <see cref="BlockMsrMatrix"/>;
         /// 
         /// This is a convenience routine, which
-        /// causes memory allocation, and therefore impacts performance slughtly negatively.
+        /// causes memory allocation, and therefore impacts performance slightly negatively.
         /// For best performance, use <see cref="BlockMsrMatrix.ReadBlock"/> instead.
         /// </summary>
         static public MultidimensionalArray GetBlock(this BlockMsrMatrix M, long iBlk, long jBlk) {
@@ -138,7 +138,7 @@ namespace ilPSP.LinSolvers {
         /// Setting a block from a <see cref="BlockMsrMatrix"/>;
         /// 
         /// This is a convenience routine, which
-        /// causes memory allocation, and therefore impacts performance slughtly negatively.
+        /// causes memory allocation, and therefore impacts performance slightly negatively.
         /// For best performance, use <see cref="BlockMsrMatrix.AccBlock(long, long, double, MultidimensionalArray, double)"/> instead.
         /// </summary>
         public static void SetBlock(this BlockMsrMatrix M, MultidimensionalArray Blk, long iBlk, long jBlk) {
