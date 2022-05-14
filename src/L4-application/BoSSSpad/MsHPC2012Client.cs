@@ -69,75 +69,86 @@ namespace BoSSS.Application.BoSSSpad {
     [Serializable]
     public class MsHPC2012Client : BatchProcessorClient {
 
-        //
-        // Summary:
-        //     Defines the state of the job.
+
+        /// <summary>
+        /// Defines the state of the job, on MS HPC Cluster
+        /// </summary>
         public enum JobState {
-            //
-            // Summary:
-            //     The job is being configured. The application called the Microsoft.Hpc.Scheduler.IScheduler.CreateJob
-            //     method to create the job but has not called the Microsoft.Hpc.Scheduler.IScheduler.AddJob(Microsoft.Hpc.Scheduler.ISchedulerJob)
-            //     or Microsoft.Hpc.Scheduler.IScheduler.SubmitJob(Microsoft.Hpc.Scheduler.ISchedulerJob,System.String,System.String)
-            //     method to add the job to the scheduler or submit the job to the scheduling queue.
-            //     This enumeration member represents a value of 1.
+            /// <summary>
+            /// The job is being configured. The application called the Microsoft.Hpc.Scheduler.IScheduler.CreateJob
+            /// method to create the job but has not called the Microsoft.Hpc.Scheduler.IScheduler.AddJob(Microsoft.Hpc.Scheduler.ISchedulerJob)
+            /// or Microsoft.Hpc.Scheduler.IScheduler.SubmitJob(Microsoft.Hpc.Scheduler.ISchedulerJob,System.String,System.String)
+            /// method to add the job to the scheduler or submit the job to the scheduling queue.
+            /// This enumeration member represents a value of 1.
+            /// </summary>
             Configuring = 1,
-            //
-            // Summary:
-            //     The job was submitted to the scheduling queue (see Microsoft.Hpc.Scheduler.IScheduler.SubmitJob(Microsoft.Hpc.Scheduler.ISchedulerJob,System.String,System.String)).
-            //     This enumeration member represents a value of 2.
+
+            /// <summary>
+            /// The job was submitted to the scheduling queue (see Microsoft.Hpc.Scheduler.IScheduler.SubmitJob(Microsoft.Hpc.Scheduler.ISchedulerJob,System.String,System.String)).
+            /// This enumeration member represents a value of 2.
+            /// </summary>
             Submitted = 2,
-            //
-            // Summary:
-            //     The server is determining if the job can run. This enumeration member represents
-            //     a value of 4.
+
+            /// <summary>
+            /// The server is determining if the job can run. This enumeration member represents
+            /// a value of 4.
+            /// </summary>
             Validating = 4,
-            //
-            // Summary:
-            //     A submission filter is determining if the job can run. For details, see the SubmissionFilterProgram
-            //     cluster parameter in the Remarks section of Microsoft.Hpc.Scheduler.IScheduler.SetClusterParameter(System.String,System.String).
-            //     This enumeration member represents a value of 8.
+
+            /// <summary>
+            /// A submission filter is determining if the job can run. For details, see the SubmissionFilterProgram
+            /// cluster parameter in the Remarks section of Microsoft.Hpc.Scheduler.IScheduler.SetClusterParameter(System.String,System.String).
+            /// This enumeration member represents a value of 8.
+            /// </summary>
             ExternalValidation = 8,
-            //
-            // Summary:
-            //     The job passed validation and was added to the scheduling queue. This enumeration
-            //     member represents a value of 16.
+
+            /// <summary>
+            /// The job passed validation and was added to the scheduling queue. This enumeration
+            /// member represents a value of 16.
+            /// </summary>
             Queued = 16,
-            //
-            // Summary:
-            //     The job is running. This enumeration member represents a value of 32.
+
+            /// <summary>
+            /// The job is running. This enumeration member represents a value of 32.
+            /// </summary>
             Running = 32,
-            //
-            // Summary:
-            //     The server is cleaning up the resources that were allocated to the job. This
-            //     enumeration member represents a value of 64.
+
+            /// <summary>
+            /// The server is cleaning up the resources that were allocated to the job. This
+            /// enumeration member represents a value of 64.
+            /// </summary>
             Finishing = 64,
-            //
-            // Summary:
-            //     The job successfully finished (all the tasks in the job finished successfully).
-            //     This enumeration member represents a value of 128.
+
+            /// <summary>
+            /// The job successfully finished (all the tasks in the job finished successfully).
+            /// This enumeration member represents a value of 128.
+            /// </summary>
             Finished = 128,
-            //
-            // Summary:
-            //     One or more of the tasks in the job failed or a system error occurred on the
-            //     compute node. To get a description of the error, access the Microsoft.Hpc.Scheduler.ISchedulerJob.ErrorMessage
-            //     property. This enumeration member represents a value of 256.
+
+            /// <summary>
+            /// One or more of the tasks in the job failed or a system error occurred on the
+            /// compute node. To get a description of the error, access the Microsoft.Hpc.Scheduler.ISchedulerJob.ErrorMessage
+            /// property. This enumeration member represents a value of 256.
+            /// </summary>
             Failed = 256,
-            //
-            // Summary:
-            //     The job was canceled (see Microsoft.Hpc.Scheduler.IScheduler.CancelJob(System.Int32,System.String)).
-            //     If the caller provided the reason for canceling the job, then the Microsoft.Hpc.Scheduler.ISchedulerJob.ErrorMessage
-            //     property will contain the reason. This enumeration member represents a value
-            //     of 512.
+
+            /// <summary>
+            /// The job was canceled (see Microsoft.Hpc.Scheduler.IScheduler.CancelJob(System.Int32,System.String)).
+            /// If the caller provided the reason for canceling the job, then the Microsoft.Hpc.Scheduler.ISchedulerJob.ErrorMessage
+            /// property will contain the reason. This enumeration member represents a value
+            /// of 512.
+            /// </summary>
             Canceled = 512,
             
-            //
-            // Summary:
-            //     The job is being canceled. This enumeration member represents a value of 1024.
+            /// <summary>
+            /// The job is being canceled. This enumeration member represents a value of 1024.
+            /// </summary>
             Canceling = 1024,
-            //
-            // Summary:
-            //     A mask used to indicate all states. This enumeration member represents a value
-            //     of 2047.
+
+            /// <summary>
+            /// A mask used to indicate all states. This enumeration member represents a value
+            /// of 2047.
+            /// </summary>
             All = 2047
         }
 
