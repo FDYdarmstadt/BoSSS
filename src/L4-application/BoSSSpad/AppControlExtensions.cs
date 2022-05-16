@@ -90,6 +90,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static Job RunBatch(this AppControl ctrl) {
             var b = BoSSSshell.GetDefaultQueue();
+            if (ctrl.SessionName == "BottiPietroStokes2D-J2304_p2_pMultigrid")
+                Debugger.Launch();
             return RunBatch(ctrl, b);
         }
 
