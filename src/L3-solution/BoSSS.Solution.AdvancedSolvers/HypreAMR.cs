@@ -30,7 +30,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Parallel ILU from HYPRE library
     /// </summary>
-    public class HypreAMR : ISolverSmootherTemplate, ISolverWithCallback, IDisposable {
+    public class HypreAMR : ISubsystemSolver, ISolverWithCallback, IDisposable {
 
         public int IterationsInNested {
             get { return 0; }
@@ -60,27 +60,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private int FillInLevel {
             get {
-                int D = m_mgop.Mapping.AggGrid.SpatialDimension;
-                switch (D) {
+                int D = m_mgop.DgMapping.SpatialDimension;
+                switch(D) {
                     case 1:
                     case 2:
-                        return 2;
+                    return 2;
                     case 3:
-                        return 1;
+                    return 1;
                     default:
-                        throw new NotSupportedException("spatial Dimension ("+D+") not supported.");
+                    throw new NotSupportedException("spatial Dimension (" + D + ") not supported.");
                 }
             }
         }
 
-        public void Init(MultigridOperator op) {
+        void InitImpl(IOperatorMappingPair op) {
             var Mtx = op.OperatorMatrix;
-            var MgMap = op.Mapping;
+            var MgMap = op.DgMapping;
             this.m_mgop = op;
 
-            if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+            if (!Mtx.RowPartitioning.EqualsPartition(MgMap))
                 throw new ArgumentException("Row partitioning mismatch.");
-            if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+            if (!Mtx.ColPartition.EqualsPartition(MgMap))
                 throw new ArgumentException("Column partitioning mismatch.");
 
             m_matrix = Mtx.CloneAs();
@@ -106,7 +106,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         ilPSP.LinSolvers.HYPRE.Solver AMG;
         BlockMsrMatrix m_matrix;
-        MultigridOperator m_mgop;
+        IOperatorMappingPair m_mgop;
 
         public void Solve<P, Q>(P X, Q B)
             where P : IList<double>
@@ -133,6 +133,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return 0;
         }
 
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
+
+        public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
     }
 }
 

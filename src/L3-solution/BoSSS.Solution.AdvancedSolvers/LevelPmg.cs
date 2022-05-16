@@ -22,7 +22,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public class LevelPmg : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
 
         /// <summary>
-        /// Configuation
+        /// Configuration
         /// </summary>
         [Serializable]
         public class Config : ISolverFactory {
@@ -36,13 +36,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public bool UseDiagonalPmg = true;
 
-            /// <summary>
-            /// Hack, for the treatment of incompressible flows:
-            /// - false (default): the D-th variable, where D is the spatial dimension (2 or 3), is assumed to be the pressure; the order is one lower than for velocity
-            /// - true: no special treatment of individual variables
-            /// </summary>
-            public bool EqualOrder = false;
-
+      
             /// <summary>
             /// If true, cell-local solvers will be used to approximate a solution to high-order modes
             /// </summary>
@@ -88,7 +82,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var other = o as Config;
 
                 return (this.UseDiagonalPmg == other.UseDiagonalPmg)
-                    && (this.EqualOrder == other.EqualOrder)
                     && (this.FullSolveOfCutcells == other.FullSolveOfCutcells)
                     && (this.OrderOfCoarseSystem == other.OrderOfCoarseSystem)
                     && (this.UseHiOrderSmoothing == other.UseHiOrderSmoothing);
@@ -173,8 +166,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         int[][] HighOrderBlocks_LUpivots;
 
 
+        MultidimensionalArray[] HighOrderBlocks;
 
-        
 
         private bool AnyHighOrderTerms {
             get {
@@ -182,6 +175,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return m_op.Mapping.DgDegree.Any(p => p > config.OrderOfCoarseSystem);
             }
         }
+
+   
 
         /// <summary>
         /// 
@@ -203,10 +198,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             int D = this.m_op.GridData.SpatialDimension;
 
+            int[] lowDegs = op.GetBestFitLowOrder(config.OrderOfCoarseSystem);
+            bool LowSelector(int iCell, int iVar, int iSpec, int pDeg) {
+                return pDeg <= lowDegs[iVar];
+            }
+
+
 
             var DGlowSelect = new SubBlockSelector(op.Mapping);
-            Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1); // containd the pressure hack
-            DGlowSelect.ModeSelector(lowFilter);
+            //Func<int, int, int, int, bool> lowFilter = delegate (int iCell, int iVar, int iSpec, int pDeg) {
+            //    return pDeg <= (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1); // containd the pressure hack
+            //};
+            DGlowSelect.SetModeSelector(LowSelector);
 
             if (config.FullSolveOfCutcells)
                 ModifyLowSelector(DGlowSelect, op);
@@ -216,9 +219,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             if (config.UseHiOrderSmoothing && AnyHighOrderTerms) {
                 var DGhighSelect = new SubBlockSelector(op.Mapping);
-                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1);
+                Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => !LowSelector(iCell, iVar, iSpec, pDeg);
+                //Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1);
                 //Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg >= 0;
-                DGhighSelect.ModeSelector(highFilter);
+                DGhighSelect.SetModeSelector(highFilter);
 
                 if (config.FullSolveOfCutcells)
                     ModifyHighSelector(DGhighSelect, op);
@@ -230,6 +234,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if (config.UseDiagonalPmg) {
                     HighOrderBlocks_LU = hMask.GetDiagonalBlocks(op.OperatorMatrix, false, false);
+                    HighOrderBlocks = HighOrderBlocks_LU.Select(b => b.CloneAs()).ToArray();
                     int NoOfBlocks = HighOrderBlocks_LU.Length;
                     HighOrderBlocks_LUpivots = new int[NoOfBlocks][];
 
@@ -238,6 +243,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         HighOrderBlocks_LUpivots[jLoc] = new int[len];
                         HighOrderBlocks_LU[jLoc].FactorizeLU(HighOrderBlocks_LUpivots[jLoc]);
                     }
+
                 } else {
                     P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix, csMPI.Raw._COMM.SELF);
 
@@ -314,7 +320,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 else
                     return Filter(iCell, iVar, iSpec, pDeg);
             };
-            sbs.ModeSelector(Modification);
+            sbs.SetModeSelector(Modification);
         }
 
         /// <summary>
@@ -410,7 +416,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 HighOrderBlocks_LU[j].BacksubsLU(HighOrderBlocks_LUpivots[j], x_hi, b_f);
                                 hMask.AccSubVecOfCell(x_hi, j, x_in_out);
                             }
-
                         }
                     } else {
                         // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -501,7 +506,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int Lf = m_op.Mapping.LocalLength; // DOF's in entire system
                 //int Lc = this.lMask.NoOfMaskedRows; // DOF's in low-order system
 
-                
 
                 var Mtx = m_op.OperatorMatrix;
 
@@ -558,6 +562,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /*
         double[] GetVariableDOFs(double[] X, int SelVar) {
             var DGSelect = new SubBlockSelector(m_op.Mapping);
             DGSelect.VariableSelector(SelVar);
@@ -572,7 +577,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return Ret;
         }
-
+        */
         
 
 
@@ -607,16 +612,31 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public long UsedMemory() {
             long r = 0;
 
-            foreach(var mda in this.HighOrderBlocks_LU) {
-                if(mda != null) {
-                    r += mda.Length * sizeof(double);
+            if(this.HighOrderBlocks_LUpivots != null) {
+                foreach(var mda in this.HighOrderBlocks_LU) {
+                    if(mda != null) {
+                        r += mda.Length * sizeof(double);
+                    }
                 }
             }
 
-            foreach(var ia in this.HighOrderBlocks_LUpivots) {
-                if(ia != null) {
-                    r += ia.Length * sizeof(int);
+            if(this.HighOrderBlocks_LU != null) {
+                foreach(var ia in this.HighOrderBlocks_LUpivots) {
+                    if(ia != null) {
+                        r += ia.Length * sizeof(int);
+                    }
                 }
+            }
+
+
+            var lowPard = this.lowSolver as PARDISOSolver;
+            if(lowPard != null) {
+                r += lowPard.UsedMemory();
+            }
+
+            var hiPard = this.hiSolver as PARDISOSolver;
+            if(hiPard != null) {
+                r += hiPard.UsedMemory();
             }
 
 

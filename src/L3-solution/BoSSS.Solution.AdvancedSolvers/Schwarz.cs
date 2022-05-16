@@ -44,7 +44,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Additive Schwarz method with optional, multiplicative coarse-grid correction.
     /// </summary>
-    public class Schwarz : ISolverSmootherTemplate, ISolverWithCallback {
+    public class Schwarz : ISolverSmootherTemplate {
 
         public Schwarz() {
             ActivateCachingOfBlockMatrix = (int noiter, int mglvl, int iblock) => true;
@@ -397,7 +397,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public class LowOrderTwoGrid : SchwarzMG {
 
-            public bool EqualOrder = false;
+            //public bool EqualOrder = false;
 
             public override void Init(MultigridOperator op, BlockMsrMatrix ExtRows) {
                 m_op = op;
@@ -405,10 +405,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int D = op.Mapping.GridData.SpatialDimension;
                 var coarseSelector = new SubBlockSelector(op.Mapping);
                 int OrderOfCoarseSystem = 1; // max order of low order system; pressure is k-1, if non-equalorder
-                Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
-                coarseSelector.ModeSelector(lowFilter);
+                
+                
+                //Func<int, int, int, int, bool> lowFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg <= (iVar != D && !EqualOrder ? OrderOfCoarseSystem : OrderOfCoarseSystem - 1);
+                int[] lowDegs = op.GetBestFitLowOrder(OrderOfCoarseSystem);;
+                bool lowFilter(int iCell, int iVar, int iSpec, int pDeg) {
+                    return pDeg <= lowDegs[iVar];
+                }
+                coarseSelector.SetModeSelector(lowFilter);
                 coarseMask = new BlockMask(coarseSelector,ExtRows);
-                var coarseMatrix = coarseMask.GetSubBlockMatrix(op.OperatorMatrix);
+                
+                var coarseMatrix = coarseMask.GetSubBlockMatrix_MpiSelf(op.OperatorMatrix);
 
                 CoarseSolver.DefineMatrix(coarseMatrix);
             }
@@ -490,7 +497,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private bool AnyHighOrderTerms {
             get {
                 Debug.Assert(m_MgOp != null, "there is no matrix given yet!");
-                return m_MgOp.Mapping.DgDegree.Any(p => p > pLow);
+                return m_MgOp.DgMapping.DgDegree.Any(p => p > pLow);
             }
         }
 
@@ -564,15 +571,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.m_MgOp = op;
                 int myMpiRank = MgMap.MpiRank;
                 int myMpisize = MgMap.MpiSize;
-                int D = m_MgOp.GridData.SpatialDimension;
+                int D = MgMap.SpatialDimension;
 
                 //if (UsePMGinBlocks && AnyHighOrderTerms)
                 //    Console.WriteLine("Schwarz: pmg is used as blocksolve");
                 //if (UsePMGinBlocks && !AnyHighOrderTerms)
                 //    Console.WriteLine("Schwarz: Only low order terms present. Schwarz blocks will be solved direct instead of PMG");
-                if (!Mop.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if (!Mop.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if (!Mop.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if (!Mop.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 var ag = MgMap.AggGrid;
@@ -710,14 +717,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var RedList = new List<int>();
                 ilPSP.Environment.StdoutOnlyOnRank0 = false;
-                for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
+                for(int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     Debug.Assert(BlockCells != null);
                     int[] bc = BlockCells[iPart];
 
-                    BlockMask fullMask=null;
+                    BlockMask fullMask = null;
                     BlockMsrMatrix fullBlock;
 
-                    if (UsePMGinBlocks && AnyHighOrderTerms) {
+                    if(UsePMGinBlocks && AnyHighOrderTerms) {
                         // Init of level pmg block solvers
                         Levelpmgsolvers[iPart] = PTGFactory.CreateAndInit(bc.ToList(), out fullBlock, out fullMask);
                     } else {
@@ -727,12 +734,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var fullSel = new SubBlockSelector(MgMap);
                         fullSel.CellSelector(bc.ToList(), false);
 
-                        
+
                         try {
                             fullMask = new BlockMask(fullSel, ExtRows);
-                        } catch (ArgumentException ex) {
+                        } catch(ArgumentException ex) {
                             // void cells, lead to empty selection error this is a fallback for this case
-                            if (fullMask == null || fullMask.NoOfMaskedCells == 0) {
+                            if(fullMask == null || fullMask.NoOfMaskedCells == 0) {
                                 //Console.WriteLine("Exception caught:" + ex.Message);
                                 RedList.Add(iPart);
                                 Console.WriteLine($"Warning: empty selection at proc{myMpiRank}/lvl{m_MgOp.LevelIndex}/swb{iPart}. You probably encountered a void cell! Block will be ignored ...");
@@ -741,14 +748,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 throw ex;
                             }
                         }
-                        
 
-                        fullBlock = fullMask.GetSubBlockMatrix(Mop);
+
+                        fullBlock = fullMask.GetSubBlockMatrix_MpiSelf(Mop);
                         Debug.Assert(fullBlock.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF);
 
                         BlockMatrices[iPart] = fullBlock; // just used to calculate memory consumption
 
-                        InitializeDirSolver(iPart);
+                        InitDirectSolver(iPart);
 
                     }
                     BMfullBlocks[iPart] = fullMask;
@@ -856,7 +863,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 else
                     return Filter(iCell, iVar, iSpec, pDeg);
             };
-            sbs.ModeSelector(Modification);
+            sbs.SetModeSelector(Modification);
         }
 
         private void NonOverlapRestrictionInit() {
@@ -929,12 +936,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         BlockLevelPmg[] Levelpmgsolvers;
 
+        
         /// <summary>
         /// In the case of P-multigrid for each level (<see cref="UsePMGinBlocks"/>), the matrices for the block
         /// - index: Schwarz block
         /// - content: matrix 
         /// </summary>
         protected BlockMsrMatrix[] BlockMatrices;
+        
 
         /// <summary>
         /// masks for the Schwarz blocks
@@ -991,13 +1000,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             bool CachingActivated = IsCachingActivated(iPart);
             bool DoDelayedActivationOfCaching = ActivateCachingOfBlockMatrix(NoIter, m_MgOp.LevelIndex, iPart) && !CachingActivated;
             if (DoDelayedActivationOfCaching) {
-                InitializeDirSolver(iPart);
+                InitDirectSolver(iPart);
                 Debug.Assert(blockSolvers[iPart] != null);
             }
             return DoDelayedActivationOfCaching;
         }
 
-        private void InitializeDirSolver(int iPart) {
+        private void InitDirectSolver(int iPart) {
             if (blockSolvers[iPart] != null)
                 blockSolvers[iPart].Dispose();
 
@@ -1048,13 +1057,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
-            get;
-            set;
-        }
+        ///// <summary>
+        ///// ~
+        ///// </summary>
+        //public Action<int, double[], double[], MultigridOperator> IterationCallback {
+        //    get;
+        //    set;
+        //}
 
 
         /// <summary>
@@ -1106,7 +1115,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //Console.WriteLine("norm on swz entry: " + X.L2Norm());
                     this.MtxFull.SpMV(-1.0, X, 1.0, Res);
 
-                    IterationCallback?.Invoke(iIter, X.ToArray(), Res.CloneAs(), this.m_MgOp);
+                    //IterationCallback?.Invoke(iIter, X.ToArray(), Res.CloneAs(), this.m_MgOp);
 
                     if (Overlap > 0) {
                         ResExchange.TransceiveStartImReturn();
@@ -1304,7 +1313,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             Clone.FixedNoOfIterations = this.FixedNoOfIterations;
             Clone.m_Overlap = this.m_Overlap;
-            Clone.IterationCallback = this.IterationCallback;
+            //Clone.IterationCallback = this.IterationCallback;
             if (this.CoarseSolver != null) {
                 throw new NotImplementedException();
             }
@@ -1355,8 +1364,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             long LocalI0 = MopMap.i0;
             for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
-                BlkIdx_gI_lR[iPart] = BMs[iPart].GlobalIList_Internal;
-                BlkIdx_gI_eR[iPart] = BMs[iPart].GlobalIList_External;
+                BlkIdx_gI_lR[iPart] = BMs[iPart].GlobalIndices_Internal;
+                BlkIdx_gI_eR[iPart] = BMs[iPart].GlobalIndices_External;
                 var locallist = new List<int>();
                 var extlist = new List<int>();
                 foreach (int lIdx in BlkIdx_gI_lR[iPart]) {
@@ -1367,7 +1376,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
                 BlockIndices_Local[iPart] = locallist.ToArray();
                 BlockIndices_External[iPart] = extlist.ToArray();
-                Blocks.Add(BMs[iPart].GetSubBlockMatrix(Mop.OperatorMatrix));
+                Blocks.Add(BMs[iPart].GetSubBlockMatrix_MpiSelf(Mop.OperatorMatrix));
             }
 
 

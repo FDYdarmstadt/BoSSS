@@ -162,7 +162,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var resFields = InstantiateResidualFields();
             CurrentResidualVector = new CoordinateVector(resFields);
             foreach(var f in resFields) {
-                base.RegisterField(f/*,IOListOption.Always*/);
+                base.RegisterField(f, IOListOption.Always);
             }
 
             CreateAdditionalFields();
@@ -641,7 +641,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control.AgglomerationThreshold,
                 Control.LinearSolver, Control.NonLinearSolver,
                 this.LsTrk,
-                Parameters);
+                Parameters,
+                this.QueryHandler);
             base.Timestepping = solver;
             Timestepping.RegisterResidualLogger(this.ResLogger);
             Timestepping.TimesteppingBase.Config_LevelSetConvergenceCriterion = Control.LevelSet_ConvergenceCriterion;
@@ -836,7 +837,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 MultigridOperatorConfig,
                 MultigridSequence,
                 Control.LinearSolver, Control.NonLinearSolver,
-                Parameters);
+                Parameters,
+                this.QueryHandler);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
             base.Timestepping = solver;

@@ -401,20 +401,19 @@ namespace AdvancedSolverTests {
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);
 
-            foreach (var S in this.LsTrk.SpeciesNames) {
+            foreach(var S in this.LsTrk.SpeciesNames) {
                 Console.WriteLine("  Species {0}: no of agglomerated cells: {1}",
                     S, Agg.GetAgglomerator(this.LsTrk.GetSpeciesId(S)).AggInfo.SourceCells.NoOfItemsLocally);
             }
 
-
             MGOp = new MultigridOperator(XAggB, map,
                     OperatorMatrix,
                     this.massFact.GetMassMatrix(map, false),
-                    OpConfig, null);
+                    OpConfig, this.Op);
             Debug.Assert(MGOp.OperatorMatrix != null);
             Debug.Assert(MGOp.Mapping != null);
 
-            someVec=GetRHS(Affine, OperatorMatrix);
+            someVec = GetRHS(Affine, OperatorMatrix);
 
             mtxBuilder.ComputeMatrix(AltOperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);
