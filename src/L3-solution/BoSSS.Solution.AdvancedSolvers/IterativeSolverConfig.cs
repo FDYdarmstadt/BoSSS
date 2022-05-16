@@ -89,6 +89,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if(other == null)
                 return false;
 
+            // equality through reflection 
+
             var t = this.GetType();
             if(!t.Equals(other.GetType()))
                 return false;

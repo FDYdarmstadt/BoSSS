@@ -456,22 +456,43 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// Optional Gnuplot left margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? lmargin = null;
 
         /// <summary>
         /// Optional Gnuplot right margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? rmargin = null;
 
         /// <summary>
         /// Optional Gnuplot top margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? tmargin = null;
 
         /// <summary>
         /// Optional Gnuplot bottom margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? bmargin = null;
+
+        /// <summary>
+        /// Additional gnuplot commands
+        /// </summary>
+        [DataMember]
+        public string[] GnuplotCommandsB4Plotting;
+
+
+        /// <summary>
+        /// Appends <paramref name="cmd"/> to <see cref="GnuplotCommandsB4Plotting"/>
+        /// </summary>
+        public void AddGnuplotCommand(string cmd) {
+            Array.Resize(ref GnuplotCommandsB4Plotting, (GnuplotCommandsB4Plotting?.Length ?? 0) + 1);
+            GnuplotCommandsB4Plotting[GnuplotCommandsB4Plotting.Length - 1] = cmd;
+        }
+
+
 
         /// <summary>
         /// Modify Format, so all lines look distinct
@@ -1286,9 +1307,9 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
-                    string command= $"set key font \",{this.LegendFont}\" ";
+                    string command = $"set key font \",{this.LegendFont}\" ";
 
-                    if ((this.LegendPosition != null) & (this.LegendAlignment != null))
+                    if ((this.LegendPosition != null) && (this.LegendAlignment != null))
                         System.Console.Error.WriteLine("legend position and legend alignment is set. Choose only one of them! Ignoring alignment ...");
 
                     if (this.LegendPosition != null) {
@@ -1338,7 +1359,7 @@ namespace BoSSS.Solution.Gnuplot {
                     if (this.LegendBox == true)
                         command += "box opaque ";
 
-                    System.Console.WriteLine(command);
+                    //System.Console.WriteLine(command);
                     gp.Cmd(command);
                 } else {
                     gp.Cmd("set key off");
@@ -1391,8 +1412,18 @@ namespace BoSSS.Solution.Gnuplot {
                 }
             }
 
-
-
+            // ===================
+            // additional commands 
+            // ===================
+            {
+                if(this.GnuplotCommandsB4Plotting != null) {
+                    foreach(var s in this.GnuplotCommandsB4Plotting) {
+                        if (!s.IsEmptyOrWhite())
+                            gp.Cmd(s);
+                    }
+                }
+            }
+                
 
             // =================
             // finally, plotting
@@ -1405,6 +1436,10 @@ namespace BoSSS.Solution.Gnuplot {
                 gp.WriteDeferredPlotCommands();
             }
         }
+
+
+
+        
 
     }
 }

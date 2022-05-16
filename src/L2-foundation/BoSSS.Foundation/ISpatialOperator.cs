@@ -257,7 +257,9 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// 'safeguard' for  solvers to avoid unphysical solutions (mostly relevant for implicit, nonlinear systems)
+        /// 'safeguard' for solvers to avoid unphysical solutions during the solution procedure;
+        /// An example would be to avoid e.g. negative denities, which might even cause NaNs,
+        /// during the solver run for implicit, nonlinear equations.
         /// </summary>
         SolverSafeguard SolverSafeguard {
             get;
@@ -291,6 +293,25 @@ namespace BoSSS.Foundation {
         IEnumerable<int[]> VectorFieldIndices {
             get;
         }
+
+
+        /// <summary>
+        /// Indicate wheter a specfic combination of DG degrees is a valid combination (e.g. with respect to numerical stability, a degree 0 is invalid for an SIP discretization)
+        /// </summary>
+        /// <param name="DomainDegreesPerVariable">
+        /// - index correlates with <see cref="DomainVar"/>
+        /// - content: DG polynomial degree for respective variable
+        /// </param>
+        /// <param name="CodomainDegreesPerVariable">
+        /// - index correlates with <see cref="CodomainVar"/>
+        /// - content: DG polynomial degree for respective variable
+        /// </param>        
+        /// <returns>
+        /// - true: combination of DG degrees is OK;
+        /// - false if not
+        /// </returns>
+        bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable);
+
     }
 
     /// <summary>

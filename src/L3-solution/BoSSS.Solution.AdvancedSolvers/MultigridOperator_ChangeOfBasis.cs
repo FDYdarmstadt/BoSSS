@@ -155,6 +155,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         R[iVar] = deg;
                     }
                 }
+
+                if (AbstractOperator != null) {
+                    if (!AbstractOperator.IsValidDomainDegreeCombination(R, R)) {
+                        throw new ArgumentException($"DG degree combiation [{R.ToConcatString("", ", ", "")}] is reported to be illegal for DG operator");
+                    }
+                }
+
                 return R;
             }
         }

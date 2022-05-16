@@ -1096,6 +1096,15 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
+        /// Serialization into a text file 
+        /// </summary>
+        public void SaveToFile(string path, FileMode fm = FileMode.Create) {
+            var code = this.Serialize();
+            File.WriteAllText(path, code);
+        }
+
+
+        /// <summary>
         /// Used for control objects in work-flow management, 
         /// Converts object to a serializable text.
         /// </summary>

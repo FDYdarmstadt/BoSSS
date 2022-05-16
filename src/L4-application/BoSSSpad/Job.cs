@@ -1036,7 +1036,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                     MetaJobMgrIO.RetryIOop(op, "deletion of directory '" + dep.DeploymentDirectory.FullName + "'", false);
-                    Console.WriteLine($"Detelted deployment {dep.DeploymentDirectory.Name}");
+                    Console.WriteLine($"Deleted deployment {dep.DeploymentDirectory.Name}");
                 }
             }
 

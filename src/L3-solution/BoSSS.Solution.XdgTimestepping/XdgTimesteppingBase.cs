@@ -28,7 +28,7 @@ using ilPSP;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
-
+using BoSSS.Solution.Queries;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -229,6 +229,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
             protected set;
         }
+
+        /// <summary>
+        /// Optional logging of solver diagnostic infromation
+        /// </summary>
+        public QueryHandler QueryHandler {
+            get;
+            internal set;
+        }
+
 
         /// <summary>
         /// Quadrature order on cut cells.
@@ -445,14 +454,17 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns the linear solver
         /// </summary>
         protected virtual ISolverSmootherTemplate GetLinearSolver(MultigridOperator op) {
+            using (var ft = new FuncTrace()) {
+                using (new BlockTrace("Solver_Init", ft)) {
+                    ISolverSmootherTemplate linearSolver = this.LinearSolverConfig.CreateInstance(op);
 
-            ISolverSmootherTemplate linearSolver = this.LinearSolverConfig.CreateInstance(op);
+                    if (linearSolver is ISolverWithCallback swc) {
+                        swc.IterationCallback += this.LogResis;
+                    }
 
-            if(linearSolver is ISolverWithCallback swc) {
-                swc.IterationCallback += this.LogResis;
+                    return linearSolver;
+                }
             }
-
-            return linearSolver;
         }
 
 

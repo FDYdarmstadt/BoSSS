@@ -44,6 +44,29 @@ namespace BoSSS.Foundation {
         IList<string> ParameterOrdering { get; }
     }
 
+
+    /// <summary>
+    /// imposes constraints (e.g. DG polynomial degree grater than 0) on the DG polynomial degree of a discretization
+    /// </summary>
+    public interface IDGdegreeConstraint : IEquationComponent {
+
+        /// <summary>
+        /// Indicate wheter a specfic combination of DG degrees is a valid combination (e.g. with respect to numerical stability, a degree 0 is invalid for an SIP discretization)
+        /// </summary>
+        /// <param name="DomainDegreesPerVariable">
+        /// - index correlates with <see cref="IEquationComponent.ArgumentOrdering"/>
+        /// - content: DG polynomial degree for respective variable
+        /// </param>
+        /// <param name="CodomainDegree">
+        ///  DG polynomial degree for codomain respective variable
+        /// </param>        
+        /// <returns>
+        /// - true: combination of DG degrees is OK;
+        /// - false if not
+        /// </returns>
+        bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int CodomainDegree);
+    }
+
     /// <summary>
     /// Interface for equation components that require parameters which are based on the current state 
     /// </summary>

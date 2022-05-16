@@ -23,6 +23,7 @@ namespace AdvancedSolverTests.SubBlocking {
             [Values(XDGusage.none, XDGusage.all)] XDGusage UseXdg,
             [Values(2)] int DGOrder,
             [Values(4)] int Res) {
+            
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
             if(MPISize <= 1) {
@@ -106,7 +107,7 @@ namespace AdvancedSolverTests.SubBlocking {
 
                 //Act --- Extract SubMatrix
                 stw.Start();
-                BlockMsrMatrix subM = mask.GetSubBlockMatrix(M);
+                BlockMsrMatrix subM = mask.GetSubBlockMatrix_MpiSelf(M);
                 stw.Stop();
 
                 //Arrange --- Extract Blocks in Matlab and substract
@@ -142,6 +143,7 @@ namespace AdvancedSolverTests.SubBlocking {
             [Values(MatrixShape.full_var_spec, MatrixShape.full_var, MatrixShape.full_spec, MatrixShape.full)] MatrixShape MShape,
             [Values(4)] int Res
             ) {
+            // --test=AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MPISize);
             if(MPISize <= 1) {
@@ -354,7 +356,7 @@ namespace AdvancedSolverTests.SubBlocking {
 
                 //Act --- project Res_i onto Res_g and Res_g=M_ext*vec_ext-Res_g
                 double[] Res_g = mask.GetSubVec(Res_ext);
-                var qM_ext = M_ext.ConvertToQuadraticBMsr(mask.GlobalIList_External.ToArray(), false);
+                var qM_ext = M_ext.ConvertToQuadraticBMsr(mask.GlobalIndices_External.ToArray(), false);
                 qM_ext.SpMV(1.0, vec_ex.Vector_Ext, -1.0, Res_g);
 
                 if(map.MpiRank == 0) {
@@ -663,7 +665,7 @@ namespace AdvancedSolverTests.SubBlocking {
                 stw.Start();
                 var mask = new BlockMask(selector, dummy);
                 stw.Stop();
-                long[] GlobalIdxMask_ext = mask.GlobalIList_External.ToArray();
+                long[] GlobalIdxMask_ext = mask.GlobalIndices_External.ToArray();
 
                 //Assert --- Idx lists are of same length
                 Assert.IsTrue(GlobalIdxMap_ext.Length == GlobalIdxMask_ext.Length);

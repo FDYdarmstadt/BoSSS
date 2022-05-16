@@ -329,7 +329,7 @@ namespace BoSSS.Application.BoSSSpad {
                         else
                             valString = v != null ? optValFormatter(v) : "NULL";
 
-                        writer.WriteLine("#" + i + ": " + v.ToString());
+                        writer.WriteLine("#" + i + ": " + valString);
                         i++;
                     }
                 });

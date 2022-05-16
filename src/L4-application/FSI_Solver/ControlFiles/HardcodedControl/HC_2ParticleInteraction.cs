@@ -67,7 +67,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = true;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             // Coupling Properties
             // =============================
@@ -125,7 +125,7 @@ namespace BoSSS.Application.FSI_Solver {
             // =============================  
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             // Timestepping
             // =============================  

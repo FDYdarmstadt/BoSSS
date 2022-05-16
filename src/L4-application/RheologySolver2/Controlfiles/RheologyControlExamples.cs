@@ -64,7 +64,7 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-7;
 
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             C.useFDJacobianForOperatorMatrix = true;
 
             C.dt = 1E20;
@@ -417,7 +417,7 @@ namespace BoSSS.Application.Rheology {
             // linear solver config 
             // ====================
             //C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();//.exp_Kcycle_schwarz_4Rheology;
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();//.exp_Kcycle_schwarz_4Rheology;
           
 
             // nonlinear solver config
@@ -426,7 +426,7 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-5;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
 
             // more solver options

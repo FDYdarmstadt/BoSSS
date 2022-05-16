@@ -457,16 +457,6 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         /// <param name="inp"></param>
         /// <returns></returns>
-        //private double GetPenalty(int jCellIn, int jCellOut) {
-        //    double cj_in = cj[jCellIn];
-        //    double mu = PenaltyBase * cj_in;
-        //    if (jCellOut >= 0) {
-        //        double cj_out = cj[jCellOut];
-        //        mu = Math.Max(mu, PenaltyBase * cj_out);
-        //    }
-        //    return mu;
-        //}
-
         protected double GetPenalty(int jCellIn, int jCellOut) {
 
             double penaltySizeFactor_A = 1.0 / cj[jCellIn];

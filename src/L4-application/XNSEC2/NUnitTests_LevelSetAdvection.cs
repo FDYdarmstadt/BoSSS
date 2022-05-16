@@ -174,7 +174,7 @@ namespace BoSSS.Application.XNSEC {
                     LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].DGLevelSet;
                     LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCG].CGLevelSet;
 
-                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", RefMPIsize);
+                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", true, RefMPIsize);
                     projCheck.AddDGField(PhiDG);
                     projCheck.AddDGField(PhiCG);
                     projCheck.DoIOnow();
@@ -302,7 +302,7 @@ namespace BoSSS.Application.XNSEC {
             C.Endtime = dt * C.NoOfTimesteps;
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             // return
             // ======

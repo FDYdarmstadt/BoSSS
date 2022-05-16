@@ -58,7 +58,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 Control.TimeSteppingScheme,
                 MultigridOperatorConfig,
                 MultigridSequence,
-                Control.LinearSolver, Control.NonLinearSolver);
+                Control.LinearSolver, Control.NonLinearSolver, 
+                queryHandler:this.QueryHandler);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
 

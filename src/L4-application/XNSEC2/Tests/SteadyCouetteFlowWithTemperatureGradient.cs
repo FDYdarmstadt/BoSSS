@@ -18,7 +18,7 @@ namespace BoSSS.Application.XNSEC {
         static public XNSEC_Control NUnitSteadyCouetteFlowWithTemperatureGradient() {
             var C = SteadyCouetteFlowWithTemperatureGradient(DGp: 2, nCells:16 );
             C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             //C.rhoOne = true;
             C.ImmediatePlotPeriod = 1;
 
@@ -67,7 +67,8 @@ namespace BoSSS.Application.XNSEC {
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NonLinearSolver.verbose = true;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.PhysicalParameters.IncludeConvection = false;
             if (powerLaw) { 
             C.MatParamsMode = MaterialParamsMode.PowerLaw;
