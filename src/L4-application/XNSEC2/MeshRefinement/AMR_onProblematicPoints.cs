@@ -19,6 +19,7 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using ilPSP.Utils;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -271,23 +272,21 @@ namespace BoSSS.Application.XNSEC {
 
         public override int[] DesiredCellChanges() {
 
-
-
             int J = GridData.CellPartitioning.LocalLength;
             int[] levels = new int[J];
             int cellsToRefine = 0;
             int cellsToCoarse = 0;
             Cell[] cells = GridData.Grid.Cells;
-            var bb = new BoSSS.Platform.Utils.Geom.BoundingBox(2);
+            var bb = new BoSSS.Platform.Utils.Geom.BoundingBox(GridData.SpatialDimension);
             bb.AddPoint(point1);
             bb.AddPoint(point2);
             for (int j = 0; j < J; j++) {
-                int currentLevel = cells[j].RefinementLevel;
-                
+                int currentLevel = cells[j].RefinementLevel;                
 
                 bool refine = false;
                 foreach (var cell in cells) {
-                    if (bb.Contains(GridData.Cells.CellCenter.ExtractSubArrayShallow(j, -1).To1DArray()))
+
+                    if (bb.Contains(GridData.Cells.GetCenter(j)))
                         refine = true;
                     //try {
                     //    if (bb.Contains(GridData.Cells.CellCenter.ExtractSubArrayShallow(j, -1).To1DArray()))
