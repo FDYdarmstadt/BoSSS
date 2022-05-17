@@ -223,6 +223,12 @@ namespace PublicTestRunner {
         static public bool discoverRelease = true;
 
         /// <summary>
+        /// Timout for job-manager run
+        /// </summary>
+        public static double TimeOutSec = 24 * 60 * 60; // 24 hours;
+
+
+        /// <summary>
         /// supposed to ignore tests depending on files in the source code repo;
         /// thereby, we can run the test runner from outside the source repositiory.
         /// </summary>
@@ -912,7 +918,7 @@ namespace PublicTestRunner {
                 var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
 
 
-                const double TimeOutSec = 24 * 55 * 60;
+                
                 using(var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
                     (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {

@@ -1525,10 +1525,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if(this.SubmitCount > 0 && DeploymentsSoFar.All(dep => dep.fixedStatus == JobStatus.FailedOrCanceled)) {
                     if(WriteHints) {
-                        Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
+                        Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed; RetryCount is {this.RetryCount}, so try once more.");
                         Console.WriteLine($"Hint: want to re-activate the job.");
                     }
-                    tr.Info($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
+                    tr.Info($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed; RetryCount is {this.RetryCount}, so try once more.");
                     tr.Info($"Hint: want to re-activate the job.");
 
                     this.statusCache = JobStatus.FailedOrCanceled;
