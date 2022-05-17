@@ -995,7 +995,7 @@ namespace BoSSS.Application.BoSSSpad {
             for(int i = 0; i < AllNewSessions.Length; i++) {
                 var sinf = AllNewSessions[i];
                 if(sinf != null) {
-                    // delpoyment was deleted, but some session was found in the database.
+                    // deployment was deleted, but some session was found in the database.
                     m_Deployments.Add(new Deployment(sinf, this));
                 }
             }
