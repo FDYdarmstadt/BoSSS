@@ -4038,10 +4038,16 @@ namespace ilPSP.LinSolvers {
             List<long> ret = new List<long>();
             foreach(var kv in RowDict) {
                 long jBlk = kv.Key;
+                if(alsoExternal == false) {
+                    if(this._ColPartitioning.IsLocalBlock(jBlk) == false)
+                        continue;
+                }
+
                 BlockEntry block = kv.Value;
                 if(!block.IsEmpty) {
                     ret.Add(jBlk);
                 }
+
             }
 
             return ret.ToArray();
