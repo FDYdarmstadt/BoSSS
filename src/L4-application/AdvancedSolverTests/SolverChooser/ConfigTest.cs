@@ -18,6 +18,7 @@ namespace AdvancedSolverTests.SolverChooser
 
         [Test]
         public static void TestLinearSolverConfigurations() {
+            // --test=AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations
             ////Arrange --- configs
             //var ACS = new AppControlSolver();
             //var lconfig = ACS.LinearSolver;
