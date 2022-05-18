@@ -1,4 +1,5 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -1466,91 +1467,114 @@ namespace PublicTestRunner {
 
             BoSSS.Solution.Application.InitMPI();
 
+            if (args[0] == "fut") {
+                var nodes = GenericBlas.Linspace(-1, 1, 4);
+                var g = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
 
-            int ret = -1;
-            switch(args[0]) {
-                case "nunit3":
-                if(args.Length < 2) {
-                    Console.WriteLine("Insufficient number of arguments.");
-                    PrintMainUsage();
-                    return -7777;
-                }
-                ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
-                break;
+                var b = new BoSSS.Foundation.Basis(g, 5);
+                var t = new BoSSS.Foundation.BernsteinTransformator(b, 0.005);
 
-                case "runjobmanager":
-                case "runjobmanager-debug":
-                case "runjobmanager-release":
-                case "runjobmanager-ignore_tests_w_deps":
-                DeleteResultFiles();
+                string prefix;
+                if (ilPSP.Environment.MPIEnv.Hostname.ToLower().Contains("hpccluster2"))
+                    prefix = "hpc2";
+                else
+                    prefix = "hpc1";
 
-                bool runRelease;
+                prefix = prefix + "r" + g.GridData.MpiRank;
+                var mtx = t.Origin2Dest[0];
+                Console.WriteLine($"Mtx dim is {mtx.NoOfRows}x{mtx.NoOfCols})");
+                mtx.SaveToTextFile(prefix + "_O2D.txt");
+
+                csMPI.Raw.mpiFinalize();
+
+                return 0;
+            } else {
+
+                int ret = -1;
+                switch (args[0]) {
+                    case "nunit3":
+                    if (args.Length < 2) {
+                        Console.WriteLine("Insufficient number of arguments.");
+                        PrintMainUsage();
+                        return -7777;
+                    }
+                    ret = RunNunit3Tests(args[1], args.Skip(2).ToArray());
+                    break;
+
+                    case "runjobmanager":
+                    case "runjobmanager-debug":
+                    case "runjobmanager-release":
+                    case "runjobmanager-ignore_tests_w_deps":
+                    DeleteResultFiles();
+
+                    bool runRelease;
 #if DEBUG
                 runRelease = false;
 #else
-                runRelease = true;
+                    runRelease = true;
 #endif
 
-                if(args[0].EndsWith("release"))
-                    runRelease = true;
-                if(args[0].EndsWith("debug"))
-                    runRelease = false;
-                discoverRelease = runRelease;
+                    if (args[0].EndsWith("release"))
+                        runRelease = true;
+                    if (args[0].EndsWith("debug"))
+                        runRelease = false;
+                    discoverRelease = runRelease;
 
-                if(args[0].EndsWith("ignore_tests_w_deps"))
-                    ignore_tests_w_deps = true;
+                    if (args[0].EndsWith("ignore_tests_w_deps"))
+                        ignore_tests_w_deps = true;
 
-                int iQueue = 1;
-                string filter = args.Length > 1 ? args[1] : "*";
-                if(args.Length == 3) {
-                    Console.WriteLine("arg 2 is:" + args[2]);
-                    if(args[2].StartsWith("queue#")) {
-                        try {
-                            iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                        } catch(Exception) {
+                    int iQueue = 1;
+                    string filter = args.Length > 1 ? args[1] : "*";
+                    if (args.Length == 3) {
+                        Console.WriteLine("arg 2 is:" + args[2]);
+                        if (args[2].StartsWith("queue#")) {
+                            try {
+                                iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+                            } catch (Exception) {
+                                ret = -1;
+                                Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
+                                PrintMainUsage();
+                                break;
+                            }
+                        } else {
                             ret = -1;
-                            Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
                             PrintMainUsage();
                             break;
                         }
                     } else {
-                        ret = -1;
-                        PrintMainUsage();
-                        break;
+
                     }
-                } else {
 
-                }
+                    ret = JobManagerRun(filter, iQueue);
+                    break;
 
-                ret = JobManagerRun(filter, iQueue);
-                break;
-
-                case "yaml":
+                    case "yaml":
 #if DEBUG
                 discoverRelease = false;
 #else
-                discoverRelease = true;
+                    discoverRelease = true;
 #endif
-                ret = BuildYaml();
-                break;
+                    ret = BuildYaml();
+                    break;
 
-                case "help":
-                PrintMainUsage();
-                ret = 0;
-                break;
+                    case "help":
+                    PrintMainUsage();
+                    ret = 0;
+                    break;
 
-                default:
-                PrintMainUsage();
-                ret = -1000;
-                break;
+                    default:
+                    PrintMainUsage();
+                    ret = -1000;
+                    break;
+                }
+
+                csMPI.Raw.mpiFinalize();
+
+
+                return ret;
             }
-
-            csMPI.Raw.mpiFinalize();
-
-
-            return ret;
-
         }
+
 
         static int Main(string[] args) {
             return _Main(args, new PublicTests());

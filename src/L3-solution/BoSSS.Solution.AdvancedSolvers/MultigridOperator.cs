@@ -126,7 +126,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int neighborSearchDepth = 4;
                 int jFound = -1;
                 bool foundACell = false;
-                //Debugger.Launch();
+                // dbg_launch();
                 while(!foundACell && neighborSearchDepth >= 0) {
                     if(lsTrk != null) {
                         Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(1, neighborSearchDepth)).GetBitMask();

@@ -635,6 +635,7 @@ namespace ilPSP {
                 // optimized version
                 // +++++++++++++++++
 
+
                 MultidimensionalArray mdaM = M as MultidimensionalArray;
                 if (mdaM.Dimension != 2)
                     throw new ArgumentException("Multidimensional Array must have 2 dimensions to be a matrix.");
@@ -649,6 +650,7 @@ namespace ilPSP {
                 else
                     _x = x.ToArray();
 
+                //double[] yCeck = y.ToArray();
 
                 if (SD == 1 && m_NoOfCols * m_NoOfRows >= 32) {
                     // ++++++++++++++++
@@ -658,12 +660,13 @@ namespace ilPSP {
 
                     double[] _y;
                     bool backCopy = false;
-                    if (typeof(VectorType1) == typeof(double[]))
+                    if (typeof(VectorType1) == typeof(double[])) {
                         _y = y as double[];
-                    else {
+                    } else {
                         _y = y.ToArray();
                         backCopy = true;
                     }
+
 
                     unsafe {
                         fixed (double* _pmdaM = mdaM.Storage, px = _x, py = _y) {
@@ -674,12 +677,48 @@ namespace ilPSP {
                         }
                     }
 
+                    
+
                     if (backCopy) {
                         int I = _y.Length;
                         for (int i = 0; i < I; i++) {
                             y[i] = _y[i];
                         }
                     }
+
+                    /*
+                    {
+
+
+                        if (!transpose) {
+
+                            for (int i = 0; i < m_NoOfRows; i++) {
+                                double yi = 0;
+
+                                for (int j = 0; j < m_NoOfCols; j++)
+                                    yi += M[i, j] * x[j];
+
+                                yCeck[i] = yCeck[i] * yScaling + yi * xScaling;
+                            }
+
+                        } else {
+
+                            for (int i = 0; i < m_NoOfCols; i++) {
+                                double yi = 0;
+
+                                for (int j = 0; j < m_NoOfRows; j++)
+                                    yi += M[j, i] * x[j];
+
+                                yCeck[i] = yCeck[i] * yScaling + yi * xScaling;
+                            }
+                        }
+
+                        double Rel = Math.Max(y.L2Norm(), yCeck.L2Norm())*1e-7;
+
+                        if (yCeck.L2Distance(y) / Rel > 1.0e-7)
+                            throw new ArithmeticException("BLAS GEMV is fucked.");
+                    }
+                    */
 
                 } else {
                     // ++++++++++++++++++++++++++++++++++++++++++++
@@ -725,11 +764,48 @@ namespace ilPSP {
                             }
                         }
                     }
+
+                    /*
+                    {
+
+
+                        if (!transpose) {
+
+                            for (int i = 0; i < m_NoOfRows; i++) {
+                                double yi = 0;
+
+                                for (int j = 0; j < m_NoOfCols; j++)
+                                    yi += M[i, j] * x[j];
+
+                                yCeck[i] = yCeck[i] * yScaling + yi * xScaling;
+                            }
+
+                        } else {
+
+                            for (int i = 0; i < m_NoOfCols; i++) {
+                                double yi = 0;
+
+                                for (int j = 0; j < m_NoOfRows; j++)
+                                    yi += M[j, i] * x[j];
+
+                                yCeck[i] = yCeck[i] * yScaling + yi * xScaling;
+                            }
+                        }
+
+                        double Rel = Math.Max(y.L2Norm(), yCeck.L2Norm()) * 1e-7;
+
+                        if (yCeck.L2Distance(y) / Rel > 1.0e-7)
+                            throw new ArithmeticException("own GEMV is fucked.");
+                    }
+                    */
                 }
             } else {
                 // +++++++++++++++++
                 // Reference version
                 // +++++++++++++++++
+
+
+                
 
                 if (!transpose) {
                     

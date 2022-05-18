@@ -168,7 +168,7 @@ namespace BoSSS.Application.XNSEC {
             int D = GridData.SpatialDimension;
             int[] levels = new int[J];
             Cell[] cells = GridData.Grid.Cells;
-            System.Diagnostics.Debugger.Launch();
+            //System.Diagnostics. dbg_launch();
 
             for (int p = 0; p < problematicPoints.Count; p++) {
                 long GlobalID, GlobalIndex; // Index of the cell to be refined

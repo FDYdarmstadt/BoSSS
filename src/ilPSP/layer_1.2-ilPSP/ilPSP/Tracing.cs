@@ -48,7 +48,7 @@ namespace ilPSP.Tracing {
             set {
                 //Console.Write("Resetting logging namespaces: ");
                 //if(value == null || value.Length <= 0) {
-                //    Debugger.Launch();
+                //     dbg_launch();
                 //    Console.WriteLine("NIX2LOG.");
                 //} else {
                 //    foreach(string s in value)
@@ -579,7 +579,7 @@ namespace ilPSP.Tracing {
                         stw.Write(_mcr.Name);
 
                         //if(_mcr.Name.Contains("AggregationGridBasis.BuildInjector_Lv1"))
-                        //    Debugger.Launch();
+                        //     dbg_launch();
 
                         _mcr = _mcr.ParrentCall;
                         if(_mcr != null)

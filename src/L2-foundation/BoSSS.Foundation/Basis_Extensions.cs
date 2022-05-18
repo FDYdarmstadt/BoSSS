@@ -174,7 +174,27 @@ namespace BoSSS.Foundation {
                 }
                 // Calculate Transformation
                 if (!m_dest.IsOrthonormal) {
-                    M[iKref].InvertSymmetrical();
+                    {
+                        var M1 = M[iKref].CloneAs();
+                        var M1inv = M1.CloneAs();
+                        M1inv.InvertSymmetrical();
+                        var Check = M1.GEMM(M1inv);
+                        Check.AccEye(-1.0);
+                        Console.WriteLine("Symmetrical inversion check: " + Check.InfNorm());
+                    }
+                    {
+                        var M1 = M[iKref].CloneAs();
+                        var M1inv = M1.CloneAs();
+                        M1inv.InvertInPlace();
+                        var Check = M1.GEMM(M1inv);
+                        Check.AccEye(-1.0);
+                        Console.WriteLine("Normal inversion check: " + Check.InfNorm());
+                    }
+
+                    //M[iKref].InvertSymmetrical();
+                    M[iKref].InvertInPlace();
+
+                    
                     Origin2Dest[iKref].DGEMM(1.0, M[iKref], S[iKref], 0.0);
                 } else {
                     Origin2Dest[iKref].Acc(1.0, S[iKref]); // in this case M is unity
