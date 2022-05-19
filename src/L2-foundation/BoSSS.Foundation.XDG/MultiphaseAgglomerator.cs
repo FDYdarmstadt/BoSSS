@@ -405,7 +405,7 @@ namespace BoSSS.Foundation.XDG {
                             }
 
 
-                            if (!object.ReferenceEquals(LeftMul, RightMul) && RightMul != null) {
+                            if(RequireRight == 2) {
                                 MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
                                 BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask, this.Tracker.GetSpeciesName(Species));
 
