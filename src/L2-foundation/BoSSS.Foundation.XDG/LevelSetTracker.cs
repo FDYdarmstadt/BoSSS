@@ -1818,8 +1818,6 @@ namespace BoSSS.Foundation.XDG {
                 }
                 #endregion
 
-                if (m_VersionCnt >= 3)
-                    throw new ApplicationException("terminate me");
 
                 // evaluate level sets / find cut cells
                 // ====================================
