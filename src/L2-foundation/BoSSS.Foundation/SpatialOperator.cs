@@ -2626,7 +2626,7 @@ namespace BoSSS.Foundation {
                 for(int iCellPass = 0; iCellPass < ColorLists.Length; iCellPass++) { // loop over all cell lists...
                     int[] CellList = this.ColorLists[iCellPass];
                     int[] ExtCellList = this.ExternalColorLists[iCellPass];
-
+                    
                     int[] CoordCounter = new int[JE];
                     int[] FieldCounter = new int[JE];
 
