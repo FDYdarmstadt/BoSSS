@@ -39,7 +39,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static DataTable GetSessionTable(this IEnumerable<ISessionInfo> sessions, Tuple<string, Func<ISessionInfo, object>>[] AdditionalColums = null) {
 
-            //Debugger.Launch();
+            // dbg_launch();
 
             Dictionary<string, object[]> Ret = new Dictionary<string, object[]>();
 

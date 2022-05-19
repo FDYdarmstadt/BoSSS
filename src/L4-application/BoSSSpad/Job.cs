@@ -1358,7 +1358,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (this.AssignedBatchProc != null)
                     throw new NotSupportedException("Job can only be activated once.");
                 AssignedBatchProc = bpc;
-                //Debugger.Launch();
+                // dbg_launch();
                 if(UndocumentedSuperHack)
                     this.DeleteOldDeploymentsAndSessions();
 

@@ -883,7 +883,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         int i0_Trg = 0;
                         int iE_Trg = NoOfPureLocal + NoOfBorrowed + NoOfRelayed;
 
-                        //Debugger.Launch();
+                        // dbg_launch();
 
                         SortedDictionary<int, int> newPeriodicEliminatedPoints = new SortedDictionary<int, int>();
                         foreach (var t in PeriodicElim) {
@@ -895,7 +895,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             Debug.Assert(elimTrg < iE_Trg);
 
                             //if (newPeriodicEliminatedPoints.Keys.Contains(elimSrc))
-                            //    Debugger.Launch();
+                            //     dbg_launch();
 
                             newPeriodicEliminatedPoints.Add(elimSrc, elimTrg);
                         }

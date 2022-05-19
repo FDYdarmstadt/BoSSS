@@ -2203,7 +2203,7 @@ namespace BoSSS.Foundation {
                         if(DeadlockWatch >= 1000)
                             throw new ApplicationException("Deadlock in parallel coloring.");
                         continue;
-                        //Debugger.Launch();
+                        // dbg_launch();
                     }
 
 
@@ -2214,7 +2214,7 @@ namespace BoSSS.Foundation {
 
                     if(gDat.MpiSize > 1) {
 
-                        //Debugger.Launch();
+                        // dbg_launch();
 
                         var ExchData = new Dictionary<int, List<Tuple<long, long>>>();
 
@@ -2394,7 +2394,7 @@ namespace BoSSS.Foundation {
 
                     if(gDat.MpiSize > 1) {
 
-                        //Debugger.Launch();
+                        // dbg_launch();
 
                         var ExchData = new Dictionary<int, List<Tuple<int, int>>>();
 
