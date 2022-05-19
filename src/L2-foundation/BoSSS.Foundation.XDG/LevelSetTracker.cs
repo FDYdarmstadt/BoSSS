@@ -1972,7 +1972,7 @@ namespace BoSSS.Foundation.XDG {
                                         // code cell:
 
                                         
-                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
+                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[jj], 0, levSetind);
                                         TempCutCellsBitmask[jj] = true;
                                     }
 
