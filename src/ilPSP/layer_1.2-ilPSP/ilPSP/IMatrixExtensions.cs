@@ -2280,6 +2280,11 @@ namespace ilPSP {
 
         //static public Stopwatch DGETRF_stopwatch;// = new Stopwatch();
 
+        /// <summary>
+        /// Solves the linear equation system:
+        /// 
+        /// <paramref name="M"/>*<paramref name="x"/> = <paramref name="b"/>.
+        /// </summary>
         static public double[] Solve<T,W>(this T M, W b)
             where T : IMatrix
             where W : IList<double> //
@@ -2334,8 +2339,7 @@ namespace ilPSP {
                             infostring = String.Format("the {0}-th argument had an illegal value", info);
                         }
                         else {
-                            infostring = "U("+info+@""","""+info+
-                                ") is exactly zero. The factorization \n has been completed, but the factor U is exactly \n singular, and division by zero will occur if it is used \n to solve a system of equations.";
+                            infostring = "U(" + info + @""",""" + info + ") is exactly zero. The factorization \n has been completed, but the factor U is exactly \n singular, and division by zero will occur if it is used \n to solve a system of equations.";
                         }
 
                         throw new ArithmeticException("LAPACK dgetrf info: " + infostring);
@@ -2355,6 +2359,76 @@ namespace ilPSP {
                     x.SetV(_x);
             }
         }
+        
+
+        /// <summary>
+        /// Solves the linear equation system with multiple right-hand-sides:
+        /// 
+        /// <paramref name="M"/>*<paramref name="X"/> = <paramref name="B"/>.
+        /// </summary>
+        /// <param name="x">On exit, the solution of the equation system; each column is the solution for one right-hand-side</param>
+        /// <param name="B">Matrix of right-hand-sides; each column is a independent right-hand-side.</param>
+        /// <param name="M">General quadratic, non-singular matrix.</param>
+        static public void SolveEx<T, V, W>(this T M, V x, W b)
+            where T : IMatrix
+            where V : IMatrix
+            where W : IMatrix //
+        {
+            if (M.NoOfRows != M.NoOfCols)
+                throw new ApplicationException("Cannot solve nonquadratic matrix.");
+            if (x.NoOfCols != b.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (x.NoOfRows != M.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (b.NoOfRows != M.NoOfRows)
+                throw new ArgumentException("number of rows in b must be equal to number of rows in M");
+            unsafe {
+
+                int L = M.NoOfCols;
+
+                int NoRhs = b.NoOfCols;
+
+                int* ipiv = stackalloc int[L];
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out int i0, L * L);
+                double[] _xRhs_Entries = TempBuffer.GetTempBuffer(out int i1, L * NoRhs);
+                fixed (double* this_Entries = _this_Entries, xrhs_Entries = _xRhs_Entries) {
+
+                    CopyToUnsafeBuffer(M, this_Entries, true);
+                    CopyToUnsafeBuffer(b, xrhs_Entries, true);
+
+                    int info;
+                    LAPACK.F77_LAPACK.DGETRF(ref L, ref L, this_Entries, ref L, ipiv, out info);
+                    if (info != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
+                        string infostring;
+                        if (info < 0) {
+                            infostring = String.Format("the {0}-th argument had an illegal value", info);
+                        } else {
+                            infostring = "U(" + info + @""",""" + info + ") is exactly zero. The factorization \n has been completed, but the factor U is exactly \n singular, and division by zero will occur if it is used \n to solve a system of equations.";
+                        }
+
+                        throw new ArithmeticException("LAPACK dgetrf info: " + infostring);
+                    }
+                    //         TRANS, N, NRHS, A,            LDA, IPIV, B, LDB
+                    char transp = 'N';
+                    
+                    LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref NoRhs, this_Entries, ref L, ipiv, xrhs_Entries, ref L, out info);
+                    if (info != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
+                        throw new ArithmeticException("LAPACK dgetrs info: " + info);
+                    }
+
+                    CopyFromUnsafeBuffer(x, xrhs_Entries, true);
+                }
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
+
+
+            }
+        }
+        
 
         /// <summary>
         /// Solves the linear equation system:
@@ -2371,8 +2445,7 @@ namespace ilPSP {
         /// <param name="c">Right-hand-side of the side equation system.</param>
         /// <param name="N">General matrix.</param>
         /// The second system is used to solve
-        static public void SolveWithCondition<T>(this T M, double[] x, double[] b, T N, double[] c) where T : IMatrix
-        {
+        static public void SolveWithCondition<T>(this T M, double[] x, double[] b, T N, double[] c) where T : IMatrix {
             if (M.NoOfCols != N.NoOfCols)
                 throw new ApplicationException("Solutionspace of both systems has to be of equal dimension");
             if (x.Length != M.NoOfCols)
@@ -2385,8 +2458,7 @@ namespace ilPSP {
             // compute the nullspace of M
             //MultidimensionalArray SRREF = M.GetSolutionSpace();
             MultidimensionalArray S = M.GetSolutionSpaceSVD();
-            if (S == null)
-            {
+            if (S == null) {
                 throw new ApplicationException("Something went wrong");
             }
 
@@ -2573,6 +2645,54 @@ namespace ilPSP {
                     }
                 }
                 TempBuffer.FreeTempBuffer(i0);
+            }
+        }
+
+        /// <summary>
+        /// Solves the symmetric, positive definite linear equation system with multiple right-hand-sides:
+        /// 
+        /// <paramref name="M"/>*<paramref name="X"/> = <paramref name="B"/>.
+        /// </summary>
+        /// <param name="x">On exit, the solution of the equation system; each column is the solution for one right-hand-side</param>
+        /// <param name="B">Matrix of right-hand-sides; each column is a independent right-hand-side.</param>
+        /// <param name="M">General quadratic, non-singular matrix.</param>
+        static public void SolveSymmetricEx<T,TX,TB>(this T M, TX x, TB b)
+            where T : IMatrix 
+            where TX : IMatrix 
+            where TB : IMatrix //
+        {
+            if (M.NoOfRows != M.NoOfCols)
+                throw new ApplicationException("Cannot solve nonquadratic matrix.");
+            if (x.NoOfCols != b.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (x.NoOfRows != M.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (b.NoOfRows != M.NoOfRows)
+                throw new ArgumentException("number of rows in b must be equal to number of rows in M");
+            unsafe {
+
+                int L = M.NoOfCols;
+                int NoRhs = b.NoOfCols;
+               
+                int* ipiv = stackalloc int[L];
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out int i0, L * L);
+                double[] _xrhs_Entries = TempBuffer.GetTempBuffer(out int i1, L * L);
+                fixed (double* this_Entries = _this_Entries, xrhs_Entries = _xrhs_Entries) {
+                    CopyToUnsafeBuffer(M, this_Entries, true);
+                    CopyToUnsafeBuffer(b, xrhs_Entries, true);
+
+                    int uplo = 'U', info;
+                    LAPACK.F77_LAPACK.DPOSV_(ref uplo, ref L, ref NoRhs, this_Entries, ref L, xrhs_Entries, ref L, out info);
+                    if (info != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
+                        throw new ArithmeticException("LAPACK dposv info: " + info);
+                    }
+
+                    CopyFromUnsafeBuffer(x, xrhs_Entries, true);
+                }
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
             }
         }
 

@@ -1289,25 +1289,9 @@ namespace BoSSS.Foundation.XDG {
                     for(int i = 0; i< this.LevelSets.Count; i++ ) {
                         if (this.LevelSets[i] is LevelSet ls) {
                             m_TestTransformer[i] = new BernsteinTransformator(ls.Basis, 0.005);
-
-                            var mtx = m_TestTransformer[i].Origin2Dest[0];
-                            Console.WriteLine("Levset" + i + " degree = " + ls.Basis.Degree);
-                            Console.WriteLine($"Mtx dim is {mtx.NoOfRows}x{mtx.NoOfCols})");
-                            string prefix;
-                            if (ilPSP.Environment.MPIEnv.Hostname.ToLower().Contains("hpccluster2"))
-                                prefix = "hpc2";
-                            else
-                                prefix = "hpc1";
-
-                            prefix = prefix + "r" + GridDat.MpiRank + "_ls" + i;
-                            mtx.SaveToTextFile(prefix + "_O2D.txt");
                         }
                     }
                 }
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-                
-                if (this.LevelSets.Count >= 2)
-                    throw new ApplicationException("Tschüs mit Ü!");
                 return m_TestTransformer;
             } 
         }

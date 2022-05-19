@@ -1471,7 +1471,7 @@ namespace PublicTestRunner {
                 var nodes = GenericBlas.Linspace(-1, 1, 4);
                 var g = Grid3D.Cartesian3DGrid(nodes, nodes, nodes);
 
-                var b = new BoSSS.Foundation.Basis(g, 5);
+                var b = new BoSSS.Foundation.Basis(g, 9);
                 var t = new BoSSS.Foundation.BernsteinTransformator(b, 0.005);
 
                 string prefix;
