@@ -2957,7 +2957,7 @@ namespace ilPSP.LinSolvers {
         static void MyAssert(bool b, string message) {
             if(!b) {
                 //Console.WriteLine();
-                //Debugger.Launch();
+                // dbg_launch();
                 throw new ApplicationException("Data integrity of BlockMsrMatrix lost: " + message);
             }
         }

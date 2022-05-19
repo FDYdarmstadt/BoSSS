@@ -35,7 +35,7 @@ namespace BoSSS.Application.XNSEC {
             //NUnitTest.COMBUSTION_TEST();
             //NUnitTest.COMBUSTION_CoFlowFlame_TEST();
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-            //Debugger.Launch();
+            // dbg_launch();
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.HeatConductivityTest(2, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
@@ -533,7 +533,7 @@ namespace BoSSS.Application.XNSEC {
         protected virtual void DefineTemporalTerm(int D, OperatorFactory opFactory) {
             //  var EoS = base.Control.EoS;
             int NoOfChemSpecies = Control.NumberOfChemicalSpecies;
-            //Debugger.Launch();
+            // dbg_launch();
 
             if (boundaryMap.PhysMode == PhysicsMode.Combustion) {
 

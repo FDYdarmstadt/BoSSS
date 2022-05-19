@@ -647,7 +647,7 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
 
-                    //Debugger.Launch();
+                    // dbg_launch();
 
                     bool terminate = true;
                     foreach(var J in this.AllJobs) {
