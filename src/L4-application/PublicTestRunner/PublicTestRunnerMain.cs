@@ -1,4 +1,5 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -1436,12 +1437,12 @@ namespace PublicTestRunner {
         /// </param>
         /// <returns></returns>
         public static int _Main(string[] args, ITestTypeProvider ttp) {
-            if(args.Length > 5) {
+            if (args.Length > 5) {
                 Console.WriteLine($"Warning: got {args.Length} arguments -- are you using this right?");
 
                 Console.WriteLine("No of args: " + args.Length);
                 //int i = 0;
-                foreach(string arg in args) {
+                foreach (string arg in args) {
                     Console.WriteLine("    " + arg);
                 }
 
@@ -1458,7 +1459,7 @@ namespace PublicTestRunner {
             System.Diagnostics.Trace.Listeners.Add(new MyListener());
 
 
-            if(args.Length < 1) {
+            if (args.Length < 1) {
                 Console.WriteLine("Insufficient number of arguments.");
                 PrintMainUsage();
                 return -7777;
@@ -1467,10 +1468,11 @@ namespace PublicTestRunner {
             BoSSS.Solution.Application.InitMPI();
 
 
+
             int ret = -1;
-            switch(args[0]) {
+            switch (args[0]) {
                 case "nunit3":
-                if(args.Length < 2) {
+                if (args.Length < 2) {
                     Console.WriteLine("Insufficient number of arguments.");
                     PrintMainUsage();
                     return -7777;
@@ -1491,23 +1493,23 @@ namespace PublicTestRunner {
                 runRelease = true;
 #endif
 
-                if(args[0].EndsWith("release"))
+                if (args[0].EndsWith("release"))
                     runRelease = true;
-                if(args[0].EndsWith("debug"))
+                if (args[0].EndsWith("debug"))
                     runRelease = false;
                 discoverRelease = runRelease;
 
-                if(args[0].EndsWith("ignore_tests_w_deps"))
+                if (args[0].EndsWith("ignore_tests_w_deps"))
                     ignore_tests_w_deps = true;
 
                 int iQueue = 1;
                 string filter = args.Length > 1 ? args[1] : "*";
-                if(args.Length == 3) {
+                if (args.Length == 3) {
                     Console.WriteLine("arg 2 is:" + args[2]);
-                    if(args[2].StartsWith("queue#")) {
+                    if (args[2].StartsWith("queue#")) {
                         try {
                             iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                        } catch(Exception) {
+                        } catch (Exception) {
                             ret = -1;
                             Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
                             PrintMainUsage();
@@ -1549,8 +1551,9 @@ namespace PublicTestRunner {
 
 
             return ret;
-
         }
+        
+
 
         static int Main(string[] args) {
             return _Main(args, new PublicTests());

@@ -80,7 +80,8 @@ namespace BoSSS.Application.XNSE_Solver {
             // Fixed: in 3D now Saye is used everywhere
 
             var C = Rotating_Cube(4, 10, 3, false);
-
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 2;
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -91,7 +92,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public static void BadInitiallyDistributionTest(
             [Values(true,false)] bool useAMR) {
             var C = Rotating_Cube(k: 1, Res: 10, SpaceDim: 3, useAMR, useLoadBal: true , UsePredefPartitioning: true);
-            //Debugger.Launch();
+            // dbg_launch();
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();

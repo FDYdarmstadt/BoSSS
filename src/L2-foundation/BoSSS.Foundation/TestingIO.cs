@@ -307,7 +307,7 @@ namespace BoSSS.Foundation {
             }
             for(int d = 0; d < GridDat.SpatialDimension; d++) {
                 if(RelError(ColName_Coörd(d)) > BLAS.MachineEps.Sqrt()) {
-                    //Debugger.Launch();
+                    // dbg_launch();
                     throw new ArgumentException($"Mismatch in cell center coordinates:  relative error for {ColName_Coörd(d)} is {RelError(ColName_Coörd(d))}");
                 }
             }
@@ -719,7 +719,7 @@ namespace BoSSS.Foundation {
         /// <param name="SortedDataColumns">Data, sorted according to GlobalId, at rank 0</param>
         /// <param name="G"></param>
         double[][] ScatterSortedData(IGridData G, double[][] SortedDataColumns) {
-            //Debugger.Launch();
+            // dbg_launch();
             long Jglob = G.CellPartitioning.TotalLength;
             int Jloc = G.CellPartitioning.LocalLength;
             int MPIrank = G.MpiRank;
