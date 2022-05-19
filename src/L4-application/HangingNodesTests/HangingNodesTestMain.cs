@@ -24,18 +24,6 @@ namespace HangingNodesTests {
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
 
-            // Size : 1, Phases : 3, Setup : 11
-            double[] sizes = new double[] { 1e0 };
-            byte[] setup = new byte[] { 11 };
-            RunTest(sizes, setup, 3);
-            
-            
-            //HangingNodesTests.HangingNodesTestMain.Test3Phase
-            /*
-            //double[] sizes = new double[] { 1e0 };
-            //byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-            //int[] phases = new int[] { 1, 2, 3 };
-
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
             byte[] setup = new byte[] { 0 };
@@ -121,7 +109,6 @@ namespace HangingNodesTests {
             Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
             Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
 
-            */
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -223,8 +210,6 @@ namespace HangingNodesTests {
         /// - instead, we must compare cell values based on the location  code (<see cref="BoSSS.Platform.Utils.Geom.GeomBinTreeBranchCode"/>).
         /// </remarks>
         private static void CheckLengthScales(XNSFE solver, string filename) {
-
-
             
             var species = solver.LsTrk.SpeciesIdS.ToArray();
             var Tracker = solver.LsTrk;
