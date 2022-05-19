@@ -505,8 +505,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally, base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
                     .MPISum();
                 //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
-                if (Jtot[0] == Jtot[1] || Jtot[1] > 0) {
-                    /*
+                if (Jtot[0] == Jtot[1]) {
+                    
                     Console.Error.WriteLine($"MPI rank {this.m_LsTrk.GridDat.MpiRank}: NoOfItems = {Jtot[1]}, NoOfCell = {Jtot[1]}");
                     var CC = new SinglePhaseField(new Basis(this.m_LsTrk.GridDat, 0), "CutCells");
                     CC.AccConstant(1.0, base.m_LsTrk.Regions.GetCutCellMask());
@@ -518,7 +518,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     CC1.AccConstant(1.0, base.m_LsTrk.Regions.GetCutCellMask4LevSet(1));
 
                     Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(this.m_LsTrk.LevelSets[0]), (DGField)(this.m_LsTrk.LevelSets[1]), CC, CC0, CC1 }, "Error", 0.0, 2);
-                    */
+                    
                     throw new ArithmeticException("All cells are cut cells - check your settings!");
                 }
             }

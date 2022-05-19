@@ -1764,14 +1764,7 @@ namespace BoSSS.Foundation.XDG {
                 ushort[,] VertexMarkerExternal;
                 (int iLevSet, int iFace)[][] _LevSetCoincidingFaces = null;
 
-                int RefSize;
-                if (ilPSP.Environment.MPIEnv.Hostname.ToLowerInvariant().Contains("hpccluster2"))
-                    RefSize = 4;
-                else
-                    RefSize = 1;
-                TestingIO test = new TestingIO(this.GridDat, $"TrackerUpdate{m_VersionCnt}.csv", __ReferenceMPISize: RefSize);
-                //test.AddDGField(this.LevelSets[0] as ConventionalDGField);
-                //test.AddDGField(this.LevelSets[1] as ConventionalDGField);
+                
 
 
                 // init & first time calls
@@ -1855,13 +1848,6 @@ namespace BoSSS.Foundation.XDG {
                     MaxVecLen = Math.Max(1, MaxVecLen);
                     var eps = BLAS.MachineEps*10;
 
-                    test.AddVector("LevSetRegionsUnsigned0", LevSetRegionsUnsigned.Take(J).Select(lsr => (double)lsr));
-
-                    test.AddVector("SearchMask", SearchMask.GetBitMask().ToBoolArray().Take(J).Select(lsr => lsr ? 1.0 : 0.0));
-
-                    MultidimensionalArray allBernstein = null;
-                    MultidimensionalArray allModal = MultidimensionalArray.Create(J, (this.LevelSets[1] as LevelSet).Basis.Length);
-
 
                     var Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
                     foreach (var t_j0_Len in Gchnks) { // loop over all cells in the search mask...
@@ -1879,94 +1865,6 @@ namespace BoSSS.Foundation.XDG {
                         // loop over level sets ...
                         for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
                             var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
-
-                            ushort[] b4change = new ushort[VecLen];
-                            {
-                                Console.WriteLine("!!!!!!!!!!!!!!!!!!!! TESTCODE AKTIV #########################################");
-
-
-                                
-
-
-                                var data = this.m_DataHistories[levSetind].Current;
-                                MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
-
-                                
-                                for (int jj = 0; jj < VecLen; jj++)
-                                    b4change[jj] = LevSetRegionsUnsigned[j + jj];
-
-                                for (int jj = 0; jj < VecLen; jj++) {
-                                    bool Pos = false;
-                                    bool Neg = false;
-
-
-                                    // loop over nodes on edges...
-                                    int nodeIndex = 0;
-                                    /*
-                                    for (int e = 0; e < noOfFaces; e++) {
-                                        bool PosEdge = false;
-                                        bool NegEdge = false;
-
-                                        double quadResult = 0.0;
-                                        for (int k = 0; k < _TestNodesPerFace[e]; k++) {
-                                            double v = levSetVal[jj, nodeIndex];
-
-                                            if (v < 0) {
-                                                NegEdge = true;
-                                            } else if (v > 0) {
-                                                PosEdge = true;
-                                            }
-
-                                            quadResult += v * v * quadWeights[k]; // weight might not even be necessary to test only for positivity
-
-                                            nodeIndex++;
-                                        }
-
-                                        Pos |= PosEdge;
-                                        Neg |= NegEdge;
-
-                                        // detect an edge which coincides with the zero-level-set
-                                        if (quadResult < eps) {
-                                            if (_LevSetCoincidingFaces == null)
-                                                _LevSetCoincidingFaces = new (int iLevSet, int iFace)[J][];
-                                            (levSetind, e).AddToArray(ref _LevSetCoincidingFaces[j + jj]);
-                                        }
-
-                                    } // end of edges loop
-                                    */
-
-                                    // loop over remaining Nodes...
-                                    for (; nodeIndex < NoOfNodes; nodeIndex++) {
-                                        double v = levSetVal[jj, nodeIndex];
-
-                                        bool PosNode = false;
-                                        bool NegNode = false;
-                                        if (v < 0) {
-                                            NegNode = true;
-                                        } else if (v > 0) {
-                                            PosNode = true;
-                                        }
-
-                                        Pos |= PosNode;
-                                        Neg |= NegNode;
-                                    }
-
-
-                                    if ((Pos && Neg) || (!Pos && !Neg)) {
-                                        // cell j+jj is cut by level set
-
-                                        // code cell:
-                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
-                                        TempCutCellsBitmask[j + jj] = true;
-                                    }
-
-                                    if (Neg == true && Pos == false) {
-                                        LevSetNeg[levSetind][j + jj] = true;
-                                    } else {
-                                        LevSetNeg[levSetind][j + jj] = false;
-                                    }
-                                }
-                            }
 
 
                             if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {
@@ -2062,14 +1960,6 @@ namespace BoSSS.Foundation.XDG {
                                     double[] bernsteinVals = new double[Transformer.Destination.Polynomials[iKref].Count];
                                     Transformer.Origin2Dest[iKref].MatVecMul(1.0, modalVals, 0.0, bernsteinVals);
 
-                                    if (levSetind == 1) {
-                                        allModal.SetRow(jj, modalVals);
-
-                                        if (allBernstein == null)
-                                            allBernstein = MultidimensionalArray.Create(J, bernsteinVals.Length);
-                                        allBernstein.SetRow(jj, bernsteinVals);
-                                    }
-
                                     double Min = bernsteinVals.Min();
                                     double Max = bernsteinVals.Max();
 
@@ -2082,23 +1972,7 @@ namespace BoSSS.Foundation.XDG {
                                         // code cell:
 
                                         
-                                        //EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
-                                        EncodeLevelSetDist(ref b4change[jj - j], 0, levSetind);
-                                        if (b4change[jj - j] != LevSetRegionsUnsigned[jj]) {
-                                            /* using(var tw = new StreamWriter("error" + m_gDat.MpiRank + ".txt")) {
-                                                 tw.WriteLine("Error in cell " + jj);
-                                                 tw.WriteLine("trf mtx:");
-                                                 Transformer.Origin2Dest[iKref].SaveToStream(tw);
-                                                 tw.WriteLine("bernstein vals:");
-                                                 bernsteinVals.SaveToStream(tw, csMPI.Raw._COMM.SELF);
-                                                 tw.WriteLine("modal vals: ");
-                                                 modalVals.SaveToStream(tw, csMPI.Raw._COMM.SELF);
-                                             }
-                                             */
-
-                                            Console.Error.WriteLine("rank" + m_gDat.MpiRank + "detection error on levset# " + levSetind + " in cell " + jj);
-                                            //throw new ApplicationException("detection error on levset# " + levSetind);
-                                        }
+                                        EncodeLevelSetDist(ref LevSetRegionsUnsigned[j + jj], 0, levSetind);
                                         TempCutCellsBitmask[jj] = true;
                                     }
 
@@ -2193,10 +2067,7 @@ namespace BoSSS.Foundation.XDG {
                         j += VecLen;
 
                     }
-                    Console.WriteLine($"Bernstein columns: {allBernstein.NoOfCols}, storrage length {allBernstein.Storage.Length}");
-                    test.AddVector("AllBernstein", allBernstein.Storage);
-                    //test.AddVector("AllModal", allModal.Storage);
-
+                    
 
                     if (_LevSetCoincidingFaces != null)
                         Regions.m_LevSetCoincidingFaces = _LevSetCoincidingFaces;
@@ -2210,13 +2081,7 @@ namespace BoSSS.Foundation.XDG {
                     // MPI update (cells)
                     // ==================
 
-                    test.AddVector("LevSetRegionsUnsigned0a", LevSetRegionsUnsigned.Take(J).Select(lsr => (double)lsr));
-
-
                     MPIUpdate(LevSetRegionsUnsigned, m_gDat);
-
-                    test.AddVector("LevSetRegionsUnsigned1", LevSetRegionsUnsigned.Take(J).Select(lsr => (double)lsr));
-
 
                     // 2nd sweep: mark vertices
                     // ========================
@@ -2238,9 +2103,6 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
                     }
-
-                    test.AddVector("LevSetRegionsUnsigned2", LevSetRegionsUnsigned.Take(J).Select(lsr => (double)lsr));
-
 
                     // MPI Update (vertex markers)
                     // ===========================
@@ -2383,12 +2245,9 @@ namespace BoSSS.Foundation.XDG {
 
                             NumberOfChanges = NumberOfChanges.MPISum();
                         }
-                        test.AddVector("LevSetRegionsUnsigned1-s" + dist, LevSetRegionsUnsigned.Take(J).Select(lsr => (double)lsr));
+                        
                     }
                 }
-
-                test.AddVector("LevSetRegionsUnsigned4", LevSetRegionsUnsigned.Take(J).Select(lsr => (double)lsr));
-
 
                 // set the sign
                 // ============
@@ -2407,18 +2266,6 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     MPIUpdate(LevSetRegions, m_gDat);
-                }
-
-
-                test.AddVector("LevSetRegions-f", LevSetRegions.Take(J).Select(lsr => (double)lsr));
-                test.DoIOnow();
-                var errs = test.AllAbsErr();
-                foreach (var kv in errs) {
-                    Console.WriteLine($" UpdateTraker#{m_VersionCnt}: {kv.Key}  error is {kv.Value}");
-                }
-                foreach (var kv in errs) {
-                    if (kv.Value > 1.0)
-                        throw new ArithmeticException($" UpdateTraker#{m_VersionCnt}: {kv.Key}  error is {kv.Value}");
                 }
 
                 // recalculate m_LenToNextChange
