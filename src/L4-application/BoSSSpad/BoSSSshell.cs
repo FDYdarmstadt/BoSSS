@@ -958,7 +958,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void ReloadExecutionQueues() {
             executionQueues = new List<BatchProcessorClient>();
-            //Debugger.Launch();
+            // dbg_launch();
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();
