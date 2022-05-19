@@ -64,7 +64,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static public void RotCube_GetSpeciesIDError() {
             // Tritt nur mit 4 cores auf !!!
             // Fixed: Bei AMR wird LevelsetTracker "genullt", dieser wurde bis dato noch vollständig an die Flüsse übergeben
-            var C = Rotating_Cube(4,30,2,true);
+            var C = Rotating_Cube(4, 30, 2, true);
 
             using (var solver = new XNSE()) {
                 solver.Init(C);
