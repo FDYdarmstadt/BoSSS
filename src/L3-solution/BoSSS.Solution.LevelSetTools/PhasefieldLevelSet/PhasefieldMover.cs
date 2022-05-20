@@ -74,9 +74,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                     gradPhi0.Gradient(1.0, phi0);
 
                     VectorField<SinglePhaseField> filtgrad;
-                    CurvatureAlgorithmsForLevelSet.CurvatureDriver(
-                                    CurvatureAlgorithmsForLevelSet.SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                                    CurvatureAlgorithmsForLevelSet.FilterConfiguration.Phasefield,
+                    CurvatureAlgorithms.CurvatureDriver(
+                                    SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                                    CurvatureAlgorithms.FilterConfiguration.Phasefield,
                                     this.DCurvature, out filtgrad, CorrectionLsTrk,
                                     this.DCurvature.Basis.Degree * 2,
                                     phi0);

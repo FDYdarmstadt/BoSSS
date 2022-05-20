@@ -431,21 +431,21 @@ namespace BoSSS.Application.XNSE_Solver {
                     MaxSigma maxSigmaParameter = new MaxSigma(Control.PhysicalParameters, Control.AdvancedDiscretizationOptions, QuadOrder(), Control.dtFixed);
                     opFactory.AddParameter(maxSigmaParameter);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, maxSigmaParameter);
-                    BeltramiGradient lsBGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    GradientAndCurvature lsBGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsBGradient);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux:
                 case SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local:
-                    BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+                    GradientAndCurvature lsGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);
                     break;
 
                 case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint:
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected:
                 case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean:
-                    BeltramiGradientAndCurvature lsGradientAndCurvature =
-                        FromControl.BeltramiGradientAndCurvature(Control, "Phi", quadOrder, D);
+                    GradientAndCurvature lsGradientAndCurvature =
+                        FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
                     opFactory.AddParameter(lsGradientAndCurvature);
                     lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradientAndCurvature);
                     break;
@@ -550,7 +550,7 @@ namespace BoSSS.Application.XNSE_Solver {
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
 
             if (config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine || config.dntParams.IBM_BoundaryType != IBM_BoundaryType.NoSlip) {
-                var normalsParameter = new Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.LevelSetCGidx(1));
+                var normalsParameter = new Normals(VariableNames.LevelSetCGidx(1), D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree);
                 opFactory.AddParameter(normalsParameter);
                 lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCGidx(1), normalsParameter);
             }

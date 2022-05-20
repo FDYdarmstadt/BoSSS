@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.NSECommon;
 using System;
 using System.Runtime.Serialization;
@@ -55,54 +56,6 @@ namespace BoSSS.Solution.XNSECommon {
         SemiImplicit
 
     }
-
-
-    /// <summary>
-    /// Options for the treatment of the isotropic part of the surface stress tensor 
-    /// </summary>
-    public enum SurfaceStressTensor_IsotropicMode {
-        
-        /// <summary>
-        /// Curvature is evaluated locally, i.e. the projection of $\divergence{ \nabla \varphi / | \nabla \varphi | $.
-        /// onto a DG field is used.
-        /// </summary>
-        Curvature_Projected,
-
-        /// <summary>
-        /// Curvature is evaluated locally at closest points on the level-set, i.e. 
-        /// the value of $\divergence{ \nabla \varphi / | \nabla \varphi | $ on the zero-set is extended to the domain.
-        /// </summary>
-        Curvature_ClosestPoint,
-
-
-        /// <summary>
-        /// A cell-wise mean-curvature is computed from a Laplace-Beltrami-ansatz.
-        /// </summary>
-        Curvature_LaplaceBeltramiMean,
-
-        /// <summary>
-        /// Curvature is computed from a specialized Level-Set as Fourier-series
-        /// </summary>
-        Curvature_Fourier,
-        
-        /// <summary>
-        /// use a cell-wise Laplace-Beltrami formulation.
-        /// </summary>
-        LaplaceBeltrami_Local,
-
-        /// <summary>
-        /// a Laplace-Beltrami formulation where level-set tangents are averaged at the cell boundary.
-        /// </summary>
-        LaplaceBeltrami_Flux,
-
-        /// <summary>
-        /// a cell-wise Laplace-Beltrami formulation with handling of the contact line
-        /// </summary>
-        LaplaceBeltrami_ContactLine
-
-
-    }
-
 
     /// <summary>
     /// Options for the localization of the slip-region for the generalized navier-slip boundary condition
@@ -358,7 +311,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// Expert options regarding the evaluation of the curvature.
         /// </summary>
         [DataMember]
-        public CurvatureAlgorithms.FilterConfiguration FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+        public LevelSetTools.CurvatureAlgorithms.FilterConfiguration FilterConfiguration = LevelSetTools.CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
 
         /// <summary>

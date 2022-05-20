@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.RheologyCommon;
 using BoSSS.Solution.XNSECommon.Operator.Convection;
@@ -520,9 +521,9 @@ namespace BoSSS.Solution.XNSECommon {
                     || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
 
                     if (dntParams.SST_isotropicMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
-                        IEquationComponent G = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
+                        IEquationComponent G = new Curvature_LaplaceBeltrami_Surface(d, sigma * 0.5);
                         AddSurfaceComponent(G);
-                        IEquationComponent H = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+                        IEquationComponent H = new Curvature_LaplaceBeltrami_BndLine(d, sigma * 0.5, dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
                         AddSurfaceComponent(H);
                     } else {
                         //IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami_Parameter(d, D, boundaryMap.EdgeTag2Type, boundaryMap, physParams.theta_e, physParams.betaL);
@@ -897,7 +898,7 @@ namespace BoSSS.Solution.XNSECommon {
             this.phaseA = phaseA;
             this.phaseB = phaseB;
             codomainName = BoSSS.Solution.NSECommon.EquationNames.MomentumEquationComponent(d);
-            AddContactLineComponent(new SurfaceTension_LaplaceBeltrami_Contactline(d, D, iLevSet));
+            AddContactLineComponent(new Curvature_LaplaceBeltrami_Contactline(d, D, iLevSet));
 
             AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)
                 .Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), NSECommon.VariableNames.NormalVector(D)))

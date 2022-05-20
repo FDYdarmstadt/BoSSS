@@ -136,7 +136,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             }
 
             // Level set evolver need the gradient
-            BeltramiGradient lsGradient = FromControl.BeltramiGradient(Control, "Phi", D);
+            GradientAndCurvature lsGradient = FromControl.GradientAndCurvature(Control, "Phi", quadOrder, D);
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, lsGradient);            
         }        
 

@@ -26,239 +26,24 @@ using BoSSS.Platform;
 using System.Diagnostics;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
 
-    public class CurvatureBasedSurfaceTension : ILevelSetForm, ISupportsJacobianComponent {
+    public class CurvatureBasedSurfaceTension : CurvatureInNormalDirectionAlongLevelSet {
 
-        public static double hmin = double.NaN;
-
-        /*
-        /// <summary>
-        /// compactification of curvature for better numerical representation
-        /// </summary>
-        /// <param name="kappa">curvature, in the range $(-infty,+infty)$</param>
-        /// <returns>compact curvature in the range $(-3,3)$</returns>
-        static public double Comp(double kappa) {
-            return 3.0 * kappa / Math.Sqrt(kappa * kappa + 8);
+        double m_sigma;
+        public CurvatureBasedSurfaceTension(int _d, int _D, double sigma) : this(0, _d, _D, sigma) {
+        }
+        public CurvatureBasedSurfaceTension(int iLevSet, int _d, int _D, double sigma) : base(iLevSet, _d, _D) {
+            m_sigma = sigma;
         }
 
-        static double EPS = BLAS.MachineEps;
-
-        /// <summary>
-        /// inverse of <see cref="Comp"/>
-        /// </summary>
-        static public double CompInv(double y) {
-            
-            
-            double abst = 1.0e-5;
-            double locomp = (-3.0 + abst);
-            double hicomp = (+3.0 - abst);
-
-            if(y < locomp) {
-                double yy = y - locomp;
-                Debug.Assert(yy <= 0);
-                yy *= -1;
-
-                double delta = abst - EPS;
-                double yyc = delta * (1 - Math.Exp(-yy / delta));
-
-                y = locomp - yyc;
-                if(y > locomp)
-                    throw new Exception();
-            }
-
-            if(y > hicomp) {
-                double yy = y - hicomp;
-                Debug.Assert(yy >= 0);
-
-                double delta = abst - EPS;
-                double yyc = delta * (1 - Math.Exp(-yy / delta));
-
-                y = hicomp + yyc;
-                if(y < hicomp)
-                    throw new Exception();
-            }
-
-            if(y <= -3.0 || y >= 3.0)
-                throw new ArgumentException();
-
-
-            return y * Math.Sqrt(-8.0 / (y * y - 9));
-             
-
-            //return y;
-        }
-        */
-
-        //LevelSetTracker m_LsTrk;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="_d">spatial direction</param>
-        /// <param name="_D">spatial dimension</param>
-        /// <param name="LsTrk"></param>
-        /// <param name="_sigma">surface-tension constant</param>
-        public CurvatureBasedSurfaceTension(int _d, int _D, double _sigma) {
-            //m_LsTrk = LsTrk;
-            if (_d >= _D)
-                throw new ArgumentOutOfRangeException();
-            this.m_D = _D;
-            this.m_d = _d;
-            this.sigma = _sigma;
-       }
-
-        int m_D;
-        int m_d;
-        double sigma;
-
-        //static bool rem = true;
-
-        /*
-        public override void DerivativVar_LevelSetFlux(out double FlxNeg, out double FlxPos,
-            ref CommonParams cp,
-            double[] U_Neg, double[] U_Pos, double[,] GradU_Neg, double[,] GradU_Pos) {
-            double curvature = cp.ParamsPos[0];
-            Debug.Assert(cp.ParamsPos[0] == cp.ParamsNeg[0], "curvature must be continuous across interface");
-            Debug.Assert(!double.IsNaN(curvature) || !double.IsInfinity(curvature));
-
-            //double r = 0.8;
-            //double r = ((cp.x[0]).Pow2() + (cp.x[1]).Pow2()).Sqrt();
-            //curvature = -1.0/r;
-            //if(rem) {
-            //    Console.WriteLine("curvature hardcoded.");
-            //    rem = false;
-            //}
-
-
-            double[] Normal = cp.n;
-
-            double presJump = (-curvature * sigma) * Normal[m_d];
-            
-            FlxNeg = -0.5 * presJump;
-            FlxPos = +0.5 * presJump;
-
-            //{
-            //    const double CC_A = 1.0;
-            //    const double CC_B = 0.0;
-            //    const double MU_A = 1;
-            //    const double MU_B = 1;
-
-            //    Func<double[],double> SX =  X => -((CC_A - CC_B) * (1 + X[0].Pow2()) + 2.0 * (MU_B - MU_A));
-            //    Func<double[],double> SY =  X => -((CC_A - CC_B) * (1 + X[0].Pow2()) - 2.0 * (MU_B - MU_A));
-            //    double surfForce;
-            //    switch(this.m_d) {
-            //        case 0: surfForce = SX(cp.x); break;
-            //        case 1: surfForce = SY(cp.x); break;
-            //        default: throw new ApplicationException();
-            //    }
-
-
-            //    FlxNeg -= +0.5 * surfForce * Normal[m_d];
-            //    FlxPos += +0.5 * surfForce * Normal[m_d];
-            //}
-            
-
-
-            Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
-            Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
-        }
-        */
-        
-
-        public double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            double curvature = cp.Parameters_OUT[0];
-            Debug.Assert(cp.Parameters_OUT[0] == cp.Parameters_IN[0], "curvature must be continuous across interface");
-            Debug.Assert(!double.IsNaN(curvature) || !double.IsInfinity(curvature));
-
-            //double r = 0.8;
-            //double r = ((cp.x[0]).Pow2() + (cp.x[1]).Pow2()).Sqrt();
-            //curvature = -1.0/r;
-            //if(rem) {
-            //    Console.WriteLine("curvature hardcoded.");
-            //    rem = false;
-            //}
-
-
-            double[] Normal = cp.Normal;
-
-            double presJump = (-curvature * sigma) * Normal[m_d];
-
-            double FlxNeg = -0.5 * presJump;
-            double FlxPos = +0.5 * presJump;
-
-            //{
-            //    const double CC_A = 1.0;
-            //    const double CC_B = 0.0;
-            //    const double MU_A = 1;
-            //    const double MU_B = 1;
-
-            //    Func<double[],double> SX =  X => -((CC_A - CC_B) * (1 + X[0].Pow2()) + 2.0 * (MU_B - MU_A));
-            //    Func<double[],double> SY =  X => -((CC_A - CC_B) * (1 + X[0].Pow2()) - 2.0 * (MU_B - MU_A));
-            //    double surfForce;
-            //    switch(this.m_d) {
-            //        case 0: surfForce = SX(cp.x); break;
-            //        case 1: surfForce = SY(cp.x); break;
-            //        default: throw new ApplicationException();
-            //    }
-
-
-            //    FlxNeg -= +0.5 * surfForce * Normal[m_d];
-            //    FlxPos += +0.5 * surfForce * Normal[m_d];
-            //}
-            
-            Debug.Assert(!(double.IsNaN(FlxNeg) || double.IsInfinity(FlxNeg)));
-            Debug.Assert(!(double.IsNaN(FlxPos) || double.IsInfinity(FlxPos)));
-
-            return FlxNeg * vA - FlxPos * vB;
+        public override double InnerEdgeForm(ref CommonParams cp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+            return base.InnerEdgeForm(ref cp, uA, uB, Grad_uA, Grad_uB, vA, vB, Grad_vA, Grad_vB) * m_sigma;
         }
 
-        public IList<string> ArgumentOrdering {
-            get {
-                return new string[] { };
-            }
-        }
-
-
-        public IList<string> ParameterOrdering {
-            get {
-                return new string[] { VariableNames.Curvature };
-            }
-        }
-
-        public int LevelSetIndex {
-            get { return 0; }
-        }
-
-        public string PositiveSpecies {
-            get { return "B"; }
-        }
-
-        public string NegativeSpecies {
-            get { return "A"; }
-        }
-
-        public TermActivationFlags LevelSetTerms {
-            get { return TermActivationFlags.V; }
-        }
-
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-            throw new NotSupportedException();
-        }
-
-        public TermActivationFlags BoundaryEdgeTerms {
-            get { return TermActivationFlags.None; }
-        }
-
-        public TermActivationFlags InnerEdgeTerms {
-            get { return TermActivationFlags.None; }
-        }
-        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            // only parameter dependent, leave this empty
-            return new IEquationComponent[] { };
-        }
     }
 
     /// <summary>
@@ -455,247 +240,49 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     
 
     /// <summary>
-    /// surface tension force, in Laplace-Beltrami -- form, surface-integral part (must be used in conjunction with the boundary-line-integral part <see cref="SurfaceTension_LaplaceBeltrami_BndLine"/>).
+    /// surface tension force, in Laplace-Beltrami -- form, surface-integral part (must be used in conjunction with the boundary-line-integral part <see cref="Curvature_LaplaceBeltrami_BndLine"/>).
     /// </summary>
-    public class SurfaceTension_LaplaceBeltrami_Surface : LinearFlux {
+    public class Curvature_LaplaceBeltrami_Surface : CurvatureLaplaceBeltrami_Surface {
 
-
-        public SurfaceTension_LaplaceBeltrami_Surface(int d, double factor) {
-            m_comp = d;
-            m_factor = factor;
-
-            if (m_comp >= 2)
-                throw new NotImplementedException("3D not implemented yet.");
+        public Curvature_LaplaceBeltrami_Surface(int d, double factor) : this(0, d, factor) {
         }
 
-        //int D = 2;
-        int m_comp;
-        double m_factor;
-
-        protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
-            return 0;
+        public Curvature_LaplaceBeltrami_Surface(int iLevSet, int d, double factor) : base(iLevSet, d) {           
+            m_factor = factor;          
         }
 
-        protected override double InnerEdgeFlux(ref Foundation.CommonParams inp, double[] Uin, double[] Uout) {
-            return 0;
-        }
-
-        static MultidimensionalArray ProjMatrix(double NX, double NY) {
-            var R = MultidimensionalArray.Create(2, 2);
-            R[0, 0] = (1 - NX*NX);
-            R[0, 1] = (-NX*NY);
-            R[1, 0] = (-NY*NX);
-            R[1, 1] = (1 - NY*NY);
-            return R;
-        }
+        double m_factor;       
 
         protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
-            double[] SurfaceNormal = (new double[] { inp.Parameters[0], inp.Parameters[1] }).Normalize();
-            //double[] SurfaceNormal = (new double[] { -inp.Xglobal[0], -inp.Xglobal[1] }).Normalize();
-            double NX = SurfaceNormal[0];
-            double NY = SurfaceNormal[1];
-            Debug.Assert(!NX.IsNaNorInf(), "Surface normal x NAN or INf");
-            Debug.Assert(!NY.IsNaNorInf(), "Surface normal y NAN or INf");
-
-            switch (m_comp) {
-                case 0:
-                    output[0] = -(1 - NX * NX) * m_factor;
-                    output[1] = -(-NX * NY) * m_factor;
-                    return;
-
-                case 1:
-                    output[0] = -(-NY * NX) * m_factor;
-                    output[1] = -(1 - NY * NY) * m_factor;
-                    return;
-
-                default:
-                    throw new NotSupportedException();
-            }
-
-            //MultidimensionalArray R = ProjMatrix(NX, NY);
-
-            //switch (m_comp) {
-            //    case 0:
-            //        output[0] = -(R[0, 0].Pow2() + R[1, 0].Pow2()) * m_factor;
-            //        output[1] = -(R[0, 0] * R[0, 1] + R[1, 0] * R[1, 1]) * m_factor;
-            //        return;
-
-            //    case 1:
-            //        output[0] = -(R[0, 1] * R[0, 0] + R[1, 1] * R[1, 0]) * m_factor;
-            //        output[1] = -(R[0, 1].Pow2() + R[1, 1].Pow2()) * m_factor;
-            //        return;
-
-            //    default:
-            //        throw new NotSupportedException();
-            //}
-
-        }
-
-        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            // only parameter dependent, leave this empty
-            return new IEquationComponent[] { };
-        }
-
-        public override IList<string> ArgumentOrdering {
-            get {
-                return new string[0]; 
-            }
-        }
-
-        public override IList<string> ParameterOrdering {
-            get {
-                return VariableNames.NormalVector(2);
-            }
-        }
-
-        public override TermActivationFlags BoundaryEdgeTerms {
-            get {
-                return TermActivationFlags.None;
-            }
-        }
-
-        public override TermActivationFlags VolTerms {
-            get {
-                return TermActivationFlags.GradV;
-            }
-        }
-
-        public override TermActivationFlags InnerEdgeTerms {
-            get {
-                return TermActivationFlags.None;
-            }
-        }
+            base.Flux(ref inp, U, output);
+            output = output.Select(x => x * m_factor).ToArray();            
+        }        
     }
 
     /// <summary>
     /// surface tension force, in Laplace-Beltrami -- form, 
-    /// boundary-line-integral term (must be used in conjunction with the surface-integral part <see cref="SurfaceTension_LaplaceBeltrami_Surface"/>).
+    /// boundary-line-integral term (must be used in conjunction with the surface-integral part <see cref="Curvature_LaplaceBeltrami_Surface"/>).
     /// </summary>
-    public class SurfaceTension_LaplaceBeltrami_BndLine : LinearDualValueFlux {
+    public class Curvature_LaplaceBeltrami_BndLine : CurvatureLaplaceBeltrami_BndLine {
 
-        public SurfaceTension_LaplaceBeltrami_BndLine(int d, double factor, bool averaging) {
-            m_comp = d;
+        public Curvature_LaplaceBeltrami_BndLine(int d, double factor, bool averaging) : base(0, d, averaging) {
+        }
+
+        public Curvature_LaplaceBeltrami_BndLine(int iLevSet, int d, double factor, bool averaging) : base(iLevSet , d, averaging) {
             m_factor = factor;
-            m_averaging = averaging;
         }
 
-        int m_comp;
         double m_factor;
-        bool m_averaging;
-
-        public override IList<string> ParameterOrdering {
-            get {
-                return VariableNames.NormalVector(2);
-            }
-        }
-
-        public override IList<string> ArgumentOrdering {
-            get {
-                return new string[0];
-            }
-        }
-
-        static double[] tangente(double[] SurfN, double[] EdgeN) {
-            Debug.Assert(SurfN.Length == EdgeN.Length);
-            if (SurfN.Length != 2)
-                throw new NotSupportedException();
-
-            double[] tan = new double[] { -SurfN[1], SurfN[0] };
-
-            if (GenericBlas.InnerProd(tan, EdgeN) < 0.0)
-                tan.ScaleV(-1.0);
-
-            return tan;
-        }
-
-        //static bool rem = true;
-
 
         protected override void InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout, out double FluxInCell, out double FluxOuCell) {
-            double[] EdgeNormal = inp.Normal;
-            double[] SurfaceNormalIn = (new double[] { inp.Parameters_IN[0], inp.Parameters_IN[1] }).Normalize();
-            double[] SurfaceNormalOu = (new double[] { inp.Parameters_OUT[0], inp.Parameters_OUT[1] }).Normalize();
-
-            /*
-            double[] SurfaceNormalIn;
-            double[] SurfaceNormalOu;
-            {
-                double XD = -inp.Normale[1], YD = inp.Normale[0];
-                double X0 = inp.X[0], Y0 = inp.X[1];
-                double R = 0.8;
-                double alpha_1 = (-X0 * XD - Y0 * YD + Math.Sqrt(R.Pow2() * XD.Pow2() + R.Pow2() * YD.Pow2() - X0.Pow2() * YD.Pow2() + 2 * X0 * XD * Y0 * YD - XD.Pow2() * Y0.Pow2())) / (XD.Pow2() + YD.Pow2());
-                double alpha_2 = -(X0 * XD + Y0 * YD + Math.Sqrt(R.Pow2() * XD.Pow2() + R.Pow2() * YD.Pow2() - X0.Pow2() * YD.Pow2() + 2 * X0 * XD * Y0 * YD - XD.Pow2() * Y0.Pow2())) / (XD.Pow2() + YD.Pow2());
-                Debug.Assert(!(double.IsNaN(alpha_1) || double.IsInfinity(alpha_1)));
-                Debug.Assert(!(double.IsNaN(alpha_2) || double.IsInfinity(alpha_2)));
-
-                double alpha;
-                if(alpha_1.Abs() < alpha_2.Abs())
-                    alpha = alpha_1;
-                else
-                    alpha = alpha_2;
-                Debug.Assert(alpha.Abs() < inp.GridDat.Cells.h_minGlobal * 0.1);
-
-
-                double X1 = X0 + XD * alpha;
-                double Y1 = Y0 + YD * alpha;
-
-                SurfaceNormalIn = (new double[] { -X1, -Y1 }).Normalize();
-                SurfaceNormalOu = (new double[] { -X1, -Y1 }).Normalize();
-            }
-            if(rem) {
-                Console.WriteLine("fake laplace beltrami normals");
-                rem = false;
-            }
-            */
-            
-            //double[] SurfaceNormalIn = (new double[] { -inp.X[0], -inp.X[1] }).Normalize();
-            //double[] SurfaceNormalOu = (new double[] { -inp.X[0], -inp.X[1] }).Normalize();
-
-
-            double[] TangenteInn = tangente(SurfaceNormalIn, EdgeNormal);
-            double[] TangenteOut = tangente(SurfaceNormalOu, EdgeNormal);
-
-            if(m_averaging) {
-                TangenteInn.ScaleV(0.5);
-                TangenteInn.AccV(0.5, TangenteOut);
-                TangenteInn.Normalize();
-                Array.Copy(TangenteInn, TangenteOut, TangenteInn.Length);
-
-                //var Buf = TangenteInn;
-                //TangenteInn = TangenteOut;
-                //TangenteOut = Buf;
-            }
-
-            FluxInCell = -TangenteInn[m_comp] * m_factor;
-            FluxOuCell = +TangenteOut[m_comp] * m_factor;
+            base.InnerEdgeFlux(ref inp, Uin, Uout, out FluxInCell, out FluxOuCell);
+            FluxInCell = FluxInCell * m_factor;
+            FluxOuCell = FluxOuCell * m_factor;
         }
-
-       
 
         protected override void BorderEdgeFlux_(ref CommonParamsBnd inp, double[] Uin, out double FluxInCell) {
-            double[] EdgeNormal = inp.Normal;
-            double[] SurfaceNormalIn = (new double[] { inp.Parameters_IN[0], inp.Parameters_IN[1] }).Normalize();
-
-            double[] TangenteInn = tangente(SurfaceNormalIn, EdgeNormal);
-
-            FluxInCell = -TangenteInn[m_comp]*m_factor;
-        }
-
-        public override TermActivationFlags BoundaryEdgeTerms {
-            get {
-                return TermActivationFlags.V;
-            }
-        }
-
-        public override TermActivationFlags InnerEdgeTerms {
-            get {
-                return TermActivationFlags.V;
-            }
-        }
-
-        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            // only parameter dependent, leave this empty
-            return new IEquationComponent[] { };
+            base.BorderEdgeFlux_(ref inp, Uin, out FluxInCell);
+            FluxInCell = FluxInCell * m_factor;
         }
     }
 
@@ -1017,12 +604,12 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     /// <summary>
     /// LaplaceBeltrami with max sigma as parameter, for contact line between two level sets
     /// </summary>
-    public class SurfaceTension_LaplaceBeltrami_Contactline : IBM_ContactLine, IVolumeForm, ISupportsJacobianComponent  {
+    public class Curvature_LaplaceBeltrami_Contactline : IBM_ContactLine, IVolumeForm, ISupportsJacobianComponent  {
         int d;
         int D;
         int iLevSet;
 
-        public SurfaceTension_LaplaceBeltrami_Contactline(int d, int D, int iLevSet) {
+        public Curvature_LaplaceBeltrami_Contactline(int d, int D, int iLevSet) {
             this.d = d;
             this.D = D;
             this.iLevSet = iLevSet;

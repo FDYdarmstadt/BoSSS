@@ -27,24 +27,63 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
-using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
-using BoSSS.Solution.LevelSetTools;
 using ilPSP.LinSolvers.PARDISO;
 using BoSSS.Foundation.Grid.Classic;
 
-namespace BoSSS.Solution.XNSECommon {
+namespace BoSSS.Solution.LevelSetTools {
 
+    /// <summary>
+    /// Options for the treatment of the isotropic part of the surface stress tensor 
+    /// </summary>
+    public enum SurfaceStressTensor_IsotropicMode {
+
+        /// <summary>
+        /// Curvature is evaluated locally, i.e. the projection of $\divergence{ \nabla \varphi / | \nabla \varphi | $.
+        /// onto a DG field is used.
+        /// </summary>
+        Curvature_Projected,
+
+        /// <summary>
+        /// Curvature is evaluated locally at closest points on the level-set, i.e. 
+        /// the value of $\divergence{ \nabla \varphi / | \nabla \varphi | $ on the zero-set is extended to the domain.
+        /// </summary>
+        Curvature_ClosestPoint,
+
+
+        /// <summary>
+        /// A cell-wise mean-curvature is computed from a Laplace-Beltrami-ansatz.
+        /// </summary>
+        Curvature_LaplaceBeltramiMean,
+
+        /// <summary>
+        /// Curvature is computed from a specialized Level-Set as Fourier-series
+        /// </summary>
+        Curvature_Fourier,
+
+        /// <summary>
+        /// use a cell-wise Laplace-Beltrami formulation.
+        /// </summary>
+        LaplaceBeltrami_Local,
+
+        /// <summary>
+        /// a Laplace-Beltrami formulation where level-set tangents are averaged at the cell boundary.
+        /// </summary>
+        LaplaceBeltrami_Flux,
+
+        /// <summary>
+        /// a cell-wise Laplace-Beltrami formulation with handling of the contact line
+        /// </summary>
+        LaplaceBeltrami_ContactLine
+    }
 
     /// <summary>
     /// A collection of algorithms to evaluate the curvature of a level-set.
     /// </summary>
-    public static class CurvatureAlgorithms {
-
-        
+    public static class CurvatureAlgorithms {        
 
         public enum GradientOption {
             //external = 0,
@@ -209,9 +248,9 @@ namespace BoSSS.Solution.XNSECommon {
                 CC = LsTrk.Regions.GetNearMask4LevSet(0, config.PatchRecoveryDomWidth); // we assume the fluid interface is level-set 0
             }
 
-                
 
-            CurvatureBasedSurfaceTension.hmin = LsTrk.GridDat.Cells.h_minGlobal;
+
+            CurvatureInNormalDirectionAlongLevelSet.hmin = LsTrk.GridDat.Cells.h_minGlobal;
 
             Curvature.Clear();
 
@@ -568,7 +607,26 @@ namespace BoSSS.Solution.XNSECommon {
                 }
             }
         }
+        public static void ComputeHessian(SinglePhaseField LevSet,
+            out SinglePhaseField[,] LevSetHess) {
+            int D = LevSet.GridDat.SpatialDimension;
+            LevSetHess = new SinglePhaseField[D, D];
 
+            CellMask CC = CellMask.GetFullMask(LevSet.GridDat);
+
+            for (int d1 = 0; d1 < D; d1++) {
+                for (int d2 = 0; d2 < D; d2++) {
+                    //LevSetHess[d1, d2].Clear();
+                    LevSetHess[d1, d2] = new SinglePhaseField(LevSet.Basis, string.Format("H({0},{1})", d1, d2));
+                    LevSetHess[d1, d2].ProjectField(1.0,
+                        delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                            var bffr = MultidimensionalArray.Create(Len, result.GetLength(1), D, D);
+                            LevSet.EvaluateHessian(j0, Len, NS, bffr);
+                            result.Set(bffr.ExtractSubArrayShallow(-1, -1, d1, d2));
+                        }, new CellQuadratureScheme(UseDefaultFactories: true, domain: CC));
+                }
+            }
+        }
 
         /// <summary>
         /// Computes curvature based on the Laplace-Beltrami Ansatz (some would also call this Stokes theorem).
@@ -601,7 +659,7 @@ namespace BoSSS.Solution.XNSECommon {
             {
                 XSpatialOperatorMk2 op = new XSpatialOperatorMk2(DomName, Params, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
                 for(int d = 0; d < D; d++) {
-                    var H = new SurfaceTension_LaplaceBeltrami_BndLine(d, 1.0, true);
+                    var H = new CurvatureLaplaceBeltrami_BndLine(0, d, true);
                     op.SurfaceElementOperator_Ls0.EquationComponents[CodName[d]].Add(H);
                 }
                 op.Commit();
@@ -622,7 +680,7 @@ namespace BoSSS.Solution.XNSECommon {
             {
                 XSpatialOperatorMk2 qr = new XSpatialOperatorMk2(DomName, new string[] { "Curvature" }, CodName, (int[] A, int[] B, int[] C) => HMForder, new[] { "A" });
                 for(int d = 0; d < D; d++) {
-                    qr.EquationComponents[CodName[d]].Add(new CurvatureBasedSurfaceTension(d, D, 1.0));
+                    qr.EquationComponents[CodName[d]].Add(new CurvatureInNormalDirectionAlongLevelSet(0, d, D));
                 }
                 qr.Commit();
                 
@@ -1169,151 +1227,151 @@ namespace BoSSS.Solution.XNSECommon {
         }
 
 
-
-        public static void ProjectSurfaceForce(SurfaceStressTensor_IsotropicMode surfaceTensionMode, double sigma, double cellAggTrsh,
-            LevelSetTracker LsTrk, MultiphaseCellAgglomerator Agglom, MassMatrixFactory massMtxFac,
-            VectorField<SinglePhaseField> levSetGradient, SinglePhaseField Curvature,
-            VectorField<SinglePhaseField> surfaceForce ) //
-        {
+        // should be moved to XNSEUtils
+//        public static void ProjectSurfaceForce(SurfaceStressTensor_IsotropicMode surfaceTensionMode, double sigma, double cellAggTrsh,
+//            LevelSetTracker LsTrk, MultiphaseCellAgglomerator Agglom, MassMatrixFactory massMtxFac,
+//            VectorField<SinglePhaseField> levSetGradient, SinglePhaseField Curvature,
+//            VectorField<SinglePhaseField> surfaceForce ) //
+//        {
             
-            //var surfaceTensionMode = config.dntParams.surfTensionMode;
+//            //var surfaceTensionMode = config.dntParams.surfTensionMode;
 
-            GridData GridDat = LsTrk.GridDat;
-            int D = GridDat.SpatialDimension;
+//            GridData GridDat = LsTrk.GridDat;
+//            int D = GridDat.SpatialDimension;
 
-            var codName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D));
-            var parameters = (new string[] {"Curvature", "NX", "NY", "NZ" }).GetSubVector(0, D+1);
-            var domName = VariableNames.VelocityVector(D);
+//            var codName = ((new string[] { "momX", "momY", "momZ" }).GetSubVector(0, D));
+//            var parameters = (new string[] {"Curvature", "NX", "NY", "NZ" }).GetSubVector(0, D+1);
+//            var domName = VariableNames.VelocityVector(D);
 
-            surfaceForce.Clear();
+//            surfaceForce.Clear();
 
 
-            var ParamsList = new List<DGField>();
-            var normals = new SinglePhaseField[D];
+//            var ParamsList = new List<DGField>();
+//            var normals = new SinglePhaseField[D];
             
 
 
-            //dummy Operator Matrix
-            var OpMatrix = new MsrMatrix(surfaceForce.Mapping, surfaceForce.Mapping);
+//            //dummy Operator Matrix
+//            var OpMatrix = new MsrMatrix(surfaceForce.Mapping, surfaceForce.Mapping);
 
-            int HMForder = Agglom.CutCellQuadratureOrder;
-            XSpatialOperatorMk2 xOp = new XSpatialOperatorMk2(domName, parameters, codName, (A,B,C) => HMForder, null);
+//            int HMForder = Agglom.CutCellQuadratureOrder;
+//            XSpatialOperatorMk2 xOp = new XSpatialOperatorMk2(domName, parameters, codName, (A,B,C) => HMForder, null);
 
-            if(surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected 
-                || surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean 
-                || surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint) {
+//            if(surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_Projected 
+//                || surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean 
+//                || surfaceTensionMode == SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint) {
 
                 
-                for (int d = 0; d < D; d++) {
-                    xOp.EquationComponents[codName[d]].Add(new CurvatureBasedSurfaceTension(d, D, sigma));
-                }
+//                for (int d = 0; d < D; d++) {
+//                    xOp.EquationComponents[codName[d]].Add(new CurvatureInNormalDirectionAlongLevelSet(d, D, sigma));
+//                }
                 
-            } else if(surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local 
-                || surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux) {
+//            } else if(surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local 
+//                || surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux) {
 
-                for (int d = 0; d < D; d++) {
-                        normals[d] = levSetGradient[d];
-                }
+//                for (int d = 0; d < D; d++) {
+//                        normals[d] = levSetGradient[d];
+//                }
                 
-                for (int d = 0; d < D; d++) {
-                    var line = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
-                    var surface = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+//                for (int d = 0; d < D; d++) {
+//                    var line = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
+//                    var surface = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, surfaceTensionMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
 
-                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(line);
-                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(surface);
-                }
+//                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(line);
+//                    xOp.SurfaceElementOperator_Ls0.EquationComponents[codName[d]].Add(surface);
+//                }
                 
-            } else {
-                throw new NotImplementedException(surfaceTensionMode.ToString());
-            }
+//            } else {
+//                throw new NotImplementedException(surfaceTensionMode.ToString());
+//            }
 
-            ParamsList.Add(Curvature);
-            ParamsList.AddRange(normals);
+//            ParamsList.Add(Curvature);
+//            ParamsList.AddRange(normals);
 
-            xOp.Commit();
-
-
-            //xOp.ComputeMatrixEx(LsTrk,
-            //    surfaceForce.Mapping, ParamsList, surfaceForce.Mapping, 
-            //    OpMatrix, surfaceForce.CoordinateVector, true, 0.0, true,
-            //    LsTrk.SpeciesIdS.ToArray());
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = xOp.GetMatrixBuilder(LsTrk, surfaceForce.Mapping, ParamsList, surfaceForce.Mapping);
-            mtxBuilder.time = 0.0;
-            mtxBuilder.MPITtransceive = true;
-            mtxBuilder.ComputeMatrix(OpMatrix, surfaceForce.CoordinateVector);
+//            xOp.Commit();
 
 
-            //    SpeciesDictionary, momentFittingVariant, cellAggTrsh, out Agglom);
-            //xOp.Evaluate(1.0,1.0,surfaceForce.Mapping, normals ,surfaceForce.Mapping);
+//            //xOp.ComputeMatrixEx(LsTrk,
+//            //    surfaceForce.Mapping, ParamsList, surfaceForce.Mapping, 
+//            //    OpMatrix, surfaceForce.CoordinateVector, true, 0.0, true,
+//            //    LsTrk.SpeciesIdS.ToArray());
+//            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = xOp.GetMatrixBuilder(LsTrk, surfaceForce.Mapping, ParamsList, surfaceForce.Mapping);
+//            mtxBuilder.time = 0.0;
+//            mtxBuilder.MPITtransceive = true;
+//            mtxBuilder.ComputeMatrix(OpMatrix, surfaceForce.CoordinateVector);
 
-            double[] TotalForce = new double[D];
-            int J = GridDat.Cells.NoOfLocalUpdatedCells;
-            for(int j = 0; j < J; j++) {
-                for(int d = 0; d < D; d++) {
-                    TotalForce[d] += surfaceForce[d].GetMeanValue(j);
-                }
-            }
 
-            Console.WriteLine("Total force: ({0}|{1}).", TotalForce[0], TotalForce[1]);
+//            //    SpeciesDictionary, momentFittingVariant, cellAggTrsh, out Agglom);
+//            //xOp.Evaluate(1.0,1.0,surfaceForce.Mapping, normals ,surfaceForce.Mapping);
 
-            Agglom.Extrapolate(surfaceForce.Mapping);
+//            double[] TotalForce = new double[D];
+//            int J = GridDat.Cells.NoOfLocalUpdatedCells;
+//            for(int j = 0; j < J; j++) {
+//                for(int d = 0; d < D; d++) {
+//                    TotalForce[d] += surfaceForce[d].GetMeanValue(j);
+//                }
+//            }
+
+//            Console.WriteLine("Total force: ({0}|{1}).", TotalForce[0], TotalForce[1]);
+
+//            Agglom.Extrapolate(surfaceForce.Mapping);
 
             
-            // Project Surface Force from Volume Force to Surface Force -> Mutliply with inverse Surface Mass-Matrix
+//            // Project Surface Force from Volume Force to Surface Force -> Mutliply with inverse Surface Mass-Matrix
 
-            var CC = LsTrk.Regions.GetCutCellMask();
-            var gDat = LsTrk.GridDat;
+//            var CC = LsTrk.Regions.GetCutCellMask();
+//            var gDat = LsTrk.GridDat;
 
 
-            // get quadrature rules
-            // ====================
-            XQuadSchemeHelper H = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), HMForder, 1).XQuadSchemeHelper;
-            CellQuadratureScheme cqs = H.GetLevelSetquadScheme(0, CC);
-            ICompositeQuadRule<QuadRule> surfRule = cqs.Compile(gDat, HMForder);
+//            // get quadrature rules
+//            // ====================
+//            XQuadSchemeHelper H = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), HMForder, 1).XQuadSchemeHelper;
+//            CellQuadratureScheme cqs = H.GetLevelSetquadScheme(0, CC);
+//            ICompositeQuadRule<QuadRule> surfRule = cqs.Compile(gDat, HMForder);
             
-            // Compute Mass matrix and RHS for the 'strange' projection
-            // ========================================================
-            int L = CC.NoOfItemsLocally;
-            VectorField<SinglePhaseField> buffer = new VectorField<SinglePhaseField>(D, surfaceForce[0].Basis, SinglePhaseField.Factory);
-            buffer.Acc(1.0, surfaceForce);
-            var Q = new QuadratureKernels(buffer, L);
+//            // Compute Mass matrix and RHS for the 'strange' projection
+//            // ========================================================
+//            int L = CC.NoOfItemsLocally;
+//            VectorField<SinglePhaseField> buffer = new VectorField<SinglePhaseField>(D, surfaceForce[0].Basis, SinglePhaseField.Factory);
+//            buffer.Acc(1.0, surfaceForce);
+//            var Q = new QuadratureKernels(buffer, L);
             
-            Q.BlockCnt = 0;
-            CellQuadrature.GetQuadrature(
-                new int[] { Q.Nnx + D, Q.Nnx },
-                gDat,
-                surfRule,
-                Q.Evaluate, Q.SaveIntegrationResults_surf).Execute();
-            Debug.Assert(Q.BlockCnt == L);
+//            Q.BlockCnt = 0;
+//            CellQuadrature.GetQuadrature(
+//                new int[] { Q.Nnx + D, Q.Nnx },
+//                gDat,
+//                surfRule,
+//                Q.Evaluate, Q.SaveIntegrationResults_surf).Execute();
+//            Debug.Assert(Q.BlockCnt == L);
             
 
-            // solve the non-diagonal mass matrix systems
-            // ==========================================
+//            // solve the non-diagonal mass matrix systems
+//            // ==========================================
 
-            int BlkCnt = 0;
-            foreach (int jCell in CC.ItemEnum) {
-                var LocalMassMatrix = Q.MassMatrix.ExtractSubArrayShallow(BlkCnt, -1, -1);
-                var LocalRHS = Q.RHS.ExtractSubArrayShallow(BlkCnt, -1, -1);
+//            int BlkCnt = 0;
+//            foreach (int jCell in CC.ItemEnum) {
+//                var LocalMassMatrix = Q.MassMatrix.ExtractSubArrayShallow(BlkCnt, -1, -1);
+//                var LocalRHS = Q.RHS.ExtractSubArrayShallow(BlkCnt, -1, -1);
 
-                // Die "Massenmatrix" muss nicht unbedingt invbar sein, daher: Least-Squares solve
-                LocalMassMatrix.LeastSquareSolve(LocalRHS);
+//                // Die "Massenmatrix" muss nicht unbedingt invbar sein, daher: Least-Squares solve
+//                LocalMassMatrix.LeastSquareSolve(LocalRHS);
 
-                for (int d = 0; d < Q.D; d++) {
-                    for (int n = 0; n < Q.Nnx; n++) {
-                        surfaceForce[d].Coordinates[jCell, n] = LocalRHS[n, d];
-                    }
-                }
+//                for (int d = 0; d < Q.D; d++) {
+//                    for (int n = 0; n < Q.Nnx; n++) {
+//                        surfaceForce[d].Coordinates[jCell, n] = LocalRHS[n, d];
+//                    }
+//                }
 
-                BlkCnt++;
-            }
-#if Debug
-            buffer.Acc(-1.0, surfaceForce);
-            double L2Change = buffer.L2Norm();
-            Console.WriteLine("Multiplication with InverseMassMatrix changed SurfaceForce by {0}", L2Change);
-#endif
-            // */
+//                BlkCnt++;
+//            }
+//#if Debug
+//            buffer.Acc(-1.0, surfaceForce);
+//            double L2Change = buffer.L2Norm();
+//            Console.WriteLine("Multiplication with InverseMassMatrix changed SurfaceForce by {0}", L2Change);
+//#endif
+//            // */
 
-        }
+//        }
 
 
         class QuadratureKernels {
