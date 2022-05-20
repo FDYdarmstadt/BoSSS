@@ -73,7 +73,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             using(new FuncTrace()) {
 
                 int D = LsTrk.GridDat.SpatialDimension;
-                double[] majorAxis = new double[3]; 
+                double[] majorAxis = new double[4]; 
                 switch (D) {
                     case 2: {
                         majorAxis = getMajorAxis2D();
@@ -143,11 +143,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 // droplet width W along x-Axis
                 double dist_xAxis = Math.Sqrt(yCoord.Pow2() + zCoord.Pow2());
-                if(dist_xAxis < dist_xAxis_min1 && xCoord > r_theta90x2) {
+                if(dist_xAxis < dist_xAxis_min1 && xCoord > 0.0) {
                     dist_xAxis_min1 = dist_xAxis;
                     r_theta90x1 = xCoord;
                 }
-                if(!AxisSymmetric && dist_xAxis < dist_xAxis_min2 && xCoord < r_theta90x1) {
+                if(!AxisSymmetric && dist_xAxis < dist_xAxis_min2 && xCoord < 0.0) {
                     dist_xAxis_min2 = dist_xAxis;
                     r_theta90x2 = xCoord;
                 }
@@ -155,22 +155,22 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
                 // droplet width W along y-Axis
                 double dist_yAxis = Math.Sqrt(xCoord.Pow2() + zCoord.Pow2());
-                if(dist_yAxis < dist_yAxis_min1 && yCoord > r_theta90y2) {
+                if(dist_yAxis < dist_yAxis_min1 && yCoord > 0.0) {
                     dist_yAxis_min1 = dist_yAxis;
                     r_theta90y1 = yCoord;
                 }
-                if(!AxisSymmetric && dist_yAxis < dist_yAxis_min2 && yCoord < r_theta90y1) {
+                if(!AxisSymmetric && dist_yAxis < dist_yAxis_min2 && yCoord < 0.0) {
                     dist_yAxis_min2 = dist_yAxis;
                     r_theta90y2 = yCoord;
                 }
 
                 // droplet length L along z-Axis 
                 double dist_zAxis = Math.Sqrt(xCoord.Pow2() + yCoord.Pow2());
-                if(dist_zAxis < dist_zAxis_min1 && zCoord > r_theta180) {
+                if(dist_zAxis < dist_zAxis_min1 && zCoord > 0.0) {
                     dist_zAxis_min1 = dist_zAxis;
                     r_theta0 = zCoord;
                 }
-                if(dist_zAxis < dist_zAxis_min2 && zCoord < r_theta0) {
+                if(dist_zAxis < dist_zAxis_min2 && zCoord < 0.0) {
                     dist_zAxis_min2 = dist_zAxis;
                     r_theta180 = zCoord;
                 }  
