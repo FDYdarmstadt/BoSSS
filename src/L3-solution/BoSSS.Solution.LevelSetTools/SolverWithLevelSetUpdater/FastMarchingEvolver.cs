@@ -51,7 +51,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.ReInit_Period = ReInitPeriod;
             ReInit_Control = new EllipticReInitAlgoControl();
 
-            parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D);
+            if(levelSetName == BoSSS.Solution.NSECommon.VariableNames.LevelSetCG) {
+                parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D);
+            } else {
+                parameters = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D));
+            }
             parameters = parameters.Cat(BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)));
         }
 
@@ -99,18 +103,19 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 ));
 
             if (extensionVelocity == null) {
-                extensionVelocity = new SinglePhaseField[D];
-                Basis basis;
-                try {
-                    basis = new Basis(phaseInterface.Tracker.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
-                } catch {
-                    Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
-                    basis = new Basis(phaseInterface.Tracker.GridDat, ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X].Basis.Degree);
-                }
+                //extensionVelocity = new SinglePhaseField[D];
+                //Basis basis;
+                //try {
+                //    basis = new Basis(phaseInterface.Tracker.GridDat, DomainVarFields[BoSSS.Solution.NSECommon.VariableNames.VelocityX].Basis.Degree);
+                //} catch {
+                //    Console.WriteLine("Velocity not registered as Domainvar, using Velocity from Parametervars");
+                //    basis = new Basis(phaseInterface.Tracker.GridDat, ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Velocity0X].Basis.Degree);
+                //}
 
-                for (int d = 0; d < D; ++d) {
-                    extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity[" + d + "]");
-                }
+                //for (int d = 0; d < D; ++d) {
+                //    extensionVelocity[d] = new SinglePhaseField(basis, "ExtensionVelocity[" + d + "]");
+                //}
+                extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
             }
             //Move LevelSet
             SinglePhaseField lsBuffer = phaseInterface.DGLevelSet.CloneAs();

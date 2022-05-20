@@ -29,8 +29,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         int degree;
         IList<string> parameterNames;
 
-        public Normals(string LsName, int D) {
-            parameterNames = VariableNames.AsLevelSetVariable(LsName, VariableNames.NormalVector(D));
+        public Normals(string LsName, int D, int degree) {
+            this.D = D;
+            this.degree = degree;
+            if (LsName == VariableNames.LevelSetCG) {
+                VariableNames.NormalVector(D);
+            } else {
+                parameterNames = VariableNames.AsLevelSetVariable(LsName, VariableNames.NormalVector(D));
+            }
         }
 
         public override DelParameterFactory Factory => ParameterFactory;
@@ -53,7 +59,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public (string, DGField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             IGridData gridData = DomainVarFields.First().Value.GridDat;
             Basis basis = new Basis(gridData, degree);
-            //VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D, basis, parameterNames[0], SinglePhaseField.Factory);
             VectorField<SinglePhaseField> Normals = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(basis, ParameterNames[d])));
 
             (string, DGField)[] normals = new (string, DGField)[D];
@@ -81,7 +86,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         CurvatureAlgorithmsForLevelSet.FilterConfiguration m_filter;
 
         public GradientAndCurvature(string LsName, int curvatureDegree, int gradientDegree, int m_HMForder, int D, CurvatureAlgorithmsForLevelSet.SurfaceStressTensor_IsotropicMode mode, CurvatureAlgorithmsForLevelSet.FilterConfiguration filter) {
-            lsParameters = VariableNames.AsLevelSetVariable(LsName, VariableNames.LevelSetGradient(D)).Cat(VariableNames.AsLevelSetVariable(LsName, VariableNames.Curvature));
+            if (LsName == VariableNames.LevelSetCG) {
+                lsParameters = VariableNames.LevelSetGradient(D).Cat(VariableNames.Curvature);
+            } else {
+                lsParameters = VariableNames.AsLevelSetVariable(LsName, VariableNames.LevelSetGradient(D)).Cat(VariableNames.AsLevelSetVariable(LsName, VariableNames.Curvature));
+            }
             this.m_HMForder = m_HMForder;
             this.gradientDegree = gradientDegree;
             this.curvatureDegree = curvatureDegree;
@@ -125,7 +134,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
            double time,
            IReadOnlyDictionary<string, DGField> DomainVarFields,
            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.Curvature];
+            SinglePhaseField Curvature = (SinglePhaseField)ParameterVarFields[lsParameters[2]];
             VectorField<SinglePhaseField> filtLevSetGradient;
             CurvatureAlgorithmsForLevelSet.CurvatureDriver(
                 m_mode,

@@ -11,7 +11,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
+namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
 
     /// <summary>
     /// PDE-solver-control object which defines configuration options for nonlinear and linear equation solvers
@@ -22,6 +22,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public SolverWithLevelSetUpdaterTestControl() {
             this.TimesteppingMode = Control.AppControl._TimesteppingMode.Transient;
+        }
+
+        public override Type GetSolverType() {
+            return typeof(SolverWithLevelSetUpdaterTestCenter);
         }
 
         private int _NoOfLevelSets = 1;
@@ -66,14 +70,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public void SetAdvectionVelocity(int iLevSet, Func<double[], double, double>[] V) {
             int D = V.Length;
             for (int d = 0; d < D; d++)
-                this.InitialValues_Evaluators_TimeDep[VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(iLevSet), VariableNames.VelocityVector(D)[d])] = V[d];
+                this.InitialValues_Evaluators_TimeDep["Var_" + VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(iLevSet), VariableNames.VelocityVector(D)[d])] = V[d];
         }
 
         public override void SetDGdegree(int p) {
-            FieldOptions["Velocity*"] = new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            };
+            
             for (int n = 0; n < this.NoOfLevelSets; n++) {
                 FieldOptions[VariableNames.LevelSetDGidx(n)] = new FieldOpts() {
                     SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -82,6 +83,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     Degree = p,
                     SaveToDB = FieldOpts.SaveToDBOpt.TRUE
                 };
+
+                // adjust the names, to defferentiate between dummy solver Var and Parameter for level set movement
+                FieldOptions[VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(n), "Var_Velocity*")] = new FieldOpts() {
+                    Degree = p,
+                    SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+                }; 
             }
         }
 

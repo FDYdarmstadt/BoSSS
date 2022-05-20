@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
+namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
 
     /// <summary>
     /// Level set velocity, i.e. parameters with name <see cref="BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(string, IList{string})"/>

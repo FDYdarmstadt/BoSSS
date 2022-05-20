@@ -9,8 +9,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
-    public class SolverWithLevelSetUpdaterTestCenter<T> : SolverWithLevelSetUpdater<T> where T : SolverWithLevelSetUpdaterTestControl, new() {
+namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
+
+
+    /// <summary>
+    /// This solver merely projects some prescribed velocity field onto a xdg field
+    /// and advects the level set.
+    /// This process is however embedded in the "normal" XdgTimestepper frame, thus allows to investigate overall stability and behavior of e.g. coupled level set handling.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class SolverWithLevelSetUpdaterTestCenter : SolverWithLevelSetUpdater<SolverWithLevelSetUpdaterTestControl> {
         protected override int NoOfLevelSets {
             get {
                 return Control.NoOfLevelSets;
@@ -129,23 +137,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return levelSetVelocity;
         }
 
-
-        protected override void CreateFields() {
-
-            int D = this.Grid.SpatialDimension;
-            // it is easier just to specify which Level Set Velocities to use, here we add the same FieldOptions for the domain fields
-            for (int iLevSet = 0; iLevSet < Control.NoOfLevelSets; iLevSet++) {
-                for (int d = 0; d < D; d++) {
-                    var variable = VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(iLevSet), VariableNames.VelocityVector(D)[d]);
-                    if (Control.FieldOptions.TryGetValue(variable, out var fopt) && Control.FieldOptions.Where(kv => kv.Key.WildcardMatch("Var_" + variable)).IsNullOrEmpty()) {
-                        Control.FieldOptions["Var_" + variable] = fopt;
-                    }
-                }
-            }
-
-            base.CreateFields();
-        }
-
         /// <summary>
         /// Dummy operator
         /// </summary>
@@ -158,16 +149,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             Dictionary<string, List<IEquationComponent>> components = new Dictionary<string, List<IEquationComponent>>();
             for (int iLevSet = 0; iLevSet < Control.NoOfLevelSets; iLevSet++) {
                 for (int d = 0; d < D; d++) {
-                    var variable = VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(iLevSet), VariableNames.VelocityVector(D)[d]);
+                    var variable = "Var_" + VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(iLevSet), VariableNames.VelocityVector(D)[d]);
                     if (Control.InitialValues_Evaluators_TimeDep.TryGetValue(variable, out var func)) {
-                        if (components[variable] == null) components[variable] = new List<IEquationComponent>();                        
-                        components[variable].Add(new MultiPhasePrescribedVariable("Var_" + variable, func));                        
+                        if (!components.ContainsKey(variable)) components[variable] = new List<IEquationComponent>();                        
+                        components[variable].Add(new MultiPhasePrescribedVariable(variable, func));                        
                     }
                 }
             }
 
             // Get Spatial Operator
-            XSpatialOperatorMk2 XOP = new XSpatialOperatorMk2(components.Keys.Select(k => "Var_" + k).ToList(), components.Keys.Select(k => k).ToList(), QuadOrderFunc.Linear(), LsTrk.SpeciesNames); // these are dummy fields
+            XSpatialOperatorMk2 XOP = new XSpatialOperatorMk2(components.Keys.Select(k => k).ToList(), components.Keys.Select(k => k).ToList(), QuadOrderFunc.Linear(), LsTrk.SpeciesNames); // these are dummy fields
             foreach(var kvp in components) {
                 foreach(var comp in kvp.Value) {
                     XOP.EquationComponents[kvp.Key].Add(comp);
@@ -179,12 +170,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             // === level set related parameters === //
             for (int iLevSet = 0; iLevSet < Control.NoOfLevelSets; iLevSet++) {
                 string LsName = VariableNames.LevelSetCGidx(iLevSet);
-                Normals normalsParameter = new Normals(LsName, D);
+                Normals normalsParameter = new Normals(LsName, D, LevelSetDegree(LsName));
                 LsUpdater.AddLevelSetParameter(LsName, normalsParameter);
 
                 GradientAndCurvature lsBGradient = new GradientAndCurvature(LsName, LevelSetDegree(LsName), LevelSetDegree(LsName), QuadOrder(), D);
                 LsUpdater.AddLevelSetParameter(LsName, lsBGradient);
             }
+            XOP.IsLinear = true;
 
             //final settings
             XOP.Commit();
