@@ -35,7 +35,7 @@ namespace BoSSS.Application.SipPoisson {
             int deg = 1,
             int NoOfLlyodsIter = 10,
             bool mirror = false,
-            LinearSolverCode solver_name = LinearSolverCode.classic_pardiso,
+            LinearSolverCode solver_name = LinearSolverCode.direct_pardiso,
             Foundation.IO.IDatabaseInfo db = null)
         {
             return TestGrid(new VoronoiGrids.Square(Res, NoOfLlyodsIter), deg, solver_name, db);
@@ -65,7 +65,7 @@ namespace BoSSS.Application.SipPoisson {
             int deg = 1,
             int NoOfLlyodsIter = 10,
             bool mirror = false,
-            LinearSolverCode solver_name = LinearSolverCode.classic_pardiso,
+            LinearSolverCode solver_name = LinearSolverCode.direct_pardiso,
             Foundation.IO.IDatabaseInfo db = null)
         {
 
@@ -96,7 +96,7 @@ namespace BoSSS.Application.SipPoisson {
         static SipControl TestGrid(
             VoronoiGrid grid,
             int deg = 1,
-            LinearSolverCode solver_name = LinearSolverCode.classic_pardiso,
+            LinearSolverCode solver_name = LinearSolverCode.direct_pardiso,
             Foundation.IO.IDatabaseInfo db = null)
         {
             var R = new SipControl

@@ -56,7 +56,6 @@ namespace BoSSS.Application.SipPoisson {
             //DeleteOldPlotFiles();
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_gmres_levelpmg);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
             //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
             //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
             //FinalizeMPI();

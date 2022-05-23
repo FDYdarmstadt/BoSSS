@@ -265,7 +265,7 @@ namespace BoSSS.Foundation.XDG {
 
                         if (!ColorsOfAllParts.Add(Color)) {
                             
-                            //Debugger.Launch();
+                            // dbg_launch();
                             //using (var stw = new System.IO.StreamWriter("verdammte-zelle.csv")) {
                             //    for (int i = 0; i < Je; i++) {
                             //        var cen = gdat.GlobalNodes.GetValue_Cell(Grid.RefElements.Square.Instance.Center, i, 1);
@@ -791,7 +791,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                         MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
-                        Debugger.Launch();
+                         dbg_launch();
                     }
                     */
 

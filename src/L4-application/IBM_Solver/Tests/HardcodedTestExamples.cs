@@ -145,7 +145,7 @@ namespace BoSSS.Application.IBM_Solver {
             // misc. solver options
             // ====================
 
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;

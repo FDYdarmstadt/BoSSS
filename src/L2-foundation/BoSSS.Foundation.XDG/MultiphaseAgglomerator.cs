@@ -405,7 +405,7 @@ namespace BoSSS.Foundation.XDG {
                             }
 
 
-                            if (!object.ReferenceEquals(LeftMul, RightMul) && RightMul != null) {
+                            if(RequireRight == 2) {
                                 MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
                                 BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask, this.Tracker.GetSpeciesName(Species));
 
@@ -605,7 +605,6 @@ namespace BoSSS.Foundation.XDG {
 
                 CenterOfGravity.Storage.MPIExchange(this.Tracker.GridDat);
 
-
                 var SpeciesName = this.Tracker.GetSpeciesName(Species);
                 this.DictAgglomeration[Species].PlotAgglomerationPairs(SpeciesName + "-" + basename + ".csv", CenterOfGravity);
             }
@@ -658,7 +657,8 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Initializes <see cref="CellLengthScales"/>.
+        /// Initializes <see cref="CellLengthScales"/>,
+        /// i.e. performs the agglomeration of length scales.
         /// </summary>
         void LengthScaleAgg() {
             using(new FuncTrace()) {
@@ -750,39 +750,7 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
 
-                        /*
-                        MultidimensionalArray LengthScales = AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc);
-
-                        // Loop includes external cells
-                        for(int j = 0; j < JE; j++) {
-                            LengthScales[j] = CellVolume[j] / CellSurface[j];
-                            VolumeFrac[j] = CellVolume[j] / this.Tracker.GridDat.Cells.GetCellVolume(j);
-                        }
-
-                        // set values in agglomeration sources to be equal to agglomeration targets
-                        foreach(var agg_pair in agginfo.AgglomerationPairs) {
-                            if(agg_pair.AgglomerationLevel <= iLevel) {
-                                LengthScales[agg_pair.jCellSource] = LengthScales[agg_pair.jCellTarget];
-                                VolumeFrac[agg_pair.jCellSource] = VolumeFrac[agg_pair.jCellTarget];
-                            }
-                        }
-
-                        if(this.AgglomerationThreshold <= 0.0) {
-                            // special treatment for no agglomeration -- which is anyway not recommended at all
-                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                            CellMask spcDom = this.Tracker.Regions.GetSpeciesMask(spc);
-
-                            foreach(int j in spcDom.ItemEnum) {
-
-                                double unCut = this.Tracker.GridDat.Cells.GetCellVolume(j);
-                                double Fraction = CellVolume[j] / unCut;
-
-                                if(Fraction <= 1.0e-10)
-                                    LengthScales[j] = 1e10;
-                            }
-                        }
-                        */
+                        
                     }
 
                     

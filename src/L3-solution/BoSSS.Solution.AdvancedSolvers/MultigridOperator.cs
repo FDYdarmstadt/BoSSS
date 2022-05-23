@@ -34,7 +34,7 @@ using BoSSS.Foundation.Grid;
 namespace BoSSS.Solution.AdvancedSolvers {
 
 
-    public partial class MultigridOperator {
+    public partial class MultigridOperator : IOperatorMappingPair {
 
         internal static LevelSetTracker GetTracker(UnsetteledCoordinateMapping map) {
             LevelSetTracker lsTrk = null;
@@ -126,7 +126,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int neighborSearchDepth = 4;
                 int jFound = -1;
                 bool foundACell = false;
-                //Debugger.Launch();
+                // dbg_launch();
                 while(!foundACell && neighborSearchDepth >= 0) {
                     if(lsTrk != null) {
                         Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(1, neighborSearchDepth)).GetBitMask();
@@ -377,12 +377,91 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        ISpatialOperator m_AbstractOperator;
+
+        /// <summary>
+        /// DG operatior which is the foundation of this linearization
+        /// </summary>
+        public ISpatialOperator AbstractOperator {
+            get {
+                if(m_AbstractOperator == null) {
+                    m_AbstractOperator = FinerLevel?.AbstractOperator;
+                }
+                return m_AbstractOperator;
+            }
+        }
 
 
+        /// <summary>
+        /// "Best Fit" of DG orders for a specific low order degree; 
+        /// </summary>
+        /// <remarks>
+        /// Intended to be used by p-multigrid methods to select the low order degree;
+        /// Designed to always give some result, in order to be forgiving w.r.t. user configuration errors, i.e. to avoid exceptions.
+        /// </remarks>
+        public int[] GetBestFitLowOrder(int pLow) {
+            var _degs = DGpolynomialDegreeHierarchy;
+
+            int pBestDist = int.MaxValue;
+            int iBest = -1;
+            for(int i = 0; i < _degs.Length; i++) {
+                int pMax = _degs[i].Max();
+
+                if(pMax == pLow)
+                    return _degs[i];
+
+                int pdist = Math.Abs(pLow - pMax);
+                if(pdist <= pBestDist) {
+                    pBestDist = pdist;
+                    iBest = i;
+                }
+            }
+
+            return _degs[iBest];
+        }
+
+
+
+        int[][] m_DGpolynomialDegreeHierarchy;
+
+        /// <summary>
+        /// hierarchy of polynomial degrees, for p-multigrid variables, for domain/codomain variables 
+        /// </summary>
+        public int[][] DGpolynomialDegreeHierarchy {
+            get {
+                if(m_DGpolynomialDegreeHierarchy == null) {
+                    if(AbstractOperator == null) {
+                        //throw new NotSupportedException("no abstract operator available - unable to specify Degree hierarchy");
+                    }
+
+                    var tmp = new List<int[]>();
+                    var degS = this.Degrees;
+                    tmp.Add(degS);
+
+                    if (AbstractOperator != null && !AbstractOperator.IsValidDomainDegreeCombination(degS, degS)) {
+                        throw new ArgumentException($"DG degree combination [{degS.ToConcatString("", ", ", "")}] is reported to be illegal for DG operator");
+                    }
+
+                    int pMax = degS.Max();
+                    for(int red = 1; red <= pMax + 1; red++) {
+                        int[] degS_red = degS.Select(p => p - red).ToArray();
+                        if (degS_red.Min() < 0)
+                            break;
+                        if (AbstractOperator != null && !AbstractOperator.IsValidDomainDegreeCombination(degS_red, degS_red))
+                            break;
+                        tmp.Add(degS_red);
+                    }
+
+                    m_DGpolynomialDegreeHierarchy = tmp.ToArray();
+                }
+
+                return m_DGpolynomialDegreeHierarchy;
+            }
+        }
        
 
 
-        bool[] m_FreeMeanValue;
+        bool[] m__FreeMeanValue;
 
 
         /// <summary>
@@ -390,10 +469,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public bool[] FreeMeanValue {
             get {
-                if(m_FreeMeanValue == null) {
-                    m_FreeMeanValue = FinerLevel.FreeMeanValue;
+                if(m__FreeMeanValue == null) {
+                    if (this.AbstractOperator == null) {
+                        m__FreeMeanValue = new bool[BaseGridProblemMapping.BasisS.Count];
+                    } else {
+                        m__FreeMeanValue = AbstractOperator.DomainVar.Select(varName => AbstractOperator.FreeMeanValue[varName]).ToArray();   
+                    }
                 }
-                return m_FreeMeanValue;
+                return m__FreeMeanValue;
             }
         }
 
@@ -415,12 +498,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Configuration of the cell-wise, explicit block-preconditioning for each multigrid level.
         /// (Remark: this kind of preconditioning is mathematically equivalent to a change of the DG resp. XDG basis.)
         /// </param>
-        /// <param name="FreeMeanValue">
-        /// pass-through from <see cref="ISpatialOperator.FreeMeanValue"/>
+        /// <param name="__AbstractOperator">
+        /// information such as <see cref="ISpatialOperator.FreeMeanValue"/>,...
         /// </param>
         public MultigridOperator(IEnumerable<AggregationGridBasis[]> basisSeq,
             UnsetteledCoordinateMapping _ProblemMapping, BlockMsrMatrix OperatorMatrix, BlockMsrMatrix MassMatrix,
-            IEnumerable<ChangeOfBasisConfig[]> cobc, bool[] FreeMeanValue)
+            IEnumerable<ChangeOfBasisConfig[]> cobc, ISpatialOperator __AbstractOperator)
             : this(null, basisSeq, _ProblemMapping, cobc) //
         {
             using(new FuncTrace()) {
@@ -429,13 +512,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(!OperatorMatrix.ColPartition.EqualsPartition(_ProblemMapping))
                     throw new ArgumentException("Column partitioning mismatch.");
 
-                if(FreeMeanValue == null) {
-                    FreeMeanValue = new bool[_ProblemMapping.BasisS.Count];
-                } else {
-                    if(FreeMeanValue.Length != _ProblemMapping.BasisS.Count)
-                        throw new ArgumentException();
+                m_AbstractOperator = __AbstractOperator;
+                if(AbstractOperator != null) {
+                    int[] degS = this.BaseGridProblemMapping.BasisS.Select(b => b.Degree).ToArray();
+                    if(!AbstractOperator.IsValidDomainDegreeCombination(degS, degS)) {
+                        throw new ArgumentException($"DG degree combiation [{degS.ToConcatString("", ", ", "")}] is reported to be illegal for DG operator");
+                    }
                 }
-                m_FreeMeanValue = FreeMeanValue.CloneAs();
 
                 if(MassMatrix != null) {
                     if(!MassMatrix.RowPartitioning.Equals(_ProblemMapping))
@@ -885,6 +968,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public MultigridMapping Mapping {
             get;
             //private set;
+        }
+
+        public ICoordinateMapping DgMapping {
+            get {
+                return Mapping;
+            }
         }
 
         /// <summary>

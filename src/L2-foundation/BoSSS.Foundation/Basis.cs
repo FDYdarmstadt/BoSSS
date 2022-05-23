@@ -238,8 +238,8 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// if <see cref="MinimalLength"/>==<see cref="MaximalLength"/>,
-        /// this value; otherwise an exception.
+        /// the number of degrees-of-freedom per cell, 
+        /// if <see cref="MinimalLength"/>==<see cref="MaximalLength"/>; otherwise an exception.
         /// </summary>
         public int Length {
             get {

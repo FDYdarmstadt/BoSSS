@@ -107,7 +107,7 @@ namespace BoSSS.Foundation.XDG {
 
         void Setup_Frame2Full() {
             //if (FrameMap.Rank == 0)
-            //    Debugger.Launch();
+            //     dbg_launch();
             //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             //FrameMap.GridDat.Cells.NoOfLocalUpdatedCells
 

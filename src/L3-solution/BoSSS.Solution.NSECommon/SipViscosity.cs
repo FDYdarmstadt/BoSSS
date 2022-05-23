@@ -64,7 +64,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class SipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
+    public abstract class SipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent, IDGdegreeConstraint {
 
         /// <summary>
         /// ctor.
@@ -133,6 +133,18 @@ namespace BoSSS.Solution.NSECommon {
                     throw new NotImplementedException();
             }
 
+        }
+
+        /// <summary>
+        /// checks that we have at least DG degree 1
+        /// </summary>
+        public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int CodomainDegree) {
+            if (DomainDegreesPerVariable.Min() < 1)
+                return false;
+            if (CodomainDegree < 1)
+                return false;
+
+            return true;
         }
 
         /// <summary>

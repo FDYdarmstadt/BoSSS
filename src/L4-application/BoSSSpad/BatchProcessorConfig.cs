@@ -158,14 +158,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// Used for control objects in work-flow management, de-serializing from a string.
         /// </summary>
         public static BatchProcessorConfig Deserialize(string Str) {
-            JsonSerializer formatter = new JsonSerializer() {
+            var formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
                 ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
                 ReferenceLoopHandling = ReferenceLoopHandling.Error
-
             };
-
 
             using(var tr = new StringReader(Str)) {
                 //string typeName = tr.ReadLine();

@@ -260,7 +260,7 @@ namespace BoSSS.Application.ScalarTransport {
                 R0Cells = R0Cells.MPISum();
                 R1Cells = R1Cells.MPISum();
                 Console.WriteLine("Redist: rank 0 {0} cells, rank 1 {1} cells.", R0Cells, R1Cells);
-                //Debugger.Launch();
+                // dbg_launch();
 
                 return part;
 

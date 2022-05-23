@@ -36,7 +36,7 @@ namespace ilPSP.LinSolvers {
     /// This matrix is addressed by global row/column indices; 
     /// </summary>
     /// <remarks>
-    /// MSR stands for 'M'utuble 'S'parse 'R'ow;
+    /// MSR stands for 'M'utable 'S'parse 'R'ow;
     /// </remarks>
     public class MsrMatrix : ICloneable, IMutableMatrixEx {
 

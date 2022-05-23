@@ -1355,7 +1355,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
             C.NonLinearSolver.MaxSolverIterations = 50;
@@ -1817,7 +1817,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 2;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -2039,9 +2039,9 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 g.DefineEdgeTags(delegate (double[] X) {
                     double x = X[0];
-                    //if(Math.Abs(x - (-1)) < 1e-8)
-                    //    return "pressure_outlet";
-                    return "wall"; // for the moment, ignore the Neumann boundary.
+                    if(Math.Abs(x - (-1)) < 1e-8)
+                        return "pressure_outlet";
+                    return "wall"; 
                 });
 
                 return g;
@@ -2071,7 +2071,15 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("wall", "VelocityX", VelocityXex);
             C.AddBoundaryValue("wall", "VelocityY", VelocityYex);
 
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = new PmgConfig() {
+                ConvergenceCriterion = 1e-9
+            };
+            //C.LinearSolver = new OrthoMGSchwarzConfig() {
+            //    ConvergenceCriterion = 1e-9
+            //};
+
+            
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.TransposeTermMissing;
@@ -4360,7 +4368,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             #endregion
 
@@ -4803,7 +4811,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ====================
             #region solver
 
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;

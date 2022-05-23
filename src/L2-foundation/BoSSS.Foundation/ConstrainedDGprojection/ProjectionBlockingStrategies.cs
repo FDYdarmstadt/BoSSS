@@ -103,7 +103,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIsize);
             //if (MPIrank == 1)
             //    NoOfParts = 1;
-            //Debugger.Launch();
+            // dbg_launch();
 
             int[] part = new int[JComp];
             {

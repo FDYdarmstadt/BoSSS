@@ -32,7 +32,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             //MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             //InitMPI();
-            ////Debugger.Launch();
+            //// dbg_launch();
             //BoSSS.Application.LoadBalancingTest.AllUpTest.RuntimeCostDynamicBalanceTest(1);
             //throw new NotImplementedException("remove me");
 
@@ -344,7 +344,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 return null;
 
             //if(MPIRank == 0)
-            //    Debugger.Launch();
+            //     dbg_launch();
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] NewPart;
             

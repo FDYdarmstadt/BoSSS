@@ -995,7 +995,7 @@ namespace BoSSS.Application.BoSSSpad {
             for(int i = 0; i < AllNewSessions.Length; i++) {
                 var sinf = AllNewSessions[i];
                 if(sinf != null) {
-                    // delpoyment was deleted, but some session was found in the database.
+                    // deployment was deleted, but some session was found in the database.
                     m_Deployments.Add(new Deployment(sinf, this));
                 }
             }
@@ -1036,7 +1036,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                     MetaJobMgrIO.RetryIOop(op, "deletion of directory '" + dep.DeploymentDirectory.FullName + "'", false);
-                    Console.WriteLine($"Detelted deployment {dep.DeploymentDirectory.Name}");
+                    Console.WriteLine($"Deleted deployment {dep.DeploymentDirectory.Name}");
                 }
             }
 
@@ -1352,13 +1352,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="bpc"></param>
         public void Activate(BatchProcessorClient bpc) {
             using (var tr = new FuncTrace()) {
+
                 // ============================================
                 // ensure that this method is only called once.
                 // ============================================
                 if (this.AssignedBatchProc != null)
                     throw new NotSupportedException("Job can only be activated once.");
                 AssignedBatchProc = bpc;
-                //Debugger.Launch();
+                // dbg_launch();
                 if(UndocumentedSuperHack)
                     this.DeleteOldDeploymentsAndSessions();
 
@@ -1525,10 +1526,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if(this.SubmitCount > 0 && DeploymentsSoFar.All(dep => dep.fixedStatus == JobStatus.FailedOrCanceled)) {
                     if(WriteHints) {
-                        Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
+                        Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed; RetryCount is {this.RetryCount}, so try once more.");
                         Console.WriteLine($"Hint: want to re-activate the job.");
                     }
-                    tr.Info($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
+                    tr.Info($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed; RetryCount is {this.RetryCount}, so try once more.");
                     tr.Info($"Hint: want to re-activate the job.");
 
                     this.statusCache = JobStatus.FailedOrCanceled;
@@ -1713,6 +1714,7 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
                 }
+                tr.Info("copied " + files.Count + " files.");
                 Console.WriteLine("copied " + files.Count + " files.");
 
                 // additional files
@@ -1727,11 +1729,12 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // deploy runtime
                 using (new BlockTrace("DEPLOY_RUNTIME", tr)) {
-                    if (AssignedBatchProc.DeployRuntime) {
+                    if (AssignedBatchProc.DeployRuntime == true) {
                         string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
-                        string BosssBinNative = Path.Combine(BosssInstall, "bin", Path.Combine("native", "win"));
-                        MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, DeployDir, "amd64");
-                        Console.WriteLine("   copied 'amd64' runtime.");
+                        var BosssBinNative = new DirectoryInfo(Path.Combine(BosssInstall, "bin", "native", AssignedBatchProc.RuntimeLocation));
+                        MetaJobMgrIO.CopyDirectoryRec(BosssBinNative.Parent.FullName, DeployDir, BosssBinNative.Name);
+                        Console.WriteLine("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
+                        tr.Info("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
                     }
                 }
 

@@ -1250,7 +1250,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.Endtime = 60;
             C.NoOfTimesteps = 1;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
             // Physical values
             C.PhysicalParameters.rho_A = 1;

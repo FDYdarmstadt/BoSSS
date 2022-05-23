@@ -30,7 +30,8 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var_spec, 4);
             //AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var, 4);
             //AdvancedSolverTests.SubBlocking.ExternalTests.GetExternalRowsTest(XDGusage.all, 2, 4);
-            //AdvancedSolverTests.Solver.addSchwarzTest.RunTest();
+            AdvancedSolverTests.Solver.addSchwarzTest.RunTest();
+            //AdvancedSolverTests.SubBlocking.ExternalTests.GetExternalRowsTest(XDGusage.none, 2, 4);
 
         }
 

@@ -266,7 +266,7 @@ namespace ilPSP.Utils {
         /// <summary>
         /// FORTRAN-style LAPACK
         /// </summary>
-        unsafe public delegate void _DGETRS(ref char transa, ref int n, ref int nrhs, double* a, ref int lda, int* ipiv, double[] b, ref int ldb, out int info);
+        unsafe public delegate void _DGETRS(ref char transa, ref int n, ref int nrhs, double* a, ref int lda, int* ipiv, double* b, ref int ldb, out int info);
 
         /// <summary>
         /// FORTRAN-style LAPACK

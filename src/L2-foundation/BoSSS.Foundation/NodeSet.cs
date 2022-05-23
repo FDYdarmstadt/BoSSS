@@ -148,7 +148,7 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// unique refenence number for the node set.
+        /// unique reference number for the node set.
         /// </summary>
         public int Reference {
             get;

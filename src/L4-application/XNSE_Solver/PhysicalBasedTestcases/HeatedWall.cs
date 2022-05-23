@@ -3983,7 +3983,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.NonLinearSolver.MaxSolverIterations = 50;

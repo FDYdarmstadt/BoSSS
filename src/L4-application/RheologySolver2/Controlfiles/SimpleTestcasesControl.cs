@@ -60,7 +60,7 @@ namespace BoSSS.Application.Rheology
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 10;
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig(); //.exp_Kcycle_schwarz;
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); //.exp_Kcycle_schwarz;
 
             // Maximum analytical output ...
             C.ObjectiveParam = 1.0;
@@ -440,7 +440,7 @@ namespace BoSSS.Application.Rheology
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.ObjectiveParam = 1.0;
 
             //Grid Params

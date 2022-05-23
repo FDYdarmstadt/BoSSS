@@ -49,7 +49,7 @@ namespace BoSSS.Application.XRheology_Solver {
         public XRheology_Control() {
             base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
-            base.LinearSolver = LinearSolverCode.classic_mumps.GetConfig(); //LinearSolver
+            base.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 50; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 50; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion

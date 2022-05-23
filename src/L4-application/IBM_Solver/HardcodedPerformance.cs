@@ -612,9 +612,9 @@ namespace BoSSS.Application.IBM_Solver {
             // ============
 
             if(pardiso) {
-                C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+                C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             } else {
-                C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+                C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             }
 
             //C.whichSolver = DirectSolver._whichSolver.MUMPS;
@@ -927,9 +927,9 @@ namespace BoSSS.Application.IBM_Solver {
             //C.NoOfMultigridLevels = 0;
 
             if(pardiso) {
-                C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+                C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             } else {
-                C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+                C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             }
             // Timestepping
             // ============

@@ -214,7 +214,7 @@ namespace BoSSS.Application.XNSEC {
             C.SetDGdegree(DGp);
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
             C.NonLinearSolver.verbose = true;
             C.NonLinearSolver.MaxSolverIterations = 50;

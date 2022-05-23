@@ -26,6 +26,9 @@ namespace HangingNodesTests {
         static public XNSFE_Control TestSkeleton(double size) {
             var ctrl = new XNSFE_Control();
 
+            //ctrl.SuperSampling = 0;
+            //ctrl.ImmediatePlotPeriod = 1;
+
             ctrl.SetDGdegree(2);           
 
             double L = size;
@@ -113,6 +116,9 @@ namespace HangingNodesTests {
 
             ctrl.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
 
+
+            ctrl.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+
             return ctrl;
         }
 
@@ -120,7 +126,7 @@ namespace HangingNodesTests {
 
             if(setup != 0 && setup < 16)
                 ctrl.AdaptiveMeshRefinement = true;
-
+            
             double L = size;
             if((setup & 1) != 0) {
                 ctrl.activeAMRlevelIndicators.Add(new BoSSS.Solution.AMRLevelIndicatorLibrary.AMRInBoundingBox(new BoundingBox(new double[,] { { -L, -L }, { 0, 0 } })) { maxRefinementLevel = 1 });
@@ -134,7 +140,7 @@ namespace HangingNodesTests {
             if ((setup & 8) != 0) {
                 ctrl.activeAMRlevelIndicators.Add(new BoSSS.Solution.AMRLevelIndicatorLibrary.AMRInBoundingBox(new BoundingBox(new double[,] { { 0, 0 }, { L, L } })) { maxRefinementLevel = 1 });
             }
-
+            
             ctrl.AMR_startUpSweeps = (new int[] { 1 }).Max();
         }
 

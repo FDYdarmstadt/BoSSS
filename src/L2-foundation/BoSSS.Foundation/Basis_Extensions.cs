@@ -152,34 +152,88 @@ namespace BoSSS.Foundation {
                 M[iKref] = MultidimensionalArray.Create(I, I);
                 Origin2Dest[iKref] = MultidimensionalArray.Create(I, J);
 
-                var P = m_origin.Evaluate(rule.Nodes);
-                var B = m_dest.Evaluate(rule.Nodes);
+                var BsvalOrg = m_origin.Evaluate(rule.Nodes);
+                var BsvalDst = m_dest.Evaluate(rule.Nodes);
+                var BsvalDstXwgt_T = MultidimensionalArray.Create(I, rule.NoOfNodes);
 
-                MultidimensionalArray PVal;
-                MultidimensionalArray BVal;
+                BsvalDstXwgt_T.Multiply(1.0, BsvalDst, rule.Weights, 0.0, "nk", "kn", "k");
+                //M[iKref].Multiply(1.0, BsvalDstXwgt_T, BsvalDst, 0.0, "ij", "ik", "kj");
+                //S[iKref].Multiply(1.0, BsvalDstXwgt_T, BsvalOrg, 0.0, "ij", "ik", "kj");
+                M[iKref].GEMM(1.0, BsvalDstXwgt_T, BsvalDst, 0.0);
+                S[iKref].GEMM(1.0, BsvalDstXwgt_T, BsvalOrg, 0.0);
+
+
+                /*
                 for (int k = 0; k < rule.Nodes.NoOfNodes; k++) {
                     double weight = rule.Weights[k];
-                    PVal = P.ExtractSubArrayShallow(k, -1);
-                    BVal = B.ExtractSubArrayShallow(k, -1);
+                    MultidimensionalArray OrgVal;
+                    MultidimensionalArray DstVal;
+                    OrgVal = BsvalOrg.ExtractSubArrayShallow(k, -1);
+                    DstVal = BsvalDst.ExtractSubArrayShallow(k, -1);
                     // Quadratur M
                     {
+
+                        // M[i,j] = w[k]*B[k,i]*B[k,j] // M = (
+
                         if (!m_dest.IsOrthonormal) {
-                            M[iKref].Multiply(weight, BVal, BVal, 1.0, "ij", "i", "j");
+                            M[iKref].Multiply(weight, DstVal, DstVal, 1.0, "ij", "i", "j");
                         }
                     }               
                     // Quadratur S
-                    {                       
-                        S[iKref].Multiply(weight, BVal, PVal, 1.0, "ij", "i", "j");                    
+                    {
+                        // S[i,j] = w[k]*B[k,i]*P[k,j]
+                        S[iKref].Multiply(weight, DstVal, OrgVal, 1.0, "ij", "i", "j");                    
                     }
                 }
+                */
+
                 // Calculate Transformation
                 if (!m_dest.IsOrthonormal) {
+                    /*
+                    {
+                        var M1 = M[iKref].CloneAs();
+                        var M1inv = M1.CloneAs();
+                        M1inv.InvertSymmetrical();
+                        var Check = M1.GEMM(M1inv);
+                        Check.AccEye(-1.0);
+                        Console.WriteLine("Symmetrical inversion check: " + Check.InfNorm());
+                    }
+                    {
+                        var M1 = M[iKref].CloneAs();
+                        var M1inv = M1.CloneAs();
+                        M1inv.InvertInPlace();
+                        var Check = M1.GEMM(M1inv);
+                        Check.AccEye(-1.0);
+                        Console.WriteLine("Normal inversion check: " + Check.InfNorm());
+                    }
+
                     M[iKref].InvertSymmetrical();
-                    Origin2Dest[iKref].DGEMM(1.0, M[iKref], S[iKref], 0.0);
+                    //M[iKref].InvertInPlace();
+                    */
+
+                    //Origin2Dest[iKref].DGEMM(1.0, M[iKref], S[iKref], 0.0);
+                    M[iKref].SolveSymmetricEx(Origin2Dest[iKref], S[iKref]);
                 } else {
                     Origin2Dest[iKref].Acc(1.0, S[iKref]); // in this case M is unity
                 }
 
+                /*
+                 * Test code:
+
+                double[] coordsOrg = new double[m_origin.Length];
+                double[] coordsDst = new double[m_dest.Length];
+
+                coordsOrg.FillRandom();
+                Origin2Dest[iKref].GEMV(1.0, coordsOrg, 0.0, coordsDst);
+                double[] valuesOrg = new double[rule.Nodes.NoOfNodes];
+                double[] valuesDst = new double[rule.Nodes.NoOfNodes];
+
+                BsvalOrg.GEMV(1.0, coordsOrg, 0.0, valuesOrg);
+                BsvalDst.GEMV(1.0, coordsDst, 0.0, valuesDst);
+
+                double err = valuesOrg.L2Dist(valuesDst);
+                Console.WriteLine("Error is " + err);
+                */
             }
         }
 

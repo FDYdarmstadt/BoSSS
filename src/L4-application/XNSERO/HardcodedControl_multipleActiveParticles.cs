@@ -79,7 +79,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetTimesteps(1e-1, 50000000);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AgglomerationThreshold = 0.1;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.UseSchurBlockPrec = false;
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
             return C;

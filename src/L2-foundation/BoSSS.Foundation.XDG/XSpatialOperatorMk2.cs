@@ -1728,9 +1728,41 @@ namespace BoSSS.Foundation.XDG {
 
 
 
+      
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.IsValidDomainDegreeCombination"/>
+        /// </summary>
+        public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable) {
+            if (!this.IsCommitted)
+                throw new InvalidOperationException("Invalid prior to calling Commit().");
+
+            if (DomainDegreesPerVariable.Length != this.DomainVar.Count)
+                throw new ArgumentException("Mismatch between length of input and number of domain variables.");
+            if (CodomainDegreesPerVariable.Length != this.CodomainVar.Count)
+                throw new ArgumentException("Mismatch between length of input and number of codomain variables.");
+
+            int i = 0;
+            foreach (var cod in this.CodomainVar) {
+                foreach (var comp in this.EquationComponents[cod]) {
+                    if (comp is IDGdegreeConstraint dgconstr) {
+                        int[] argDegrees;
+                        if (comp.ArgumentOrdering != null)
+                            argDegrees = comp.ArgumentOrdering.Select(argName => DomainDegreesPerVariable[this.DomainVar.IndexWhere(domName => domName == argName)]).ToArray();
+                        else
+                            argDegrees = new int[0];
+
+                        if (dgconstr.IsValidDomainDegreeCombination(argDegrees, CodomainDegreesPerVariable[i]) == false)
+                            return false;
+                    }
+                }
+
+                i++;
+            }
 
 
-
+            return true;
+        }
 
 
 

@@ -18,7 +18,7 @@ namespace BoSSS.Application.XNSEC {
             C.NonLinearSolver.verbose = true;
             C.ReactionRateConstants = new double[] { 1e4, 3, 1, 1 };
             C.HeatRelease = 1;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
 
             C.VariableOneStepParameters = false;

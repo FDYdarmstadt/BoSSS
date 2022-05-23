@@ -39,6 +39,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static DataTable GetSessionTable(this IEnumerable<ISessionInfo> sessions, Tuple<string, Func<ISessionInfo, object>>[] AdditionalColums = null) {
 
+            // dbg_launch();
+
             Dictionary<string, object[]> Ret = new Dictionary<string, object[]>();
 
             for (int iSess = 0; iSess < sessions.Count(); iSess++) {
@@ -57,8 +59,20 @@ namespace BoSSS.Application.BoSSSpad {
                         } catch(Exception) {
                             val = null;
                         }
-                        kq.Add(new KeyValuePair<string, object>(t.Item1, val));
+
+                        if (kq.Where(kv => kv.Key == t.Item1).Count() > 0) {
+                            string addInfo;
+                            try {
+                                addInfo = $": '{t.Item1}' == {SS.KeysAndQueries[t.Item1]}";
+                            } catch(Exception) {
+                                addInfo = "";
+                            }
+                            throw new NotSupportedException($"Name of additional column '{t.Item1}' is not unique; it already appears in the 'KeysAndQueries' of session '{SS.ToString()}'{addInfo}.");
+                        } else {
+                            kq.Add(new KeyValuePair<string, object>(t.Item1, val));
+                        }
                     }
+
                 }
 
 
@@ -424,7 +438,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Stores Table in JSON-File
+        /// Loads Table from JSON-File
         /// </summary>
         static public DataTable LoadFromFile(string filePath) {
             string s = File.ReadAllText(filePath);

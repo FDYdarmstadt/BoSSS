@@ -1287,8 +1287,9 @@ namespace BoSSS.Foundation.XDG {
                 if (m_TestTransformer == null) {
                     m_TestTransformer = new BernsteinTransformator[this.LevelSets.Count];
                     for(int i = 0; i< this.LevelSets.Count; i++ ) {
-                        if (this.LevelSets[i] is LevelSet ls)
-                            m_TestTransformer[i] = new BernsteinTransformator(ls.Basis, 0.005); 
+                        if (this.LevelSets[i] is LevelSet ls) {
+                            m_TestTransformer[i] = new BernsteinTransformator(ls.Basis, 0.005);
+                        }
                     }
                 }
                 return m_TestTransformer;
@@ -1763,6 +1764,9 @@ namespace BoSSS.Foundation.XDG {
                 ushort[,] VertexMarkerExternal;
                 (int iLevSet, int iFace)[][] _LevSetCoincidingFaces = null;
 
+                
+
+
                 // init & first time calls
                 // =======================
                 #region UpdateTracker_INIT
@@ -1807,6 +1811,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 #endregion
 
+
                 // evaluate level sets / find cut cells
                 // ====================================
                 #region UpdateTracker_FIND_CUT_CELLS
@@ -1843,6 +1848,7 @@ namespace BoSSS.Foundation.XDG {
                     MaxVecLen = Math.Max(1, MaxVecLen);
                     var eps = BLAS.MachineEps*10;
 
+
                     var Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
                     foreach (var t_j0_Len in Gchnks) { // loop over all cells in the search mask...
                         int j = t_j0_Len.Item1;
@@ -1859,8 +1865,12 @@ namespace BoSSS.Foundation.XDG {
                         // loop over level sets ...
                         for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
                             var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
-                            // Use the accelerated bernstein cut cell finding technique for dg levelsets
+
+
                             if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {
+                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                // Use the accelerated bernstein cut cell finding technique for dg levelsets
+                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 var data = this.m_DataHistories[levSetind].Current;
                                 NodeSet EdgeNodes = new NodeSet(Kref, this.TestNodes[iKref].ExtractSubArrayShallow(new int[] {0 , 0}, new int[] { _TestNodesPerFace.Sum() - 1, D - 1})); // only use edge nodes
                                 MultidimensionalArray levSetVal = data.GetLevSetValues(EdgeNodes, j, VecLen);
@@ -1872,6 +1882,7 @@ namespace BoSSS.Foundation.XDG {
                                     bool Pos = false;
                                     bool Neg = false;
 
+                                    
                                     #region edges  
                                     // loop over nodes on edges...
                                     int nodeIndex = 0;
@@ -1906,6 +1917,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     } // end of edges loop
                                     #endregion
+                                    
 
                                     /* Seems to be not robust enough... using the "old" procedure for now
                                     // loop over nodes on edges...
@@ -1958,6 +1970,8 @@ namespace BoSSS.Foundation.XDG {
                                     if (Pos && Neg || (!Pos && !Neg)) {
                                         // cell jj is cut by level set
                                         // code cell:
+
+                                        
                                         EncodeLevelSetDist(ref LevSetRegionsUnsigned[jj], 0, levSetind);
                                         TempCutCellsBitmask[jj] = true;
                                     }
@@ -1970,7 +1984,13 @@ namespace BoSSS.Foundation.XDG {
                                     }
                                     
                                 }
-                            } else { 
+                            } else {
+                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                // Use the old cut-cell detection,
+                                // which just evaluates the level-set at certain points in the cell.
+                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
                                 var data = this.m_DataHistories[levSetind].Current;
                                 MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
 
@@ -2045,15 +2065,16 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
                         j += VecLen;
+
                     }
+                    
 
-
-                    if(_LevSetCoincidingFaces != null)
+                    if (_LevSetCoincidingFaces != null)
                         Regions.m_LevSetCoincidingFaces = _LevSetCoincidingFaces;
-
-                   
-
                 }
+
+                //test.AddVector()
+
 
                 using (new BlockTrace("CELL_SWEEPS", tr)) {
 
@@ -2220,11 +2241,13 @@ namespace BoSSS.Foundation.XDG {
                             MPIUpdate(LevSetRegionsUnsigned, m_gDat);
                             MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
 
+
+
                             NumberOfChanges = NumberOfChanges.MPISum();
                         }
+                        
                     }
                 }
-
 
                 // set the sign
                 // ============

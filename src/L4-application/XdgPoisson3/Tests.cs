@@ -100,7 +100,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             
             foreach (int res in ResS) {
                 var C = HardCodedControl.Circle(Resolution: res, p: dgDegree);
-                C.LinearSolver = Code.classic_pardiso.GetConfig();
+                C.LinearSolver = Code.direct_pardiso.GetConfig();
                 C.savetodb = false;
 
                 Controls.Add(C);

@@ -103,12 +103,26 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// True, if it is required to deploy the runtime on the destination system,
         /// in order to execute a job.
+        /// If specified, the runtime will be taken from <see cref="RuntimeLocation"/>
         /// </summary>
         [DataMember]
         public bool DeployRuntime {
             get;
             set;
         }
+
+        /// <summary>
+        /// If not null, it is required to deploy the runtime on the destination system.
+        /// The runtime is typically located at `$BOSSS_INSTALL/bin/native/`;
+        /// If this member is set e.g. to `linux\amd64-openmpi`, then the runtime located beneath
+        /// `$BOSSS_INSTALL/bin/native/linux\amd64-openmpi` will be copied to the destination system.
+        /// </summary>
+        [DataMember]
+        virtual public string RuntimeLocation {
+            get;
+            set;
+        }
+
 
         /// <summary>
         /// Descriptive name specified by the user

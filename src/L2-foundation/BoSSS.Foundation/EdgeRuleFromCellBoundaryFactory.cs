@@ -353,7 +353,7 @@ namespace BoSSS.Foundation.Quadrature {
                 }
             }
 
-            //Debugger.Launch();
+            // dbg_launch();
 
             MultidimensionalArray NodesVol = givenRule.Nodes.ExtractSubArrayShallow(new int[] { i0, 0 }, new int[] { iE, D - 1 });
             MultidimensionalArray Weigts = givenRule.Weights.ExtractSubArrayShallow(new int[] { i0 }, new int[] { iE }).CloneAs();

@@ -29,6 +29,8 @@ using ilPSP.Connectors.Matlab;
 using BoSSS.Solution.AdvancedSolvers;
 
 namespace BoSSS.Solution.AdvancedSolvers {
+
+    /*
     public class RheologyJacobiPrecond : ISolverSmootherTemplate, ISolverWithCallback {
         public int IterationsInNested {
             get {
@@ -234,4 +236,5 @@ namespace BoSSS.Solution.AdvancedSolvers {
        
 
     }
+    */
 }
