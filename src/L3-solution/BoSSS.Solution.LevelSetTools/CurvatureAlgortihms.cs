@@ -268,76 +268,55 @@ namespace BoSSS.Solution.LevelSetTools {
 
             // now, do all the rest...
             // =======================
+            switch (surfTenM) {
+                default:
+                case SurfaceStressTensor_IsotropicMode.Curvature_Projected: {
+                        int[] lim;
+                        ProjectTotalCurvature(G, H, Curvature, CC, out lim);
+
+                        if (!config.CurvatureLimiting)
+                            lim = null;
+
+                        if (config.CurvatureLimiting)
+                            PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
+
+                        Curvature.CheckForNanOrInf();
+
+                        LevelSetGradient = new VectorField<SinglePhaseField>(G);
+
+                        return SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+                    }
+                case SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint: {
+                        int[] lim;
+                        ClosestPointTotalCurvature(LsTrk, G, H, Curvature, out lim);
+
+                        if (!config.CurvatureLimiting)
+                            lim = null;
+
+                        if (config.CurvatureLimiting)
+                            PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
+
+                        Curvature.CheckForNanOrInf();
 
 
-            if(surfTenM == SurfaceStressTensor_IsotropicMode.Curvature_Projected) {
+                        LevelSetGradient = null;// new VectorField<SinglePhaseField>(G); 
 
+                        return SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint;
+                    }
+                case SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean: {
+                        LaplaceBeltramiFiltered(
+                         LsTrk,
+                         Curvature,
+                         config.FilterCurvatureCycles,
+                         G,
+                         HMForder);
+                        Curvature.CheckForNanOrInf(true, true, true);
 
-                int[] lim;
-                ProjectTotalCurvature(G, H, Curvature, CC, out lim);
-
-                if(!config.CurvatureLimiting)
-                    lim = null;
-
-                if(config.CurvatureLimiting)
-                    PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
-
-                Curvature.CheckForNanOrInf();
-
-
-                //Basis BasisForFiltered = Curvature.Basis;
-                //PatchRecFilteredCurvature(levSet,
-                //    Curvature,
-                //    LsTrk.GetNearFieldMask(config.PatchRecoveryDomWidth),
-                //    config.NoOfPatchRecoverySweeps,
-                //    config.gradOpt,
-                //    config.hessOpt,
-                //    config.useFiltLevSetGrad,
-                //    config.useFiltLevSetHess,
-                //    config.FilterCurvatureCycles,
-                //    config.CurvatureLimiting);
-                //Curvature.CheckForNanOrInf(true, true, true);
-
-                LevelSetGradient = new VectorField<SinglePhaseField>(G); 
-
-                return SurfaceStressTensor_IsotropicMode.Curvature_Projected;
-
-            } else if(surfTenM == SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint) {
-
-
-                int[] lim;
-                ClosestPointTotalCurvature(LsTrk, G, H, Curvature, out lim);
-
-                if(!config.CurvatureLimiting)
-                    lim = null;
-
-                if(config.CurvatureLimiting)
-                    PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
-
-                Curvature.CheckForNanOrInf();
-
-                
-                LevelSetGradient = null;// new VectorField<SinglePhaseField>(G); 
-
-                return SurfaceStressTensor_IsotropicMode.Curvature_ClosestPoint;
-
-            } else if(surfTenM == SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean) {
-
-                LaplaceBeltramiFiltered(
-                    LsTrk,
-                    Curvature,
-                    config.FilterCurvatureCycles, 
-                    G,
-                    HMForder);
-                Curvature.CheckForNanOrInf(true, true, true);
-
-                LevelSetGradient = null;
-                return SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean;
-
-            } 
-
+                        LevelSetGradient = null;
+                        return SurfaceStressTensor_IsotropicMode.Curvature_LaplaceBeltramiMean;
+                    }
+            }
             throw new ArgumentOutOfRangeException("unknown AlgorithmClass");
-
         }
 
         private static SinglePhaseField SourceLevelSet(FilterConfiguration config, LevelSetTracker LsTrk,
@@ -393,7 +372,15 @@ namespace BoSSS.Solution.LevelSetTools {
             return levSet;
         }
 
-
+        /// <summary>
+        /// somewhat deprecated, use <see cref="CurvatureAlgorithms.CurvatureDriver(SurfaceStressTensor_IsotropicMode, FilterConfiguration, SinglePhaseField, out VectorField{SinglePhaseField}, LevelSetTracker, int, SinglePhaseField)"/> instead, that also computes the curvature
+        /// </summary>
+        /// <param name="surfTenM"></param>
+        /// <param name="config"></param>
+        /// <param name="LevelSetGradient"></param>
+        /// <param name="LsTrk"></param>
+        /// <param name="DG_LevSet"></param>
+        /// <returns></returns>
         static public SurfaceStressTensor_IsotropicMode LaplaceBeltramiDriver(
 
             SurfaceStressTensor_IsotropicMode surfTenM, FilterConfiguration config,
