@@ -354,7 +354,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
                 if (IO != null) {
 
 
-                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", RefMPIsize);
+                    var projCheck = new TestingIO(solver.GridData, $"{IO}.csv", true, RefMPIsize);
                     for (int iLevSet = 0; iLevSet < solver.Control.NoOfLevelSets; iLevSet++) {
                         LevelSet PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].DGLevelSet;
                         LevelSet PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].CGLevelSet;
