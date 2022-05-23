@@ -269,7 +269,24 @@ namespace BoSSS.Solution.LevelSetTools {
             // now, do all the rest...
             // =======================
             switch (surfTenM) {
-                default:
+                default: {
+                        // same as SurfaceStressTensor_IsotropicMode.Curvature_Projecte, but Hessian does not exist yet
+                        int[] lim;
+                        ComputeHessian(levSet, CC, config, out H, out H, levSet, G, G, l2pr); // do not distinguish between filtered and unfiltered, use what is available
+                        ProjectTotalCurvature(G, H, Curvature, CC, out lim);
+
+                        if (!config.CurvatureLimiting)
+                            lim = null;
+
+                        if (config.CurvatureLimiting)
+                            PatchRecMultipassFilter(Curvature, config.FilterCurvatureCycles, l2pr, lim);
+
+                        Curvature.CheckForNanOrInf();
+
+                        LevelSetGradient = new VectorField<SinglePhaseField>(G);
+
+                        return SurfaceStressTensor_IsotropicMode.Curvature_Projected; // return the setting used for the curvature calculation
+                    }
                 case SurfaceStressTensor_IsotropicMode.Curvature_Projected: {
                         int[] lim;
                         ProjectTotalCurvature(G, H, Curvature, CC, out lim);
