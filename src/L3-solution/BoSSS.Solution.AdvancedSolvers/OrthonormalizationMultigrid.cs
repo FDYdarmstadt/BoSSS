@@ -501,10 +501,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.m_MgOperator = op;
                 var Mtx = op.OperatorMatrix;
                 var MgMap = op.DgMapping;
-                if (op is MultigridOperator _mgOp) {
-                    if (_mgOp.LevelIndex == 0)
-                        viz = new MGViz(_mgOp);
-                }
+                //if (op is MultigridOperator _mgOp) {
+                //    if (_mgOp.LevelIndex == 0)
+                //        viz = new MGViz(_mgOp);
+                //}
                 TrackMemory(1);
                 if (!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
@@ -620,9 +620,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         StreamWriter m_MTracker = null;
 #endif
 
-#pragma warning disable 0649
-        MGViz viz;
-#pragma warning restore 0649
+//#pragma warning disable 0649
+//        MGViz viz;
+//#pragma warning restore 0649
 
         /// <summary>
         /// coarse-level correction; can be defined either
@@ -678,24 +678,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             }
         }
-
-
-
-
-        /*
-
-        private void CatchThisExclamationmark(double[] Vector, string name, int position) {
-            double L2norm = Vector.L2Norm();
-            Console.WriteLine("Norm of {0} at {1}: {2}", name, position, L2norm);
-            try {
-                Vector.CheckForNanOrInfV();
-            } catch(Exception ex) {
-                Console.WriteLine("Arithmetic Exception in {0}, at {1}:", name, position);
-                Console.WriteLine(ex.Message);
-                Vector.SaveToTextFile(name + "_" + position);
-            }
-        }
-        */
 
         /// <summary>
         /// the multigrid iterations for a linear problem
@@ -762,41 +744,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // clear history of coarse solvers
                 ortho.Clear();
                 bool bIterate = true;
-                /*
-                var oldMxx = MxxHistory.ToArray();
-                var oldSol = SolHistory.ToArray();
-                MxxHistory.Clear();
-                SolHistory.Clear();
-                Alphas.Clear();
-
-                bool bIterate = false;
-                for(int i = 0; i < oldMxx.Length; i++) {
-                    MxxHistory.Add(oldMxx[i]);
-                    SolHistory.Add(oldSol[i]);
-                    resNorm = MinimizeResidual(X, Sol0, Res0, Res, -1);
-                }
-                //Console.WriteLine("Reduction through wisdom: " + (resNorm/iter0_resNorm));
-                {
-                    
-                    
-                    var termState0 = TerminationCriterion(0, iter0_resNorm, resNorm);
-                    if(!termState0.bNotTerminate) {
-                        Converged = termState0.bSuccess;
-
-                    } else {
-                        bIterate = true;
-                        
-                    }
-                }
-
-                if(oldMxx.Length > 40) {
-                    MxxHistory.Clear();
-                    SolHistory.Clear();
-                    Alphas.Clear();
-                }
-                oldSol = null;
-                oldMxx = null;
-                //*/
 
                 for (int iIter = 1; bIterate; iIter++) {
                     var termState = TerminationCriterion(iIter, iter0_resNorm, resNorm);
@@ -841,9 +788,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             break;
                         }
                     }
-
-                    //PlottyMcPlot(rl, X, Xprev, Corr, B);
-
 
                     // coarse grid correction
                     // ----------------------
@@ -964,7 +908,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         int cnt = 0;
 
-        public double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, int id) {
+        double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, int id) {
             using (var ft = new FuncTrace()) {
                 var ResNorm = ortho.MinimizeResidual(outX, Sol0, Res0, outRes, id);
 
