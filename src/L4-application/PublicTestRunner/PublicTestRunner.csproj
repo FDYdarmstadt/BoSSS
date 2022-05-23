@@ -50,6 +50,7 @@
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
     <ProjectReference Include="..\ipViscosity\ipViscosity.csproj" />
     <ProjectReference Include="..\LoadBalancingTest\LoadBalancingTest.csproj" />
+    <ProjectReference Include="..\LsTest\LsTest.csproj" />
     <ProjectReference Include="..\LTSTests\LTSTests.csproj" />
     <ProjectReference Include="..\Matrix_MPItest\Matrix_MPItest.csproj" />
     <ProjectReference Include="..\MPITest\MPITest.csproj" />

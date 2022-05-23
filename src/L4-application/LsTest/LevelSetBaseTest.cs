@@ -28,7 +28,7 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
+namespace BoSSS.Application.LsTest {
 
     /// <summary>
     /// Basic test class for the level-set unit tests

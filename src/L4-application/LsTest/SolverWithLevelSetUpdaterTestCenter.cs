@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using System;
@@ -9,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
+namespace BoSSS.Application.LsTest {
 
 
     /// <summary>
@@ -18,7 +19,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
     /// This process is however embedded in the "normal" XdgTimestepper frame, thus allows to investigate overall stability and behavior of e.g. coupled level set handling.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class SolverWithLevelSetUpdaterTestCenter : SolverWithLevelSetUpdater<SolverWithLevelSetUpdaterTestControl> {
+    public partial class SolverWithLevelSetUpdaterTestCenter : SolverWithLevelSetUpdater<SolverWithLevelSetUpdaterTestControl> {
         protected override int NoOfLevelSets {
             get {
                 return Control.NoOfLevelSets;

@@ -37,7 +37,7 @@ using System.Linq;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
+namespace BoSSS.Application.LsTest {
 
 
     public interface ILevelSetTest {
@@ -296,7 +296,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
                             allfields.Add(f);
                     }
 
-                    Tecplot.Tecplot.PlotFields(allfields, "AgglomFail", 0.0, 4);
+                    Tecplot.PlotFields(allfields, "AgglomFail", 0.0, 4);
                 };
 
                 solver.Init(C);

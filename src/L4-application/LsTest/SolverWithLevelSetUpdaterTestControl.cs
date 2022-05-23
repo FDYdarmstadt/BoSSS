@@ -1,9 +1,9 @@
 ﻿using BoSSS.Solution.Control;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XdgTimestepping;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
+namespace BoSSS.Application.LsTest {
 
     /// <summary>
     /// PDE-solver-control object which defines configuration options for nonlinear and linear equation solvers
@@ -21,7 +21,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
     public class SolverWithLevelSetUpdaterTestControl : SolverWithLevelSetUpdaterControl {
 
         public SolverWithLevelSetUpdaterTestControl() {
-            this.TimesteppingMode = Control.AppControl._TimesteppingMode.Transient;
+            this.TimesteppingMode = Solution.Control.AppControl._TimesteppingMode.Transient;
         }
 
         public override Type GetSolverType() {

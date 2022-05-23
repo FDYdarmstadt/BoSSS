@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using ilPSP;
 using ilPSP.Tracing;
@@ -9,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
+namespace BoSSS.Application.LsTest {
 
     /// <summary>
     /// Level set velocity, i.e. parameters with name <see cref="BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(string, IList{string})"/>

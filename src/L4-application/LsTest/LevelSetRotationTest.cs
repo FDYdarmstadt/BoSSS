@@ -28,13 +28,13 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
+namespace BoSSS.Application.LsTest {
 
     /// <summary>
     /// Basic test case for rotating the leve-set field
     /// in a constant velocity field
     /// </summary>
-    class LevelSetScalingTest : LevelSetBaseTest {
+    class LevelSetRotationTest : ILevelSetTest {
 
         double L = 1.0;
         double Radius = 0.4;
@@ -43,10 +43,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
         /// <summary>
         /// ctor
         /// </summary>
-        public LevelSetScalingTest(int spatDim, int LevelSetDegree) 
-            : base(spatDim, LevelSetDegree) {
+        public LevelSetRotationTest(int spatDim, int LevelSetDegree) {
+            this.SpatialDimension = spatDim;
+            this.LevelsetPolynomialDegree = LevelSetDegree;
         }
 
+
+        public double dt {
+            get {
+                return -1.0;    // will be set in LevelSetTest() according to level set cfl 
+            }
+        }
 
         /// <summary>
         /// computes the timestep size according to the level-set CFL condition
@@ -54,7 +61,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
         /// <param name="Resolution"></param>
         /// <param name="LSdegree"></param>
         /// <returns></returns>
-        public override double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel) {
+        public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel) {
             int gridCells1D = (9 * Resolution) * (AMRlevel + 1);
             double h = 1.0 * L / (double)gridCells1D;
             double dt = h / Uscale;
@@ -68,17 +75,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
         /// 
         /// </summary>
         /// <returns></returns>
-        public override double getEndTime() {
+        public double getEndTime() {
             return 1.0; //TODO
         }
-
 
         /// <summary>
         /// creates a square in 2D and a cube in 3D
         /// </summary>
         /// <param name="Resolution"></param>
         /// <returns></returns>
-        public override GridCommons CreateGrid(int Resolution) {
+        public GridCommons CreateGrid(int Resolution) {
             if (Resolution < 1)
                 throw new ArgumentException();
             
@@ -135,23 +141,23 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
         /// 
         /// </summary>
         /// <returns></returns>
-        public override IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
+        public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
             var config = new Dictionary<string, AppControl.BoundaryValueCollection>();
 
             config.Add("velocity_inlet", new AppControl.BoundaryValueCollection());
             config["velocity_inlet"].Evaluators.Add(
                 VariableNames.Velocity_d(0) + "#A",
-                (X, t) => Uscale * X[0]);
+                (X, t) => Uscale * X[1]);
             config["velocity_inlet"].Evaluators.Add(
                 VariableNames.Velocity_d(0) + "#B",
-                (X, t) => Uscale * X[0]);
+                (X, t) => Uscale * X[1]);
 
             config["velocity_inlet"].Evaluators.Add(
                 VariableNames.Velocity_d(1) + "#A",
-                (X, t) => Uscale * X[1]);
+                (X, t) => -Uscale * X[0]);
             config["velocity_inlet"].Evaluators.Add(
                 VariableNames.Velocity_d(1) + "#B",
-                (X, t) => Uscale * X[1]);
+                (X, t) => -Uscale * X[0]);
 
             if (SpatialDimension == 3) {
 
@@ -182,10 +188,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
         /// <summary>
         /// Level-Set: at t=0 circle with radius R, at the center (0,0); non-moving.
         /// </summary>
-        public override Func<double[], double, double>[] GetPhi() {
+        public Func<double[], double, double>[] GetPhi() {
             return new Func<double[], double, double>[] {delegate (double[] X, double time) {
+
+
                 double x = X[0], y = X[1];
-                double r = Radius * (1 + Uscale * time);
+                //x -= time * Uscale;
 
                 double dist;
                 switch (SpatialDimension) {
@@ -195,7 +203,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
                     throw new ArgumentOutOfRangeException();
                 }
 
-                return quadratic ? (r * r - dist * dist) : r - dist;
+                return quadratic ? (Radius * Radius - dist * dist) : Radius - dist;
 
             } };
         }
@@ -203,13 +211,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
         /// <summary>
         /// velocity: constant rotational velocity field.
         /// </summary>
-        public override Func<double[], double, double>[][] GetU() {
+        public Func<double[], double, double>[][] GetU() {
             var Ret = new Func<double[], double, double>[this.NoOfLevelsets][];
             switch (SpatialDimension) {
                 case 2:
                     Ret[0] = new Func<double[], double, double>[] {
-                        ((_2D)((x, y) => Uscale * x)).Convert_xy2X().Convert_X2Xt(),
-                        ((_2D)((x, y) => Uscale * y)).Convert_xy2X().Convert_X2Xt()
+                        ((_2D)((x, y) => Uscale * y)).Convert_xy2X().Convert_X2Xt(),
+                        ((_2D)((x, y) => -Uscale * x)).Convert_xy2X().Convert_X2Xt()
                         };
                     break;
                 case 3:
@@ -222,18 +230,61 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-            return Ret;
+            return Ret;            
+
         }
 
-        public override int NoOfLevelsets => 1;
+        /// <summary>
+        /// pressure: 
+        /// </summary>
+        public Func<double[], double, double> GetPress(string species) {
+            switch (SpatialDimension) {
+                case 2: {
+                    switch (species) {
+                        case "A": return ((_2D)((x, y) => 0.0)).Convert_xy2X().Convert_X2Xt();
+                        case "B": return ((_2D)((x, y) => 0.0)).Convert_xy2X().Convert_X2Xt();
+                        default: throw new ArgumentException();
+                    }
+                }
+                case 3: {
+                    switch (species) {
+                        case "A": return ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt();
+                        case "B": return ((_3D)((x, y, z) => 0.0)).Convert_xyz2X().Convert_X2Xt();
+                        default: throw new ArgumentException();
+                    }
+                }
+                default:
+                throw new ArgumentOutOfRangeException();
+            }
+        }
 
-        override public double[,] AcceptableError {
+        /// <summary>
+        /// No bulk force.
+        /// </summary>
+        public Func<double[], double> GetF(string species, int d) {
+            return (X => 0.0);
+        }       
+
+        public int LevelsetPolynomialDegree {
+            get;
+            private set;
+        }
+
+        public double[,] AcceptableError {
             get {
                 return new double[,] { { 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6 } }; //{ { 1.0e-6, 1.0e-6, 1.0e-1 } }; from XNSE copy
             }
         }
 
+        /// <summary>
+        /// returns spatial dimension
+        /// </summary>
+        public int SpatialDimension {
+            get;
+            private set;
+        }
 
+        public int NoOfLevelsets => 1;
     }
 
 }

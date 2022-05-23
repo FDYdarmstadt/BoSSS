@@ -129,7 +129,7 @@ namespace PublicTestRunner {
         virtual public Type[] ReleaseOnlyTests {
             get {
                 return new Type[] {
-                        typeof(BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests.SolverWithLevelSetUpdaterTestCenter),
+                        typeof(BoSSS.Application.LsTest.SolverWithLevelSetUpdaterTestCenter),
                         typeof(BoSSS.Application.XNSERO_Solver.XNSERO),
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.XNSFE_Solver.XNSFE),

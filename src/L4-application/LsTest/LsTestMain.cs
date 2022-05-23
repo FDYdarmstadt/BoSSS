@@ -14,23 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using BoSSS.Foundation;
-using BoSSS.Solution.Utils;
-using BoSSS.Foundation.Grid;
-using BoSSS.Solution.Control;
-using System.Globalization;
-using BoSSS.Solution.NSECommon;
-using BoSSS.Foundation.Grid.Classic;
-using ilPSP.Utils;
+using BoSSS.Solution.LevelSetTools;
 
+namespace BoSSS.Application.LsTest {
+    partial class SolverWithLevelSetUpdaterTestCenter {
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
+        static void Main(string[] args) {
 
-    class LevelSetContinuityTest {
+            InitMPI();
+            LevelSetUnitTests.LevelSetAdvectionTest2D_fwd(2, 0, LevelSetEvolution.FastMarching, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting);
+            FinalizeMPI();
+        }
+
     }
-
 }

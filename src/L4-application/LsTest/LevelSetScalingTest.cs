@@ -28,13 +28,13 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
+namespace BoSSS.Application.LsTest {
 
     /// <summary>
-    /// Basic test case for a shearing the level-set field
+    /// Basic test case for rotating the leve-set field
     /// in a constant velocity field
     /// </summary>
-    class LevelSetShearingTest : LevelSetBaseTest {
+    class LevelSetScalingTest : LevelSetBaseTest {
 
         double L = 1.0;
         double Radius = 0.4;
@@ -43,7 +43,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
         /// <summary>
         /// ctor
         /// </summary>
-        public LevelSetShearingTest(int spatDim, int LevelSetDegree)
+        public LevelSetScalingTest(int spatDim, int LevelSetDegree) 
             : base(spatDim, LevelSetDegree) {
         }
 
@@ -61,6 +61,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
             dt /= (double)(LSdegree * LSdegree);
 
             return dt;
+
         }
 
         /// <summary>
@@ -70,6 +71,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
         public override double getEndTime() {
             return 1.0; //TODO
         }
+
 
         /// <summary>
         /// creates a square in 2D and a cube in 3D
@@ -139,11 +141,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
             config.Add("velocity_inlet", new AppControl.BoundaryValueCollection());
             config["velocity_inlet"].Evaluators.Add(
                 VariableNames.Velocity_d(0) + "#A",
-                (X, t) => Uscale * X[1]);
+                (X, t) => Uscale * X[0]);
             config["velocity_inlet"].Evaluators.Add(
                 VariableNames.Velocity_d(0) + "#B",
-                (X, t) => Uscale * X[1]);
+                (X, t) => Uscale * X[0]);
 
+            config["velocity_inlet"].Evaluators.Add(
+                VariableNames.Velocity_d(1) + "#A",
+                (X, t) => Uscale * X[1]);
+            config["velocity_inlet"].Evaluators.Add(
+                VariableNames.Velocity_d(1) + "#B",
+                (X, t) => Uscale * X[1]);
 
             if (SpatialDimension == 3) {
 
@@ -172,12 +180,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
         bool quadratic = false;
 
         /// <summary>
-        /// Level-Set: at t=0 circle with radius R, at the center (0,0); evolution not known
+        /// Level-Set: at t=0 circle with radius R, at the center (0,0); non-moving.
         /// </summary>
         public override Func<double[], double, double>[] GetPhi() {
             return new Func<double[], double, double>[] {delegate (double[] X, double time) {
                 double x = X[0], y = X[1];
-                //x -= time * Uscale;
+                double r = Radius * (1 + Uscale * time);
 
                 double dist;
                 switch (SpatialDimension) {
@@ -187,7 +195,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
                     throw new ArgumentOutOfRangeException();
                 }
 
-                return quadratic ? (Radius * Radius - dist * dist) : Radius - dist;
+                return quadratic ? (r * r - dist * dist) : r - dist;
 
             } };
         }
@@ -200,8 +208,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
             switch (SpatialDimension) {
                 case 2:
                     Ret[0] = new Func<double[], double, double>[] {
-                        ((_2D)((x, y) => Uscale * y)).Convert_xy2X().Convert_X2Xt(),
-                        ((_2D)((x, y) => 0.0)).Convert_xy2X().Convert_X2Xt()
+                        ((_2D)((x, y) => Uscale * x)).Convert_xy2X().Convert_X2Xt(),
+                        ((_2D)((x, y) => Uscale * y)).Convert_xy2X().Convert_X2Xt()
                         };
                     break;
                 case 3:
@@ -217,14 +225,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
             return Ret;
         }
 
+        public override int NoOfLevelsets => 1;
 
-        public override double[,] AcceptableError {
+        override public double[,] AcceptableError {
             get {
                 return new double[,] { { 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6, 1.0e-6 } }; //{ { 1.0e-6, 1.0e-6, 1.0e-1 } }; from XNSE copy
             }
         }
 
-        public override int NoOfLevelsets => 1;
+
     }
 
 }

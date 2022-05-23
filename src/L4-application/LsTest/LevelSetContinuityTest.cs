@@ -28,9 +28,9 @@ using BoSSS.Foundation.Grid.Classic;
 using ilPSP.Utils;
 
 
-namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.Tests {
+namespace BoSSS.Application.LsTest {
 
-    class LevelSetInitializationTest {
+    class LevelSetContinuityTest {
     }
 
 }
