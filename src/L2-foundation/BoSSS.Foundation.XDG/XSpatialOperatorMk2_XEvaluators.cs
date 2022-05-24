@@ -283,7 +283,7 @@ namespace BoSSS.Foundation.XDG {
                                 }
 
 #endif
-                                /*
+                                
                                 var MtxBuilder = new LECQuadratureLevelSet<M, V>(GridDat,
                                                                  m_Xowner,
                                                                  OnlyAffine ? default(M) : Matrix, AffineOffset,
@@ -291,7 +291,7 @@ namespace BoSSS.Foundation.XDG {
                                                                  lsTrk, iLevSet, TrackerHistoryIndex, new Tuple<SpeciesId, SpeciesId>(SpeciesA, SpeciesB),
                                                                  rule);
                                 allBuilders.Add(MtxBuilder);
-                                */
+                                
                                 if(trx != null) {
                                     trx.TransceiveFinish();
                                     trx = null; // we only need to do comm once!

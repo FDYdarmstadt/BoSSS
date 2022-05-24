@@ -207,7 +207,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     return true;
                 };
 
-                Debugger.Launch();
                 for (MultigridOperator op_lv = op; op_lv.CoarserLevel != null; op_lv = op_lv.CoarserLevel) {
                     int iLevel = op_lv.LevelIndex;
 
