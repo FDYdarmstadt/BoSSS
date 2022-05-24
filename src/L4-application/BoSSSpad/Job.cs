@@ -1370,8 +1370,13 @@ namespace BoSSS.Application.BoSSSpad {
 
                 var stat = GetStatus(true);
                 if (stat != JobStatus.Unknown) {
-                    Console.WriteLine("No submission, because job status is: " + stat.ToString());
-                    return;
+                    int sc = this.SubmitCount;
+                    if (stat == JobStatus.FailedOrCanceled && sc < RetryCount) {
+                        Console.WriteLine($"Job is {stat}, but retry count is set to {RetryCount} and only {sc} tries yet - trying once more...");
+                    } else {
+                        Console.WriteLine("No submission, because job status is: " + stat.ToString());
+                        return;
+                    }
                 }
              
 
