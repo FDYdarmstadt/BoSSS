@@ -184,6 +184,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
         ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op, Func<int,int> SchwarzblockSize) {
             using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
                 int MSLength = op.NoOfLevels;
 
                 var SolverChain = new List<ISolverSmootherTemplate>();
@@ -206,6 +207,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     return true;
                 };
 
+                Debugger.Launch();
                 for (MultigridOperator op_lv = op; op_lv.CoarserLevel != null; op_lv = op_lv.CoarserLevel) {
                     int iLevel = op_lv.LevelIndex;
 
@@ -228,11 +230,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                     if (useDirect)
-                        Console.WriteLine($"KcycleMultiSchwarz: lv {iLevel}, Direct solver ");
+                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, L = {op_lv.Mapping.TotalLength}, Direct solver ");
                     else if (skipLevel) {
-                        Console.WriteLine($"Only one block per node on levels {iLevel} and {iLevel - 1}, so {iLevel} will be skipped.");
+                        tr.Info($"Only one block per node on levels {iLevel} and {iLevel - 1}, so {iLevel} will be skipped.");
                     } else {
-                        Console.WriteLine($"KcycleMultiSchwarz: lv {iLevel}, no of blocks total: {GlobalNoBlocks[iLevel]}");                       
+                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, L = {op_lv.Mapping.TotalLength}, no of blocks total: {GlobalNoBlocks[iLevel]}");                       
                     }
 
                     ISolverSmootherTemplate levelSolver;
@@ -266,8 +268,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             PostSmoother = smoother1
                         };
                         _levelSolver.config.m_omega = 1;
-                        _levelSolver.config.NoOfPostSmootherSweeps = 2;
-
+                      
                         if (iLevel > 0) {
                             (_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
                         } else {

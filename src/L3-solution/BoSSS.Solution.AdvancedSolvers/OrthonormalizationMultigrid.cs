@@ -146,6 +146,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (ResNorm > oldResiNorm + tol)
                     throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm/oldResiNorm}");
 
+
+                if (KrylovDim % 40 == 0) { // 40 should be a decent compromise between performance and stability
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // once in a while, re-compute the residual to get rid of round-off errors which might accumulate
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+                    outRes.SetV(Res0);
+                    Sol0.AccV(-1.0, outX);
+                    this.OpMatrix.SpMV(1.0, Sol0, 1.0, outRes);
+                    Sol0.AccV(+1.0, outX);
+                }
+
+
+
                 /*
                 if (m_MgOperator is MultigridOperator mgop && mgop.LevelIndex == 0) {
                     // prevent to much info dropping from lower levels
@@ -256,7 +271,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double FillXwithRandom(double[] __X, double[] __Mxx) {
                     double __NormMxx;
-                    ft.Error("Solution norm is exactly 0.0; trying with a random vector instead to recover.");
+                    ft.Error("Solution norm is exactly 0.0 -- OR -- re-orthonormalization failed; trying with a random vector instead to recover.");
                     __X.FillRandom();
 
                     __Mxx.ClearEntries();
@@ -291,7 +306,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Mxx.ScaleV(1.0 / NormMxx);
                 X.ScaleV(1.0 / NormMxx);
 
-                for (int jj = 0; jj < 10; jj++) { // re-orthogonalisation, loop-limit to 10; See also book of Saad, p 156, section 6.3.2
+                const int MaxOrtho = 10;
+                for (int jj = 0; jj <= MaxOrtho; jj++) { // re-orthogonalisation, loop-limit to 10; See also book of Saad, p 156, section 6.3.2
 
                     for (int i = 0; i < KrylovDim; i++) {
                         Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
@@ -307,34 +323,39 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     if (NewMxxNorm <= 1E-5) {
                         using (new BlockTrace("re-orthonormalization", ft)) {
-                            // a lot of canceling out has occurred; |Mxx| dropped by several magnitudes.
-                            // do another loop, to ensure ortho-normality:
-                            // Mxx and X lost more than 5 Magnitudes, so we might have lost a couple of digits of accuracy
+                            if (jj < MaxOrtho) {
 
-                            // Note: although |Mxx| might be small, |X| can be quite large (and probably random).
-                            // To ensure stability, we must start over with a re-scaled X!
-                            // We have to re-scale what is remaining of X:
-                            double Xnorm = X.MPI_L2Norm();
-                            Console.WriteLine("Orthonormalization: Severe cancellation may have occurred after " + name + ", attempting re-orthonormalization; L = " + X.Length);
-                            ft.Info("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + ")");
+                                // a lot of canceling out has occurred; |Mxx| dropped by several magnitudes.
+                                // do another loop, to ensure ortho-normality:
+                                // Mxx and X lost more than 5 Magnitudes, so we might have lost a couple of digits of accuracy
 
-                            if (Xnorm < 1e-200) {
-                                // prohibits div by 0, if we got zero solution  
-                                NormMxx = FillXwithRandom(X, Mxx);
-                            } else {
-                                X.ScaleV(1.0 / Xnorm);
-                                Mxx.ClearEntries();
-                                OpMatrix.SpMV(1.0, X, 0.0, Mxx);
-                                NormMxx = Mxx.MPI_L2Norm();
+                                // Note: although |Mxx| might be small, |X| can be quite large (and probably random).
+                                // To ensure stability, we must start over with a re-scaled X!
+                                // We have to re-scale what is remaining of X:
+                                double Xnorm = X.MPI_L2Norm();
+                                Console.WriteLine("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + X.Length);
+                                ft.Info("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + X.Length);
 
-                                if (NormMxx == 0)
-                                    // solution is really strange: try with a random vector.
+                                if ((Xnorm < 1e-200) || (jj == MaxOrtho - 1)) {
+                                    // prohibits div by 0, if we got zero solution  
                                     NormMxx = FillXwithRandom(X, Mxx);
-                            }
+                                } else {
+                                    X.ScaleV(1.0 / Xnorm);
+                                    Mxx.ClearEntries();
+                                    OpMatrix.SpMV(1.0, X, 0.0, Mxx);
+                                    NormMxx = Mxx.MPI_L2Norm();
 
-                            double gamma = 1 / NewMxxNorm;
-                            BLAS.dscal(L, gamma, Mxx, 1);
-                            BLAS.dscal(L, gamma, X, 1);
+                                    if (NormMxx == 0)
+                                        // solution is really strange: try with a random vector.
+                                        NormMxx = FillXwithRandom(X, Mxx);
+                                }
+
+                                double gamma = 1 / NewMxxNorm;
+                                BLAS.dscal(L, gamma, Mxx, 1);
+                                BLAS.dscal(L, gamma, X, 1);
+                            } else {
+                                throw new ArithmeticException("numerical breakdown");
+                            }
                         }
                     } else {
                         double gamma = 1 / NewMxxNorm;
@@ -938,7 +959,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="Res"></param>
         /// <param name="iter"></param>
         private void VerivyCurrentResidual(double[] X, double[] B, double[] Res, int iter) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
 #if DEBUG
             {
 #else
@@ -951,7 +972,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //Console.WriteLine("verified Residual: " + resDist);
                     double resNormTst = Res.MPI_L2Norm();
                     double XnormTest = X.MPI_L2Norm();
-                    Console.WriteLine($"Residual vector check iter {iter}: distance is {resDist}, reference value {resNormTst}");
+                    tr.Info($"Residual vector check iter {iter}: distance is {resDist}, reference value {resNormTst}");
                     if (resDist > resNormTst * 10e-5 + XnormTest * 1e-5)
                         throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
                     //Debug.Assert(resDist <= resNormTst * 10e-5, $"Residual vector is not up-to-date: distance is {resDist}, reference value ${resNormTst}");
