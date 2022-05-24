@@ -1352,6 +1352,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="bpc"></param>
         public void Activate(BatchProcessorClient bpc) {
             using (var tr = new FuncTrace()) {
+
                 // ============================================
                 // ensure that this method is only called once.
                 // ============================================
@@ -1713,6 +1714,7 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
                 }
+                tr.Info("copied " + files.Count + " files.");
                 Console.WriteLine("copied " + files.Count + " files.");
 
                 // additional files
@@ -1729,9 +1731,10 @@ namespace BoSSS.Application.BoSSSpad {
                 using (new BlockTrace("DEPLOY_RUNTIME", tr)) {
                     if (AssignedBatchProc.DeployRuntime == true) {
                         string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
-                        string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", AssignedBatchProc.RuntimeLocation);
-                        MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, DeployDir, "amd64");
-                        Console.WriteLine("   copied 'amd64' runtime.");
+                        var BosssBinNative = new DirectoryInfo(Path.Combine(BosssInstall, "bin", "native", AssignedBatchProc.RuntimeLocation));
+                        MetaJobMgrIO.CopyDirectoryRec(BosssBinNative.Parent.FullName, DeployDir, BosssBinNative.Name);
+                        Console.WriteLine("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
+                        tr.Info("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
                     }
                 }
 
