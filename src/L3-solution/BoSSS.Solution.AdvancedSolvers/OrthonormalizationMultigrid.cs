@@ -45,7 +45,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public CoreOrthonormalizationProcedure(ISparseMatrix __OpMatrix) {
             MxxHistory = new List<double[]>();
             SolHistory = new List<double[]>();
-            Alphas = new List<(double, double, int)>();
+            Alphas = new List<(double, double, string)>();
             OpMatrix = __OpMatrix;
         }
 
@@ -86,12 +86,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// scaling factors which were applied to <see cref="SolHistory"/> to approximate the solution
-        /// - 1st item: the scaling appliet to the respective solutions provided through <see cref="AddSol"/>
+        /// - 1st item: the scaling applied to the respective solutions provided through <see cref="AddSol"/>
         /// - 2nd: relative residual reduction (typically greater or equal to 1)
         /// - 3rd: user id data
         /// </summary>
-        public List<(double alpha_i, double RelResReduction, int id)> Alphas = new List<(double, double, int)>();
+        public List<(double alpha_i, double RelResReduction, string id)> Alphas = new List<(double, double, string)>();
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public double FullMinimization(double[] outX, double[] Sol0, double[] Res0, double[] outRes) {
+            //var ids = Alphas.Select(ttt => ttt.id);
+            Alphas.Clear();
+            double LastResi = -1;
+            while(Alphas.Count < SolHistory.Count) {
+                LastResi = MinimizeResidual(outX, Sol0, Res0, outRes, "lulu");
+                //ids = ids.Skip(1);
+            }
+            return LastResi;
+        }
 
 
         /// <summary>
@@ -111,8 +125,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// - input: the residual with respect to the input value of <paramref name="outX"/>
         /// - output: on exit, the residual with respect to the output value of <paramref name="outX"/>
         /// </param>
-        /// <param name="id"></param>
-        public double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, int id) {
+        /// <param name="id">
+        /// name/information for debugging and analysis
+        /// </param>
+        private double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, string id) {
             using (var ft = new FuncTrace()) {
                 Debug.Assert(SolHistory.Count == MxxHistory.Count);
                 Debug.Assert(outX.Length == OpMatrix.ColPartition.LocalLength);
@@ -125,9 +141,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int KrylovDim = SolHistory.Count;
                 int L = outX.Length;
 
-                if (Alphas.Count != KrylovDim - 1) {
-                    throw new ApplicationException();
-                }
+                //if (Alphas.Count != KrylovDim - 1) {
+                //    throw new ApplicationException();
+                //}
 
                 // note: this implementation is based on the assumption, that the 
                 // factors alpha_0 ... alpha_(i-1) are equal to the previous call;
@@ -144,7 +160,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double tol = Math.Max(ResNorm, oldResiNorm) * 0.2;
                 tol = Math.Max(tol, 1.0e-7);
                 if (ResNorm > oldResiNorm + tol)
-                    throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm/oldResiNorm}");
+                    throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm / oldResiNorm}");
 
 
                 if (m_UsedMoreThanOneOrthoCycle || KrylovDim % 40 == 0) { // 40 should be a decent compromise between performance and stability
@@ -268,7 +284,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <param name="X"></param>
         /// <param name="name"></param>
-        public void AddSol(ref double[] X, string name) {
+        private void AddSol(ref double[] X, string name) {
             using (var ft = new FuncTrace()) {
 
                 m_UsedMoreThanOneOrthoCycle = false;
@@ -312,7 +328,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 const int MaxOrtho = 10;
                 for (int jj = 0; jj <= MaxOrtho; jj++) { // re-orthogonalisation, loop-limit to 10; See also book of Saad, p 156, section 6.3.2
-                    
+
                     m_UsedMoreThanOneOrthoCycle = jj > 0;
 
                     for (int i = 0; i < KrylovDim; i++) {
@@ -379,6 +395,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+
+
+        /// <summary>
+        /// Residual minimization in the space spanned by <see cref="SolHistory"/>/<see cref="MxxHistory"/>
+        /// </summary>
+        /// <param name="outX">
+        /// - input: the solution build upon all vectors in the Krylov space **except the last one**
+        /// - output: on exit, updated by the contribution from the most recent Krylov basis
+        /// </param>
+        /// <param name="Res0">
+        /// residual with respect to the initial guess
+        /// </param>
+        /// <param name="Sol0">
+        /// initial guess; not used
+        /// </param>
+        /// <param name="outRes">
+        /// - input: the residual with respect to the input value of <paramref name="outX"/>
+        /// - output: on exit, the residual with respect to the output value of <paramref name="outX"/>
+        /// </param>
+        /// <param name="name">
+        /// identifyer 
+        /// </param>
+        /// <param name="xGuess">
+        /// guess for the solution (typically, preconditionder output)
+        /// </param>
+        public double AddSolAndMinimizeResidual(ref double[] xGuess, double[] outX, double[] Sol0, double[] Res0, double[] outRes, string name) {
+            AddSol(ref xGuess, name);
+            return MinimizeResidual(outX, Sol0, Res0, outRes, name);
+        }
     }
 
 
@@ -547,9 +592,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // set operator
                 // ============
 
-#if TEST
-                Console.WriteLine("level: {0} cells: {1} degree: {2}", op.LevelIndex, op.Mapping.LocalNoOfBlocks, op.Degrees[0]);
-#endif
                 // initiate coarser level
                 // ======================
                 if (this.CoarserLevelSolver == null) {
@@ -594,16 +636,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                 }
-#if TEST
-                try {
-                    op.OperatorMatrix.CheckForNanOrInfM();
-                } catch (Exception ex) {
-                    Console.WriteLine("Arithmetic exception in OperatorMatrix");
-                    Console.WriteLine(ex.Message);
-                    op.OperatorMatrix.SaveToTextFileSparse("A");
-                }
-                
-#endif
             }
         }
 
@@ -644,13 +676,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
         }
 
-#if TEST
-        StreamWriter m_MTracker = null;
-#endif
-
-//#pragma warning disable 0649
-//        MGViz viz;
-//#pragma warning restore 0649
 
         /// <summary>
         /// coarse-level correction; can be defined either
@@ -664,20 +689,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public ISolverSmootherTemplate PreSmoother;
 
-        ///// <summary>
-        ///// to be removed.
-        ///// </summary>
-        //public ISolverSmootherTemplate DebugSmoother;
-
         /// <summary>
         /// high frequency solver before coarse grid correction
         /// </summary>
         public ISolverSmootherTemplate PostSmoother;
 
 
-
-
-        //public bool SpectralAnalysis;
         /// <summary>
         /// 
         /// </summary>
@@ -756,12 +773,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Residual(Res0, Sol0, B);
                 Array.Copy(Res0, Res, L);
 
-#if TEST
-                int pos=0;
-                CatchThisExclamationmark(Res,"Res", pos);
-                CatchThisExclamationmark(Sol0, "Sol", pos);
-                pos++;
-#endif
+
 
                 double iter0_resNorm = Res0.MPI_L2Norm();
                 double resNorm = iter0_resNorm;
@@ -770,7 +782,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //Console.Write("DG deg " + m_MgOperator.DgMapping.DgDegree.Min() + ", kdim = " + this.MxxHistory.Count + " ... ");
 
                 // clear history of coarse solvers
-                ortho.Clear();
+                if (m_MgOperator is MultigridOperator omg && omg.LevelIndex == 1 && ortho.Alphas.Count > 0) {
+                    resNorm = ortho.FullMinimization(X, Sol0, Res0, Res);
+                    Console.WriteLine("Level1: using my wisdom, resnorm reduction: " + (resNorm / iter0_resNorm));
+                } else {
+                    ortho.Clear();
+                }
                 bool bIterate = true;
 
                 for (int iIter = 1; bIterate; iIter++) {
@@ -799,15 +816,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             PreSmoother.Solve(PreCorr, Res); // Vorglättung
 
                             // orthonormalization and residual minimization
-                            ortho.AddSol(ref PreCorr, "presmooth");
-                            resNorm = MinimizeResidual(X, Sol0, Res0, Res, 1);
+                            //ortho.AddSol(ref PreCorr, "presmooth");
+                            //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 1);
+                            resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmooth");
 
                         }
-#if TEST
-                        CatchThisExclamationmark(Res, "Res", pos);
-                        CatchThisExclamationmark(X, "Sol", pos);
-                        pos++;
-#endif
+
 
                         //SpecAnalysisSample(iIter, X, "ortho1");
                         var termState2 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
@@ -822,8 +836,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // Test: Residual on this level / already computed by 'MinimizeResidual' above
                     VerivyCurrentResidual(X, B, Res, iIter);
 
+                    double resNorm_b4Coarse = resNorm;
+                    bool RunVWcycle(int i) {
+                        if (this.m_MgOperator is MultigridOperator mgop && mgop.LevelIndex == 0) {
+                            Console.WriteLine("Coarse iter: " + i + "  --- " + resNorm / resNorm_b4Coarse);
+                            if (i > 100) {
+                                Console.WriteLine("Failed to sufficiently reduce coarse sol.");
+                                return false;
+                            } else {
+                                return resNorm > resNorm_b4Coarse * 0.1;
+                            }
+                        } else {
+                            return i < myConfig.m_omega;
+                        }
+                    }
 
-                    for (int i = 0; i < myConfig.m_omega; i++) {
+                    for (int i = 0; RunVWcycle(i); i++) {
                         if (this.CoarserLevelSolver != null) {
 
                             double[] vl = new double[L];
@@ -860,16 +888,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                             // orthonormalization and residual minimization
-                            ortho.AddSol(ref vl, "coarsecor");
-                            resNorm = MinimizeResidual(X, Sol0, Res0, Res, 2);
-
-
-#if TEST
-                            CatchThisExclamationmark(Res, "Res", pos);
-                            CatchThisExclamationmark(X, "Sol", pos);
-                            pos++;
-#endif
-                            //SpecAnalysisSample(iIter, X, "ortho2");
+                            //ortho.AddSol(ref vl, "coarsecor");
+                            //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 2);
+                            resNorm = ortho.AddSolAndMinimizeResidual(ref vl, X, Sol0, Res0, Res, "coarsecor");
 
 
 
@@ -896,17 +917,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if (PostSmoother != null) {
                             double[] PostCorr = new double[L];
                             PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
-                            ortho.AddSol(ref PostCorr, "postsmooth" + g); //orthonormalization and residual minimization
-                            resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
+                            //ortho.AddSol(ref PostCorr, "postsmooth" + g); //orthonormalization and residual minimization
+                            //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
+                            resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + g);
                         }
-
-#if TEST
-                        CatchThisExclamationmark(Res, "Res", pos);
-                        CatchThisExclamationmark(X, "Sol", pos);
-                        pos++;
-#endif
-
-                        //SpecAnalysisSample(iIter, X, "ortho3_" + g);
                     } // end of post-smoother loop
 
                     // iteration callback
@@ -934,6 +948,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+        /*
         int cnt = 0;
 
         double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, int id) {
@@ -954,7 +969,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return ResNorm;
             }
         }
-
+        */
 
         /// <summary>
         /// For performance optimization, the <see cref="OrthonormalizationMultigrid"/>

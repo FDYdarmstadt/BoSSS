@@ -227,7 +227,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Debug.Assert(useDirect.MPIEquals());
                     Debug.Assert(skipLevel.MPIEquals());
 
-
                     if (useDirect)
                         tr.Info($"KcycleMultiSchwarz: lv {iLevel}, L = {op_lv.Mapping.TotalLength}, Direct solver ");
                     else if (skipLevel) {
@@ -235,6 +234,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     } else {
                         tr.Info($"KcycleMultiSchwarz: lv {iLevel}, L = {op_lv.Mapping.TotalLength}, no of blocks total: {GlobalNoBlocks[iLevel]}");                       
                     }
+
 
                     ISolverSmootherTemplate levelSolver;
 
@@ -268,10 +268,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         };
                         _levelSolver.config.m_omega = 1;
                       
-                        if (iLevel > 0) {
+                        if (iLevel == 0) {
+                            (_levelSolver).TerminationCriterion = this.DefaultTermination; 
+                        } else if(iLevel == 1) {
                             (_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
+
+                            //(_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
+                            //    var ret =  (i <= 1 || r > r0 * 0.1, true);
+                            //    Console.WriteLine($"level 1: {i} {r} {r / r0} {ret}");
+                            //    return ret;
+                                
+                            //};
+                            
                         } else {
-                            (_levelSolver).TerminationCriterion = this.DefaultTermination;
+                            (_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
                         }
                         levelSolver = _levelSolver;
 
