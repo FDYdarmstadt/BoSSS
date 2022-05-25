@@ -29,64 +29,11 @@ namespace BoSSS.Application.XNSEC {
         // Main file
         //===========
         private static void Main(string[] args) {
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //DeleteOldTextFiles();
-            //NUnitTest.COMBUSTION_TEST();
-            //NUnitTest.COMBUSTION_CoFlowFlame_TEST();
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-            // dbg_launch();
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.HeatConductivityTest(2, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.SteadyStateEvaporationTest(0.0, 3, 0.1, true, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, NonLinearSolverCode.Newton);
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //NUnitTest.IncompressibleSteadyPoiseuilleFlowTest();
-            //NUnitTest.CavityNaturalConvection();
-
-
-            //NUnitTest.LowMachSteadyCouetteWithTemperatureGradientTest(); //
-
-            //NUnitTest.ManufacturedSolutionLowMachCombustionTest(); //
-
-            //NUnitTest.IncompressibleUnsteadyTaylorVortexTest(); //
-
-            ////NUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            ////NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-            //NUnitTest.NuNit_ChannelTest(2, 0.0, ViscosityMode.FullySymmetric, 60.0 * Math.PI / 180.0, XQuadFactoryHelper.MomentFittingVariants.Saye);
-
-            //NUnitTest.LevelSetAdvectionTest2D(2, 0, Solution.LevelSetTools.LevelSetEvolution.FastMarching, Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
-            //NUnitTest.BcTest_PressureOutletTest(2, 2, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false);
-            //NUnitTest.TranspiratingChannelTest(2, 0.1, 0.2, ViscosityMode.FullySymmetric, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, NonLinearSolverCode.Newton);
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-            //NUnitTest.ViscosityJumpTest(2, 2, 0.0, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-            //NUnitTest.PseudoTwoDimensionalTwoPhaseFlow(2, 0.0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, differentFluids: true, RightBC_PressureOutlet: true);
-            //NUnitTest.HeatConductivityTest(2, 0.0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine);
-            //NUnitTest.SteadyStateEvaporationTest_XNSEC_MixtureFraction(0, 2, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            ////NUnitTest.SteadyStateEvaporationTestXNSEC_ScalingTest(2, 0.0, false);
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //Console.WriteLine("tests passed!!!!!!!!!!!");
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
-            //NUnitTest.ViscosityJumpTest(2, 2, 0.0, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            InitMPI();
+            DeleteOldPlotFiles();
+            NUnitTest.TestOperatorScaling2D_p1();
+            NUnit.Framework.Assert.AreEqual(true, false, "remove me");
             
-            //Console.WriteLine("tests passed!!!!!!!!!!!");
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-            //NUnitTest.CavityNaturalConvectionTest_Homotopy(); //TODO
-            //   NUnitTest.CavityNaturalConvection_AMR_eachNewtonIteration();TODO
-            //NUnitTest.TwoPhaseIncompressibleSteadyPoiseuilleFlowTest(); // TODO!
-            ////NUnitTest.ThermodynamicPressureTest(); // TODO
-
-            //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.UnsteadyTaylorVortex()", "--delplt" }, false, delegate () {
-            //    var p = new XNSEC();
-            //    return p;
-            //});
-            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
             //System.Threading.Thread.Sleep(10000);
