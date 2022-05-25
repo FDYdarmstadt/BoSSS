@@ -782,12 +782,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //Console.Write("DG deg " + m_MgOperator.DgMapping.DgDegree.Min() + ", kdim = " + this.MxxHistory.Count + " ... ");
 
                 // clear history of coarse solvers
-                if (m_MgOperator is MultigridOperator omg && omg.LevelIndex == 1 && ortho.Alphas.Count > 0) {
-                    resNorm = ortho.FullMinimization(X, Sol0, Res0, Res);
-                    Console.WriteLine("Level1: using my wisdom, resnorm reduction: " + (resNorm / iter0_resNorm));
-                } else {
-                    ortho.Clear();
-                }
+                ortho.Clear();
                 bool bIterate = true;
 
                 for (int iIter = 1; bIterate; iIter++) {
@@ -837,21 +832,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     VerivyCurrentResidual(X, B, Res, iIter);
 
                     double resNorm_b4Coarse = resNorm;
-                    bool RunVWcycle(int i) {
-                        if (this.m_MgOperator is MultigridOperator mgop && mgop.LevelIndex == 0) {
-                            Console.WriteLine("Coarse iter: " + i + "  --- " + resNorm / resNorm_b4Coarse);
-                            if (i > 100) {
-                                Console.WriteLine("Failed to sufficiently reduce coarse sol.");
-                                return false;
-                            } else {
-                                return resNorm > resNorm_b4Coarse * 0.1;
-                            }
-                        } else {
-                            return i < myConfig.m_omega;
-                        }
-                    }
-
-                    for (int i = 0; RunVWcycle(i); i++) {
+                    for (int i = 0; i < myConfig.m_omega; i++) {
                         if (this.CoarserLevelSolver != null) {
 
                             double[] vl = new double[L];
