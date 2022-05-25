@@ -39,7 +39,7 @@ namespace BoSSS.Application.DatabaseTests {
             if(size > 1) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
                 if(rank == 1)
-                    Debugger.Launch();
+                     Debugger.Launch();
             }
         }
     }

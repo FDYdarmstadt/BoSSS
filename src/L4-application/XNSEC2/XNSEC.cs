@@ -35,7 +35,7 @@ namespace BoSSS.Application.XNSEC {
             //NUnitTest.COMBUSTION_TEST();
             //NUnitTest.COMBUSTION_CoFlowFlame_TEST();
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
-            //Debugger.Launch();
+            // dbg_launch();
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.HeatConductivityTest(2, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
@@ -73,7 +73,7 @@ namespace BoSSS.Application.XNSEC {
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //NUnitTest.ViscosityJumpTest(2, 2, 0.0, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-
+            
             //Console.WriteLine("tests passed!!!!!!!!!!!");
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
             //NUnitTest.CavityNaturalConvectionTest_Homotopy(); //TODO
@@ -533,7 +533,7 @@ namespace BoSSS.Application.XNSEC {
         protected virtual void DefineTemporalTerm(int D, OperatorFactory opFactory) {
             //  var EoS = base.Control.EoS;
             int NoOfChemSpecies = Control.NumberOfChemicalSpecies;
-            //Debugger.Launch();
+            // dbg_launch();
 
             if (boundaryMap.PhysMode == PhysicsMode.Combustion) {
 
@@ -605,7 +605,7 @@ namespace BoSSS.Application.XNSEC {
             XOP = opFactory.GetSpatialOperator(QuadOrder());
             //final settings
             XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-
+            
             if (Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
                 Console.WriteLine("Linearization Hint:" + LinearizationHint.GetJacobiOperator.ToString());
                 XOP.LinearizationHint = LinearizationHint.GetJacobiOperator;
