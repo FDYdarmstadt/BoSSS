@@ -147,7 +147,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new ArithmeticException($"residual increase (L = {L}): old norm: {oldResiNorm}, new norm {ResNorm}, reduction factor: {ResNorm/oldResiNorm}");
 
 
-                if (KrylovDim % 40 == 0) { // 40 should be a decent compromise between performance and stability
+                if (m_UsedMoreThanOneOrthoCycle || KrylovDim % 40 == 0) { // 40 should be a decent compromise between performance and stability
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // once in a while, re-compute the residual to get rid of round-off errors which might accumulate
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -261,6 +261,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         */
 
 
+        bool m_UsedMoreThanOneOrthoCycle = false;
+
         /// <summary>
         /// 
         /// </summary>
@@ -268,6 +270,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="name"></param>
         public void AddSol(ref double[] X, string name) {
             using (var ft = new FuncTrace()) {
+
+                m_UsedMoreThanOneOrthoCycle = false;
 
                 double FillXwithRandom(double[] __X, double[] __Mxx) {
                     double __NormMxx;
@@ -308,6 +312,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 const int MaxOrtho = 10;
                 for (int jj = 0; jj <= MaxOrtho; jj++) { // re-orthogonalisation, loop-limit to 10; See also book of Saad, p 156, section 6.3.2
+                    
+                    m_UsedMoreThanOneOrthoCycle = jj > 0;
 
                     for (int i = 0; i < KrylovDim; i++) {
                         Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
@@ -323,6 +329,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     if (NewMxxNorm <= 1E-5) {
                         using (new BlockTrace("re-orthonormalization", ft)) {
+
                             if (jj < MaxOrtho) {
 
                                 // a lot of canceling out has occurred; |Mxx| dropped by several magnitudes.
