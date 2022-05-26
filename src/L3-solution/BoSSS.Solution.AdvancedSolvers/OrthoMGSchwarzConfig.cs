@@ -269,13 +269,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         _levelSolver.config.m_omega = 1;
                       
                         if (iLevel == 0) {
-                            (_levelSolver).TerminationCriterion = this.DefaultTermination; 
+                            (_levelSolver).TerminationCriterion = this.DefaultTermination;
+                            if(maxDG > 3)
+                                _levelSolver.config.NoOfPostSmootherSweeps = 6;
                         } else if(iLevel == 1) {
                             //(_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
 
                             (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
                                 var ret = (i <= 1 || r > r0 * 0.1, true);
-                                Console.WriteLine($"level 1: {i} {r} {r / r0} {ret}");
+                                //Console.WriteLine($"level 1: {i} {r} {r / r0} {ret}");
                                 return ret;
 
                             };
