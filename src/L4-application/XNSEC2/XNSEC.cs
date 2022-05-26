@@ -621,7 +621,7 @@ namespace BoSSS.Application.XNSEC {
         protected virtual void DefineTemporalTerm(int D, OperatorFactory opFactory) {
             //  var EoS = base.Control.EoS;
             int NoOfChemSpecies = Control.NumberOfChemicalSpecies;
-            //Debugger.Launch();
+            // dbg_launch();
 
             if (boundaryMap.PhysMode == PhysicsMode.Combustion) {
 

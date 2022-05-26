@@ -100,7 +100,7 @@ namespace BoSSS.Application.XNSEC {
             base.NonLinearSolver.ConvergenceCriterion = 1e-8;
             base.NonLinearSolver.verbose = true;
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            base.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            base.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             base.NonLinearSolver.MaxSolverIterations = 20;
             //base.NoOfTimesteps = int.MaxValue;
             this.BDFOrder = 1;

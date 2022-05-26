@@ -76,7 +76,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose();
 
                 m_op = op;
-                Console.WriteLine($"CellILU, MG level {op.LevelIndex}...");
+
                 UpdateILU();
                 //CheckILU();
             }
@@ -241,12 +241,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         void UpdateILU() {
             using(var ft = new FuncTrace()) {
-                if(m_op.Mapping.MpiSize > 1)
-                    throw new NotImplementedException();
+                //if(m_op.DgMapping.MpiSize > 1)
+                //    throw new NotImplementedException();
 
                 var grd = m_op.Mapping.GridData;
                 var Mtx = m_op.OperatorMatrix;
-                IBlockPartitioning part = m_op.Mapping;
+                IBlockPartitioning part = m_op.DgMapping;
                 Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
                 Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
                 long cell0 = part.FirstBlock;
@@ -255,8 +255,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var A = Mtx.CloneAs();
 
-
+                // dbg_launch();
                 var ILUp = GetPattern(out int Occupied);
+                csMPI.Raw.Barrier(Mtx.MPI_Comm);
+                csMPI.Raw.Barrier(Mtx.MPI_Comm);
+                csMPI.Raw.Barrier(Mtx.MPI_Comm);
                 var ILUpT = m_ILUp_pattern.Transpose();
                 double occupancy = (double)Occupied / (double)(J * J);
                 ft.Info($"CellILU, lv {m_op.LevelIndex}, ILU-{ILU_level}, occupancy = {Math.Round(occupancy * 100)}%.");
@@ -267,7 +270,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         continue; // cell i is empty
 
                     var invAkk = A.GetBlock(k, k);
-                    invAkk.InvertInPlace();
+                    try {
+                        invAkk.InvertInPlace();
+                    } catch(ArithmeticException ae) {
+                        Console.Error.WriteLine(ae.GetType() + ": " + ae.Message);
+                        continue;
+                        //A.GetBlock(k, k).SaveToStream(Console.Error);
+                        //A.GetBlock(k, k).SaveToTextFile("C:\\tmp\\ae13.txt");
+                        //throw ae;
+                    }
 
                     long[] occColumn_k = ILUpT.GetOccupiedColumnIndices(k);
                     foreach(long i in occColumn_k) { 
@@ -410,8 +421,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private MsrMatrix GetPattern(out int Occupied) {
             using(var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
-                if(m_op.Mapping.MpiSize > 1)
-                    throw new NotImplementedException();
+                //if(m_op.Mapping.MpiSize > 1)
+                //    throw new NotImplementedException();
                 if(ILU_level < 0)
                     throw new ArgumentException("ILU-Level must be >= 0, got " + ILU_level);
                 if(ILU_level > Math.Min((int)(byte.MaxValue), 10))
@@ -428,22 +439,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //byte[,] lev = new byte[J, J];
                 //lev.SetAll(byte.MaxValue);
 
-                // determinte ILU-0 pattern
+                // determine ILU-0 pattern
                 tr.Info("computing ILU(0) pattern...");
-                var p = new Partitioning(J, csMPI.Raw._COMM.SELF);
+                var p = new Partitioning(J, Mtx.MPI_Comm);
                 var ILU0_pattern = new MsrMatrix(p, p);
                 for(long i = cell0; i < (J + cell0); i++) { // loop over block rows
                     //long iB = part.GetBlockI0(i);
                     //int sz_i = part.GetBlockLen(i);
 
-                    long[] colBlocks = Mtx.GetOccupiedRowBlockIndices(i);
+                    long[] colBlocks = Mtx.GetOccupiedRowBlockIndices(i, alsoExternal:false);
                     foreach(long j in colBlocks) { // loop over block columns
-                        var Blk = Mtx.GetBlock(j, i);
-                        if(Blk.L2Norm() > 0) {
+                        var Blk = Mtx.GetBlock(i, j);
+                        if(!Blk.IsZeroValued()) {
                             //lev[i, j] = 0;
                             ILU0_pattern[i, j] = 1;
                         } else {
+                            /*
+                             * seems to happen sometimes in the XDG case
+                             * 
+                             * 
+                            int RowType = Mtx._RowPartitioning.GetBlockType(i);
+                            int ColType = Mtx._ColPartitioning.GetBlockType(j);
+                            int[] rowI0s = Mtx._RowPartitioning.GetSubblk_i0(RowType);
+                            int[] colI0s = Mtx._ColPartitioning.GetSubblk_i0(ColType);
+                            int[] rowLns = Mtx._RowPartitioning.GetSubblkLen(RowType);
+                            int[] colLns = Mtx._ColPartitioning.GetSubblkLen(ColType);
+                            int II = Mtx._RowPartitioning.GetBlockLen(i);
+                            int JJ = Mtx._RowPartitioning.GetBlockLen(j);
+
                             tr.Info("Mem occupied, but the block is 0");
+                            */
                         }
                     }
                 }
@@ -473,10 +498,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 Occupied = 0;
                 //bool[,] ret = new bool[J, J];
-                for(int j = 0; j < J; j++) {
+                /*
+                for(long j = cell0; j < (J + cell0); j++) {
 
                     long[] rowPattern = ILUp_pattern.GetOccupiedColumnIndices(j);
-                    /*
+                    
                     var checkPattern = new List<long>();
 
                     for(int i = 0; i < J; i++) {
@@ -493,9 +519,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(!rowPattern.SetEquals(checkPattern)) {
                         throw new Exception();
                     }
-                    */
+                    
                 }
-
+                */
                 m_ILUp_pattern = ILUp_pattern;
                 return m_ILUp_pattern;
             }

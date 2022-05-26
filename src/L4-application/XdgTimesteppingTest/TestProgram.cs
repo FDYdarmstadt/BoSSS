@@ -407,7 +407,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             C.NoOfTimesteps = 1;
             C.dtFixed = 0.0005;
             C.Endtime = C.dtFixed * C.NoOfTimesteps;
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
 

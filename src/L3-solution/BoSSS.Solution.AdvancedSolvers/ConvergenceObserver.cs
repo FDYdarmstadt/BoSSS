@@ -139,7 +139,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             //this.DecompositionOperator = muop; this.DecompositionOperator_IsOrthonormal = false;
-            this.DecompositionOperator = new MultigridOperator(aggBasisSeq, muop.BaseGridProblemMapping, DummyOpMatrix, MassMatrix, config, new bool[Degrees.Length]);
+            this.DecompositionOperator = new MultigridOperator(aggBasisSeq, muop.BaseGridProblemMapping, DummyOpMatrix, MassMatrix, config, muop.AbstractOperator);
             this.DecompositionOperator_IsOrthonormal = true;
 
             ResNormTrend = new Dictionary<(int, int, int), List<double>>();

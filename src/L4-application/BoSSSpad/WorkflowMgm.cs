@@ -647,13 +647,13 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
 
-                    //Debugger.Launch();
+                    // dbg_launch();
 
                     bool terminate = true;
                     foreach(var J in this.AllJobs) {
                         var s = J.Value.Status;
                         tr.Info("Testing job: " + J);
-                        if(s != JobStatus.FailedOrCanceled && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation) {
+                        if(s != JobStatus.FailedOrCanceled && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation && s != JobStatus.Unknown) {
                             tr.Info("not terminating because of job: " + J);
                             terminate = false;
                             break;

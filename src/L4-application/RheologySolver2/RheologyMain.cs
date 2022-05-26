@@ -560,7 +560,7 @@ namespace BoSSS.Application.Rheology {
                         this.CurrentSolution.Fields, this.CurrentResidual.Fields, 
                         Control.TimeSteppingScheme, 
                         this.MultigridOperatorConfig, this.MultigridSequence, 
-                        Control.LinearSolver, Control.NonLinearSolver);
+                        Control.LinearSolver, Control.NonLinearSolver, null, this.QueryHandler);
 
                     m_Timestepper.RegisterResidualLogger(this.ResLogger);
                         
