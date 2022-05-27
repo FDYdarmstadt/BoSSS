@@ -196,7 +196,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="SolverMode_performsolve"></param>
         /// <param name="CutCellQuadratureType"></param>
         /// <param name="stm"></param>
-        [Test]
+        //[Test]
         public static void PseudoTwoDimensionalTwoPhaseFlow(
             [Values(2)] int deg,
             [Values(0, 0.1)] double AgglomerationTreshold,
@@ -230,7 +230,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="SolverMode_performsolve"></param>
         /// <param name="CutCellQuadratureType"></param>
         /// <param name="stm"></param>
-        [Test]
+        //[Test]
         public static void PseudoTwoDimensionalTwoPhaseFlow_ScalingTest(
             [Values(2)] int deg,
             [Values(0)] double AgglomerationTreshold,
@@ -254,7 +254,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="SolverMode_performsolve"></param>
         /// <param name="CutCellQuadratureType"></param>
         /// <param name="stm"></param>
-        [Test]
+        //[Test]
         public static void PseudoTwoDimensionalTwoPhaseFlow_withviscosity(
             [Values(2)] int deg,
             [Values(0, 0.1)] double AgglomerationTreshold,
