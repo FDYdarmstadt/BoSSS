@@ -308,12 +308,12 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         [Test]
         public static void SteadyStateEvaporationTestXNSEC(
-            [Values(0.0, 15.0, 45.0, 73.1264, 90.0)] double rawangle,
+            [Values(0.0, 15.0, 45.0, 73.1264)] double rawangle,
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
-            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm
             ) {
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
 
