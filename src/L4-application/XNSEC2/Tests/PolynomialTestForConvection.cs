@@ -548,7 +548,7 @@ namespace BoSSS.Application.XNSEC {
             public double[] AcceptableL2Error {
                 get {
                     return (m_SpatialDimension == 2) ?
-                      new double[] { 1.0e-4, 1.0e-4, 1.0e-4, 1.0e-4 } : new double[] { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 };
+                      new double[] { 1.0e4, 1.0e-2, 1.0e-4, 1.0e-4 } : new double[] { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 };
                 }
             }
 
@@ -787,7 +787,7 @@ namespace BoSSS.Application.XNSEC {
             public double[] AcceptableL2Error {
                 get {
                     return (m_SpatialDimension == 2) ?
-                      new double[] { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 } : new double[] { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 };
+                      new double[] { 1.0e-3, 1.0e-3, 1.0e-3, 1.0e-3, 1.0e-3 } : new double[] { 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5, 1.0e-5 };
                 }
             }
 

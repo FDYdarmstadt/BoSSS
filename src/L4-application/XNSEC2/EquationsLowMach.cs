@@ -262,17 +262,10 @@ namespace BoSSS.Solution.XNSECommon {
             this.phaseB = phaseB;
 
             codomainName = EquationNames.MomentumEquationComponent(d);
-            AddInterfaceNSE_Evaporation(dimension, d, config);
-            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d));
-            if (config.prescribedMassflux != null)
-                AddCoefficient("PrescribedMassFlux");
-        }
-
-        private void AddInterfaceNSE_Evaporation(int D, int d, XNSFE_OperatorConfiguration config) {
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
+            int D = dimension;
 
-            // from XNSFE_OperatorComponents
             if (config.isTransport) {
                 if (!config.isMovingMesh) {
                     // the following terms decode the condition at the interface (consider the similarity to the rankine hugoniot condition)
@@ -297,8 +290,14 @@ namespace BoSSS.Solution.XNSECommon {
 
             if (config.isViscous) {
                 AddComponent(new ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling_LowMach(dntParams.PenaltySafety, d, D, config.getThermParams, physParams, FirstSpeciesName, SecondSpeciesName));
-            }
+            } 
+
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d));
+            if (config.prescribedMassflux != null)
+                AddCoefficient("PrescribedMassFlux");
         }
+
+      
 
         public override string FirstSpeciesName => phaseA;
 
@@ -583,9 +582,9 @@ namespace BoSSS.Solution.XNSECommon {
 
             double penalty = dntParams.PenaltySafety;
 
-            //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);         public Interface_EnergyConduction_LowMach(int SpatialDim, MaterialLaw EoS_A, MaterialLaw EoS_B, double Reynolds, double Prandtl, double _penalty, string phaseA, string phaseB, int iLevSet = 0) {
-            var Visc = new Interface_EnergyConduction_LowMach(dimension, EoS_A, EoS_B, Reynolds, Prandtl, penalty, Tsat, FirstSpeciesName, SecondSpeciesName);
-            AddComponent(Visc); AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+            var Visc = new ConductivityAtLevelSet_material(dimension, kA, kB, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName);
+                //var Visc = new Interface_EnergyConduction_LowMach(dimension, EoS_A, EoS_B, Reynolds, Prandtl, penalty, Tsat, FirstSpeciesName, SecondSpeciesName);
+                AddComponent(Visc); AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
             //AddCoefficient("EvapMicroRegion");
         }
 

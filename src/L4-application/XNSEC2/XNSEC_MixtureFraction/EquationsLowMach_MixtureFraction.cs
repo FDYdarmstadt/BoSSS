@@ -159,9 +159,10 @@ namespace BoSSS.Solution.XNSECommon {
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // Convection
-            var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustion_ScalarConvectionInSpeciesBulk_LLF(spcName, D, NoOfChemicalSpecies, boundaryMap, EoS, 0);
-            AddComponent(conv);
-
+            if (config.physParams.IncludeConvection && config.isTransport) {
+                var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustion_ScalarConvectionInSpeciesBulk_LLF(spcName, D, NoOfChemicalSpecies, boundaryMap, EoS, 0);
+                AddComponent(conv);
+            }
             // Diffusion
             double penalty = dntParams.PenaltySafety;
             var heatConduction = new LowMachMassFractionDiffusionBulk(spcName, penalty, boundaryMap, EoS, Reynolds, Prandtl, false);

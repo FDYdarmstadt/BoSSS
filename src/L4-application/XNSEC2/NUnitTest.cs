@@ -881,8 +881,8 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         /// <param name="dg"></param>
         /// <param name="ncells"></param>
-        [Test]
-        public static void XDG_PSEUDO1D_COMBUSTION_TEST(int dg = 2, int ncells = 8) {
+        //[Test]
+        public static void XDG_PSEUDO1D_COMBUSTION_TEST(int dg = 2, int ncells = 4) {
             string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
             if (basepath.IsEmptyOrWhite())
                 basepath = System.Environment.GetEnvironmentVariable("HOME");
@@ -899,16 +899,16 @@ namespace BoSSS.Application.XNSEC {
                 db.Controller.ClearDatabase();
             }
 
-            using (var p = new XNSEC_MixtureFraction()) {
-                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(2, 8, db.Path);
+            //using (var p = new XNSEC_MixtureFraction()) {
+            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(2, 5, db.Path);
 
-                p.Init(c);
-                p.RunSolverMode();
-            }
+            //    p.Init(c);
+            //    p.RunSolverMode();
+            //}
 
-            Console.WriteLine("Flame sheet calculation done.");
+            //Console.WriteLine("Flame sheet calculation done.");
             using (var p = new XNSEC()) {
-                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dCombustion(2, 8, db.Path);
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dCombustion(1, 5, db.Path);
                 p.Init(c);
                 p.RunSolverMode();
 
@@ -917,7 +917,7 @@ namespace BoSSS.Application.XNSEC {
                 double minT; double maxT;
                 temp.GetExtremalValues(out minT, out maxT);
                 Console.WriteLine("Maximum reached temperature is {0}K", maxT);
-                if(maxT < 1.1) {
+                if (maxT < 1.1) {
                     throw new Exception("");
                 }
             }

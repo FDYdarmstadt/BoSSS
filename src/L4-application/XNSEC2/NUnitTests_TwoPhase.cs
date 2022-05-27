@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSEC {
         [Test]
         public static void ViscosityJumpTest(
 #if DEBUG
-            [Values(2, 3)] int spatialDimension,
+            [Values(2)] int spatialDimension,
             [Values(1)] int deg,
             [Values(0.0, 0.1)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
@@ -74,7 +74,7 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         [Test]
         public static void BcTest_PressureOutletTest(
-            [Values(2, 3)] int spatialDimension,
+            [Values(2)] int spatialDimension,
             [Values(1)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
@@ -289,7 +289,7 @@ namespace BoSSS.Application.XNSEC {
             [Values(0.1)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
-            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm) {
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm) {
 
             ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
 
