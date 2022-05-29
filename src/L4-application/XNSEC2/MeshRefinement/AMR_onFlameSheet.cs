@@ -60,28 +60,28 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public override int[] DesiredCellChanges() {
-            //for(int j = 0; j < noOfLocalCells; j++) {
-            //    double localMinVal, localMaxVal;
-            //    double zMeanValue = MixtureFraction.GetMeanValue(j);
-            //    //MixtureFraction.Current.GetExtremalValuesInCell(out localMinVal, out localMaxVal, j);
-
-            //    for(int k = 0; k < RefinementLevel; k++) {
-            //        if(!levelNCells[k][j] && (Math.Abs(zMeanValue - 0.5) < 0.1)) {
-            //            levelNCells[k][j] = true;
-
-            //        }
-            //    }
-
-            //}
+           
 
             int J = GridData.CellPartitioning.LocalLength;
             int[] levels = new int[J];
             Cell[] cells = GridData.Grid.Cells;
+
+
             for(int j = 0; j < J; j++) {
                 int currentLevel = cells[j].RefinementLevel;
                 double localMinVal, localMaxVal;
                 MixtureFraction.GetExtremalValuesInCell(out localMinVal, out localMaxVal, j);
-                if((localMaxVal > m_zSt) && (m_zSt > localMinVal) && currentLevel < maxRefinementLevel) {
+                bool cutcell = false; ;
+                try {
+                    double lvlsetlocalMinVal, lvlsetlocalMaxVal;
+                    var lvlsetImmersedBoundary = (LevelSet)this.LsTrk.LevelSets[1];
+                    lvlsetImmersedBoundary.GetExtremalValuesInCell(out lvlsetlocalMinVal, out lvlsetlocalMaxVal, j);
+                    cutcell = (lvlsetlocalMaxVal > 0) && (0 > lvlsetlocalMinVal) ? true : false;
+                } catch {
+
+                }
+
+                if ((localMaxVal > m_zSt) && (m_zSt > localMinVal) && currentLevel < maxRefinementLevel && !cutcell) {
                     //if((Math.Abs(zMeanValue - m_zSt) < zBand) && currentLevel < maxRefinementLevel) {
                     levels[j] = 1;
                 } else if(currentLevel >0) {
@@ -105,6 +105,16 @@ namespace BoSSS.Application.XNSEC {
             //}
             return levels;
         }
+
+        ///// <summary>
+        ///// the level-set which represents the fluid-ImmersedBoundary interface
+        ///// </summary>
+        //protected LevelSet LevSetImmersedBoundary {
+        //    get {
+        //        return this.LsTrk.LevelSets[1] != null ? (LevelSet)(this.LsTrk.LevelSets[1]) : null;
+        //    }
+        //}
+
     }
 
 
