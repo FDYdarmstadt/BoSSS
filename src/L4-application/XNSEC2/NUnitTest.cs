@@ -899,16 +899,16 @@ namespace BoSSS.Application.XNSEC {
                 db.Controller.ClearDatabase();
             }
 
-            //using (var p = new XNSEC_MixtureFraction()) {
-            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(2, 5, db.Path);
+            using (var p = new XNSEC_MixtureFraction()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(3, 5, db.Path);
 
-            //    p.Init(c);
-            //    p.RunSolverMode();
-            //}
+                p.Init(c);
+                p.RunSolverMode();
+            }
 
-            //Console.WriteLine("Flame sheet calculation done.");
+            Console.WriteLine("Flame sheet calculation done.");
             using (var p = new XNSEC()) {
-                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dCombustion(1, 5, db.Path);
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dCombustion(3, 5, db.Path);
                 p.Init(c);
                 p.RunSolverMode();
 
