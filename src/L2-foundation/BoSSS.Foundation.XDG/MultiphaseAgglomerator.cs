@@ -692,7 +692,7 @@ namespace BoSSS.Foundation.XDG {
                         CellVolume.Set(this.NonAgglomeratedMetrics.CutCellVolumes[spc]);
                         for(int j = 0; j < J; j++)
                             VolumeFrac[j] = this.Tracker.GridDat.Cells.GetCellVolume(j); // we first accumulate all un-cut volumes and then convert this into volume fraction
-
+                        
 
 
                         MultidimensionalArray EdgeArea = this.NonAgglomeratedMetrics.CutEdgeAreas[spc];
@@ -809,6 +809,8 @@ namespace BoSSS.Foundation.XDG {
                         // Loop includes external cells
                         for(int j = 0; j < JE; j++) {
                             LengthScales[j] = CellVolume[j] / CellSurface[j];
+                            
+                            LengthScales[j] = Math.Max(LengthScales[j], BLAS.MachineEps / this.Tracker.GridDat.Cells.h_min[j]);
                         }
 
 
