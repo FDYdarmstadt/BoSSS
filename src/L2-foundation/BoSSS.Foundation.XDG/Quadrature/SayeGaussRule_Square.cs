@@ -276,7 +276,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override SayeQuadRule SetLowOrderQuadratureNodes(SayeSquare arg)
         {
-            throw new NotImplementedException();
+            // A1007, proposition for low order Rule
+            QuadRule LowOrderRule = QuadRule.CreateEmpty(RefElement, 1, RefElement.SpatialDimension);
+            // set node & weight
+            NodeSet x_center = arg.GetCellCenter();
+            if (arg.Surface == false && arg.PsiAndS.All(psi_s => psi_s.Item2 * EvaluateAt(psi_s.Item1, x_center, this.cell) >= 0)) {
+                LowOrderRule.Nodes.Set(x_center);
+                LowOrderRule.Weights[0] = arg.Diameters.Aggregate((a, b) => a * b);
+            }
+            LowOrderRule.Nodes.LockForever();
+
+            // convert to SayeQuadRule
+            SayeQuadRule transformed_LowOrderRule = new SayeQuadRule(LowOrderRule.Nodes, LowOrderRule.Weights, RefElement);
+            return transformed_LowOrderRule;
         }
 
         protected override SayeQuadRule SetGaussQuadratureNodes(SayeSquare arg)
