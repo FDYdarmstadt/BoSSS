@@ -22,7 +22,12 @@ namespace BoSSS.Application.LsTest {
         static void Main(string[] args) {
 
             InitMPI();
-            LevelSetUnitTests.LevelSetAdvectionTest2D_fwd(2, 0, LevelSetEvolution.FastMarching, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting);
+            //LevelSetUnitTests.LevelSetCubeProjectionConvergenceTest(2, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
+            //LevelSetUnitTests.LevelSetCircleProjectionConvergenceTest(2, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false, true);
+            //LevelSetUnitTests.LevelSetZalasakDiscConvergenceTest(3, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
+            //LevelSetUnitTests.LevelSetZalesakDisc(2, 0, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
+            LevelSetUnitTests.LevelSetSwirlingFlow(2, 0, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
+
             FinalizeMPI();
         }
 

@@ -373,6 +373,117 @@ namespace BoSSS.Application.LsTest {
             }
         }
 
+        private static (string Name, double slope, double Intercept)[] LevelSetConvergenceTest(ILevelSetTest Tst, SolverWithLevelSetUpdaterTestControl[] CS, bool useExactSolution, (string Name, double Slope, double intercept, double interceptTol)[] RegResults) {
+            int D = Tst.SpatialDimension;
+            int NoOfMeshes = CS.Length;
+            int NoOfInterfaces = Tst.NoOfLevelsets;
+
+            var Ret = new List<(string Name, double slope, double Intercept)>();
+
+            if (useExactSolution) {
+                if (NoOfMeshes < 2)
+                    throw new ArgumentException("At least two meshes required for convergence against exact solution.");
+
+                MultidimensionalArray errorS = null;
+                string[,] Names = null;
+
+                double[] hS = new double[NoOfMeshes];
+                SolverWithLevelSetUpdaterTestCenter[] solvers = new SolverWithLevelSetUpdaterTestCenter[NoOfMeshes];
+
+                for (int k = 0; k < CS.Length; k++) {
+
+                    var C = CS[k];
+                    //using(var solver = new XNSE()) {
+                    var solver = new SolverWithLevelSetUpdaterTestCenter();
+                    solvers[k] = solver;
+                    {
+                        Console.WriteLine("Warning! - enabled immediate plotting");
+                        C.ImmediatePlotPeriod = 1;
+                        C.SuperSampling = 3;
+
+                        solver.Init(C);
+                        solver.RunSolverMode();
+                        solver.Dispose(); // close file handles etc.
+                        var spcIds = solver.LsTrk.SpeciesNames;
+
+                        Assert.LessOrEqual(Math.Abs(solver.Timestepping.TimesteppingBase.GetSimulationTime() - Tst.getEndTime()), 1e-8, "simulation and test endtimes are not equal");
+
+                       //-------------------Evaluate Error ---------------------------------------- 
+                       var evaluator = new LevelSetErrorEvaluator<SolverWithLevelSetUpdaterTestControl>(solver);
+                        double[,] LastErrors = evaluator.ComputeErrors(Tst.getEndTime(), false);
+                        double[,] ErrThresh = Tst.AcceptableError;
+
+                        if (k == 0) {
+                            errorS = MultidimensionalArray.Create(NoOfMeshes, LastErrors.GetLength(0), LastErrors.GetLength(1));
+                            Names = new string[LastErrors.GetLength(0), LastErrors.GetLength(1)];
+                            if (RegResults.Length != Names.Length)
+                                throw new ArgumentOutOfRangeException();
+                        } else {
+                            if (LastErrors.Length != Names.Length)
+                                throw new ApplicationException();
+                        }
+
+                        if (LastErrors.Length != ErrThresh.Length)
+                            throw new ApplicationException();
+
+                        for (int i = 0; i < NoOfInterfaces; i++) {
+                            string[] ErrNames = new string[spcIds.Count + 2 + 2];
+                            {
+                                int j = 0;
+                                var levSetName = VariableNames.LevelSetCGidx(i);
+                                ErrNames[j++] = levSetName;
+                                ErrNames[j++] = VariableNames.LevelSetDGidx(i);
+                                foreach (var spc in spcIds) {
+                                    ErrNames[j++] = VariableNames.AsLevelSetVariable(levSetName,"Volume#" + spc);
+                                }
+                                ErrNames[j++] = VariableNames.AsLevelSetVariable(levSetName, "Surface-Error");
+                                ErrNames[j++] = VariableNames.AsLevelSetVariable(levSetName, "Contour-Error");
+                            }
+                            for (int j = 0; j < LastErrors.GetLength(1); j++) {
+                                
+                                Console.WriteLine($"L2 error, '{ErrNames[j]}': \t{LastErrors[i,j]}");
+                                Names[i,j] = ErrNames[j];
+                            }
+                        }
+                        errorS.ExtractSubArrayShallow(k, -1, -1).Clear();
+                        errorS.ExtractSubArrayShallow(k,-1,-1).Acc2DArray(1.0, LastErrors);
+                        hS[k] = evaluator.GetGrid_h();
+                    }
+                }
+
+                for (int i = 0; i < errorS.GetLength(1); i++) {
+                    for (int j = 0; j < errorS.GetLength(2); j++) {
+                        var RegModel = hS.LogLogRegression(errorS.ExtractSubArrayShallow(-1,i,-1).GetColumn(j));
+                        var RegRef = RegResults.Single(ttt => ttt.Name == Names[i,j]);
+                        Console.WriteLine($"Convergence slope for Error of '{Names[i,j]}': \t{RegModel.Slope}\tIntercept: \t{RegModel.Intercept}\t(Expecting: {RegRef.Slope}, {RegRef.intercept}+/-{RegRef.interceptTol})");
+                        Ret.Add((Names[i,j], RegModel.Slope, RegModel.Intercept));
+                    }
+                }
+
+                for (int i = 0; i < errorS.GetLength(1); i++) {
+                    for (int j = 0; j < errorS.GetLength(2); j++) {
+                        var RegModel = hS.LogLogRegression(errorS.ExtractSubArrayShallow(-1, i, -1).GetColumn(j));
+                        var RegRef = RegResults.Single(ttt => ttt.Name == Names[i,j]);
+
+
+                        Assert.GreaterOrEqual(RegModel.Slope, RegRef.Slope, $"Convergence Slope of {Names[i,j]} is degenerate.");
+                        Assert.GreaterOrEqual(RegModel.Intercept, RegRef.intercept - RegRef.interceptTol, $"Convergence Intercept of {Names[i,j]} is degenerate.");
+                        Assert.LessOrEqual(RegModel.Intercept, RegRef.intercept + RegRef.interceptTol, $"Convergence Intercept of {Names[i,j]} overshoot.");
+                    }
+                }
+
+                foreach (var s in solvers) {
+                    s.Dispose();
+                }
+            } else {
+                if (NoOfMeshes < 3)
+                    throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact.");
+
+                throw new NotImplementedException("LevelSet convergence tests only implemented vs exact level set solution");
+            }
+
+            return Ret.ToArray();
+        }
 
         static SolverWithLevelSetUpdaterTestControl LSTstObj2CtrlObj(ILevelSetTest tst, int maxNoTimesteps,
             LevelSetEvolution levelSetEvolution, LevelSetHandling levelSetHandling, 
@@ -450,14 +561,18 @@ namespace BoSSS.Application.LsTest {
     public class LevelSetErrorEvaluator<T> where T : SolverWithLevelSetUpdaterTestControl, new() {
 
         protected SolverWithLevelSetUpdater<T> solver;
-        public LevelSetErrorEvaluator(SolverWithLevelSetUpdater<T> solver) {
+        ILevelSetTest tst;
+        public LevelSetErrorEvaluator(SolverWithLevelSetUpdater<T> solver, ILevelSetTest tst = null) {
             this.solver = solver;
+            this.tst = tst;
         }
 
         LevelSet[] exactPhi;
         LevelSetTracker exactLsTrk;
+        double time;
 
         void SetExactPhiAndLevelSetTracker(double time) {
+            this.time = time;
             int NoLS = solver.Control.NoOfLevelSets;
             exactPhi = new LevelSet[NoLS];
             // exact level-set fields
@@ -473,9 +588,16 @@ namespace BoSSS.Application.LsTest {
             exactLsTrk.UpdateTracker(time);
         }
 
+        /// <summary>
+        /// characteristic grid/mesh length scale
+        /// </summary>
+        public double GetGrid_h() {
+            return ((Foundation.Grid.Classic.GridData)(solver.GridData)).Cells.h_minGlobal;
+        }
 
         /// <summary>
         /// computes the error against the continuous level set field "Phi"
+        /// usually "Phi" is cut off behind the near band, so this value makes sense only there
         /// </summary>
         /// <param name="exactLevelSetFunc"></param>
         /// <param name="time"></param>
@@ -485,7 +607,11 @@ namespace BoSSS.Application.LsTest {
             SinglePhaseField PhiCG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].CGLevelSet;
             string name = PhiCG.Identification;
 
-            double L2Error = PhiCG.L2Error(exactPhi[iLevSet], cm);
+            double L2Error;
+            if (tst != null)
+                L2Error = PhiCG.L2Error(tst.GetPhi()[iLevSet].Vectorize(time), 16, new CellQuadratureScheme(true, cm));
+            else
+                L2Error = PhiCG.L2Error(exactPhi[iLevSet], cm);
 
             solver.QueryHandler.ValueQuery("L2err_" + name, L2Error, true);
 
@@ -503,7 +629,11 @@ namespace BoSSS.Application.LsTest {
             SinglePhaseField PhiDG = solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].DGLevelSet;
             string name = PhiDG.Identification;
 
-            double L2Error = PhiDG.L2Error(exactPhi[iLevSet], cm);
+            double L2Error;
+            if (tst != null)
+                L2Error = PhiDG.L2Error(tst.GetPhi()[iLevSet].Vectorize(time), 16, new CellQuadratureScheme(true, cm));
+            else
+                L2Error = PhiDG.L2Error(exactPhi[iLevSet], cm);
 
             solver.QueryHandler.ValueQuery("L2err_" + name, L2Error, true);
 
@@ -521,7 +651,7 @@ namespace BoSSS.Application.LsTest {
             int Norm = 2;
             var t_exactPhi = exactPhi[iLevSet].CloneAs();
             t_exactPhi.AccLaidBack(-1.0, solver.LsUpdater.LevelSets[VariableNames.LevelSetCGidx(iLevSet)].CGLevelSet);
-            double conterr = DGField.IntegralOverEx(cqs, (X,U,j) => U[0], 2, t_exactPhi);
+            double conterr = DGField.IntegralOverEx(cqs, (X,U,j) => Math.Abs(U[0]), 2, t_exactPhi); // 1-norm of interface position error, only real meaningful in signed distance fields
 
             return conterr;
         }
@@ -561,7 +691,7 @@ namespace BoSSS.Application.LsTest {
         /// <summary>
         /// Computes the L2 Error of the actual solution against the exact solution in the control object, given by the time dependent initial evaluators
         /// </summary>
-        public double[,] ComputeErrors(double time) {
+        public double[,] ComputeErrors(double time, bool full = false) {
 
             SetExactPhiAndLevelSetTracker(time);
 
@@ -572,7 +702,12 @@ namespace BoSSS.Application.LsTest {
             for (int iLevSet = 0; iLevSet < solver.Control.NoOfLevelSets; iLevSet++) {
                 int j = 0;
 
-                CellMask cm = solver.LsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
+                CellMask cm;
+                if (!full)
+                    cm = solver.LsTrk.Regions.GetCutCellMask4LevSet(iLevSet);
+                else
+                    cm = CellMask.GetFullMask(solver.LsTrk.GridDat);
+
                 Ret[iLevSet, j++] = ComputeLevelSetError(iLevSet, cm);
                 Ret[iLevSet, j++] = ComputeDGLevelSetError(iLevSet, cm);
 

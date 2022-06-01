@@ -159,13 +159,16 @@ namespace BoSSS.Application.LsTest {
             }
 
             // Get Spatial Operator
-            XSpatialOperatorMk2 XOP = new XSpatialOperatorMk2(components.Keys.Select(k => k).ToList(), components.Keys.Select(k => k).ToList(), QuadOrderFunc.Linear(), LsTrk.SpeciesNames); // these are dummy fields
+            XSpatialOperatorMk2 XOP = new XSpatialOperatorMk2(components.Keys.Select(k => k).ToList(), components.Keys.Select(k => k).ToList(), (x,y,z) => this.QuadOrder(), LsTrk.SpeciesNames); // these are dummy fields
             foreach(var kvp in components) {
                 foreach(var comp in kvp.Value) {
                     XOP.EquationComponents[kvp.Key].Add(comp);
                 }
             }
             XOP.AgglomerationThreshold = 0.1;
+            AgglomerationAlgorithm.RecoverFromAgglomerationFail = true;
+            if (AgglomerationAlgorithm.RecoverFromAgglomerationFail)
+                Console.WriteLine("Careful activated experimental agglomeration fail recovery - i.e. do not agglomerate when no target is found");
             XOP.TemporalOperator = new ConstantXTemporalOperator(XOP, 0.0);
 
             // === level set related parameters === //
@@ -185,7 +188,11 @@ namespace BoSSS.Application.LsTest {
         }
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            dt = Math.Min(Control.dtFixed, Control.Endtime - phystime);
+            if((int)this.Control.TimeSteppingScheme >= 100)
+                dt = Math.Min(Control.dtFixed, Control.Endtime - phystime);
+            else
+                dt = this.GetTimestep();
+
             Console.WriteLine("Starting timestep {0}, time {2}, dt {1}", TimestepNo, dt, phystime);
             bool success = Timestepping.Solve(phystime, dt);
             return dt;
