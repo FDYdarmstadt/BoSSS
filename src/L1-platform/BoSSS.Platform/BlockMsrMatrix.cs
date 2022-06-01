@@ -2189,6 +2189,13 @@ namespace ilPSP.LinSolvers {
             /// ctor.
             /// </summary>
             public Membank(int L, int ISblk, int JSblk) {
+
+                long MaxL = ((long)int.MaxValue) / (((long)L) * ISblk * JSblk);
+                if (L > MaxL)
+                    L = checked((int)MaxL);
+                if (L < 1)
+                    L = 1;
+
                 Mem = MultidimensionalArray.Create(L, ISblk, JSblk);
                 Occupied = new BitArray(L);
                 NextFree = 0;
