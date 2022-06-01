@@ -22,7 +22,10 @@ using System.Diagnostics;
 using System.Linq;
 
 namespace BoSSS.Application.XNSEC {
-
+    /// <summary>
+    /// Low Mach number flow solver. Supports temperature dependeant density and transport parameters.
+    /// The mixture fraction solver <see cref="XNSEC_MixtureFraction"/> can be used for finding estimates for combustion applications
+    /// </summary>
     public partial class XNSEC : SolverWithLevelSetUpdater<XNSEC_Control> {
 
         //===========
@@ -33,50 +36,6 @@ namespace BoSSS.Application.XNSEC {
             //DeleteOldPlotFiles();
             //DeleteOldTextFiles();
             //Debugger.Launch();
-
-            ////////////////////
-            /// Incompressible test cases
-            ////////////////////
-            ///
-            //NUnitTest.IncompressibleSteadyPoiseuilleFlowTest();
-            //NUnitTest.IncompressibleUnsteadyTaylorVortexTest(); //
-            //NUnitTest.IncompressibleSteadyPoiseuilleFlowTest_WithImmersedBoundary();
-
-            ////////////////
-            ///// non - isothermic test cases
-            ////////////////
-            //NUnitTest.CavityNaturalConvection();
-            //NUnitTest.LowMachSteadyCouetteWithTemperatureGradientTest(); //
-
-
-
-            //////////////////
-            ///// multicomponent non - isothermic test cases
-            //////////////////
-            //NUnitTest.ManufacturedSolutionLowMachCombustionTest(); //
-
-
-
-
-
-            //////////////////
-            /// Multiphase test cases
-            ////////////////////
-            //NUnitTest.PolynomialTestForConvectionTest(2, 3, 0.0, false, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            //NUnitTest.NuNit_ChannelTest(2, 0.0, ViscosityMode.FullySymmetric, 60.0 * Math.PI / 180.0, XQuadFactoryHelper.MomentFittingVariants.Saye);
-
-            //NUnitTest.BcTest_PressureOutletTest(2, 2, 0.0, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, false);
-            //NUnitTest.TranspiratingChannelTest(2, 0.1, 0.2, ViscosityMode.FullySymmetric, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, NonLinearSolverCode.Newton);
-
-            //NUnitTest.HeatConductivityTest(2, 0.0, false, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine);
-            //NUnitTest.ViscosityJumpTest(2, 2, 0.0, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
-
-
-            ////////////NUnitTest.SteadyStateEvaporationTest_XNSEC_MixtureFraction(0, 2, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-            //NUnitTest.SteadyStateEvaporationTestXNSEC(0.0, 2, 0.0, true, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-
-
-            //NUnitTest.PseudoTwoDimensionalTwoPhaseFlow(2, 0.0, false, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, differentFluids: true, TopBC_PressureOutlet: true, BotBC_PressureOutlet: true);
 
             //NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
             ////NUnitTest.XDG_DROPLET_COMBUSTION_TEST();

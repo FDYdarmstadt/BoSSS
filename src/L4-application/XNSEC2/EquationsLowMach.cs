@@ -267,20 +267,14 @@ namespace BoSSS.Solution.XNSECommon {
             int D = dimension;
 
             if (config.isTransport) {
-                if (!config.isMovingMesh) {
                     // the following terms decode the condition at the interface (consider the similarity to the rankine hugoniot condition)
-                    // for the moving mesh discretization this condition is already contained in the convective terms
-                    // therefore we only need these terms when using splitting...
+                    
                     if (config.isRecoilPressure) {
                         AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
                     }
                     AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(d, D, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
                     AddComponent(new ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton(d, D, -1, false, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
-                } else {
-                    if (config.isRecoilPressure) {
-                        AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
-                    }
-                }
+                 
             } else {
                 //  ... and when the convective terms are turned off we still need the contribution below
                 if (config.isRecoilPressure) {
@@ -496,7 +490,7 @@ namespace BoSSS.Solution.XNSECommon {
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // Convection
-            if (config.getPhysParams.IncludeConvection) {
+            if (config.physParams.IncludeConvection) {
                 var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustion_ScalarConvectionInSpeciesBulk_LLF(spcName, D, NoOfChemicalSpecies, boundaryMap, EoS, 0);
                 AddComponent(conv);
             }
@@ -506,6 +500,7 @@ namespace BoSSS.Solution.XNSECommon {
             AddComponent(heatConduction);
 
             if (config.includeReactionTerms) {
+                Console.WriteLine("including reactive terms!!!!");
                 var ReactionTerm = new BoSSS.Solution.XNSECommon.LowMach_HeatSource(spcName, HeatReleaseFactor, ReactionRateConstants, MolarMasses, EoS, TRef, cpRef, config.VariableReactionRateParameters, config.NoOfChemicalSpecies);
                 AddComponent(ReactionTerm);
                 AddParameter("kReact");
@@ -778,6 +773,7 @@ namespace BoSSS.Solution.XNSECommon {
             // Mass source/sink term of species i
             //===================================
             if (config.includeReactionTerms) {
+
                 var massReaction_i = new BoSSS.Solution.XNSECommon.LowMach_MassFractionSource(spcName, ReactionRateConstants, StoichiometricCoefficients, MolarMasses, EoS, NoOfChemicalSpecies, ChemicalSpeciesCounter, 300, 1.0, config.VariableReactionRateParameters);
                 AddComponent(massReaction_i);
             }
