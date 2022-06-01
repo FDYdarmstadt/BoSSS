@@ -490,7 +490,7 @@ namespace BoSSS.Solution.XNSECommon {
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // Convection
-            if (config.getThermParams.IncludeConvection) {
+            if (config.physParams.IncludeConvection) {
                 var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustion_ScalarConvectionInSpeciesBulk_LLF(spcName, D, NoOfChemicalSpecies, boundaryMap, EoS, 0);
                 AddComponent(conv);
             }
