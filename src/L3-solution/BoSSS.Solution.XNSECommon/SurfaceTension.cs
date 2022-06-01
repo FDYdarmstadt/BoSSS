@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -255,7 +255,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
         protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
             base.Flux(ref inp, U, output);
-            output = output.Select(x => x * m_factor).ToArray();            
+            for (int d = 0; d < output.Length; d++)
+                output[d] *= m_factor;       
         }        
     }
 
@@ -265,7 +266,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     /// </summary>
     public class Curvature_LaplaceBeltrami_BndLine : CurvatureLaplaceBeltrami_BndLine {
 
-        public Curvature_LaplaceBeltrami_BndLine(int d, double factor, bool averaging) : base(0, d, averaging) {
+        public Curvature_LaplaceBeltrami_BndLine(int d, double factor, bool averaging) : this(0, d, factor, averaging) {
         }
 
         public Curvature_LaplaceBeltrami_BndLine(int iLevSet, int d, double factor, bool averaging) : base(iLevSet , d, averaging) {
