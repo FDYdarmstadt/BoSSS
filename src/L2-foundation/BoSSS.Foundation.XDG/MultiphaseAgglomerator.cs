@@ -810,7 +810,7 @@ namespace BoSSS.Foundation.XDG {
                         for(int j = 0; j < JE; j++) {
                             LengthScales[j] = CellVolume[j] / CellSurface[j];
                             
-                            if(AgglomerationAlgorithm.RecoverFromAgglomerationFail) LengthScales[j] = Math.Max(LengthScales[j], BLAS.MachineEps / this.Tracker.GridDat.Cells.h_min[j]);
+                            if(AgglomerationAlgorithm.RecoverFromAgglomerationFail) LengthScales[j] = Math.Max(LengthScales[j], BLAS.MachineEps);
                         }
 
 
