@@ -540,6 +540,7 @@ namespace BoSSS.Solution.XNSECommon {
                     AddComponent(new CurvatureBasedSurfaceTension(d, D, sigma));                    
                     AddParameter(BoSSS.Solution.NSECommon.VariableNames.Curvature);
                     AddParameter(BoSSS.Solution.NSECommon.VariableNames.NormalVector(D)[d]);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D)[d]);
 
                     // == Implementation with SurfaceElementOperator
                     //AddSurfaceComponent(new CurvatureBasedSurfaceTension_SurfaceOperator(d, D, sigma));
