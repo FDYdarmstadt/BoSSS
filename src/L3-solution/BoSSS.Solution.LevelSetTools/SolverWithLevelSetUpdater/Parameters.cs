@@ -102,9 +102,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             m_filter = filter;
         }
 
-        IList<string> ILevelSetParameter.ParameterNames => lsParameters;
-
-        public override IList<string> ParameterNames => new string[] { VariableNames.Curvature };
+        public override IList<string> ParameterNames => lsParameters;
 
         public override DelParameterFactory Factory => ParameterFactory;
 
