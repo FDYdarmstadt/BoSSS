@@ -1,4 +1,4 @@
-﻿using BoSSS.Foundation;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
@@ -106,19 +106,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public override IList<string> ParameterNames => new string[] { VariableNames.Curvature };
 
-        public override DelParameterFactory Factory => CurvatureFactory;
+        public override DelParameterFactory Factory => ParameterFactory;
 
-        (string ParameterName, DGField ParamField)[] CurvatureFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
-            //Curvature
-            (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[1];
-            IGridData gridData = DomainVarFields.First().Value.GridDat;
-            Basis curvatureBasis = new Basis(gridData, curvatureDegree);
-            string curvatureName = VariableNames.Curvature;
-            fields[0] = (curvatureName, new SinglePhaseField(curvatureBasis, curvatureName));
-            return fields;
-        }
-
-        (string ParameterName, DGField ParamField)[] ILevelSetParameter.ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
+        public (string ParameterName, DGField ParamField)[] ParameterFactory(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             int paramCount = lsParameters.Length;
             (string ParameterName, DGField ParamField)[] fields = new (string, DGField)[lsParameters.Length];
             IGridData gridData = DomainVarFields.First().Value.GridDat;
@@ -127,6 +117,13 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             for (int i = 0; i < paramCount - 1; ++i) {
                 fields[i] = (lsParameters[i], new SinglePhaseField(basis, lsParameters[i]));
             }
+
+            int pmax = gridData.iGeomCells.RefElements.Min(r => r.HighestSupportedPolynomialDegree);
+            if (curvatureDegree > pmax) {
+                Console.WriteLine("Curvature Degree higher than supported, setting down to order {0}", pmax);
+                curvatureDegree = pmax;
+            }
+
             Basis curvatureBasis = new Basis(gridData, curvatureDegree);
             fields[2] = (lsParameters[2], new SinglePhaseField(curvatureBasis, lsParameters[2]));
             return fields;
