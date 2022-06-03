@@ -157,7 +157,7 @@ namespace BoSSS.Solution.NSECommon {
 
                     rho = p0 / (R * phi[0] * MassFractionsOverMolarFractions);
 
-                    //Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
+                    Debug.Assert(!(double.IsNaN(rho) || double.IsInfinity(rho)));
                 } else {
                     rho = ConstantDensityValue;
                 }
