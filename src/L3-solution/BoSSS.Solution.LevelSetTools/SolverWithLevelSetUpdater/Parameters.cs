@@ -1,4 +1,4 @@
-﻿using BoSSS.Foundation;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
