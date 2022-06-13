@@ -244,12 +244,18 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
         */
-       
 
         /// <summary>
         /// Defines the name of the current project; also creates a default database
         /// </summary>
         public void Init(string ProjectName) {
+            Init(ProjectName, true);
+        }
+
+        /// <summary>
+        /// Defines the name of the current project; also creates a default database
+        /// </summary>
+        public void Init(string ProjectName, bool CreateDatabase) {
             if ((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
                 InvalidateCaches();
             m_CurrentProject = ProjectName;
@@ -257,10 +263,12 @@ namespace BoSSS.Application.BoSSSpad {
 
             //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
             //    MiniBatchProcessor.Server.StartIfNotRunning();
-            try {
-                DefaultDatabase = BoSSSshell.GetDefaultQueue().CreateOrOpenCompatibleDatabase(ProjectName);
-            } catch (Exception e) {
-                Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
+            if (CreateDatabase) {
+                try {
+                    DefaultDatabase = BoSSSshell.GetDefaultQueue().CreateOrOpenCompatibleDatabase(ProjectName);
+                } catch (Exception e) {
+                    Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
+                }
             }
         }
 
