@@ -12,6 +12,8 @@ using NUnit.Framework;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.NSECommon;
+using System.IO;
+using BoSSS.Foundation.IO;
 
 namespace BoSSS.Application.LsTest {
     public static partial class LevelSetUnitTests {
@@ -49,6 +51,59 @@ namespace BoSSS.Application.LsTest {
 
             Solution.Application.DeleteOldPlotFiles(); // delete plot files if we don't throw an exception!
         }
+        public static SolverWithLevelSetUpdaterTestControl SwirlingFlowTemporalConvergence(int degree, int gridRes, int tempRes, LevelSetEvolution lsEvo, string ProjectName, string dbPath){
+            var Tst = new LevelSetSwirlingFlowTest(2, degree, false, 0.1);
+            var C = LSTstObj2CtrlObj(Tst, int.MaxValue, lsEvo, LevelSetHandling.LieSplitting, gridRes, 0, tempRes);
+
+            C.SessionName = "SwirlingFlow_T_p" + degree + "_H" + gridRes + "_t" + tempRes + "_Evo" + lsEvo.ToString();
+            C.ProjectName = ProjectName;
+            C.savetodb = dbPath != null;
+            C.DbPath = dbPath;
+            C.saveperiod = 50; // in principal we only need the last timestep, save now and then for potential restarts
+
+            var db = DatabaseInfo.Open(dbPath);
+            var grd = C.GridFunc();
+            db.Controller.DBDriver.SaveGridIfUnique(ref grd, out bool found, db);
+            if (found) {
+                Console.WriteLine("Found equivalent grid in database, grid will not be saved");
+            }
+            C.SetGrid(grd);
+            C.GridFunc = null;
+
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Res", gridRes));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Degree", degree));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Evo", lsEvo.ToString()));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dt", C.dtFixed));
+
+            return C;
+        }
+        public static SolverWithLevelSetUpdaterTestControl SwirlingFlowSpatialConvergence(int degree, int gridRes, LevelSetEvolution lsEvo, string ProjectName, string dbPath) {
+            var Tst = new LevelSetSwirlingFlowTest(2, degree, false, 8);
+            var C = LSTstObj2CtrlObj(Tst, int.MaxValue, lsEvo, LevelSetHandling.LieSplitting, gridRes, 0);
+
+            C.SessionName = "SwirlingFlow_H_p" + degree + "_H" + gridRes + "_Evo" + lsEvo.ToString();
+            C.ProjectName = ProjectName;
+            C.savetodb = dbPath != null;
+            C.DbPath = dbPath;
+            C.saveperiod = 50; // in principal we only need the last timestep, save now and then for potential restarts
+            C.dtFixed = 1.0 / (100 * degree * degree * 4); // gridres max is 4, and tempres is 4 for all simulations (all using the same timestep)
+
+            var db = DatabaseInfo.Open(dbPath);
+            var grd = C.GridFunc();
+            db.Controller.DBDriver.SaveGridIfUnique(ref grd, out bool found, db);
+            if (found) {
+                Console.WriteLine("Found equivalent grid in database, grid will not be saved");
+            }
+            C.SetGrid(grd);
+            C.GridFunc = null;
+
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Res", gridRes));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Degree", degree));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Evo", lsEvo.ToString()));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dt", C.dtFixed));
+
+            return C;
+        }
 
         public static void LevelSetSwirlingFlow(
             [Values(2, 3, 4)] int LSdegree,
@@ -58,8 +113,7 @@ namespace BoSSS.Application.LsTest {
             [Values(false, true)] bool reversed) {
             Solution.Application.DeleteOldPlotFiles();
 
-            int gridResolution;
-            gridResolution = 1;
+            int gridResolution = 1;
             //switch (LSdegree) {
             //    case 2: gridResolution = 3; break;
             //    case 3: gridResolution = 2; break;
@@ -88,14 +142,14 @@ namespace BoSSS.Application.LsTest {
             C.saveperiod = 10;
             //C.rollingSaves = true;
 
-            string IO = $"LSAdvectionTest2D-deg{LSdegree}-amrLvl{AMRlevel}-lsEvo{levelSetEvolution}-rev{reversed}-grdRes{gridResolution}";
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 3;
+            //string IO = $"LSAdvectionTest2D-deg{LSdegree}-amrLvl{AMRlevel}-lsEvo{levelSetEvolution}-rev{reversed}-grdRes{gridResolution}";
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 3;
 
             LevelSetUnitTests.LevelSetTest(Tst, C);
 
             Solution.Application.DeleteOldPlotFiles(); // delete plot files if we don't throw an exception!
-        }
+        }        
 
         public static void LevelSetSwirlingFlowConvergenceTest(
             [Values(2, 3, 4)] int LSdegree,
@@ -256,13 +310,13 @@ namespace BoSSS.Application.LsTest {
             /// <param name="Resolution"></param>
             /// <param name="LSdegree"></param>
             /// <returns></returns>
-            public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel) {
+            public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel, int temporalResolution) {
                 int gridCells1D = (25 * Resolution) * (AMRlevel + 1);
                 double h = 1.0 * 1.0 / (double)gridCells1D;
                 double dt = h / (Math.Sqrt(2) * Math.PI); // this is grid width divided by maximum velocity
                 dt /= (double)(LSdegree * LSdegree);
 
-                int timesteps = Math.Max((int)Math.Ceiling(T / dt), 1); // make sure that the singular point in time is exactly on one timestep
+                int timesteps = temporalResolution * Math.Max((int)Math.Ceiling(T / dt), 1); // make sure that the singular point in time is exactly on one timestep
 
                 return (T / (double)timesteps);
             }
@@ -391,15 +445,16 @@ namespace BoSSS.Application.LsTest {
         /// </summary>
         public class LevelSetSwirlingFlowTest : ILevelSetTest {
 
-            protected double T = 8.0; // how much distortion, later 8
+            protected double T; // how much distortion, later 8
             protected double sign;
 
             /// <summary>
             /// ctor
             /// </summary>
-            public LevelSetSwirlingFlowTest(int spatDim, int LevelSetDegree, bool reversed) {
+            public LevelSetSwirlingFlowTest(int spatDim, int LevelSetDegree, bool reversed, double T = 8.0) {
                 this.SpatialDimension = spatDim;
                 this.LevelsetPolynomialDegree = LevelSetDegree;
+                this.T = T;
                 sign = (reversed) ? -1 : 1;
             }
 
@@ -415,13 +470,13 @@ namespace BoSSS.Application.LsTest {
             /// <param name="Resolution"></param>
             /// <param name="LSdegree"></param>
             /// <returns></returns>
-            public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel) {
+            public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel, int temporalResolution) {
                 int gridCells1D = (25 * Resolution) * (AMRlevel + 1);
                 double h = 1.0 * 1.0 / (double)gridCells1D;
-                double dt = h / (Math.Sqrt(2) * Math.PI); // this is grid width divided by maximum velocity
+                double dt = h / (1.0) * 1.0; // this is grid width divided by maximum velocity, times safety factor of 1.0 (1.0 no saftey)
                 dt /= (double)(LSdegree * LSdegree);
 
-                int timesteps = Math.Max((int)Math.Ceiling(T / dt), 1); // make sure that the singular point in time is exactly on one timestep
+                int timesteps = temporalResolution * Math.Max((int)Math.Ceiling(T / dt), 1); // make sure that the singular point in time is exactly on one timestep
 
                 return (T / (double)timesteps);
             }
@@ -461,7 +516,7 @@ namespace BoSSS.Application.LsTest {
                 grd.DefineEdgeTags(delegate (double[] X) {
                     return 1;
                 });
-
+                
                 return grd;
             }
 
@@ -537,7 +592,7 @@ namespace BoSSS.Application.LsTest {
             }
 
             public int NoOfLevelsets => 1;
-        }
+        }        
 
         /// <summary>
         /// No advection, just the projection of a circle with some high order even degree polynomial (or signed distance) function
@@ -571,13 +626,13 @@ namespace BoSSS.Application.LsTest {
             /// <param name="Resolution"></param>
             /// <param name="LSdegree"></param>
             /// <returns></returns>
-            public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel) {
+            public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel, int temporalResolution) {
                 int gridCells1D = (9 * Resolution) * (AMRlevel + 1);
                 double h = 1.0 * 1.0 / (double)gridCells1D;
                 double dt = h / 1.0; // this is grid width divided by maximum velocity
                 dt /= (double)(LSdegree * LSdegree);
 
-                int timesteps = Math.Max((int)Math.Ceiling(T / dt), 1); // make sure that the singular point in time is exactly on one timestep
+                int timesteps = temporalResolution * Math.Max((int)Math.Ceiling(T / dt), 1); // make sure that the singular point in time is exactly on one timestep
 
                 return (T / (double)timesteps);
             }
@@ -729,13 +784,13 @@ namespace BoSSS.Application.LsTest {
             /// <param name="Resolution"></param>
             /// <param name="LSdegree"></param>
             /// <returns></returns>
-            public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel) {
+            public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel, int temporalResolution) {
                 int gridCells1D = (9 * Resolution) * (AMRlevel + 1);
                 double h = 1.0 * 1.0 / (double)gridCells1D;
                 double dt = h / 1.0; // this is grid width divided by maximum velocity
                 dt /= (double)(LSdegree * LSdegree);
 
-                int timesteps = Math.Max((int)Math.Ceiling(T / dt), 1); // make sure that the singular point in time is exactly on one timestep
+                int timesteps = temporalResolution * Math.Max((int)Math.Ceiling(T / dt), 1); // make sure that the singular point in time is exactly on one timestep
 
                 return (T / (double)timesteps);
             }

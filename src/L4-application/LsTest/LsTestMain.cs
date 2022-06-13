@@ -21,14 +21,25 @@ namespace BoSSS.Application.LsTest {
 
         static void Main(string[] args) {
 
-            InitMPI();
-            //LevelSetUnitTests.LevelSetCubeProjectionConvergenceTest(2, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
-            //LevelSetUnitTests.LevelSetCircleProjectionConvergenceTest(2, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false, true);
-            //LevelSetUnitTests.LevelSetZalasakDiscConvergenceTest(3, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
-            //LevelSetUnitTests.LevelSetZalesakDisc(2, 0, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
-            LevelSetUnitTests.LevelSetSwirlingFlow(2, 0, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
+            string ArgName = "BOSSS_ARG_0";
+            string ArgValue = System.Environment.GetEnvironmentVariable(ArgName);
+            if (ArgValue == null && args.Length == 0) {
+                InitMPI();
+                //LevelSetUnitTests.LevelSetCubeProjectionConvergenceTest(2, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
+                //LevelSetUnitTests.LevelSetCircleProjectionConvergenceTest(2, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false, true);
+                //LevelSetUnitTests.LevelSetZalasakDiscConvergenceTest(3, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
+                //LevelSetUnitTests.LevelSetZalesakDisc(2, 0, LevelSetEvolution.StokesExtension, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
+                LevelSetUnitTests.LevelSetSwirlingFlow(2, 0, LevelSetEvolution.PrescribedVelocity, BoSSS.Solution.XdgTimestepping.LevelSetHandling.LieSplitting, false);
 
-            FinalizeMPI();
+                FinalizeMPI();
+            }
+
+            {
+                SolverWithLevelSetUpdaterTestCenter._Main(args, false, delegate () {
+                    var p = new SolverWithLevelSetUpdaterTestCenter();
+                    return p;
+                });
+            }
         }
 
     }

@@ -93,7 +93,7 @@ namespace BoSSS.Application.LsTest {
         /// <summary>
         /// compute a suitable timestep for various combinations of grid resolutions and level-set degrees
         /// </summary>
-        double ComputeTimestep(int gridResolution, int lsDegree, int AMRlevel);
+        double ComputeTimestep(int gridResolution, int lsDegree, int AMRlevel, int temporalResolution);
 
         /// <summary>
         /// 
@@ -485,9 +485,9 @@ namespace BoSSS.Application.LsTest {
             return Ret.ToArray();
         }
 
-        static SolverWithLevelSetUpdaterTestControl LSTstObj2CtrlObj(ILevelSetTest tst, int maxNoTimesteps,
+        public static SolverWithLevelSetUpdaterTestControl LSTstObj2CtrlObj(ILevelSetTest tst, int maxNoTimesteps,
             LevelSetEvolution levelSetEvolution, LevelSetHandling levelSetHandling, 
-            int GridResolution = 1, int AMRlevel = 0) {
+            int GridResolution = 1, int AMRlevel = 0, int TemporalResolution = 1) {
 
             SolverWithLevelSetUpdaterTestControl C = new SolverWithLevelSetUpdaterTestControl();
             int D = tst.SpatialDimension;
@@ -540,7 +540,7 @@ namespace BoSSS.Application.LsTest {
                 C.AMR_startUpSweeps = AMRlevel;
             }
 
-            double dt = tst.ComputeTimestep(GridResolution, tst.LevelsetPolynomialDegree, AMRlevel);
+            double dt = tst.ComputeTimestep(GridResolution, tst.LevelsetPolynomialDegree, AMRlevel, TemporalResolution);
             C.dtFixed = dt;
             double T = tst.getEndTime();
             int timesteps = (int)(T / dt);

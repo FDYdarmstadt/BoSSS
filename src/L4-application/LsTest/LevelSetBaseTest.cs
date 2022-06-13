@@ -57,7 +57,7 @@ namespace BoSSS.Application.LsTest {
         /// <param name="Resolution"></param>
         /// <param name="LSdegree"></param>
         /// <returns></returns>
-        public abstract double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel);
+        public abstract double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel, int temporalResolution);
 
         /// <summary>
         /// 

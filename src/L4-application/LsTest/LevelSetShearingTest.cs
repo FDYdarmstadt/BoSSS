@@ -54,7 +54,7 @@ namespace BoSSS.Application.LsTest {
         /// <param name="Resolution"></param>
         /// <param name="LSdegree"></param>
         /// <returns></returns>
-        public override double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel) {
+        public override double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel, int temporalResolution) {
             int gridCells1D = (9 * Resolution) * (AMRlevel + 1);
             double h = 1.0 * L / (double)gridCells1D;
             double dt = h / Uscale;
