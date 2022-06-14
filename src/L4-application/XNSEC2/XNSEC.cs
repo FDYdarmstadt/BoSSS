@@ -32,7 +32,6 @@ namespace BoSSS.Application.XNSEC {
         // Main file
         //===========
         private static void Main(string[] args) {
- 
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
             //InitMPI();
