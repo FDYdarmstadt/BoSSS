@@ -50,7 +50,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int NoOfMultigridLevels = 1000000;
 
         /// <summary>
-        /// Use a p-two-grid approach in Additive Schwarz (<see cref="Schwarz.UsePMGinBlocks"/>).
+        /// Use a p-two-grid approach in Additive Schwarz (<see cref="Schwarz.Config.UsePMGinBlocks"/>).
         /// 
         /// This results in a lesser number of Schwarz blocks and more computational cells per Schwarz block.
         /// It seems to accelerate convergence for certain problems (mostly single-phase).
@@ -198,6 +198,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new ApplicationException("Error in algorithm: No Of blocks cannot be 0.");
                 var OneBlockPerNode = NoBlocks.Select(nb => nb <= 1).MPIAnd(op.Mapping.MPI_Comm);
 
+                /*
                 Func<int, int, int, bool> SmootherCaching = delegate (int Iter, int MgLevel, int iBlock) {
                     //return Iter >= ((MaxMGLevel - MgLevel) * 3) * (1);
                     return true;
@@ -206,6 +207,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //return Iter >= MaxMGDepth+1;
                     return true;
                 };
+                */
 
                 for (MultigridOperator op_lv = op; op_lv != null; op_lv = op_lv.CoarserLevel) {
                     int iLevel = op_lv.LevelIndex;
@@ -243,7 +245,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         levelSolver = _levelSolver;
                         _levelSolver.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
                         _levelSolver.config.TestSolution = false;
-                        _levelSolver.ActivateCaching = CoarseCaching;
+                        //_levelSolver.ActivateCaching = CoarseCaching;
 
 
                     } else if (skipLevel) {
@@ -256,11 +258,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 NoOfPartsOnCurrentProcess = NoBlocks[iLevel],
                             },
-                            ActivateCachingOfBlockMatrix = SmootherCaching,
-                            Overlap = 1, // overlap seems to help; more overlap seems to help more
-                            EnableOverlapScaling = true,
-                            UsePMGinBlocks = UsepTG
+                            //ActivateCachingOfBlockMatrix = SmootherCaching,
+                            
                         };
+                        smoother1.config.EnableOverlapScaling = true;
+                        smoother1.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
+                        smoother1.config.UsePMGinBlocks = UsepTG;
 
                         var _levelSolver = new OrthonormalizationMultigrid() {
                             PreSmoother = smoother1,

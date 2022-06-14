@@ -103,13 +103,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public double[] Xdummy = null;
 
         /// <summary>
-        /// masks for the Schwarz blocks, high order modes, only initialized if PMG is used, <see cref="Schwarz.UsePMGinBlocks"/>
+        /// masks for the Schwarz blocks, high order modes, only initialized if PMG is used, <see cref="Schwarz.Config.UsePMGinBlocks"/>
         /// - index: Schwarz block
         /// </summary>
         BlockMask BMhiBlocks;
 
         /// <summary>
-        /// masks for the Schwarz blocks, low order modes, only initialized if PMG is used, <see cref="Schwarz.UsePMGinBlocks"/>
+        /// masks for the Schwarz blocks, low order modes, only initialized if PMG is used, <see cref="Schwarz.Config.UsePMGinBlocks"/>
         /// - index: Schwarz block
         /// </summary>
         BlockMask BMloBlock;

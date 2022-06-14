@@ -111,9 +111,9 @@ namespace AdvancedSolverTests.Solver {
             var solver = new TestSchwarz() {
                 //m_BlockingStrategy = ,
                 m_BlockingStrategy = new TestBlockingStrat(),
-                Overlap = overlap? 1 : 0,
-                EnableOverlapScaling = overlap
             };
+            solver.config.Overlap = overlap ? 1 : 0;
+            solver.config.EnableOverlapScaling = overlap;
             solver.Init(op);
 
             return solver;
