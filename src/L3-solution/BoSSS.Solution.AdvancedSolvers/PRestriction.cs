@@ -13,8 +13,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     /// <summary>
     /// Recursive p-Multigrid on a single mesh level;
-    /// this object os not a solver on its own, but it performs the restriction of the operator matrix
-    /// to a certain subset of cells and modes,
+    /// this object is not a solver on its own, but it performs the restriction of the operator matrix
+    /// to a certain **subset of cells and modes**,
     /// and applies the <see cref="LowerPSolver"/> onto it.
     /// </summary>
     public class PRestriction : ISubsystemSolver {
@@ -97,7 +97,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 public int[] DgDegree => m_ownerHack.m_RestrictedDeg;
 
-                public int NoOfExternalCells => m_ownerHack.m_Unrestricted.DgMapping.NoOfExternalCells;
+                public int NoOfExternalCells {
+                    get {
+                        if (m_ownerHack.m_MPIself)
+                            return 0;
+                        else 
+                            return m_ownerHack.m_Unrestricted.DgMapping.NoOfExternalCells;
+                    }
+                }
 
                 public int SpatialDimension => m_ownerHack.m_Unrestricted.DgMapping.SpatialDimension;
 
@@ -199,10 +206,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public Func<BlockMsrMatrix> GetExtRows = null;
 
+
         /// <summary>
-        /// 
+        /// Memory for external rows, if <see cref="GetCellRestriction"/> provides external cells;
+        /// (see <see cref="MPIexchange{T}.Vector_Ext"/>, <see cref="MPIexchangeInverse{T}.Vector_Ext"/>)
         /// </summary>
-        public bool ResrictToMPIself = false;
+        public Func<(double[] Xext, double[] RHSext)> GetExtMem = null;
+
+        /// <summary>
+        /// if true, the nested solver is working serially (only on the respective core), i.e. on the SELF communicator;
+        /// </summary>
+        public bool RestrictToMPIself = false;
 
 
         public int IterationsInNested {
@@ -250,16 +264,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new NotSupportedException("Configuration Error: length of 'RestrictedDeg' must match number of variables.");
             if(RestrictedDeg.Min() < 0)
                 throw new NotSupportedException("Cannot reduce DG Degree below 0.");
-            for(int iVar = 0; iVar < op.DgMapping.NoOfVariables; iVar++) {
+            if ((this.GetExtRows != null) != (this.GetExtMem != null))
+                throw new ArgumentException("Illegal configuration; if external matrix is provided, also external memory must be provided, and vise-versa.");
+
+            for (int iVar = 0; iVar < op.DgMapping.NoOfVariables; iVar++) {
                 if(RestrictedDeg[iVar] >= op.DgMapping.DgDegree[iVar])
                     throw new NotSupportedException($"Configuration Error: 'RestrictedDeg[{iVar}] == {RestrictedDeg[iVar]}' but the maximum supported degree for the respective variable is {op.DgMapping.DgDegree[iVar]}..");
             }
 
-            m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows, this.ResrictToMPIself);
+            Len = op.DgMapping.LocalLength;
+            m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows, this.RestrictToMPIself);
+            LenSub = m_MgOperatorRestriction.DgMapping.TotalLength;
 
-            if(LowerPSolver != null)
+            if(LowerPSolver != null && LenSub > 0)
                 LowerPSolver.Init(m_MgOperatorRestriction);
+
         }
+
+        int Len;
+
+        long LenSub;
 
         /// <summary>
         /// DG polynomial degrees in the restricted system
@@ -276,13 +300,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double> //
         {
-            var xLo = m_MgOperatorRestriction.BlkMask.GetSubVec(X);
-            var bLo = m_MgOperatorRestriction.BlkMask.GetSubVec(B);
+            if (X.Count != Len)
+                throw new ArgumentException("mismatch in solution vector length");
+            if (B.Count != Len)
+                throw new ArgumentException("mismatch in right-hand-side vector length");
+      
+            if (LenSub <= 0)
+                return; // empty solver: might happen in certain IBM-calculations
+
+            double[] xLo, bLo;
+            double[] xExt, bExt;
+            if (this.GetExtMem != null) {
+                (xExt, bExt) = GetExtMem();
+                xLo = m_MgOperatorRestriction.BlkMask.GetSubVec(xExt, X);
+                bLo = m_MgOperatorRestriction.BlkMask.GetSubVec(bExt, B);
+            } else {
+                xExt = null;
+                bExt = null;
+                xLo = m_MgOperatorRestriction.BlkMask.GetSubVec(X);
+                bLo = m_MgOperatorRestriction.BlkMask.GetSubVec(B);
+            }
+
 
             if(LowerPSolver != null)
                 LowerPSolver.Solve(xLo, bLo);
 
-            m_MgOperatorRestriction.BlkMask.AccSubVec(xLo, X);
+            if(xExt != null)
+                m_MgOperatorRestriction.BlkMask.AccSubVec(xLo, xExt, X);
+            else 
+                m_MgOperatorRestriction.BlkMask.AccSubVec(xLo, X);
         }
 
         public long UsedMemory() {
@@ -298,6 +344,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// solver for the restricted system
         /// </summary>
         public ISubsystemSolver LowerPSolver;
+
+
+        public BlockMask RestrictionMask {
+            get {
+                return m_MgOperatorRestriction.BlkMask;
+            }
+        }
+
+        /// <summary>
+        /// matrix of sub-system
+        /// </summary>
+        public BlockMsrMatrix SubsysMatrix {
+            get {
+                return m_MgOperatorRestriction.OperatorMatrix;
+            }
+        }
 
     }
 }

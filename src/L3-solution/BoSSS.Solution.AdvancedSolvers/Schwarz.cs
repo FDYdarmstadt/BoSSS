@@ -505,6 +505,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public abstract void Dispose();
         }
 
+        /*
         /// <summary>
         /// Use this with care. Not much tested yet ...
         /// </summary>
@@ -561,6 +562,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             BlockMask coarseMask;
         }
 
+
+        */
+        
+        
+        
         public class ClassicMG : SchwarzMG {
 
             public override void Init(MultigridOperator op, BlockMsrMatrix ExtRows) {
@@ -677,10 +683,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int myMpisize = MgMap.MpiSize;
                 int D = MgMap.SpatialDimension;
 
-                //if (UsePMGinBlocks && AnyHighOrderTerms)
-                //    Console.WriteLine("Schwarz: pmg is used as blocksolve");
-                //if (UsePMGinBlocks && !AnyHighOrderTerms)
-                //    Console.WriteLine("Schwarz: Only low order terms present. Schwarz blocks will be solved direct instead of PMG");
                 if (!Mop.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
                 if (!Mop.ColPartition.EqualsPartition(MgMap))
@@ -697,8 +699,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ===============
 
                 var _Blocks = this.m_BlockingStrategy.GetBlocking(m_MgOp);
-
-
                 
                 foreach (var b in _Blocks) {
                     if (b.Count <= 0)
@@ -707,16 +707,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int NoOfSchwzBlocks = _Blocks.Count();
 
                 
-                /* fk 14sep21:
-                int CellsInBlockMin = _Blocks.Min(b => b.Count).MPIMin();
-                int CellsInBlockMax = _Blocks.Max(b => b.Count).MPIMax();
-                int NoOfSchwarzTot = NoOfSchwzBlocks.MPISum();
-                int CellsInBlockTot = _Blocks.Sum(b => b.Count());
-                double CellsInBlockAvg = (double)CellsInBlockTot / (double)NoOfSchwarzTot;
-                Console.WriteLine($" Swz lv {m_MgOp.LevelIndex}: {NoOfSchwarzTot} blks, cells: {CellsInBlockMin} -- {CellsInBlockAvg} -- {CellsInBlockMax}");
-                 */      
-
-
                 // test cell blocks
                 // ================
 #if DEBUG
@@ -788,14 +778,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     BlockCells = _Blocks.Select(list => list.ToArray()).ToArray();
 
-                    /* fk 14sep21:
-                    int _CellsInBlockMin = BlockCells.Min(l => l.Length).MPIMin();
-                    int _CellsInBlockMax = BlockCells.Max(l => l.Length).MPIMax();
-                    int _CellsInBlockTot = BlockCells.Sum(b => b.Length);
-                    double _CellsInBlockAvg = (double)_CellsInBlockTot / (double)NoOfSchwarzTot;
-
-                    Console.WriteLine($" Swz lv {m_MgOp.LevelIndex}: {NoOfSchwarzTot} enl blks, cells: {_CellsInBlockMin} -- {_CellsInBlockAvg} -- {_CellsInBlockMax}");
-                    */
                 }
 
                 // Get all the External rows at once, for performance sake!
@@ -803,11 +785,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (config.Overlap > 0)
                     ExtRows = BlockMask.GetAllExternalRows(MgMap, Mop);
 
-                blockSolvers = new ISparseSolver[NoOfSchwzBlocks];
-                BMfullBlocks = new BlockMask[NoOfSchwzBlocks];
-                BlockMatrices = new BlockMsrMatrix[NoOfSchwzBlocks];
-                Levelpmgsolvers = new BlockLevelPmg[NoOfSchwzBlocks];
+                blockSolvers = new PRestriction[NoOfSchwzBlocks];
+                //BMfullBlocks = new BlockMask[NoOfSchwzBlocks];
+                //BlockMatrices = new BlockMsrMatrix[NoOfSchwzBlocks];
+                //Levelpmgsolvers = new BlockLevelPmg[NoOfSchwzBlocks];
 
+                /*
                 // Factory to provide the level pmg solver for blocks
                 // cannot be merged with LevelPmg right now,
                 // because sub-mapping is not implemented right now
@@ -815,6 +798,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     pLow = m_config.CoarseLowOrder,
                     FullSolveOfCutcells = m_config.CoarseSolveOfCutcells
                 };
+                */
 
                 var RedList = new List<int>();
                 ilPSP.Environment.StdoutOnlyOnRank0 = false;
@@ -822,15 +806,40 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Debug.Assert(BlockCells != null);
                     int[] bc = BlockCells[iPart];
 
-                    BlockMask fullMask = null;
-                    BlockMsrMatrix fullBlock;
+
+                    var BlockSolver = new PRestriction() {
+                        RestrictedDeg = op.Degrees,
+                        GetCellRestriction = () => bc,
+                        GetExtRows = () => ExtRows, // MPI exchange hack for matrix
+                        GetExtMem = this.GetExchangeMem, // MPI exchange hack for vector
+                        RestrictToMPIself = true
+                    };
+
+                    //BlockMask fullMask = null;
+                    //BlockMsrMatrix fullBlock;
 
                     if(m_config.UsePMGinBlocks && AnyHighOrderTerms) {
-                        // Init of level pmg block solvers
-                        Levelpmgsolvers[iPart] = PTGFactory.CreateAndInit(bc.ToList(), out fullBlock, out fullMask);
-                    } else {
-                        // direct solver for blocks
+                        // +++++++++++++++++++++
+                        // p-Multigrid in blocks
+                        // +++++++++++++++++++++
 
+                        //Levelpmgsolvers[iPart] = PTGFactory.CreateAndInit(bc.ToList(), out fullBlock, out fullMask);
+
+                        throw new NotImplementedException("todo");
+                    } else {
+                        // ++++++++++++++++++++++++
+                        // direct solver for blocks
+                        // ++++++++++++++++++++++++
+
+                        var direct = new DirectSolver() {
+                            ActivateCaching = (int NoIter, int MgLevel) => true
+                        };
+                        direct.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
+                        direct.config.TestSolution = false; 
+
+                        BlockSolver.LowerPSolver = direct;
+
+                        /*
                         // generates the block mask
                         var fullSel = new SubBlockSelector(MgMap);
                         fullSel.CellSelector(bc.ToList(), false);
@@ -857,12 +866,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         BlockMatrices[iPart] = fullBlock; // just used to calculate memory consumption
 
                         InitDirectSolver(iPart);
+                        */
 
                     }
-                    BMfullBlocks[iPart] = fullMask;
-                }
-                ilPSP.Environment.StdoutOnlyOnRank0 = true;
+                    BlockSolver.Init(op);
 
+                    //BMfullBlocks[iPart] = fullMask;
+                }
+
+                
+                /*
                 // dismisses void selections
                 var tmp1 = BMfullBlocks.ToList();
                 var tmp2 = BlockMatrices.ToList();
@@ -879,8 +892,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BlockMatrices = tmp2.ToArray();
                 blockSolvers = tmp3.ToArray();
 
-                if (NoOfSchwzBlocks == 0)
+                if (NoOfSchwzBlocks <= 0)
                     throw new ArgumentException($"No Schwarz Blocks on process {myMpiRank} / MgLevel {m_MgOp.LevelIndex}!. If void cells are present, consider adjusting partitioning.");
+                */
 
                 // Watchdog bomb!
                 // ==============
@@ -907,15 +921,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     var XExchange = new MPIexchangeInverse<double[]>(MgMap, SolScale);
 
-                    //int extLength = MgMap.AggGrid.iLogicalCells.NoOfExternalCells + MgMap.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                    //double[] sammel = new double[extLength];
 
                     for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) {
+                        var mask = blockSolvers[iPart].RestrictionMask;
 
-                        int rows = BMfullBlocks[iPart].NoOfMaskedRows;
+                        int rows = mask.NoOfMaskedRows;
                         double[] druffdamit = rows.ForLoop<double>(i => 1.0);
 
-                        BMfullBlocks[iPart].AccSubVec(druffdamit, XExchange.Vector_Ext, SolScale);
+                        mask.AccSubVec(druffdamit, XExchange.Vector_Ext, SolScale);
 
                     }
 
@@ -928,22 +941,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 }
 
-                //var grid = m_MgOp.Mapping.AggGrid;
-                //long L = grid.CellPartitioning.LocalLength;
-                //var basis = new Basis(op.BaseGridProblemMapping.GridDat, 0);
-                //SinglePhaseField SchwarzBlockPrint = new SinglePhaseField(basis, "SBlocks");
-                //SchwarzBlockPrint.AccConstant(-1);
-
-                //for (int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
-                //    foreach (int cell in BlockCells[iPart]) {
-                //        SchwarzBlockPrint.SetMeanValue(cell, iPart);
-                //    }
-                //}
-                //var print = new List<SinglePhaseField>();
-                //print.Add(SchwarzBlockPrint);
-                //BoSSS.Solution.Tecplot.Tecplot.PlotFields(print, "Sblocks.plt", 0.0, 0);
-
-                if (CoarseSolver != null) CoarseSolver.Init(op,ExtRows);
+                if (CoarseSolver != null) 
+                    CoarseSolver.Init(op, ExtRows);
             }
         }
 
@@ -967,13 +966,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             sbs.SetModeSelector(Modification);
         }
 
+        /*
         private void NonOverlapRestrictionInit() {
             var _Blocks = this.m_BlockingStrategy.GetBlocking(this.m_MgOp);
             var BlockCells = _Blocks.Select(list => list.ToArray()).ToArray();
             int NoOfSchwarzBlocks = BlockCells.Length;
             var retBMask = new BlockMask[NoOfSchwarzBlocks];
 
-            for (int iBlock=0;iBlock < NoOfSchwarzBlocks; iBlock++) {
+            for (int iBlock = 0; iBlock < NoOfSchwarzBlocks; iBlock++) {
                 var selector = new SubBlockSelector(this.m_MgOp.Mapping);
                 selector.CellSelector(BlockCells[iBlock]);
                 retBMask[iBlock] = new BlockMask(selector);
@@ -992,7 +992,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private void NonOverlapRestriction<U>(int iBlock, double[] xi, U X)
             where U : IList<double> //
         {
-            if (NonOverlapMask == null) NonOverlapRestrictionInit();
+            if (NonOverlapMask == null) 
+                NonOverlapRestrictionInit();
             Debug.Assert(NonOverlapMask != null);
             var tmp = new double[X.ToArray().Length];
             int extLen = BMfullBlocks[iBlock].NoOfMaskedRows;
@@ -1002,6 +1003,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         private BlockMask[] NonOverlapMask = null;
+        */
 
         /// <summary>
         /// scaling of blocks in the overlapping regions (<see cref="Config.EnableOverlapScaling"/>).
@@ -1019,6 +1021,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /*
         /// <summary>
         /// Linear solver for each block
         /// </summary>
@@ -1029,8 +1032,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// if <see cref="Config.UsePMGinBlocks"/> is set.
         /// </summary>
         BlockLevelPmg[] Levelpmgsolvers;
+        */
 
-        
+        /// <summary>
+        /// Linear solver for each block
+        /// </summary>
+        protected PRestriction[] blockSolvers;
+
+        /*
         /// <summary>
         /// In the case of P-multigrid for each level (<see cref="Config.UsePMGinBlocks"/>), the matrices for the block
         /// - index: Schwarz block
@@ -1040,11 +1049,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
 
         /// <summary>
-        /// masks for the Schwarz blocks
+        /// masks for the Schwarz blocks (all modes, for all DG degrees)
         /// - index: Schwarz block
         /// </summary>
         protected BlockMask[] BMfullBlocks;
-
+        */
 
 
         /*
@@ -1061,7 +1070,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
         */
 
-
+        /*
         private bool IsSolverSuppored(int iPart) {
             bool IsSupported = (blockSolvers[iPart] is PARDISOSolver);
             return IsSupported;
@@ -1073,7 +1082,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return (solver as PARDISOSolver).CacheFactorization;
             return false;
         }
+        */
 
+        /*
         /// <summary>
         /// If CacheFactorization activated. Matrix is already stored in Pardiso-Format.
         /// No need to keep Schwarzblocks ...
@@ -1090,7 +1101,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             return Disposethisblock;
         }
-
+        */
         /*
         private bool ActivateCachingOfSolver(int iPart) {
             if (!IsSolverSuppored(iPart))
@@ -1105,6 +1116,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
         */
 
+        /*
         private void InitDirectSolver(int iPart) {
             if (blockSolvers[iPart] != null)
                 blockSolvers[iPart].Dispose();
@@ -1134,7 +1146,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 blockSolvers[iPart].DefineMatrix(BlockMatrices[iPart]);
             }
         }
-
+        */
         
 
         ///// <summary>
@@ -1156,6 +1168,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         //private double[] Xdummy, Resdummy;
 
+        (double[] Xext, double[] RHSext) GetExchangeMem() {
+            return m_GetExchangeMemTemp();
+        }
+
+
+        Func<(double[] Xext, double[] RHSext)> m_GetExchangeMemTemp;
+
         /// <summary>
         /// ~
         /// </summary>
@@ -1164,7 +1183,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double> //
         {
             using (var tr = new FuncTrace()) {
-                int NoParts = this.BMfullBlocks.Length;
+                int NoParts = this.blockSolvers.Length;
 
                 // --------
                 // Reminder: we solve for a correction, the basic idea is:
@@ -1185,6 +1204,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // Reminder: even though no overlap considered, these Vectors have to be there ...
                 ResExchange = new MPIexchange<double[]>(this.m_MgOp.Mapping, Res);
                 XExchange = new MPIexchangeInverse<U>(this.m_MgOp.Mapping, X);
+                m_GetExchangeMemTemp = () => (XExchange.Vector_Ext, ResExchange.Vector_Ext);
+
 
                 int LocLength = m_MgOp.Mapping.LocalLength;
 
@@ -1216,6 +1237,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         */
                         for (int iPart = 0; iPart < NoParts; iPart++) {
 
+                            /*
                             var bi = BMfullBlocks[iPart].GetSubVec(ResExchange.Vector_Ext, Res);
                             double[] xi = new double[bi.Length];
                             if (m_config.UsePMGinBlocks && AnyHighOrderTerms) {
@@ -1254,26 +1276,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 //SingleFilter(xi);
                             }
+                            
 
-                            //xi.SaveToTextFileDebug(String.Format("x{0}",iPart));
+                            
 
                             // accumulate block solution 'xi' to global solution 'X'
                             BMfullBlocks[iPart].AccSubVec(xi, XExchange.Vector_Ext, X);
                             //NonOverlapRestriction(iPart, xi, X);
+
+                            */
+                            this.blockSolvers[iPart].Solve(X, Res);
                         }
-                        /* fk 14sep21:
-                        MinBlockSize = MinBlockSize.MPIMin();
-                        MaxBlockSize = MaxBlockSize.MPIMax();
-
-                        mintime = mintime.MPIMin();
-                        maxtime = maxtime.MPIMax();
-                        totTime = totTime.MPISum();
-                        int NoPartsTot = NoParts.MPISum();
-                        double avgTime = totTime / NoPartsTot;
-
-                        Console.WriteLine($" Swz lv {m_MgOp.LevelIndex}: {NoPartsTot} blks, {mintime} -- {avgTime} -- {maxtime}");
-                        Console.WriteLine($"        Blksize:  {MinBlockSize}  -- {MaxBlockSize}");
-                        */
+                        
                     }
                     tr.Info("entering overlapscaling");
                     using (new BlockTrace("overlap_scaling", tr)) {
@@ -1358,6 +1372,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //Console.WriteLine($"peak memory: {mempeak} MB");
         }
 
+        /*
         private void DisposePMGSolvers() {
             if (m_config.UsePMGinBlocks && Levelpmgsolvers != null) {
                 foreach (var solver in this.Levelpmgsolvers) {
@@ -1366,6 +1381,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.Levelpmgsolvers = null;
             }
         }
+        */
 
         /// <summary>
         /// ~
@@ -1401,6 +1417,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return Clone;
         }
 
+        /*
         /// <summary>
         /// ~
         /// </summary>
@@ -1420,6 +1437,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return s;
             }
         }
+        */
 
         /// <summary>
         /// This can be used for testing MPI parallel execution
@@ -1643,10 +1661,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Dispose() {
             this.DisposeBlockSolver();
-            this.DisposePMGSolvers();
+            //this.DisposePMGSolvers();
             this.SolutionScaling = null;
-            this.BlockMatrices = null;
-            this.BMfullBlocks = null;
+            //this.BlockMatrices = null;
+            //this.BMfullBlocks = null;
 
             if (this.CoarseSolver != null) {
                 this.CoarseSolver.Dispose();
@@ -1654,17 +1672,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /// <summary>
+        /// ~
+        /// </summary>
         public long UsedMemory() {
             long LScaling = 0;
             if (config.EnableOverlapScaling && config.Overlap >= 1) 
                 LScaling += this.SolutionScaling.Length * sizeof(double);
-            long MemoryOfBlocks = UsedMem;
             long MemoryOfFac = 0;
             foreach (var solver in blockSolvers) {
-                if (solver is PARDISOSolver ps)
-                    MemoryOfFac += ps.UsedMemory();
+                MemoryOfFac += solver.UsedMemory();
             }
-            return (LScaling + MemoryOfBlocks) + MemoryOfFac;
+            return LScaling + MemoryOfFac;
         }
     }
 }

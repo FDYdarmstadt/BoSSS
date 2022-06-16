@@ -1,4 +1,5 @@
-﻿using ilPSP;
+﻿using BoSSS.Foundation.XDG;
+using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.LinSolvers.PARDISO;
 using ilPSP.Tracing;
@@ -11,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-
+    /*
     /// <summary>
     /// The main purpose of this factory is to wrap up input parameters for the block solvers and to provide buffer arrays.
     /// All block solver share these buffers, which reduces the pressure on the garbage collector.
@@ -89,7 +90,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
     }
 
-
+    */
     class BlockLevelPmg : IDisposable {
 
         public bool m_FullSolveOfCutcells = true;
@@ -378,4 +379,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotImplementedException();
         }
     }
+
+    
 }

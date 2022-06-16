@@ -123,8 +123,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-
-
         /// <summary>
         /// 
         /// </summary>
@@ -152,10 +150,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             Matlab
         }
-
-
-
-
 
         void InitImpl(IOperatorMappingPair op) {
             using(var tr = new FuncTrace()) {
