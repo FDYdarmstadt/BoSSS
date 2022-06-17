@@ -814,6 +814,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         GetExtMem = this.GetExchangeMem, // MPI exchange hack for vector
                         RestrictToMPIself = true
                     };
+                    blockSolvers[iPart] = BlockSolver;
 
                     //BlockMask fullMask = null;
                     //BlockMsrMatrix fullBlock;

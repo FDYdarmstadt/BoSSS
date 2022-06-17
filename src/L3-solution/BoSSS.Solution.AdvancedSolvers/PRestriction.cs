@@ -268,7 +268,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ArgumentException("Illegal configuration; if external matrix is provided, also external memory must be provided, and vise-versa.");
 
             for (int iVar = 0; iVar < op.DgMapping.NoOfVariables; iVar++) {
-                if(RestrictedDeg[iVar] >= op.DgMapping.DgDegree[iVar])
+                if(RestrictedDeg[iVar] > op.DgMapping.DgDegree[iVar])
                     throw new NotSupportedException($"Configuration Error: 'RestrictedDeg[{iVar}] == {RestrictedDeg[iVar]}' but the maximum supported degree for the respective variable is {op.DgMapping.DgDegree[iVar]}..");
             }
 
