@@ -50,7 +50,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int NoOfMultigridLevels = 1000000;
 
         /// <summary>
-        /// Use a p-two-grid approach in Additive Schwarz (<see cref="Schwarz.UsePMGinBlocks"/>).
+        /// Use a p-two-grid approach in Additive Schwarz (<see cref="Schwarz.Config.UsePMGinBlocks"/>).
         /// 
         /// This results in a lesser number of Schwarz blocks and more computational cells per Schwarz block.
         /// It seems to accelerate convergence for certain problems (mostly single-phase).
@@ -73,6 +73,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// 
         /// </summary>
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+            //Debugger.Launch();
             Func<int, int> SblkSizeFunc = delegate (int iLevel) { return TargetBlockSize; };
             var instance = KcycleMultiSchwarz(level, SblkSizeFunc);
             instance.Init(level);
@@ -80,7 +81,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-
+        /*
         /// <summary>
         /// Determine max MG level from target blocksize
         /// </summary>
@@ -113,6 +114,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //MaxUsedMGLevel = iLevel; // remember this for saving in query
             return iLevel + 1;
         }
+        */
+
 
         int GetLocalDOF(MultigridOperator op, int pOfLowOrderSystem) {
             if(pOfLowOrderSystem <= -1) {
@@ -146,10 +149,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int LocalDOF4directSolver = GetLocalDOF(op, pCoarsest);
             double SizeFraction = (double)LocalDOF4directSolver / (double)SchwarzblockSize;
 
-            if(SizeFraction < 1) {
-                Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver}) < Schwarz-Block size ({SchwarzblockSize});");
-                Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
-            }
+            //if(SizeFraction < 1) {
+            //    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver}) < Schwarz-Block size ({SchwarzblockSize});");
+            //    Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
+            //}
             int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Floor(SizeFraction));
             return LocalNoOfSchwarzBlocks;
         }
@@ -158,14 +161,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// No Of Local Schwarz Blocks (process local) for all MG levels
         /// </summary>
-
         private int[] NoOfSchwarzBlocks(MultigridOperator op, int pCoarsest = -1, Func<int, int> targetblocksize = null) {
             int MSLength = op.NoOfLevels;
             var NoOfBlocks = MSLength.ForLoop(level => -1);
             for(int iLevel = 0; iLevel < MSLength; iLevel++) {
-                int LocalNoOfSchwarzBlocks = NoOfBlocksAtLevel(op, iLevel, pCoarsest, targetblocksize);
-                int TotalNoOfSchwarzBlocks = LocalNoOfSchwarzBlocks.MPISum();
-                //SetQuery("GlobalSblocks at Lvl" + iLevel, TotalNoOfSchwarzBlocks, true);
+                int LocalNoOfSchwarzBlocks = NoOfBlocksAtLevel(op.GetLevel(iLevel), iLevel, pCoarsest, targetblocksize);
                 NoOfBlocks[iLevel] = LocalNoOfSchwarzBlocks;
             }
             return NoOfBlocks;
@@ -184,8 +184,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         
         ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op, Func<int,int> SchwarzblockSize) {
             using(var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
                 int MSLength = op.NoOfLevels;
-
 
                 var SolverChain = new List<ISolverSmootherTemplate>();
 
@@ -193,10 +193,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 
                 int pCoarsest = pMaxOfCoarseSolver < maxDG && UsepTG ? pMaxOfCoarseSolver : -1;
                 int[] NoBlocks = NoOfSchwarzBlocks(op, pCoarsest, SchwarzblockSize);
-                int[] GlobalNoBlocks = NoBlocks.Select(No => No.MPISum()).ToArray();
-                int MGDepth = GetMGDepth(op);
-                int LastLevel = MGDepth - 1;
+                int[] GlobalNoBlocks = NoBlocks.MPISum();
+                if (NoBlocks.Any(no => no <= 0))
+                    throw new ApplicationException("Error in algorithm: No Of blocks cannot be 0.");
+                var OneBlockPerNode = NoBlocks.Select(nb => nb <= 1).MPIAnd(op.Mapping.MPI_Comm);
 
+                /*
                 Func<int, int, int, bool> SmootherCaching = delegate (int Iter, int MgLevel, int iBlock) {
                     //return Iter >= ((MaxMGLevel - MgLevel) * 3) * (1);
                     return true;
@@ -205,16 +207,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //return Iter >= MaxMGDepth+1;
                     return true;
                 };
+                */
 
-                for(int iLevel = 0; iLevel < MGDepth; iLevel++) {
+                for (MultigridOperator op_lv = op; op_lv != null; op_lv = op_lv.CoarserLevel) {
+                    int iLevel = op_lv.LevelIndex;
 
-                    bool useDirect = iLevel == LastLevel;
+                    bool useDirect = false;
+                    useDirect |= op_lv.Mapping.TotalLength <= TargetBlockSize;
+                    useDirect |= GlobalNoBlocks[iLevel] <= 1;
+                    //useDirect |= (double)PrevSize / (double)SysSize < 1.5 && SysSize < 50000; // degenerated MG-Agglomeration, because too few candidates
+                    useDirect |= op_lv.CoarserLevel == null;
 
+                    bool skipLevel = false;
+                    if(useDirect == false && iLevel > 0) {
+                        if (OneBlockPerNode[iLevel] && OneBlockPerNode[iLevel - 1]) {
+                            // $"Only one block per node on level {iLevel}, and should be skipped, but cannot be skipped be skipped, but not supported yet."
+                            //throw new NotSupportedException($"Only one block per node on level {iLevel}, and should be skipped, but cannot be skipped be skipped, but not supported yet.");
+                            skipLevel = true;
+                        }
+                    }
+                    Debug.Assert(useDirect.MPIEquals());
+                    Debug.Assert(skipLevel.MPIEquals());
 
-                    if(useDirect)
-                        Console.WriteLine("KcycleMultiSchwarz: lv {0}, Direct solver ", iLevel);
-                    else
-                        Console.WriteLine("KcycleMultiSchwarz: lv {0}, no of blocks {1} : ", iLevel, GlobalNoBlocks[iLevel]);
+                    if (useDirect)
+                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, L = {op_lv.Mapping.TotalLength}, Direct solver ");
+                    else if (skipLevel) {
+                        tr.Info($"Only one block per node on levels {iLevel} and {iLevel - 1}, so {iLevel} will be skipped.");
+                    } else {
+                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, L = {op_lv.Mapping.TotalLength}, no of blocks total: {GlobalNoBlocks[iLevel]}");                       
+                    }
+
 
                     ISolverSmootherTemplate levelSolver;
 
@@ -223,9 +245,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         levelSolver = _levelSolver;
                         _levelSolver.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
                         _levelSolver.config.TestSolution = false;
-                        _levelSolver.ActivateCaching = CoarseCaching;
+                        //_levelSolver.ActivateCaching = CoarseCaching;
 
 
+                    } else if (skipLevel) {
+                        var _levelSolver = new GenericRestriction();
+                        levelSolver = _levelSolver;
                     } else {
 
                         var smoother1 = new Schwarz() {
@@ -233,22 +258,35 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             m_BlockingStrategy = new Schwarz.METISBlockingStrategy() {
                                 NoOfPartsOnCurrentProcess = NoBlocks[iLevel],
                             },
-                            ActivateCachingOfBlockMatrix = SmootherCaching,
-                            Overlap = 1, // overlap seems to help; more overlap seems to help more
-                            EnableOverlapScaling = true,
-                            UsePMGinBlocks = UsepTG
+                            //ActivateCachingOfBlockMatrix = SmootherCaching,
+                            
                         };
+                        smoother1.config.EnableOverlapScaling = true;
+                        smoother1.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
+                        smoother1.config.UsePMGinBlocks = UsepTG;
 
                         var _levelSolver = new OrthonormalizationMultigrid() {
                             PreSmoother = smoother1,
                             PostSmoother = smoother1
                         };
                         _levelSolver.config.m_omega = 1;
-
-                        if(iLevel > 0) {
-                            (_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
-                        } else {
+                      
+                        if (iLevel == 0) {
                             (_levelSolver).TerminationCriterion = this.DefaultTermination;
+                            if(maxDG > 3)
+                                _levelSolver.config.NoOfPostSmootherSweeps = 6;
+                        } else if(iLevel == 1) {
+                            //(_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
+
+                            (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
+                                var ret = (i <= 1 || r > r0 * 0.1, true);
+                                //Console.WriteLine($"level 1: {i} {r} {r / r0} {ret}");
+                                return ret;
+
+                            };
+
+                        } else {
+                            (_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
                         }
                         levelSolver = _levelSolver;
 
@@ -266,8 +304,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     SolverChain.Add(levelSolver);
 
                     if(iLevel > 0) {
-                        ((OrthonormalizationMultigrid)(SolverChain[iLevel - 1])).CoarserLevelSolver = levelSolver;
+                        if(SolverChain[iLevel - 1] is OrthonormalizationMultigrid omg_fine)
+                            omg_fine.CoarserLevelSolver = levelSolver;
+                        else if(SolverChain[iLevel - 1] is GenericRestriction rest)
+                            rest.CoarserLevelSolver = levelSolver;
                     }
+
+                    if (useDirect)
+                        break;
                 }
 
                 return SolverChain[0];
@@ -275,4 +319,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
     }
+
+
+  
 }
