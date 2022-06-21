@@ -198,16 +198,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new ApplicationException("Error in algorithm: No Of blocks cannot be 0.");
                 var OneBlockPerNode = NoBlocks.Select(nb => nb <= 1).MPIAnd(op.Mapping.MPI_Comm);
 
-                /*
-                Func<int, int, int, bool> SmootherCaching = delegate (int Iter, int MgLevel, int iBlock) {
-                    //return Iter >= ((MaxMGLevel - MgLevel) * 3) * (1);
-                    return true;
-                };
-                Func<int, int, bool> CoarseCaching = delegate (int Iter, int MgLevel) {
-                    //return Iter >= MaxMGDepth+1;
-                    return true;
-                };
-                */
 
                 for (MultigridOperator op_lv = op; op_lv != null; op_lv = op_lv.CoarserLevel) {
                     int iLevel = op_lv.LevelIndex;

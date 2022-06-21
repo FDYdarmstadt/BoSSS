@@ -640,7 +640,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ~
         /// </summary>
         public void Init(MultigridOperator op) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 if(object.ReferenceEquals(op, m_MgOp))
                     return; // already initialized
                 else
@@ -801,12 +801,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 */
 
                 var RedList = new List<int>();
-                ilPSP.Environment.StdoutOnlyOnRank0 = false;
+
+                tr.Info($"Initializing " + NoOfSchwzBlocks + " blocks on multigrid level " + op.LevelIndex);
                 for(int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     Debug.Assert(BlockCells != null);
                     int[] bc = BlockCells[iPart];
 
-
+                    tr.Info($"Initializing block " + iPart + " of " + NoOfSchwzBlocks + "...");
                     var BlockSolver = new PRestriction() {
                         RestrictedDeg = op.Degrees,
                         GetCellRestriction = () => bc,
@@ -819,6 +820,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //BlockMask fullMask = null;
                     //BlockMsrMatrix fullBlock;
 
+                    
+
                     if(m_config.UsePMGinBlocks && AnyHighOrderTerms) {
                         // +++++++++++++++++++++
                         // p-Multigrid in blocks
@@ -828,6 +831,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         throw new NotImplementedException("todo");
                     } else {
+
                         // ++++++++++++++++++++++++
                         // direct solver for blocks
                         // ++++++++++++++++++++++++

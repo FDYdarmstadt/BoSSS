@@ -1,9 +1,11 @@
 ﻿using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -27,24 +29,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             public MgOperatorRestriction(IOperatorMappingPair Unrestricted, int[] RestrictedDeg, Func<int[]> __GetCellRestriction, Func<BlockMsrMatrix> __GetExtRows, bool __MPIself) {
-                
-                var subBlock = new SubBlockSelector(Unrestricted.DgMapping);
+                using (new FuncTrace()) {
+                    var subBlock = new SubBlockSelector(Unrestricted.DgMapping);
 
-                if(__GetCellRestriction != null) {
-                    jLoc2Glob = __GetCellRestriction();
-                    subBlock.CellSelector(jLoc2Glob);
-                }
-                subBlock.SetModeSelector((int jCell, int iVar, int iSpc, int Deg) => Deg <= RestrictedDeg[iVar]);
+                    if (__GetCellRestriction != null) {
+                        jLoc2Glob = __GetCellRestriction();
+                        subBlock.CellSelector(jLoc2Glob);
+                    }
+                    subBlock.SetModeSelector((int jCell, int iVar, int iSpc, int Deg) => Deg <= RestrictedDeg[iVar]);
 
-                m_MPIself = __MPIself;
-                m_RestrictedDeg = RestrictedDeg;
-                m_Unrestricted = Unrestricted;
-                m_Mask = new BlockMask(subBlock, __GetExtRows?.Invoke());
+                    m_MPIself = __MPIself;
+                    m_RestrictedDeg = RestrictedDeg;
+                    m_Unrestricted = Unrestricted;
+                    m_Mask = new BlockMask(subBlock, __GetExtRows?.Invoke());
 
-                var idx = m_Mask.GlobalIndices_Internal;
-                for(int i = 1; i < idx.Count; i++) {
-                    if (idx[i - 1] >= idx[i])
-                        throw new Exception("ghdshj: " + Unrestricted.GetType());
+                    var idx = m_Mask.GlobalIndices_Internal;
+                    for (int i = 1; i < idx.Count; i++) {
+                        if (idx[i - 1] >= idx[i])
+                            throw new Exception("ghdshj: " + Unrestricted.GetType());
+                    }
                 }
             }
 
@@ -254,31 +257,40 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MgOperatorRestriction m_MgOperatorRestriction;
 
         void InitImpl(IOperatorMappingPair op) {
-            this.Dispose();
-            this.ResetStat();
+            using (var tr = new FuncTrace()) {
+                this.Dispose();
+                this.ResetStat();
 
-            //int[] RestrictedDeg = op.DgMapping.DgDegree.Select(p => p - 1).ToArray();
-            if (RestrictedDeg == null)
-                throw new NotSupportedException("'RestrictedDeg' must be initialized before this object can be used.");
-            if (RestrictedDeg.Length != op.DgMapping.NoOfVariables)
-                throw new NotSupportedException("Configuration Error: length of 'RestrictedDeg' must match number of variables.");
-            if(RestrictedDeg.Min() < 0)
-                throw new NotSupportedException("Cannot reduce DG Degree below 0.");
-            if ((this.GetExtRows != null) != (this.GetExtMem != null))
-                throw new ArgumentException("Illegal configuration; if external matrix is provided, also external memory must be provided, and vise-versa.");
+                //int[] RestrictedDeg = op.DgMapping.DgDegree.Select(p => p - 1).ToArray();
+                if (RestrictedDeg == null)
+                    throw new NotSupportedException("'RestrictedDeg' must be initialized before this object can be used.");
+                if (RestrictedDeg.Length != op.DgMapping.NoOfVariables)
+                    throw new NotSupportedException("Configuration Error: length of 'RestrictedDeg' must match number of variables.");
+                if (RestrictedDeg.Min() < 0)
+                    throw new NotSupportedException("Cannot reduce DG Degree below 0.");
+                if ((this.GetExtRows != null) != (this.GetExtMem != null))
+                    throw new ArgumentException("Illegal configuration; if external matrix is provided, also external memory must be provided, and vise-versa.");
 
-            for (int iVar = 0; iVar < op.DgMapping.NoOfVariables; iVar++) {
-                if(RestrictedDeg[iVar] > op.DgMapping.DgDegree[iVar])
-                    throw new NotSupportedException($"Configuration Error: 'RestrictedDeg[{iVar}] == {RestrictedDeg[iVar]}' but the maximum supported degree for the respective variable is {op.DgMapping.DgDegree[iVar]}..");
+                for (int iVar = 0; iVar < op.DgMapping.NoOfVariables; iVar++) {
+                    if (RestrictedDeg[iVar] > op.DgMapping.DgDegree[iVar])
+                        throw new NotSupportedException($"Configuration Error: 'RestrictedDeg[{iVar}] == {RestrictedDeg[iVar]}' but the maximum supported degree for the respective variable is {op.DgMapping.DgDegree[iVar]}..");
+                }
+                if (op.DgMapping.MPI_Comm != op.OperatorMatrix.MPI_Comm)
+                    throw new ApplicationException("mismatch of MPI communicators");
+
+
+                Len = op.DgMapping.LocalLength;
+                m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows, this.RestrictToMPIself);
+                LenSub = m_MgOperatorRestriction.DgMapping.TotalLength;
+
+                tr.Info("MPI rank of DG mapping " + m_MgOperatorRestriction.DgMapping.MpiRank + " of " + m_MgOperatorRestriction.DgMapping.MpiSize);
+                if (m_MgOperatorRestriction.DgMapping.MPI_Comm != m_MgOperatorRestriction.OperatorMatrix.MPI_Comm)
+                    throw new ApplicationException("mismatch of MPI communicators");
+
+                if (LowerPSolver != null && LenSub > 0)
+                    LowerPSolver.Init(m_MgOperatorRestriction);
+
             }
-
-            Len = op.DgMapping.LocalLength;
-            m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows, this.RestrictToMPIself);
-            LenSub = m_MgOperatorRestriction.DgMapping.TotalLength;
-
-            if(LowerPSolver != null && LenSub > 0)
-                LowerPSolver.Init(m_MgOperatorRestriction);
-
         }
 
         int Len;
