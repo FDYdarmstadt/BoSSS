@@ -106,9 +106,6 @@ namespace BoSSS.Solution.Control {
                 case LinearSolverCode.exp_Kcycle_ILU:
                 return new AdvancedSolvers.OrthoMGILUconfig();
                 
-                //case LinearSolverCode.cg:
-                //return new AdvancedSolvers.MonkeySolver.Config() { WhichSolver = AdvancedSolvers.MonkeySolver._whichSolver.CG };
-
                 case LinearSolverCode.pMultigrid:
                 return new AdvancedSolvers.PmgConfig();
                 

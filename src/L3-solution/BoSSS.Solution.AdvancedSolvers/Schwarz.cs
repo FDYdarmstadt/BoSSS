@@ -220,8 +220,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Debug.Assert(xadj[JComp] == adjncy.Count);
 
                 int MPIrank, MPIsize;
-                MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIrank);
-                MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIsize);
+                MPI.Wrappers.csMPI.Raw.Comm_Rank(op.DgMapping.MPI_Comm, out MPIrank);
+                MPI.Wrappers.csMPI.Raw.Comm_Size(op.DgMapping.MPI_Comm, out MPIsize);
 
 
                 int[] part = new int[JComp];
@@ -260,10 +260,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 {
                     List<List<int>> _Blocks = NoOfPartsOnCurrentProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsOnCurrentProcess))).ToList();
-                    for (int j = 0; j < JComp; j++) {
-                        _Blocks[part[j]].Add(j);
+                    for (int j = 0; j < JComp; j++) { // loop over cells...
+                        _Blocks[part[j]].Add(j); // cell `j` belongs to block `part[j]` 
                     }
 
+                    // delete blocks which are completely empty:
                     for (int iB = 0; iB < _Blocks.Count; iB++) {
                         if (_Blocks[iB].Count <= 0) {
                             _Blocks.RemoveAt(iB);
@@ -275,7 +276,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         Console.WriteLine("METIS WARNING: requested " + NoOfPartsOnCurrentProcess + " blocks, but got " + _Blocks.Count);
 
                     cache = _Blocks.ToArray();
-                    Console.WriteLine("MetisBlocking Testcode active !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                     return cache.Select(orgList => new List<int>(orgList)).ToArray();
                 }
             }
@@ -329,8 +329,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 int MPIrank, MPIsize;
-                MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIrank);
-                MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIsize);
+                MPI.Wrappers.csMPI.Raw.Comm_Rank(op.DgMapping.MPI_Comm, out MPIrank);
+                MPI.Wrappers.csMPI.Raw.Comm_Size(op.DgMapping.MPI_Comm, out MPIsize);
 
                 int[] part = new int[JComp];
                 {
@@ -378,13 +378,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         [Serializable]
         public class Config : ISolverFactory {
 
-
-            /// <summary>
-            /// Hack the hack, if pressure is equal order ...
-            /// Only viable, if p-two-grid used 
-            /// </summary>
-            public bool EqualOrder = false;
-
             /// <summary>
             /// turn P-multigrid for block solvers on/off.
             /// Not recommended: This may cause bad convergence in the presence of pressure.
@@ -402,9 +395,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public int pLow = 1;
 
-            public string Name => throw new NotImplementedException();
+            public string Name => "Additive Schwarz Preconditioner";
 
-            public string Shortname => throw new NotImplementedException();
+            public string Shortname => "AddSwz";
 
             public ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
                 var R = new Schwarz();
@@ -420,8 +413,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(other == null)
                     return false;
 
-                if (other.EqualOrder != this.EqualOrder)
-                    return false;
+
                 if (other.UsePMGinBlocks != this.UsePMGinBlocks)
                     return false;
                 if (other.CoarseSolveOfCutcells != this.CoarseSolveOfCutcells)
@@ -429,6 +421,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (other.CoarseLowOrder != this.CoarseLowOrder)
                     return false;
                 if (other.pLow != this.pLow)
+                    return false;
+                if (other.Overlap != this.Overlap)
+                    return false;
+                if (other.EnableOverlapScaling != this.EnableOverlapScaling)
                     return false;
 
                 return true;
