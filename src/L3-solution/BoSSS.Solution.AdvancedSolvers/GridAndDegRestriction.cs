@@ -14,13 +14,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
     /// <summary>
-    /// Recursive p-Multigrid on a single mesh level;
-    /// this object is not a solver on its own, but it performs the restriction of the operator matrix
-    /// to a certain **subset of cells and modes**,
-    /// and applies the <see cref="LowerPSolver"/> onto it.
+    /// Restriction of a <see cref="IOperatorMappingPair"/> onto a sub-mesh with lower polynomial degree, 
+    /// i.e. this object is not a solver on its own, but it performs the restriction of the operator matrix
+    /// to a certain **subset of cells and modes**.
+    /// - sub-mes restriction and degree restriction can be used independent,
+    ///   i.e. it is also possible to use only one of them
+    /// - the solution of the sub-system is performed by <see cref="LowerPSolver"/>
+    /// - the polynomial degree hierarchy is defined by setting <see cref="RestrictedDeg"/>
+    /// - mesh restriction is performed by <see cref="GetCellRestriction"/>
     /// </summary>
     public class GridAndDegRestriction : ISubsystemSolver {
 
+        /*
         static int counter_objectId = 1;
 
         public int objectId;
@@ -32,7 +37,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             objectId = counter_objectId;
             counter_objectId++;
         }
-
+        */
 
         /// <summary>
         /// Note: at this point, we do not support everything which a <see cref="SubBlockSelector"/> can support.

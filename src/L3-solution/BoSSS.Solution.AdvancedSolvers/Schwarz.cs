@@ -785,80 +785,46 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         RestrictToMPIself = true
                     };
                     blockSolvers[iPart] = BlockSolver;
-                    blockSolvers[iPart].Init(op); // will only initialize 
-                    //BlockMask fullMask = null;
-                    //BlockMsrMatrix fullBlock;
-
-                    
-
-                    if(m_config.UsePMGinBlocks && AnyHighOrderTerms) {
-                        // +++++++++++++++++++++
-                        // p-Multigrid in blocks
-                        // +++++++++++++++++++++
-
-                        //Levelpmgsolvers[iPart] = PTGFactory.CreateAndInit(bc.ToList(), out fullBlock, out fullMask);
-
-                        var pmgConfig = new PmgConfig();
-                            
-
-                        var pmg = pmgConfig.CreateInstanceImpl(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
-                        if (pmg is IProgrammableTermination pmg_pTerm) {
-                            pmg_pTerm.TerminationCriterion = delegate (int i, double r0, double r) {
-                                var ret = (i <= 1 || r > r0 * 0.1, true);
-                                Console.WriteLine($"Block solver {iPart}: {i} {r} {r / r0} {ret}");
-                                return ret;
-                            };
-                        }
-
-                        BlockSolver.LowerPSolver = pmg;
-                    } else {
-
-                        // ++++++++++++++++++++++++
-                        // direct solver for blocks
-                        // ++++++++++++++++++++++++
-
-                        var direct = new DirectSolver() {
-                            ActivateCaching = (int NoIter, int MgLevel) => true
-                        };
-                        direct.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
-                        direct.config.TestSolution = false; 
-
-                        BlockSolver.LowerPSolver = direct;
-
-                        /*
-                        // generates the block mask
-                        var fullSel = new SubBlockSelector(MgMap);
-                        fullSel.CellSelector(bc.ToList(), false);
+                    blockSolvers[iPart].Init(op); // will only initialize Restriction, since sub-solver is not set yet!
+                                                  //                               initialization of sub-solver must be done manually, see below.
 
 
-                        try {
-                            fullMask = new BlockMask(fullSel, ExtRows);
-                        } catch(ArgumentException ex) {
-                            // void cells, lead to empty selection error this is a fallback for this case
-                            if(fullMask == null || fullMask.NoOfMaskedCells == 0) {
-                                //Console.WriteLine("Exception caught:" + ex.Message);
-                                RedList.Add(iPart);
-                                Console.WriteLine($"Warning: empty selection at proc{myMpiRank}/lvl{m_MgOp.LevelIndex}/swb{iPart}. You probably encountered a void cell! Block will be ignored ...");
-                                continue;
-                            } else {
-                                throw ex;
+                    if (BlockSolver.OperatorRestriction.DgMapping.TotalLength > 0) {
+                        if (m_config.UsePMGinBlocks && AnyHighOrderTerms) {
+                            // +++++++++++++++++++++
+                            // p-Multigrid in blocks
+                            // +++++++++++++++++++++
+                                                       
+                            var pmgConfig = new PmgConfig();
+                            var pmg = pmgConfig.CreateInstanceImpl(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
+                            BlockSolver.LowerPSolver = pmg;
+
+                            if (pmg is IProgrammableTermination pmg_pTerm) {
+                                pmg_pTerm.TerminationCriterion = delegate (int i, double r0, double r) {
+                                    var ret = (i <= 1 || r > r0 * 0.1, true);
+                                    if(ret.Item1)
+                                        Console.WriteLine($"Block solver {iPart}: {i} {r} {r / r0} {ret}");
+                                    return ret;
+                                };
+
                             }
+                        } else {
+
+                            // ++++++++++++++++++++++++
+                            // direct solver for blocks
+                            // ++++++++++++++++++++++++
+
+
+                            var direct = new DirectSolver() {
+                                ActivateCaching = (int NoIter, int MgLevel) => true
+                            };
+                            direct.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
+                            direct.config.TestSolution = false;
+                            
+                            direct.Init(BlockSolver.OperatorRestriction);
+                            BlockSolver.LowerPSolver = direct;
                         }
-
-
-                        fullBlock = fullMask.GetSubBlockMatrix_MpiSelf(Mop);
-                        Debug.Assert(fullBlock.RowPartitioning.MPI_Comm == csMPI.Raw._COMM.SELF);
-
-                        BlockMatrices[iPart] = fullBlock; // just used to calculate memory consumption
-
-                        InitDirectSolver(iPart);
-                        */
-
                     }
-                    
-                    BlockSolver.Init(op);
-
-                    //BMfullBlocks[iPart] = fullMask;
                 }
 
                 
