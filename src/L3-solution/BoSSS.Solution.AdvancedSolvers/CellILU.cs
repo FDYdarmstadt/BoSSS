@@ -17,7 +17,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// Incomplete LU decomposition on a cell-level
     /// 
     /// </summary>
-    public class CellILU : ISolverSmootherTemplate {
+    public class CellILU : ISubsystemSolver {
         
         /// <summary>
         /// always 0, no sub-calls here
@@ -63,12 +63,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_ILUp_pattern = null;
         }
 
-        MultigridOperator m_op;
+        IOperatorMappingPair m_op;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
 
         /// <summary>
         /// 
         /// </summary>
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void InitImpl(IOperatorMappingPair op) {
             using(new FuncTrace()) {
                 if(object.ReferenceEquals(op, m_op))
                     return; // already initialized
@@ -244,7 +258,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //if(m_op.DgMapping.MpiSize > 1)
                 //    throw new NotImplementedException();
 
-                var grd = m_op.Mapping.GridData;
+                //var grd = m_op.Mapping.GridData;
                 var Mtx = m_op.OperatorMatrix;
                 IBlockPartitioning part = m_op.DgMapping;
                 Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
@@ -262,7 +276,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 csMPI.Raw.Barrier(Mtx.MPI_Comm);
                 var ILUpT = m_ILUp_pattern.Transpose();
                 double occupancy = (double)Occupied / (double)(J * J);
-                ft.Info($"CellILU, lv {m_op.LevelIndex}, ILU-{ILU_level}, occupancy = {Math.Round(occupancy * 100)}%.");
+                //ft.Info($"CellILU, lv {m_op.LevelIndex}, ILU-{ILU_level}, occupancy = {Math.Round(occupancy * 100)}%.");
 
                 for(long k = cell0; k < (cell0 + J - 1); k++) { // Iteration over matrix (rows and columns)
                     int sz_k = part.GetBlockLen(k);
@@ -428,9 +442,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(ILU_level > Math.Min((int)(byte.MaxValue), 10))
                     throw new ArgumentException("ILU-Level must be <= 10, got " + ILU_level);
 
-                var grd = m_op.Mapping.GridData;
+                //var grd = m_op.Mapping.GridData;
                 var Mtx = m_op.OperatorMatrix;
-                IBlockPartitioning part = m_op.Mapping;
+                IBlockPartitioning part = m_op.DgMapping;
                 Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
                 Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
                 long cell0 = part.FirstBlock;
@@ -539,7 +553,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var P1 = GetPattern(out _);
 
 
-                var grd = m_op.Mapping.GridData;
+                //var grd = m_op.Mapping.GridData;
 
                 BlockMsrMatrix ErrMtx = LxU.CloneAs();
                 ErrMtx.Acc(-1, m_op.OperatorMatrix);
@@ -735,5 +749,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
         }
+
+
     }
 }

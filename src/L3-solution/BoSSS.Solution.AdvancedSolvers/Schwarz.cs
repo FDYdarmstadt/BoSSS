@@ -643,33 +643,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose();
 
                 ResetStat();
-                // Without checking the matrix, the other criteria is not enough to determine if reusing is possible
-                // Init shall be a Init, so skip that ... 
-                //                if (m_MgOp != null) {
-                //                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                //                    // someone is trying to re-use this solver: see if the settings permit that
-                //                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                //                    if (op.LevelIndex != m_MgOp.LevelIndex)
-                //                        throw new ArgumentException("Re-use on different level not possible.");
-                //                    if (!this.MtxFull._RowPartitioning.EqualsPartition(op.OperatorMatrix._RowPartitioning))
-                //                        throw new ArgumentException("Matrix has changed, unable to re-use");
-                //                    if (!this.MtxFull._ColPartitioning.EqualsPartition(op.OperatorMatrix._ColPartitioning))
-                //                        throw new ArgumentException("Matrix has changed, unable to re-use");
-                //#if DEBUG
-                //                    //if (!object.ReferenceEquals(this.MtxFull, op.OperatorMatrix)) {
-                //                    //    BlockMsrMatrix Check = this.MtxFull.CloneAs();
-                //                    //    Check.Acc(-1.0, op.OperatorMatrix);
-                //                    //    if (Check.InfNorm() != 0.0) {
-                //                    //        throw new ArgumentException("Matrix has changed, unable to re-use");
-                //                    //    }
-                //                    //}
-                //#endif
-                //                    if (this.m_BlockingStrategy.GetNoOfBlocks(op) != this.blockSolvers.Count()) {
-                //                        throw new ArgumentException("Blocking, unable to re-use");
-                //                    }
-                //                    return;
-                //                }
 
                 var Mop = op.OperatorMatrix;
                 var MgMap = op.Mapping;
@@ -781,7 +754,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (config.Overlap > 0)
                     ExtRows = BlockMask.GetAllExternalRows(MgMap, Mop);
 
-                blockSolvers = new PRestriction[NoOfSchwzBlocks];
+                blockSolvers = new GridAndDegRestriction[NoOfSchwzBlocks];
                 //BMfullBlocks = new BlockMask[NoOfSchwzBlocks];
                 //BlockMatrices = new BlockMsrMatrix[NoOfSchwzBlocks];
                 //Levelpmgsolvers = new BlockLevelPmg[NoOfSchwzBlocks];
@@ -804,7 +777,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     int[] bc = BlockCells[iPart];
 
                     tr.Info($"Initializing block " + iPart + " of " + NoOfSchwzBlocks + "...");
-                    var BlockSolver = new PRestriction() {
+                    var BlockSolver = new GridAndDegRestriction() {
                         RestrictedDeg = op.Degrees,
                         GetCellRestriction = () => bc,
                         GetExtRows = () => ExtRows, // MPI exchange hack for matrix
@@ -812,7 +785,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         RestrictToMPIself = true
                     };
                     blockSolvers[iPart] = BlockSolver;
-
+                    blockSolvers[iPart].Init(op); // will only initialize 
                     //BlockMask fullMask = null;
                     //BlockMsrMatrix fullBlock;
 
@@ -825,7 +798,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         //Levelpmgsolvers[iPart] = PTGFactory.CreateAndInit(bc.ToList(), out fullBlock, out fullMask);
 
-                        throw new NotImplementedException("todo");
+                        var pmgConfig = new PmgConfig();
+                            
+
+                        var pmg = pmgConfig.CreateInstanceImpl(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
+                        if (pmg is IProgrammableTermination pmg_pTerm) {
+                            pmg_pTerm.TerminationCriterion = delegate (int i, double r0, double r) {
+                                var ret = (i <= 1 || r > r0 * 0.1, true);
+                                Console.WriteLine($"Block solver {iPart}: {i} {r} {r / r0} {ret}");
+                                return ret;
+                            };
+                        }
+
+                        BlockSolver.LowerPSolver = pmg;
                     } else {
 
                         // ++++++++++++++++++++++++
@@ -870,6 +855,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         */
 
                     }
+                    
                     BlockSolver.Init(op);
 
                     //BMfullBlocks[iPart] = fullMask;
@@ -1038,7 +1024,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Linear solver for each block
         /// </summary>
-        protected PRestriction[] blockSolvers;
+        protected GridAndDegRestriction[] blockSolvers;
 
         /*
         /// <summary>

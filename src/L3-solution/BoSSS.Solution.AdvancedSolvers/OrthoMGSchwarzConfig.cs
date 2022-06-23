@@ -57,7 +57,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// The order of the low-order system can be adjusted using <see cref="pMaxOfCoarseSolver"/>.
         /// </summary>
         [DataMember]
-        bool UsepTG = false; 
+        public bool UsepTG = false; 
 
         /// <summary>
         /// 
@@ -74,47 +74,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
             //Debugger.Launch();
-            Func<int, int> SblkSizeFunc = delegate (int iLevel) { return TargetBlockSize; };
+            Func<int, int> SblkSizeFunc = delegate (int iLevel) {
+                return TargetBlockSize; 
+            };
             var instance = KcycleMultiSchwarz(level, SblkSizeFunc);
             instance.Init(level);
             return instance;
         }
-
-
-        /*
-        /// <summary>
-        /// Determine max MG level from target blocksize
-        /// </summary>
-        private int GetMGDepth(MultigridOperator op) {
-            int MSLength = op.NoOfLevels;
-            int DirectKickIn = this.TargetBlockSize;
-            int MGDepth = Math.Min(MSLength, NoOfMultigridLevels);
-            //var PrevSize = GlobalDOF[0]; // system size on finer level
-            long PrevSize = op.FinestLevel.Mapping.TotalLength;
-
-            int iLevel = 0;
-            for (var level = op; level != null && iLevel < MGDepth; iLevel++) {
-                long SysSize = op.Mapping.TotalLength;
-                //Console.WriteLine("DOF on L{0}: {1}", iLevel, SysSize);
-                bool useDirect = false;
-                useDirect |= (SysSize < DirectKickIn);
-                //useDirect |= (double)PrevSize / (double)SysSize < 1.5 && SysSize < 50000; // degenerated MG-Agglomeration, because too few candidates
-                useDirect |= iLevel == NoOfMultigridLevels - 1;
-                useDirect |= iLevel == MGDepth - 1; // otherwise error, due to missing coarse solver
-                Debug.Assert(useDirect.MPIEquals());
-
-                if (useDirect) {
-                    break;
-                }
-
-                PrevSize = SysSize;
-                level = op.CoarserLevel;
-            }
-            //Console.WriteLine("INFO: using {0} levels, lowest level DOF is {1}, target size is {2}.", iLevel + 1, GlobalDOF[iLevel], DirectKickIn);
-            //MaxUsedMGLevel = iLevel; // remember this for saving in query
-            return iLevel + 1;
-        }
-        */
 
 
         int GetLocalDOF(MultigridOperator op, int pOfLowOrderSystem) {
@@ -187,17 +153,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 tr.InfoToConsole = true;
                 int MSLength = op.NoOfLevels;
 
+                int mpiSz = op.Mapping.MpiSize;
+
                 var SolverChain = new List<ISolverSmootherTemplate>();
 
                 int maxDG = getMaxDG(op, 0, 0);
-                
+
                 int pCoarsest = pMaxOfCoarseSolver < maxDG && UsepTG ? pMaxOfCoarseSolver : -1;
                 int[] NoBlocks = NoOfSchwarzBlocks(op, pCoarsest, SchwarzblockSize);
+                NoBlocks[0] = 2 / mpiSz;
+                NoBlocks[1] = 1;
+
+                //NoBlocks[0] = 12 / mpiSz;
+                //NoBlocks[1] = 4 / mpiSz;
+                //NoBlocks[2] = 1;
+
                 int[] GlobalNoBlocks = NoBlocks.MPISum();
                 if (NoBlocks.Any(no => no <= 0))
                     throw new ApplicationException("Error in algorithm: No Of blocks cannot be 0.");
                 var OneBlockPerNode = NoBlocks.Select(nb => nb <= 1).MPIAnd(op.Mapping.MPI_Comm);
-
 
                 for (MultigridOperator op_lv = op; op_lv != null; op_lv = op_lv.CoarserLevel) {
                     int iLevel = op_lv.LevelIndex;

@@ -519,12 +519,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        static int counter_objectId = 1;
+
+        public int objectId;
+
         /// <summary>
         /// ctor
         /// </summary>
         public OrthonormalizationMultigrid() {
             myConfig = new Config();
             TerminationCriterion = myConfig.DefaultTermination;
+            objectId = counter_objectId;
+            counter_objectId++;
         }
 
         /// <summary>

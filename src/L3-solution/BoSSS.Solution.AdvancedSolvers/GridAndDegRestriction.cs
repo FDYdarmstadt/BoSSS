@@ -19,7 +19,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// to a certain **subset of cells and modes**,
     /// and applies the <see cref="LowerPSolver"/> onto it.
     /// </summary>
-    public class PRestriction : ISubsystemSolver {
+    public class GridAndDegRestriction : ISubsystemSolver {
+
+        static int counter_objectId = 1;
+
+        public int objectId;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public GridAndDegRestriction() {
+            objectId = counter_objectId;
+            counter_objectId++;
+        }
+
 
         /// <summary>
         /// Note: at this point, we do not support everything which a <see cref="SubBlockSelector"/> can support.
@@ -241,7 +254,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public object Clone() {
-            return new PRestriction() {
+            return new GridAndDegRestriction() {
                 LowerPSolver = this.LowerPSolver?.CloneAs()
             };
         }
@@ -370,6 +383,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public BlockMsrMatrix SubsysMatrix {
             get {
                 return m_MgOperatorRestriction.OperatorMatrix;
+            }
+        }
+
+        /// <summary>
+        /// Access to sub-system
+        /// </summary>
+        public IOperatorMappingPair OperatorRestriction {
+            get {
+                return m_MgOperatorRestriction;
             }
         }
 

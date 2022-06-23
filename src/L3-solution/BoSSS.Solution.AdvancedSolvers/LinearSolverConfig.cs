@@ -59,7 +59,7 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
-        /// GMRES with p-multigrid on the same mesh level; direct solver is used for 
+        /// GMRES with p-multigrid on the same mesh level; direct solver is used for lowest polynomial level
         /// </summary>
         exp_gmres_levelpmg = 47,
 

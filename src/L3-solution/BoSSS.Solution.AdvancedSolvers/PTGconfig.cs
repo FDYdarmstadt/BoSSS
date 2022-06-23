@@ -105,8 +105,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// 
         /// </summary>
         public override string Shortname => "Ortho w pmG";
-  
+
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+            return CreateInstanceImpl(level, level.DGpolynomialDegreeHierarchy);
+        }
+
+
+        internal ISubsystemSolver CreateInstanceImpl(IOperatorMappingPair level, int[][] DegreeHierarchy) {
             //var precond = new LevelPmg();
             //precond.config.UseHiOrderSmoothing = false;
             //precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
@@ -114,11 +119,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
             //precond.config.EqualOrder = this.EqualOrder;
 
-            
-           
-
-            int[][] DegreeHierarchy = level.DGpolynomialDegreeHierarchy;
-            
             ISubsystemSolver CreateLevelRecursive(int iLevel) {
 
                 //level.Mapping.
@@ -134,7 +134,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Console.WriteLine("OrthoMG solver on level " + iLevel + ", restricting to Degree " + DegreeHierarchy[iLevel + 1].ToConcatString("[", ",", "]"));
 
 
-                    var coarseSolver = new PRestriction() {
+                    var coarseSolver = new GridAndDegRestriction() {
                         RestrictedDeg = DegreeHierarchy[iLevel + 1].CloneAs(),
                         LowerPSolver = CreateLevelRecursive(iLevel + 1)
                     };
