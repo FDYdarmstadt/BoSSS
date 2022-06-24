@@ -758,7 +758,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             var blockSolve = new SoftGMRES() {
                                 MaxKrylovDim = 20,
                                 Precond = pc
-                              
                             };
 
                             blockSolve.Init(BlockSolver.OperatorRestriction);

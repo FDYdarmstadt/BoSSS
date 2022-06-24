@@ -585,6 +585,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             InitImpl(op);
+            /*
+            int D = 2;
+            int pLowVel = 4;
+            SubBlockSelector VelLo = new SubBlockSelector(op.DgMapping);
+            VelLo.CellSelector
+            */
+
         }
 
         CoreOrthonormalizationProcedure ortho;
