@@ -972,8 +972,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                            //Console.WriteLine("verified Residual: " + resDist);
                     var ss = (new double[] { rTest.L2DistPow2(Res), Res.L2NormPow2(), X.L2NormPow2() }).MPISum(m_MgOperator.DgMapping.MPI_Comm);
                     double resDist = ss[0].Sqrt();
-                    double resNormTst = ss[0].Sqrt();
-                    double XnormTest = ss[0].Sqrt();
+                    double resNormTst = ss[1].Sqrt();
+                    double XnormTest = ss[2].Sqrt();
                     tr.Info($"Residual vector check iter {iter}: distance is {resDist}, reference value {resNormTst}");
                     if (resDist > resNormTst * 10e-5 + XnormTest * 1e-5)
                         throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
