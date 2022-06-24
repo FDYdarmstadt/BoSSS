@@ -149,14 +149,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // factors alpha_0 ... alpha_(i-1) are equal to the previous call;
                 // therefore, it is only necessary to apply the contributions from the most recent Krylov vector
 
-                var oldResiNorm = outRes.MPI_L2Norm();
+                var oldResiNorm = Norm(outRes);
 
                 int i = KrylovDim - 1;
-                double alpha_i = BLAS.ddot(L, MxxHistory[i], 1, Res0, 1).MPISum();
+                double alpha_i = InnerProduct(MxxHistory[i], Res0);
                 BLAS.daxpy(L, alpha_i, SolHistory[i], 1, outX, 1); // accumulate solution correction...
                 BLAS.daxpy(L, -alpha_i, MxxHistory[i], 1, outRes, 1); // ...and its effect on the residual
 
-                double ResNorm = outRes.MPI_L2Norm();
+                double ResNorm = Norm(outRes);
                 double tol = Math.Max(ResNorm, oldResiNorm) * 0.2;
                 tol = Math.Max(tol, 1.0e-7);
                 if (ResNorm > oldResiNorm + tol)
@@ -180,7 +180,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 /*
                 if (m_MgOperator is MultigridOperator mgop && mgop.LevelIndex == 0) {
                     // prevent to much info dropping from lower levels
-                    double xNorm = outX.MPI_L2Norm();
+                    double xNorm = Norm(outX);
                     ft.Info("|x|: " + xNorm + ", last alpha was " + alpha_i);
 
                     //var iterSol = mgop.ProlongateRhsToDg(outX, "Sol");
@@ -260,7 +260,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 for(int i = 0; i < alpha.Length; i++)
                     this.Alphas.Add((alpha[i], double.NaN, -2));
 
-                double ResNorm = outRes.MPI_L2Norm();
+                double ResNorm = Norm(outRes);
 
                 if(KrylovDim > MaxKrylovDim) {
                     int leastSignificantVec = alpha.Select(x => x.Abs()).IndexOfMin();
@@ -296,7 +296,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     __Mxx.ClearEntries();
                     OpMatrix.SpMV(1.0, __X, 0.0, __Mxx);
-                    __NormMxx = __Mxx.MPI_L2Norm();
+                    __NormMxx = Norm(__Mxx);
 
                     if (__NormMxx == 0)
                         throw new ArithmeticException("Numerical breakdown: norm of matrix * solution after using RANDOM NUMBERS (!) is " + __NormMxx);
@@ -313,7 +313,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double[] Mxx = new double[L];
                 OpMatrix.SpMV(1.0, X, 0.0, Mxx);
-                double NormMxx = Mxx.MPI_L2Norm();
+                double NormMxx = Norm(Mxx);
                 if (NormMxx.IsNaNorInf())
                     throw new ArithmeticException("Numerical breakdown: norm of matrix * solution is " + NormMxx);
 
@@ -333,15 +333,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     for (int i = 0; i < KrylovDim; i++) {
                         Debug.Assert(!object.ReferenceEquals(Mxx, MxxHistory[i]));
-                        double beta = BLAS.ddot(L, Mxx, 1, MxxHistory[i], 1).MPISum();
+                        double beta = InnerProduct(Mxx, MxxHistory[i]);
                         BLAS.daxpy(L, -beta, SolHistory[i], 1, X, 1);
                         BLAS.daxpy(L, -beta, MxxHistory[i], 1, Mxx, 1);
                     }
 
-                    //double NormAfter = Mxx.MPI_L2Norm();
+                    //double NormAfter = Norm(Mxx);
                     //Console.WriteLine("   orthonormalization norm reduction: " + (NormAfter/NormInitial));
 
-                    double NewMxxNorm = Mxx.MPI_L2Norm();
+                    double NewMxxNorm = Norm(Mxx);
 
                     if (NewMxxNorm <= 1E-5) {
                         using (new BlockTrace("re-orthonormalization", ft)) {
@@ -355,7 +355,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // Note: although |Mxx| might be small, |X| can be quite large (and probably random).
                                 // To ensure stability, we must start over with a re-scaled X!
                                 // We have to re-scale what is remaining of X:
-                                double Xnorm = X.MPI_L2Norm();
+                                double Xnorm = Norm(X);
                                 Console.WriteLine("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + X.Length);
                                 ft.Info("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + X.Length);
 
@@ -366,7 +366,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     X.ScaleV(1.0 / Xnorm);
                                     Mxx.ClearEntries();
                                     OpMatrix.SpMV(1.0, X, 0.0, Mxx);
-                                    NormMxx = Mxx.MPI_L2Norm();
+                                    NormMxx = Norm(Mxx);
 
                                     if (NormMxx == 0)
                                         // solution is really strange: try with a random vector.
@@ -395,6 +395,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        MPI_Comm comm {
+            get {
+                return OpMatrix.MPI_Comm;
+            }
+        }
+
+        /// <summary>
+        /// Inner Product use for orthonormalization (not necessarily the standard l2-product)
+        /// </summary>
+        public double InnerProduct(double[] A, double[] B) {
+            Debug.Assert(A.Length == B.Length);
+            return BLAS.ddot(A.Length, A, 1, B, 1).MPISum(comm);
+        }
+
+        /// <summary>
+        /// norm induced by <see cref="InnerProduct(double[], double[])"/>
+        /// </summary>
+        public double Norm(double[] A) {
+            return A.MPI_L2Norm(comm);
+        }
 
 
         /// <summary>
@@ -768,7 +788,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-                double iter0_resNorm = Res0.MPI_L2Norm();
+                double iter0_resNorm = ortho.Norm(Res0);
                 double resNorm = iter0_resNorm;
                 this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator as MultigridOperator);
 
@@ -922,29 +942,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        /*
-        int cnt = 0;
-
-        double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, int id) {
-            using (var ft = new FuncTrace()) {
-                var ResNorm = ortho.MinimizeResidual(outX, Sol0, Res0, outRes, id);
-
-                if (m_MgOperator is MultigridOperator mgop && mgop.LevelIndex == 0) {
-                    // prevent to much info dropping from lower levels
-                    double xNorm = outX.MPI_L2Norm();
-                    ft.Info("|x|: " + xNorm + ", last alpha was " + ortho.Alphas.Last().Item1);
-
-                    //var iterSol = mgop.ProlongateRhsToDg(outX, "Sol");
-                    //Tecplot.Tecplot.PlotFields(iterSol, "itersol-" + cnt, 0, 2);
-                    //Console.WriteLine("residual: " + cnt + "    " + ResNorm);
-                    cnt++;
-                }
-
-                return ResNorm;
-            }
-        }
-        */
-
+      
         /// <summary>
         /// For performance optimization, the <see cref="OrthonormalizationMultigrid"/>
         /// assumes that <see cref="PreSmoother"/> and <see cref="PostSmoother"/>
@@ -964,10 +962,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double[] rTest = new double[Res.Length];
                     Residual(rTest, X, B); // Residual on this level; 
                                            // Test also fails if convergence criterium is to strict because then machine accuracy is reached
-                    double resDist = rTest.MPI_L2Dist(Res);
-                    //Console.WriteLine("verified Residual: " + resDist);
-                    double resNormTst = Res.MPI_L2Norm();
-                    double XnormTest = X.MPI_L2Norm();
+                                           //Console.WriteLine("verified Residual: " + resDist);
+                    var ss = (new double[] { rTest.L2DistPow2(Res), Res.L2NormPow2(), X.L2NormPow2() }).MPISum(m_MgOperator.DgMapping.MPI_Comm);
+                    double resDist = ss[0].Sqrt();
+                    double resNormTst = ss[0].Sqrt();
+                    double XnormTest = ss[0].Sqrt();
                     tr.Info($"Residual vector check iter {iter}: distance is {resDist}, reference value {resNormTst}");
                     if (resDist > resNormTst * 10e-5 + XnormTest * 1e-5)
                         throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
