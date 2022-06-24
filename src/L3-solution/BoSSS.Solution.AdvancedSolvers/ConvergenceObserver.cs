@@ -65,7 +65,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //    };
             //}
 
-            // use a random init for intial guess.
+            // use a random init for intial guess; if RHS = 0, then the exact solution is 0, so the error for approximate solution x_i in iteration i is (x_i - 0).
             double[] x0 = GenericBlas.RandomVec(L, 0);
 
             // execute solver 
@@ -229,22 +229,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //var AllData = ErrorOrResidual ? this.ErrNormTrend : this.ResNormTrend;
 
             int i = 0;
-            //foreach(var AllData in new[] { this.ResNormTrend, this.ErrNormTrend }) {
-            foreach (var AllData in new[] { this.ErrNormTrend }) {
+            foreach (var AllData in new[] { this.ErrNormTrend, this.ResNormTrend }) {
                 i++;
-               
 
-
-               
                 int MglMax = AllData.Keys.Max(tt => tt.MGlevel);
                 int VarMax = AllData.Keys.Max(tt => tt.iVar);
                 int MaxIter = AllData.First().Value.Count - 1;
 
-                for (int iVar = 0; iVar < VarMax+1; iVar++) {
-                    var Ret = new Plot2Ddata();
-                    Ret.Title = "Waterfall of Variable "+iVar;
+                for (int iVar = 0; iVar < VarMax + 1; iVar++) {
+                    if (!RetDict.TryGetValue("Waterfall_of_Var" + iVar, out Plot2Ddata Ret)) {
+                        Ret = new Plot2Ddata();
+                        RetDict.Add("Waterfall_of_Var" + iVar, Ret);
+                    }
+                    Ret.Title = "Waterfall of Variable " + iVar;
 
-                    int DegMax = AllData.Keys.Where(v=>v.iVar==iVar).Max(tt => tt.deg); // pressure may have DG-1
+                    int DegMax = AllData.Keys.Where(v => v.iVar == iVar).Max(tt => tt.deg); // pressure may have DG-1
                     var WaterfallData = new List<double[]>();
                     var Row = new List<double>();
                     var xCoords = new List<double>();
@@ -256,7 +255,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 double Acc = 0;
 
                                 foreach (var kv in AllData) {
-                                    if (kv.Key.deg == p && kv.Key.MGlevel == iLv && kv.Key.iVar==iVar)
+                                    if (kv.Key.deg == p && kv.Key.MGlevel == iLv && kv.Key.iVar == iVar)
                                         Acc += kv.Value[iIter].Pow2();
                                 }
 
@@ -281,16 +280,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         var g = new Plot2Ddata.XYvalues("iter" + iIter, xCoords, PlotRow);
                         if (i == 1) {
-                            g.Format.PointType = PointTypes.OpenBox;
-                            g.Format.LineColor = LineColors.Black;
-                        } else {
+                            // error
                             g.Format.PointType = PointTypes.Circle;
                             g.Format.LineColor = LineColors.Black;
+                        } else {
+                            // residual
+                            g.Format.PointType = PointTypes.OpenBox;
+                            g.Format.LineColor = LineColors.Red;
                         }
                         Ret.AddDataGroup(g);
 
                     }
-                    RetDict.Add("Waterfall_of_Var"+iVar,Ret);
+                    //RetDict.Add("Waterfall_of_Var" + iVar, Ret);
                 }
             }
             return RetDict;

@@ -1552,26 +1552,27 @@ namespace BoSSS.Solution.XdgTimestepping {
                         }
 
                         using(var linearSolver = GetLinearSolver(mgOperator)) {
-
-                            //var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
-                            //p.PlotInteractive();
+                            //{
+                            //    var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
+                            //    Plot2Ddata[,] vars = new Plot2Ddata[1, p.Count];
+                            //    vars.SetRow(0, p.Values.ToArray());
+                            //    vars.ToGnuplot().SaveToGIF("waterfall-" + this.LinearSolverConfig.Shortname + ".png", xRes: 1800, yRes: 600);
+                            //}
 
                             //var EigValVect = mgOperator.OperatorMatrix.MinimalEigen();
                             //var DGevevt = mgOperator.ProlongateSolToDg(EigValVect.V, "MinimalEigen");
                             //Tecplot.Tecplot.PlotFields(DGevevt, "Eigen", 0.0, 4);
                             //throw new Exception("done eigen");
 
-                            //mgOperator.OperatorMatrix.SaveToTextFileSparse("C:\\tmp\\Bug2\\XNS.txt");
-                            //throw new Exception("term");
-
-                           
-
                             // try to solve the saddle-point system.
+                            TimeSpan duration;
                             using(new BlockTrace("Solver_Run", tr)) {
+                                var st = DateTime.Now;
                                 mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                                 //mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
+                                duration = DateTime.Now - st;
                             }
-                            Console.WriteLine("solver success: " + linearSolver.Converged);
+                            Console.WriteLine("solver success: " + linearSolver.Converged + " time: " + duration.TotalSeconds);
                             success = linearSolver.Converged;
 
 

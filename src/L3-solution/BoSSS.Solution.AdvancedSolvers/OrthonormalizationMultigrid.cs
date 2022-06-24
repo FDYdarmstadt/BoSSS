@@ -739,17 +739,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double> //
         {
-            //Solve__experimento(_xl, _B);
-            //return;
-
-
             using (var f = new FuncTrace()) {
-                //if(this.m_MgOperator.LevelIndex == 0) {
-                //    GC.Collect();
-                //} leads to a Internal CLR error at timestep > 1. see WIP-roCube at Jenkins 
-
-
-
                 double[] B, X;
                 if (_B is double[])
                     B = _B as double[];
@@ -759,9 +749,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     X = _xl as double[];
                 else
                     X = _xl.ToArray();
-
-
-
 
                 int L = X.Length;
                 int Lc;

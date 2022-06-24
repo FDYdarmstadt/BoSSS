@@ -136,17 +136,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             return NoOfBlocks;
         }
-
-        private int getMaxDG (MultigridOperator op, int iLevel, int iVar) {
-            //This workaround takes into account, the wierd structure of the ChangeOfBasis-thing
-            //prohibits out of bounds exception
-
-            var MGChangeOfBasis = op.GetLevel(iLevel).Config;
-
-            int tVar = iVar < MGChangeOfBasis.Length ? iVar : MGChangeOfBasis.Length - 1;
-            return MGChangeOfBasis[tVar].DegreeS[0];
-        }
-
         
         ISolverSmootherTemplate KcycleMultiSchwarz(MultigridOperator op, Func<int,int> SchwarzblockSize) {
             using(var tr = new FuncTrace()) {
@@ -157,18 +146,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var SolverChain = new List<ISolverSmootherTemplate>();
 
-                int maxDG = getMaxDG(op, 0, 0);
+                int maxDG = op.DGpolynomialDegreeHierarchy.First().Max();
+                int minDG = Math.Max(op.DGpolynomialDegreeHierarchy.Last().Max(), pMaxOfCoarseSolver);
+                minDG = Math.Min(minDG, maxDG); // make sure that minDG <= MaxDG;
 
-                int pCoarsest = pMaxOfCoarseSolver < maxDG && UsepTG ? pMaxOfCoarseSolver : -1;
+                int pCoarsest = UsepTG ? minDG : -1;
                 int[] NoBlocks = NoOfSchwarzBlocks(op, pCoarsest, SchwarzblockSize);
-                NoBlocks[0] = 2 / mpiSz;
-                NoBlocks[1] = 1;
-
-                //NoBlocks[0] = 12 / mpiSz;
-                //NoBlocks[1] = 4 / mpiSz;
-                //NoBlocks[2] = 1;
-
                 int[] GlobalNoBlocks = NoBlocks.MPISum();
+
                 if (NoBlocks.Any(no => no <= 0))
                     throw new ApplicationException("Error in algorithm: No Of blocks cannot be 0.");
                 var OneBlockPerNode = NoBlocks.Select(nb => nb <= 1).MPIAnd(op.Mapping.MPI_Comm);
