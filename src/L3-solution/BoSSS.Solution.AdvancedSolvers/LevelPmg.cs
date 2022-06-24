@@ -309,7 +309,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             lowSolver = new PARDISOSolver() {
                 CacheFactorization = true,
                 UseDoublePrecision = false, // no difference towards =true observed for XDGPoisson
-                Parallelism = Parallelism.OMP
+
+                // fk, 24jun22, i have confirmed, at least on my laptop, that serial is faster when only used as some local block solver
+                Parallelism = (op.OperatorMatrix.MPI_Comm == csMPI.Raw._COMM.SELF) ? Parallelism.SEQ : Parallelism.OMP
             };
             lowSolver.DefineMatrix(P01SubMatrix);
 

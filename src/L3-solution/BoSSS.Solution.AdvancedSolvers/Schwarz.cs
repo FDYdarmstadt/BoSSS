@@ -968,7 +968,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                         
                     }
-                    tr.Info("entering overlapscaling");
+                    
                     using (new BlockTrace("overlap_scaling", tr)) {
                         if (config.Overlap > 0 && config.EnableOverlapScaling) {
                             // block solutions stored on *external* indices will be accumulated on other processors.
@@ -989,7 +989,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
                         }
                     }
-                    tr.Info("leaving overlapscaling");
+                    
                 } // end loop Schwarz iterations
 
             } // end FuncTrace
