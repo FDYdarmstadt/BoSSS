@@ -635,6 +635,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int[][] BlockCells = null;
 
 
+                /*{
+                    int TotalNumberOfSchwarzBlocks = NoOfSchwzBlocks.MPISum();
+                    var blocks = TotalNumberOfSchwarzBlocks.ForLoop(idx => new SinglePhaseField(new Basis(op.BaseGridProblemMapping.GridDat, 0), "block#" + idx)); ;
+                    var pp = new Partitioning(NoOfSchwzBlocks);
+
+
+                    for(int i = 0; i < NoOfSchwzBlocks; i++) {
+                        foreach (int jCell in _Blocks.ElementAt(i)) {
+                            blocks[i + pp.i0].SetMeanValue(jCell, 1.0);
+                        }
+                    }
+
+                    Tecplot.Tecplot.PlotFields(blocks, "schwarzi-lv" + op.LevelIndex, 0.0, 0);
+
+                }*/
+
+
+
 
                 // extend blocks according to desired overlap
                 // ==========================================
@@ -688,15 +706,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 }
 
+
+                // MPI-exchange of rows which are required on other MPI procs
+                // =========================================================
+
+
                 // Get all the External rows at once, for performance sake!
                 BlockMsrMatrix ExtRows = null;
                 if (config.Overlap > 0)
                     ExtRows = BlockMask.GetAllExternalRows(MgMap, Mop);
 
+                // initialize solvers for blocks
+                // =============================
+
+
                 blockSolvers = new GridAndDegRestriction[NoOfSchwzBlocks];
 
-                var RedList = new List<int>();
-
+                
                 tr.Info($"Initializing " + NoOfSchwzBlocks + " blocks on multigrid level " + op.LevelIndex);
                 for(int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     Debug.Assert(BlockCells != null);
@@ -714,41 +740,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     blockSolvers[iPart].Init(op); // will only initialize Restriction, since sub-solver is not set yet!
                                                   // initialization of sub-solver must be done manually, see below.
 
-
                     if (BlockSolver.OperatorRestriction.DgMapping.TotalLength > 0) {
                         if (m_config.UsePMGinBlocks && AnyHighOrderTerms) {
                             // +++++++++++++++++++++
                             // p-Multigrid in blocks
                             // +++++++++++++++++++++
 
-                            /*
+                            
                             var pmgConfig = new PmgConfig();
                             var blockSolve = pmgConfig.CreateInstanceImpl(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
                             BlockSolver.LowerPSolver = blockSolve;
-
-                            if (blockSolve is IProgrammableTermination pmg_pTerm) {
-                                int iPartCopy = iPart;
-                                pmg_pTerm.TerminationCriterion = delegate (int i, double r0, double r) {
-                                    var ret = (i <= 1 || r > r0 * 0.5, true);
-                                    //var ret = (i <= 1, true);
-                                    if(!ret.Item1)
-                                        // sub-solver terminates:
-                                        Console.WriteLine($"Block solver {iPartCopy}: {i} {r} {r / r0} {ret}");
-                                    return ret;
-                                };
-
-                            }
-                            */
+                            
 
                             /*
                             // just ILU is bad
                             var blockSolve = new CellILU() {
                                 ILU_level = 0
                             };
-                            blockSolve.Init(BlockSolver.OperatorRestriction);
-                            BlockSolver.LowerPSolver = blockSolve;
                             */
 
+                            /*
                             var pc = new LevelPmg() {
                                 
                             };
@@ -759,6 +770,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 MaxKrylovDim = 20,
                                 Precond = pc
                             };
+                            //*/
 
                             blockSolve.Init(BlockSolver.OperatorRestriction);
                             BlockSolver.LowerPSolver = blockSolve;
@@ -768,12 +780,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 pmg_pTerm.TerminationCriterion = delegate (int i, double r0, double r) {
                                     var ret = (i <= 1 || r > r0 * 0.1, true);
                                     //var ret = (i <= 1, true);
-                                    //if (!ret.Item1)
-                                    //    // sub-solver terminates:
-                                    //    Console.WriteLine($"Block solver {iPartCopy}: {i} {r} {r / r0} {ret}");
+                                    if (!ret.Item1)
+                                        // sub-solver terminates:
+                                        Console.WriteLine($"Block solver {iPartCopy} lv {op.LevelIndex}: {i} {r} {r / r0} {ret}");
                                     return ret;
                                 };
-
                             }
 
                         } else {

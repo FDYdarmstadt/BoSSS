@@ -9,9 +9,6 @@ using System.Runtime.Serialization;
 using System.Text;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-    
- 
-
 
     /// <summary>
     /// Dynamic configuration for the orthonormalization multigrid.
@@ -152,7 +149,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int pCoarsest = UsepTG ? minDG : -1;
                 int[] NoBlocks = NoOfSchwarzBlocks(op, pCoarsest, SchwarzblockSize);
-                int[] GlobalNoBlocks = NoBlocks.MPISum();
+
+                int[] GlobalNoBlocks = NoBlocks.MPISum(op.Mapping.MPI_Comm);
 
                 if (NoBlocks.Any(no => no <= 0))
                     throw new ApplicationException("Error in algorithm: No Of blocks cannot be 0.");
@@ -175,8 +173,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             skipLevel = true;
                         }
                     }
-                    Debug.Assert(useDirect.MPIEquals());
-                    Debug.Assert(skipLevel.MPIEquals());
+                    Debug.Assert(useDirect.MPIEquals(op.Mapping.MPI_Comm));
+                    Debug.Assert(skipLevel.MPIEquals(op.Mapping.MPI_Comm));
+
 
                     if (useDirect)
                         tr.Info($"KcycleMultiSchwarz: lv {iLevel}, L = {op_lv.Mapping.TotalLength}, Direct solver ");
@@ -190,12 +189,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     ISolverSmootherTemplate levelSolver;
 
                     if(useDirect) {
+                        
                         var _levelSolver = new DirectSolver();
                         levelSolver = _levelSolver;
                         _levelSolver.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
                         _levelSolver.config.TestSolution = false;
-                        //_levelSolver.ActivateCaching = CoarseCaching;
+                        _levelSolver.ActivateCaching = (__1, __2) => true;
+                        
 
+                        // Not really recommend ILU for coarse: for Botti2DStokes, 3x int time, 2x in iterations
+                        //
+                        //var _levelSolver = new CellILU();
+                        //levelSolver = _levelSolver;
+                        //_levelSolver.ILU_level = 0;
+                        
 
                     } else if (skipLevel) {
                         var _levelSolver = new GenericRestriction();
@@ -225,8 +232,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             if(maxDG > 3)
                                 _levelSolver.config.NoOfPostSmootherSweeps = 6;
                         } else if(iLevel == 1) {
-                            //(_levelSolver).TerminationCriterion = (i, r0, r) => (i <= 1, true);
-
                             (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
                                 var ret = (i <= 1 || r > r0 * 0.1, true);
                                 //Console.WriteLine($"level 1: {i} {r} {r / r0} {ret}");

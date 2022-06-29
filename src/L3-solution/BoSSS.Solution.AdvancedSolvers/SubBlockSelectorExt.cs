@@ -876,6 +876,31 @@ namespace BoSSS.Solution.AdvancedSolvers
             }
         }
 
+        /// <summary>
+        /// local (i.e. valid only on current MPI processor) indices of vector entries, resp. matrix rows and columns to select.
+        /// </summary>
+        public int[] LocalIndices {
+            get {
+                List<int> tmp = new List<int>();
+                if(m_includeExternalCells) {
+                    if (BMLoc != null)
+                        tmp.AddRange(BMLoc.m_LocalMask);
+                    if (BMExt != null)
+                        tmp.AddRange(BMExt.m_LocalMask);
+                    if (BMLoc == null && BMExt == null)
+                        throw new Exception("empty mask. what a waste of time!");
+                } else {
+                    if (BMLoc != null)
+                        tmp.AddRange(BMLoc.m_LocalMask);
+                    else
+                        throw new Exception("empty mask. what a waste of time!");
+                }
+
+                return tmp.ToArray();
+            }
+        }
+
+
         // ==========
         // Stuff dedicated to testing ...
         // ==========

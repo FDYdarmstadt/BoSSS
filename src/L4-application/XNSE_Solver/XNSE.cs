@@ -294,7 +294,6 @@ namespace BoSSS.Application.XNSE_Solver {
             int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
             int D = this.GridData.SpatialDimension;
 
-
             if (this.Control.UseSchurBlockPrec) {
                 // using a Schur complement for velocity & pressure
                 var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
@@ -316,7 +315,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 for (int d = 0; d < D; d++) {
                     var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
                         DegreeS = new int[] { pVel },
-                        //DegreeS = new int[] { Math.Max(1, pVel - iLevel) }, // p-multigrid reduction
                         mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                         VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
                     };

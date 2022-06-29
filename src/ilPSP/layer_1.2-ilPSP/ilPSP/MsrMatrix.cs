@@ -765,13 +765,13 @@ namespace ilPSP.LinSolvers {
             MsrMatrix T = new MsrMatrix(this.ColPartition, this.RowPartitioning);
 
             int Size;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out Size);
+            csMPI.Raw.Comm_Size(this.MPI_Comm, out Size);
 
 
             SerialisationMessenger sms = null;
             SortedDictionary<int, List<TransposeHelper>> exchangeData = null;
             if (Size > 1) {
-                sms = new SerialisationMessenger(csMPI.Raw._COMM.WORLD);
+                sms = new SerialisationMessenger(this.MPI_Comm);
                 exchangeData = new SortedDictionary<int, List<TransposeHelper>>();
             }
 
@@ -1067,9 +1067,14 @@ namespace ilPSP.LinSolvers {
                 if (left.NoOfCols != right.NoOfRows)
                     throw new ArgumentException("number of columns of left matrix must match number of rows of right matrix");
 
+                var comm = left.MPI_Comm;
+                if(right.MPI_Comm != comm) {
+                    throw new ArgumentException("MPI communicator mismatch.");
+                }
+
                 int size, rank;
-                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
-                csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+                csMPI.Raw.Comm_Rank(comm, out rank);
+                csMPI.Raw.Comm_Size(comm, out size);
 
                 //MsrMatrix Target = null;
 
@@ -1096,8 +1101,8 @@ namespace ilPSP.LinSolvers {
                 }
 
                 MsrMatrix res = new MsrMatrix(
-                    new Partitioning(left.RowPartitioning.LocalLength),
-                    new Partitioning(right.ColPartition.LocalLength),
+                    new Partitioning(left.RowPartitioning.LocalLength, comm),
+                    new Partitioning(right.ColPartition.LocalLength, comm),
                     (int)Math.Ceiling(MaxLen * 4.0));
 
                 unsafe {

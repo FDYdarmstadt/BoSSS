@@ -42,6 +42,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// </summary>
     public class ConvergenceObserver {
 
+        public static double last_resReduction;
+        public static double last_errReduction;
+
         /// <summary>
         /// Performs a mode decay analysis (<see cref="Waterfall(bool, bool, int)"/>) on this solver.
         /// </summary>
@@ -79,11 +82,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
             //var p = co.PlotIterationTrend(true, false, true, true);
 
-            double resReduction = Math.Pow(co.LastResidualNorm / co.Iter0ResidualNorm, 1.0 / co.NumberOfIterations);
-            double errReduction = Math.Pow(co.LastSolNorm / co.Iter0SolNorm, 1.0 / co.NumberOfIterations);
+            double resReduction = Math.Exp(Math.Log(co.Iter0ResidualNorm / co.LastResidualNorm) / co.NumberOfIterations);
+            double errReduction = Math.Exp(Math.Log(co.Iter0SolNorm / co.LastSolNorm) / co.NumberOfIterations);
+            last_resReduction = resReduction;
+            last_errReduction = errReduction;
 
-            Console.WriteLine("Residual reduction:   " + (co.LastResidualNorm / co.Iter0ResidualNorm));
-            Console.WriteLine("Error    reduction:   " + (co.LastSolNorm / co.Iter0SolNorm));
+            Console.WriteLine("Residual reduction:   " + Math.Pow(co.LastResidualNorm / co.Iter0ResidualNorm, -1));
+            Console.WriteLine("Error    reduction:   " + Math.Pow(co.LastSolNorm / co.Iter0SolNorm, -1));
             Console.WriteLine("Residual reduction per iteration:   " + resReduction);
             Console.WriteLine("Error    reduction per iteration:   " + errReduction);
             

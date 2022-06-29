@@ -9,6 +9,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// Orthonormalization (<see cref="OrthonormalizationMultigrid"/>) scheme with full p-multigrid (i.e. multigrid over DG polynomial degree) preconditioning.
     /// In comparison to <see cref="PTGconfig"/>, where only two p-levels are used, this uses all available p-levels.
     /// </summary>
+    [Serializable]
     public class PmgConfig : IterativeSolverConfig {
 
 
@@ -49,11 +50,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     OrthonormalizationMultigrid createOMG() {
 
-                        tr.Info("OrthoMG solver on level " + iLevel + ", restricting to Degree " + DegreeHierarchy[iLevel + 1].ToConcatString("[", ",", "]"));
+                        tr.Info("OrthoMG solver on level " + iLevel + ", restricting to Degree " + DegreeHierarchy[iLevel + 2].ToConcatString("[", ",", "]"));
 
 
                         var coarseSolver = new GridAndDegRestriction() {
-                            RestrictedDeg = DegreeHierarchy[iLevel + 1].CloneAs(),
+                            RestrictedDeg = DegreeHierarchy[iLevel + 2].CloneAs(),
                             LowerPSolver = CreateLevelRecursive(iLevel + 1)
                         };
 
@@ -78,21 +79,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             post = new BlockJacobi() {
                                 NoOfIterations = 1,
                             };
+
                         }
 
 
                         var omg = new OrthonormalizationMultigrid() {
-                            //CoarserLevelSolver = loPsol,
-                            PreSmoother = coarseSolver,
+                            CoarserLevelSolver = coarseSolver,
                             PostSmoother = post,
-                            //CoarserLevelSolver = loPsol
                         };
                         omg.config.NoOfPostSmootherSweeps = 10;
+                        omg.config.m_omega = 1;
+                        omg.config.CoarseOnLovwerLevel = false;
                         return omg;
                     }
 
-                    //Console.WriteLine("###########################   testcode aktiv ##################################");
-                    if (iLevel >= DegreeHierarchy.Length - 1) {
+                    Console.WriteLine("###########################   testcode aktiv ##################################");
+                    Console.WriteLine("###########################   testcode aktiv ##################################");
+                    Console.WriteLine("###########################   testcode aktiv ##################################");
+                    Console.WriteLine("###########################   testcode aktiv ##################################");
+                    Console.WriteLine("###########################   testcode aktiv ##################################");
+                    Console.WriteLine("###########################   testcode aktiv ##################################");
+                    if (iLevel >= 1/* DegreeHierarchy.Length - 1*/) {
 
                         tr.Info("direct solver on level " + iLevel);
 

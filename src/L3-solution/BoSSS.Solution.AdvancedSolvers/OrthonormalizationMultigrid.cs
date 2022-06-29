@@ -39,6 +39,16 @@ using BoSSS.Solution.Control;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <remarks>
+    /// First described in: 
+    ///  Vinsome, P.K.W.: 
+	///  Orthomin, an Iterative Method for Solving Sparse Sets of Simultaneous Linear Equations,
+    ///  SPE Symposium on Numerical Simulation of Reservoir Performance, 
+    ///  doi: 10.2118/5729-MS, Los Angeles, California, 1976
+    /// </remarks>
     class CoreOrthonormalizationProcedure {
 
 
@@ -119,7 +129,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// residual with respect to the initial guess
         /// </param>
         /// <param name="Sol0">
-        /// initial guess; not used
+        /// initial guess; required for checking <paramref name="outRes"/>,
+        /// resp. for re-computing <paramref name="outRes"/> in the case of severe round-of errors.
         /// </param>
         /// <param name="outRes">
         /// - input: the residual with respect to the input value of <paramref name="outX"/>
@@ -222,60 +233,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        /*
-        /// <summary>
-        /// original residual minimization, which re-computes all contributions
-        /// </summary>
-        double MinimizeResidual(double[] outX, double[] Sol0, double[] Res0, double[] outRes, int id) {
-            using (new FuncTrace()) {
-                Debug.Assert(SolHistory.Count == MxxHistory.Count);
-                Debug.Assert(outX.Length == m_MgOperator.Mapping.LocalLength);
-                Debug.Assert(Sol0.Length == m_MgOperator.Mapping.LocalLength);
-                Debug.Assert(Res0.Length == m_MgOperator.Mapping.LocalLength);
-                Debug.Assert(outRes.Length == m_MgOperator.Mapping.LocalLength);
-                
-                int KrylovDim = SolHistory.Count;
-                int L = outX.Length;
-
-                
-                double[] alpha = new double[KrylovDim];
-                for (int i = 0; i < KrylovDim; i++) {
-                    alpha[i] = BLAS.ddot(L, MxxHistory[i], 1, Res0, 1);
-                }
-                alpha = alpha.MPISum();
-                for(int i = 0; i < KrylovDim; i++) {
-                    if(alpha[i].IsNaNorInf())
-                        throw new ArithmeticException("Numerical breakdown in residual minimization.");
-                }
-
-
-                Array.Copy(Sol0, outX, L);
-                Array.Copy(Res0, outRes, L);
-                for (int i = 0; i < KrylovDim; i++) {
-                    BLAS.daxpy(L, alpha[i], SolHistory[i], 1, outX, 1);
-                    BLAS.daxpy(L, -alpha[i], MxxHistory[i], 1, outRes, 1);
-                }
-
-                this.Alphas.Clear();
-                for(int i = 0; i < alpha.Length; i++)
-                    this.Alphas.Add((alpha[i], double.NaN, -2));
-
-                double ResNorm = Norm(outRes);
-
-                if(KrylovDim > MaxKrylovDim) {
-                    int leastSignificantVec = alpha.Select(x => x.Abs()).IndexOfMin();
-                    MxxHistory.RemoveAt(leastSignificantVec);
-                    SolHistory.RemoveAt(leastSignificantVec);
-                }
-
-               
-
-                return ResNorm;
-            }
-        }
-
-        */
-
+ 
 
         bool m_UsedMoreThanOneOrthoCycle = false;
 
@@ -356,7 +314,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // To ensure stability, we must start over with a re-scaled X!
                                 // We have to re-scale what is remaining of X:
                                 double Xnorm = Norm(X);
-                                Console.WriteLine("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + X.Length);
+                                Console.Error.WriteLine("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + X.Length);
                                 ft.Info("Orthonormalization: Severe cancellation may have occurred after " + name + ", norm after orthogonalization is " + NewMxxNorm + "; norm of X: " + Xnorm + " Doing Re-orthonormalization (" + (jj + 1) + "); L = " + X.Length);
 
                                 if ((Xnorm < 1e-200) || (jj == MaxOrtho - 1)) {
@@ -401,19 +359,43 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        public double[] Diagonal {
+            get;
+            set;
+        }
+
+
         /// <summary>
         /// Inner Product use for orthonormalization (not necessarily the standard l2-product)
         /// </summary>
         public double InnerProduct(double[] A, double[] B) {
-            Debug.Assert(A.Length == B.Length);
-            return BLAS.ddot(A.Length, A, 1, B, 1).MPISum(comm);
+            if (Diagonal == null) {
+                Debug.Assert(A.Length == B.Length);
+                return BLAS.ddot(A.Length, A, 1, B, 1).MPISum(comm);
+            } else {
+                int L = Diagonal.Length; 
+                Debug.Assert(A.Length == L);
+                Debug.Assert(B.Length == L);
+
+                double acc = 0;
+                for(int i = 0; i < L; i++) {
+                    if (Diagonal[i] <= 0)
+                        throw new ArithmeticException("fuced up diagonal");
+                    acc += A[i] * B[i] * Diagonal[i];
+                }
+                return acc.MPISum(comm);
+            }
         }
 
         /// <summary>
         /// norm induced by <see cref="InnerProduct(double[], double[])"/>
         /// </summary>
         public double Norm(double[] A) {
-            return A.MPI_L2Norm(comm);
+            if (Diagonal == null) {
+                return A.MPI_L2Norm(comm);
+            } else {
+                return InnerProduct(A, A).Sqrt();
+            }
         }
 
 
@@ -428,23 +410,113 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// residual with respect to the initial guess
         /// </param>
         /// <param name="Sol0">
-        /// initial guess; not used
+        /// initial guess; required for checking <paramref name="outRes"/>,
+        /// resp. for re-computing <paramref name="outRes"/> in the case of severe round-of errors.
         /// </param>
         /// <param name="outRes">
         /// - input: the residual with respect to the input value of <paramref name="outX"/>
         /// - output: on exit, the residual with respect to the output value of <paramref name="outX"/>
         /// </param>
         /// <param name="name">
-        /// identifyer 
+        /// identifier 
         /// </param>
         /// <param name="xGuess">
-        /// guess for the solution (typically, preconditionder output)
+        /// guess for the solution (typically, preconditioner output); will be modified during the orthonormalization
         /// </param>
         public double AddSolAndMinimizeResidual(ref double[] xGuess, double[] outX, double[] Sol0, double[] Res0, double[] outRes, string name) {
             AddSol(ref xGuess, name);
             return MinimizeResidual(outX, Sol0, Res0, outRes, name);
         }
     }
+    /*
+    class DecompositionAccelerator {
+
+        CoreOrthonormalizationProcedure m_kSpace;
+
+        public DecompositionAccelerator(MultigridOperator op, CoreOrthonormalizationProcedure kSpace) {
+            m_kSpace = kSpace;
+            
+            int pLowVel = 4;
+            int pLowPres = pLowVel - 1;
+
+            SubBlockSelector VelLo = new SubBlockSelector(op.DgMapping);
+            VelLo.VariableSelector(0, 1);
+            VelLo.SetModeSelector(k => k <= pLowVel);
+            BlockMask maskVelLo = new BlockMask(VelLo);
+
+            SubBlockSelector VelHi = new SubBlockSelector(op.DgMapping);
+            VelHi.VariableSelector(0, 1);
+            VelHi.SetModeSelector(k => k > pLowVel);
+            BlockMask maskVelHi = new BlockMask(VelHi);
+
+            SubBlockSelector PresLo = new SubBlockSelector(op.DgMapping);
+            PresLo.VariableSelector(2);
+            PresLo.SetModeSelector(k => k <= pLowPres);
+            BlockMask maskPresLo = new BlockMask(PresLo);
+
+            SubBlockSelector PresHi = new SubBlockSelector(op.DgMapping);
+            PresHi.VariableSelector(2);
+            PresHi.SetModeSelector(k => k > pLowPres);
+            BlockMask maskPresHi = new BlockMask(PresHi);
+
+            int L = op.Mapping.LocalLength;
+
+
+            bool[] check = new bool[L];
+            foreach (var msk in new BlockMask[] { maskVelLo, maskVelHi, maskPresLo, maskPresHi }) {
+                foreach (int i in msk.LocalIndices) {
+                    if (check[i] == true)
+                        throw new Exception("double hit " + i);
+                    check[i] = true;
+                }
+            }
+            for (int i = 0; i < L; i++) {
+                if (check[i] == false)
+                    throw new Exception("miss " + i);
+
+            }
+        
+            m_Decompositions.Add(maskVelLo.LocalIndices);
+            m_Decompositions.Add(maskVelHi.LocalIndices);
+            m_Decompositions.Add(maskPresLo.LocalIndices);
+            m_Decompositions.Add(maskPresHi.LocalIndices);
+        }
+
+        List<int[]> m_Decompositions = new List<int[]>();                                                   
+
+
+        public void Solve(double[] X, double[] RHS) {
+
+            var X0 = X.CloneAs();
+            var Res = RHS.CloneAs();
+
+            int L = X.Length;
+            X.ClearEntries();
+
+            var myOrtho = new CoreOrthonormalizationProcedure(m_kSpace.OpMatrix);
+
+            //myOrtho.AddSolAndMinimizeResidual()
+
+            foreach(var Y in m_kSpace.SolHistory) {
+                int i = -1;
+                foreach(int[] Decomp in m_Decompositions) {
+                    i++;
+
+                    double[] Yd = new double[L];
+                    Yd.AccV(1.0, Y, Decomp, Decomp);
+                    if (Yd.MPI_L2Norm(m_kSpace.OpMatrix.MPI_Comm) <= 0)
+                        continue;
+                    double resNorm = myOrtho.AddSolAndMinimizeResidual(ref Yd, X, X0, RHS, Res, "decomp" + i);
+                    
+                    //Console.WriteLine("decomp" + i + ": " + resNorm);
+                }
+            }
+
+        }
+
+
+    }
+    */
 
 
     /// <summary>
@@ -458,6 +530,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// One instance of this class represents only one level of the multigrid method; coarser 
     /// levels must be added by configuring the <see cref="OrthonormalizationMultigrid.CoarserLevelSolver"/> member.
     /// </summary>
+    /// <remarks>
+    /// Residual minimization through orthonormalization (ORTHOMIN) is first described in:
+    ///  Vinsome, P.K.W.: 
+    ///  Orthomin, an Iterative Method for Solving Sparse Sets of Simultaneous Linear Equations,
+    ///  SPE Symposium on Numerical Simulation of Reservoir Performance, 
+    ///  doi: 10.2118/5729-MS, Los Angeles, California, 1976
+    /// </remarks>    
     public class OrthonormalizationMultigrid : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination, ISubsystemSolver {
 
 
@@ -585,14 +664,84 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             InitImpl(op);
-            /*
-            int D = 2;
+        }
+
+        
+        public void ScalingKakke(MultigridOperator op) { 
             int pLowVel = 4;
+            int pLowPres = pLowVel - 1;
+
             SubBlockSelector VelLo = new SubBlockSelector(op.DgMapping);
-            VelLo.CellSelector
+            VelLo.VariableSelector(0, 1);
+            VelLo.SetModeSelector(k => k <= pLowVel);
+            BlockMask maskVelLo = new BlockMask(VelLo);
+
+            SubBlockSelector VelHi = new SubBlockSelector(op.DgMapping);
+            VelHi.VariableSelector(0, 1);
+            VelHi.SetModeSelector(k => k > pLowVel);
+            BlockMask maskVelHi = new BlockMask(VelHi);
+            
+            SubBlockSelector PresLo = new SubBlockSelector(op.DgMapping);
+            PresLo.VariableSelector(2);
+            PresLo.SetModeSelector(k => k <= pLowPres);
+            BlockMask maskPresLo = new BlockMask(PresLo);
+
+            SubBlockSelector PresHi = new SubBlockSelector(op.DgMapping);
+            PresHi.VariableSelector(2);
+            PresHi.SetModeSelector(k => k > pLowPres);
+            BlockMask maskPresHi = new BlockMask(PresHi);
+
+            int L = op.Mapping.LocalLength;
+            ortho.Diagonal = new double[L];
+            ortho.Diagonal.SetAll(1.0);
+
+
+            bool[] check = new bool[L];
+            foreach (var msk in new BlockMask[] { maskVelLo, maskVelHi, maskPresLo, maskPresHi }) {
+                foreach (int i in msk.LocalIndices) {
+                    if (check[i] == true)
+                        throw new Exception("double hit " + i);
+                    check[i] = true;
+                }
+            }
+            for(int i = 0; i < L; i++) {
+                if (check[i] == false)
+                    throw new Exception("miss " + i);
+
+            }
+
+            Console.WriteLine($"    Inner Product diagonal factors: {velScaleLo}  {velScaleHi}  {presScaleLo}  {presScaleHi}");
+            
+            ortho.Diagonal.ScaleV(velScaleLo, maskVelLo.LocalIndices);
+            ortho.Diagonal.ScaleV(velScaleHi, maskVelHi.LocalIndices);
+            ortho.Diagonal.ScaleV(presScaleLo, maskPresLo.LocalIndices);
+            ortho.Diagonal.ScaleV(presScaleHi, maskPresHi.LocalIndices);
+
+            /*
+            maskVelLo.LocalIndices.Select(idx => idx + 1).SaveToTextFile("m1.txt");
+            maskVelHi.LocalIndices.Select(idx => idx + 1).SaveToTextFile("m2.txt");
+            maskPresLo.LocalIndices.Select(idx => idx + 1).SaveToTextFile("m3.txt");
+            maskPresHi.LocalIndices.Select(idx => idx + 1).SaveToTextFile("m4.txt");
+            
+            op.OperatorMatrix.SaveToTextFileSparse("Mtx.txt");
             */
 
+            //Console.WriteLine("     vL: " + maskVelLo.GetSubVec(vec).L2Norm());
+            //Console.WriteLine("     vH: " + maskVelHi.GetSubVec(vec).L2Norm());
+            //Console.WriteLine("     pL: " + maskPresLo.GetSubVec(vec).L2Norm());
+            //Console.WriteLine("     pH: " + maskPresHi.GetSubVec(vec).L2Norm());
+
+
+            Console.WriteLine("check passed");
         }
+
+        
+        public static double velScaleLo = 1;
+        public static double presScaleLo = 1;
+        public static double velScaleHi = 1;
+        public static double presScaleHi = 1;
+        //*/
+
 
         CoreOrthonormalizationProcedure ortho;
 
@@ -639,7 +788,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             this.CoarserLevelSolver.Init(mgOp);
                         }
                     } else {
-                        throw new NotSupportedException($"Unable to initialize coarse-level-solver if operator is not a {typeof(MultigridOperator)}");
+                        if(myConfig.CoarseOnLovwerLevel == false && this.CoarserLevelSolver is ISubsystemSolver ssCoarse) {
+                            ssCoarse.Init(op);
+                        } else {
+                            throw new NotSupportedException($"Unable to initialize coarse-level-solver if operator is not a {typeof(MultigridOperator)}");
+                        }
                     }
                 }
 
@@ -669,7 +822,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                 }
+
+                //if(op is MultigridOperator mgop) {
+                //    ScalingKakke(mgop);
+                //}
             }
+
+
         }
 
 
@@ -798,9 +957,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double iter0_resNorm = ortho.Norm(Res0);
                 double resNorm = iter0_resNorm;
                 this.IterationCallback?.Invoke(0, Sol0, Res0, this.m_MgOperator as MultigridOperator);
-
-                //Console.Write("DG deg " + m_MgOperator.DgMapping.DgDegree.Min() + ", kdim = " + this.MxxHistory.Count + " ... ");
-
+                                
                 // clear history of coarse solvers
                 ortho.Clear();
                 bool bIterate = true;
@@ -831,8 +988,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             PreSmoother.Solve(PreCorr, Res); // Vorglättung
 
                             // orthonormalization and residual minimization
-                            //ortho.AddSol(ref PreCorr, "presmooth");
-                            //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 1);
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmooth");
 
                         }
@@ -909,13 +1064,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // post-smoother
                     // -------------
 
-                    for (int g = 0; g < config.NoOfPostSmootherSweeps; g++) { // doppelt hält besser
-                                                                              // Test: Residual on this level / already computed by 'MinimizeResidual' above
+                    if (PostSmoother != null) {
+                        for (int g = 0; g < config.NoOfPostSmootherSweeps; g++) { // Test: Residual on this level / already computed by 'MinimizeResidual' above
 
-                        VerivyCurrentResidual(X, B, Res, iIter); // 
+                            VerivyCurrentResidual(X, B, Res, iIter); // 
 
 
-                        if (PostSmoother != null) {
                             double[] PostCorr = new double[L];
                             PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
                             //ortho.AddSol(ref PostCorr, "postsmooth" + g); //orthonormalization and residual minimization
@@ -924,12 +1078,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     } // end of post-smoother loop
 
+
+                    
+
+
                     // iteration callback
                     // ------------------
                     this.ThisLevelIterations++;
                     IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator as MultigridOperator);
 
-                    SpecAnalysisSample(iIter, X, "_");
+                    //ScalingKakke(this.m_MgOperator as MultigridOperator, Res);
+
+                    //SpecAnalysisSample(iIter, X, "_");
 
                     var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                     if (!termState4.bNotTerminate) {
@@ -972,8 +1132,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                            //Console.WriteLine("verified Residual: " + resDist);
                     var ss = (new double[] { rTest.L2DistPow2(Res), Res.L2NormPow2(), X.L2NormPow2() }).MPISum(m_MgOperator.DgMapping.MPI_Comm);
                     double resDist = ss[0].Sqrt();
-                    double resNormTst = ss[0].Sqrt();
-                    double XnormTest = ss[0].Sqrt();
+                    double resNormTst = ss[1].Sqrt();
+                    double XnormTest = ss[2].Sqrt();
                     tr.Info($"Residual vector check iter {iter}: distance is {resDist}, reference value {resNormTst}");
                     if (resDist > resNormTst * 10e-5 + XnormTest * 1e-5)
                         throw new ArithmeticException($"Residual vector (after pre-smoother/before coarse-correction) is not up-to-date: distance is {resDist}, reference value {resNormTst}");
@@ -982,6 +1142,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /*
         private double[] cloneofX;
 
         /// <summary>
@@ -1011,7 +1172,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             get;
             set;
         }
-
+        */
 
         /// <summary>
         /// ~
