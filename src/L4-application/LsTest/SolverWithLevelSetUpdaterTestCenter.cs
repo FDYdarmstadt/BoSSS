@@ -167,8 +167,10 @@ namespace BoSSS.Application.LsTest {
             }
             XOP.AgglomerationThreshold = 0.1;
             AgglomerationAlgorithm.RecoverFromAgglomerationFail = true;
-            if (AgglomerationAlgorithm.RecoverFromAgglomerationFail)
+            if (AgglomerationAlgorithm.RecoverFromAgglomerationFail) {
                 Console.WriteLine("Careful activated experimental agglomeration fail recovery - i.e. do not agglomerate when no target is found");
+                AgglomerationAlgorithm.Katastrophenplot = null; // no plotting for agglomeration fails
+            }
             XOP.TemporalOperator = new ConstantXTemporalOperator(XOP, 0.0);
 
             // === level set related parameters === //
