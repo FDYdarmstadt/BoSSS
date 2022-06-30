@@ -79,6 +79,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             InitImpl(op);
         }
 
+        public string id;
+
         /// <summary>
         /// 
         /// </summary>
@@ -104,12 +106,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Converged = false;
         }
 
+        bool written = false;
+
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double>  //
         {
-
-
+            if (!written) {
+                m_op.OperatorMatrix.SaveToTextFileSparse("M" + id + ".txt");
+                m_BlockL.SaveToTextFileSparse("L" + id + ".txt");
+                m_BlockU.SaveToTextFileSparse("U" + id + ".txt");
+                written = true;
+            }
             int L = X.Count;
 
             //double[] _B;
@@ -334,7 +342,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 m_BlockL = new BlockMsrMatrix(part, part);
                 m_BlockL.AccEyeSp(1.0);
 
-                for(long j = cell0; j < J + cell0; j++) {
+
+
+                for (long j = cell0; j < J + cell0; j++) {
                     //for(long i = cell0; i < J + cell0; i++) {
                     //    if(P1[i, j]) {
                     long[] occRow_j = ILUp.GetOccupiedColumnIndices(j);
@@ -434,9 +444,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         private MsrMatrix GetPattern(out int Occupied) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
-                //if(m_op.Mapping.MpiSize > 1)
-                //    throw new NotImplementedException();
+                //tr.InfoToConsole = true;
+
                 if(ILU_level < 0)
                     throw new ArgumentException("ILU-Level must be >= 0, got " + ILU_level);
                 if(ILU_level > Math.Min((int)(byte.MaxValue), 10))
@@ -461,7 +470,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //long iB = part.GetBlockI0(i);
                     //int sz_i = part.GetBlockLen(i);
 
-                    long[] colBlocks = Mtx.GetOccupiedRowBlockIndices(i, alsoExternal:false);
+                    long[] colBlocks = Mtx.GetOccupiedRowBlockIndices(i, alsoExternal: false);
                     foreach(long j in colBlocks) { // loop over block columns
                         var Blk = Mtx.GetBlock(i, j);
                         if(!Blk.IsZeroValued()) {
@@ -487,7 +496,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
                 //ILU0pattern.SaveToTextFileSparse("ILU0.txt");
-                Console.WriteLine("done.");
+
                 MsrMatrix ILUp_pattern = ILU0_pattern;
                 for(int iLevel = 1; iLevel <= ILU_level; iLevel++) {
                     tr.Info($"computing ILU({iLevel}) pattern...");

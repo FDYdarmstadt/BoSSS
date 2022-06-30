@@ -1069,12 +1069,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             VerivyCurrentResidual(X, B, Res, iIter); // 
 
+                            string id = "";
+                            if (PostSmoother is CellILU cilu)
+                                id = cilu.id;
 
                             double[] PostCorr = new double[L];
                             PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
                             //ortho.AddSol(ref PostCorr, "postsmooth" + g); //orthonormalization and residual minimization
                             //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
-                            resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + g);
+                            resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + id + "--" + g);
                         }
                     } // end of post-smoother loop
 

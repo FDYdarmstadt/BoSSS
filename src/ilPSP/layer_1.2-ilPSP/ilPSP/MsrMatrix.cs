@@ -87,7 +87,7 @@ namespace ilPSP.LinSolvers {
         /// </summary>
         /// <param name="path"></param>
         /// <param name="mpi_comm">
-        /// mpi communicator; currently, only MPI_COMM_WORLD is supported; 
+        /// mpi communicator;
         /// </param>
         /// <returns></returns>
         /// <remarks>
@@ -166,7 +166,7 @@ namespace ilPSP.LinSolvers {
                 long[] Dim = new long[2];
                 unsafe {
                     fixed (long* pDim = &Dim[0]) {
-                        csMPI.Raw.Bcast((IntPtr)pDim, 2, csMPI.Raw._DATATYPE.LONG_LONG_INT, 0, csMPI.Raw._COMM.WORLD);
+                        csMPI.Raw.Bcast((IntPtr)pDim, 2, csMPI.Raw._DATATYPE.LONG_LONG_INT, 0, mpi_comm);
                     }
                 }
                 RowPart = FindPartitioning(RowPart, mpi_comm, rank, size, Dim[0]);
@@ -468,7 +468,7 @@ namespace ilPSP.LinSolvers {
             where VectorType2 : IList<double> {
 
             int size;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+            csMPI.Raw.Comm_Size(MPI_Comm, out size);
             if (size != 1)
                 throw new NotImplementedException("SpMV(...) does not work for more than 1 MPI process.");
 
@@ -834,74 +834,6 @@ namespace ilPSP.LinSolvers {
             return T;
         }
 
-        /*
-        /// <summary>
-        /// The Infinity-Norm (maximum absolute row sum norm) of this matrix;
-        /// </summary>
-        /// <returns></returns>
-        public double InfNorm() {
-            using (var tr = new FuncTrace()) {
-                double normLoc = 0;
-
-                for (int i = 0; i < m_Entries.Length; i++) {
-                    double rownrm = 0;
-                    MatrixEntry[] row = m_Entries[i];
-                    if (row != null) {
-                        for (int j = 0; j < row.Length; j++) {
-                            if (row[j].m_ColIndex >= 0) {
-                                rownrm += Math.Abs(row[j].Value);
-                            }
-                        }
-                    }
-
-                    normLoc = Math.Max(normLoc, rownrm);
-                }
-
-                //Console.WriteLine("local norm" + normLoc);
-                tr.Info("local norm " + normLoc);
-
-                double normGlob = double.NaN;
-                unsafe {
-                    csMPI.Raw.Allreduce((IntPtr)(&normLoc), (IntPtr)(&normGlob), 1, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._OP.MAX, csMPI.Raw._COMM.WORLD);
-                }
-                return normGlob;
-            }
-        }
-        */
-        /*
-        /// <summary>
-        /// Determines the minimum and maximum column index for a specific row.
-        /// </summary>
-        /// <param name="iRow">
-        /// the row index (local index (!)) which should be investigated
-        /// </param>
-        /// <param name="jMin">
-        /// the minimum of all column indices (global index) of nonzero
-        /// elements in row <paramref name="iRow"/>
-        /// </param>
-        /// <param name="jMax">
-        /// the maximum of all column indices (global index)of nonzero elements
-        /// in row <paramref name="iRow"/>
-        /// </param>
-        private void GetRowRange(int iRow, out int jMin, out int jMax) {
-            MatrixEntry[] row = m_Entries[iRow];
-
-            jMin = int.MaxValue;
-            jMax = int.MinValue;
-
-            if (row != null) {
-                foreach (MatrixEntry e in row) {
-                    int j = e.m_ColIndex;
-                    if (j < 0)
-                        continue;
-
-                    jMin = Math.Min(jMin, j);
-                    jMax = Math.Max(jMax, j);
-                }
-            }
-        }
-        */
-
         /// <summary>
         /// Computes the deviation of this matrix from symmetry
         /// </summary>
@@ -911,7 +843,7 @@ namespace ilPSP.LinSolvers {
         /// </returns>
         public double SymmetryDeviation() {
             int size;
-            csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+            csMPI.Raw.Comm_Size(this.MPI_Comm, out size);
             if (size != 1)
                 throw new NotImplementedException("currently, this method does not work mpi parallel.");
 
@@ -1846,7 +1778,7 @@ namespace ilPSP.LinSolvers {
 
             unsafe {
                 int globRes = -1;
-                csMPI.Raw.Allreduce((IntPtr)(&locRes), (IntPtr)(&globRes), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MIN, csMPI.Raw._COMM.WORLD);
+                csMPI.Raw.Allreduce((IntPtr)(&locRes), (IntPtr)(&globRes), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MIN, this.MPI_Comm);
 
                 return (locRes > 0);
             }

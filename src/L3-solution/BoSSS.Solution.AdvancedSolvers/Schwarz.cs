@@ -634,16 +634,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int[][] BlockCells = null;
 
-
-                /*{
+                /*
+                {
                     int TotalNumberOfSchwarzBlocks = NoOfSchwzBlocks.MPISum();
                     var blocks = TotalNumberOfSchwarzBlocks.ForLoop(idx => new SinglePhaseField(new Basis(op.BaseGridProblemMapping.GridDat, 0), "block#" + idx)); ;
                     var pp = new Partitioning(NoOfSchwzBlocks);
 
+                    int[][] agg2Parts = op.GridData.iLogicalCells.AggregateCellToParts;
 
-                    for(int i = 0; i < NoOfSchwzBlocks; i++) {
+                    for (int i = 0; i < NoOfSchwzBlocks; i++) {
                         foreach (int jCell in _Blocks.ElementAt(i)) {
-                            blocks[i + pp.i0].SetMeanValue(jCell, 1.0);
+
+                            if (agg2Parts == null || agg2Parts[jCell] == null) {
+                                blocks[i + pp.i0].SetMeanValue(jCell, 1.0);
+                            } else {
+                                foreach(int jGeom in agg2Parts[jCell])
+                                    blocks[i + pp.i0].SetMeanValue(jGeom, 1.0);
+                            }
                         }
                     }
 
@@ -746,11 +753,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // p-Multigrid in blocks
                             // +++++++++++++++++++++
 
-                            
-                            var pmgConfig = new PmgConfig();
-                            var blockSolve = pmgConfig.CreateInstanceImpl(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
-                            BlockSolver.LowerPSolver = blockSolve;
-                            
+                            ISubsystemSolver blockSolve;
+
+                            if (op.LevelIndex == 1 && op.DgMapping.MpiRank == 2) {
+                                blockSolve = new DirectSolver() {
+                                    ActivateCaching = (int NoIter, int MgLevel) => true
+                                };
+                            } else {
+                                var pmgConfig = new PmgConfig();
+                                blockSolve = pmgConfig.CreateInstanceImpl(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
+                                BlockSolver.LowerPSolver = blockSolve;
+
+                                ((CellILU)((OrthonormalizationMultigrid)blockSolve).PostSmoother).id = "R" + op.Mapping.MpiRank + "Lv" + op.LevelIndex + "p" + iPart;
+                            }
 
                             /*
                             // just ILU is bad

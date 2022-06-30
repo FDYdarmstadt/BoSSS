@@ -27,15 +27,17 @@ using BoSSS.Platform.Utils;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
-    public enum Library {
-        HYPRE = 0,
-        Intel_MKL = 1,
-    }
+    
 
     /// <summary>
-    /// Parallel ILU from HYPRE library
+    /// ILU from HYPRE or INTEL library 
     /// </summary>
-    public class sparseILU : ISubsystemSolver, IDisposable {
+    public class SparseILU : ISubsystemSolver, IDisposable {
+
+        public enum Library {
+            HYPRE = 0,
+            Intel_MKL = 1,
+        }
 
         public int IterationsInNested {
             get { return 0; }
@@ -95,7 +97,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public Library UsedLibrary {
             set {
-                m_lib=value;
+                m_lib = value;
             }
         }
 
@@ -153,6 +155,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         BlockMsrMatrix m_ILUmatrix;
         IOperatorMappingPair m_mgop;
         bool m_LocalPrecond = false;
+        
         Library m_lib = Library.Intel_MKL;
 
         public void Solve<P, Q>(P X, Q B)
@@ -194,7 +197,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public object Clone() {
-            var clone = new sparseILU();
+            var clone = new SparseILU();
             clone.LocalPreconditioning = this.m_LocalPrecond;
             if(this.IterationCallback !=null) clone.IterationCallback = this.IterationCallback.CloneAs();
             return clone;

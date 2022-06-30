@@ -49,6 +49,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public MPIexchange(MultigridMapping map, T vector) {
 
+            if (map.MPI_Comm != csMPI.Raw._COMM.WORLD)
+                throw new NotSupportedException("works only on world communicator");
+
             // misc init
             // =========
 
@@ -391,6 +394,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ctor.
         /// </summary>
         public MPIexchangeInverse(MultigridMapping map, T vector) {
+
+            if (map.MPI_Comm != csMPI.Raw._COMM.WORLD)
+                throw new NotSupportedException("works only on world communicator");
 
             // misc init
             // =========

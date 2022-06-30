@@ -149,7 +149,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int pCoarsest = UsepTG ? minDG : -1;
                 int[] NoBlocks = NoOfSchwarzBlocks(op, pCoarsest, SchwarzblockSize);
-
+                //if (op.DgMapping.MpiRank == 0)
+                //    NoBlocks[0] = 9;
+                //NoBlocks[1] = 4;
                 int[] GlobalNoBlocks = NoBlocks.MPISum(op.Mapping.MPI_Comm);
 
                 if (NoBlocks.Any(no => no <= 0))
@@ -175,6 +177,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                     Debug.Assert(useDirect.MPIEquals(op.Mapping.MPI_Comm));
                     Debug.Assert(skipLevel.MPIEquals(op.Mapping.MPI_Comm));
+
+                    //useDirect = op_lv.LevelIndex > 0;
 
 
                     if (useDirect)
