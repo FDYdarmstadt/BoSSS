@@ -86,7 +86,8 @@ namespace BoSSS.Application.LsTest {
             C.savetodb = dbPath != null;
             C.DbPath = dbPath;
             C.saveperiod = 50; // in principal we only need the last timestep, save now and then for potential restarts
-            C.dtFixed = 1.0 / (100 * degree * degree * 4); // gridres max is 4, and tempres is 4 for all simulations (all using the same timestep)
+            C.dtFixed = 1.0 / (100 * degree * degree * 2); // gridres max is 4, and tempres is 2 for all simulations (all using the same timestep)
+            C.NoOfTimesteps = (int)(C.Endtime / C.dtFixed);
 
             var db = DatabaseInfo.Open(dbPath);
             var grd = C.GridFunc();
