@@ -52,6 +52,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // misc init
             // =========
 
+            if (map.MPI_Comm != csMPI.Raw._COMM.WORLD)
+                throw new NotSupportedException("works only on world communicator");
+
             IGridData master = map.AggGrid;
             int J = master.iLogicalCells.Count;
             if (vector.Count != map.LocalLength)
@@ -392,6 +395,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public MPIexchangeInverse(MultigridMapping map, T vector) {
 
+            if (map.MPI_Comm != csMPI.Raw._COMM.WORLD)
+                throw new NotSupportedException("works only on world communicator");
+
             // misc init
             // =========
 
@@ -400,7 +406,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (vector.Count != map.LocalLength)
                 throw new ArgumentException("wrong length of input vector.");
 
-            
+
             m_vector = vector;
             m_master = master;
             m_map = map;

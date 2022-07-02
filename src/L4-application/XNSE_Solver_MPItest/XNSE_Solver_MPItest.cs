@@ -120,7 +120,9 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
         [Test]
-        public static void emptyMaskInSchwarz() {
+        public static void EmptyMaskInSchwarz() {
+            //--test=BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz
+
             // This test simulates bad initial distribution of void cells over ranks
             // which would lead to an error within Schwarz solver
             // because of voidcells Schwarzblocks would be empty

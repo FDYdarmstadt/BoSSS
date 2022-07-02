@@ -271,12 +271,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(RestrictedDeg[iVar] > op.DgMapping.DgDegree[iVar])
                     throw new NotSupportedException($"Configuration Error: 'RestrictedDeg[{iVar}] == {RestrictedDeg[iVar]}' but the maximum supported degree for the respective variable is {op.DgMapping.DgDegree[iVar]}..");
             }
+            if (op.DgMapping.MPI_Comm != op.OperatorMatrix.MPI_Comm)
+                throw new ApplicationException("mismatch of MPI communicators");
+
 
             Len = op.DgMapping.LocalLength;
             m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows, this.RestrictToMPIself);
             LenSub = m_MgOperatorRestriction.DgMapping.TotalLength;
 
-            if(LowerPSolver != null && LenSub > 0)
+            if (m_MgOperatorRestriction.DgMapping.MPI_Comm != m_MgOperatorRestriction.OperatorMatrix.MPI_Comm)
+                throw new ApplicationException("mismatch of MPI communicators");
+
+            if (LowerPSolver != null && LenSub > 0)
                 LowerPSolver.Init(m_MgOperatorRestriction);
 
         }

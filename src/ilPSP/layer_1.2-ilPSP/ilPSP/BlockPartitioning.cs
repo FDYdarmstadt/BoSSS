@@ -69,7 +69,7 @@ namespace ilPSP {
             } else {
                 FrameBlockSize = -2356675;
             }
-            int FrameBlockSize_g = FrameBlockSize.MPIMax();
+            int FrameBlockSize_g = FrameBlockSize.MPIMax(othrPart.MPI_Comm);
 
             ConstructorCommon(FrameBlockSize_g, _Subblk_i0, _SubblkLen, _BlockType, othrPart.MPI_Comm); 
 
