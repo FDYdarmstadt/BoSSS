@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation.Grid;
 using ilPSP;
+using ilPSP.Connectors.Matlab;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -60,7 +61,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void Dispose() {
             m_BlockL = null;
             m_BlockU = null;
-            m_ILUp_pattern = null;
         }
 
         IOperatorMappingPair m_op;
@@ -93,7 +93,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 m_op = op;
 
-                UpdateILU();
+                (this.m_BlockL, this.m_BlockU) = UpdateILU(this.ILU_level, op.OperatorMatrix);
                 //CheckILU();
             }
         }
@@ -106,17 +106,81 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Converged = false;
         }
 
-        bool written = false;
+        bool written = true;
+
+
+        public static void Verify(string _iD) {
+            var Blocks = VectorIO.LoadFromTextFile("part" + _iD + ".txt").Select(d => (int)d).ToArray();
+            int J = Blocks.Length;
+            long[] i0 = new long[J];
+            for (int j = 1; j < J; j++) {
+                i0[j] = i0[j - 1] + Blocks[j - 1];
+            }
+            var part = new BlockPartitioning(checked((int)(i0[J - 1] + Blocks[J - 1])), i0, Blocks, csMPI.Raw._COMM.SELF);
+
+
+            var opMtx_tmp = MsrMatrix.LoadFromFile("M" + _iD + ".mtx", csMPI.Raw._COMM.SELF, part, part);
+            var L_tmp = MsrMatrix.LoadFromFile("L" + _iD + ".mtx", csMPI.Raw._COMM.SELF, part, part);
+            var U_tmp = MsrMatrix.LoadFromFile("U" + _iD + ".mtx", csMPI.Raw._COMM.SELF, part, part);
+
+            var opMtx = new BlockMsrMatrix(part); opMtx.Acc(1.0, opMtx_tmp);
+            var L = new BlockMsrMatrix(part); L.Acc(1.0, L_tmp);
+            var U = new BlockMsrMatrix(part); U.Acc(1.0, U_tmp);
+
+
+            for (int i = 0; i < 1; i++) {
+                Console.WriteLine("pass " + i + " on " + _iD +  " ...");
+                var (test_L1, test_U1) = UpdateILU(0, opMtx);
+                var (test_L2, test_U2) = UpdateILU(0, opMtx);
+
+                //double cond_Matlab = opMtx.condest();
+                //double cond_Arnold = opMtx.condestArnoldi();
+
+                double LErr1 = L.MatrixDist(test_L1);
+                double UErr1 = U.MatrixDist(test_U1);
+                double LErr2 = L.MatrixDist(test_L2);
+                double UErr2 = U.MatrixDist(test_U2);
+                double LErr12 = test_L1.MatrixDist(test_L2);
+                double UErr12 = test_U1.MatrixDist(test_U2);
+
+                var LDiff = test_L1.
+
+
+                Console.WriteLine($" {LErr1}, {UErr1}");
+                Console.WriteLine($" {LErr2}, {UErr2}");
+                Console.WriteLine($" {LErr12}, {UErr12}");
+            }
+
+            //Console.WriteLine($"ID: {_iD}: LErr = {LErr}, UErr = {UErr}; cond = {cond_Matlab} (Matlab), {cond_Arnold} (BoSSS Arnoldi)");
+
+        }
+
 
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double>  //
         {
             if (!written) {
+                var part = m_op.OperatorMatrix._RowPartitioning;
+                if (part.MpiSize != 1)
+                    throw new NotSupportedException();
+                if (part.LocalNoOfBlocks != part.TotalNoOfBlocks)
+                    throw new NotSupportedException();
+
+                int NoOfBlocks = part.LocalNoOfBlocks;
+                int[] BL = NoOfBlocks.ForLoop(iblk => part.GetBlockLen(iblk));
+                BL.SaveToTextFile("part" + id + ".txt", part.MPI_Comm);
+
                 m_op.OperatorMatrix.SaveToTextFileSparse("M" + id + ".txt");
                 m_BlockL.SaveToTextFileSparse("L" + id + ".txt");
                 m_BlockU.SaveToTextFileSparse("U" + id + ".txt");
+
+                m_op.OperatorMatrix.ToMsrMatrix().SaveToFile("M" + id + ".mtx");
+                m_BlockL.ToMsrMatrix().SaveToFile("L" + id + ".mtx");
+                m_BlockU.ToMsrMatrix().SaveToFile("U" + id + ".mtx");
+
                 written = true;
+                Console.Error.WriteLine("Written: " + id);
             }
             int L = X.Count;
 
@@ -128,18 +192,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             double[] y = new double[L];
-            //double[] yref = new double[L];
-            //m_BlockL.Solve_Direct(yref, B.ToArray().CloneAs());
+            double[] yref = new double[L];
+            m_BlockL.Solve_Direct(yref, B.ToArray().CloneAs());
             LoTriDiagonalSolve(m_BlockL, y, B, true);
-            //double check1 = GenericBlas.L2Dist(yref, y);
-            //Console.WriteLine("Check value (lo solve) is: " + check1);
+            double check1 = GenericBlas.L2Dist(yref, y);
+            Console.Error.WriteLine("Check value (lo solve) is: " + check1);
 
 
-            //double[] Xref = new double[y.Length];
-            //m_BlockU.Solve_Direct(Xref, y.CloneAs());
+            double[] Xref = new double[y.Length];
+            m_BlockU.Solve_Direct(Xref, y.CloneAs());
             UpTriDiagonalSolve(m_BlockU, X, y, false);
-            //double check2 = GenericBlas.L2Dist(Xref, X);
-            //Console.WriteLine("Check value (hi solve) is: " + check2);
+            double check2 = GenericBlas.L2Dist(Xref, X);
+            Console.Error.WriteLine("Check value (hi solve) is: " + check2);
 
             
             m_ThisLevelIterations += 1;
@@ -261,14 +325,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// ILU, in-place version, after book of Saad (p 303)
         /// </summary>
-        void UpdateILU() {
+        static (BlockMsrMatrix L, BlockMsrMatrix U) UpdateILU(int iluLevel, BlockMsrMatrix Mtx) {
             using(var ft = new FuncTrace()) {
                 //if(m_op.DgMapping.MpiSize > 1)
                 //    throw new NotImplementedException();
 
                 //var grd = m_op.Mapping.GridData;
-                var Mtx = m_op.OperatorMatrix;
-                IBlockPartitioning part = m_op.DgMapping;
+                //var Mtx = m_op.OperatorMatrix;
+                IBlockPartitioning part = Mtx._RowPartitioning;
                 Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
                 Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
                 long cell0 = part.FirstBlock;
@@ -278,11 +342,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var A = Mtx.CloneAs();
 
                 // dbg_launch();
-                var ILUp = GetPattern(out int Occupied);
+                var ILUp_pattern = GetPattern(iluLevel, Mtx, out int Occupied);
                 csMPI.Raw.Barrier(Mtx.MPI_Comm);
                 csMPI.Raw.Barrier(Mtx.MPI_Comm);
                 csMPI.Raw.Barrier(Mtx.MPI_Comm);
-                var ILUpT = m_ILUp_pattern.Transpose();
+                var ILUpT = ILUp_pattern.Transpose();
                 double occupancy = (double)Occupied / (double)(J * J);
                 //ft.Info($"CellILU, lv {m_op.LevelIndex}, ILU-{ILU_level}, occupancy = {Math.Round(occupancy * 100)}%.");
 
@@ -292,14 +356,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         continue; // cell i is empty
 
                     var invAkk = A.GetBlock(k, k);
+                    var LU_Akk_T = A.GetBlock(k, k);
+                    LU_Akk_T.TransposeInPlace();
+                    int[] _ipiv = new int[LU_Akk_T.NoOfRows];
                     try {
-                        invAkk.InvertInPlace();
+                        //invAkk.InvertInPlace();
+
+                        LU_Akk_T.FactorizeLU(_ipiv);
                     } catch(ArithmeticException ae) {
                         Console.Error.WriteLine(ae.GetType() + ": " + ae.Message);
                         continue;
-                        //A.GetBlock(k, k).SaveToStream(Console.Error);
-                        //A.GetBlock(k, k).SaveToTextFile("C:\\tmp\\ae13.txt");
-                        //throw ae;
                     }
 
                     long[] occColumn_k = ILUpT.GetOccupiedColumnIndices(k);
@@ -312,10 +378,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //    throw new Exception($"fuck: P1[{i},{k}] = {P1[i, k]} //  {ILUpT[i, k]}  {m_ILUp_pattern[i, k]} ");
 
                             var Aik = A.GetBlock(i, k);
+                            var temp = MultidimensionalArray.Create(Aik.NoOfRows, Aik.NoOfCols);
+                            
+                            Aik.TransposeInPlace();
+                            LU_Akk_T.BacksubsLU(_ipiv, temp, Aik);
+                            Aik.TransposeInPlace();
                             Aik = Aik.GEMM(invAkk);
-                            A.SetBlock(Aik, i, k);
 
-                            long[] occRow_i = m_ILUp_pattern.GetOccupiedColumnIndices(i);
+                            temp.TransposeInPlace();
+                            //temp.Acc(-1.0, Aik);
+                            //Console.Write(temp.L2Norm() + " ");
+
+                            //A.SetBlock(Aik, i, k);
+                            A.SetBlock(temp, i, k);
+
+                            long[] occRow_i = ILUp_pattern.GetOccupiedColumnIndices(i);
                             //for(long j = k + 1; j < (cell0 + J); j++) {
                             //    if(P1[i, j] != occRow_i.Contains(j))
                             //        throw new Exception("fuck 2");
@@ -338,25 +415,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                m_BlockU = new BlockMsrMatrix(part, part);
-                m_BlockL = new BlockMsrMatrix(part, part);
-                m_BlockL.AccEyeSp(1.0);
+                var BlockU = new BlockMsrMatrix(part, part);
+                var BlockL = new BlockMsrMatrix(part, part);
+                BlockL.AccEyeSp(1.0);
 
 
 
                 for (long j = cell0; j < J + cell0; j++) {
                     //for(long i = cell0; i < J + cell0; i++) {
                     //    if(P1[i, j]) {
-                    long[] occRow_j = ILUp.GetOccupiedColumnIndices(j);
+                    long[] occRow_j = ILUp_pattern.GetOccupiedColumnIndices(j);
                     foreach(long i in occRow_j) {
                         {
                             var Aji = A.GetBlock(j, i);
                             if(j > i) {
                                 // lower tri
-                                m_BlockL.SetBlock(Aji, j, i);
+                                BlockL.SetBlock(Aji, j, i);
                             } else {
                                 // upper tri
-                                m_BlockU.SetBlock(Aji, j, i);
+                                BlockU.SetBlock(Aji, j, i);
                             }
                         }
                         //} else {
@@ -370,6 +447,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 //m_BlockL.SaveToTextFileSparse("L.txt");
                 //m_BlockU.SaveToTextFileSparse("U.txt");
+
+                return (BlockL, BlockU);
             }
         }
 
@@ -442,7 +521,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Optimized version
         /// </summary>
-        private MsrMatrix GetPattern(out int Occupied) {
+        static private MsrMatrix GetPattern(int ILU_level, BlockMsrMatrix Mtx, out int Occupied) {
             using(var tr = new FuncTrace()) {
                 //tr.InfoToConsole = true;
 
@@ -452,8 +531,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new ArgumentException("ILU-Level must be <= 10, got " + ILU_level);
 
                 //var grd = m_op.Mapping.GridData;
-                var Mtx = m_op.OperatorMatrix;
-                IBlockPartitioning part = m_op.DgMapping;
+                //var Mtx = m_op.OperatorMatrix;
+                IBlockPartitioning part = Mtx._RowPartitioning;
                 Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
                 Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
                 long cell0 = part.FirstBlock;
@@ -545,13 +624,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     
                 }
                 */
-                m_ILUp_pattern = ILUp_pattern;
-                return m_ILUp_pattern;
+                //m_ILUp_pattern = ILUp_pattern;
+                return ILUp_pattern;
             }
         }
 
-        MsrMatrix m_ILUp_pattern;
-
+        
         void CheckILU() {
             using(new FuncTrace()) {
                 BlockMsrMatrix LxU = BlockMsrMatrix.Multiply(m_BlockL, m_BlockU);
@@ -559,7 +637,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BlockMsrMatrix Uc = m_BlockU.CloneAs();
 
 
-                var P1 = GetPattern(out _);
+                var P1 = GetPattern(this.ILU_level, m_op.OperatorMatrix, out _);
 
 
                 //var grd = m_op.Mapping.GridData;

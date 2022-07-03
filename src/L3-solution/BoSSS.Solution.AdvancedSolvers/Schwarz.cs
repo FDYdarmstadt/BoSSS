@@ -755,7 +755,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             ISubsystemSolver blockSolve;
 
-                            if (op.LevelIndex == 1 && op.DgMapping.MpiRank == 2) {
+                            if (op.LevelIndex == 1 && op.DgMapping.MpiRank == 2 && op.DgMapping.MpiSize == 4000000) {
                                 blockSolve = new DirectSolver() {
                                     ActivateCaching = (int NoIter, int MgLevel) => true
                                 };

@@ -2305,7 +2305,7 @@ namespace ilPSP {
         static public void Solve<T,V,W>(this T M, V x, W b) 
             where T : IMatrix
             where V : IList<double>
-            where W : IList<double>
+            where W : IList<double> //
         {
             if (M.NoOfRows != M.NoOfCols)
                 throw new ApplicationException("Cannot solve nonquadratic matrix.");
@@ -2375,7 +2375,7 @@ namespace ilPSP {
             where W : IMatrix //
         {
             if (M.NoOfRows != M.NoOfCols)
-                throw new ApplicationException("Cannot solve nonquadratic matrix.");
+                throw new ApplicationException("Cannot solve non-quadratic matrix.");
             if (x.NoOfCols != b.NoOfCols)
                 throw new ArgumentException("mismatch between number of columns in x and b");
             if (x.NoOfRows != M.NoOfCols)
@@ -2424,8 +2424,6 @@ namespace ilPSP {
                 }
                 TempBuffer.FreeTempBuffer(i0);
                 TempBuffer.FreeTempBuffer(i1);
-
-
             }
         }
         
@@ -2445,7 +2443,9 @@ namespace ilPSP {
         /// <param name="c">Right-hand-side of the side equation system.</param>
         /// <param name="N">General matrix.</param>
         /// The second system is used to solve
-        static public void SolveWithCondition<T>(this T M, double[] x, double[] b, T N, double[] c) where T : IMatrix {
+        static public void SolveWithCondition<T>(this T M, double[] x, double[] b, T N, double[] c) 
+            where T : IMatrix //
+        {
             if (M.NoOfCols != N.NoOfCols)
                 throw new ApplicationException("Solutionspace of both systems has to be of equal dimension");
             if (x.Length != M.NoOfCols)
@@ -2603,6 +2603,72 @@ namespace ilPSP {
 
                 if (iBuf >= 0)
                     TempBuffer.FreeTempBuffer(iBuf);
+            }
+        }
+
+
+        /// <summary>
+        /// Performs the backward substitution which has been obtained through <see cref="FactorizeLU{T}(T, int[])"/>
+        /// for multiple right-hand-sides
+        /// </summary>
+        static public void BacksubsLU<T, V, W>(this T M, int[] _ipiv, V x, W b)
+            where T : IMatrix
+            where V : IMatrix
+            where W : IMatrix //
+        {
+            if (M.NoOfRows != M.NoOfCols)
+                throw new ApplicationException("Cannot solve non-quadratic matrix.");
+            if (x.NoOfCols != b.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (x.NoOfRows != M.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (b.NoOfRows != M.NoOfRows)
+                throw new ArgumentException("number of rows in b must be equal to number of rows in M");
+            if (_ipiv.Length != M.NoOfCols)
+                throw new ArgumentException("length of ipiv must be equal to number of columns");
+            unsafe {
+
+                int L = M.NoOfCols;
+
+                int NoRhs = b.NoOfCols;
+
+
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out int i0, L * L);
+                double[] _xRhs_Entries = TempBuffer.GetTempBuffer(out int i1, L * NoRhs);
+                fixed (double* this_Entries = _this_Entries, xrhs_Entries = _xRhs_Entries) {
+                    fixed (int* ipiv = _ipiv) {
+                        CopyToUnsafeBuffer(M, this_Entries, true);
+                        CopyToUnsafeBuffer(b, xrhs_Entries, true);
+
+                        int info;
+                        /*
+                        LAPACK.F77_LAPACK.DGETRF(ref L, ref L, this_Entries, ref L, ipiv, out info);
+                        if (info != 0) {
+                            TempBuffer.FreeTempBuffer(i0);
+                            TempBuffer.FreeTempBuffer(i1);
+                            string infostring;
+                            if (info < 0) {
+                                infostring = String.Format("the {0}-th argument had an illegal value", info);
+                            } else {
+                                infostring = "U(" + info + @""",""" + info + ") is exactly zero. The factorization \n has been completed, but the factor U is exactly \n singular, and division by zero will occur if it is used \n to solve a system of equations.";
+                            }
+
+                            throw new ArithmeticException("LAPACK dgetrf info: " + infostring);
+                        }*/
+                        //         TRANS, N, NRHS, A,            LDA, IPIV, B, LDB
+                        char transp = 'N';
+                        LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref NoRhs, this_Entries, ref L, ipiv, xrhs_Entries, ref L, out info);
+                        if (info != 0) {
+                            TempBuffer.FreeTempBuffer(i0);
+                            TempBuffer.FreeTempBuffer(i1);
+                            throw new ArithmeticException("LAPACK dgetrs info: " + info);
+                        }
+
+                        CopyFromUnsafeBuffer(x, xrhs_Entries, true);
+                    }
+                }
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
             }
         }
 

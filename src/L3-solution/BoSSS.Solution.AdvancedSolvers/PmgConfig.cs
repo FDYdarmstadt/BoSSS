@@ -75,6 +75,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             post = new CellILU() {
                                 ILU_level = 0
                             };
+
+                            //post = new SparseILU() {
+                            //    UsedLibrary = SparseILU.Library.Intel_MKL
+                            //};
                         } else {
                             post = new BlockJacobi() {
                                 NoOfIterations = 1,
@@ -93,11 +97,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         return omg;
                     }
 
-                    Console.WriteLine("###########################   testcode aktiv ##################################");
-                    Console.WriteLine("###########################   testcode aktiv ##################################");
-                    Console.WriteLine("###########################   testcode aktiv ##################################");
-                    Console.WriteLine("###########################   testcode aktiv ##################################");
-                    Console.WriteLine("###########################   testcode aktiv ##################################");
                     Console.WriteLine("###########################   testcode aktiv ##################################");
                     if (iLevel >= 1/* DegreeHierarchy.Length - 1*/) {
 

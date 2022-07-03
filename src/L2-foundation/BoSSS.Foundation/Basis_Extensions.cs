@@ -157,60 +157,15 @@ namespace BoSSS.Foundation {
                 var BsvalDstXwgt_T = MultidimensionalArray.Create(I, rule.NoOfNodes);
 
                 BsvalDstXwgt_T.Multiply(1.0, BsvalDst, rule.Weights, 0.0, "nk", "kn", "k");
-                //M[iKref].Multiply(1.0, BsvalDstXwgt_T, BsvalDst, 0.0, "ij", "ik", "kj");
-                //S[iKref].Multiply(1.0, BsvalDstXwgt_T, BsvalOrg, 0.0, "ij", "ik", "kj");
                 M[iKref].GEMM(1.0, BsvalDstXwgt_T, BsvalDst, 0.0);
                 S[iKref].GEMM(1.0, BsvalDstXwgt_T, BsvalOrg, 0.0);
 
 
-                /*
-                for (int k = 0; k < rule.Nodes.NoOfNodes; k++) {
-                    double weight = rule.Weights[k];
-                    MultidimensionalArray OrgVal;
-                    MultidimensionalArray DstVal;
-                    OrgVal = BsvalOrg.ExtractSubArrayShallow(k, -1);
-                    DstVal = BsvalDst.ExtractSubArrayShallow(k, -1);
-                    // Quadratur M
-                    {
-
-                        // M[i,j] = w[k]*B[k,i]*B[k,j] // M = (
-
-                        if (!m_dest.IsOrthonormal) {
-                            M[iKref].Multiply(weight, DstVal, DstVal, 1.0, "ij", "i", "j");
-                        }
-                    }               
-                    // Quadratur S
-                    {
-                        // S[i,j] = w[k]*B[k,i]*P[k,j]
-                        S[iKref].Multiply(weight, DstVal, OrgVal, 1.0, "ij", "i", "j");                    
-                    }
-                }
-                */
+             
 
                 // Calculate Transformation
                 if (!m_dest.IsOrthonormal) {
-                    /*
-                    {
-                        var M1 = M[iKref].CloneAs();
-                        var M1inv = M1.CloneAs();
-                        M1inv.InvertSymmetrical();
-                        var Check = M1.GEMM(M1inv);
-                        Check.AccEye(-1.0);
-                        Console.WriteLine("Symmetrical inversion check: " + Check.InfNorm());
-                    }
-                    {
-                        var M1 = M[iKref].CloneAs();
-                        var M1inv = M1.CloneAs();
-                        M1inv.InvertInPlace();
-                        var Check = M1.GEMM(M1inv);
-                        Check.AccEye(-1.0);
-                        Console.WriteLine("Normal inversion check: " + Check.InfNorm());
-                    }
-
-                    M[iKref].InvertSymmetrical();
-                    //M[iKref].InvertInPlace();
-                    */
-
+                    //M[iKref].InvertSymmetrical();
                     //Origin2Dest[iKref].DGEMM(1.0, M[iKref], S[iKref], 0.0);
                     M[iKref].SolveSymmetricEx(Origin2Dest[iKref], S[iKref]);
                 } else {
@@ -281,8 +236,10 @@ namespace BoSSS.Foundation {
 
                 // Calculate Transformation
                 if (!m_origin.IsOrthonormal) {
-                    M[iKref].InvertSymmetrical();
-                    Dest2Origin[iKref].DGEMM(1.0, M[iKref], S[iKref], 0.0);
+                    //M[iKref].InvertSymmetrical();
+                    //Dest2Origin[iKref].DGEMM(1.0, M[iKref], S[iKref], 0.0);
+                   
+                    M[iKref].SolveSymmetricEx(Dest2Origin[iKref], S[iKref]);
                 } else {
                     Dest2Origin[iKref].Acc(1.0, S[iKref]); // in this case M is unity
                 }
