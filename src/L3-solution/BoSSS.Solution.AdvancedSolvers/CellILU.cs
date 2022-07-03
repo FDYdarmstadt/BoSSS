@@ -143,7 +143,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double LErr12 = test_L1.MatrixDist(test_L2);
                 double UErr12 = test_U1.MatrixDist(test_U2);
 
-                var LDiff = test_L1.
+                var LDiff = test_L1.Minus(test_L2);
+                var UDiff = test_U1.Minus(test_U2);
 
 
                 Console.WriteLine($" {LErr1}, {UErr1}");
@@ -360,7 +361,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     LU_Akk_T.TransposeInPlace();
                     int[] _ipiv = new int[LU_Akk_T.NoOfRows];
                     try {
-                        //invAkk.InvertInPlace();
+                        invAkk.InvertInPlace();
 
                         LU_Akk_T.FactorizeLU(_ipiv);
                     } catch(ArithmeticException ae) {

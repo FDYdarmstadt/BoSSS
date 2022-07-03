@@ -73,6 +73,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+            /*
             InitMPI();
 
             var ids = new string[] {
@@ -102,7 +103,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 CellILU.Verify(id);
             }
 
-            /*
+            */
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);

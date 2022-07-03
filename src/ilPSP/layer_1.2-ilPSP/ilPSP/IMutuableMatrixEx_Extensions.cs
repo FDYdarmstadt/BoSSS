@@ -956,8 +956,9 @@ namespace ilPSP.LinSolvers {
             }
         }
 
-        static public IMutableMatrixEx operator -(IMutableMatrixEx A, IMutableMatrixEx B) {
-        }
+        //static public IMutableMatrixEx operator -(this IMutableMatrixEx A, IMutableMatrixEx B) {
+        //    return A.Minus(B);
+        //}
 
 
         /// <summary>
