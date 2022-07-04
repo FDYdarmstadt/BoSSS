@@ -93,7 +93,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 m_op = op;
 
-                (this.m_BlockL, this.m_BlockU) = UpdateILU(this.ILU_level, op.OperatorMatrix);
+                (this.m_BlockL, this.m_BlockU, this.m_BlockU_lublks, this.m_BlockU_luipiv) = UpdateILU(this.ILU_level, op.OperatorMatrix);
                 //CheckILU();
             }
         }
@@ -130,8 +130,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             for (int i = 0; i < 1; i++) {
                 Console.WriteLine("pass " + i + " on " + _iD +  " ...");
-                var (test_L1, test_U1) = UpdateILU(0, opMtx);
-                var (test_L2, test_U2) = UpdateILU(0, opMtx);
+                var (test_L1, test_U1, _, _) = UpdateILU(0, opMtx);
+                var (test_L2, test_U2, _, _) = UpdateILU(0, opMtx);
 
                 //double cond_Matlab = opMtx.condest();
                 //double cond_Arnold = opMtx.condestArnoldi();
@@ -202,7 +202,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             //double[] Xref = new double[y.Length];
             //m_BlockU.Solve_Direct(Xref, y.CloneAs());
-            UpTriDiagonalSolve(m_BlockU, X, y, false);
+            UpTriDiagonalSolve(m_BlockU, X, y, m_BlockU_lublks, m_BlockU_luipiv);
             //double check2 = GenericBlas.L2Dist(Xref, X);
             //Console.Error.WriteLine("Check value (hi solve) is: " + check2);
 
@@ -211,9 +211,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Converged = true;
         }
 
+        /// <summary>
+        /// Lower triangular part of ILU-decomposition; Diagonal blocks are Identity matrices
+        /// </summary>
         BlockMsrMatrix m_BlockL;
 
+        /// <summary>
+        /// Upper triangular part of ILU-decomposition; Diagonal blocks are fully occupied
+        /// </summary>
         BlockMsrMatrix m_BlockU;
+
+        /// <summary>
+        /// LU-decomposition of the diagonal blocks of <see cref="m_BlockU"/>
+        /// </summary>
+        MultidimensionalArray[] m_BlockU_lublks;
+
+
+        /// <summary>
+        /// Pivot indices for LU-decomposition of the diagonal blocks of <see cref="m_BlockU"/>
+        /// </summary>
+        int[][] m_BlockU_luipiv;
 
         /// <summary>
         /// 
@@ -324,15 +341,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         */
 
         /// <summary>
-        /// ILU, in-place version, after book of Saad (p 303)
+        /// ILU, in-place version, after book of Saad (p 303);
+        /// This only considers the MPI-local part of the matrix, i.e. the ILU decomposition is MPI-rank diagonal.
         /// </summary>
-        static (BlockMsrMatrix L, BlockMsrMatrix U) UpdateILU(int iluLevel, BlockMsrMatrix Mtx) {
+        static (BlockMsrMatrix L, BlockMsrMatrix U, MultidimensionalArray[] U_lublks, int[][] U_luipiv) UpdateILU(int iluLevel, BlockMsrMatrix Mtx) {
             using(var ft = new FuncTrace()) {
-                //if(m_op.DgMapping.MpiSize > 1)
-                //    throw new NotImplementedException();
-
-                //var grd = m_op.Mapping.GridData;
-                //var Mtx = m_op.OperatorMatrix;
                 IBlockPartitioning part = Mtx._RowPartitioning;
                 Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
                 Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
@@ -352,9 +365,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //ft.Info($"CellILU, lv {m_op.LevelIndex}, ILU-{ILU_level}, occupancy = {Math.Round(occupancy * 100)}%.");
 
                 MultidimensionalArray LU_Akk_T = null, 
-                    //Aik = null, 
-                    temp = null;
-                    //Aij = null, Akj = null;
+                    Aik = null, 
+                    Aij = null, Akj = null;
 
                 for (long k = cell0; k < (cell0 + J - 1); k++) { // Iteration over matrix (rows and columns)
                     int sz_k = part.GetBlockLen(k);
@@ -363,11 +375,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //var invAkk = A.GetBlock(k, k);
                     
-                    LU_Akk_T = A.GetBlock(k, k);
+                    //LU_Akk_T = A.GetBlock(k, k);
                     int Szk = part.GetBlockLen(k);
                     long Idxk = part.GetBlockI0(k);
-                    //LU_Akk_T = LU_Akk_T.ReuseTemp(Szk, Szk);
-                    //A.ReadBlock(Idxk, Idxk, LU_Akk_T);
+                    LU_Akk_T = LU_Akk_T.ReuseTemp(Szk, Szk);
+                    A.ReadBlock(Idxk, Idxk, LU_Akk_T);
                     LU_Akk_T.TransposeInPlace();
 
                     int[] _ipiv = new int[LU_Akk_T.NoOfRows];
@@ -387,12 +399,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //    if(P1[i, k]) {
                         if(i >= k + 1) {
                             
-                            var Aik = A.GetBlock(i, k);
+                            //Aik = A.GetBlock(i, k);
                             int Szi = part.GetBlockLen(i);
-                            //long Idxi = part.GetBlockI0(i);
-                            //Aik = Aik.ReuseTemp(Szi, Szk);
-                            //A.ReadBlock(Idxi, Idxk, Aik);
-                            temp = temp.ReuseTemp(Szi, Szk);
+                            long Idxi = part.GetBlockI0(i);
+                            Aik = Aik.ReuseTemp(Szi, Szk);
+                            A.ReadBlock(Idxi, Idxk, Aik);
                             
                             // Compute: Aik = Aik*inv(Akk) via LU decomposition
                             Aik.TransposeInPlace();
@@ -405,15 +416,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // L(Bk,Bi) = U(Bk,Bi)*invUii
                             foreach(long j in occRow_i) { 
                                 if(j >= k + 1) {
-                                    //int Szj = part.GetBlockLen(j);
-                                    //long Idxj = part.GetBlockI0(j);
-                                    //Aij = Aij.ReuseTemp(Szi, Szj);
-                                    //Akj = Akj.ReuseTemp(Szk, Szj);
-                                    //A.ReadBlock(Idxi, Idxj, Aij);
-                                    //A.ReadBlock(Idxk, Idxj, Akj);
+                                    //Aij = A.GetBlock(i, j);
+                                    //Akj = A.GetBlock(k, j);
+                                    int Szj = part.GetBlockLen(j);
+                                    long Idxj = part.GetBlockI0(j);
+                                    Aij = Aij.ReuseTemp(Szi, Szj);
+                                    Akj = Akj.ReuseTemp(Szk, Szj);
+                                    A.ReadBlock(Idxi, Idxj, Aij);
+                                    A.ReadBlock(Idxk, Idxj, Akj);
 
-                                    var Aij = A.GetBlock(i, j);
-                                    var Akj = A.GetBlock(k, j);
                                     Aij.GEMM(-1, Aik, Akj, 1.0);
                                     A.SetBlock(Aij, i, j);
                                 }
@@ -431,7 +442,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var BlockL = new BlockMsrMatrix(part, part);
                 BlockL.AccEyeSp(1.0);
 
-
+                var Udiag_lublks = new MultidimensionalArray[J];
+                int[][] Udiag_lubl_ipiv = new int[J][];
 
                 for (long j = cell0; j < J + cell0; j++) {
                     //for(long i = cell0; i < J + cell0; i++) {
@@ -447,6 +459,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // upper tri
                                 BlockU.SetBlock(Aji, j, i);
                             }
+
+                            if(i == j) {
+                                int[] ipiv = new int[Aji.NoOfRows];
+                                Aji.FactorizeLU(ipiv);
+                                Udiag_lublks[j] = Aji;
+                                Udiag_lubl_ipiv[j] = ipiv;
+                            }
                         }
                         //} else {
                         //    var Aji = A.GetBlock(j, i);
@@ -460,7 +479,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //m_BlockL.SaveToTextFileSparse("L.txt");
                 //m_BlockU.SaveToTextFileSparse("U.txt");
 
-                return (BlockL, BlockU);
+                return (BlockL, BlockU, Udiag_lublks, Udiag_lubl_ipiv);
             }
         }
 
@@ -738,7 +757,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        void LoTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, U X, V B, bool diagEye)
+        static void LoTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, U X, V B, bool diagEye)
             where U : IList<double>
             where V : IList<double>  //
         {
@@ -794,7 +813,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        void UpTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, U X, V B, bool diagEye)
+        
+        static void UpTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, U X, V B, MultidimensionalArray[] Mtx_lublks, int[][] Mtx_luipiv)
             where U : IList<double>
             where V : IList<double>  //
         {
@@ -806,8 +826,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 long i0Idx = rowPart.i0;
                 long j0Idx = colPart.i0;
 
+                bool diagEye = Mtx_lublks == null;
 
-                for(long i = i0 + J - 1; i >= i0; i--) {
+
+                for (long i = i0 + J - 1; i >= i0; i--) {
                     int sz_i = rowPart.GetBlockLen(i);
                     if(sz_i <= 0)
                         continue; // empty cell;
@@ -841,8 +863,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         X.SetSubVector<double, U, double[]>(Bi, iIdxLoc, sz_i);
                     } else {
                         double[] Xi = new double[sz_i];
-                        var Mtx_ii = Mtx.GetBlock(i, i);
-                        Mtx_ii.Solve(Xi, Bi);
+                        //var Mtx_ii = Mtx.GetBlock(i, i);
+                        //Mtx_ii.Solve(Xi, Bi);
+                        Mtx_lublks[i - i0].BacksubsLU(Mtx_luipiv[i - i0], Xi, Bi);
                         X.SetSubVector<double, U, double[]>(Xi, iIdxLoc, sz_i);
                     }
                 }
