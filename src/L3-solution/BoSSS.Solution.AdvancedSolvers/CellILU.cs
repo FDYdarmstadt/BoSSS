@@ -351,17 +351,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double occupancy = (double)Occupied / (double)(J * J);
                 //ft.Info($"CellILU, lv {m_op.LevelIndex}, ILU-{ILU_level}, occupancy = {Math.Round(occupancy * 100)}%.");
 
-                for(long k = cell0; k < (cell0 + J - 1); k++) { // Iteration over matrix (rows and columns)
+                MultidimensionalArray LU_Akk_T = null, 
+                    //Aik = null, 
+                    temp = null;
+                    //Aij = null, Akj = null;
+
+                for (long k = cell0; k < (cell0 + J - 1); k++) { // Iteration over matrix (rows and columns)
                     int sz_k = part.GetBlockLen(k);
                     if(sz_k <= 0)
                         continue; // cell i is empty
 
-                    var invAkk = A.GetBlock(k, k);
-                    var LU_Akk_T = A.GetBlock(k, k);
+                    //var invAkk = A.GetBlock(k, k);
+                    
+                    LU_Akk_T = A.GetBlock(k, k);
+                    int Szk = part.GetBlockLen(k);
+                    long Idxk = part.GetBlockI0(k);
+                    //LU_Akk_T = LU_Akk_T.ReuseTemp(Szk, Szk);
+                    //A.ReadBlock(Idxk, Idxk, LU_Akk_T);
                     LU_Akk_T.TransposeInPlace();
+
                     int[] _ipiv = new int[LU_Akk_T.NoOfRows];
                     try {
-                        invAkk.InvertInPlace();
+                        //invAkk.InvertInPlace();
 
                         LU_Akk_T.FactorizeLU(_ipiv);
                     } catch(ArithmeticException ae) {
@@ -374,32 +385,33 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //for(long i = k + 1; i < (cell0 + J); i++) {
                     //    Debug.Assert(i > k);
                     //    if(P1[i, k]) {
-                        if(i >= k + 1) { 
-                            //if(!occColumn_k.Contains(i))
-                            //    throw new Exception($"fuck: P1[{i},{k}] = {P1[i, k]} //  {ILUpT[i, k]}  {m_ILUp_pattern[i, k]} ");
-
-                            var Aik = A.GetBlock(i, k);
-                            var temp = MultidimensionalArray.Create(Aik.NoOfRows, Aik.NoOfCols);
+                        if(i >= k + 1) {
                             
+                            var Aik = A.GetBlock(i, k);
+                            int Szi = part.GetBlockLen(i);
+                            //long Idxi = part.GetBlockI0(i);
+                            //Aik = Aik.ReuseTemp(Szi, Szk);
+                            //A.ReadBlock(Idxi, Idxk, Aik);
+                            temp = temp.ReuseTemp(Szi, Szk);
+                            
+                            // Compute: Aik = Aik*inv(Akk) via LU decomposition
                             Aik.TransposeInPlace();
-                            LU_Akk_T.BacksubsLU(_ipiv, temp, Aik);
+                            LU_Akk_T.BacksubsLU(_ipiv, Aik, Aik);
                             Aik.TransposeInPlace();
-                            Aik = Aik.GEMM(invAkk);
-
-                            temp.TransposeInPlace();
-                            //temp.Acc(-1.0, Aik);
-                            //Console.Write(temp.L2Norm() + " ");
-
-                            A.SetBlock(Aik, i, k); // via inverse matrix
-                            //A.SetBlock(temp, i, k); // via LU decomp
+                            A.SetBlock(Aik, i, k); 
 
                             long[] occRow_i = ILUp_pattern.GetOccupiedColumnIndices(i);
-                            //for(long j = k + 1; j < (cell0 + J); j++) {
-                            //    if(P1[i, j] != occRow_i.Contains(j))
-                            //        throw new Exception("fuck 2");
-                            //    if(P1[i, j]) {
+                            
+                            // L(Bk,Bi) = U(Bk,Bi)*invUii
                             foreach(long j in occRow_i) { 
-                                if(j >= k + 1) { 
+                                if(j >= k + 1) {
+                                    //int Szj = part.GetBlockLen(j);
+                                    //long Idxj = part.GetBlockI0(j);
+                                    //Aij = Aij.ReuseTemp(Szi, Szj);
+                                    //Akj = Akj.ReuseTemp(Szk, Szj);
+                                    //A.ReadBlock(Idxi, Idxj, Aij);
+                                    //A.ReadBlock(Idxk, Idxj, Akj);
+
                                     var Aij = A.GetBlock(i, j);
                                     var Akj = A.GetBlock(k, j);
                                     Aij.GEMM(-1, Aik, Akj, 1.0);
@@ -407,7 +419,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 }
                             }
 
-                            // L(Bk,Bi) = U(Bk,Bi)*invUii
                         } else {
                             //if(occColumn_k.Contains(i))
                             //    throw new Exception($"fuck: P1[{i},{k}] = {P1[i, k]} //  {ILUpT[i, k]}  {m_ILUp_pattern[i, k]} ");

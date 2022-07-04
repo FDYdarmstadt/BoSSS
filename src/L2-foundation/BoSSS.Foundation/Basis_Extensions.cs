@@ -257,7 +257,7 @@ namespace BoSSS.Foundation {
                 int I = m_dest.Polynomials[iKref].Count;
                 int J = m_origin.Polynomials[iKref].Count;
                 MultidimensionalArray TinvT = MultidimensionalArray.Create(J, J);
-                TinvT.DGEMM(1.0, Dest2Origin[iKref], Origin2Dest[iKref], 0.0);
+                TinvT.GEMM(1.0, Dest2Origin[iKref], Origin2Dest[iKref], 0.0);
                 TinvT.AccEye(-1.0);
                 /*
                 Console.WriteLine("============================================================");

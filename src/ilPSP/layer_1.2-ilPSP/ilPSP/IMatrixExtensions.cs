@@ -911,6 +911,7 @@ namespace ilPSP {
             where Matrix2 : IMatrix
             where Matrix3 : IMatrix //
         {
+            
             if (!transA && !transB) {
                 if (A.NoOfCols != B.NoOfRows)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
@@ -963,6 +964,11 @@ namespace ilPSP {
                 int c00 = _C.Index(0, 0);
 
                 if((_A.Index(0, 1) - a00 == 1) && (_B.Index(0, 1) - b00 == 1) && (_C.Index(0, 1) - c00 == 1)) {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // Data layout is suitable to use BLAS DGEMM
+                    // directly on MultidimenasionalArray storage.
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
                     unsafe {
                         fixed(double* _pA = _A.Storage, _pB = _B.Storage, _pC = _C.Storage) {
                             double* pA = _pA + a00, pB = _pB + b00, pC = _pC + c00;
@@ -992,7 +998,21 @@ namespace ilPSP {
 
                         }
                     }
-                } else {
+                    return;
+                } else if(_C.NoOfRows*_C.NoOfCols <= 512 && _A.NoOfRows * _A.NoOfCols <= 512 && _B.NoOfRows * _B.NoOfCols <= 512) {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // Multidimensional array are not suitable for direst use of BLAS DGEMM
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    // Note: (fk, 04jul22)
+                    // simple test shows, below 512 entries (for nearly quadratic matrix C), the overhead from copying data 
+                    // out-weights the performance gain from BLAS DGEMM
+                    // Obviously, this is processor-dependent and also might be different for very tall or shallow matrix shapes,
+                    // but this is good enough for BoSSS;
+                    //
+
+                    // probably, the 'multiply'-program is faster than 'BLAS-DGEMM + copy overhead'?
+
                     if (!transA && !transB) {
                         _C.Multiply(alpha, _A, _B, beta, ref GEMMnn_Prog);
                     } else if (transA && !transB) {
@@ -1002,28 +1022,53 @@ namespace ilPSP {
                     } else if (transA && transB) {
                         _C.Multiply(alpha, _A, _B, beta, ref GEMMtt_Prog);
                     }
+
+                    return;
                 }
-            } else {
-
-                int K = A.NoOfCols;
-
-                for (int i = C.NoOfRows - 1; i >= 0; i--) {
-                    for (int j = C.NoOfCols - 1; j >= 0; j--) {
-                        double r = 0;
+            }
 
 
-                        for (int k = K - 1; k >= 0; k--)
-                            r += A[i, k] * B[k, j];
+            {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++
+                // not returned yet;
+                // data must be copied before we can use BLAS DGEMM
+                // +++++++++++++++++++++++++++++++++++++++++++++++++
 
-                        r *= alpha;
-                        C[i, j] = C[i, j] * beta + r;
+                
+                unsafe {
+                    int TRANSA = transA ? 't' : 'n';
+                    int TRANSB = transB ? 't' : 'n';
+
+                    int M = transA ? A.NoOfCols : A.NoOfRows;
+                    int N = transB ? B.NoOfRows : B.NoOfCols;
+                    int K = transA ? A.NoOfRows : A.NoOfCols;
+
+                    int LDA = transA ? Math.Max(1, K) : Math.Max(1, M);
+                    int LDB = transB ? Math.Max(1, N) : Math.Max(1, K);
+                    int LDC = Math.Max(1, M);
+
+                    int i0, i1, i2;
+                    double[] __A = TempBuffer.GetTempBuffer(out i0, M * K);
+                    double[] __B = TempBuffer.GetTempBuffer(out i1, N * K);
+                    double[] __C = TempBuffer.GetTempBuffer(out i2, M * N);
+                    fixed (double* pA = __A, pB = __B, pC = __C) {
+                        CopyToUnsafeBuffer(A, pA, true);
+                        CopyToUnsafeBuffer(B, pB, true);
+                        CopyToUnsafeBuffer(C, pC, true);
+
+                        BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, pA, LDA, pB, LDB, beta, pC, LDC);
+
+                        CopyFromUnsafeBuffer(C, pC, true);
                     }
-
+                    TempBuffer.FreeTempBuffer(i0);
+                    TempBuffer.FreeTempBuffer(i1);
+                    TempBuffer.FreeTempBuffer(i2);
                 }
             }
         }
 
-        
+
+
         /// <summary>
         /// General matrix/matrix multiplication, 
         /// based on Level 3 Blas routine `dgemm`:
@@ -1097,7 +1142,7 @@ namespace ilPSP {
                 TempBuffer.FreeTempBuffer(i2);
             }
         }
-        
+
 
         /// <summary>
         /// total absolute sum of all entries
