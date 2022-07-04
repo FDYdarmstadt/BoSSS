@@ -93,7 +93,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 m_op = op;
 
-                (this.m_BlockL, this.m_BlockU, this.m_BlockU_lublks, this.m_BlockU_luipiv) = UpdateILU(this.ILU_level, op.OperatorMatrix);
+                (this.m_BlockL, this.m_BlockL_OccupiedBlockColumnsPerRow,
+                    this.m_BlockU, this.m_BlockU_OccupiedBlockColumnsPerRow,
+                    this.m_BlockU_lublks, this.m_BlockU_luipiv) = UpdateILU(this.ILU_level, op.OperatorMatrix);
                 //CheckILU();
             }
         }
@@ -130,8 +132,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             for (int i = 0; i < 1; i++) {
                 Console.WriteLine("pass " + i + " on " + _iD +  " ...");
-                var (test_L1, test_U1, _, _) = UpdateILU(0, opMtx);
-                var (test_L2, test_U2, _, _) = UpdateILU(0, opMtx);
+                var (test_L1, _, test_U1, _, _, _) = UpdateILU(0, opMtx);
+                var (test_L2, _, test_U2, _, _, _) = UpdateILU(0, opMtx);
 
                 //double cond_Matlab = opMtx.condest();
                 //double cond_Arnold = opMtx.condestArnoldi();
@@ -195,14 +197,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double[] y = new double[L];
             //double[] yref = new double[L];
             //m_BlockL.Solve_Direct(yref, B.ToArray().CloneAs());
-            LoTriDiagonalSolve(m_BlockL, y, B, true);
+            LoTriDiagonalSolve(m_BlockL, m_BlockL_OccupiedBlockColumnsPerRow, y, B, true);
             //double check1 = GenericBlas.L2Dist(yref, y);
             //Console.Error.WriteLine("Check value (lo solve) is: " + check1);
 
 
             //double[] Xref = new double[y.Length];
             //m_BlockU.Solve_Direct(Xref, y.CloneAs());
-            UpTriDiagonalSolve(m_BlockU, X, y, m_BlockU_lublks, m_BlockU_luipiv);
+            UpTriDiagonalSolve(m_BlockU, m_BlockU_OccupiedBlockColumnsPerRow, X, y, m_BlockU_lublks, m_BlockU_luipiv);
             //double check2 = GenericBlas.L2Dist(Xref, X);
             //Console.Error.WriteLine("Check value (hi solve) is: " + check2);
 
@@ -217,9 +219,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
         BlockMsrMatrix m_BlockL;
 
         /// <summary>
+        /// occupied block-columns for each block-row for <see cref="m_BlockL"/>
+        /// </summary>
+        long[][] m_BlockL_OccupiedBlockColumnsPerRow;
+
+        /// <summary>
         /// Upper triangular part of ILU-decomposition; Diagonal blocks are fully occupied
         /// </summary>
         BlockMsrMatrix m_BlockU;
+
+        /// <summary>
+        /// occupied block-columns for each block-row for <see cref="m_BlockL"/>
+        /// </summary>
+        long[][] m_BlockU_OccupiedBlockColumnsPerRow;
+
 
         /// <summary>
         /// LU-decomposition of the diagonal blocks of <see cref="m_BlockU"/>
@@ -344,7 +357,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ILU, in-place version, after book of Saad (p 303);
         /// This only considers the MPI-local part of the matrix, i.e. the ILU decomposition is MPI-rank diagonal.
         /// </summary>
-        static (BlockMsrMatrix L, BlockMsrMatrix U, MultidimensionalArray[] U_lublks, int[][] U_luipiv) UpdateILU(int iluLevel, BlockMsrMatrix Mtx) {
+        static (BlockMsrMatrix L, long[][] L_OccupiedBlockColumnsPerRow, BlockMsrMatrix U, long[][] U_OccupiedBlockColumnsPerRow, MultidimensionalArray[] U_lublks, int[][] U_luipiv) UpdateILU(int iluLevel, BlockMsrMatrix Mtx) {
             using(var ft = new FuncTrace()) {
                 IBlockPartitioning part = Mtx._RowPartitioning;
                 Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
@@ -444,6 +457,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var Udiag_lublks = new MultidimensionalArray[J];
                 int[][] Udiag_lubl_ipiv = new int[J][];
+                long[][] L_OccupiedBlockColumnsPerRow = new long[J][];
+                long[][] U_OccupiedBlockColumnsPerRow = new long[J][];
 
                 for (long j = cell0; j < J + cell0; j++) {
                     //for(long i = cell0; i < J + cell0; i++) {
@@ -455,6 +470,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             if(j > i) {
                                 // lower tri
                                 BlockL.SetBlock(Aji, j, i);
+                                
                             } else {
                                 // upper tri
                                 BlockU.SetBlock(Aji, j, i);
@@ -474,12 +490,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //        throw new ArithmeticException();
                         //}
                     }
+
+                    L_OccupiedBlockColumnsPerRow[j - cell0] = BlockL.GetOccupiedRowBlockIndices(j);
+                    U_OccupiedBlockColumnsPerRow[j - cell0] = BlockU.GetOccupiedRowBlockIndices(j);
                 }
 
                 //m_BlockL.SaveToTextFileSparse("L.txt");
                 //m_BlockU.SaveToTextFileSparse("U.txt");
 
-                return (BlockL, BlockU, Udiag_lublks, Udiag_lubl_ipiv);
+                return (BlockL, L_OccupiedBlockColumnsPerRow, BlockU, U_OccupiedBlockColumnsPerRow, Udiag_lublks, Udiag_lubl_ipiv);
             }
         }
 
@@ -757,7 +776,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        static void LoTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, U X, V B, bool diagEye)
+        static void LoTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, long[][] OccupiedBlockColumnsPerRow, U X, V B, bool diagEye)
             where U : IList<double>
             where V : IList<double>  //
         {
@@ -783,8 +802,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
 
-                    long[] jS = Mtx.GetOccupiedRowBlockIndices(i);
-                    foreach(long j in jS) {
+                    //long[] jS = Mtx.GetOccupiedRowBlockIndices(i);
+                    long[] jS = OccupiedBlockColumnsPerRow[i - i0];
+                    foreach (long j in jS) {
                         if(j >= i) // ignore everything above the diagonal
                             continue;
                         int sz_j = colPart.GetBlockLen(j);
@@ -814,7 +834,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         
-        static void UpTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, U X, V B, MultidimensionalArray[] Mtx_lublks, int[][] Mtx_luipiv)
+        static void UpTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, long[][] OccupiedBlockColumnsPerRow, U X, V B, MultidimensionalArray[] Mtx_lublks, int[][] Mtx_luipiv)
             where U : IList<double>
             where V : IList<double>  //
         {
@@ -842,7 +862,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
 
-                    long[] jS = Mtx.GetOccupiedRowBlockIndices(i);
+                    //long[] jS = Mtx.GetOccupiedRowBlockIndices(i);
+                    long[] jS = OccupiedBlockColumnsPerRow[i - i0];
                     foreach(long j in jS) {
                         if(j <= i) // ignore everything below the diagonal
                             continue;
