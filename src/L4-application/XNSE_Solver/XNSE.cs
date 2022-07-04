@@ -73,9 +73,9 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            /*
+            
             InitMPI();
-
+            /*
             var ids = new string[] {
                 "R0Lv0p0",
                 //"R0Lv0p1",
@@ -104,6 +104,30 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             */
+
+            foreach (var transpA in new[] { true, false }) {
+                foreach (var transpB in new[] { true, false }) {
+
+                    int N = 5, M = 3, L = 7;
+                    var A = MultidimensionalArray.Create(N, L); A.Storage.FillRandom(); A = transpA ? A.TransposeTo() : A;
+
+                    var B = MultidimensionalArray.Create(L, M); B.Storage.FillRandom(); B = transpB ? B.TransposeTo() : B;
+
+                    var C = MultidimensionalArray.Create(!transpA ? A.NoOfRows : A.NoOfCols, !transpB ? B.NoOfCols : B.NoOfRows); C.Storage.FillRandom();
+                    var D = C.CloneAs();
+                    
+                    
+                    
+                    C.GEMM(1.0, A, B, 0.5, transpA, transpB);
+                    D.DGEMM(1.0, A, B, 0.5, transpA, transpB);
+
+                    Console.WriteLine($"{(transpA ? 't' : '0')}{(transpB ? 't' : '0')} error: " + (C.Storage.L2Dist(D.Storage)));
+
+                }
+            }
+
+
+            /*
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);

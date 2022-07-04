@@ -894,39 +894,121 @@ namespace ilPSP {
             return GEMM(GEMM(A, B), C);
         }
 
-        static MultidimensionalArray.MultiplyProgram GEMM_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ik", "kj");
+        static MultidimensionalArray.MultiplyProgram GEMMnn_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ik", "kj"); // A*B
+        static MultidimensionalArray.MultiplyProgram GEMMtn_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ki", "kj"); // A^T * B
+        static MultidimensionalArray.MultiplyProgram GEMMnt_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ik", "jk"); // A   * B^T
+        static MultidimensionalArray.MultiplyProgram GEMMtt_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ki", "jk"); // A^T * B^T
 
         /// <summary>
         /// General matrix/matrix multiplication:
-        /// <paramref name="M"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="M"/>;
+        /// 
+        /// <paramref name="C"/> = <paramref name="alpha"/>*<paramref name="A"/>^x*<paramref name="B"/>^y + <paramref name="beta"/>*<paramref name="C"/>,
+        /// 
+        /// where x and y are either T (transpose) or 1, depending on <paramref name="transA"/> and <paramref name="transB"/>, respectively.
         /// </summary>
-        static public void GEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 M, double alpha, Matrix2 A, Matrix3 B, double beta)
+        static public void GEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 C, double alpha, Matrix2 A, Matrix3 B, double beta, bool transA = false, bool transB = false)
             where Matrix1 : IMatrix
             where Matrix2 : IMatrix
             where Matrix3 : IMatrix //
         {
-            if (A.NoOfCols != B.NoOfRows)
-                throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
-            if (A.NoOfRows != M.NoOfRows)
-                throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
-            if (B.NoOfCols != M.NoOfCols)
-                throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
-            if(object.ReferenceEquals(M, A))
-                throw new ArgumentException("in-place GEMM is not supported");
-            if(object.ReferenceEquals(M, A))
-                throw new ArgumentException("in-place GEMM is not supported");
+            if (!transA && !transB) {
+                if (A.NoOfCols != B.NoOfRows)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfRows != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != M.NoOfRows", "A,M");
+                if (B.NoOfCols != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != M.NoOfCols", "B,M");
+                if (A.NoOfCols == 0)
+                    return;
+            } else if (transA && !transB) {
+                if (A.NoOfRows != B.NoOfRows)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfCols != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != M.NoOfRows", "A,M");
+                if (B.NoOfCols != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != M.NoOfCols", "B,M");
+                if (A.NoOfRows == 0)
+                    return;
+            } else if (!transA && transB) {
+                if (A.NoOfCols != B.NoOfCols)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfRows != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != M.NoOfRows", "A,M");
+                if (B.NoOfRows != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != M.NoOfCols", "B,M");
+                if (A.NoOfCols == 0)
+                    return;
+            } else if (transA && transB) {
+                if (A.NoOfRows != B.NoOfCols)
+                    throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
+                if (A.NoOfCols != C.NoOfRows)
+                    throw new ArgumentException("A.NoOfRows != M.NoOfRows", "A,M");
+                if (B.NoOfRows != C.NoOfCols)
+                    throw new ArgumentException("B.NoOfCols != M.NoOfCols", "B,M");
+                if (A.NoOfRows == 0)
+                    return;
+            }
 
-            if (A is MultidimensionalArray && B is MultidimensionalArray && M is MultidimensionalArray) {
-                MultidimensionalArray _A = A as MultidimensionalArray;
-                MultidimensionalArray _B = B as MultidimensionalArray;
-                MultidimensionalArray _M = M as MultidimensionalArray;
-                _M.Multiply(alpha, _A, _B, beta, ref GEMM_Prog);
+            if (object.ReferenceEquals(C, A))
+                throw new ArgumentException("in-place GEMM is not supported");
+            if(object.ReferenceEquals(C, A))
+                throw new ArgumentException("in-place GEMM is not supported");
+            if (C.NoOfCols == 0 || C.NoOfRows == 0)
+                return;
+
+
+            if (A is MultidimensionalArray _A && B is MultidimensionalArray _B && C is MultidimensionalArray _C) {
+                int a00 = _A.Index(0, 0);
+                int b00 = _B.Index(0, 0);
+                int c00 = _C.Index(0, 0);
+
+                if((_A.Index(0, 1) - a00 == 1) && (_B.Index(0, 1) - b00 == 1) && (_C.Index(0, 1) - c00 == 1)) {
+                    unsafe {
+                        fixed(double* _pA = _A.Storage, _pB = _B.Storage, _pC = _C.Storage) {
+                            double* pA = _pA + a00, pB = _pB + b00, pC = _pC + c00;
+
+                            // C-order vs. FORTRAN-order
+                            // Note that we are using FORTRAN BLAS, while BoSSS stores in C-order;
+                            // therefore, we have to trick with A, B and the transposition
+
+                           
+                            int TRANSA = transB ? 't' : 'n';
+                            int TRANSB = transA ? 't' : 'n';
+
+                            int M = !transB ? _B.NoOfCols : _B.NoOfRows;
+                            int N = !transA ? _A.NoOfRows : _A.NoOfCols;
+                            int K = !transB ? _B.NoOfRows : _B.NoOfCols;
+
+                            //int M = transA ? A.NoOfCols : A.NoOfRows;
+                            //int N = transB ? B.NoOfRows : B.NoOfCols;
+                            //int K = transA ? A.NoOfRows : A.NoOfCols;
+
+                            int LDA = transB ? Math.Max(1, K) : Math.Max(1, M);
+                            int LDB = transA ? Math.Max(1, N) : Math.Max(1, K);
+                            int LDC = Math.Max(1, M);
+
+
+                            BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, pB, LDA, pA, LDB, beta, pC, LDC);
+
+                        }
+                    }
+                } else {
+                    if (!transA && !transB) {
+                        _C.Multiply(alpha, _A, _B, beta, ref GEMMnn_Prog);
+                    } else if (transA && !transB) {
+                        _C.Multiply(alpha, _A, _B, beta, ref GEMMtn_Prog);
+                    } else if (!transA && transB) {
+                        _C.Multiply(alpha, _A, _B, beta, ref GEMMnt_Prog);
+                    } else if (transA && transB) {
+                        _C.Multiply(alpha, _A, _B, beta, ref GEMMtt_Prog);
+                    }
+                }
             } else {
 
                 int K = A.NoOfCols;
 
-                for (int i = M.NoOfRows - 1; i >= 0; i--) {
-                    for (int j = M.NoOfCols - 1; j >= 0; j--) {
+                for (int i = C.NoOfRows - 1; i >= 0; i--) {
+                    for (int j = C.NoOfCols - 1; j >= 0; j--) {
                         double r = 0;
 
 
@@ -934,13 +1016,14 @@ namespace ilPSP {
                             r += A[i, k] * B[k, j];
 
                         r *= alpha;
-                        M[i, j] = M[i, j] * beta + r;
+                        C[i, j] = C[i, j] * beta + r;
                     }
 
                 }
             }
         }
 
+        
         /// <summary>
         /// General matrix/matrix multiplication, 
         /// based on Level 3 Blas routine `dgemm`:
@@ -949,40 +1032,33 @@ namespace ilPSP {
         /// 
         /// Matrix A or B should be used as transpose by setting <paramref name="transA"/> and <paramref name="transB"/>
         /// </summary>
-        static public void DGEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 C, double alpha, Matrix2 A, Matrix3 B, double beta, bool transA = false, bool transB = false) 
+        static public void DGEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 C, double alpha, Matrix2 A, Matrix3 B, double beta, bool transA = false, bool transB = false)
             where Matrix1 : IMatrix
             where Matrix2 : IMatrix
-            where Matrix3 : IMatrix
+            where Matrix3 : IMatrix //
         {
-            if (!transA && !transB)
-            {
+            if (!transA && !transB) {
                 if (A.NoOfCols != B.NoOfRows)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
                 if (A.NoOfRows != C.NoOfRows)
                     throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
                 if (B.NoOfCols != C.NoOfCols)
                     throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
-            }
-            else if (transA && !transB)
-            {
+            } else if (transA && !transB) {
                 if (A.NoOfRows != B.NoOfRows)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
                 if (A.NoOfCols != C.NoOfRows)
                     throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
                 if (B.NoOfCols != C.NoOfCols)
                     throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
-            }
-            else if (!transA && transB)
-            {
+            } else if (!transA && transB) {
                 if (A.NoOfCols != B.NoOfCols)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
                 if (A.NoOfRows != C.NoOfRows)
                     throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
                 if (B.NoOfRows != C.NoOfCols)
                     throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
-            }
-            else if (transA && transB)
-            {
+            } else if (transA && transB) {
                 if (A.NoOfRows != B.NoOfCols)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
                 if (A.NoOfCols != C.NoOfRows)
@@ -991,8 +1067,7 @@ namespace ilPSP {
                     throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
             }
 
-            unsafe 
-            {                
+            unsafe {
                 int TRANSA = transA ? 't' : 'n';
                 int TRANSB = transB ? 't' : 'n';
 
@@ -1008,8 +1083,7 @@ namespace ilPSP {
                 double[] __A = TempBuffer.GetTempBuffer(out i0, M * K);
                 double[] __B = TempBuffer.GetTempBuffer(out i1, N * K);
                 double[] __C = TempBuffer.GetTempBuffer(out i2, M * N);
-                fixed (double* _A = __A, _B = __B, _C = __C)
-                {
+                fixed (double* _A = __A, _B = __B, _C = __C) {
                     CopyToUnsafeBuffer(A, _A, true);
                     CopyToUnsafeBuffer(B, _B, true);
                     CopyToUnsafeBuffer(C, _C, true);
@@ -1020,9 +1094,10 @@ namespace ilPSP {
                 }
                 TempBuffer.FreeTempBuffer(i0);
                 TempBuffer.FreeTempBuffer(i1);
-                TempBuffer.FreeTempBuffer(i2);                             
+                TempBuffer.FreeTempBuffer(i2);
             }
         }
+        
 
         /// <summary>
         /// total absolute sum of all entries

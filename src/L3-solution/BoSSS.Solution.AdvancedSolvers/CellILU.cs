@@ -193,18 +193,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             double[] y = new double[L];
-            double[] yref = new double[L];
-            m_BlockL.Solve_Direct(yref, B.ToArray().CloneAs());
+            //double[] yref = new double[L];
+            //m_BlockL.Solve_Direct(yref, B.ToArray().CloneAs());
             LoTriDiagonalSolve(m_BlockL, y, B, true);
-            double check1 = GenericBlas.L2Dist(yref, y);
-            Console.Error.WriteLine("Check value (lo solve) is: " + check1);
+            //double check1 = GenericBlas.L2Dist(yref, y);
+            //Console.Error.WriteLine("Check value (lo solve) is: " + check1);
 
 
-            double[] Xref = new double[y.Length];
-            m_BlockU.Solve_Direct(Xref, y.CloneAs());
+            //double[] Xref = new double[y.Length];
+            //m_BlockU.Solve_Direct(Xref, y.CloneAs());
             UpTriDiagonalSolve(m_BlockU, X, y, false);
-            double check2 = GenericBlas.L2Dist(Xref, X);
-            Console.Error.WriteLine("Check value (hi solve) is: " + check2);
+            //double check2 = GenericBlas.L2Dist(Xref, X);
+            //Console.Error.WriteLine("Check value (hi solve) is: " + check2);
 
             
             m_ThisLevelIterations += 1;
@@ -390,8 +390,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //temp.Acc(-1.0, Aik);
                             //Console.Write(temp.L2Norm() + " ");
 
-                            //A.SetBlock(Aik, i, k);
-                            A.SetBlock(temp, i, k);
+                            A.SetBlock(Aik, i, k); // via inverse matrix
+                            //A.SetBlock(temp, i, k); // via LU decomp
 
                             long[] occRow_i = ILUp_pattern.GetOccupiedColumnIndices(i);
                             //for(long j = k + 1; j < (cell0 + J); j++) {
