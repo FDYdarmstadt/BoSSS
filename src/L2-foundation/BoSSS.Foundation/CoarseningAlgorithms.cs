@@ -177,7 +177,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             int[][] AggregateCells = new int[J][];
             for (int j = 0; j < J; j++) {
-                AggregateCells[j] = new int[] { j };
+                AggregateCells[j] = new int[] { (j + 55)%J };
             }
 
             AggregationGrid ret = new AggregationGrid(g, AggregateCells);
@@ -196,8 +196,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </param>
         public static AggregationGridData Coarsen(IGridData ag, int AggCellCount) {
             using (new FuncTrace()) {
-                int[][] Coarsened_ComositeCells = AggregationKernel(ag, AggCellCount);
-                return new AggregationGridData(ag, Coarsened_ComositeCells);
+                var g = Coarsen(ag.Grid, AggCellCount);
+                if (!object.ReferenceEquals(g.GridData.Grid, g))
+                    throw new ApplicationException("internal error in mesh coarsening");
+                return g.GridData;
             }
         }
         /*

@@ -1563,6 +1563,7 @@ namespace ilPSP {
         /// <paramref name="M"/> is symmetrical and positive definite, by using
         /// a Cholesky factorization.
         /// </summary>
+        /// <param name="M">input/output</param>
         static public void InvertSymmetrical<T>(this T M) where T : IMatrix {
             if (M.NoOfCols != M.NoOfRows)
                 throw new NotSupportedException("can't invert non-square matrix.");

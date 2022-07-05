@@ -418,9 +418,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // linear cell branch
                 // ++++++++++++++++++
 
-
-
-
                 // level 1
                 if(agSeq.Length >= 2) {
                     int iLevel = 1;
