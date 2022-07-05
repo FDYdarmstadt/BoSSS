@@ -963,7 +963,7 @@ namespace ilPSP {
                 int b00 = _B.Index(0, 0);
                 int c00 = _C.Index(0, 0);
 
-                if((_A.Index(0, 1) - a00 == 1) && (_B.Index(0, 1) - b00 == 1) && (_C.Index(0, 1) - c00 == 1)) {
+                if(_A.NoOfCols > 1 && (_A.Index(0, 1) - a00 == 1) && _B.NoOfCols > 1 && (_B.Index(0, 1) - b00 == 1) && _C.NoOfCols > 1 && (_C.Index(0, 1) - c00 == 1)) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // Data layout is suitable to use BLAS DGEMM
                     // directly on MultidimenasionalArray storage.
