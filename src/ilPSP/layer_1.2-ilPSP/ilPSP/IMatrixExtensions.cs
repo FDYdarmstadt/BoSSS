@@ -671,7 +671,7 @@ namespace ilPSP {
                     unsafe {
                         fixed (double* _pmdaM = mdaM.Storage, px = _x, py = _y) {
                             double* pmdaM = _pmdaM + off;
-
+                            // because of FORTRAN-vs-C arrays, the transpose passed to BLAS is inverted:
                             BLAS.dgemv(transpose ? 'N' : 'T', m_NoOfCols, m_NoOfRows, xScaling, pmdaM, LD, px, 1, yScaling, py, 1);
 
                         }
