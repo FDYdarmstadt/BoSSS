@@ -113,7 +113,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool written = true;
 
-
+        
         public static void Verify(string _iD) {
             var Blocks = VectorIO.LoadFromTextFile("part" + _iD + ".txt").Select(d => (int)d).ToArray();
             int J = Blocks.Length;
@@ -169,7 +169,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double>  //
         {
             if (!written) {
-                /*
+                
                 var part = m_op.OperatorMatrix._RowPartitioning;
                 if (part.MpiSize != 1)
                     throw new NotSupportedException();
@@ -180,17 +180,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int[] BL = NoOfBlocks.ForLoop(iblk => part.GetBlockLen(iblk));
                 BL.SaveToTextFile("part" + id + ".txt", part.MPI_Comm);
 
+                var test = new BackSubs_Reference(ComputeILU(this.ILU_level, m_op.OperatorMatrix));
+
+
                 m_op.OperatorMatrix.SaveToTextFileSparse("M" + id + ".txt");
-                m_BlockL.SaveToTextFileSparse("L" + id + ".txt");
-                m_BlockU.SaveToTextFileSparse("U" + id + ".txt");
+                test.BlockL.SaveToTextFileSparse("L" + id + ".txt");
+                test.BlockU.SaveToTextFileSparse("U" + id + ".txt");
 
                 m_op.OperatorMatrix.ToMsrMatrix().SaveToFile("M" + id + ".mtx");
-                m_BlockL.ToMsrMatrix().SaveToFile("L" + id + ".mtx");
-                m_BlockU.ToMsrMatrix().SaveToFile("U" + id + ".mtx");
+                test.BlockL.ToMsrMatrix().SaveToFile("L" + id + ".mtx");
+                test.BlockU.ToMsrMatrix().SaveToFile("U" + id + ".mtx");
 
                 written = true;
                 Console.Error.WriteLine("Written: " + id);
-                */
+                
             }
             int L = X.Count;
 

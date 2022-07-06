@@ -177,7 +177,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             int[][] AggregateCells = new int[J][];
             for (int j = 0; j < J; j++) {
-                AggregateCells[j] = new int[] { (j + 55)%J };
+                AggregateCells[j] = new int[] { j };
             }
 
             AggregationGrid ret = new AggregationGrid(g, AggregateCells);
@@ -217,12 +217,90 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
                 IGridData pGridData = ag.iGridData;
                 int[][] Coarsened_ComositeCells = AggregationKernel(pGridData, AggCellCount);
-                return new AggregationGrid(ag, Coarsened_ComositeCells);
+
+                /*
+                // random permute of aggregation cells
+                int JC = __Coarsened_ComositeCells.Length;
+                int[][] Coarsened_ComositeCells = new int[JC][];
+                Random rnd = new Random();
+                Console.Write(" perm: ");
+                for(int jc = 0; jc < JC; jc++) {
+                    int jDest = rnd.Next(JC);
+                    while(Coarsened_ComositeCells[jDest] != null) {
+                        jDest = (jDest + 1) % JC;
+                    }
+
+                    Console.Write($" {jc}>{jDest}");
+                    Coarsened_ComositeCells[jDest] = __Coarsened_ComositeCells[jc];
+                }
+                Console.WriteLine();
+                */
+                Coarsened_ComositeCells = CuthillMcKey(ag, Coarsened_ComositeCells);
+
+                var g = new AggregationGrid(ag, Coarsened_ComositeCells);
+                return g;
             }
         }
 
 
+        static int[][] CuthillMcKey(IGrid parrent, int[][] AggCells) {
 
+            var gTemp = new AggregationGrid(parrent, AggCells);
+            int JC = AggCells.Length;
+            if (JC != gTemp.iGridData.iLogicalCells.NoOfLocalUpdatedCells)
+                throw new ApplicationException();
+
+            BitArray added = new BitArray(JC);
+            int[] AdjRest(int jc) {
+                return gTemp.GridData.iLogicalCells.CellNeighbours[jc].Where(jneigh => jneigh < JC && !added[jneigh]).ToArray();
+            }
+
+            int Degree(int jc) {
+                return gTemp.GridData.iLogicalCells.CellNeighbours[jc].Where(jneigh => jneigh < JC).Count();
+            }
+
+            List<int> R = new List<int>(new int[] { 0 }); added[0] = true;
+            for(int i = 0; R.Count < JC; i++) {
+                int Ri = R[i];
+
+                int[] Ai = AdjRest(Ri);
+                Debug.Assert(Ai.Where(a => added[a]).Count() == 0);
+                if (Ai.Length > 0) {
+                    int[] Degs = Ai.Select(a => Degree(a)).ToArray();
+
+                    Array.Sort(Degs, Ai);
+
+                    R.AddRange(Ai);
+                    foreach (var k in Ai)
+                        added[k] = true;
+                }
+            }
+
+            if (R.Count != JC)
+                throw new ApplicationException("Cuthill-McKey internal error.");
+
+
+            int[][] ret = new int[JC][];
+            for(int j = 0; j < JC; j++) {
+                ret[JC - j - 1] = AggCells[R[j]];
+            }
+            return ret;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ag">
+        /// mesh which should be coarsened
+        /// </param>
+        /// <param name="AggCellCount">
+        /// number of cells from the grid <paramref name="ag"/> that should be aggregated in each aggregate cell
+        /// </param>
+        /// <returns>
+        /// - 1st index: local cell mesh of the aggregate mesh
+        /// - 2nd index: enumeration of cell parts
+        /// </returns>
         private static int[][] AggregationKernel(IGridData ag, int AggCellCount) {
             int Jloc = ag.iLogicalCells.NoOfLocalUpdatedCells;
             int D = ag.SpatialDimension;

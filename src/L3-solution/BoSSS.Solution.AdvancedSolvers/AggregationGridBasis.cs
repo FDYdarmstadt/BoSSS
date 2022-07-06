@@ -389,7 +389,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // directly compute the Injector for the coarsest level
                     //int ilevel = agSeq.Length - 1;
 
-                    if(!maxDgBasis.IsOrthonormal) { throw new NotImplementedException("DG Basis has to be orthonormal"); }
+                    if(!maxDgBasis.IsOrthonormal) { 
+                        throw new NotImplementedException("DG Basis has to be orthonormal"); 
+                    }
 
                     // compute the direct Injector for the coarsest mesh
                     MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[agSeq[0].iLogicalCells.NoOfLocalUpdatedCells];

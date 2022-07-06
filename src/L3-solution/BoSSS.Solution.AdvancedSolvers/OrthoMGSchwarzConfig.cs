@@ -221,7 +221,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             
                         };
                         smoother1.config.EnableOverlapScaling = true;
-                        smoother1.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
+                        if(iLevel > 0)
+                            smoother1.config.Overlap = 0; // overlap seems to help; more overlap seems to help more
+                        else
+                            smoother1.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
                         smoother1.config.UsePMGinBlocks = UsepTG;
 
                         var _levelSolver = new OrthonormalizationMultigrid() {
