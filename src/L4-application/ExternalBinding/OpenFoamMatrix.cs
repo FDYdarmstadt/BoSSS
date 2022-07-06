@@ -67,7 +67,6 @@ namespace BoSSS.Application.ExternalBinding {
             return RHSbuffer[this.RowMap.LocalUniqueCoordinateIndex(f, j, n)];
         }
 
-
         OpenFoamDGField m_SolBuffer;
 
         /// <summary>
@@ -88,7 +87,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// <returns></returns>
         [CodeGenExport]
         public double GetSolCoordinate(int f, int j, int n) {
-            return RHSbuffer[this.RowMap.LocalUniqueCoordinateIndex(f, j, n)];
+            return SolBuffer[this.RowMap.LocalUniqueCoordinateIndex(f, j, n)];
         }
 
 
@@ -103,6 +102,18 @@ namespace BoSSS.Application.ExternalBinding {
             try {
                 Console.WriteLine("Solving Matrix, norm is " + this.InfNorm());
                 this.Solve_Direct(this.SolBuffer, RHSbuffer);
+                Console.WriteLine("SolBuffer:");
+                foreach (var elem in this.SolBuffer){
+                    Console.Write(elem);
+                    Console.Write(" ");
+                }
+                Console.WriteLine();
+                Console.WriteLine("RHSBuffer:");
+                foreach (var elem in this.RHSbuffer){
+                    Console.Write(elem);
+                    Console.Write(" ");
+                }
+                Console.WriteLine();
             } catch(Exception e) {
                 Console.WriteLine(e.GetType().FullName + ": " + e.Message);
             }

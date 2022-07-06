@@ -53,7 +53,8 @@ namespace BoSSS.Application.ExternalBinding {
         /// 
         /// </summary>
         [CodeGenExport]
-        public void Laplacian(OpenFoamMatrix mtx) {
+        // public void Laplacian(OpenFoamMatrix mtx) {
+        public void Laplacian(OpenFoamMatrix mtx, OpenFoamPatchField ptch) {
 
             // grid, etc
             // =========
@@ -63,8 +64,9 @@ namespace BoSSS.Application.ExternalBinding {
             var b = mtx.ColMap.BasisS[0];
             var map = new UnsetteledCoordinateMapping(b);
 
-            var L = new Laplace(1.3);
+            var L = new Laplace(1.3, ptch);
             var op = new SpatialOperator(1, 0, 1, QuadOrderFunc.Linear(), "T", "c1");
+
             op.EquationComponents["c1"].Add(L);
             op.Commit();
 
@@ -76,6 +78,10 @@ namespace BoSSS.Application.ExternalBinding {
             mtx.RHSbuffer.ScaleV(-1); // convert LHS affine vector to RHS
 
             Console.WriteLine("Computed Laplacian Matrix, norm is " + mtx.InfNorm());
+            Console.WriteLine("Computed Laplacian Matrix, RHS is ");
+            foreach (var elem in mtx.RHSbuffer)
+                Console.Write(elem + " ");
+            Console.WriteLine();
         }
 
         /// <summary>
@@ -83,12 +89,15 @@ namespace BoSSS.Application.ExternalBinding {
         /// </summary>
         class Laplace : BoSSS.Solution.NSECommon.SIPLaplace {
 
+            OpenFoamPatchField _ptch;
+
             /// <summary>
             /// 
             /// </summary>
-            public Laplace(double penalty_const)
+            public Laplace(double penalty_const, OpenFoamPatchField ptch)
                 : base(penalty_const, "T") //
             {
+                _ptch = ptch;
                 //m_boundaryCondMap = __boundaryCondMap;
                 //m_bndFunc = m_boundaryCondMap.bndFunction["T"];
             }
@@ -97,8 +106,33 @@ namespace BoSSS.Application.ExternalBinding {
             /// always true
             /// </summary>
             protected override bool IsDirichlet(ref CommonParamsBnd inp) {
-                return true;
+                return (inp.EdgeTag == 1 || inp.EdgeTag == 2); // TODO generalize
             }
+
+            /// <summary>
+            /// Dirichlet boundary value
+            /// </summary>
+            override protected double g_Diri(ref Foundation.CommonParamsBnd inp) { // TODO generalize
+                // Console.WriteLine("Hello from fixedoperators. EdgeTag: " + inp.EdgeTag);
+                if (inp.EdgeTag == 1)
+                {
+                    Console.WriteLine("EdgeTag 1");
+                    return _ptch.Values[0];
+                }
+                if (inp.EdgeTag == 2)
+                {
+                    Console.WriteLine("EdgeTag 1");
+                    return _ptch.Values[1];
+                }
+                Console.WriteLine("should not happen");
+                // throw new Exception("Should not happen");
+                return 0;
+            }
+
+            /// <summary>
+            /// Neumann boundary value
+            /// </summary>
+            override protected double g_Neum(ref Foundation.CommonParamsBnd inp) { return 0; }
         }
 
 

@@ -371,6 +371,33 @@ namespace BoSSS.Foundation.Grid {
             // ==================
 
             grid.Cells = bosss_cells;
+            grid.AddEdgeTag("left"); // TODO generalize
+            grid.AddEdgeTag("right");
+            grid.AddEdgeTag("empty");
+            grid.DefineEdgeTags(delegate (double[] X){ // TODO generalize
+                    if (Math.Abs(X[0] - 0) < 1e-10){
+                        return 1;
+                    }
+                    if (Math.Abs(X[0] - 5) < 1e-10){
+                        return 2;
+                    }
+                    if (Math.Abs(X[1] - 0) < 1e-10){
+                        return 3;
+                    }
+                    if (Math.Abs(X[1] - 1) < 1e-10){
+                        return 3;
+                    }
+                    if (Math.Abs(X[2] - 0) < 1e-10){
+                        return 3;
+                    }
+                    if (Math.Abs(X[2] - 1) < 1e-10){
+                        return 3;
+                    }
+                    // return 3;
+                    Console.WriteLine("Argument out of range!");
+                    throw new ArgumentOutOfRangeException();
+                }
+            );
             grid.Description = "imported form OpenFOAM";
         }
 
