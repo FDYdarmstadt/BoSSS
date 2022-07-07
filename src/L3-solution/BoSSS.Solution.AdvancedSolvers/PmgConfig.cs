@@ -79,6 +79,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var MPIcomm = level.DgMapping.MPI_Comm;
 
+                //weirdo idea:
+                //DegreeHierarchy = new int[][] { new int[] { 5, 5, 4 }, new int[] { 4, 4, 4 }, new int[] { 3, 3, 4 } };
+
 
                 long DOF_top = level.DgMapping.TotalLength;
 
@@ -183,7 +186,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                         (bool bNotTerminate, bool bSuccess) SubLevelTermination(int iter, double R0_l2, double R_l2) {
-                            double reduction = iLevel >= 2 ? 1e-2 : 1e-2;
+                            double reduction = iLevel >= 2 ? 1e-1 : 1e-1;
                             int limit = iLevel >= 2 ? 4 : 100;
 
                             if (iter <= 1)
@@ -237,6 +240,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 tr.Info("UseILU = " + UseILU);
 
+             
 
                 ISubsystemSolver CreateLevelRecursive(int iLevel) {
 
@@ -255,23 +259,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         ISolverSmootherTemplate post, pre;
 
-                        
 
-                        //GMRES bringt nix als PC
+
+                        // GMRES as recommended in Botti/DiPietro paper
+                        const int FewIter = 2;
                         var smoother = new SoftGMRES() {
-                        //    //Precond = bj
                         };
-                        smoother.TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= 1, true);
+                        smoother.MaxKrylovDim = FewIter + 2;
+                        //var smoother = new OrthonormalizationMultigrid() {
+                        //};
+                        smoother.TerminationCriterion = delegate (int iter, double R0_l2, double R_l2) {
+                            //Console.WriteLine("  gmres: iter = " + iter);
+                            var RunSucc = (iter <= FewIter, true);
+                            return RunSucc;
+                        };
                         if (UseILU) {
                             var _post_pc = new CellILU() {
                                 ILU_level = 0
                             };
                             smoother.Precond = _post_pc;
+                            //smoother.PreSmoother = _post_pc;
                         } else {
                             var bj = new BlockJacobi() {
                                 NoOfIterations = 1,
                             };
                             smoother.Precond = bj;
+                            //smoother.PreSmoother = bj;
                         }
 
                         pre = smoother;

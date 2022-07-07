@@ -278,7 +278,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         H[i + 1 - 1, i - 1] = norm_w; // the +1-1 actually makes me sure I haven't forgotten to subtract -1 when porting the code
                                                       //V(:,i+1) = w / H(i+1,i);
                         V[i + 1 - 1].SetV(w, alpha: (1.0 / norm_w));
-
                         #endregion
 
                         #region Givens rotation
