@@ -180,6 +180,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //useDirect = op_lv.LevelIndex > 1;
 
+
+                    if (skipLevel) {
+                        useDirect = true;
+                        skipLevel = false;
+                    }
+
                     if (useDirect)
                         tr.Info($"KcycleMultiSchwarz: lv {iLevel}, L = {op_lv.Mapping.TotalLength}, Direct solver ");
                     else if (skipLevel) {
@@ -221,10 +227,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             
                         };
                         smoother1.config.EnableOverlapScaling = true;
-                        if(iLevel > 0)
-                            smoother1.config.Overlap = 0; // overlap seems to help; more overlap seems to help more
-                        else
-                            smoother1.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
+                        smoother1.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
                         smoother1.config.UsePMGinBlocks = UsepTG;
 
                         var _levelSolver = new OrthonormalizationMultigrid() {

@@ -219,31 +219,41 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 int[][] Coarsened_ComositeCells = AggregationKernel(pGridData, AggCellCount);
 
                 /*
-                // random permute of aggregation cells
-                int JC = __Coarsened_ComositeCells.Length;
-                int[][] Coarsened_ComositeCells = new int[JC][];
-                Random rnd = new Random();
-                Console.Write(" perm: ");
-                for(int jc = 0; jc < JC; jc++) {
-                    int jDest = rnd.Next(JC);
-                    while(Coarsened_ComositeCells[jDest] != null) {
-                        jDest = (jDest + 1) % JC;
-                    }
-
-                    Console.Write($" {jc}>{jDest}");
-                    Coarsened_ComositeCells[jDest] = __Coarsened_ComositeCells[jc];
-                }
-                Console.WriteLine();
+                
                 */
-                Coarsened_ComositeCells = CuthillMcKey(ag, Coarsened_ComositeCells);
+
+
+                // Cuthill-McKey sorting should theoretically help iterative and direct solvers
+                //Coarsened_ComositeCells = RandomSorting(Coarsened_ComositeCells);
+                //Coarsened_ComositeCells = CuthillMcKey(ag, Coarsened_ComositeCells, true);
 
                 var g = new AggregationGrid(ag, Coarsened_ComositeCells);
                 return g;
             }
         }
 
+        static int[][] RandomSorting(int[][] __Coarsened_ComositeCells) {
+            // random permute of aggregation cells
+            int JC = __Coarsened_ComositeCells.Length;
+            int[][] Coarsened_ComositeCells = new int[JC][];
+            Random rnd = new Random();
+            //Console.Write(" perm: ");
+            for (int jc = 0; jc < JC; jc++) {
+                int jDest = rnd.Next(JC);
+                while (Coarsened_ComositeCells[jDest] != null) {
+                    jDest = (jDest + 1) % JC;
+                }
 
-        static int[][] CuthillMcKey(IGrid parrent, int[][] AggCells) {
+                //Console.Write($" {jc}>{jDest}");
+                Coarsened_ComositeCells[jDest] = __Coarsened_ComositeCells[jc];
+            }
+            //Console.WriteLine();
+
+            return Coarsened_ComositeCells;
+        }
+
+
+        static int[][] CuthillMcKey(IGrid parrent, int[][] AggCells, bool reverse) {
 
             var gTemp = new AggregationGrid(parrent, AggCells);
             int JC = AggCells.Length;
@@ -282,7 +292,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             int[][] ret = new int[JC][];
             for(int j = 0; j < JC; j++) {
-                ret[JC - j - 1] = AggCells[R[j]];
+                if(reverse)
+                    ret[JC - j - 1] = AggCells[R[j]];
+                else
+                    ret[j] = AggCells[R[j]];
             }
             return ret;
         }

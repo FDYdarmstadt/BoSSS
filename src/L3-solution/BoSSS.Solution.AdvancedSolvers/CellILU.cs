@@ -6,6 +6,7 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -96,10 +97,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //    this.m_BlockU, this.m_BlockU_OccupiedBlockColumnsPerRow,
                 //    this.m_BlockU_lublks, this.m_BlockU_luipiv) = ComputeILU(this.ILU_level, op.OperatorMatrix);
                 //CheckILU();
+
+
+                //m_Perm = GetPermMatrix(op.OperatorMatrix, true);
+                //m_PermT = m_Perm.Transpose();
+                //var op_perm = BlockMsrMatrix.Multiply(m_PermT, BlockMsrMatrix.Multiply(op.OperatorMatrix, m_Perm));
+                //var ILU = ComputeILU(this.ILU_level, op_perm);
+
                 var ILU = ComputeILU(this.ILU_level, op.OperatorMatrix);
+
                 m_backSubs = new BackSubs_Optimized(ILU);
             }
         }
+
+        //BlockMsrMatrix m_Perm;
+        //BlockMsrMatrix m_PermT;
 
         BackSubs m_backSubs;
 
@@ -111,7 +123,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Converged = false;
         }
 
-        bool written = true;
+        //bool written = true;
 
         
         public static void Verify(string _iD) {
@@ -168,6 +180,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double>  //
         {
+            /*
             if (!written) {
                 
                 var part = m_op.OperatorMatrix._RowPartitioning;
@@ -180,12 +193,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int[] BL = NoOfBlocks.ForLoop(iblk => part.GetBlockLen(iblk));
                 BL.SaveToTextFile("part" + id + ".txt", part.MPI_Comm);
 
-                var test = new BackSubs_Reference(ComputeILU(this.ILU_level, m_op.OperatorMatrix));
+                var ILU = ComputeILU(this.ILU_level, BlockMsrMatrix.Multiply(m_PermT, BlockMsrMatrix.Multiply(m_op.OperatorMatrix, m_Perm)));
+                var test = new BackSubs_Reference(ILU);
 
 
                 m_op.OperatorMatrix.SaveToTextFileSparse("M" + id + ".txt");
                 test.BlockL.SaveToTextFileSparse("L" + id + ".txt");
                 test.BlockU.SaveToTextFileSparse("U" + id + ".txt");
+                m_Perm.SaveToTextFileSparse("P" + id + ".txt");
 
                 m_op.OperatorMatrix.ToMsrMatrix().SaveToFile("M" + id + ".mtx");
                 test.BlockL.ToMsrMatrix().SaveToFile("L" + id + ".mtx");
@@ -194,14 +209,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 written = true;
                 Console.Error.WriteLine("Written: " + id);
                 
-            }
+            }*/
             int L = X.Count;
 
-            //double[] _B;
-            //if(B.GetType() == typeof(double[]))
-            //    _B = B as double[];
-            //else
-            //    _B = B.ToArray();
+            //double[] _B = new double[B.Count];
+            //m_PermT.SpMV(1.0, B, 0.0, _B);
 
 
             double[] y = new double[L];
@@ -214,54 +226,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             //double[] Xref = new double[y.Length];
             //m_BlockU.Solve_Direct(Xref, y.CloneAs());
+            //double[] _X = new double[X.Count];
             m_backSubs.UpTriDiagonalSolve(X, y);
             //double check2 = GenericBlas.L2Dist(Xref, X);
             //Console.Error.WriteLine("Check value (hi solve) is: " + check2);
 
+
+            //m_Perm.SpMV(1.0, _X, 0.0, X);
             
             m_ThisLevelIterations += 1;
             Converged = true;
         }
 
-        /*
-        /// <summary>
-        /// Lower triangular part of ILU-decomposition; Diagonal blocks are Identity matrices
-        /// </summary>
-        BlockMsrMatrix m_BlockL;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        MultidimensionalArray[] m_BlockL_compressed;
-
-        /// <summary>
-        /// occupied block-columns for each block-row for <see cref="m_BlockL"/>
-        /// </summary>
-        long[][] m_BlockL_OccupiedBlockColumnsPerRow;
-
-        /// <summary>
-        /// Upper triangular part of ILU-decomposition; Diagonal blocks are fully occupied
-        /// </summary>
-        BlockMsrMatrix m_BlockU;
-
-        /// <summary>
-        /// occupied block-columns for each block-row for <see cref="m_BlockL"/>
-        /// </summary>
-        long[][] m_BlockU_OccupiedBlockColumnsPerRow;
-
-
-        /// <summary>
-        /// LU-decomposition of the diagonal blocks of <see cref="m_BlockU"/>
-        /// </summary>
-        MultidimensionalArray[] m_BlockU_lublks;
-
-
-        /// <summary>
-        /// Pivot indices for LU-decomposition of the diagonal blocks of <see cref="m_BlockU"/>
-        /// </summary>
-        int[][] m_BlockU_luipiv;
-        */
-
+        
         /// <summary>
         /// 
         /// </summary>
@@ -970,8 +947,161 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public int ILU_level = 1;
 
+
+        static int[] RandomPermute(int JC) {
+            // random permute of aggregation cells
+            int[] R = new int[JC];
+            R.SetAll(-1);
+            Random rnd = new Random();
+            //Console.Write(" perm: ");
+            for (int jc = 0; jc < JC; jc++) {
+                int jDest = rnd.Next(JC);
+                while (R[jDest] >= 0) {
+                    jDest = (jDest + 1) % JC;
+                }
+
+                //Console.Write($" {jc}>{jDest}");
+                R[jDest] = jc;
+            }
+            //Console.WriteLine();
+
+            return R;
+        }
+
+        static private int[] CuthillMcKeyPerm(BlockMsrMatrix Mtx, bool reverse) {
+            if (!Mtx._RowPartitioning.EqualsPartition(Mtx._ColPartitioning))
+                throw new ApplicationException();
+
+            var part = Mtx._RowPartitioning;
+            MsrMatrix Adj = GetPattern(0, Mtx);
+
+            int JC = part.LocalNoOfBlocks;
+
+            BitArray added = new BitArray(JC);
+            int[] AdjRest(int jc) {
+                long i0Adj = Adj.RowPartitioning.i0;
+                long[] ColIdx = null;
+                Adj.GetOccupiedColumnIndices(jc + i0Adj, ref ColIdx);
+
+                return ColIdx.Where(jneigh => jneigh != (jc + i0Adj)  && !added[checked((int)(jneigh - i0Adj))])
+                    .Select(jneigh => checked((int)(jneigh - i0Adj)))
+                    .ToArray();
+            }
+
+            int Degree(int jc) {
+                long i0Adj = Adj.RowPartitioning.i0;
+                return Adj.GetNoOfOffDiagonalNonZerosPerRow(jc + i0Adj);
+            }
+
+            List<int> R = new List<int>(new int[] { 0 }); added[0] = true;
+            for (int i = 0; R.Count < JC; i++) {
+                int Ri = R[i];
+
+                int[] Ai = AdjRest(Ri);
+                Debug.Assert(Ai.Where(a => added[a]).Count() == 0);
+                if (Ai.Length > 0) {
+                    int[] Degs = Ai.Select(a => Degree(a)).ToArray();
+
+                    Array.Sort(Degs, Ai);
+
+                    R.AddRange(Ai);
+                    foreach (var k in Ai)
+                        added[k] = true;
+                }
+            }
+
+            if (R.Count != JC)
+                throw new ApplicationException("Cuthill-McKey internal error.");
+
+            /*
+            int[][] ret = new int[JC][];
+            for (int j = 0; j < JC; j++) {
+                if (reverse)
+                    ret[JC - j - 1] = AggCells[R[j]];
+                else
+                    ret[j] = AggCells[R[j]];
+            }*/
+            if (reverse) {
+                int[] ret = new int[JC];
+                for (int j = 0; j < JC; j++) {
+                    ret[JC - j - 1] = R[j];
+                }
+                return ret;
+            } else {
+                return R.ToArray();
+            }
+        }
+
+
+        static private BlockMsrMatrix GetPermMatrix(BlockMsrMatrix Mtx, bool reverse) {
+            if (!Mtx._RowPartitioning.EqualsPartition(Mtx._ColPartitioning))
+                throw new ApplicationException();
+
+            var part = Mtx._RowPartitioning;
+            int J = Mtx._RowPartitioning.LocalNoOfBlocks;
+
+            int[] perm = CuthillMcKeyPerm(Mtx, reverse);
+            //int[] perm = RandomPermute(J);
+            //perm = J.ForLoop(j => J - j - 1);
+            BitArray check = new BitArray(J);
+            for(int j = 0; j < J; j++) {
+                if (check[perm[j]])
+                    throw new ArgumentException("double");
+                check[perm[j]] = true;
+            }
+            for (int j = 0; j < J; j++) {
+                if (!check[perm[j]])
+                    throw new ArgumentException("missing");
+            }
+
+            BlockMsrMatrix P = new BlockMsrMatrix(part, part);
+
+
+            //perm = J.ForLoop(i => i);
+
+            for(int j = 0; j < J; j++) {
+                int i = perm[j];
+                //long row_idx = part.GetBlockI0(j0 + j);
+                //long col_idx = part.GetBlockI0(j0 + i);
+
+                int NoRow = part.GetBlockLen(j);
+                int NoCol = part.GetBlockLen(i);
+
+                var Eye = MultidimensionalArray.Create(NoRow, NoCol);
+                Eye.AccEye(1.0);
+                P.SetBlock(Eye, j + part.FirstBlock, i + part.FirstBlock);
+            }
+
+            double[] test = new double[part.LocalLength];
+            long partI0 = part.i0;
+            for (int j = 0; j < J; j++) {
+                int NoRow = part.GetBlockLen(j);
+                long BlkI0 = part.GetBlockI0(j);
+                for(int i = 0; i < NoRow; i++) {
+                    test[i + BlkI0 - partI0] = j;
+                }
+            }
+
+            double[] testOut = new double[test.Length];
+            P.SpMV(1.0, test, 0.0, testOut);
+            for (int j = 0; j < J; j++) {
+                int NoRow = part.GetBlockLen(j);
+                long BlkI0 = part.GetBlockI0(j);
+                for (int i = 0; i < NoRow; i++) {
+                    if(testOut[i + BlkI0 - partI0] != perm[j]) {
+                        throw new ArgumentException("perm matrix fubar");
+                    }
+                }
+            }
+
+            return P;
+        }
+
+
+
         /// <summary>
-        /// Obtain occupancy pattern of a <see cref="BlockMsrMatrix"/>
+        /// Obtain occupancy pattern of a <see cref="BlockMsrMatrix"/>;
+        /// this is also an adjacency matrix.
         /// </summary>
         /// <returns>
         /// A matrix with one entry for each block of the input matrix <paramref name="Mtx"/>

@@ -1074,7 +1074,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 id = cilu.id;
 
                             double[] PostCorr = new double[L];
+                            //if (g % 2 == 1)
+                            //    PreSmoother.Solve(PostCorr, Res);
+                            //else
                             PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
+
+
+
                             //ortho.AddSol(ref PostCorr, "postsmooth" + g); //orthonormalization and residual minimization
                             //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + id + "--" + g);

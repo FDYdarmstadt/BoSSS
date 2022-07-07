@@ -755,16 +755,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             ISubsystemSolver blockSolve;
 
-                            if (op.LevelIndex == 1 && op.DgMapping.MpiRank == 2 && op.DgMapping.MpiSize == 4000000) {
+                            if (op.LevelIndex >= 1 && op.DgMapping.MpiSize == 4000000) {
                                 blockSolve = new DirectSolver() {
                                     ActivateCaching = (int NoIter, int MgLevel) => true
                                 };
                             } else {
                                 var pmgConfig = new PmgConfig();
+                                pmgConfig.UseILU = true;// op.LevelIndex == 0;
                                 blockSolve = pmgConfig.CreateInstanceImpl(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
                                 BlockSolver.LowerPSolver = blockSolve;
 
-                                ((CellILU)((OrthonormalizationMultigrid)blockSolve).PostSmoother).id = "R" + op.Mapping.MpiRank + "Lv" + op.LevelIndex + "p" + iPart;
+                                //if(op.LevelIndex == 0)
+                                //    ((CellILU)((OrthonormalizationMultigrid)blockSolve).PostSmoother).id = "R" + op.Mapping.MpiRank + "Lv" + op.LevelIndex + "p" + iPart;
                             }
 
                             /*
@@ -797,7 +799,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     //var ret = (i <= 1, true);
                                     if (!ret.Item1)
                                         // sub-solver terminates:
-                                        Console.WriteLine($"Block solver {iPartCopy} lv {op.LevelIndex}: {i} {r} {r / r0} {ret}");
+                                        Console.WriteLine($"Block solver {iPartCopy} lv {op.LevelIndex}: {i} {r / r0:0.###e-00} {ret}");
                                     return ret;
                                 };
                             }

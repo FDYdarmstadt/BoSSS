@@ -27,6 +27,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return CreateInstanceImpl(level, level.DGpolynomialDegreeHierarchy);
         }
 
+        /// <summary>
+        /// - true: <see cref="CellILU"/> is used as smoother on finest p-level
+        /// - false: <see cref="BlockJacobi"/> is used as smoother on finest p-level
+        /// </summary>
+        public bool UseILU = true;
 
         internal ISubsystemSolver CreateInstanceImpl(IOperatorMappingPair level, int[][] DegreeHierarchy) {
             using (var tr = new FuncTrace()) {
@@ -58,7 +63,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             LowerPSolver = CreateLevelRecursive(iLevel + 1)
                         };
 
-                        ISolverSmootherTemplate post;
+                        ISolverSmootherTemplate post, pre;
 
                         //var bj = new BlockJacobi() {
                         //    NoOfIterations = 1,
@@ -71,24 +76,34 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //};
                         //post.TerminationCriterion = (int iter, double R0_l2, double R_l2) => (iter <= 1, true);
 
-                        if (iLevel == 0) {
+                        if (iLevel == 0 && UseILU) {
+                            //pre = new BlockJacobi() {
+                            //    NoOfIterations = 1,
+                            //};
+                            pre = null;
+
+
                             post = new CellILU() {
                                 ILU_level = 0
                             };
 
+                            ((CellILU)post).id = "Lv0";
+
                             //post = new SparseILU() {
                             //    UsedLibrary = SparseILU.Library.Intel_MKL
                             //};
+
                         } else {
                             post = new BlockJacobi() {
                                 NoOfIterations = 1,
                             };
-
+                            pre = null;
                         }
 
 
                         var omg = new OrthonormalizationMultigrid() {
                             CoarserLevelSolver = coarseSolver,
+                            PreSmoother = pre,
                             PostSmoother = post,
                         };
                         omg.config.NoOfPostSmootherSweeps = 10;
