@@ -218,11 +218,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
                 IGridData pGridData = ag.iGridData;
                 int[][] Coarsened_ComositeCells = AggregationKernel(pGridData, AggCellCount);
 
-                /*
-                
-                */
-
-
+               
                 // Cuthill-McKey sorting should theoretically help iterative and direct solvers
                 //Coarsened_ComositeCells = RandomSorting(Coarsened_ComositeCells);
                 //Coarsened_ComositeCells = CuthillMcKey(ag, Coarsened_ComositeCells, true);

@@ -281,8 +281,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 // scale Mxx to norm 1, should allow better stability when compared to the Krylov vectors who have all norm 1;
-                Mxx.ScaleV(1.0 / NormMxx);
-                X.ScaleV(1.0 / NormMxx);
+                BLAS.dscal(L, 1.0 / NormMxx, Mxx, 1);
+                BLAS.dscal(L, 1.0 / NormMxx, X, 1);
 
                 const int MaxOrtho = 10;
                 for (int jj = 0; jj <= MaxOrtho; jj++) { // re-orthogonalisation, loop-limit to 10; See also book of Saad, p 156, section 6.3.2

@@ -107,7 +107,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         case 1: return p + 1;
                         case 2: return (p * p + 3 * p + 2) / 2;
                         case 3: return (p * p * p + 6 * p * p + 11 * p + 6) / 6;
-                        default: throw new ArgumentOutOfRangeException("wtf?Spacialdim=1,2,3 expected");
+                        default: throw new ArgumentOutOfRangeException("Unknown spatial dimension: " + SpacDim);
                     }
                 }
 
@@ -129,9 +129,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 public int SpatialDimension => m_ownerHack.m_Unrestricted.DgMapping.SpatialDimension;
 
-                public int NoOfLocalUpdatedCells => m_ownerHack.m_Unrestricted.DgMapping.NoOfLocalUpdatedCells;
-
-                public int LocalCellCount => m_ownerHack.m_Unrestricted.DgMapping.LocalCellCount;
+                public int NoOfLocalUpdatedCells {
+                    get {
+                        if (m_ownerHack.jLoc2Glob != null)
+                            return m_ownerHack.jLoc2Glob.Length;
+                        else
+                            return m_ownerHack.m_Unrestricted.DgMapping.NoOfLocalUpdatedCells;
+                    }
+                }
+                public int LocalCellCount {
+                    get {
+                        if (m_ownerHack.jLoc2Glob != null) {
+                            if (this.MpiSize == 1)
+                                return NoOfLocalUpdatedCells;
+                            else
+                                throw new NotImplementedException();
+                        } else {
+                            return m_ownerHack.m_Unrestricted.DgMapping.LocalCellCount;
+                        }
+                    }
+                }
 
                 public SpeciesId[] UsedSpecies => m_ownerHack.m_Unrestricted.DgMapping.UsedSpecies;
 
@@ -218,12 +235,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Optional restriction to a subset of cells/matrix blocks
+        /// Optional restriction to a subset of cells/matrix blocks:
+        /// returns local indices of cells which should be in the selection;
+        /// if null, all cells are selected
         /// </summary>
         public Func<int[]> GetCellRestriction = null;
 
         /// <summary>
-        /// Matrix containing external rows, if <see cref="GetCellRestriction"/> provides external cells
+        /// Matrix containing external rows, if <see cref="GetCellRestriction"/> provides external cells;
+        /// these rows would then be copied to this processor
         /// </summary>
         public Func<BlockMsrMatrix> GetExtRows = null;
 
@@ -307,6 +327,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 if (m_MgOperatorRestriction.DgMapping.MPI_Comm != m_MgOperatorRestriction.OperatorMatrix.MPI_Comm)
                     throw new ApplicationException("mismatch of MPI communicators");
+                
+                if (this.GetCellRestriction != null) {
+                    if (m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks != this.GetCellRestriction().Length)
+                        throw new Exception("");
+                }
 
                 if (LowerPSolver != null && LenSub > 0)
                     LowerPSolver.Init(m_MgOperatorRestriction);

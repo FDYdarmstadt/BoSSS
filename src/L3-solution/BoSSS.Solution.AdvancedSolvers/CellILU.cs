@@ -865,7 +865,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var ILUpT = ILUp_pattern.Transpose();
                 
                 MultidimensionalArray LU_Akk_T = null, 
-                    Aik = null, 
+                    Aik = null, AikT = null,
                     Aij = null, Akj = null;
 
                 for (long k = cell0; k < (cell0 + J - 1); k++) { // Iteration over matrix (rows and columns)
@@ -904,11 +904,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             long Idxi = part.GetBlockI0(i);
                             Aik = Aik.ReuseTemp(Szi, Szk);
                             A.ReadBlock(Idxi, Idxk, Aik);
-                            
+
                             // Compute: Aik = Aik*inv(Akk) via LU decomposition
-                            Aik.TransposeInPlace();
-                            LU_Akk_T.BacksubsLU(_ipiv, Aik, Aik);
-                            Aik.TransposeInPlace();
+                            AikT = AikT.ReuseTemp(Szk, Szi);
+                            Aik.TransposeTo(AikT);
+                            LU_Akk_T.BacksubsLU(_ipiv, AikT, AikT);
+                            AikT.TransposeTo(Aik);
                             A.SetBlock(Aik, i, k); 
 
                             long[] occRow_i = ILUp_pattern.GetOccupiedColumnIndices(i);

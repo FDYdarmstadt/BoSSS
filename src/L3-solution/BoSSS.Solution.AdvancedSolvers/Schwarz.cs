@@ -762,7 +762,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             } else {
                                 var pmgConfig = new PmgConfig();
                                 pmgConfig.UseILU = true;// op.LevelIndex == 0;
-                                blockSolve = pmgConfig.CreateInstanceImpl(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
+                                blockSolve = pmgConfig.CreateInstanceImpl__Kummer(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
                                 BlockSolver.LowerPSolver = blockSolve;
 
                                 //if(op.LevelIndex == 0)
