@@ -485,6 +485,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public BlockingStrategy m_BlockingStrategy;
 
+        /*
         /// <summary>
         /// two grid in Schwarz solver. If <see cref="isMultiplicative"/> is true, coarse solution is MPI-local multiplicative.
         /// </summary>
@@ -533,7 +534,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public SchwarzMG CoarseSolver = null;
-
+        */
         MultigridOperator m_MgOp;
 
 
@@ -869,8 +870,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 }
 
-                if (CoarseSolver != null) 
-                    CoarseSolver.Init(op, ExtRows);
+                //if (CoarseSolver != null) 
+                //    CoarseSolver.Init(op, ExtRows);
             }
         }
 
@@ -978,7 +979,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         ResExchange.TransceiveFinish(0.0);
                     }
 
-                    if (CoarseSolver != null) CoarseSolver.Solve(X, B, Res, ResExchange.Vector_Ext);
+                    //if (CoarseSolver != null) 
+                    //    CoarseSolver.Solve(X, B, Res, ResExchange.Vector_Ext);
 
                     using (new BlockTrace("block_solve_level", tr)) {
 
@@ -1027,10 +1029,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public int IterationsInNested {
             get {
-                if (this.CoarseSolver != null && this.CoarseSolver is ClassicMG)
-                    return (this.CoarseSolver as ClassicMG).CoarseSolver.IterationsInNested + (this.CoarseSolver as ClassicMG).CoarseSolver.ThisLevelIterations;
-                else
-                    return 0;
+                return 0;
+                //if (this.CoarseSolver != null && this.CoarseSolver is ClassicMG)
+                //    return (this.CoarseSolver as ClassicMG).CoarseSolver.IterationsInNested + (this.CoarseSolver as ClassicMG).CoarseSolver.ThisLevelIterations;
+                //else
+                //    return 0;
             }
         }
 
@@ -1106,9 +1109,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Clone.FixedNoOfIterations = this.FixedNoOfIterations;
             Clone.config.Overlap = this.config.Overlap;
             //Clone.IterationCallback = this.IterationCallback;
-            if (this.CoarseSolver != null) {
-                throw new NotImplementedException();
-            }
+            //if (this.CoarseSolver != null) {
+            //    throw new NotImplementedException();
+            //}
             return Clone;
         }
 
@@ -1339,10 +1342,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //this.BlockMatrices = null;
             //this.BMfullBlocks = null;
 
-            if (this.CoarseSolver != null) {
-                this.CoarseSolver.Dispose();
-                //this.CoarseSolver = null; // don't delete - we need this again for the next init
-            }
+            //if (this.CoarseSolver != null) {
+            //    this.CoarseSolver.Dispose();
+            //    //this.CoarseSolver = null; // don't delete - we need this again for the next init
+            //}
         }
 
         /// <summary>
