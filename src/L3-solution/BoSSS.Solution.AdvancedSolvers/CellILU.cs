@@ -61,6 +61,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Dispose() {
             m_backSubs = null;
+            m_op = null;
         }
 
         IOperatorMappingPair m_op;
@@ -104,11 +105,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //var op_perm = BlockMsrMatrix.Multiply(m_PermT, BlockMsrMatrix.Multiply(op.OperatorMatrix, m_Perm));
                 //var ILU = ComputeILU(this.ILU_level, op_perm);
 
-                var ILU = ComputeILU(this.ILU_level, op.OperatorMatrix);
-
-                m_backSubs = new BackSubs_Optimized(ILU);
+                
             }
         }
+
+
 
         //BlockMsrMatrix m_Perm;
         //BlockMsrMatrix m_PermT;
@@ -180,6 +181,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where U : IList<double>
             where V : IList<double>  //
         {
+            if(m_backSubs == null) {
+                var ILU = ComputeILU(this.ILU_level, m_op.OperatorMatrix);
+                m_backSubs = new BackSubs_Optimized(ILU);
+            }
+ 
             /*
             if (!written) {
                 
