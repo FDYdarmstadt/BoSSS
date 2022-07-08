@@ -328,15 +328,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (m_MgOperatorRestriction.DgMapping.MPI_Comm != m_MgOperatorRestriction.OperatorMatrix.MPI_Comm)
                     throw new ApplicationException("mismatch of MPI communicators");
                 
+
                 if (this.GetCellRestriction != null) {
+                    // Note, fk, 08jul22: the following exception would wrongfully occur when there are completely empty cells;
+                    // then, empty blocks are eliminated from the matrix and the number of matrix blocks might be less than the number of cells.
+
                     //if (m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks != this.GetCellRestriction().Length)
                     //    throw new Exception($"Blocks in Operator Matrix: {m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks}," +
                     //        $" number of cell restriction: {this.GetCellRestriction().Length}");
 
-                    Console.Error.WriteLine(
-                        $"Rank{op.DgMapping.MpiRank}of{op.DgMapping.MpiSize}: " +
-                        $"Blocks in Operator Matrix: {m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks}," +
-                            $" number of cell restriction: {this.GetCellRestriction().Length}");
+                    //Console.Error.WriteLine(
+                    //    $"Rank{op.DgMapping.MpiRank}of{op.DgMapping.MpiSize}: " +
+                    //    $"Blocks in Operator Matrix: {m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks}," +
+                    //        $" number of cell restriction: {this.GetCellRestriction().Length}");
                 }
 
                 if (LowerPSolver != null && LenSub > 0)
