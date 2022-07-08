@@ -66,7 +66,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-
+        /// <summary>
+        /// Our own approach (see also <see cref="CreateInstanceImpl__BottiDiPietro"/>):
+        /// p-Multigrid using <see cref="OrthonormalizationMultigrid"/> as a multigrid and <see cref="CellILU"/> or <see cref="BlockJacobi"/> as smoother
+        /// </summary>
         internal ISubsystemSolver CreateInstanceImpl__Kummer(IOperatorMappingPair level, int[][] DegreeHierarchy) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
@@ -153,7 +156,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     //Console.WriteLine("###########################   testcode aktiv ##################################");
-                    if (iLevel >= 2/*DegreeHierarchy.Length - 1*/) {
+                    if ((iLevel >= 2) || (DegreeHierarchy.Length == iLevel + 1)) {
 
                         tr.Info("direct solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
 
@@ -228,8 +231,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return topLevel;
             }
         }
-        
-        
+
+        /// <summary>
+        /// Approach according to (Botti, Di Pietro, 2021: p‑Multilevel Preconditioners for HHO Discretizations of the Stokes Equations with Static Condensation):
+        /// p-Multigrid using <see cref="ClassicMultigrid"/> and <see cref="SoftGMRES"/> with <see cref="CellILU"/> or <see cref="BlockJacobi"/> as smoother.
+        /// </summary>
+        /// <returns></returns>
+        /// <remarks>
+        /// - the Botti and DiPietro approach uses only ILU, so <see cref="UseILU"/> must be set to true to comply with their findings;
+        /// - or own approach (<see cref="CreateInstanceImpl__Kummer"/>) out-performs this configuration;
+        ///   E.g. in their 2D test-case, polynomial order 5, 576 cells on one processor:
+        ///   - Botti and Di Pietro: 32 iter, 24 sec
+        ///   - Kummer: 7 iter, 3.3 sec
+        /// </remarks>
         internal ISubsystemSolver CreateInstanceImpl__BottiDiPietro(IOperatorMappingPair level, int[][] DegreeHierarchy) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;

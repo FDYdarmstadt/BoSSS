@@ -969,6 +969,17 @@ namespace ilPSP {
                     // directly on MultidimenasionalArray storage.
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                    var __C = _C.CloneAs();
+                    if (!transA && !transB) {
+                        __C.Multiply(alpha, _A, _B, beta, ref GEMMnn_Prog);
+                    } else if (transA && !transB) {
+                        __C.Multiply(alpha, _A, _B, beta, ref GEMMtn_Prog);
+                    } else if (!transA && transB) {
+                        __C.Multiply(alpha, _A, _B, beta, ref GEMMnt_Prog);
+                    } else if (transA && transB) {
+                        __C.Multiply(alpha, _A, _B, beta, ref GEMMtt_Prog);
+                    }
+
                     unsafe {
                         fixed(double* _pA = _A.Storage, _pB = _B.Storage, _pC = _C.Storage) {
                             double* pA = _pA + a00, pB = _pB + b00, pC = _pC + c00;
@@ -989,8 +1000,8 @@ namespace ilPSP {
                             //int N = transB ? B.NoOfRows : B.NoOfCols;
                             //int K = transA ? A.NoOfRows : A.NoOfCols;
 
-                            int LDA = transB ? Math.Max(1, K) : Math.Max(1, M);
-                            int LDB = transA ? Math.Max(1, N) : Math.Max(1, K);
+                            int LDA = (TRANSA == 'n') ? Math.Max(1, M) : Math.Max(1, K);
+                            int LDB = (TRANSB == 'n') ? Math.Max(1, K) : Math.Max(1, N);
                             int LDC = Math.Max(1, M);
 
 
@@ -998,6 +1009,56 @@ namespace ilPSP {
 
                         }
                     }
+
+                    var ERR = _C.CloneAs();
+                    ERR.Acc(-1.0, __C);
+                    double gemmErr = ERR.L2Norm();
+                    double denom = __C.L2Norm();
+                    if (gemmErr > 1e-6) {
+                        Console.WriteLine("gemm error " + gemmErr + ",  denom = " + denom + ", rel = " + (gemmErr / denom));
+
+                        A.SaveToTextFile("A.txt");
+                        B.SaveToTextFile("B.txt");
+                        _C.SaveToTextFile("C1.txt");
+                        __C.SaveToTextFile("C2.txt");
+
+                        unsafe {
+                            fixed (double* _pA = _A.Storage, _pB = _B.Storage, _pC = _C.Storage) {
+                                double* pA = _pA + a00, pB = _pB + b00, pC = _pC + c00;
+
+                                // C-order vs. FORTRAN-order
+                                // Note that we are using FORTRAN BLAS, while BoSSS stores in C-order;
+                                // therefore, we have to trick with A, B and the transposition
+
+
+                                int TRANSA = transB ? 't' : 'n';
+                                int TRANSB = transA ? 't' : 'n';
+
+                                int M = !transB ? _B.NoOfCols : _B.NoOfRows;
+                                int N = !transA ? _A.NoOfRows : _A.NoOfCols;
+                                int K = !transB ? _B.NoOfRows : _B.NoOfCols;
+
+                                //int M = transA ? A.NoOfCols : A.NoOfRows;
+                                //int N = transB ? B.NoOfRows : B.NoOfCols;
+                                //int K = transA ? A.NoOfRows : A.NoOfCols;
+
+                                int LDA = transB ? Math.Max(1, K) : Math.Max(1, M);
+                                int LDB = transA ? Math.Max(1, N) : Math.Max(1, K);
+
+                                int _LDA = (TRANSA == 'n') ? Math.Max(1, M) : Math.Max(1, K);
+                                int _LDB = (TRANSB == 'n') ? Math.Max(1, K) : Math.Max(1, N);
+
+                                int LDC = Math.Max(1, M);
+
+
+                                BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, pB, LDA, pA, LDB, beta, pC, LDC);
+
+                            }
+                        }
+
+                    }
+                    _C.Set(__C);
+
                     return;
                 } else if(_C.NoOfRows*_C.NoOfCols <= 512 && _A.NoOfRows * _A.NoOfCols <= 512 && _B.NoOfRows * _B.NoOfCols <= 512) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

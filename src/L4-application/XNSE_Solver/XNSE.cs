@@ -74,9 +74,9 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
             
-            /*
-            InitMPI();
-            var ids = new string[] {
+            
+            //InitMPI();
+            /*var ids = new string[] {
                 "R0Lv0p0",
                 //"R0Lv0p1",
                 //"R1Lv0p0",
@@ -104,8 +104,43 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             //*/
+            /*
+            for (int pass = 0; pass < 1; pass++) {
+                Stopwatch stw = new Stopwatch();
+                foreach (int mult in new int[] { 1 }) {
+                    foreach (var transpA in new[] {  false }) {
+                        foreach (var transpB in new[] { false }) {
 
-                        
+                            int N = 9 * mult, M = 6 * mult, L = 16 * mult;
+                            var A = MultidimensionalArray.Create(N, L); A.Storage.FillRandom(); A = transpA ? A.TransposeTo() : A;
+
+                            var B = MultidimensionalArray.Create(L, M); B.Storage.FillRandom(); B = transpB ? B.TransposeTo() : B;
+
+                            var C = MultidimensionalArray.Create(!transpA ? A.NoOfRows : A.NoOfCols, !transpB ? B.NoOfCols : B.NoOfRows); C.Storage.FillRandom();
+                            var D = C.CloneAs();
+
+                            stw.Reset();
+                            stw.Start();
+                            C.GEMM(1.0, A, B, 0.0, transpA, transpB);
+                            stw.Stop();
+                            double timeINTR = stw.Elapsed.TotalSeconds;
+
+                            stw.Reset();
+                            stw.Start();
+                            D.GEMM(1.0, A, B, 0.0, transpA, transpB);
+                            stw.Stop();
+                            double timeBLAS = stw.Elapsed.TotalSeconds;
+
+                            if (pass > 0)
+                                //Console.WriteLine($"mult = {mult}, C-Size = {C.NoOfCols*C.NoOfRows} INTR = {timeINTR} , BLAS = {timeBLAS}, Factor = {timeINTR/timeBLAS}");
+                                Console.WriteLine($"{(transpA ? 't' : '0')}{(transpB ? 't' : '0')} error: " + (C.Storage.L2Dist(D.Storage)));
+                        }
+                    }
+                }
+            }
+            */
+
+            
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);
