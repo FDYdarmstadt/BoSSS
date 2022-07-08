@@ -75,8 +75,8 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             
             
-            InitMPI();
-            /*var ids = new string[] {
+            /*InitMPI();
+            var ids = new string[] {
                 "R0Lv0p0",
                 //"R0Lv0p1",
                 //"R1Lv0p0",
@@ -102,19 +102,7 @@ namespace BoSSS.Application.XNSE_Solver {
             foreach (var id in ids) {
                 CellILU.Verify(id);
             }
-
-            //*/
-
-            ilPSP.MatrixOp_Tests.GEMMTest_Frame(1.0d, 2, true, false);
-            //foreach (int mult in new int[] { 1 }) {
-            //    foreach (var transpA in new[] { false }) {
-            //        foreach (var transpB in new[] { false }) {
-
-            //            ilPSP.MatrixOp_Tests.GEMMTest_Frame(1.0, mult, transpA, transpB);
-            //        }
-            //    }
-            //}
-            /*
+            */
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);
