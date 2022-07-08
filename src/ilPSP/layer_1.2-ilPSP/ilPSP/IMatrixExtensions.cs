@@ -423,8 +423,8 @@ namespace ilPSP {
         /// output;
         /// </param>
         /// <param name="BufferInFortranOrder">
-        /// - true:  <paramref name="buffer"/> will be witten in FORTRAN order (column-wise)
-        /// - false:  <paramref name="buffer"/> will be witten in C order (row-wise)
+        /// - true:  <paramref name="buffer"/> will be written in FORTRAN order (column-wise)
+        /// - false:  <paramref name="buffer"/> will be written in C order (row-wise)
         /// </param>
         static unsafe void CopyToUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
 #if DEBUG
@@ -969,6 +969,7 @@ namespace ilPSP {
                     // directly on MultidimenasionalArray storage.
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+                    /*
                     var __C = _C.CloneAs();
                     if (!transA && !transB) {
                         __C.Multiply(alpha, _A, _B, beta, ref GEMMnn_Prog);
@@ -979,6 +980,7 @@ namespace ilPSP {
                     } else if (transA && transB) {
                         __C.Multiply(alpha, _A, _B, beta, ref GEMMtt_Prog);
                     }
+                    */
 
                     unsafe {
                         fixed(double* _pA = _A.Storage, _pB = _B.Storage, _pC = _C.Storage) {
@@ -996,20 +998,18 @@ namespace ilPSP {
                             int N = !transA ? _A.NoOfRows : _A.NoOfCols;
                             int K = !transB ? _B.NoOfRows : _B.NoOfCols;
 
-                            //int M = transA ? A.NoOfCols : A.NoOfRows;
-                            //int N = transB ? B.NoOfRows : B.NoOfCols;
-                            //int K = transA ? A.NoOfRows : A.NoOfCols;
-
+   
                             int LDA = (TRANSA == 'n') ? Math.Max(1, M) : Math.Max(1, K);
                             int LDB = (TRANSB == 'n') ? Math.Max(1, K) : Math.Max(1, N);
                             int LDC = Math.Max(1, M);
 
 
-                            BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, pB, LDA, pA, LDB, beta, pC, LDC);
+                            BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, pB, _B.GetCycle(0), pA, _A.GetCycle(0), beta, pC, _C.GetCycle(0));
 
                         }
                     }
 
+                    /*
                     var ERR = _C.CloneAs();
                     ERR.Acc(-1.0, __C);
                     double gemmErr = ERR.L2Norm();
@@ -1033,7 +1033,7 @@ namespace ilPSP {
 
                                 int TRANSA = transB ? 't' : 'n';
                                 int TRANSB = transA ? 't' : 'n';
-
+                                
                                 int M = !transB ? _B.NoOfCols : _B.NoOfRows;
                                 int N = !transA ? _A.NoOfRows : _A.NoOfCols;
                                 int K = !transB ? _B.NoOfRows : _B.NoOfCols;
@@ -1051,13 +1051,14 @@ namespace ilPSP {
                                 int LDC = Math.Max(1, M);
 
 
-                                BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, pB, LDA, pA, LDB, beta, pC, LDC);
+                                BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, pB, _B.GetCycle(0), pA, _A.GetCycle(0), beta, pC, _C.GetCycle(0));
 
                             }
                         }
 
                     }
                     _C.Set(__C);
+                    */
 
                     return;
                 } else if(_C.NoOfRows*_C.NoOfCols <= 512 && _A.NoOfRows * _A.NoOfCols <= 512 && _B.NoOfRows * _B.NoOfCols <= 512) {
@@ -1109,9 +1110,9 @@ namespace ilPSP {
                     int LDC = Math.Max(1, M);
 
                     int i0, i1, i2;
-                    double[] __A = TempBuffer.GetTempBuffer(out i0, M * K);
-                    double[] __B = TempBuffer.GetTempBuffer(out i1, N * K);
-                    double[] __C = TempBuffer.GetTempBuffer(out i2, M * N);
+                    double[] __A = TempBuffer.GetTempBuffer(out i0, A.NoOfRows * A.NoOfCols);
+                    double[] __B = TempBuffer.GetTempBuffer(out i1, B.NoOfRows * B.NoOfCols);
+                    double[] __C = TempBuffer.GetTempBuffer(out i2, C.NoOfRows * C.NoOfCols);
                     fixed (double* pA = __A, pB = __B, pC = __C) {
                         CopyToUnsafeBuffer(A, pA, true);
                         CopyToUnsafeBuffer(B, pB, true);

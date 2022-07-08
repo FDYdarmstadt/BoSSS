@@ -75,7 +75,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             
             
-            //InitMPI();
+            InitMPI();
             /*var ids = new string[] {
                 "R0Lv0p0",
                 //"R0Lv0p1",
@@ -104,7 +104,7 @@ namespace BoSSS.Application.XNSE_Solver {
             }
 
             //*/
-            /*
+            
             for (int pass = 0; pass < 1; pass++) {
                 Stopwatch stw = new Stopwatch();
                 foreach (int mult in new int[] { 1 }) {
@@ -138,7 +138,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                 }
             }
-            */
+            /*
 
             
             //DeleteOldPlotFiles();
