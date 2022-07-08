@@ -426,7 +426,7 @@ namespace ilPSP {
         /// - true:  <paramref name="buffer"/> will be written in FORTRAN order (column-wise)
         /// - false:  <paramref name="buffer"/> will be written in C order (row-wise)
         /// </param>
-        static unsafe void CopyToUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
+        internal static unsafe void CopyToUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
 #if DEBUG
             if(M.GetType().IsValueType)
                 throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
@@ -462,7 +462,7 @@ namespace ilPSP {
         /// - true: <paramref name="buffer"/> will be read in FORTRAN order (column-wise)
         /// - false: <paramref name="buffer"/> will be read in C order (row-wise)
         /// </param>
-        static unsafe void CopyFromUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
+        internal static unsafe void CopyFromUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
             int I = M.NoOfRows, J = M.NoOfCols;
 
             if (BufferInFortranOrder) {
@@ -1128,6 +1128,11 @@ namespace ilPSP {
                 }
             }
         }
+
+       
+
+        
+
 
         /// <summary>
         /// total absolute sum of all entries

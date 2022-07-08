@@ -99,6 +99,7 @@ namespace PublicTestRunner {
         virtual public Type[] FullTest {
             get {
                 return new Type[] {
+                        typeof(ilPSP.MultidimensionalArray_Tests),
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                         typeof(AdvancedSolverTests.TestsMain),
                         typeof(BoSSS.Application.CDG_ProjectionTest.AllUpTest),
