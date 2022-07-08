@@ -329,8 +329,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new ApplicationException("mismatch of MPI communicators");
                 
                 if (this.GetCellRestriction != null) {
-                    if (m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks != this.GetCellRestriction().Length)
-                        throw new Exception("");
+                    //if (m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks != this.GetCellRestriction().Length)
+                    //    throw new Exception($"Blocks in Operator Matrix: {m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks}," +
+                    //        $" number of cell restriction: {this.GetCellRestriction().Length}");
+
+                    Console.Error.WriteLine(
+                        $"Rank{op.DgMapping.MpiRank}of{op.DgMapping.MpiSize}: " +
+                        $"Blocks in Operator Matrix: {m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks}," +
+                            $" number of cell restriction: {this.GetCellRestriction().Length}");
                 }
 
                 if (LowerPSolver != null && LenSub > 0)
