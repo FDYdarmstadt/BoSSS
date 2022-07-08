@@ -328,10 +328,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if (m_MgOperatorRestriction.DgMapping.MPI_Comm != m_MgOperatorRestriction.OperatorMatrix.MPI_Comm)
                     throw new ApplicationException("mismatch of MPI communicators");
                 
-                if (this.GetCellRestriction != null) {
-                    if (m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks != this.GetCellRestriction().Length)
-                        throw new Exception("");
-                }
+                //if (this.GetCellRestriction != null) {
+                //    if (m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks != this.GetCellRestriction().Length)
+                //        throw new Exception("");
+                //}
 
                 if (LowerPSolver != null && LenSub > 0)
                     LowerPSolver.Init(m_MgOperatorRestriction);
