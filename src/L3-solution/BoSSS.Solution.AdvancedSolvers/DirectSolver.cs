@@ -148,7 +148,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// MATLAB 'backslash' solver, see <see cref="ilPSP.Connectors.Matlab.Extensions.SolveMATLAB{T1, T2}(IMutableMatrixEx, T1, T2, string)"/> 
             /// </summary>
-            Matlab
+            Matlab,
+
         }
 
         void InitImpl(IOperatorMappingPair op) {
@@ -336,17 +337,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 if(Residual != null) {
-                    //Console.Write("Checking residual (run {0}) ... ", IterCnt - 1);
                     double MatrixInfNorm = m_Mtx.InfNorm();
-                    double RhsNorm_loc = Residual.L2NormPow2();
-                    m_Mtx.SpMV(-1.0, X, 1.0, Residual);
 
+                    double RhsNorm_loc = Residual.L2NormPow2();
+
+                    m_Mtx.SpMV(-1.0, X, 1.0, Residual);
 
                     double[] normsGlobPow2 = (new[] { RhsNorm_loc, Residual.L2NormPow2(), B.L2NormPow2(), X.L2NormPow2() }).MPISum(m_Mtx.MPI_Comm);
                     double RhsNorm = normsGlobPow2[0].Sqrt();
                     double ResidualNorm = normsGlobPow2[1].Sqrt();
                     double SolutionNorm = normsGlobPow2[2].Sqrt();
-
                     double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
                     double RelResidualNorm = ResidualNorm / Denom;
 

@@ -467,7 +467,7 @@ namespace BoSSS.Foundation.Caching {
 #endif
 
             MultidimensionalArray R = null;
-            if(lastCell_j0 == j0 && lastCell_Len == Len && lastCell_Degree == Degree && lastCell_NSref == NS.Reference) {
+            if(NS.Reference != 0 && lastCell_j0 == j0 && lastCell_Len == Len && lastCell_Degree == Degree && lastCell_NSref == NS.Reference) {
                 R = (MultidimensionalArray)Cache.GetItem(lastCell_CashRef);
                 Debug.Assert((R == null) || (R.GetLength(0) == Len));
                 Debug.Assert((R == null) || (R.GetLength(1) == NS.NoOfNodes));
@@ -483,7 +483,8 @@ namespace BoSSS.Foundation.Caching {
                 this.m_ComputeValues(NS, j0, Len, Degree, R);
                 Debug.Assert(R.GetLength(0) == Len);
                 Debug.Assert(R.GetLength(1) == NS.NoOfNodes);
-                lastCell_CashRef = Cache.CacheItem(R, R.Length * sizeof(double));
+                if(NS.Reference != 0)
+                    lastCell_CashRef = Cache.CacheItem(R, R.Length * sizeof(double));
             }
             return R;
         }

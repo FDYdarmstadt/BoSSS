@@ -1,9 +1,11 @@
 ﻿using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.LinSolvers;
+using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -12,12 +14,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
     /// <summary>
-    /// Recursive p-Multigrid on a single mesh level;
-    /// this object is not a solver on its own, but it performs the restriction of the operator matrix
-    /// to a certain **subset of cells and modes**,
-    /// and applies the <see cref="LowerPSolver"/> onto it.
+    /// Restriction of a <see cref="IOperatorMappingPair"/> onto a sub-mesh with lower polynomial degree, 
+    /// i.e. this object is not a solver on its own, but it performs the restriction of the operator matrix
+    /// to a certain **subset of cells and modes**.
+    /// - sub-mes restriction and degree restriction can be used independent,
+    ///   i.e. it is also possible to use only one of them
+    /// - the solution of the sub-system is performed by <see cref="LowerPSolver"/>
+    /// - the polynomial degree hierarchy is defined by setting <see cref="RestrictedDeg"/>
+    /// - mesh restriction is performed by <see cref="GetCellRestriction"/>
     /// </summary>
-    public class PRestriction : ISubsystemSolver {
+    public class GridAndDegRestriction : ISubsystemSolver {
+
+        /*
+        static int counter_objectId = 1;
+
+        public int objectId;
+
+        /// <summary>
+        /// ctor
+        /// </summary>
+        public GridAndDegRestriction() {
+            objectId = counter_objectId;
+            counter_objectId++;
+        }
+        */
 
         /// <summary>
         /// Note: at this point, we do not support everything which a <see cref="SubBlockSelector"/> can support.
@@ -27,24 +47,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             public MgOperatorRestriction(IOperatorMappingPair Unrestricted, int[] RestrictedDeg, Func<int[]> __GetCellRestriction, Func<BlockMsrMatrix> __GetExtRows, bool __MPIself) {
-                
-                var subBlock = new SubBlockSelector(Unrestricted.DgMapping);
+                using (new FuncTrace()) {
+                    var subBlock = new SubBlockSelector(Unrestricted.DgMapping);
 
-                if(__GetCellRestriction != null) {
-                    jLoc2Glob = __GetCellRestriction();
-                    subBlock.CellSelector(jLoc2Glob);
-                }
-                subBlock.SetModeSelector((int jCell, int iVar, int iSpc, int Deg) => Deg <= RestrictedDeg[iVar]);
+                    if (__GetCellRestriction != null) {
+                        jLoc2Glob = __GetCellRestriction();
+                        subBlock.CellSelector(jLoc2Glob);
+                    }
+                    subBlock.SetModeSelector((int jCell, int iVar, int iSpc, int Deg) => Deg <= RestrictedDeg[iVar]);
 
-                m_MPIself = __MPIself;
-                m_RestrictedDeg = RestrictedDeg;
-                m_Unrestricted = Unrestricted;
-                m_Mask = new BlockMask(subBlock, __GetExtRows?.Invoke());
+                    m_MPIself = __MPIself;
+                    m_RestrictedDeg = RestrictedDeg;
+                    m_Unrestricted = Unrestricted;
+                    m_Mask = new BlockMask(subBlock, __GetExtRows?.Invoke());
 
-                var idx = m_Mask.GlobalIndices_Internal;
-                for(int i = 1; i < idx.Count; i++) {
-                    if (idx[i - 1] >= idx[i])
-                        throw new Exception("ghdshj: " + Unrestricted.GetType());
+                    var idx = m_Mask.GlobalIndices_Internal;
+                    for (int i = 1; i < idx.Count; i++) {
+                        if (idx[i - 1] >= idx[i])
+                            throw new Exception("ghdshj: " + Unrestricted.GetType());
+                    }
                 }
             }
 
@@ -86,7 +107,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         case 1: return p + 1;
                         case 2: return (p * p + 3 * p + 2) / 2;
                         case 3: return (p * p * p + 6 * p * p + 11 * p + 6) / 6;
-                        default: throw new ArgumentOutOfRangeException("wtf?Spacialdim=1,2,3 expected");
+                        default: throw new ArgumentOutOfRangeException("Unknown spatial dimension: " + SpacDim);
                     }
                 }
 
@@ -108,9 +129,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 public int SpatialDimension => m_ownerHack.m_Unrestricted.DgMapping.SpatialDimension;
 
-                public int NoOfLocalUpdatedCells => m_ownerHack.m_Unrestricted.DgMapping.NoOfLocalUpdatedCells;
-
-                public int LocalCellCount => m_ownerHack.m_Unrestricted.DgMapping.LocalCellCount;
+                public int NoOfLocalUpdatedCells {
+                    get {
+                        if (m_ownerHack.jLoc2Glob != null)
+                            return m_ownerHack.jLoc2Glob.Length;
+                        else
+                            return m_ownerHack.m_Unrestricted.DgMapping.NoOfLocalUpdatedCells;
+                    }
+                }
+                public int LocalCellCount {
+                    get {
+                        if (m_ownerHack.jLoc2Glob != null) {
+                            if (this.MpiSize == 1)
+                                return NoOfLocalUpdatedCells;
+                            else
+                                throw new NotImplementedException();
+                        } else {
+                            return m_ownerHack.m_Unrestricted.DgMapping.LocalCellCount;
+                        }
+                    }
+                }
 
                 public SpeciesId[] UsedSpecies => m_ownerHack.m_Unrestricted.DgMapping.UsedSpecies;
 
@@ -197,12 +235,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// Optional restriction to a subset of cells/matrix blocks
+        /// Optional restriction to a subset of cells/matrix blocks:
+        /// returns local indices of cells which should be in the selection;
+        /// if null, all cells are selected
         /// </summary>
         public Func<int[]> GetCellRestriction = null;
 
         /// <summary>
-        /// Matrix containing external rows, if <see cref="GetCellRestriction"/> provides external cells
+        /// Matrix containing external rows, if <see cref="GetCellRestriction"/> provides external cells;
+        /// these rows would then be copied to this processor
         /// </summary>
         public Func<BlockMsrMatrix> GetExtRows = null;
 
@@ -238,7 +279,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public object Clone() {
-            return new PRestriction() {
+            return new GridAndDegRestriction() {
                 LowerPSolver = this.LowerPSolver?.CloneAs()
             };
         }
@@ -254,37 +295,57 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MgOperatorRestriction m_MgOperatorRestriction;
 
         void InitImpl(IOperatorMappingPair op) {
-            this.Dispose();
-            this.ResetStat();
+            using (var tr = new FuncTrace()) {
+                this.Dispose();
+                this.ResetStat();
 
-            //int[] RestrictedDeg = op.DgMapping.DgDegree.Select(p => p - 1).ToArray();
-            if (RestrictedDeg == null)
-                throw new NotSupportedException("'RestrictedDeg' must be initialized before this object can be used.");
-            if (RestrictedDeg.Length != op.DgMapping.NoOfVariables)
-                throw new NotSupportedException("Configuration Error: length of 'RestrictedDeg' must match number of variables.");
-            if(RestrictedDeg.Min() < 0)
-                throw new NotSupportedException("Cannot reduce DG Degree below 0.");
-            if ((this.GetExtRows != null) != (this.GetExtMem != null))
-                throw new ArgumentException("Illegal configuration; if external matrix is provided, also external memory must be provided, and vise-versa.");
+                //int[] RestrictedDeg = op.DgMapping.DgDegree.Select(p => p - 1).ToArray();
+                if (RestrictedDeg == null)
+                    throw new NotSupportedException("'RestrictedDeg' must be initialized before this object can be used.");
+                if (RestrictedDeg.Length != op.DgMapping.NoOfVariables)
+                    throw new NotSupportedException("Configuration Error: length of 'RestrictedDeg' must match number of variables.");
+                if (RestrictedDeg.Min() < 0)
+                    throw new NotSupportedException("Cannot reduce DG Degree below 0.");
+                if ((this.GetExtRows != null) != (this.GetExtMem != null))
+                    throw new ArgumentException("Illegal configuration; if external matrix is provided, also external memory must be provided, and vise-versa.");
 
-            for (int iVar = 0; iVar < op.DgMapping.NoOfVariables; iVar++) {
-                if(RestrictedDeg[iVar] > op.DgMapping.DgDegree[iVar])
-                    throw new NotSupportedException($"Configuration Error: 'RestrictedDeg[{iVar}] == {RestrictedDeg[iVar]}' but the maximum supported degree for the respective variable is {op.DgMapping.DgDegree[iVar]}..");
+                for (int iVar = 0; iVar < op.DgMapping.NoOfVariables; iVar++) {
+                    if (RestrictedDeg[iVar] > op.DgMapping.DgDegree[iVar])
+                        throw new NotSupportedException($"Configuration Error: 'RestrictedDeg[{iVar}] == {RestrictedDeg[iVar]}' but the maximum supported degree for the respective variable is {op.DgMapping.DgDegree[iVar]}..");
+                }
+                if (op.DgMapping.MPI_Comm != op.OperatorMatrix.MPI_Comm)
+                    throw new ApplicationException("mismatch of MPI communicators");
+
+
+                Len = op.DgMapping.LocalLength;
+                m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows, this.RestrictToMPIself);
+                LenSub = m_MgOperatorRestriction.DgMapping.TotalLength;
+
+                tr.Info("MPI rank of DG mapping " + m_MgOperatorRestriction.DgMapping.MpiRank + " of " + m_MgOperatorRestriction.DgMapping.MpiSize);
+                if (m_MgOperatorRestriction.DgMapping.MPI_Comm != m_MgOperatorRestriction.OperatorMatrix.MPI_Comm)
+                    throw new ApplicationException("mismatch of MPI communicators");
+
+                if (m_MgOperatorRestriction.DgMapping.MPI_Comm != m_MgOperatorRestriction.OperatorMatrix.MPI_Comm)
+                    throw new ApplicationException("mismatch of MPI communicators");
+                
+
+                if (this.GetCellRestriction != null) {
+                    // Note, fk, 08jul22: the following exception would wrongfully occur when there are completely empty cells;
+                    // then, empty blocks are eliminated from the matrix and the number of matrix blocks might be less than the number of cells.
+
+                    //if (m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks != this.GetCellRestriction().Length)
+                    //    throw new Exception($"Blocks in Operator Matrix: {m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks}," +
+                    //        $" number of cell restriction: {this.GetCellRestriction().Length}");
+
+                    //Console.Error.WriteLine(
+                    //    $"Rank{op.DgMapping.MpiRank}of{op.DgMapping.MpiSize}: " +
+                    //    $"Blocks in Operator Matrix: {m_MgOperatorRestriction.OperatorMatrix._RowPartitioning.LocalNoOfBlocks}," +
+                    //        $" number of cell restriction: {this.GetCellRestriction().Length}");
+                }
+
+                if (LowerPSolver != null && LenSub > 0)
+                    LowerPSolver.Init(m_MgOperatorRestriction);
             }
-            if (op.DgMapping.MPI_Comm != op.OperatorMatrix.MPI_Comm)
-                throw new ApplicationException("mismatch of MPI communicators");
-
-
-            Len = op.DgMapping.LocalLength;
-            m_MgOperatorRestriction = new MgOperatorRestriction(op, RestrictedDeg, this.GetCellRestriction, this.GetExtRows, this.RestrictToMPIself);
-            LenSub = m_MgOperatorRestriction.DgMapping.TotalLength;
-
-            if (m_MgOperatorRestriction.DgMapping.MPI_Comm != m_MgOperatorRestriction.OperatorMatrix.MPI_Comm)
-                throw new ApplicationException("mismatch of MPI communicators");
-
-            if (LowerPSolver != null && LenSub > 0)
-                LowerPSolver.Init(m_MgOperatorRestriction);
-
         }
 
         int Len;
@@ -364,6 +425,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public BlockMsrMatrix SubsysMatrix {
             get {
                 return m_MgOperatorRestriction.OperatorMatrix;
+            }
+        }
+
+        /// <summary>
+        /// Access to sub-system
+        /// </summary>
+        public IOperatorMappingPair OperatorRestriction {
+            get {
+                return m_MgOperatorRestriction;
             }
         }
 

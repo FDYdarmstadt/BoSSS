@@ -91,6 +91,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
     }
 
     */
+
+    /*
     class BlockLevelPmg : IDisposable {
 
         public bool m_FullSolveOfCutcells = true;
@@ -157,6 +159,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        
         /// <summary>
         /// For performance sake, just build the objects, which are passed to this function, once.
         /// </summary>
@@ -251,6 +254,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             loSolver.DefineMatrix(loBlock);
 
         }
+        
 
         private void ModifyLowSelector(SubBlockSelector sbs, MultigridOperator op) {
             AssignXdgBlocksModification(sbs, op, true);
@@ -380,5 +384,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
     }
 
+    */
     
 }

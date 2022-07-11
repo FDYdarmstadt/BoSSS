@@ -27,15 +27,17 @@ using BoSSS.Platform.Utils;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
-    public enum Library {
-        HYPRE = 0,
-        Intel_MKL = 1,
-    }
+    
 
     /// <summary>
-    /// Parallel ILU from HYPRE library
+    /// ILU from HYPRE or INTEL library 
     /// </summary>
-    public class sparseILU : ISubsystemSolver, IDisposable {
+    public class SparseILU : ISubsystemSolver, IDisposable {
+
+        public enum Library {
+            HYPRE = 0,
+            Intel_MKL = 1,
+        }
 
         public int IterationsInNested {
             get { return 0; }
@@ -78,6 +80,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        /*
         /// <summary>
         /// forces to apply ILU only on local systems.
         /// This is always the case for the intel version, because library is sequential.
@@ -89,13 +92,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new Exception("No adjustment after initialization allowed!");
                 m_LocalPrecond = value; }
         }
+        */
 
         /// <summary>
         /// Switch between HYPRE and INTEL version
         /// </summary>
         public Library UsedLibrary {
             set {
-                m_lib=value;
+                m_lib = value;
             }
         }
 
@@ -117,13 +121,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             if (!Mtx.ColPartition.EqualsPartition(MgMap))
                 throw new ArgumentException("Column partitioning mismatch.");
 
+            if (m_ILU_Solver != null) {
+                m_ILU_Solver.Dispose();
+                m_ILU_Solver = null;
+            }
 
-            if (m_LocalPrecond || MgMap.MpiSize > 1 && m_lib == Library.Intel_MKL) {
-                m_ILUmatrix = GetLocalMatrix(Mtx);
-                Console.WriteLine("INFO: the sparse ILU preconditioner is applied to local system");
-            } else
-                m_ILUmatrix = Mtx.CloneAs();
-            
+
+            //if (m_LocalPrecond || MgMap.MpiSize > 1 && m_lib == Library.Intel_MKL) {
+            //    m_ILUmatrix = GetLocalMatrix(Mtx);
+            //    Console.WriteLine("INFO: the sparse ILU preconditioner is applied to local system");
+            //} else
+            m_ILUmatrix = Mtx.CloneAs();
+
 
             switch (m_lib) {
                 case Library.HYPRE:
@@ -135,6 +144,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     m_ILU_Solver = new ilPSP.LinSolvers.ILU.ILUSolver() {
                     };
                     break;
+                default:
+                    throw new NotImplementedException();
             }
 
             // Zeros on diagonal elements because of saddle point structure
@@ -142,7 +153,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             long iE = m_ILUmatrix._RowPartitioning.iE;
             for (long iRow = i0; iRow < iE; iRow++) {
                 if (m_ILUmatrix.GetDiagonalElement(iRow) == 0) {
-                    m_ILUmatrix.SetDiagonalElement(iRow, 1);
+                    m_ILUmatrix.SetDiagonalElement(iRow, 1e-8);
                 }
             }
             if (m_ILUmatrix != null && m_ILUmatrix.RowPartitioning.LocalLength > 0) 
@@ -152,7 +163,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         ISparseSolver m_ILU_Solver;
         BlockMsrMatrix m_ILUmatrix;
         IOperatorMappingPair m_mgop;
-        bool m_LocalPrecond = false;
+        //bool m_LocalPrecond = false;
+        
         Library m_lib = Library.Intel_MKL;
 
         public void Solve<P, Q>(P X, Q B)
@@ -163,6 +175,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             m_ThisLevelIterations += SolverResult.NoOfIterations;
         }
 
+        /*
         public static BlockMsrMatrix GetLocalMatrix(BlockMsrMatrix Matrix) {
             int rank;
             MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out rank);
@@ -186,16 +199,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Matrix.WriteSubMatrixTo(localMatrix, RowISrc, default(long[]), RowISrc, default(long[]));
             return localMatrix;
         }
+        */
 
         public void Dispose() {
-            m_ILU_Solver.Dispose();
+            if (m_ILU_Solver != null) {
+                m_ILU_Solver.Dispose();
+                m_ILU_Solver = null;
+            }
             m_ILUmatrix = null;
             m_mgop = null;
         }
 
         public object Clone() {
-            var clone = new sparseILU();
-            clone.LocalPreconditioning = this.m_LocalPrecond;
+            var clone = new SparseILU();
+            //clone.LocalPreconditioning = this.m_LocalPrecond;
             if(this.IterationCallback !=null) clone.IterationCallback = this.IterationCallback.CloneAs();
             return clone;
         }
