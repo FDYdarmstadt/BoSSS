@@ -25,7 +25,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public override string Shortname => "Ortho w pmG";
 
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-            return CreateInstanceImpl__Kummer(level, level.DGpolynomialDegreeHierarchy);
+            var r = CreateInstanceImpl__Kummer(level, level.DGpolynomialDegreeHierarchy);
+
+            if(r is IProgrammableTermination pt) {
+                pt.TerminationCriterion =  this.DefaultTermination;
+
+            }
+            return r;
         }
 
         /// <summary>

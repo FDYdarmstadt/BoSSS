@@ -798,9 +798,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 pmg_pTerm.TerminationCriterion = delegate (int i, double r0, double r) {
                                     var ret = (i <= 1 || r > r0 * 0.1, true);
                                     //var ret = (i <= 1, true);
-                                    if (!ret.Item1)
-                                        // sub-solver terminates:
-                                        Console.WriteLine($"Block solver {iPartCopy} lv {op.LevelIndex}: {i} {r / r0:0.###e-00} {ret}");
+                                    //if (!ret.Item1)
+                                    //    // sub-solver terminates:
+                                    //    Console.WriteLine($"Block solver {iPartCopy} lv {op.LevelIndex}: {i} {r / r0:0.###e-00} {ret}");
                                     return ret;
                                 };
                             }
