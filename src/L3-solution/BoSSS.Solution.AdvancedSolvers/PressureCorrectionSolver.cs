@@ -56,6 +56,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // pressure gradient
                 VelDiv = prsCompsMask.GetSubBlockMatrix(Mtx, velCompsMask, Mtx.MPI_Comm);
 
+                
 
                 var Poisson = BlockMsrMatrix.Multiply(VelDiv, PrGrad);
                 PressureSolver = new PARDISOSolver();

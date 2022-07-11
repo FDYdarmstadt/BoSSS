@@ -824,10 +824,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 }
 
-
-                if (PostSmoother__0 != null)
-                    PostSmoother__0.Init((MultigridOperator)op);
-
                 //if(op is MultigridOperator mgop) {
                 //    ScalingKakke(mgop);
                 //}
@@ -892,12 +888,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate PostSmoother;
 
 
-        /// <summary>
-        /// testcode
-        /// </summary>
-        public ISolverSmootherTemplate PostSmoother__0;
-
-
+      
         /// <summary>
         /// 
         /// </summary>
@@ -1089,17 +1080,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //    PreSmoother.Solve(PostCorr, Res);
                             //else
 
-                            //if(PostSmoother__0 != null && g%2 == 0)
-                            //    PostSmoother__0.Solve(PostCorr, Res); // compute correction (Nachglättung)
-                            //else
-                                PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
-
-
-                            double resNorm_prev = resNorm;
-                            //ortho.AddSol(ref PostCorr, "postsmooth" + g); //orthonormalization and residual minimization
-                            //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
+                            PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + id + "--" + g);
-                            //Console.WriteLine($"  postsmooth {g} res reduction: {(resNorm_prev/resNorm):0.###e-00}");
+
                         }
                     } // end of post-smoother loop
 

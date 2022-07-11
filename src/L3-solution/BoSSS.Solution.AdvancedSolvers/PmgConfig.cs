@@ -79,13 +79,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         internal ISubsystemSolver CreateInstanceImpl__Kummer(IOperatorMappingPair level, int[][] DegreeHierarchy) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
-                //var precond = new LevelPmg();
-                //precond.config.UseHiOrderSmoothing = false;
-                //precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
-                //precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
-                //precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
-                //precond.config.EqualOrder = this.EqualOrder;
-
+                
                 var MPIcomm = level.DgMapping.MPI_Comm;
 
                 //weirdo idea:
@@ -112,7 +106,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             LowerPSolver = CreateLevelRecursive(iLevel + 1)
                         };
 
-                        ISolverSmootherTemplate post, post__0, pre;
+                        ISolverSmootherTemplate post, pre;
 
                         //var bj = new BlockJacobi() {
                         //    NoOfIterations = 1,
@@ -138,21 +132,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             ((CellILU)post).id = "Lv0";
 
-                            //post = new SparseILU() {
-                            //    UsedLibrary = SparseILU.Library.Intel_MKL
-                            //};
-
-                            if (iLevel == 0)
-                                post__0 = new PressureCorrectionSolver();
-                            else
-                                post__0 = null;
 
                         } else {
                             post = new BlockJacobi() {
                                 NoOfIterations = 1,
                             };
                             pre = null;
-                            post__0 = null;
                         }
 
 
@@ -160,7 +145,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             CoarserLevelSolver = coarseSolver,
                             PreSmoother = pre,
                             PostSmoother = post,
-                            PostSmoother__0 = post__0
                         };
                         omg.config.NoOfPostSmootherSweeps = 10;
                         omg.config.m_omega = 1;
@@ -169,7 +153,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     //Console.WriteLine("###########################   testcode aktiv ##################################");
-                    if ((iLevel >= 2) || (DegreeHierarchy.Length == iLevel + 1)) {
+                    if ((iLevel >= 1) || (DegreeHierarchy.Length == iLevel + 1)) {
 
                         tr.Info("direct solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
 
