@@ -664,6 +664,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             InitImpl(op);
+
         }
 
         
@@ -672,22 +673,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int pLowPres = pLowVel - 1;
 
             SubBlockSelector VelLo = new SubBlockSelector(op.DgMapping);
-            VelLo.VariableSelector(0, 1);
+            VelLo.SetVariableSelector(0, 1);
             VelLo.SetModeSelector(k => k <= pLowVel);
             BlockMask maskVelLo = new BlockMask(VelLo);
 
             SubBlockSelector VelHi = new SubBlockSelector(op.DgMapping);
-            VelHi.VariableSelector(0, 1);
+            VelHi.SetVariableSelector(0, 1);
             VelHi.SetModeSelector(k => k > pLowVel);
             BlockMask maskVelHi = new BlockMask(VelHi);
             
             SubBlockSelector PresLo = new SubBlockSelector(op.DgMapping);
-            PresLo.VariableSelector(2);
+            PresLo.SetVariableSelector(2);
             PresLo.SetModeSelector(k => k <= pLowPres);
             BlockMask maskPresLo = new BlockMask(PresLo);
 
             SubBlockSelector PresHi = new SubBlockSelector(op.DgMapping);
-            PresHi.VariableSelector(2);
+            PresHi.SetVariableSelector(2);
             PresHi.SetModeSelector(k => k > pLowPres);
             BlockMask maskPresHi = new BlockMask(PresHi);
 
@@ -823,6 +824,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 }
 
+
+                if (PostSmoother__0 != null)
+                    PostSmoother__0.Init((MultigridOperator)op);
+
                 //if(op is MultigridOperator mgop) {
                 //    ScalingKakke(mgop);
                 //}
@@ -882,9 +887,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate PreSmoother;
 
         /// <summary>
-        /// high frequency solver before coarse grid correction
+        /// high frequency solver after coarse grid correction
         /// </summary>
         public ISolverSmootherTemplate PostSmoother;
+
+
+        /// <summary>
+        /// testcode
+        /// </summary>
+        public ISolverSmootherTemplate PostSmoother__0;
 
 
         /// <summary>
@@ -1077,13 +1088,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //if (g % 2 == 1)
                             //    PreSmoother.Solve(PostCorr, Res);
                             //else
-                            PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
+
+                            //if(PostSmoother__0 != null && g%2 == 0)
+                            //    PostSmoother__0.Solve(PostCorr, Res); // compute correction (Nachglättung)
+                            //else
+                                PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
 
 
-
+                            double resNorm_prev = resNorm;
                             //ortho.AddSol(ref PostCorr, "postsmooth" + g); //orthonormalization and residual minimization
                             //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + id + "--" + g);
+                            //Console.WriteLine($"  postsmooth {g} res reduction: {(resNorm_prev/resNorm):0.###e-00}");
                         }
                     } // end of post-smoother loop
 

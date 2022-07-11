@@ -112,7 +112,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             LowerPSolver = CreateLevelRecursive(iLevel + 1)
                         };
 
-                        ISolverSmootherTemplate post, pre;
+                        ISolverSmootherTemplate post, post__0, pre;
 
                         //var bj = new BlockJacobi() {
                         //    NoOfIterations = 1,
@@ -142,11 +142,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //    UsedLibrary = SparseILU.Library.Intel_MKL
                             //};
 
+                            if (iLevel == 0)
+                                post__0 = new PressureCorrectionSolver();
+                            else
+                                post__0 = null;
+
                         } else {
                             post = new BlockJacobi() {
                                 NoOfIterations = 1,
                             };
                             pre = null;
+                            post__0 = null;
                         }
 
 
@@ -154,6 +160,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             CoarserLevelSolver = coarseSolver,
                             PreSmoother = pre,
                             PostSmoother = post,
+                            PostSmoother__0 = post__0
                         };
                         omg.config.NoOfPostSmootherSweeps = 10;
                         omg.config.m_omega = 1;
