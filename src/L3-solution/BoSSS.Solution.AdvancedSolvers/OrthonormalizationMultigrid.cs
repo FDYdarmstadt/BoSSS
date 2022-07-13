@@ -664,6 +664,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public void Init(MultigridOperator op) {
             InitImpl(op);
+
         }
 
         
@@ -672,22 +673,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int pLowPres = pLowVel - 1;
 
             SubBlockSelector VelLo = new SubBlockSelector(op.DgMapping);
-            VelLo.VariableSelector(0, 1);
+            VelLo.SetVariableSelector(0, 1);
             VelLo.SetModeSelector(k => k <= pLowVel);
             BlockMask maskVelLo = new BlockMask(VelLo);
 
             SubBlockSelector VelHi = new SubBlockSelector(op.DgMapping);
-            VelHi.VariableSelector(0, 1);
+            VelHi.SetVariableSelector(0, 1);
             VelHi.SetModeSelector(k => k > pLowVel);
             BlockMask maskVelHi = new BlockMask(VelHi);
             
             SubBlockSelector PresLo = new SubBlockSelector(op.DgMapping);
-            PresLo.VariableSelector(2);
+            PresLo.SetVariableSelector(2);
             PresLo.SetModeSelector(k => k <= pLowPres);
             BlockMask maskPresLo = new BlockMask(PresLo);
 
             SubBlockSelector PresHi = new SubBlockSelector(op.DgMapping);
-            PresHi.VariableSelector(2);
+            PresHi.SetVariableSelector(2);
             PresHi.SetModeSelector(k => k > pLowPres);
             BlockMask maskPresHi = new BlockMask(PresHi);
 
@@ -882,11 +883,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public ISolverSmootherTemplate PreSmoother;
 
         /// <summary>
-        /// high frequency solver before coarse grid correction
+        /// high frequency solver after coarse grid correction
         /// </summary>
         public ISolverSmootherTemplate PostSmoother;
 
 
+      
         /// <summary>
         /// 
         /// </summary>
@@ -1077,13 +1079,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //if (g % 2 == 1)
                             //    PreSmoother.Solve(PostCorr, Res);
                             //else
+
                             PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
-
-
-
-                            //ortho.AddSol(ref PostCorr, "postsmooth" + g); //orthonormalization and residual minimization
-                            //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 3 + g);
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + id + "--" + g);
+
                         }
                     } // end of post-smoother loop
 

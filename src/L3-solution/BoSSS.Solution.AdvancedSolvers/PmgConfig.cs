@@ -79,13 +79,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         internal ISubsystemSolver CreateInstanceImpl__Kummer(IOperatorMappingPair level, int[][] DegreeHierarchy) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
-                //var precond = new LevelPmg();
-                //precond.config.UseHiOrderSmoothing = false;
-                //precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
-                //precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
-                //precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
-                //precond.config.EqualOrder = this.EqualOrder;
-
+                
                 var MPIcomm = level.DgMapping.MPI_Comm;
 
                 //weirdo idea:
@@ -138,9 +132,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             ((CellILU)post).id = "Lv0";
 
-                            //post = new SparseILU() {
-                            //    UsedLibrary = SparseILU.Library.Intel_MKL
-                            //};
 
                         } else {
                             post = new BlockJacobi() {
@@ -162,7 +153,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     //Console.WriteLine("###########################   testcode aktiv ##################################");
-                    if ((iLevel >= 2) || (DegreeHierarchy.Length == iLevel + 1)) {
+                    if ((iLevel >= 1) || (DegreeHierarchy.Length == iLevel + 1)) {
 
                         tr.Info("direct solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
 
