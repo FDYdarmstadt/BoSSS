@@ -821,8 +821,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             throw new NotSupportedException($"Unable to initialize post-smoother if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
                         }
                     }
-
                 }
+                if(AdditionalPostSmoothers != null) {
+                    foreach (var ps in AdditionalPostSmoothers) {
+                        if (ps is ISubsystemSolver ssPostSmother) {
+                            ssPostSmother.Init(op);
+                        } else {
+                            if (op is MultigridOperator mgOp) {
+                                ps.Init(mgOp);
+                            } else {
+                                throw new NotSupportedException($"Unable to initialize post-smoother if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
+                            }
+                        }
+                    }
+                }
+
 
                 //if(op is MultigridOperator mgop) {
                 //    ScalingKakke(mgop);
@@ -887,8 +900,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public ISolverSmootherTemplate PostSmoother;
 
+        /// <summary>
+        /// high frequency solver after coarse grid correction
+        /// </summary>
+        public ISolverSmootherTemplate[] AdditionalPostSmoothers;
 
-      
+
+
         /// <summary>
         /// 
         /// </summary>
@@ -1065,14 +1083,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // post-smoother
                     // -------------
+                    if (PostSmoother != null || AdditionalPostSmoothers != null) {
+                        bool termPost = false;
 
-                    if (PostSmoother != null) {
+                        ISolverSmootherTemplate[] allSmooters;
+                        {
+                            allSmooters = new ISolverSmootherTemplate[(PostSmoother != null ? 1 : 0) + (AdditionalPostSmoothers?.Length ?? 0)];
+                            if (PostSmoother != null)
+                                allSmooters[allSmooters.Length - 1] = PostSmoother;
+                            if (AdditionalPostSmoothers != null)
+                                Array.Copy(AdditionalPostSmoothers, allSmooters, AdditionalPostSmoothers.Length);
+                        }
+
                         for (int g = 0; g < config.NoOfPostSmootherSweeps; g++) { // Test: Residual on this level / already computed by 'MinimizeResidual' above
+
+                            ISolverSmootherTemplate _PostSmoother = allSmooters[g%allSmooters.Length];
 
                             VerivyCurrentResidual(X, B, Res, iIter); // 
 
                             string id = "";
-                            if (PostSmoother is CellILU cilu)
+                            if (_PostSmoother is CellILU cilu)
                                 id = cilu.id;
 
                             double[] PostCorr = new double[L];
@@ -1080,30 +1110,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //    PreSmoother.Solve(PostCorr, Res);
                             //else
 
-                            PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
+                            _PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + id + "--" + g);
 
+                            var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+                            if (!termState4.bNotTerminate) {
+                                Converged = termState4.bSuccess;
+                                termPost = true;
+                                break;
+                            }
+
                         }
+
+                        if (termPost)
+                            break;
+
                     } // end of post-smoother loop
 
 
                     
-
-
                     // iteration callback
                     // ------------------
                     this.ThisLevelIterations++;
                     IterationCallback?.Invoke(iIter, X, Res, this.m_MgOperator as MultigridOperator);
 
+
+      
+
                     //ScalingKakke(this.m_MgOperator as MultigridOperator, Res);
 
                     //SpecAnalysisSample(iIter, X, "_");
 
-                    var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
-                    if (!termState4.bNotTerminate) {
-                        Converged = termState4.bSuccess;
-                        break;
-                    }
+                    
 
                 } // end of solver iterations
 

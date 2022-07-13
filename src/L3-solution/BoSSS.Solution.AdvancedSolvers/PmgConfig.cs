@@ -108,6 +108,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         ISolverSmootherTemplate post, pre;
 
+                        ISolverSmootherTemplate[] aps = null;
+
                         //var bj = new BlockJacobi() {
                         //    NoOfIterations = 1,
 
@@ -131,8 +133,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             };
 
                             ((CellILU)post).id = "Lv0";
-
-
+                            /*
+                            if (iLevel == 0) {
+                                aps = new ISolverSmootherTemplate[] {
+                                    new PressureCorrectionSolver()
+                                };
+                            }*/
                         } else {
                             post = new BlockJacobi() {
                                 NoOfIterations = 1,
@@ -145,6 +151,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             CoarserLevelSolver = coarseSolver,
                             PreSmoother = pre,
                             PostSmoother = post,
+                            AdditionalPostSmoothers = aps
                         };
                         omg.config.NoOfPostSmootherSweeps = 10;
                         omg.config.m_omega = 1;
@@ -153,7 +160,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     //Console.WriteLine("###########################   testcode aktiv ##################################");
-                    if ((iLevel >= 1) || (DegreeHierarchy.Length == iLevel + 1)) {
+                    if ((iLevel >= 2) || (DegreeHierarchy.Length == iLevel + 1)) {
 
                         tr.Info("direct solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
 
