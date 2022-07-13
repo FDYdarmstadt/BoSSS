@@ -153,6 +153,58 @@ namespace BoSSS.Application.ExternalBinding {
              {0.1,0.1,0.01}
             };
 
+        internal static string[] names = new string[] {"left", "right", "empty"};
+        internal static int[] patchIDs = new int[] {0,
+                                                       1,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2
+        };
+
         public static void Main() {
             
             int nPoints = points.GetLength(0);
@@ -172,7 +224,7 @@ namespace BoSSS.Application.ExternalBinding {
         [Test]
         public static void ConvertFOAMGrid() {
             int nCells = 9;
-            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points);
+            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points, names, patchIDs);
 
             Assert.AreEqual(g.GridData.iLogicalCells.Count, nCells, "Mismatch in expected number of cells.");
         }

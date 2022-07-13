@@ -114,6 +114,7 @@ namespace BoSSS.Application.ExternalBinding {
             /// </summary>
             override protected double g_Diri(ref Foundation.CommonParamsBnd inp) { // TODO generalize
                 // Console.WriteLine("Hello from fixedoperators. EdgeTag: " + inp.EdgeTag);
+                // if (inp.EdgeTag == 1)
                 if (inp.EdgeTag == 1)
                 {
                     Console.WriteLine("EdgeTag 1");
@@ -121,7 +122,7 @@ namespace BoSSS.Application.ExternalBinding {
                 }
                 if (inp.EdgeTag == 2)
                 {
-                    Console.WriteLine("EdgeTag 1");
+                    Console.WriteLine("EdgeTag 2");
                     return _ptch.Values[1];
                 }
                 Console.WriteLine("should not happen");
