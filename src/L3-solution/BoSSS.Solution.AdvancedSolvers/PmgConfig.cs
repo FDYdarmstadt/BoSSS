@@ -133,12 +133,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             };
 
                             ((CellILU)post).id = "Lv0";
-                            /*
+                            
                             if (iLevel == 0) {
                                 aps = new ISolverSmootherTemplate[] {
-                                    new PressureCorrectionSolver()
+                                    new VelocityPredictionSolver(),
+                                    //new PressureCorrectionSolver()
                                 };
-                            }*/
+                            }
                         } else {
                             post = new BlockJacobi() {
                                 NoOfIterations = 1,
