@@ -396,13 +396,13 @@ namespace BoSSS.Foundation.Grid {
                                 // cl.CellFaceTags[i].FaceIndex = i;
                                 cl.CellFaceTags[i].EdgeTag = 0;
                                 cl.CellFaceTags[i].NeighCell_GlobalID = neighbour[faceIndex];
-                            // } else if (patchIDs[faceIndex - nInternalFaces] == 2) { // TODO generalize
-                            //     // this is an empty face
-                            //     Console.WriteLine("Face Nr " + faceIndex + " is an empty face, GlobalID: " + iCell + " , patchID: " + patchIDs[faceIndex - nInternalFaces]);
-                            //     cl.CellFaceTags[i].FaceIndex = faceIndex;
-                            //     // cl.CellFaceTags[i].FaceIndex = i;
-                            //     cl.CellFaceTags[i].EdgeTag = (byte)(patchIDs[faceIndex - nInternalFaces] + 1);
-                            //     cl.CellFaceTags[i].NeighCell_GlobalID = -1;
+                            } else if (patchIDs[faceIndex - nInternalFaces] == 2) { // TODO generalize
+                                // this is an empty face
+                                Console.WriteLine("Face Nr " + faceIndex + " is an empty face, GlobalID: " + iCell);
+                                cl.CellFaceTags[i].FaceIndex = faceIndex;
+                                cl.CellFaceTags[i].EdgeTag = (byte)(GridCommons.FIRST_PERIODIC_BC_TAG);
+                                // in degenerate dimensions, there can only be one cell layer. Therefore, each cell is its own neighbour
+                                cl.CellFaceTags[i].NeighCell_GlobalID = iCell;
                             } else {
                                 // this is an actual boundary face
                                 cl.CellFaceTags[i].EdgeTag = (byte)(patchIDs[faceIndex - nInternalFaces] + 1);
@@ -412,6 +412,7 @@ namespace BoSSS.Foundation.Grid {
                                 // cl.CellFaceTags[i].EdgeTag = (byte)(patchIDs[faceIndex - nInternalFaces]);
                                 cl.CellFaceTags[i].NeighCell_GlobalID = -1;
                                 cl.CellFaceTags[i].FaceIndex = faceIndex;
+                                // cl.CellFaceTags[i].ConformalNeighborship = true;
                                 // foreach (var node in cl.NodeIndices){
                                 //     Console.WriteLine(node);
                                 // }
