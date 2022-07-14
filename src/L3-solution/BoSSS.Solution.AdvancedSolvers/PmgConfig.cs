@@ -136,7 +136,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             
                             if (iLevel == 0) {
                                 aps = new ISolverSmootherTemplate[] {
-                                    new VelocityPredictionSolver(),
+                                    //new VelocityPredictionSolver(),
                                     //new PressureCorrectionSolver()
                                 };
                             }

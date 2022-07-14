@@ -1067,7 +1067,9 @@ namespace ilPSP.Utils {
         _DNRM2  dnrm2;
         _DSWAP  dswap;
         _DGEMM  dgemm;
-        _DGEMV  dgemv;
+        _SGEMM  sgemm;
+        _DGEMV dgemv;
+        _SGEMV  sgemv;
         _DAXPY  daxpy;
         _DSCAL  dscal;
 #pragma warning restore 649
@@ -1101,6 +1103,20 @@ namespace ilPSP.Utils {
             get { return dgemm; }
         }
 
+        /// <summary> FORTRAN BLAS routine </summary>
+        public unsafe delegate void _SGEMM(ref int TRANSA, ref int TRANSB,
+                                           ref int M, ref int N, ref int K,
+                                           ref double ALPHA,
+                                           float* A, ref int LDA,
+                                           float* B, ref int LDB,
+                                           ref double BETA,
+                                           float* C, ref int LDC);
+
+        /// <summary> FORTRAN BLAS routine </summary>
+        public unsafe _SGEMM SGEMM {
+            get { return sgemm; }
+        }
+
 
         /// <summary> FORTRAN BLAS routine </summary>
         public unsafe delegate void _DGEMV(ref int TRANSA,
@@ -1115,6 +1131,21 @@ namespace ilPSP.Utils {
         /// <summary> FORTRAN BLAS routine </summary>
         public unsafe _DGEMV DGEMV {
             get { return dgemv; }
+        }
+
+        /// <summary> FORTRAN BLAS routine </summary>
+        public unsafe delegate void _SGEMV(ref int TRANSA,
+                                           ref int M, ref int N,
+                                           ref double ALPHA,
+                                           float* A, ref int LDA,
+                                           float* X, ref int INCX,
+                                           ref double BETA,
+                                           float* Y, ref int INCY);
+
+
+        /// <summary> FORTRAN BLAS routine </summary>
+        public unsafe _SGEMV SGEMV {
+            get { return sgemv; }
         }
 
 
@@ -1280,6 +1311,28 @@ namespace ilPSP.Utils {
             unsafe {
                 m_BLAS.DGEMV(ref TRANSA,
                              ref M, ref N, 
+                             ref ALPHA,
+                             A, ref LDA,
+                             X, ref INCX,
+                             ref BETA,
+                             Y, ref INCY);
+            }
+        }
+
+        /// <summary>
+        /// native blas in C-stype
+        /// (matrices are still in FORTRAN order)
+        /// </summary>
+        unsafe static public void sgemv(int TRANSA,
+                                        int M, int N,
+                                        double ALPHA,
+                                        float* A, int LDA,
+                                        float* X, int INCX,
+                                        double BETA,
+                                        float* Y, int INCY) {
+            unsafe {
+                m_BLAS.SGEMV(ref TRANSA,
+                             ref M, ref N,
                              ref ALPHA,
                              A, ref LDA,
                              X, ref INCX,
