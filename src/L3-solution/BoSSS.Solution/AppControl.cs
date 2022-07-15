@@ -1400,6 +1400,7 @@ namespace BoSSS.Solution.Control {
 
             var scriptOptions = ScriptOptions.Default;
             scriptOptions = scriptOptions.AddReferences(allAssis);
+            // Console.WriteLine("Evaluating : {0}", Script);
             object controlObj = CSharpScript.EvaluateAsync(Script, scriptOptions).Result;
 
             if(controlObj == null) {
