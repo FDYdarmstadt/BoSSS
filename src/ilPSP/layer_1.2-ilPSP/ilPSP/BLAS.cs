@@ -1106,10 +1106,10 @@ namespace ilPSP.Utils {
         /// <summary> FORTRAN BLAS routine </summary>
         public unsafe delegate void _SGEMM(ref int TRANSA, ref int TRANSB,
                                            ref int M, ref int N, ref int K,
-                                           ref double ALPHA,
+                                           ref float ALPHA,
                                            float* A, ref int LDA,
                                            float* B, ref int LDB,
-                                           ref double BETA,
+                                           ref float BETA,
                                            float* C, ref int LDC);
 
         /// <summary> FORTRAN BLAS routine </summary>
@@ -1136,10 +1136,10 @@ namespace ilPSP.Utils {
         /// <summary> FORTRAN BLAS routine </summary>
         public unsafe delegate void _SGEMV(ref int TRANSA,
                                            ref int M, ref int N,
-                                           ref double ALPHA,
+                                           ref float ALPHA,
                                            float* A, ref int LDA,
                                            float* X, ref int INCX,
-                                           ref double BETA,
+                                           ref float BETA,
                                            float* Y, ref int INCY);
 
 
@@ -1325,10 +1325,10 @@ namespace ilPSP.Utils {
         /// </summary>
         unsafe static public void sgemv(int TRANSA,
                                         int M, int N,
-                                        double ALPHA,
+                                        float ALPHA,
                                         float* A, int LDA,
                                         float* X, int INCX,
-                                        double BETA,
+                                        float BETA,
                                         float* Y, int INCY) {
             unsafe {
                 m_BLAS.SGEMV(ref TRANSA,
