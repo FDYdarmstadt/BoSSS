@@ -11,55 +11,33 @@ using System.Text;
 namespace BoSSS.Solution {
     public static class SolverExceptionLogger {
 
-        private static int cnt = 0;
-        private static bool _insideFirstChanceExceptionHandler;
-        public static void RegisterLogger<T>(Application<T> app) where T : AppControl, new() {
+        public static void SaveException<T>(Exception e, Application<T> app) where T : AppControl, new() {
 
-            Console.WriteLine("Register Exception Logger!");
-            AppDomain currentDomain = AppDomain.CurrentDomain;
+            if (app == null || app.IsDisposed) return; // object is disposed of, do nothing
+                                                       // i'm actually not sure if this can happen
+                                                       // some testing with a using(){} around a statement like here did not give like a null reference exception...
+                                                       // apparently the object.Dispose() is called, but it is not collected and the reference in the event handler is still valid
 
-            currentDomain.FirstChanceException += (sender, args) => {
-                if (_insideFirstChanceExceptionHandler) {
-                    // Prevent recursion if an exception is thrown inside this method
-                    return;
-                }
+            if (app.Control.savetodb && !app.CurrentSessionInfo.SuccessfulTermination) {
+                //Console.WriteLine("**saving exception to database ...");
 
-                _insideFirstChanceExceptionHandler = true;
-                try {
-                    Exception e = args.Exception;
+                SaveException(e, app.CurrentSessionInfo);
+                // app.SaveToDatabase(-1, -1.0); this would be nice, but atm can cause deadlocks
+            }
 
-                    if (app == null || app.IsDisposed) return; // object is disposed of, do nothing
-                                                               // i'm actually not sure if this can happen
-                                                               // some testing with a using(){} around a statement like here did not give like a null reference exception...
-                                                               // apparently the object.Dispose() is called, but it is not collected and the reference in the event handler is still valid
+            //Console.WriteLine("**logging exception ...");
+            MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
+            Console.Error.WriteLine(("").PadRight(50, '='));
+            Console.Error.WriteLine();
+            Console.Error.WriteLine($"MPI rank {rank}: {e.GetType().Name } :");
+            Console.Error.WriteLine(e.Message);
+            Console.Error.WriteLine(e.StackTrace);
+            Console.Error.WriteLine();
+            Console.Error.WriteLine(("").PadRight(50, '='));
+            Console.Error.WriteLine();
 
-                    if (app.Control.savetodb && !app.CurrentSessionInfo.SuccessfulTermination) {
-                        //Console.WriteLine("**saving exception to database ...");
-
-                        SaveException(e, app.CurrentSessionInfo);
-                        // app.SaveToDatabase(-1, -1.0); this would be nice, but atm can cause deadlocks
-                    }
-
-                    //Console.WriteLine("**logging exception ...");
-                    MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out int rank);
-                    Console.Error.WriteLine((String.Format("{0} ", ++cnt)).PadRight(50, '='));
-                    Console.Error.WriteLine(("").PadRight(50, '='));
-                    Console.Error.WriteLine();
-                    Console.Error.WriteLine($"MPI rank {rank}: {e.GetType().Name } :");
-                    Console.Error.WriteLine(e.Message);
-                    Console.Error.WriteLine(e.StackTrace);
-                    Console.Error.WriteLine();
-                    Console.Error.WriteLine(("").PadRight(50, '='));
-                    Console.Error.WriteLine();
-
-                    ilPSP.Environment.StdOut.Flush();
-                    ilPSP.Environment.StdErr.Flush();
-                } catch { 
-                    // catch all exception in this eventhandler, otherwise bad things happen
-                } finally {
-                    _insideFirstChanceExceptionHandler = false;
-                }
-            };
+            ilPSP.Environment.StdOut.Flush();
+            ilPSP.Environment.StdErr.Flush();
         }
 
         private static void SaveException(Exception e, SessionInfo s) {

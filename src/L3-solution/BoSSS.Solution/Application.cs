@@ -800,8 +800,6 @@ namespace BoSSS.Solution {
         /// </param>
         public virtual void Init(AppControl control) {
 
-            SolverExceptionLogger.RegisterLogger(this);
-
             if (control != null) {
                 this.Control = (T)control;
             } else {
@@ -2026,6 +2024,17 @@ namespace BoSSS.Solution {
         protected TimestepNumber TimeStepNoRestart = null;
 
         /// <summary>
+        /// 
+        /// </summary>
+        public virtual void RunSolverMode() {
+            try {
+                this.RunSolverModeInternal();
+            } catch (Exception e) {
+                SolverExceptionLogger.SaveException(e, this);
+            }
+        }
+
+        /// <summary>
         /// Runs the application in the "solver"-mode. This method makes
         /// multiple calls to <see cref="RunSolverOneStep"/> method. The
         /// termination behavior is determined by the variables
@@ -2052,7 +2061,7 @@ namespace BoSSS.Solution {
         ///     <item><see cref="Queries.QueryHandler.EvaluateQueries"/></item>
         /// </list>
         /// </remarks>
-        public virtual void RunSolverMode() {
+        private void RunSolverModeInternal() {
 
             // =========================================
             // loading grid, initializing database, etc:
