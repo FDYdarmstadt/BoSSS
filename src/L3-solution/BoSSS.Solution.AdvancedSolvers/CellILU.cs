@@ -1100,7 +1100,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             long[] occBlk_i = U_OccupiedBlockColumnsPerRow[i - i0];
                             int NB = occBlk_i.Length;
 
-                            //double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
                             for (int n = 0; n < sz_i; n++)
                                 Bi[n] = (float)B[iIdxLoc + n];
 
@@ -1108,8 +1107,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 var Ucompr = m_BlockU_compressed[i - i0];
                                 int K = Ucompr?.GetLength(1) ?? 0;
                                 if (K > 0) {
-                                    //if (Xtemp == null || Xtemp.Length != K)
-                                    //    Array.Resize(ref Xtemp, K);
+
                                     int oj = 0;
                                     for (int jx = 0; jx < NB; jx++) {
                                         long j = occBlk_i[jx];
@@ -1124,7 +1122,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         }
                                     }
 
-                                    //m_BlockU_compressed[i - i0].GEMV(-1.0, Xtemp, 1.0, Bi);
 
                                     fixed (float* pMtx = Ucompr) {
                                         BLAS.sgemv('T', K, sz_i, -1.0f, pMtx, K, Xtemp, 1, 1.0f, Bi, 1);
@@ -1137,11 +1134,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Debug.Assert(this.Udiag_inverse[i - i0].GetLength(0) == sz_i);
                             Debug.Assert(this.Udiag_inverse[i - i0].GetLength(1) == sz_i);
                             fixed (float* pInvUdiag = this.Udiag_inverse[i - i0]) {
-                                //this.Udiag_inverse[i - i0].GEMV(1.0, Bi, 1.0, Xi);
                                 BLAS.sgemv('T', sz_i, sz_i, 1.0f, pInvUdiag, sz_i, Bi, 1, 0.0f, Xi, 1);
                             }
 
-                            //X.SetSubVector<double, U, double[]>(Xi, iIdxLoc, sz_i);
                             for (int n = 0; n < sz_i; n++)
                                 X[iIdxLoc + n] = Xi[n];
 
@@ -1151,35 +1146,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            /*
-            static MultidimensionalArray ToMDA(float[,] A) {
-                var R = MultidimensionalArray.Create(A.GetLength(0), A.GetLength(1));
-                for(int n = 0; n < R.NoOfRows; n++) {
-                    for(int m =  0; m < R.NoOfCols; m++) {
-                        R[n, m] = A[n, m];
-                    }
-                }
-                return R;
-            }
-
-            static double[] ToDbl(float[] A) {
-                var R = new double[A.Length];
-                for(int i = 0; i < A.Length; i++) {
-                    R[i] = A[i];
-                }
-                return R;
-            }
-
-            unsafe static double[] Diff(double[] A, float* B) {
-                int L = A.Length;
-                var R = A.CloneAs();
-                for(int l = 0; l < L; l++) {
-                    R[l] -= B[l];
-                }
-                return R;
-            }
-            */
-
+          
             public override void LoTriDiagonalSolve<U, V>(U X, V B) {
                 using (new FuncTrace()) {
                     var rowPart = part;
@@ -1228,41 +1195,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         }
                                     }
 
-                                    //m_BlockL_compressed[i - i0].GEMV(-1.0, Xtemp, 1.0, Bi);
-
-                                    //var MTX = Lcompr_Ref;
-                                    //var _Xtemp = ToDbl(Xtemp);
-                                    //var _Bi = new double[sz_i];
-                                    //for (int n = 0; n < sz_i; n++)
-                                    //    _Bi[n] = Bi[n];
-                                    //MTX.GEMV(-1.0, _Xtemp, 1.0, _Bi);
-
                                     fixed (float* pMtx = Lcompr) {
-                                        //var ERRd = Diff(MTX.Storage, pMtx);
-                                        //double fuck = ERRd.L2Norm();
-                                        //Console.WriteLine("fuck = " + fuck);
-                                        
                                         BLAS.sgemv('T', K, sz_i, -1.0f, pMtx, K, Xtemp, 1, 1.0f, Bi, 1);
-
-                                        /*
-                                        for(int n = 0; n < sz_i; n++) {
-                                            float acc = 0;
-                                            for(int m = 0; m < MTX.NoOfCols; m++) {
-                                                acc += Lcompr[n, m] * Xtemp[m];
-                                            }
-                                            Bi[n] -= acc;
-                                        }
-                                        */
                                     }
-
-
-                                    //var ERR = Diff(_Bi, Bi);
-                                    //double fuck2 = ERR.L2Norm();
-                                    //Console.WriteLine("fuck2 = " + fuck2);
                                 }
                             }
-
-                            //X.SetSubVector<double, U, double[]>(Bi, iIdxLoc, sz_i);
                             for (int n = 0; n < sz_i; n++)
                                 X[iIdxLoc + n] = Bi[n];
                         }
