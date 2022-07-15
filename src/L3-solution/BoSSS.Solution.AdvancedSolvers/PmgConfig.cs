@@ -171,6 +171,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var s = new DirectSolver();
                         s.config.TestSolution = false;
                         s.ActivateCaching = (a, b) => true;
+                        s.config.UseDoublePrecision = false;
                         return s;
                     } else if (iLevel >= 2) {
                         // +++++++++++++++++++++++++++

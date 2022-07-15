@@ -815,6 +815,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             var direct = new DirectSolver() {
                                 ActivateCaching = (int NoIter, int MgLevel) => true
                             };
+                            direct.config.UseDoublePrecision = false;
                             direct.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
                             direct.config.TestSolution = false;
                             

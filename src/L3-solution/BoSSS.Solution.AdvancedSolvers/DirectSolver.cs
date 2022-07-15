@@ -109,6 +109,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 get;
                 set;
             } = true;
+
+            /// <summary>
+            /// - true: use double precision floats internally (default)
+            /// - false: use single precision; might be useful for solution guesses in preconditioners; only supported for <see cref="WhichSolver"/>==<see cref="_whichSolver.PARDISO"/>.
+            /// </summary>
+            public bool UseDoublePrecision {
+                get;
+                set;
+            } = true;
         }
 
 
@@ -256,9 +265,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ISparseSolver solver;
 
             bool RunSerial = Mtx.MPI_Comm == csMPI.Raw._COMM.SELF;
-            
-            
-            switch(config.WhichSolver) {
+
+            if(config.WhichSolver != _whichSolver.PARDISO) {
+                if (!config.UseDoublePrecision)
+                    throw new NotSupportedException($"{config.WhichSolver} is not supported in single precision");
+            }
+
+
+            switch (config.WhichSolver) {
                 case _whichSolver.PARDISO:
                 bool CachingOn = false;
                 if (ActivateCaching != null) {
@@ -268,7 +282,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     
                 solver = new PARDISOSolver() {
                     CacheFactorization = CachingOn,
-                    UseDoublePrecision = true,
+                    UseDoublePrecision = config.UseDoublePrecision,
                     Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.OMP
                 };
                 break;
