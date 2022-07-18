@@ -2031,6 +2031,7 @@ namespace BoSSS.Solution {
                 this.RunSolverModeInternal();
             } catch (Exception e) {
                 SolverExceptionLogger.SaveException(e, this);
+                throw;
             }
         }
 

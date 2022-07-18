@@ -46,7 +46,12 @@ namespace BoSSS.Solution {
             SingleExceptionDataSet.LogException(dbDrv, s, e);
         }
 
-        public static ExceptionDataSet LoadExceptions(List<ISessionInfo> sessions) {
+        /// <summary>
+        /// Load all exceptions, logged for the selected sessions
+        /// </summary>
+        /// <param name="sessions"></param>
+        /// <returns></returns>
+        public static ExceptionDataSet LoadExceptions(IEnumerable<ISessionInfo> sessions) {
 
             // Create dataset with unique correlation between session and exception
             var set = new ExceptionDataSet();
