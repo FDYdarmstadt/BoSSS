@@ -224,7 +224,7 @@ namespace BoSSS.Application.ExternalBinding {
         [Test]
         public static void ConvertFOAMGrid() {
             int nCells = 9;
-            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points, names, patchIDs);
+            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points, names, patchIDs, 0);
 
             Assert.AreEqual(g.GridData.iLogicalCells.Count, nCells, "Mismatch in expected number of cells.");
         }

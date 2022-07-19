@@ -17,16 +17,19 @@ namespace BoSSS.Application.ExternalBinding {
         [CodeGenExport]
         unsafe public OpenFoamPatchField(OpenFOAMGrid grdDat, int nBoundaries, int* edgeTags, int* edgeTypes, double* edgeValues)
             {
-                Console.WriteLine("edgeValues[0]");
-                Console.WriteLine(edgeValues[0]);
+                // Console.WriteLine("edgeValues[0]");
+                // Console.WriteLine(edgeValues[0]);
 
+                Console.WriteLine("no of boundaries: " + nBoundaries);
                 this.Values = new double[nBoundaries];
                 this.EdgeTags = new int[nBoundaries];
                 this.EdgeTypes = new string[nBoundaries];
                 for (int i = 0; i < nBoundaries; i++){
+                    Console.WriteLine("edgetype: " + edgeTypes[i]);
+                    Console.WriteLine("values" + edgeValues[i]);
+                    Console.WriteLine("edgetag: " + edgeTags[i]);
                     this.Values[i] = edgeValues[i];
-                    // this.EdgeTags[i] = edgeTags[i];
-                    this.EdgeTags[i] = i;
+                    this.EdgeTags[i] = edgeTags[i];
                     this.EdgeTypes[i] = IntToBCType(edgeTypes[i]);
                 }
         }
@@ -46,8 +49,28 @@ namespace BoSSS.Application.ExternalBinding {
         Dictionary<int, string> BCTypes = new Dictionary<int, string>() {
             {0, "dirichlet"},
             {1, "neumann"},
-            {2, "empty"}
+            {-1, "empty"}
         };
+
+        public bool IsDirichlet(int EdgeTag){
+            int FaceIndex = -1;
+            int i = 0;
+            bool found = false;
+            foreach (var et in this.EdgeTags){
+                if (et == EdgeTag){
+                    if (found){
+                        throw new ApplicationException("nonunique EdgeTag encountered");
+                    }
+                    FaceIndex = i;
+                    found = true;
+                }
+                i++;
+            }
+            if (!found){
+                throw new ApplicationException("EdgeTag " + EdgeTag + " not found");
+            }
+            return this.EdgeTypes[FaceIndex] == "dirichlet";
+        }
 
         public double[] Values;
         public int[] EdgeTags;

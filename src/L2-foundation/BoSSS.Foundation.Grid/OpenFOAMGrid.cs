@@ -4,6 +4,7 @@ using ilPSP;
 using ilPSP.Connectors;
 using ilPSP.Utils;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -79,7 +80,7 @@ namespace BoSSS.Foundation.Grid {
         /// </param>
         [CodeGenExport]
         unsafe public OpenFOAMGrid(
-            int nPoints, int nCells, int nFaces, int nInternalFaces, int nNames, int* nameLenghts,
+            int nPoints, int nCells, int nFaces, int nInternalFaces, int nNames, int* nameLenghts, int emptyTag,
             int** faces,
             int* vertices_per_face,
             int* neighbour,
@@ -155,8 +156,11 @@ namespace BoSSS.Foundation.Grid {
 
 
                 // create BoSSS grid
-                FOAMmesh_to_BoSSS(this, nCells, _faces, _neighbour, _owner, _points, _names, _patchIDs);
+                FOAMmesh_to_BoSSS(this, nCells, _faces, _neighbour, _owner, _points, _names, _patchIDs, emptyTag);
 
+                foreach (var name in _names){
+                    this.AddEdgeTag(name);
+                }
                 // create grid data object
                 this.GridDataObject = new GridData(this);
             } catch(Exception e) {
@@ -190,17 +194,20 @@ namespace BoSSS.Foundation.Grid {
             int[] owner,
             double[,] points,
             string[] names,
-            int[] patchIDs
+            int[] patchIDs,
+            int emptyTag
         ) :
             base(new[] { Cube.Instance }, new[] { Square.Instance }) //
         {
 
 
             // create BoSSS grid
-            FOAMmesh_to_BoSSS(this, nCells, faces, neighbour, owner, points, names, patchIDs);
+            FOAMmesh_to_BoSSS(this, nCells, faces, neighbour, owner, points, names, patchIDs, emptyTag);
 
+                Console.Write("test4");
             // create grid data object
             this.GridDataObject = new GridData(this);
+                Console.Write("test5");
         }
 
 
@@ -235,7 +242,28 @@ namespace BoSSS.Foundation.Grid {
         }
 
 
-        internal static void FOAMmesh_to_BoSSS(GridCommons grid, int nCells, int[][] faces, int[] neighbour, int[] owner, double[,] points, string[] names, int[] patchIDs) {
+        internal static void FOAMmesh_to_BoSSS(GridCommons grid, int nCells, int[][] faces, int[] neighbour, int[] owner, double[,] points, string[] names, int[] patchIDs, int emptyTag) {
+
+            // write everything to a file for debugging
+            File.WriteAllLines("neighbour", neighbour.Select(i=>i.ToString()).ToArray());
+            File.WriteAllLines("owner", owner.Select(i=>i.ToString()).ToArray());
+            // System.IO.File.WriteAllLines("faces", faces.Select(i=>i.ToString()).ToArray());
+            File.WriteAllLines("faces", faces.Select(line => String.Join(" ", line)));
+
+            using (var sw = new StreamWriter("points"))
+            {
+                for (int i = 0; i < points.Length/3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        sw.Write(points[i, j] + " ");
+                    }
+                    sw.Write("\n");
+                }
+
+                sw.Flush();
+                sw.Close();
+            }
 
             // Checks
             // ======
@@ -287,12 +315,6 @@ namespace BoSSS.Foundation.Grid {
                 Cells2Faces[j] = new List<int>();
             }
 
-            for (int iFace = 0; iFace < nFaces; iFace++) {
-                Debug.Assert(Cells2Faces[owner[iFace]].Contains(iFace) == false);
-                Cells2Faces[owner[iFace]].Add(iFace);
-
-            }
-
             for (int iInternalFace = 0; iInternalFace < nInternalFaces; iInternalFace++) {
                 int NeighCell = neighbour[iInternalFace];
 
@@ -300,6 +322,20 @@ namespace BoSSS.Foundation.Grid {
                 Cells2Faces[NeighCell].Add(iInternalFace);
             }
 
+            for (int iFace = 0; iFace < nFaces; iFace++) {
+                Debug.Assert(Cells2Faces[owner[iFace]].Contains(iFace) == false);
+                Cells2Faces[owner[iFace]].Add(iFace);
+
+            }
+
+            int index = 0;
+            foreach (var cfs in Cells2Faces){
+                Console.WriteLine("Cell " + index);
+                foreach(var face in cfs){
+                    Console.WriteLine(face);
+                }
+                index++;
+            }
 
             // convert to BoSSS grid
             // =====================
@@ -327,6 +363,26 @@ namespace BoSSS.Foundation.Grid {
                     if (NodesUnsorted.Count != 8) {
                         throw new NotImplementedException("Degenerate cubes are not supported.");
                     }
+                    int iii = 0;
+                    Console.WriteLine("cubefaces of cell " + iCell);
+                    foreach (var cf in cube_faces){
+                        Console.WriteLine("face " + iii);
+                        foreach (var f in cf){
+                            Console.WriteLine(f);
+                        }
+                        iii++;
+                    }
+                    // Console.WriteLine("Hello from loop for Cell " + iCell);
+                    // // int index = 0;
+                    // foreach (var node in NodesUnsorted){
+                    //     // Console.WriteLine("Node " + index);
+                    //     Console.WriteLine("Node ");
+                    //     Console.WriteLine(node);
+                    //     // foreach (var coord in node){
+                    //     //     Console.WriteLine(coord);
+                    //     // }
+                    //     // index++;
+                    // }
 
                     // create cell
                     Cell cl = new Cell();
@@ -337,6 +393,7 @@ namespace BoSSS.Foundation.Grid {
                     cl.TransformationParams = MultidimensionalArray.Create(8, 3);
 
                     // Find point indices for bottom, i.e. 'y == -1' (in ref. coordinates):
+                    // TODO face 0 is not always the bottom one -> might be fixed by transformationparams
                     cl.NodeIndices[0] = cube_faces[0][0];
                     cl.NodeIndices[1] = cube_faces[0][1];
                     cl.NodeIndices[6] = cube_faces[0][2];
@@ -362,62 +419,127 @@ namespace BoSSS.Foundation.Grid {
                     if (found == false)
                         throw new NotSupportedException("weird cell topology in cell " + iCell + "; assuming a cube/hex;");
 
-                    
+
                     // set point coordinates
                     for (int i = 0; i < 8; i++) {
                         cl.TransformationParams.SetRow(i, points.GetRow(checked((int)(cl.NodeIndices[i]))));
                     }
 
                     cl.CellFaceTags = new CellFaceTag[6];
+
+                    // in order to establish the neighbor relationships of empty faces, we first have to collect them
+                    var emptyFacesOfCell = new List<int>();
                     for (int i = 0; i < 6; i++){
-                            int faceIndex = Cells2Faces[iCell][i];
-                            // int GlobalFaceIndex = faces[faceIndex];
-                            cl.CellFaceTags[i] = new CellFaceTag();
-                        // if (faceIndex == 9)
-                        // {
-                        //     foreach (var node in faces[faceIndex])
-                        //     {
-                        //         Console.WriteLine("Face 9 nodes: " + node);
-                        //         Console.WriteLine("Face 9 node points: " + points[node,0]);
-                        //         Console.WriteLine("Face 9 node points: " + points[node,1]);
-                        //         Console.WriteLine("Face 9 node points: " + points[node,2]);
-                        //     }
-                        //         // cl.CellFaceTags[i].EdgeTag = 2;
-                        //         // // cl.CellFaceTags[i].FaceIndex = i;
-                        //         // cl.CellFaceTags[i].FaceIndex = faceIndex;
-                        //         // // cl.CellFaceTags[i].EdgeTag = 0;
-                        //         // // cl.CellFaceTags[i].EdgeTag = (byte)(patchIDs[faceIndex - nInternalFaces]);
-                        //         // cl.CellFaceTags[i].NeighCell_GlobalID = -1;
-                        // }
-                        if (faceIndex < nInternalFaces){
-                                // this is an internal face
-                                Console.WriteLine("Face Nr " + faceIndex + " is an internal face");
-                                cl.CellFaceTags[i].FaceIndex = faceIndex;
-                                // cl.CellFaceTags[i].FaceIndex = i;
-                                cl.CellFaceTags[i].EdgeTag = 0;
-                                cl.CellFaceTags[i].NeighCell_GlobalID = neighbour[faceIndex];
-                            } else if (patchIDs[faceIndex - nInternalFaces] == 2) { // TODO generalize
-                                // this is an empty face
-                                Console.WriteLine("Face Nr " + faceIndex + " is an empty face, GlobalID: " + iCell);
-                                cl.CellFaceTags[i].FaceIndex = faceIndex;
-                                cl.CellFaceTags[i].EdgeTag = (byte)(GridCommons.FIRST_PERIODIC_BC_TAG);
-                                // in degenerate dimensions, there can only be one cell layer. Therefore, each cell is its own neighbour
-                                cl.CellFaceTags[i].NeighCell_GlobalID = iCell;
+                        int faceIndex = Cells2Faces[iCell][i];
+                        if (faceIndex >= nInternalFaces && patchIDs[faceIndex - nInternalFaces] == emptyTag){
+                            throw new NotSupportedException("empty patches are currently not supported");
+                            emptyFacesOfCell.Add(faceIndex);
+                            // Console.WriteLine("Found empty face " + faceIndex);
+                        }
+                    }
+                    int iEmpty = 0;
+
+                    // loop over all faces in order to set the CellFaceTags appropriately.
+                    // This is important for the specification of boundary conditions.
+                    for (int i = 0; i < 6; i++) {
+                        int faceIndex = Cells2Faces[iCell][i];
+                        cl.CellFaceTags[i] = new CellFaceTag();
+                        if (faceIndex < nInternalFaces) {
+                            // this is an internal face
+                            Console.WriteLine("Face Nr " + faceIndex + " is an internal face, local index " + i);
+                            // cl.CellFaceTags[i].FaceIndex = faceIndex;
+                            cl.CellFaceTags[i].FaceIndex = i;
+                            cl.CellFaceTags[i].EdgeTag = 0;
+                            // cl.CellFaceTags[i].NeighCell_GlobalID = neighbour[faceIndex];
+                            cl.CellFaceTags[i].NeighCell_GlobalID = -1;
+                            cl.CellFaceTags[i].ConformalNeighborship = true;
+                        } else if (patchIDs[faceIndex - nInternalFaces] == emptyTag) {
+                            throw new NotSupportedException("empty patches are currently not supported");
+                            // this is an empty face
+                            cl.CellFaceTags[i].FaceIndex = faceIndex;
+                            // in degenerate dimensions, there can only be one cell layer. Therefore, each cell is its own neighbor
+                            cl.CellFaceTags[i].NeighCell_GlobalID = iCell;
+                            cl.CellFaceTags[i].ConformalNeighborship = true;
+                            int D = 3; // since OpenFOAM only knows 3D grids, it seems acceptable to hardcode this
+
+                            int faceIndexNeighbor;
+                            if (iEmpty % 2 == 0){
+                                faceIndexNeighbor = emptyFacesOfCell[iEmpty + 1];
+                                cl.CellFaceTags[i].PeriodicInverse = true;
                             } else {
-                                // this is an actual boundary face
-                                cl.CellFaceTags[i].EdgeTag = (byte)(patchIDs[faceIndex - nInternalFaces] + 1);
-                                // cl.CellFaceTags[i].EdgeTag = (byte)(patchIDs[faceIndex - nInternalFaces]);
-                                // cl.CellFaceTags[i].FaceIndex = i;
-                                // cl.CellFaceTags[i].EdgeTag = 0;
-                                // cl.CellFaceTags[i].EdgeTag = (byte)(patchIDs[faceIndex - nInternalFaces]);
-                                cl.CellFaceTags[i].NeighCell_GlobalID = -1;
-                                cl.CellFaceTags[i].FaceIndex = faceIndex;
-                                // cl.CellFaceTags[i].ConformalNeighborship = true;
-                                // foreach (var node in cl.NodeIndices){
-                                //     Console.WriteLine(node);
-                                // }
-                                Console.WriteLine("Face Nr " + faceIndex + " is a boundary face, EdgeTag: " + cl.CellFaceTags[i].EdgeTag);
+                                faceIndexNeighbor = emptyFacesOfCell[iEmpty - 1];
+                                cl.CellFaceTags[i].PeriodicInverse = false;
                             }
+                            iEmpty++;
+
+                            var pointsOfFace = new List<List<double>>();
+                            for (int iPoint = 0; iPoint < 4; iPoint++){
+                                pointsOfFace.Add(new List<double>());
+                                // Console.WriteLine("point: " + iPoint);
+                                for (int iCoord = 0; iCoord < D ; iCoord++){
+                                    pointsOfFace[iPoint].Add(points[faces[faceIndex][iPoint], iCoord]);
+                                    // Console.WriteLine(pointsOfFace[iPoint][iCoord]);
+                                }
+                            }
+                            var pointsOfNeighborFace = new List<List<double>>();
+                            for (int iPoint = 0; iPoint < 4; iPoint++){
+                                pointsOfNeighborFace.Add(new List<double>());
+                                // Console.WriteLine("point of neighbor: " + iPoint);
+                                for (int iCoord = 0; iCoord < D ; iCoord++){
+                                    pointsOfNeighborFace[iPoint].Add(points[faces[faceIndexNeighbor][iPoint], iCoord]);
+                                    // Console.WriteLine(pointsOfNeighborFace[iPoint][iCoord]);
+                                }
+                            }
+                            byte periodicTag = 0;
+                            Vector[] inlet = new Vector[D];
+                            for (int j = 0; j < D; j++){ // TODO do we have to do this for the entire patch, not individual cells?
+                                inlet[j] = new Vector();
+                                for (int jj = 0; jj < D; jj++){
+                                    inlet[j].Add(pointsOfFace[j][jj]);
+                                }
+                            }
+                            Vector[] outlet = new Vector[D];
+                            for (int j = 0; j < D; j++){ // TODO do we have to do this for the entire patch, not individual cells?
+                                outlet[j] = new Vector();
+                                for (int jj = 0; jj < D; jj++){
+                                    outlet[j].Add(pointsOfNeighborFace[j][jj]);
+                                }
+                            }
+
+                            var inletVec1 = inlet[0] - inlet[1];
+                            var inletVec2 = inlet[0] - inlet[2];
+                            var inletNormal = inletVec1.CrossProduct(inletVec2);
+
+                            var outletVec1 = outlet[0] - outlet[1];
+                            var outletVec2 = outlet[0] - outlet[2];
+                            var outletNormal = outletVec1.CrossProduct(outletVec2);
+
+                            // Console.WriteLine("inletNormalVec" + inletNormal);
+                            // Console.WriteLine("outletNormalVec" + outletNormal);
+                            grid.ConstructPeriodicEdgeTrafo(outlet, outletNormal, inlet, inletNormal, out periodicTag);
+                            cl.CellFaceTags[i].EdgeTag = periodicTag;
+                            // cl.CellFaceTags[i].EdgeTag = 182;
+                            Console.WriteLine("Face Nr " + faceIndex + " is an empty face, GlobalID: " + iCell + " , EdgeTag: " + cl.CellFaceTags[i].EdgeTag + ", neighborFaceIndex: " + faceIndexNeighbor + ", localFaceIndex: " + i + " , periodicInverse: " + cl.CellFaceTags[i].PeriodicInverse);
+                        } else {
+                            // this is an actual boundary face
+                            cl.CellFaceTags[i].EdgeTag = (byte)(patchIDs[faceIndex - nInternalFaces] + 1);
+                            cl.CellFaceTags[i].NeighCell_GlobalID = -1;
+                            // cl.CellFaceTags[i].FaceIndex = faceIndex;
+                            cl.CellFaceTags[i].FaceIndex = i;
+                            cl.CellFaceTags[i].ConformalNeighborship = true;
+                            Console.WriteLine("Face Nr " + faceIndex + " is a boundary face, EdgeTag: " + cl.CellFaceTags[i].EdgeTag + ", local index: " + i);
+                            if (faceIndex == 9){
+                                Console.WriteLine("nodes: ");
+                                foreach (var node in faces[faceIndex]){
+                                    Console.WriteLine(node);
+                                }
+                                foreach (var node in faces[faceIndex]){
+                                    for (int kk = 0; kk < 3; kk++)
+                                    {Console.WriteLine(points[node,kk]);}
+                                }
+                            }
+                        }
+                        // Console.WriteLine("CellFaceTag: " + cl.CellFaceTag);
                     }
 
                     // Jacobian Test
@@ -452,6 +574,17 @@ namespace BoSSS.Foundation.Grid {
                     Debug.Assert(PositiveJacobianFlag == true);
                     Debug.Assert(NegativeJacobianFlag == false);
 
+                    Console.WriteLine("transformationparams of cell " + iCell);
+                    for (int ii = 0; ii < 8; ii++){
+                        Console.WriteLine("row " + ii);
+                        Console.WriteLine("nodeindex " + cl.NodeIndices[ii]);
+                        for (int jj = 0; jj < 3; jj++){
+                            Console.Write(cl.TransformationParams[ii,jj]);
+                            Console.Write(" ");
+                        }
+                        Console.WriteLine();
+                    }
+
                     if (Linear) {
                         cl.Type = CellType.Cube_Linear;
                         cl.TransformationParams = cl.TransformationParams.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { 3, 2 }).CloneAs();
@@ -467,9 +600,6 @@ namespace BoSSS.Foundation.Grid {
             // ==================
 
             grid.Cells = bosss_cells;
-            // grid.AddEdgeTag("left"); // TODO generalize
-            // grid.AddEdgeTag("right");
-            // grid.AddEdgeTag("empty");
             // grid.DefineEdgeTags(delegate (double[] X){ // TODO generalize
             //         if (Math.Abs(X[0] - 0) < 1e-10){
             //             return 1;
@@ -494,6 +624,11 @@ namespace BoSSS.Foundation.Grid {
             //         throw new ArgumentOutOfRangeException();
             //     }
             // );
+            // grid.BcCells = new BCElement[nFaces - nInternalFaces];
+            // for (int i = 0; i < nFaces - nInternalFaces; i++){
+            //     grid.BcCells[i] = new BCElement();
+            //     grid.BcCells[i].EdgeTag = (byte)(patchIDs[i - nInternalFaces] + 1);
+            // }
             grid.Description = "imported form OpenFOAM";
         }
 
