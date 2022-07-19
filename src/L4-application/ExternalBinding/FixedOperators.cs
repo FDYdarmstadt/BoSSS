@@ -107,6 +107,7 @@ namespace BoSSS.Application.ExternalBinding {
             /// </summary>
             protected override bool IsDirichlet(ref CommonParamsBnd inp) {
                 return (inp.EdgeTag == 1 || inp.EdgeTag == 2); // TODO generalize
+                inp.iEdge
             }
 
             /// <summary>
