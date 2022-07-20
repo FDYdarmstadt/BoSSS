@@ -51,7 +51,7 @@ namespace BoSSS.Solution {
         /// </summary>
         /// <param name="sessions"></param>
         /// <returns></returns>
-        public static ExceptionDataSet LoadExceptions(List<ISessionInfo> sessions) {
+        public static ExceptionDataSet LoadExceptions(IEnumerable<ISessionInfo> sessions) {
 
             // Create dataset with unique correlation between session and exception
             var set = new ExceptionDataSet();
