@@ -61,7 +61,7 @@ namespace BoSSS.Application.LsTest {
             C.DbPath = dbPath;
             C.saveperiod = 50; // in principal we only need the last timestep, save now and then for potential restarts
 
-            var db = DatabaseInfo.Open(dbPath);
+            var db = DatabaseInfo.CreateOrOpen(dbPath);
             var grd = C.GridFunc();
             db.Controller.DBDriver.SaveGridIfUnique(ref grd, out bool found, db);
             if (found) {
@@ -89,7 +89,36 @@ namespace BoSSS.Application.LsTest {
             C.dtFixed = 1.0 / (100 * degree * degree * 2); // gridres max is 4, and tempres is 2 for all simulations (all using the same timestep)
             C.NoOfTimesteps = (int)(C.Endtime / C.dtFixed);
 
-            var db = DatabaseInfo.Open(dbPath);
+            var db = DatabaseInfo.CreateOrOpen(dbPath);
+            var grd = C.GridFunc();
+            db.Controller.DBDriver.SaveGridIfUnique(ref grd, out bool found, db);
+            if (found) {
+                Console.WriteLine("Found equivalent grid in database, grid will not be saved");
+            }
+            C.SetGrid(grd);
+            C.GridFunc = null;
+
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Res", gridRes));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Degree", degree));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Evo", lsEvo.ToString()));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dt", C.dtFixed));
+
+            return C;
+        }
+
+        public static SolverWithLevelSetUpdaterTestControl ZalesakDiscSpatialConvergence(int degree, int gridRes, LevelSetEvolution lsEvo, string ProjectName, string dbPath) {
+            var Tst = new LevelSetZalesakDiscTest(2, degree, false);
+            var C = LSTstObj2CtrlObj(Tst, int.MaxValue, lsEvo, LevelSetHandling.LieSplitting, gridRes, 0);
+
+            C.SessionName = "ZalesakDisc_H_p" + degree + "_H" + gridRes + "_Evo" + lsEvo.ToString();
+            C.ProjectName = ProjectName;
+            C.savetodb = dbPath != null;
+            C.DbPath = dbPath;
+            C.saveperiod = 50; // in principal we only need the last timestep, save now and then for potential restarts
+            C.dtFixed = 1.0 / (100 * degree * degree * 2); // gridres max is 4, and tempres is 2 for all simulations (all using the same timestep)
+            C.NoOfTimesteps = (int)(C.Endtime / C.dtFixed);
+
+            var db = DatabaseInfo.CreateOrOpen(dbPath);
             var grd = C.GridFunc();
             db.Controller.DBDriver.SaveGridIfUnique(ref grd, out bool found, db);
             if (found) {
@@ -317,7 +346,7 @@ namespace BoSSS.Application.LsTest {
                 double dt = h / (Math.Sqrt(2) * Math.PI); // this is grid width divided by maximum velocity
                 dt /= (double)(LSdegree * LSdegree);
 
-                int timesteps = temporalResolution * Math.Max((int)Math.Ceiling(T / dt), 1); // make sure that the singular point in time is exactly on one timestep
+                int timesteps = (int)(T * temporalResolution * Math.Max((int)Math.Ceiling(1.0 / dt), 1)); // make sure that the singular point in time is exactly on one timestep
 
                 return (T / (double)timesteps);
             }
