@@ -1097,7 +1097,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         for (int g = 0; g < config.NoOfPostSmootherSweeps; g++) { // Test: Residual on this level / already computed by 'MinimizeResidual' above
 
-                            ISolverSmootherTemplate _PostSmoother = allSmooters[g%allSmooters.Length];
+                            ISolverSmootherTemplate _PostSmoother = allSmooters[g % allSmooters.Length];
 
                             VerivyCurrentResidual(X, B, Res, iIter); // 
 
@@ -1113,14 +1113,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             _PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
                             resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + id + "--" + g);
 
+
+
                             var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
                             if (!termState4.bNotTerminate) {
                                 Converged = termState4.bSuccess;
                                 termPost = true;
                                 break;
                             }
-
                         }
+                        
 
                         if (termPost)
                             break;

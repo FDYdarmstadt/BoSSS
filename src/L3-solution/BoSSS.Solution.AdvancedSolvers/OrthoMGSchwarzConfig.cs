@@ -242,8 +242,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 _levelSolver.config.NoOfPostSmootherSweeps = 6;
                         } else if(iLevel == 1) {
                             (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
-                                var ret = (i <= 1 || r > r0 * 0.1, true);
-                                //Console.WriteLine($"level 1: {i} {r} {r / r0} {ret}");
+                                var ret = (i <= 1 || r > r0 * 0.01, true);
+                                //if(ret.Item1 == false)
+                                //    Console.WriteLine($"level 1: {i} {r / r0:0.##e-00} {ret}");
                                 return ret;
 
                             };
