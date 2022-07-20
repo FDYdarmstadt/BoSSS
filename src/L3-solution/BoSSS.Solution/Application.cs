@@ -653,9 +653,9 @@ namespace BoSSS.Solution {
                 // control object
                 // +++++++++++++++++++++
 
+            
                 string JSON = File.ReadAllText(ControlFilePath);
                 object controlObj = AppControl.Deserialize(JSON);
-
                 ctrlV2 = controlObj as T;
 
 

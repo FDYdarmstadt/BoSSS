@@ -95,6 +95,7 @@ namespace BoSSS.Application.BoSSSpad {
                 InteractiveShell.LastError = e;
             }
             InitTraceFile();
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" }; // try to log everyting, so we might find something useful
 
             Microsoft.DotNet.Interactive.Formatting.Formatter.RecursionLimit = 1;
             Microsoft.DotNet.Interactive.Formatting.Formatter.ListExpansionLimit = 100;

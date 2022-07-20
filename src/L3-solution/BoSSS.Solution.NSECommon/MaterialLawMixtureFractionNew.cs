@@ -121,11 +121,14 @@ namespace BoSSS.Solution.NSECommon {
                 double[] densityArguments = new double[] { T, Y0, Y1, Y2, Y3/*, Y4*/ }; // Y4 is calculated internally in the GetDensity method
                 res = base.GetDensity(densityArguments);
             } else {
-                res = 1.0;
+                res = ConstantDensityValue;
             }
             return res;
         }
-
+        /// <summary>
+        /////
+        ///// </summary>
+        //public double ConstantDensityValue { get; set; } = 1.0;
         /// <summary>
         ///  The diffusivity  D. Possibly dependent on the variable <see cref="phi"/> representing the temperature
         ///  Used for the mixture fraction equations

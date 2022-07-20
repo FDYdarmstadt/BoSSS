@@ -156,7 +156,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             for(int iIter = 0; true; iIter++) {
                 ql.SetV(bl);
                 Mtx.SpMV(-1.0, xl, 1.0, ql);
-                double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
+                double ResNorm = ql.MPI_L2Norm(Mtx.MPI_Comm);
 
                 if(iIter == 0) {
                     iter0_ResNorm = ResNorm;

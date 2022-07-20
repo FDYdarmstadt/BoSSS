@@ -99,6 +99,7 @@ namespace PublicTestRunner {
         virtual public Type[] FullTest {
             get {
                 return new Type[] {
+                        typeof(ilPSP.MultidimensionalArray_Tests),
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                         typeof(AdvancedSolverTests.TestsMain),
                         typeof(BoSSS.Application.CDG_ProjectionTest.AllUpTest),
@@ -1381,7 +1382,7 @@ namespace PublicTestRunner {
                     ftr.Info("Found  " + count + " assemblies in total");
                     
                     if(count <= 0) {
-                        Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
+                        Console.WriteLine("Found no assembly matching: " + AssemblyFilter + " (hint: don't provide a filename extension, e.g. '.dll' or '.exe'; assembly names are compared without using an extension, e.g. 'XNSE_Solver', not 'XNSE_Solver.exe' or 'XNSE_Solver.dll'.)");
                         return -1;
                     }
                 }

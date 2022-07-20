@@ -70,7 +70,10 @@ namespace BoSSS.Application.BoSSSpad {
         /// 
         /// </summary>
         public override string ToString() {
-            return LocalMountPath + " == " + PathAtRemote;
+            if(PathAtRemote.IsEmptyOrWhite())
+                return LocalMountPath;
+            else
+                return LocalMountPath + " == " + PathAtRemote;
         }
     }
 

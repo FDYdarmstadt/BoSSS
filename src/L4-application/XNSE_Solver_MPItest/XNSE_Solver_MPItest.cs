@@ -64,7 +64,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static public void RotCube_GetSpeciesIDError() {
             // Tritt nur mit 4 cores auf !!!
             // Fixed: Bei AMR wird LevelsetTracker "genullt", dieser wurde bis dato noch vollständig an die Flüsse übergeben
-            var C = Rotating_Cube(4,30,2,true);
+            var C = Rotating_Cube(4, 30, 2, true);
 
             using (var solver = new XNSE()) {
                 solver.Init(C);
@@ -120,7 +120,9 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
         [Test]
-        public static void emptyMaskInSchwarz() {
+        public static void EmptyMaskInSchwarz() {
+            //--test=BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz
+
             // This test simulates bad initial distribution of void cells over ranks
             // which would lead to an error within Schwarz solver
             // because of voidcells Schwarzblocks would be empty
@@ -148,9 +150,11 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             
             BoSSS.Solution.Application.InitMPI();
-            ParallelRisingDroplet(1);
-            ParallelRisingDroplet(2);
-            ParallelRisingDroplet(3);
+            //ParallelRisingDroplet(1);
+            //ParallelRisingDroplet(2);
+            //ParallelRisingDroplet(3);
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.BadInitiallyDistributionTest(true);
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_OrderNotSupportedInHMF();
 
             BoSSS.Solution.Application.FinalizeMPI();
         }

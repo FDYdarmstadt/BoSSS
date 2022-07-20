@@ -1230,22 +1230,18 @@ namespace BoSSS.Solution.LevelSetTool.SemiLagrangianLevelSet
 
                 NormalField = new Dictionary<int, MultidimensionalArray []> ();
 
-                foreach (int cell in NarrowBandCells.ItemEnum)
-                {
-                    NodeSet NormalEvalPoints = new NodeSet (Grid.iGeomCells.GetRefElement (cell), nds);
-                    NormalField.Add (cell, new MultidimensionalArray [nbrofTestPoints]);
-                    for (int dim = 0; dim < SpatialDimension; dim++)
-                    {
-                        InterfaceLevelSetGradient [dim].Evaluate (cell, 1, NormalEvalPoints, result[dim]);
+                foreach (int cell in NarrowBandCells.ItemEnum) {
+                    NodeSet NormalEvalPoints = new NodeSet(Grid.iGeomCells.GetRefElement(cell), nds);
+                    NormalField.Add(cell, new MultidimensionalArray[nbrofTestPoints]);
+                    for (int dim = 0; dim < SpatialDimension; dim++) {
+                        InterfaceLevelSetGradient[dim].Evaluate(cell, 1, NormalEvalPoints, result[dim]);
                     }
-                    for(int k=0;k<nbrofTestPoints;k++)
-                    {
-                        NormalField [cell] [k] = MultidimensionalArray.Create (1, SpatialDimension);
-                        for(int dim=0;dim<SpatialDimension;dim++)
-                        {
-                            NormalField [cell] [k] [0, dim] = result [dim] [0, k];
+                    for (int k = 0; k < nbrofTestPoints; k++) {
+                        NormalField[cell][k] = MultidimensionalArray.Create(1, SpatialDimension);
+                        for (int dim = 0; dim < SpatialDimension; dim++) {
+                            NormalField[cell][k][0, dim] = result[dim][0, k];
                         }
-                        NormalField [cell] [k] = NormalizeVector (NormalField [cell] [k]);
+                        NormalField[cell][k] = NormalizeVector(NormalField[cell][k]);
                     }
                 }
 
