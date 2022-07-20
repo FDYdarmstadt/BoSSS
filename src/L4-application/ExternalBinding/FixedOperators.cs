@@ -61,7 +61,7 @@ namespace BoSSS.Application.ExternalBinding {
             // =========
 
             GridData grd = mtx.ColMap.GridDat as GridData;
-            PlotGrid("grid.plt", grd);
+            // PlotGrid("grid.plt", grd);
 
             var b = mtx.ColMap.BasisS[0];
             var map = new UnsetteledCoordinateMapping(b);
@@ -80,10 +80,10 @@ namespace BoSSS.Application.ExternalBinding {
             mtx.RHSbuffer.ScaleV(-1); // convert LHS affine vector to RHS
 
             Console.WriteLine("Computed Laplacian Matrix, norm is " + mtx.InfNorm());
-            Console.WriteLine("Computed Laplacian Matrix, RHS is ");
-            foreach (var elem in mtx.RHSbuffer)
-                Console.Write(elem + " ");
-            Console.WriteLine();
+            // Console.WriteLine("Computed Laplacian Matrix, RHS is ");
+            // foreach (var elem in mtx.RHSbuffer)
+            //     Console.Write(elem + " ");
+            // Console.WriteLine();
         }
 
         static public void PlotGrid(string filename, IGridData grd) {
@@ -222,7 +222,6 @@ namespace BoSSS.Application.ExternalBinding {
             /// always true
             /// </summary>
             protected override bool IsDirichlet(ref CommonParamsBnd inp) {
-                // return true;
                 return _ptch.IsDirichlet(inp.EdgeTag);
             }
 
@@ -230,21 +229,18 @@ namespace BoSSS.Application.ExternalBinding {
             /// Dirichlet boundary value
             /// </summary>
             override protected double g_Diri(ref Foundation.CommonParamsBnd inp) { // TODO generalize
-                // Console.WriteLine("Hello from fixedoperators. EdgeTag: " + inp.EdgeTag);
                 if (inp.EdgeTag == 0){
-                    return 10;
-                    // throw new ApplicationException("Edge Index of a boundary edge should not be zero");
+                    throw new ApplicationException("Edge Index of a boundary edge should not be zero");
                 }
-                Console.Write("EdgeTag: " + inp.EdgeTag);
-                Console.Write("Value len: " + _ptch.Values.Count());
-                Console.Write("Value: " + _ptch.Values[inp.EdgeTag - 1]);
                 return _ptch.Values[inp.EdgeTag - 1];
             }
 
             /// <summary>
             /// Neumann boundary value
             /// </summary>
-            override protected double g_Neum(ref Foundation.CommonParamsBnd inp) { return 0; }
+            override protected double g_Neum(ref Foundation.CommonParamsBnd inp) {
+                return 0;
+            }
         }
 
 

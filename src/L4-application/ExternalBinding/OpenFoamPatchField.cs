@@ -17,17 +17,11 @@ namespace BoSSS.Application.ExternalBinding {
         [CodeGenExport]
         unsafe public OpenFoamPatchField(OpenFOAMGrid grdDat, int nBoundaries, int* edgeTags, int* edgeTypes, double* edgeValues)
             {
-                // Console.WriteLine("edgeValues[0]");
-                // Console.WriteLine(edgeValues[0]);
 
-                Console.WriteLine("no of boundaries: " + nBoundaries);
                 this.Values = new double[nBoundaries];
                 this.EdgeTags = new int[nBoundaries];
                 this.EdgeTypes = new string[nBoundaries];
                 for (int i = 0; i < nBoundaries; i++){
-                    Console.WriteLine("edgetype: " + edgeTypes[i]);
-                    Console.WriteLine("values" + edgeValues[i]);
-                    Console.WriteLine("edgetag: " + edgeTags[i]);
                     this.Values[i] = edgeValues[i];
                     this.EdgeTags[i] = edgeTags[i];
                     this.EdgeTypes[i] = IntToBCType(edgeTypes[i]);

@@ -150,8 +150,6 @@ namespace BoSSS.Foundation.Grid {
                 for (int i = 0; i < nBoundaryFaces; i++)
                 {
                     this.BoundaryFacePatchTypes[i] = _names[_patchIDs[i]];
-                    // Console.WriteLine("BoundaryFacepatchtypes");
-                    // Console.WriteLine(this.BoundaryFacePatchTypes[i]);
                 }
 
 
@@ -204,10 +202,8 @@ namespace BoSSS.Foundation.Grid {
             // create BoSSS grid
             FOAMmesh_to_BoSSS(this, nCells, faces, neighbour, owner, points, names, patchIDs, emptyTag);
 
-                Console.Write("test4");
             // create grid data object
             this.GridDataObject = new GridData(this);
-                Console.Write("test5");
         }
 
 
@@ -301,14 +297,6 @@ namespace BoSSS.Foundation.Grid {
 
             // Build Cells-to-Faces correlation
             // ================================
-            Console.WriteLine("faces");
-            int k = 0;
-            foreach (var face in faces){
-                Console.WriteLine("face " + k);
-                k++;
-                foreach (var i in face)
-                    Console.WriteLine(i);
-            }
 
             List<int>[] Cells2Faces = new List<int>[nCells]; // mapping of BoSSS cells to OpenFOAM faces
             for (int j = 0; j < nCells; j++) {
@@ -326,15 +314,6 @@ namespace BoSSS.Foundation.Grid {
                 Debug.Assert(Cells2Faces[owner[iFace]].Contains(iFace) == false);
                 Cells2Faces[owner[iFace]].Add(iFace);
 
-            }
-
-            int index = 0;
-            foreach (var cfs in Cells2Faces){
-                Console.WriteLine("Cell " + index);
-                foreach(var face in cfs){
-                    Console.WriteLine(face);
-                }
-                index++;
             }
 
             // convert to BoSSS grid
@@ -362,15 +341,6 @@ namespace BoSSS.Foundation.Grid {
                     }
                     if (NodesUnsorted.Count != 8) {
                         throw new NotImplementedException("Degenerate cubes are not supported.");
-                    }
-                    int iii = 0;
-                    Console.WriteLine("cubefaces of cell " + iCell);
-                    foreach (var cf in cube_faces){
-                        Console.WriteLine("face " + iii);
-                        foreach (var f in cf){
-                            Console.WriteLine(f);
-                        }
-                        iii++;
                     }
                     // Console.WriteLine("Hello from loop for Cell " + iCell);
                     // // int index = 0;
@@ -489,7 +459,6 @@ namespace BoSSS.Foundation.Grid {
                             // => nothing to do
                             // ++++++++++++++++++++++++++
 
-                            //Console.WriteLine("Face Nr " + faceIndex + " is an internal face, local index " + i);
                             //// cl.CellFaceTags[i].FaceIndex = faceIndex;
                             //cl.CellFaceTags[i].FaceIndex = i;
                             //cl.CellFaceTags[i].EdgeTag = 0;
@@ -522,19 +491,15 @@ namespace BoSSS.Foundation.Grid {
                             var pointsOfFace = new List<List<double>>();
                             for (int iPoint = 0; iPoint < 4; iPoint++){
                                 pointsOfFace.Add(new List<double>());
-                                // Console.WriteLine("point: " + iPoint);
                                 for (int iCoord = 0; iCoord < D ; iCoord++){
                                     pointsOfFace[iPoint].Add(points[faces[faceIndex][iPoint], iCoord]);
-                                    // Console.WriteLine(pointsOfFace[iPoint][iCoord]);
                                 }
                             }
                             var pointsOfNeighborFace = new List<List<double>>();
                             for (int iPoint = 0; iPoint < 4; iPoint++){
                                 pointsOfNeighborFace.Add(new List<double>());
-                                // Console.WriteLine("point of neighbor: " + iPoint);
                                 for (int iCoord = 0; iCoord < D ; iCoord++){
                                     pointsOfNeighborFace[iPoint].Add(points[faces[faceIndexNeighbor][iPoint], iCoord]);
-                                    // Console.WriteLine(pointsOfNeighborFace[iPoint][iCoord]);
                                 }
                             }
                             byte periodicTag = 0;
@@ -561,12 +526,9 @@ namespace BoSSS.Foundation.Grid {
                             var outletVec2 = outlet[0] - outlet[2];
                             var outletNormal = outletVec1.CrossProduct(outletVec2);
 
-                            // Console.WriteLine("inletNormalVec" + inletNormal);
-                            // Console.WriteLine("outletNormalVec" + outletNormal);
                             grid.ConstructPeriodicEdgeTrafo(outlet, outletNormal, inlet, inletNormal, out periodicTag);
                             cl.CellFaceTags[i].EdgeTag = periodicTag;
                             // cl.CellFaceTags[i].EdgeTag = 182;
-                            Console.WriteLine("Face Nr " + faceIndex + " is an empty face, GlobalID: " + iCell + " , EdgeTag: " + cl.CellFaceTags[i].EdgeTag + ", neighborFaceIndex: " + faceIndexNeighbor + ", localFaceIndex: " + i + " , periodicInverse: " + cl.CellFaceTags[i].PeriodicInverse);
                             */
                         } else {
                             // this is an actual boundary face
@@ -578,21 +540,9 @@ namespace BoSSS.Foundation.Grid {
                             // cl.CellFaceTags[i].FaceIndex = faceIndex;
                             cft.FaceIndex = i;
                             cft.ConformalNeighborship = true;
-                            Console.WriteLine("Face Nr " + faceIndex + " is a boundary face, EdgeTag: " + cft.EdgeTag + ", local index: " + i);
-                            if (faceIndex == 9){
-                                Console.WriteLine("nodes: ");
-                                foreach (var node in faces[faceIndex]){
-                                    Console.WriteLine(node);
-                                }
-                                foreach (var node in faces[faceIndex]){
-                                    for (int kk = 0; kk < 3; kk++)
-                                    {Console.WriteLine(points[node,kk]);}
-                                }
-                            }
 
                             tempCellFaceTags.Add(cft);
                         }
-                        // Console.WriteLine("CellFaceTag: " + cl.CellFaceTag);
                     }
 
 
@@ -600,17 +550,6 @@ namespace BoSSS.Foundation.Grid {
                         cl.CellFaceTags = tempCellFaceTags.ToArray();
 
                     
-
-                    Console.WriteLine("transformationparams of cell " + iCell);
-                    for (int ii = 0; ii < 8; ii++){
-                        Console.WriteLine("row " + ii);
-                        Console.WriteLine("nodeindex " + cl.NodeIndices[ii]);
-                        for (int jj = 0; jj < 3; jj++){
-                            Console.Write(cl.TransformationParams[ii,jj]);
-                            Console.Write(" ");
-                        }
-                        Console.WriteLine();
-                    }
 
                     if (Linear) {
                         cl.Type = CellType.Cube_Linear;
