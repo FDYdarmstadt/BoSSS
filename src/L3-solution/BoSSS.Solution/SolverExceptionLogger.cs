@@ -1,4 +1,4 @@
-﻿using BoSSS.Foundation.IO;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
 using System;
@@ -46,6 +46,11 @@ namespace BoSSS.Solution {
             SingleExceptionDataSet.LogException(dbDrv, s, e);
         }
 
+        /// <summary>
+        /// Load all exceptions, logged for the selected sessions
+        /// </summary>
+        /// <param name="sessions"></param>
+        /// <returns></returns>
         public static ExceptionDataSet LoadExceptions(List<ISessionInfo> sessions) {
 
             // Create dataset with unique correlation between session and exception
