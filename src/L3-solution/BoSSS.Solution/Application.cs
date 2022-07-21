@@ -2027,12 +2027,16 @@ namespace BoSSS.Solution {
         /// 
         /// </summary>
         public virtual void RunSolverMode() {
+#if RELEASE
             try {
+#endif
                 this.RunSolverModeInternal();
+#if RELEASE
             } catch (Exception e) {
                 SolverExceptionLogger.SaveException(e, this);
                 throw;
             }
+#endif
         }
 
         /// <summary>
