@@ -391,7 +391,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-
+        /*
         /// <summary>
         /// "Best Fit" of DG orders for a specific low order degree; 
         /// </summary>
@@ -419,7 +419,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             return _degs[iBest];
         }
-
+        */
 
 
         int[][] m_DGpolynomialDegreeHierarchy;

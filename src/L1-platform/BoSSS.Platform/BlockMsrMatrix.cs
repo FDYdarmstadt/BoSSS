@@ -2189,6 +2189,13 @@ namespace ilPSP.LinSolvers {
             /// ctor.
             /// </summary>
             public Membank(int L, int ISblk, int JSblk) {
+
+                long MaxL = ((long)int.MaxValue) / (((long)L) * ISblk * JSblk);
+                if (L > MaxL)
+                    L = checked((int)MaxL);
+                if (L < 1)
+                    L = 1;
+
                 Mem = MultidimensionalArray.Create(L, ISblk, JSblk);
                 Occupied = new BitArray(L);
                 NextFree = 0;
@@ -2468,39 +2475,56 @@ namespace ilPSP.LinSolvers {
 
 
         /// <summary>
-        /// Ad-hoc iperformance instrumentation
+        /// Ad-hoc performance instrumentation
         /// </summary>
         public static Stopwatch SPMV_tot = new Stopwatch();
 
         /// <summary>
-        /// Ad-hoc iperformance instrumentation
+        /// Ad-hoc performance instrumentation
         /// </summary>
         public static Stopwatch SPMV_inner = new Stopwatch();
 
         /// <summary>
-        /// Ad-hoc iperformance instrumentation
+        /// Ad-hoc performance instrumentation
         /// </summary>
         public static Stopwatch SpMV_local = new Stopwatch();
 
         /// <summary>
-        /// Ad-hoc iperformance instrumentation
+        /// Ad-hoc performance instrumentation
         /// </summary>
         public static Stopwatch SpMV_initSending = new Stopwatch();
 
         /// <summary>
-        /// Ad-hoc iperformance instrumentation
+        /// Ad-hoc performance instrumentation
         /// </summary>
         public static Stopwatch SpMV_receive = new Stopwatch();
 
         /// <summary>
-        /// Ad-hoc iperformance instrumentation
+        /// Ad-hoc performance instrumentation
         /// </summary>
         public static Stopwatch SpMV_external = new Stopwatch();
 
         /// <summary>
-        /// Ad-hoc iperformance instrumentation
+        /// Ad-hoc performance instrumentation
         /// </summary>
         public static Stopwatch SpMV_indextrans = new Stopwatch();
+
+        /// <summary>
+        /// Write the ad-hoc instrumentation to Console
+        /// </summary>
+        public static void PrintPerfStat() {
+            if(BlockMsrMatrix.multiply != null)
+                Console.WriteLine("  spmm total " + BlockMsrMatrix.multiply.Elapsed.TotalSeconds);
+            if (BlockMsrMatrix.multiply_core != null)
+                Console.WriteLine("  spmm core " + BlockMsrMatrix.multiply_core.Elapsed.TotalSeconds);
+            
+            Console.WriteLine("  spmv total     " + BlockMsrMatrix.SPMV_tot.Elapsed.TotalSeconds);
+            Console.WriteLine("   spmv local    " + BlockMsrMatrix.SpMV_local.Elapsed.TotalSeconds);
+            Console.WriteLine("    spmv inner   " + BlockMsrMatrix.SPMV_inner.Elapsed.TotalSeconds);
+            Console.WriteLine("   spmv send     " + BlockMsrMatrix.SpMV_initSending.Elapsed.TotalSeconds);
+            Console.WriteLine("   spmv receive  " + BlockMsrMatrix.SpMV_receive.Elapsed.TotalSeconds);
+            Console.WriteLine("   spmv external " + BlockMsrMatrix.SpMV_external.Elapsed.TotalSeconds);
+        }
 
         /// <summary>
         /// Sparse Matrix/Vector multiplication;
@@ -2521,13 +2545,13 @@ namespace ilPSP.LinSolvers {
             where VectorType2 : IList<double> //
         {
             using(new FuncTrace()) {
-                SPMV_tot.Reset();
-                SPMV_inner.Reset();
-                SpMV_local.Reset();
-                SpMV_initSending.Reset();
-                SpMV_receive.Reset();
-                SpMV_external.Reset();
-                SpMV_indextrans.Reset();
+                //SPMV_tot.Reset();
+                //SPMV_inner.Reset();
+                //SpMV_local.Reset();
+                //SpMV_initSending.Reset();
+                //SpMV_receive.Reset();
+                //SpMV_external.Reset();
+                //SpMV_indextrans.Reset();
 
                 SPMV_tot.Start();
 
@@ -2544,6 +2568,7 @@ namespace ilPSP.LinSolvers {
                 else
                     a = _a.ToArray(); // still faster than accessing via IList
 
+                SpMV_initSending.Start();
                 this.UpdateCommPattern(this.MPI_Comm);
                 int MPIsize = this._RowPartitioning.MpiSize;
                 int MPIrank = this._RowPartitioning.MpiRank;
@@ -2615,7 +2640,7 @@ namespace ilPSP.LinSolvers {
                         csMPI.Raw.Issend(SendBuffers[i], Len, csMPI.Raw._DATATYPE.DOUBLE, SendRnk, 55 * 19 * MPIrank, this.MPI_Comm, out Requests[i]);
                     }
                 }
-
+                SpMV_initSending.Stop();
                 bool[] bTouch = new bool[acc.Count];
 
                 // local multiplication
@@ -2744,7 +2769,7 @@ namespace ilPSP.LinSolvers {
                                         int __iRowLoc = __i + locBlockRowOffset;
                                         double ri = acc[__iRowLoc] * beta + alpha * VecAccu[__i];
                                         acc[__iRowLoc] = ri;
-                                        Debug.Assert(acc[__iRowLoc] == ri);
+                                        Debug.Assert(acc[__iRowLoc] == ri, "ri = " + ri + "acc = " + acc[__iRowLoc]);
                                     }
                                 }
 

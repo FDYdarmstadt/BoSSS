@@ -19,7 +19,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// p-Multigrid on a single grid level
     /// </summary>
-    public class LevelPmg : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
+    public class LevelPmg : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination, ISubsystemSolver {
 
         /// <summary>
         /// Configuration
@@ -157,7 +157,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotImplementedException();
         }
 
-        private MultigridOperator m_op;
+        private IOperatorMappingPair m_op;
 
         /// <summary>
         /// - 1st index: cell
@@ -172,40 +172,88 @@ namespace BoSSS.Solution.AdvancedSolvers {
         private bool AnyHighOrderTerms {
             get {
                 Debug.Assert(m_op != null, "there is no matrix given yet!");
-                return m_op.Mapping.DgDegree.Any(p => p > config.OrderOfCoarseSystem);
+                return m_op.DgMapping.DgDegree.Any(p => p > config.OrderOfCoarseSystem);
             }
         }
 
-   
+
+        int[] GetBestFitLowOrder(int pLow) {
+            if (m_op is MultigridOperator _op) {
+                var _degs = _op.DGpolynomialDegreeHierarchy;
+
+                int pBestDist = int.MaxValue;
+                int iBest = -1;
+                for (int i = 0; i < _degs.Length; i++) {
+                    int pMax = _degs[i].Max();
+
+                    if (pMax == pLow)
+                        return _degs[i];
+
+                    int pdist = Math.Abs(pLow - pMax);
+                    if (pdist <= pBestDist) {
+                        pBestDist = pdist;
+                        iBest = i;
+                    }
+                }
+
+                return _degs[iBest];
+            } else {
+                var _degs = new List<int[]>();
+                _degs.Add(m_op.DgMapping.DgDegree);
+
+                int pBestDist = Math.Abs(_degs[0].Max() - pLow);
+                int iBest = 0;
+                for (int i = 1; i <= _degs[0].Max(); i++) {
+                    int[] _degs_i = _degs[i - 1].Select(k => k - 1).ToArray();
+                    int pMax = _degs_i.Max();
+                    if (_degs_i.Min() < 0)
+                        break;
+                    _degs.Add(_degs_i);
+
+                    if (pMax == pLow)
+                        return _degs[i];
+
+                    int pdist = Math.Abs(pLow - pMax);
+                    if (pdist <= pBestDist) {
+                        pBestDist = pdist;
+                        iBest = i;
+                    }
+
+                }
+
+                return _degs[iBest];
+
+            }
+        }
 
         /// <summary>
         /// 
         /// </summary>
-        public void Init(MultigridOperator op) {
+        void InitImpl(IOperatorMappingPair op) {
+            if (object.ReferenceEquals(op, m_op))
+                return;
+            if (m_op != null)
+                this.Dispose();
 
             //            //System.Threading.Thread.Sleep(10000);
             //            //ilPSP.Environment.StdoutOnlyOnRank0 = false;
             m_op = op;
 
-            if (config.OrderOfCoarseSystem > m_op.Mapping.DgDegree.Max())
+            if (config.OrderOfCoarseSystem > m_op.DgMapping.DgDegree.Max())
                 throw new ArgumentOutOfRangeException("CoarseLowOrder is higher than maximal DG degree");
 
-#if TEST
-            var debugerSW = new StreamWriter(String.Concat("debug_of_", ilPSP.Environment.MPIEnv.MPI_Rank));
-            Console.WriteLine("variable TEST is defined");
-            //debugerSW.WriteLine("proc {0} reporting Num of Blocks {1}", ilPSP.Environment.MPIEnv.MPI_Rank, HighOrderBlocks_LUpivots.Length);
-#endif
 
-            int D = this.m_op.GridData.SpatialDimension;
 
-            int[] lowDegs = op.GetBestFitLowOrder(config.OrderOfCoarseSystem);
+            //int D = this.m_op.GridData.SpatialDimension;
+
+            int[] lowDegs = GetBestFitLowOrder(config.OrderOfCoarseSystem);
             bool LowSelector(int iCell, int iVar, int iSpec, int pDeg) {
                 return pDeg <= lowDegs[iVar];
             }
 
 
 
-            var DGlowSelect = new SubBlockSelector(op.Mapping);
+            var DGlowSelect = new SubBlockSelector(op.DgMapping);
             //Func<int, int, int, int, bool> lowFilter = delegate (int iCell, int iVar, int iSpec, int pDeg) {
             //    return pDeg <= (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1); // containd the pressure hack
             //};
@@ -218,7 +266,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int m_lowMaskLen = lMask.NoOfMaskedRows;
 
             if (config.UseHiOrderSmoothing && AnyHighOrderTerms) {
-                var DGhighSelect = new SubBlockSelector(op.Mapping);
+                var DGhighSelect = new SubBlockSelector(op.DgMapping);
                 Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => !LowSelector(iCell, iVar, iSpec, pDeg);
                 //Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg > (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1);
                 //Func<int, int, int, int, bool> highFilter = (int iCell, int iVar, int iSpec, int pDeg) => pDeg >= 0;
@@ -261,7 +309,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             lowSolver = new PARDISOSolver() {
                 CacheFactorization = true,
                 UseDoublePrecision = false, // no difference towards =true observed for XDGPoisson
-                Parallelism = Parallelism.OMP
+
+                // fk, 24jun22, i have confirmed, at least on my laptop, that serial is faster when only used as some local block solver
+                Parallelism = (op.OperatorMatrix.MPI_Comm == csMPI.Raw._COMM.SELF) ? Parallelism.SEQ : Parallelism.OMP
             };
             lowSolver.DefineMatrix(P01SubMatrix);
 
@@ -296,15 +346,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 #endif
         }
 
-        private void ModifyLowSelector(SubBlockSelector sbs, MultigridOperator op) {
+        private void ModifyLowSelector(SubBlockSelector sbs, IOperatorMappingPair op) {
             AssignXdgBlocksModification(sbs, op, true);
         }
 
-        private void ModifyHighSelector(SubBlockSelector sbs, MultigridOperator op) {
+        private void ModifyHighSelector(SubBlockSelector sbs, IOperatorMappingPair op) {
             AssignXdgBlocksModification(sbs, op, false);
         }
 
-        private void AssignXdgBlocksModification(SubBlockSelector sbs, MultigridOperator op, bool IsLowSelector) {
+        private void AssignXdgBlocksModification(SubBlockSelector sbs, IOperatorMappingPair op, bool IsLowSelector) {
             var Filter = sbs.ModeFilter;
             //var Mask = (op.BaseGridProblemMapping.BasisS[0] as XDGBasis).Tracker.Regions.GetNearFieldMask(0);
             //var bMask = Mask.GetBitMask();
@@ -314,7 +364,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //if(bMask[iCell])
                 //    return true;
 
-                int NoOfSpec = op.Mapping.AggBasis[0].GetNoOfSpecies(iCell);
+                int NoOfSpec = op.DgMapping.GetNoOfSpecies(iCell);
                 if (NoOfSpec >= 2)
                     return IsLowSelector;
                 else
@@ -503,7 +553,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         {
             using(var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
-                int Lf = m_op.Mapping.LocalLength; // DOF's in entire system
+                int Lf = m_op.DgMapping.LocalLength; // DOF's in entire system
                 //int Lc = this.lMask.NoOfMaskedRows; // DOF's in low-order system
 
 
@@ -530,7 +580,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(IterationCallback != null) {
                     Res_f.SetV(B);
                     Mtx.SpMV(-1.0, X, 1.0, Res_f);
-                    IterationCallback(m_Iter, X.ToArray(), Res_f, m_op);
+                    IterationCallback(m_Iter, X.ToArray(), Res_f, m_op as MultigridOperator);
                 }
 
 
@@ -602,8 +652,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 hiSolver.Dispose();
                 hiSolver = null;
             }
-
-
+            HighOrderBlocks = null;
+            HighOrderBlocks_LU = null;
+            HighOrderBlocks_LUpivots = null;
+            lMask = null;
+            hMask = null;
         }
 
         /// <summary>
@@ -641,6 +694,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             return r;
+        }
+
+        public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
         }
     }
 }

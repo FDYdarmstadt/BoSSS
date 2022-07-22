@@ -1,4 +1,5 @@
-﻿using ilPSP;
+﻿using BoSSS.Foundation.XDG;
+using ilPSP;
 using ilPSP.LinSolvers;
 using ilPSP.LinSolvers.PARDISO;
 using ilPSP.Tracing;
@@ -11,7 +12,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-
+    /*
     /// <summary>
     /// The main purpose of this factory is to wrap up input parameters for the block solvers and to provide buffer arrays.
     /// All block solver share these buffers, which reduces the pressure on the garbage collector.
@@ -89,7 +90,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
     }
 
+    */
 
+    /*
     class BlockLevelPmg : IDisposable {
 
         public bool m_FullSolveOfCutcells = true;
@@ -103,13 +106,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public double[] Xdummy = null;
 
         /// <summary>
-        /// masks for the Schwarz blocks, high order modes, only initialized if PMG is used, <see cref="Schwarz.UsePMGinBlocks"/>
+        /// masks for the Schwarz blocks, high order modes, only initialized if PMG is used, <see cref="Schwarz.Config.UsePMGinBlocks"/>
         /// - index: Schwarz block
         /// </summary>
         BlockMask BMhiBlocks;
 
         /// <summary>
-        /// masks for the Schwarz blocks, low order modes, only initialized if PMG is used, <see cref="Schwarz.UsePMGinBlocks"/>
+        /// masks for the Schwarz blocks, low order modes, only initialized if PMG is used, <see cref="Schwarz.Config.UsePMGinBlocks"/>
         /// - index: Schwarz block
         /// </summary>
         BlockMask BMloBlock;
@@ -156,6 +159,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        
         /// <summary>
         /// For performance sake, just build the objects, which are passed to this function, once.
         /// </summary>
@@ -250,6 +254,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             loSolver.DefineMatrix(loBlock);
 
         }
+        
 
         private void ModifyLowSelector(SubBlockSelector sbs, MultigridOperator op) {
             AssignXdgBlocksModification(sbs, op, true);
@@ -378,4 +383,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotImplementedException();
         }
     }
+
+    */
+    
 }

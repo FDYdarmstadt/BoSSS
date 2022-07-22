@@ -71,15 +71,15 @@ namespace BoSSS.Foundation {
             : base(2) //
         {
 
-            if(nds.GetLength(1) > 3)
+            if (nds.GetLength(1) > 3)
                 throw new ArgumentException("Spatial dimension is expected to be lower or equal to 3.");
             base.Allocate(nds.GetLength(0), nds.GetLength(1));
             base.Set2DArray(nds);
             base.LockForever();
             this.RefElement = r;
-            lock(syncRoot) {
+            lock (syncRoot) {
                 this.Reference = RefCounter;
-                if(RefCounter >= int.MaxValue)
+                if (RefCounter >= int.MaxValue)
                     throw new ApplicationException("NodeSet ref-counter overflow.");
                 RefCounter++;
             }
@@ -148,7 +148,8 @@ namespace BoSSS.Foundation {
 
 
         /// <summary>
-        /// unique reference number for the node set.
+        /// unique reference number for the node set;
+        /// 0 indicates a temporary node set
         /// </summary>
         public int Reference {
             get;

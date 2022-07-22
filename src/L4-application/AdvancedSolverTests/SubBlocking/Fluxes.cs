@@ -39,7 +39,7 @@ namespace AdvancedSolverTests {
         double m_factor;
 
         public override IList<string> ArgumentOrdering {
-            get { return new string[] { m_varname };  }
+            get { return new string[] { m_varname }; }
         }
 
         protected override double Source(double[] x, double[] parameters, double[] U) {
@@ -70,15 +70,15 @@ namespace AdvancedSolverTests {
         }
 
         protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
-            return Uin[0]*inp.Normal[0]*m_factor;
+            return Uin[0] * inp.Normal[0] * m_factor;
         }
 
         protected override double InnerEdgeFlux(ref CommonParams inp, double[] Uin, double[] Uout) {
-            return 0.5*(Uin[0] + Uout[0])*inp.Normal[0]*m_factor;
+            return 0.5 * (Uin[0] + Uout[0]) * inp.Normal[0] * m_factor;
         }
 
         protected override void Flux(ref CommonParamsVol inp, double[] U, double[] output) {
-            output[0] = U[0]*m_factor;
+            output[0] = U[0] * m_factor;
         }
     }
 
@@ -133,14 +133,14 @@ namespace AdvancedSolverTests {
         }
 
         public string PositiveSpecies {
-            get { 
-                return "A"; 
+            get {
+                return "A";
             }
         }
 
         public string NegativeSpecies {
-            get { 
-                return "B"; 
+            get {
+                return "B";
             }
         }
 
@@ -158,8 +158,7 @@ namespace AdvancedSolverTests {
     }
 
 
-    public class XLaplaceBCs
-    {
+    public class XLaplaceBCs {
 
         /// <summary>
         /// Function which determines which part of the domain boundary is of Dirichlet type
@@ -180,8 +179,7 @@ namespace AdvancedSolverTests {
     /// <summary>
     /// Laplace operator in the bulk.
     /// </summary>
-    public class XLaplace_Bulk : BoSSS.Solution.NSECommon.SIPLaplace, IEquationComponentSpeciesNotification, IEquationComponentCoefficient
-    {
+    public class XLaplace_Bulk : BoSSS.Solution.NSECommon.SIPLaplace, IEquationComponentSpeciesNotification, IEquationComponentCoefficient {
 
         public XLaplace_Bulk(double _muA, double _muB, double __penatly_baseFactor, string n)
             : base(__penatly_baseFactor, n) {
@@ -192,16 +190,14 @@ namespace AdvancedSolverTests {
             BC.g_Diri = ((CommonParamsBnd inp) => 0.0);
             BC.IsDirichlet = (inp => true);
             this.boundaries = BC;
-            this.penatly_baseFactor = __penatly_baseFactor;
             this.m_Mode = XLaplace_Interface.Mode.SIP;
         }
 
         double muA;
         double muB;
-        double penatly_baseFactor;
+
         XLaplace_Interface.Mode m_Mode;
-        
-        string current_species;
+
 
         public void SetParameter(string speciesName) {
             switch (speciesName) {
@@ -209,7 +205,7 @@ namespace AdvancedSolverTests {
                 case "B": species_Mu = muB; otherSpecies_Mu = muA; break;
                 default: throw new ArgumentException("Unknown species.");
             }
-            current_species = speciesName;
+
         }
 
         double species_Mu;
@@ -285,10 +281,10 @@ namespace AdvancedSolverTests {
             switch (this.m_Mode) {
                 case XLaplace_Interface.Mode.SIP:
                 case XLaplace_Interface.Mode.SWIP: {
-                        scaleIN = 0.5;
-                        scaleOT = 0.5;
-                        return;
-                    }
+                    scaleIN = 0.5;
+                    scaleOT = 0.5;
+                    return;
+                }
 
                 default:
                     throw new NotImplementedException();
@@ -304,11 +300,9 @@ namespace AdvancedSolverTests {
     /// <summary>
     /// Laplace operator at the interface
     /// </summary>
-    public class XLaplace_Interface : ILevelSetForm, ILevelSetEquationComponentCoefficient
-    {
+    public class XLaplace_Interface : ILevelSetForm, ILevelSetEquationComponentCoefficient {
 
-        public enum Mode
-        {
+        public enum Mode {
             SWIP,
             SIP
         }
@@ -384,7 +378,7 @@ namespace AdvancedSolverTests {
         /// penalty degree multiplier
         /// </summary>
         double m_penalty_deg;
-        
+
         protected double GetPenalty(ref CommonParams inp) {
 
             double PosCellLengthScale = PosLengthScaleS[inp.jCellOut];
@@ -416,7 +410,7 @@ namespace AdvancedSolverTests {
             }
 
             double mu = this.penatly_baseFactor * penaltySizeFactor * penalty_muFactor * m_penalty_deg;
-            if(mu.IsNaNorInf())
+            if (mu.IsNaNorInf())
                 throw new ArithmeticException("NAN/INF in penalty param");
             return mu;
         }
@@ -429,17 +423,17 @@ namespace AdvancedSolverTests {
 
             switch (this.m_mode) {
                 case Mode.SWIP: {
-                        scaleIN = muB / (muA + muB);
-                        scaleOT = muA / (muA + muB);
-                        return;
-                    }
+                    scaleIN = muB / (muA + muB);
+                    scaleOT = muA / (muA + muB);
+                    return;
+                }
 
                 case Mode.SIP: {
-                        // Konventionell:
-                        scaleIN = 0.5;
-                        scaleOT = 0.5;
-                        return;
-                    }
+                    // Konventionell:
+                    scaleIN = 0.5;
+                    scaleOT = 0.5;
+                    return;
+                }
 
                 default:
                     throw new NotImplementedException();

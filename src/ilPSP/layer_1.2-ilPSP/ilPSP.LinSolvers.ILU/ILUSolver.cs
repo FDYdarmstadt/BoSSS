@@ -207,7 +207,7 @@ namespace ilPSP.LinSolvers.ILU {
                     int error = 0;
                     //int* n, double* a, int* ia, int* ja, double* bilu0, int* ipar, double* dpar, int* ierr);
                     wrapper.ILU0(&N, a, p_ia, p_ja, p_bilu, iparm, dparm, &error);
-                    Console.WriteLine("MKL ILU:"+ILUerror2string(error));
+                    Console.WriteLine("MKL ILU:" + ILUerror2string(error));
 
                     ILUfactorization = new Matrix((IntPtr)p_bilu, ia, ja, N);
                     //TranslateMatrixBack(bilu,ia,ja,nonZ);

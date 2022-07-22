@@ -448,7 +448,7 @@ namespace MPI.Wrappers {
 
 
         /// <summary>
-        /// equal to <see cref="MPIOr(int,MPI_Comm)"/>, acting on the WORLD-communicator
+        /// equal to <see cref="MPIOr(bool,MPI_Comm)"/>, acting on the WORLD-communicator
         /// </summary>
         static public bool MPIOr(this bool i) {
             return MPIOr(i, csMPI.Raw._COMM.WORLD);
@@ -526,8 +526,51 @@ namespace MPI.Wrappers {
             }
         }
 
+        /// <summary>
+        /// equal to <see cref="MPIAnd(System.Collections.Generic.IEnumerable{bool},MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public bool[] MPIAnd(this System.Collections.Generic.IEnumerable<bool> i) {
+            return MPIAnd(i, csMPI.Raw._COMM.WORLD);
+        }
 
+        /// <summary>
+        /// returns the logical and of <paramref name="bb"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public bool[] MPIAnd(this System.Collections.Generic.IEnumerable<bool> bb, MPI_Comm comm) {
+            int[] loc = bb.Select(b => b ? 1 : 0).ToArray();
+            int[] glb = new int[loc.Length];
+            unsafe {
+                fixed (int* ploc = loc, pglb = glb) {
+                    csMPI.Raw.Allreduce(((IntPtr)ploc), ((IntPtr)pglb), loc.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.PROD, comm);
+                }
+            }
+            return glb.Select(g => g != 0).ToArray();
+        }
 
+        /// <summary>
+        /// equal to <see cref="MPIOr(System.Collections.Generic.IEnumerable{bool},MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public bool[] MPIOr(this System.Collections.Generic.IEnumerable<bool> i) {
+            return MPIOr(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the logical or of <paramref name="bb"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public bool[] MPIOr(this System.Collections.Generic.IEnumerable<bool> bb, MPI_Comm comm) {
+            int[] loc = bb.Select(b => b ? 1 : 0).ToArray();
+            int[] glb = new int[loc.Length];
+            unsafe {
+                fixed (int* ploc = loc, pglb = glb) {
+                    csMPI.Raw.Allreduce(((IntPtr)ploc), ((IntPtr)pglb), loc.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, comm);
+                }
+            }
+            return glb.Select(g => g != 0).ToArray();
+        }
 
 
         /// <summary>

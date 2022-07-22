@@ -292,58 +292,58 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //                Console.WriteLine(c);
                     //            blaagr.Add(Chunk.GetSingleElementChunk(jCell));
                     //        }
-                            
+
                     //    }
                     //}
 
                     //(new CellMask(GridData, blaagr)).SaveToTextFile("failCell.csv");
 
                     for (int jCell = 0; jCell < J; jCell++) { // loop over cells...
-                    //ReducedRegionCode rrc;
-                    //int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);
+                                                              //ReducedRegionCode rrc;
+                                                              //int NoOfSpc = LsTrk.GetNoOfSpecies(jCell, out rrc);
 
-                    //if (this.Mapping.GetLength(jCell) == 0)
-                    //    // void cell
-                    //    continue;
+                        //if (this.Mapping.GetLength(jCell) == 0)
+                        //    // void cell
+                        //    continue;
 
-                    for (int i = 0; i < LL; i++) { // for each configuration item...
-                        var conf = m_Config[i];
+                        for (int i = 0; i < LL; i++) { // for each configuration item...
+                            var conf = m_Config[i];
 
-                        int E = conf.VarIndex.Length;
-                        long[] _i0s = __i0s[i];
-                        int[] _Lns = __Lns[i];
-                        //AggregationGridBasis basis = null;
+                            int E = conf.VarIndex.Length;
+                            long[] _i0s = __i0s[i];
+                            int[] _Lns = __Lns[i];
+                            //AggregationGridBasis basis = null;
 
-                        int DOF = 0;
-                        bool AnyZeroLength = false;
-                        for (int e1 = 0; e1 < E; e1++) {
-                            int dof_var = this.Mapping.GetLengthForVar(jCell, conf.VarIndex[e1]);
-                            DOF += dof_var;
-                            AnyZeroLength |= (dof_var == 0);
-                        }
-                        if (AnyZeroLength && DOF > 0)
-                            throw new ApplicationException();
+                            int DOF = 0;
+                            bool AnyZeroLength = false;
+                            for (int e1 = 0; e1 < E; e1++) {
+                                int dof_var = this.Mapping.GetLengthForVar(jCell, conf.VarIndex[e1]);
+                                DOF += dof_var;
+                                AnyZeroLength |= (dof_var == 0);
+                            }
+                            if (AnyZeroLength && DOF > 0)
+                                throw new ApplicationException();
 
-                        if (DOF == 0)
-                            // void cell
-                            continue;
+                            if (DOF == 0)
+                                // void cell
+                                continue;
 
-                        for (int e = 0; e < E; e++) {
-                            int iVar = conf.VarIndex[e];
-                            _i0s[e] = this.Mapping.LocalUniqueIndex(iVar, jCell, 0) + i0;
-                            _Lns[e] = basisS[iVar].GetLength(jCell, Degrees[iVar]);
-                        }
+                            for (int e = 0; e < E; e++) {
+                                int iVar = conf.VarIndex[e];
+                                _i0s[e] = this.Mapping.LocalUniqueIndex(iVar, jCell, 0) + i0;
+                                _Lns[e] = basisS[iVar].GetLength(jCell, Degrees[iVar]);
+                            }
 
-                        // extract blocks from operator and mass matrix
-                        // --------------------------------------------
+                            // extract blocks from operator and mass matrix
+                            // --------------------------------------------
 
-                        stw_Data.Start();
-                        ExtractBlock(_i0s, _Lns, true, MassMatrix, ref MassBlock[i]);
-                        ExtractBlock(_i0s, _Lns, true, OpMatrix, ref OperatorBlock[i]);
-                        stw_Data.Stop();
-                        double MassBlkNrm = MassBlock[i].InfNorm();
-                        double OperatorBlkNrm = OperatorBlock[i].InfNorm();
-                        int NN = MassBlock[i].NoOfRows;
+                            stw_Data.Start();
+                            ExtractBlock(_i0s, _Lns, true, MassMatrix, ref MassBlock[i]);
+                            ExtractBlock(_i0s, _Lns, true, OpMatrix, ref OperatorBlock[i]);
+                            stw_Data.Stop();
+                            double MassBlkNrm = MassBlock[i].InfNorm();
+                            double OperatorBlkNrm = OperatorBlock[i].InfNorm();
+                            int NN = MassBlock[i].NoOfRows;
 
                             if (MassBlkNrm == 0) {
                                 //throw new ArithmeticException("absolute zero Mass block in cell " + jCell + ".");
@@ -370,9 +370,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 }
                                 Console.WriteLine(jCell);
                             } else {
-
-
-
 
                                 //if(OperatorBlkNrm == 0) {
                                 //    throw new ArithmeticException("absolute zero Operator block in cell " + jCell + ".");
@@ -438,7 +435,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                                 stw_Data.Stop();
                             }
-                    }
+                        }
                     }
 
                     bt.LogDummyblock(stw_Data.Elapsed.Ticks, "Change_of_Basis_data_copy");

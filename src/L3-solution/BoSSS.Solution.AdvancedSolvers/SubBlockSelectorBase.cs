@@ -641,12 +641,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
         */
 
+#if DEBUG
         private int[] m_DGdegree {
             get {
                 return m_map.DgDegree;
             }
         }
-
+#endif
         private int m_NoLocalCells {
             get {
                 return m_map.LocalNoOfBlocks + m_map.NoOfExternalCells;
@@ -832,10 +833,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// stores offsets (of local, global and subblock numbering) and lengths of dg blocks
         /// structure mimics subblock hierarchy:
-        /// 1 idx : cells
-        /// 2 idx : variables
-        /// 3 idx : species
-        /// 4 idx : dg blocks
+        /// - 1st idx : cells
+        /// - 2nd idx : variables
+        /// - 3rd idx : species
+        /// - 4th idx : dg blocks
         /// content : offset (of local, global and subblock numbering) and length of dg block
         /// </summary>
         public extNi0[][][][] m_StructuredNi0 = null;

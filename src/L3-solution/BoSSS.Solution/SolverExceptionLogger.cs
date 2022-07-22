@@ -1,4 +1,4 @@
-﻿using BoSSS.Foundation.IO;
+using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
 using System;

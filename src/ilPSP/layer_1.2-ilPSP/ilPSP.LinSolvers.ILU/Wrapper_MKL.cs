@@ -51,7 +51,7 @@ namespace ilPSP.LinSolvers.ILU {
                 break;
 
                 default:
-                throw new NotSupportedException($"Unsupported level of parallelism {par} for v5 PARDISO solver.");
+                throw new NotSupportedException($"Unsupported level of parallelism {par} for Intel MKL ILU library.");
             }
             return liborder;
         }

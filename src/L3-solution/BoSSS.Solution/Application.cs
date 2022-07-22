@@ -656,9 +656,9 @@ namespace BoSSS.Solution {
                 // control object
                 // +++++++++++++++++++++
 
+            
                 string JSON = File.ReadAllText(ControlFilePath);
                 object controlObj = AppControl.Deserialize(JSON);
-
                 ctrlV2 = controlObj as T;
 
 
@@ -2027,12 +2027,16 @@ namespace BoSSS.Solution {
         /// 
         /// </summary>
         public virtual void RunSolverMode() {
+#if RELEASE
             try {
+#endif
                 this.RunSolverModeInternal();
+#if RELEASE
             } catch (Exception e) {
                 SolverExceptionLogger.SaveException(e, this);
                 throw;
             }
+#endif
         }
 
         /// <summary>

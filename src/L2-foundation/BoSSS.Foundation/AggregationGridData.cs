@@ -144,14 +144,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// - 2nd index: enumeration
         /// - content: local cell index into the parent grid <paramref name="pGrid"/>.
         /// </param>
-        public AggregationGridData(IGridData pGrid, int[][] AggregationCells)
-        {
+        public AggregationGridData(IGridData pGrid, int[][] AggregationCells) {
             InitializeGridData(pGrid, AggregationCells);
             aggregationGrid = null;
         }
 
-        void InitializeGridData(IGridData pGrid, int[][] AggregationCells)
-        {
+        void InitializeGridData(IGridData pGrid, int[][] AggregationCells) {
             ParentGrid = pGrid;
 
             int JlocFine = pGrid.iLogicalCells.NoOfLocalUpdatedCells;
@@ -772,8 +770,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </summary>
         public IGrid Grid {
             get {
-                if(aggregationGrid == null)
-                {
+                if (aggregationGrid == null) {
                     throw new Exception("Grid was never set.");
                 }
                 return aggregationGrid;
