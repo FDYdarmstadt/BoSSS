@@ -317,6 +317,12 @@ namespace BoSSS.Application.XNSFE_Solver {
 
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
 
+            AgglomerationAlgorithm.RecoverFromAgglomerationFail = true;
+            if (AgglomerationAlgorithm.RecoverFromAgglomerationFail) {
+                Console.WriteLine("Careful activated experimental agglomeration fail recovery - i.e. do not agglomerate when no target is found");
+                AgglomerationAlgorithm.Katastrophenplot = null; // no plotting for agglomeration fails
+            }
+
             if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton & this.Control.ThermalParameters.IncludeConvection) {
                 //XOP.HomotopyUpdate.Add(delegate (double HomotopyScalar) {
                 //    if (HomotopyScalar < 0.0)

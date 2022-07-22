@@ -374,6 +374,12 @@ namespace BoSSS.Application.XNSE_Solver {
             //Get Spatial Operator
             XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
+            AgglomerationAlgorithm.RecoverFromAgglomerationFail = true;
+            if (AgglomerationAlgorithm.RecoverFromAgglomerationFail) {
+                Console.WriteLine("Careful activated experimental agglomeration fail recovery - i.e. do not agglomerate when no target is found");
+                AgglomerationAlgorithm.Katastrophenplot = null; // no plotting for agglomeration fails
+            }
+
             //final settings
             FinalOperatorSettings(XOP, D);
             XOP.Commit();
