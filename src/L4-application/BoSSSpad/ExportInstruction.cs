@@ -183,16 +183,16 @@ namespace BoSSS.Application.BoSSSpad {
         /// If you are curious about the naming of this method, see
         /// <see cref="ExportInstructionExtensions"/>.
         /// </remarks>
-        public abstract string YouMust();
+        public abstract string YouMust(bool wait);
 
         /// <summary>
-        /// See <see cref="YouMust()"/>
+        /// See <see cref="YouMust(bool)"/>
         /// </summary>
         /// <returns>
         /// Export path
         /// </returns>
-        public string Do() {
-            return YouMust();
+        public string Do(bool wait = false) {
+            return YouMust(wait);
         }
     }
 

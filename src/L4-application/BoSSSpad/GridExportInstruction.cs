@@ -67,7 +67,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Starts the export.
         /// </summary>
-        public override string YouMust() {
+        public override string YouMust(bool wait = false) {
             Console.Write("Starting export process... ");
             //// BoSSS.PlotGenerator currently does not support plots without a
             //// session...
