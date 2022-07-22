@@ -230,11 +230,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         smoother1.config.Overlap = 1; // overlap seems to help; more overlap seems to help more
                         smoother1.config.UsePMGinBlocks = UsepTG;
 
+                        
+
                         var _levelSolver = new OrthonormalizationMultigrid() {
                             PreSmoother = smoother1,
-                            PostSmoother = smoother1
+                            PostSmoother = smoother1,
+                           
                         };
                         _levelSolver.config.m_omega = 1;
+                        if (iLevel == 0) {
+                            tr.Info("Using additional ILU smoother on level " + iLevel);
+                            var otherSmoother = new CellILU() {
+
+                            };
+                            _levelSolver.config.NoOfPostSmootherSweeps = 4;
+                            _levelSolver.AdditionalPostSmoothers = new ISolverSmootherTemplate[] { otherSmoother };
+                        }
                       
                         if (iLevel == 0) {
                             (_levelSolver).TerminationCriterion = this.DefaultTermination;
