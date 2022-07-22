@@ -106,6 +106,61 @@ namespace BoSSS.Application.LsTest {
             return C;
         }
 
+        public static SolverWithLevelSetUpdaterTestControl SwirlingFlow3DTemporalConvergence(int degree, int gridRes, int tempRes, LevelSetEvolution lsEvo, string ProjectName, string dbPath) {
+            var Tst = new LevelSetSwirlingFlowTest(3, degree, false, 0.1);
+            var C = LSTstObj2CtrlObj(Tst, int.MaxValue, lsEvo, LevelSetHandling.LieSplitting, gridRes, 0, tempRes);
+
+            C.SessionName = "SwirlingFlow3D_T_p" + degree + "_H" + gridRes + "_t" + tempRes + "_Evo" + lsEvo.ToString();
+            C.ProjectName = ProjectName;
+            C.savetodb = dbPath != null;
+            C.DbPath = dbPath;
+            C.saveperiod = 50; // in principal we only need the last timestep, save now and then for potential restarts
+
+            var db = DatabaseInfo.CreateOrOpen(dbPath);
+            var grd = C.GridFunc();
+            db.Controller.DBDriver.SaveGridIfUnique(ref grd, out bool found, db);
+            if (found) {
+                Console.WriteLine("Found equivalent grid in database, grid will not be saved");
+            }
+            C.SetGrid(grd);
+            C.GridFunc = null;
+
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Res", gridRes));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Degree", degree));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Evo", lsEvo.ToString()));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dt", C.dtFixed));
+
+            return C;
+        }
+        public static SolverWithLevelSetUpdaterTestControl SwirlingFlow3DSpatialConvergence(int degree, int gridRes, LevelSetEvolution lsEvo, string ProjectName, string dbPath) {
+            var Tst = new LevelSetSwirlingFlowTest(3, degree, false, 3);
+            var C = LSTstObj2CtrlObj(Tst, int.MaxValue, lsEvo, LevelSetHandling.LieSplitting, gridRes, 0);
+
+            C.SessionName = "SwirlingFlow3D_H_p" + degree + "_H" + gridRes + "_Evo" + lsEvo.ToString();
+            C.ProjectName = ProjectName;
+            C.savetodb = dbPath != null;
+            C.DbPath = dbPath;
+            C.saveperiod = 50; // in principal we only need the last timestep, save now and then for potential restarts
+            C.dtFixed = 1.0 / (100 * degree * degree * 2); // gridres max is 4, and tempres is 2 for all simulations (all using the same timestep)
+            C.NoOfTimesteps = (int)(C.Endtime / C.dtFixed);
+
+            var db = DatabaseInfo.CreateOrOpen(dbPath);
+            var grd = C.GridFunc();
+            db.Controller.DBDriver.SaveGridIfUnique(ref grd, out bool found, db);
+            if (found) {
+                Console.WriteLine("Found equivalent grid in database, grid will not be saved");
+            }
+            C.SetGrid(grd);
+            C.GridFunc = null;
+
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Res", gridRes));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Degree", degree));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Evo", lsEvo.ToString()));
+            C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("dt", C.dtFixed));
+
+            return C;
+        }
+
         public static SolverWithLevelSetUpdaterTestControl ZalesakDiscSpatialConvergence(int degree, int gridRes, LevelSetEvolution lsEvo, string ProjectName, string dbPath) {
             var Tst = new LevelSetZalesakDiscTest(2, degree, false);
             var C = LSTstObj2CtrlObj(Tst, int.MaxValue, lsEvo, LevelSetHandling.LieSplitting, gridRes, 0);
@@ -537,6 +592,9 @@ namespace BoSSS.Application.LsTest {
                         grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                         break;
                     case 3:
+                        var zNodes = GenericBlas.Linspace(0, 1, 25 * Resolution + 1);
+                        grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -578,6 +636,8 @@ namespace BoSSS.Application.LsTest {
                         break;
                     }
                     case 3:
+                        PhiFunc = new Func<double[], double, double>((X, t) => Math.Sqrt(Math.Pow(X[0] - 0.35, 2) + Math.Pow(X[1] - 0.35, 2) + Math.Pow(X[2] - 0.35, 2)) - Radius);
+                        break;
                     default:
                     throw new ArgumentOutOfRangeException();
                 }
@@ -593,9 +653,19 @@ namespace BoSSS.Application.LsTest {
                 var Ret = new Func<double[], double, double>[this.NoOfLevelsets][];
                 switch (SpatialDimension) {
                     case 2:
-                        Ret[0] = new Func<double[], double, double>[] { (X, t) => -2 * Math.Sin(Math.PI * X[1]) * Math.Cos(Math.PI * X[1]) * Math.Pow(Math.Sin(Math.PI * X[0]) , 2) * Math.Cos(Math.PI * t / T), (X, t) => 2 * Math.Sin(Math.PI * X[0]) * Math.Cos(Math.PI * X[0]) * Math.Pow(Math.Sin(Math.PI * X[1]), 2) * Math.Cos(Math.PI * t / T) };
+                        Ret[0] = new Func<double[], double, double>[] { 
+                            (X, t) => -2 * Math.Sin(Math.PI * X[1]) * Math.Cos(Math.PI * X[1]) * Math.Pow(Math.Sin(Math.PI * X[0]) , 2) * Math.Cos(Math.PI * t / T),
+                            (X, t) => 2 * Math.Sin(Math.PI * X[0]) * Math.Cos(Math.PI * X[0]) * Math.Pow(Math.Sin(Math.PI * X[1]), 2) * Math.Cos(Math.PI * t / T) 
+                        };
                         break;
                     case 3:
+                        Ret[0] = new Func<double[], double, double>[] {
+                            (X, t) => 2 * Math.Sin(2 * Math.PI * X[1]) * Math.Sin(2 * Math.PI * X[2]) * Math.Pow(Math.Sin(Math.PI * X[0]) , 2) * Math.Cos(Math.PI * t / T),
+                            (X, t) => -Math.Sin(2 * Math.PI * X[0]) * Math.Sin(2 * Math.PI * X[2]) * Math.Pow(Math.Sin(Math.PI * X[1]) , 2) * Math.Cos(Math.PI * t / T),
+                            (X, t) => -Math.Sin(2 * Math.PI * X[0]) * Math.Sin(2 * Math.PI * X[1]) * Math.Pow(Math.Sin(Math.PI * X[2]) , 2) * Math.Cos(Math.PI * t / T)
+
+                        };
+                        break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
