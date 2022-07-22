@@ -8,6 +8,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using ZwoLevelSetSolver.SolidPhase;
+using BoSSS.Solution.LevelSetTools;
 
 namespace ZwoLevelSetSolver.ControlFiles {
     public static class Vortex {

@@ -21,6 +21,7 @@ using BoSSS.Solution.XNSECommon;
 using ilPSP;
 using BoSSS.Solution.Utils;
 using NUnit.Framework;
+using BoSSS.Solution.LevelSetTools;
 
 namespace ZwoLevelSetSolver {
 
@@ -172,14 +173,14 @@ namespace ZwoLevelSetSolver {
             opFactory.AddParameter((ParameterS)GetLevelSetVelocity(1));
             */
             //*
-            if(config.dntParams.SST_isotropicMode == BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
+            if(config.dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 for(int d = 0; d < D; ++d) {
                     opFactory.AddEquation(new SlipContactLine(d, D, config.physParams.betaL, config.physParams.theta_e));
                 }
                 //ContactLine
                 //=====================
             }
-            var normalsParameter = new BoSSS.Solution.XNSECommon.Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.SolidLevelSetCG);
+            var normalsParameter = new Normals(VariableNames.SolidLevelSetCG, D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree);
             opFactory.AddParameter(normalsParameter);
             lsUpdater.AddLevelSetParameter(VariableNames.SolidLevelSetCG, normalsParameter);
             //*/

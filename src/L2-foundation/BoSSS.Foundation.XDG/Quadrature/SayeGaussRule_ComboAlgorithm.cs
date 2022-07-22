@@ -88,7 +88,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         nodeArg.NodesAndWeights.AddRule(newRule);
                         break;
                     case SayeArgument<S>.Mode.LowOrderQuadrature:
-                        throw new NotImplementedException();
+                        newRule = SetLowOrderQuadratureNodes(nodeArg);
+                        nodeArg.NodesAndWeights.AddRule(newRule);
+                        break;
                     case SayeArgument<S>.Mode.DomainIsEmpty:
                         break;
                     default:

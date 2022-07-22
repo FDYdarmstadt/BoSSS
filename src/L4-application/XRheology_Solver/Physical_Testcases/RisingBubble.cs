@@ -330,7 +330,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
             C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG; //.ContinuousDG;
             #endregion
@@ -635,7 +635,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
 
 
-            C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
+            C.AdvancedDiscretizationOptions.FilterConfiguration = Solution.LevelSetTools.CurvatureAlgorithms.FilterConfiguration.NoFilter;
             //C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
 
@@ -1159,7 +1159,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion

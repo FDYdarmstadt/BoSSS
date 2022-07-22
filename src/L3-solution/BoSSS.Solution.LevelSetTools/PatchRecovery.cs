@@ -28,7 +28,7 @@ using BoSSS.Foundation.Quadrature;
 using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 
-namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
+namespace BoSSS.Solution.LevelSetTools {
 
 
     public enum PatchRecoveryMode {

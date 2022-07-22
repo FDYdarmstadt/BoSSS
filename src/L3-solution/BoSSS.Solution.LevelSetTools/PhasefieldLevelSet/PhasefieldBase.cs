@@ -629,9 +629,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
 
             if(this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledIterative) {
                 VectorField<SinglePhaseField> filtgrad;
-                CurvatureAlgorithmsForLevelSet.CurvatureDriver(
-                             CurvatureAlgorithmsForLevelSet.SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                             CurvatureAlgorithmsForLevelSet.FilterConfiguration.Phasefield,
+                CurvatureAlgorithms.CurvatureDriver(
+                             SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                             CurvatureAlgorithms.FilterConfiguration.Phasefield,
                              this.DCurvature, out filtgrad, CorrectionLsTrk,
                              this.DCurvature.Basis.Degree * 2,
                              this.phi);

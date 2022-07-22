@@ -662,6 +662,8 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+        // Hardcore experimental option
+        public static bool RecoverFromAgglomerationFail = false;
 
         /// <summary>
         /// 2nd pass of agglomeration algorithm, Identification of agglomeration targets
@@ -712,7 +714,7 @@ namespace BoSSS.Foundation.XDG {
                     // cell 'jCell' should be agglomerated to some other cell
                     Debug.Assert(AgglomCellsBitmask[jCell] == true);
 
-                    double frac_neigh_max = -1.0;
+                    double frac_neigh_max = 0.0;//-1.0;
                     int e_max = -1;
                     int jEdge_max = int.MinValue;
                     int jCellNeigh_max = int.MinValue;
@@ -821,6 +823,7 @@ namespace BoSSS.Foundation.XDG {
                     {
                         if(jCellNeigh_max < 0) {
                             failCells.Add(jCell);
+                            if(RecoverFromAgglomerationFail) continue;
                         }
 
                         //_AccEdgesMask[jEdge_max] = true;
@@ -844,8 +847,8 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 if (failCells.Count.MPISum() > 0) {
-                    PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, ExceptionOnFailedAgglomeration, failCells);
-
+                    PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, ExceptionOnFailedAgglomeration & !RecoverFromAgglomerationFail, failCells);
+                    
                 }
 
                 // store & return

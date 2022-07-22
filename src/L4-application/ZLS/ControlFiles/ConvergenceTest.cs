@@ -1,6 +1,7 @@
 ﻿using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.XdgTimestepping;
@@ -705,7 +706,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             //C.AdaptiveMeshRefinement = true;
             //C.activeAMRlevelIndicators.Add(new AMRonNarrowband { maxRefinementLevel = 3 });

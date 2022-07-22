@@ -26,6 +26,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon.Operator.SurfaceTension;
 using BoSSS.Solution.RheologyCommon;
+using BoSSS.Solution.LevelSetTools;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -372,9 +373,9 @@ namespace BoSSS.Solution.XNSECommon {
                  || dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
 
                     if (dntParams.SST_isotropicMode != SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
-                        IEquationComponent G = new SurfaceTension_LaplaceBeltrami_Surface(d, sigma * 0.5);
+                        IEquationComponent G = new Curvature_LaplaceBeltrami_Surface(d, sigma * 0.5);
                         XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(G);
-                        IEquationComponent H = new SurfaceTension_LaplaceBeltrami_BndLine(d, sigma * 0.5, dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
+                        IEquationComponent H = new Curvature_LaplaceBeltrami_BndLine(d, sigma * 0.5, dntParams.SST_isotropicMode == SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
                         XOp.SurfaceElementOperator_Ls0.EquationComponents[CodName].Add(H);
                     } else {
                         IEquationComponent isoSurfT = new IsotropicSurfaceTension_LaplaceBeltrami(d, D, sigma * 0.5, BcMap.EdgeTag2Type, BcMap, physParams.theta_e, physParams.betaL);

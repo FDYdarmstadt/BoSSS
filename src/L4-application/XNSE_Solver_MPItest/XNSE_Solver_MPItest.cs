@@ -433,7 +433,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.AdvancedDiscretizationOptions.surfTensionMode = SurfaceTensionMode.Curvature_Fourier;
             //C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
             //C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.Curvature_Projected;
             C.AdvancedDiscretizationOptions.FilterConfiguration.FilterCurvatureCycles = 1;
 
             #endregion

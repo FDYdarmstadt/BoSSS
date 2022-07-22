@@ -689,7 +689,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.PhysicalParameters.mu_I = 1 * sigma;
             C.PhysicalParameters.lambda_I = 2 * sigma;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             //C.LS_TrackerWidth = 2;
@@ -981,7 +981,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.PhysicalParameters.mu_I = 1 * sigma;
             C.PhysicalParameters.lambda_I = 2 * sigma;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             //if (C.Option_LevelSetEvolution == LevelSetEvolution.Fourier) {
@@ -1542,7 +1542,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.PhysicalParameters.mu_I = 10 * sigma;
             C.PhysicalParameters.lambda_I = 20 * sigma;
 
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             if (C.Option_LevelSetEvolution == LevelSetEvolution.Fourier) {
@@ -1808,7 +1808,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
 
             C.AdaptiveMeshRefinement = true;
@@ -2099,7 +2099,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.NoFilter;
 
             C.AdvancedDiscretizationOptions.SurfStressTensor = SurfaceSressTensor.Isotropic;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
             C.RefineStrategy = XRheology_Control.RefinementStrategy.ContactLineRefined;
