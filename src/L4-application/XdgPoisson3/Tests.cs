@@ -49,6 +49,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <param name="SolverName"></param>
         [Test]
         public static void IterativeSolverTest([Values(Code.exp_Kcycle_schwarz, Code.exp_gmres_levelpmg)] Code SolverName) {
+            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest
             using (var solver = new XdgPoisson3Main()) {
 
                 int Res, p;
