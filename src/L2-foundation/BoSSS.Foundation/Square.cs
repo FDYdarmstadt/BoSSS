@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// <summary>
         /// Indicates all four edges of the square
         /// </summary>
-        public enum Edge {
+        public enum Faces {
             /// <summary>
             /// edge between this cell the neighbor cell with x - coordinates closer to negative infinity
             /// </summary>
@@ -6500,7 +6500,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         /// transforms some vertices (<paramref name="EdgeVertices"/>) from the local 1D-coordinate system of either
         /// the top, bottom, left or right edge to the local coordinate system of the square;
         /// </summary>
-        /// <param name="EdgeIndex">0, 1, 2, or 3; <see cref="Edge"/></param>
+        /// <param name="EdgeIndex">0, 1, 2, or 3; <see cref="Faces"/></param>
         /// <param name="EdgeVertices">input;</param>
         /// <param name="VolumeVertices">output;</param>
         public override void TransformFaceCoordinates(int EdgeIndex, MultidimensionalArray EdgeVertices, MultidimensionalArray VolumeVertices) {
@@ -6518,28 +6518,28 @@ namespace BoSSS.Foundation.Grid.RefElements {
             int L = EdgeVertices.GetLength(0);
 
             switch (EdgeIndex) {
-                case (int)Edge.Left:
+                case (int)Faces.Left:
                     for (int i = 0; i < L; i++) {
                         VolumeVertices[i, 0] = -1.0;
                         VolumeVertices[i, 1] = EdgeVertices[i, 0];
                     }
                     break;
 
-                case (int)Edge.Right:
+                case (int)Faces.Right:
                     for (int i = 0; i < L; i++) {
                         VolumeVertices[i, 0] = 1.0;
                         VolumeVertices[i, 1] = EdgeVertices[i, 0];
                     }
                     break;
 
-                case (int)Edge.Top:
+                case (int)Faces.Top:
                     for (int i = 0; i < L; i++) {
                         VolumeVertices[i, 0] = EdgeVertices[i, 0];
                         VolumeVertices[i, 1] = 1.0;
                     }
                     break;
 
-                case (int)Edge.Bottom:
+                case (int)Faces.Bottom:
                     for (int i = 0; i < L; i++) {
                         VolumeVertices[i, 0] = EdgeVertices[i, 0];
                         VolumeVertices[i, 1] = -1.0;
