@@ -757,10 +757,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.m_MgOperator = op;
                 var Mtx = op.OperatorMatrix;
                 var MgMap = op.DgMapping;
-                //if (op is MultigridOperator _mgOp) {
-                //    if (_mgOp.LevelIndex == 0)
-                //        viz = new MGViz(_mgOp);
-                //}
+                
                 TrackMemory(1);
                 if (!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
@@ -1111,15 +1108,33 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //else
 
                             _PostSmoother.Solve(PostCorr, Res); // compute correction (Nachglättung)
-                            resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + id + "--" + g);
+
+                            if (PostCorr.ContainsForNanOrInfV()) {
+                                Console.Error.WriteLine("Post-Smoother " + _PostSmoother.GetType().Name + " produces NAN/INF at sweep " + g);
+
+                                if (Res.ContainsForNanOrInfV())
+                                    Console.WriteLine("... so does RHS");
+                                else
+                                    Console.WriteLine("... although RHS is regular");
+
+                                var viz = new MGViz(m_MgOperator as MultigridOperator);
+                                var __RHS = viz.ProlongateRhsToDg(Res, "RES");
+                                var __SOL = viz.ProlongateRhsToDg(PostCorr, "SOL");
+                                Tecplot.Tecplot.PlotFields(__SOL.Cat(__RHS), "iilufail", 0.0, 0);
+                                throw new ArithmeticException();
+
+
+                            } else {
+                                resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + id + "--" + g);
 
 
 
-                            var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
-                            if (!termState4.bNotTerminate) {
-                                Converged = termState4.bSuccess;
-                                termPost = true;
-                                break;
+                                var termState4 = TerminationCriterion(iIter, iter0_resNorm, resNorm);
+                                if (!termState4.bNotTerminate) {
+                                    Converged = termState4.bSuccess;
+                                    termPost = true;
+                                    break;
+                                }
                             }
                         }
                         

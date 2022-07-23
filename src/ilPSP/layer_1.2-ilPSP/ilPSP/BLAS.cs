@@ -773,17 +773,19 @@ namespace ilPSP.Utils {
         /// checks all entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>
-        static public void CheckForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true, string messageprefix = null)
+        static public int CheckForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true, string messageprefix = null)
             where T: IEnumerable<double> //
         {
             if(messageprefix == null)
                 messageprefix = "";
 
             int cnt = 0;
+            int troubles = 0;
             foreach (double a in v) {
                 
                 if (CheckForNan)
                     if (double.IsNaN(a)) {
+                        troubles++;
                         if(ExceptionIfFound) {
                             throw new ArithmeticException($"{messageprefix}: NaN found at {cnt}-th entry.");
                         } else {
@@ -793,6 +795,7 @@ namespace ilPSP.Utils {
 
                 if (CheckForInf)
                     if (double.IsInfinity(a)) {
+                        troubles++;
                         if(ExceptionIfFound) {
                             throw new ArithmeticException($"{messageprefix}: Inf found at {cnt}-th entry.");
                         } else {
@@ -802,6 +805,32 @@ namespace ilPSP.Utils {
 
                 cnt++;
             }
+
+            return troubles;
+        }
+
+
+        /// <summary>
+        /// checks all entries for infinity or NAN - values, and
+        /// throws an <see cref="ArithmeticException"/> if found;
+        /// </summary>
+        static public bool ContainsForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true)
+            where T : IEnumerable<double> //
+        {
+
+            foreach (double a in v) {
+
+                if (CheckForNan)
+                    if (double.IsNaN(a)) {
+                        return true;
+                    }
+
+                if (CheckForInf)
+                    if (double.IsInfinity(a)) {
+                        return true;
+                    }
+            }
+            return false;
         }
 
         /// <summary>

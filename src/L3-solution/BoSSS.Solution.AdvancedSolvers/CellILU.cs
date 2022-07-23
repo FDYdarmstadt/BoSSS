@@ -165,7 +165,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var LDiff = test_L1.Minus(test_L2);
                 var UDiff = test_U1.Minus(test_U2);
-
+                
 
                 Console.WriteLine($" {LErr1}, {UErr1}");
                 Console.WriteLine($" {LErr2}, {UErr2}");
@@ -185,7 +185,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         {
             if(m_backSubs == null) {
                 var ILU = ComputeILU(this.ILU_level, m_op.OperatorMatrix);
-                m_backSubs = new BackSubs_Optimized_SinglePrec(ILU);
+                //m_backSubs = new BackSubs_Optimized_SinglePrec(ILU);
+                m_backSubs = new BackSubs_Optimized(ILU);
                 //m_backSubsRef = new BackSubs_Reference(ILU);
             }
  
@@ -809,7 +810,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             //Mtx_ii.Solve(Xi, Bi);
                             //this.Udiag_lublks[i - i0].BacksubsLU(this.Udiag_luipiv[i - i0], Xi, Bi);
 
+                            if (Bi.CheckForNanOrInfV(ExceptionIfFound: false) > 0) {
+                                Console.Error.WriteLine("ILU breakdown in U1 slove");
+                                return;
+                            }
+
                             this.Udiag_inverse[i - i0].GEMV(1.0, Bi, 1.0, Xi);
+
+                            if (Xi.CheckForNanOrInfV(ExceptionIfFound: false) > 0) {
+                                Console.Error.WriteLine("ILU breakdown in U2 slove");
+                                return;
+                            }
 
                             X.SetSubVector<double, U, double[]>(Xi, iIdxLoc, sz_i);
                         }
@@ -888,7 +899,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             }
                         }
 
-
+                        if (Bi.CheckForNanOrInfV(ExceptionIfFound:false) > 0) {
+                            Console.Error.WriteLine("ILU breakdown in L slove");
+                            return;
+                        }
                         X.SetSubVector<double, U, double[]>(Bi, iIdxLoc, sz_i);
                         
                     }
@@ -1251,6 +1265,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //invAkk.InvertInPlace();
 
                         LU_Akk_T.FactorizeLU(_ipiv);
+                        LU_Akk_T.CheckForNanOrInf();
                     } catch(ArithmeticException ae) {
                         Console.Error.WriteLine(ae.GetType() + ": " + ae.Message);
                         continue;
@@ -1274,6 +1289,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             Aik.TransposeTo(AikT);
                             LU_Akk_T.BacksubsLU(_ipiv, AikT, AikT);
                             AikT.TransposeTo(Aik);
+                            Aik.CheckForNanOrInf();
                             A.SetBlock(Aik, i, k); 
 
                             long[] occRow_i = ILUp_pattern.GetOccupiedColumnIndices(i);
