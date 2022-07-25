@@ -135,7 +135,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 string EscapeKack(string p) {
-                    if(plotGenPath.Contains(' ')) {
+                    if(p.Contains(' ')) {
                         // i hate escaping
                         if(System.IO.Path.DirectorySeparatorChar == '\\') {
                             // probably windows --> use quotes
@@ -162,7 +162,7 @@ namespace BoSSS.Application.BoSSSpad {
                     plotProcess.StartInfo.Arguments =
                         $" -n {config.NumberOfProcesses} dotnet {EscapeKack(plotGenPath)} ";
                 }
-                plotProcess.StartInfo.Arguments += "\"" + EscapeKack(plotConfigPath) + "\"";
+                plotProcess.StartInfo.Arguments += EscapeKack(plotConfigPath);
 
                 tr.Info("Plot process file: " + plotProcess.StartInfo.FileName);
                 tr.Info("Plot process args: " + plotProcess.StartInfo.Arguments);
