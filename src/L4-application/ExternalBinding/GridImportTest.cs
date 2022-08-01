@@ -310,7 +310,7 @@ namespace BoSSS.Application.ExternalBinding {
         };
         */
 
-        public static void Main() {
+        public static void GridImportMain() {
             
             //int nPoints = points.GetLength(0);
             //int nFaces = owner.Length;
@@ -330,9 +330,17 @@ namespace BoSSS.Application.ExternalBinding {
         public static void ConvertFOAMGrid() {
 
             int nCells = Math.Max(owner.Max(), neighbour.Max()) + 1;
-            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points, names, patchIDs, -1);
+            var g = GenerateFOAMGrid();
 
             Assert.AreEqual(g.GridData.iLogicalCells.Count, nCells, "Mismatch in expected number of cells.");
+        }
+
+        public static OpenFOAMGrid GenerateFOAMGrid() {
+
+            int nCells = Math.Max(owner.Max(), neighbour.Max()) + 1;
+            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points, names, patchIDs, -1);
+
+            return g;
         }
         
         static Initializer MyInit;
@@ -343,6 +351,7 @@ namespace BoSSS.Application.ExternalBinding {
         [OneTimeSetUp]
         public static void Init() {
             MyInit = new Initializer();
+            Console.WriteLine("Test");
             MyInit.BoSSSInitialize();
         }
 

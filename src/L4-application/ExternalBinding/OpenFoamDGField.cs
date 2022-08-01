@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Solution.Tecplot;
 
 namespace BoSSS.Application.ExternalBinding {
     
@@ -56,8 +57,6 @@ namespace BoSSS.Application.ExternalBinding {
         public double GetDGcoordinate(int f, int j, int n) {
             return this[Mapping.LocalUniqueCoordinateIndex(f, j, n)];
         }
-
-
 
         IntPtr m_ForeignPtr;
 

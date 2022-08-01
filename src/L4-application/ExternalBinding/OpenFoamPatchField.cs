@@ -11,21 +11,61 @@ namespace BoSSS.Application.ExternalBinding {
 
     public class OpenFoamPatchField : IForeignLanguageProxy {
 
+        // /// <summary>
+        // /// Ctor
+        // /// </summary>
+        // [CodeGenExport]
+        // unsafe public OpenFoamPatchField(OpenFOAMGrid grdDat, int nBoundaries, int* edgeTags, int* edgeTypes, double* edgeValues)
+        //     {
+
+        //         this.Values = new List<List<double>>();
+        //         this.EdgeTags = new int[nBoundaries];
+        //         this.EdgeTypes = new string[nBoundaries];
+        //         for (int i = 0; i < nBoundaries; i++){
+        //             this.Values.Add(new List<double>{edgeValues[i]});
+        //             this.EdgeTags[i] = edgeTags[i];
+        //             this.EdgeTypes[i] = IntToBCType(edgeTypes[i]);
+        //         }
+        // }
+        public OpenFOAMGrid Grid;
+
         /// <summary>
         /// Ctor
         /// </summary>
         [CodeGenExport]
-        unsafe public OpenFoamPatchField(OpenFOAMGrid grdDat, int nBoundaries, int* edgeTags, int* edgeTypes, double* edgeValues)
+        unsafe public OpenFoamPatchField(OpenFOAMGrid grdDat, int dim, int nBoundaries, int* edgeTags, int* edgeTypes, double* edgeValues)
             {
-
-                this.Values = new double[nBoundaries];
+                this.Grid = grdDat;
+                this.Values = new List<List<double>>();
                 this.EdgeTags = new int[nBoundaries];
                 this.EdgeTypes = new string[nBoundaries];
                 for (int i = 0; i < nBoundaries; i++){
-                    this.Values[i] = edgeValues[i];
+                    Console.WriteLine("i = " + i);
+                    this.Values.Add(new List<double>());
+                    for (int d = 0; d < dim; d++) {
+                    this.Values[i].Add(edgeValues[dim * i + d]);
+                    Console.WriteLine("d = " + d);
+                }
                     this.EdgeTags[i] = edgeTags[i];
                     this.EdgeTypes[i] = IntToBCType(edgeTypes[i]);
                 }
+        }
+
+        public OpenFoamPatchField(OpenFOAMGrid grdDat, int dim, int[] edgeTags, string[] edgeTypes, double[] edgeValues)
+            {
+                this.Grid = grdDat;
+                this.EdgeTags = edgeTags;
+                this.Values = new List<List<double>>();
+                for (int i = 0; i < edgeTags.Length; i++){
+                    Console.WriteLine("i = " + i);
+                    this.Values.Add(new List<double>());
+                    for (int d = 0; d < dim; d++)
+                    {
+                        this.Values[i].Add(edgeValues[dim * i + d]);
+                        Console.WriteLine("d = " + d);
+                    }
+            }
+                this.EdgeTypes = edgeTypes;
         }
 
         // [CodeGenExport]
@@ -66,7 +106,7 @@ namespace BoSSS.Application.ExternalBinding {
             return this.EdgeTypes[FaceIndex] == "dirichlet";
         }
 
-        public double[] Values;
+        public List<List<double>> Values;
         public int[] EdgeTags;
         public string[] EdgeTypes;
 

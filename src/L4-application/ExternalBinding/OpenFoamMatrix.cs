@@ -8,18 +8,21 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Application.ExternalBinding {
     public class OpenFoamMatrix : BlockMsrMatrix, IForeignLanguageProxy {
 
+        public OpenFoamDGField[] Fields;
 
         /// <summary>
         /// Constructor for quadratic matrices
         /// </summary>
         [CodeGenExport]
-        public OpenFoamMatrix(OpenFoamDGField f) :
+        public OpenFoamMatrix(OpenFOAMGrid grd, OpenFoamDGField f) :
             base(f.Mapping, f.Mapping) //
         {
+            Fields = new[]{f};
             RowMap = f.Mapping;
             ColMap = f.Mapping;
             m_SolBuffer = f;
@@ -87,7 +90,8 @@ namespace BoSSS.Application.ExternalBinding {
         /// <returns></returns>
         [CodeGenExport]
         public double GetSolCoordinate(int f, int j, int n) {
-            return SolBuffer[this.RowMap.LocalUniqueCoordinateIndex(f, j, n)];
+            // return SolBuffer[f][this.RowMap.LocalUniqueCoordinateIndex(f, j, n)];
+            return SolBuffer[this.RowMap.LocalUniqueCoordinateIndex(0, j, n)];
         }
 
 
