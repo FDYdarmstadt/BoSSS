@@ -288,5 +288,17 @@ namespace BoSSS.Application.ExternalBinding {
             return m_ForeignPtr;
         }
 
+        public override string ToString(){
+            string ret = new("");
+            ret += "OpenFoamMatrix with " + this.NoOfRows + " rows and " + this.NoOfCols + " columns\n";
+            for (int i = 0; i < this.NoOfRows; i++){
+                for (int j = 0; j < this.NoOfCols; j++){
+                    ret += string.Format("{0:#.#e+0} ", this[i, j]);
+                }
+                ret += "\n";
+            }
+            return ret;
+        }
+
     }
 }

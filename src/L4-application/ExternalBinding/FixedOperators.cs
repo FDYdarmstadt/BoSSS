@@ -16,6 +16,11 @@ using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG.Quadrature.HMF;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Application.CahnHilliard;
+using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.Control;
+using BoSSS.Solution.Utils;
+using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.ExternalBinding {
     
@@ -62,105 +67,170 @@ namespace BoSSS.Application.ExternalBinding {
         // public void Laplacian(OpenFoamMatrix mtx) {
         // public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamMatrix Umtx, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
         public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
+            try{
 
-            // grid, etc
-            // =========
+                // grid, etc
+                // =========
 
-            // Console.WriteLine("Test1");
-            GridData grd = mtx.ColMap.GridDat as GridData;
-            // PlotGrid("grid.plt", grd);
+                GridData grd = mtx.ColMap.GridDat as GridData;
+                // PlotGrid("grid.plt", grd);
 
-            Console.WriteLine("Test2");
-            var b = mtx.ColMap.BasisS[0];
-            var bPhi = mtx.ColMap.BasisS[0];
+                Basis b = mtx.ColMap.BasisS[0];
+                Basis bPhi = mtx.ColMap.BasisS[0];
 
-            var C = mtx.Fields[0];
-            // SinglePhaseField Phi = new(b);
-            OpenFOAMGrid ofGrid = ptch.Grid;
-            OpenFoamDGField fields = new(ofGrid, b.Degree, 2);
-            OpenFoamMatrix fullMtx = new(ofGrid, fields);
+                OpenFoamDGField C = mtx.Fields[0];
+                // SinglePhaseField Phi = new(b);
+                OpenFOAMGrid ofGrid = ptch.Grid;
+                OpenFoamDGField fields = new(ofGrid, b.Degree, 2);
+                OpenFoamMatrix fullMtx = new(ofGrid, fields);
 
-            var map = new UnsetteledCoordinateMapping(b, bPhi);
-            // Console.WriteLine("Test3");
+                var map = new UnsetteledCoordinateMapping(b, bPhi);
 
-            // var L = new Laplace(1.3, ptch);
-            // var CH = new Laplace(1.3, ptch);
-            // var op = new SpatialOperator(3, 0, 1, QuadOrderFunc.Linear(), "c", "phi", "u", "c0");
-            // var op = new SpatialOperator(2, 0, 1, QuadOrderFunc.Linear(), "c", "phi", "c0");
-            // var op = new SpatialOperator(2, 7, 2, QuadOrderFunc.Linear(), "c", "phi", "c0", "VelocityX", "VelocityY", "VelocityZ", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "phi_Res");
-            var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "phi_Res");
-            // Console.WriteLine("Test4");
+                int nParams = 7;
+                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "phi", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
+                // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "phi_Res");
+                // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "phi_Res");
 
-            // var CHconv = new c_Flux(3);
 
-            var CHCdiff = new CahnHilliardCDiff(ptch);
-            Console.WriteLine("Test4.1");
-            var CHPhidiff = new CahnHilliardPhiDiff(ptch);
-            Console.WriteLine("Test4.2");
-            var CHPhisource = new CahnHilliardPhiSource();
-            Console.WriteLine("Test5");
-            op.EquationComponents["c_Res"].Add(CHCdiff);
-            // op.EquationComponents["phi_Res"].Add(CHPhisource);
-            op.EquationComponents["phi_Res"].Add(CHPhidiff);
-            // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
-            Console.WriteLine("Test6");
-            op.Commit();
-            Console.WriteLine("Test6.1");
+                var CHCdiff = new CahnHilliardCDiff(ptch);
+                // var CHCsource = new CahnHilliardCSource(ptch);
+                var CHPhidiff = new CahnHilliardPhiDiff(ptch);
+                var CHPhisource = new CahnHilliardPhiSource();
+                op.EquationComponents["Res_c"].Add(CHCdiff);
+                // op.EquationComponents["Res_c"].Add(CHCsource);
+                op.EquationComponents["Res_phi"].Add(CHPhisource);
+                op.EquationComponents["Res_phi"].Add(CHPhidiff);
+                // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
-            // Console.WriteLine("dirichlet: " + ptch.IsDirichlet(1));
-            // Console.WriteLine("dirichlet: " + ptch.IsDirichlet(2));
-            // Console.WriteLine("dirichlet: " + ptch.IsDirichlet(3));
-            // Console.WriteLine("dirichlet: " + CHCdiff.GetIsDiri(1));
-            // Console.WriteLine("dirichlet: " + CHCdiff.GetIsDiri(2));
-            // Console.WriteLine("dirichlet: " + CHCdiff.GetIsDiri(3));
-            // Console.WriteLine("dirichlet: " + CHPhidiff.GetIsDiri(1));
-            // Console.WriteLine("dirichlet: " + CHPhidiff.GetIsDiri(2));
-            // Console.WriteLine("dirichlet: " + CHPhidiff.GetIsDiri(3));
+                double[] MassScales = new double[2];
+                MassScales[0] = 1.0;
+                // MassScales[1] = 1.0;
+                op.TemporalOperator = new ConstantTemporalOperator(op, MassScales);
 
-            // var RealLevSet = new LevelSet(b, "Levset");
-            // var RealTracker = new LevelSetTracker((GridData)(b.GridDat), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "A", "B" }, RealLevSet);
-            // RealTracker.UpdateTracker(0.0);
-            // RealLevSet.Clear();
-            // // RealLevSet.Acc(1.0, C);
+                op.LinearizationHint = LinearizationHint.GetJacobiOperator;
+                op.Commit();
 
-            // int J = b.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-            // for (int j = 0; j < J; j++)
-            // {
-            //     int N = b.GetLength(j);
-            //     for (int n = 0; n < N; n++)
-            //         RealLevSet.Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
-            // }
-            // evaluate operator
-            // =================
+                // var RealLevSet = new LevelSet(b, "Levset");
+                // var RealTracker = new LevelSetTracker((GridData)(b.GridDat), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "A", "B" }, RealLevSet);
+                // RealTracker.UpdateTracker(0.0);
+                // RealLevSet.Clear();
+                // // RealLevSet.Acc(1.0, C);
 
-            // Console.WriteLine(op.DomainVar.Count);
-            // foreach (var elem in op.DomainVar){
-            //     Console.WriteLine(elem);
-            // }
-            // Console.WriteLine(map.NoOfVariables);
+                // int J = b.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                // for (int j = 0; j < J; j++)
+                // {
+                //     int N = b.GetLength(j);
+                //     for (int n = 0; n < N; n++)
+                //         RealLevSet.Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
+                // }
 
-            Console.WriteLine(op.CodomainVar.Count);
-            foreach (var elem in op.CodomainVar){
-                Console.WriteLine(elem);
+                // TODO
+                int J = b.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+                SinglePhaseField c = new(b);
+                SinglePhaseField phi = new(b);
+                for (int j = 0; j < J; j++)
+                {
+                    int N = b.GetLength(j);
+                    for (int n = 0; n < N; n++) {
+                        c.Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
+                        // phi.Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
+                    }
+                }
+                double tanh(double x){
+                    // return Math.Tanh(x);
+                    return x;
+                }
+                double sqrt(double x){
+                    // return Math.Sqrt(x);
+                    double sqrt = x / 2;
+                    double temp = 0;
 
+                    // Iterate until sqrt is different of temp, that is updated on the loop
+                    while(sqrt - temp > 1e-10){
+                        // initially 0, is updated with the initial value of 128
+                        // (on second iteration = 65)
+                        // and so on
+                        temp = sqrt;
+
+                        // Then, replace values (256 / 128 + 128 ) / 2 = 65
+                        // (on second iteration 34.46923076923077)
+                        // and so on
+                        sqrt = ( x/temp + temp) / 2;
+                    }
+                    return sqrt;
+                }
+                c.Clear();
+                ScalarFunction func() {
+                    double cahn = 1.0;
+                    double radius = 0.1;
+                    return ((_3D)((x, y, z) => tanh((-sqrt(((x - 0.3)*(x - 0.3)) + ((y - 0.3)*(y - 0.3))) + radius) / (sqrt(2.0) * cahn)))).Vectorize();
+                }
+                c.ProjectField(func());
+                phi.Laplacian(-1.0, c);
+                phi.Acc(-1.0, c);
+                phi.ProjectPow(1.0, c, 3.0);
+                SinglePhaseField Res_c = new(b);
+                SinglePhaseField Res_phi = new(b);
+                List<DGField> ParameterMap = new();
+                for (int i = 0; i < nParams; i++)
+                {
+                    ParameterMap.Add(new SinglePhaseField(b));
+                }
+                // ParameterMap[3].Acc(1.0, C);
+                for (int j = 0; j < J; j++)
+                {
+                    int N = b.GetLength(j);
+                    for (int n = 0; n < N; n++)
+                        ParameterMap[3].Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
+                }
+                NonLinearSolverConfig nls = new();
+                var ls = new DirectSolver.Config();
+                nls.SolverCode = NonLinearSolverCode.Newton;
+                XdgTimestepping TimeStepper = new(op,
+                                                  new SinglePhaseField[]{c, phi},
+                                                  new SinglePhaseField[]{Res_c, Res_phi},
+                                                  // TimeSteppingScheme.ExplicitEuler,
+                                                  TimeSteppingScheme.ImplicitEuler,
+                                                  null,
+                                                  null,
+                                                  ls,
+                                                  nls,
+                                                  ParameterMap,
+                                                  null);
+
+                var tp = new Tecplot(grd.Grid.GridData, 3);
+                for (int i = 0; i < 2; i++)
+                    Tecplot("plot-pre" + i, 1.0, 3, new SinglePhaseField[2]{c, phi}[i]);
+
+                for (int t = 0; t < 11; t++)
+                    {
+                        TimeStepper.Solve(t/10.0, 1.0/10.0);
+                    for (int i = 0; i < 2; i++)
+                        Tecplot("plot_time_" + t + "_field_" + i, 1.0, 3, new SinglePhaseField[2] { c, phi }[i]);
+                }
+                // evaluate operator
+                // =================
+
+                // var eval = op.GetMatrixBuilder(map, ParameterMap, map);
+                // eval.ComputeMatrix(fullMtx, fullMtx.RHSbuffer);
+                // mtx.RHSbuffer.ScaleV(-1); // convert LHS affine vector to RHS
+
+                // var tp = new Tecplot(grd.Grid.GridData, 3);
+                for (int i = 0; i < 2; i++)
+                    Tecplot("plot" + i, 1.0, 3, new SinglePhaseField[2]{c, phi}[i]);
+                // Console.WriteLine("Computed Cahn Hilliard Matrix, norm is " + fullMtx.InfNorm());
+                // Console.WriteLine(fullMtx);
+                // Console.WriteLine("Computed Laplacian Matrix, RHS is ");
+                // foreach (var elem in mtx.RHSbuffer)
+                //     Console.Write(elem + " ");
+                // Console.WriteLine();
+            } catch (Exception e) {
+                // Console.WriteLine(e.GetType());
+                // Console.WriteLine(e.Message);
+                // Console.WriteLine(e.StackTrace);
+                Console.WriteLine(e);
+                throw e;
             }
-            Console.WriteLine(map.NoOfVariables);
-
-            List<DGField> ParameterMap = new();
-            for (int i = 0; i < 4; i++){
-                ParameterMap.Add(new SinglePhaseField(b));
-            }
-            var eval = op.GetMatrixBuilder(map, ParameterMap, map);
-            Console.WriteLine("Test7");
-            eval.ComputeMatrix(fullMtx, fullMtx.RHSbuffer);
-            Console.WriteLine("Test8");
-            mtx.RHSbuffer.ScaleV(-1); // convert LHS affine vector to RHS
-
-            Console.WriteLine("Computed Cahn Hilliard Matrix, norm is " + fullMtx.InfNorm());
-            // Console.WriteLine("Computed Laplacian Matrix, RHS is ");
-            // foreach (var elem in mtx.RHSbuffer)
-            //     Console.Write(elem + " ");
-            // Console.WriteLine();
         }
 
         /// <summary>
@@ -379,7 +449,7 @@ namespace BoSSS.Application.ExternalBinding {
             }
 
             protected override bool IsDirichlet(ref CommonParamsBnd inp) {
-                return _ptch.IsDirichlet(inp.EdgeTag);
+                return !_ptch.IsDirichlet(inp.EdgeTag);
             }
             public bool GetIsDiri(int et){
                 return _ptch.IsDirichlet(et);
@@ -392,6 +462,8 @@ namespace BoSSS.Application.ExternalBinding {
                 if (inp.EdgeTag == 0){
                     throw new ApplicationException("Edge Index of a boundary edge should not be zero");
                 }
+                // return 1.0;
+                // Console.WriteLine("diriPhi " + _ptch.Values[inp.EdgeTag - 1][0]);
                 return _ptch.Values[inp.EdgeTag - 1][0];
             }
 
@@ -399,6 +471,7 @@ namespace BoSSS.Application.ExternalBinding {
             /// Neumann boundary value
             /// </summary>
             override protected double g_Neum(ref Foundation.CommonParamsBnd inp) {
+                // throw new Exception("g_neum should not be called");
                 return 0;
             }
         }
@@ -425,14 +498,27 @@ namespace BoSSS.Application.ExternalBinding {
                 if (inp.EdgeTag == 0){
                     throw new ApplicationException("Edge Index of a boundary edge should not be zero");
                 }
+                // Console.WriteLine("diriC " + _ptch.Values[inp.EdgeTag - 1][0]);
                 return _ptch.Values[inp.EdgeTag - 1][0];
+                // return 1.0;
             }
 
             /// <summary>
             /// Neumann boundary value
             /// </summary>
             override protected double g_Neum(ref Foundation.CommonParamsBnd inp) {
+                throw new Exception("g_neum should not be called");
                 return 0;
+            }
+        }
+
+        class CahnHilliardCSource : c_Source {
+
+            OpenFoamPatchField _ptch;
+
+            public CahnHilliardCSource(OpenFoamPatchField ptch)
+                : base(1.0){
+                this._ptch = ptch;
             }
         }
     }
