@@ -64,7 +64,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static public void RotCube_GetSpeciesIDError() {
             // Tritt nur mit 4 cores auf !!!
             // Fixed: Bei AMR wird LevelsetTracker "genullt", dieser wurde bis dato noch vollständig an die Flüsse übergeben
-            var C = Rotating_Cube(4,30,2,true);
+            var C = Rotating_Cube(4, 30, 2, true);
 
             using (var solver = new XNSE()) {
                 solver.Init(C);
@@ -80,7 +80,8 @@ namespace BoSSS.Application.XNSE_Solver {
             // Fixed: in 3D now Saye is used everywhere
 
             var C = Rotating_Cube(4, 10, 3, false);
-
+            C.ImmediatePlotPeriod = 1;
+            C.SuperSampling = 2;
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -91,7 +92,7 @@ namespace BoSSS.Application.XNSE_Solver {
         public static void BadInitiallyDistributionTest(
             [Values(true,false)] bool useAMR) {
             var C = Rotating_Cube(k: 1, Res: 10, SpaceDim: 3, useAMR, useLoadBal: true , UsePredefPartitioning: true);
-            //Debugger.Launch();
+            // dbg_launch();
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -119,7 +120,9 @@ namespace BoSSS.Application.XNSE_Solver {
         //}
 
         [Test]
-        public static void emptyMaskInSchwarz() {
+        public static void EmptyMaskInSchwarz() {
+            //--test=BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz
+
             // This test simulates bad initial distribution of void cells over ranks
             // which would lead to an error within Schwarz solver
             // because of voidcells Schwarzblocks would be empty
@@ -147,9 +150,11 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             
             BoSSS.Solution.Application.InitMPI();
-            ParallelRisingDroplet(1);
-            ParallelRisingDroplet(2);
-            ParallelRisingDroplet(3);
+            //ParallelRisingDroplet(1);
+            //ParallelRisingDroplet(2);
+            //ParallelRisingDroplet(3);
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.BadInitiallyDistributionTest(true);
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_OrderNotSupportedInHMF();
 
             BoSSS.Solution.Application.FinalizeMPI();
         }

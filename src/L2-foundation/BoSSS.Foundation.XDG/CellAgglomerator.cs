@@ -253,11 +253,11 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="g"></param>
         /// <param name="AgglomerationPairs">
         /// Each tuple represents one agglomeration operation:
-        ///  - 1st entry: source cell index, i.e. cell which will be removed due to agglomeration; must be in the range of locally updated cells.<br/>
+        ///  - 1st entry: source cell index, i.e. cell which will be removed due to agglomeration; must be in the range of locally updated cells.
         ///  - 2nd entry: target cell index, i.e. cell which will be enlarged due to agglomeration
         /// </param>
         /// <remarks>
-        /// The cell agglomerator eliminates (resp. tries to elimintate ;) cycles in the agglomeration graph, since 
+        /// The cell agglomerator eliminates (resp. tries to eliminate ;) cycles in the agglomeration graph, since 
         /// it cannot be guaranteed that the <see cref="AgglomerationAlgorithm"/> provides cycle-free agglomeration graphs.
         /// </remarks>
         public CellAgglomerator(GridData g, IEnumerable<(int jSource, int jTarget)> AgglomerationPairs) {

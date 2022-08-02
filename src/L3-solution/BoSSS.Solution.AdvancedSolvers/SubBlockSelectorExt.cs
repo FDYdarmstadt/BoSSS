@@ -350,7 +350,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             } else {
                 BlockPartitioning localBlocking = new BlockPartitioning(BMLoc.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF, i0isLocal: true);
                 target = new BlockMsrMatrix(localBlocking);
-                BMLoc.m_GlobalMask.SaveToTextFile("mask-" + BMLoc.m_GlobalMask.Count + ".txt");
+                //BMLoc.m_GlobalMask.SaveToTextFile("mask-" + BMLoc.m_GlobalMask.Count + ".txt");
                 source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(long[]), BMLoc.m_GlobalMask, default(long[]));
             }
             Debug.Assert(target != null);
@@ -875,6 +875,31 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             }
         }
+
+        /// <summary>
+        /// local (i.e. valid only on current MPI processor) indices of vector entries, resp. matrix rows and columns to select.
+        /// </summary>
+        public int[] LocalIndices {
+            get {
+                List<int> tmp = new List<int>();
+                if(m_includeExternalCells) {
+                    if (BMLoc != null)
+                        tmp.AddRange(BMLoc.m_LocalMask);
+                    if (BMExt != null)
+                        tmp.AddRange(BMExt.m_LocalMask);
+                    if (BMLoc == null && BMExt == null)
+                        throw new Exception("empty mask. what a waste of time!");
+                } else {
+                    if (BMLoc != null)
+                        tmp.AddRange(BMLoc.m_LocalMask);
+                    else
+                        throw new Exception("empty mask. what a waste of time!");
+                }
+
+                return tmp.ToArray();
+            }
+        }
+
 
         // ==========
         // Stuff dedicated to testing ...

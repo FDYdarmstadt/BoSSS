@@ -629,30 +629,38 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             bool ReadExitCache(out JobStatus status, out int? ExitCode) {
-                ExitCode = null;
-                status = JobStatus.Unknown;
+                using (var tr = new FuncTrace()) {
+                    ExitCode = null;
+                    status = JobStatus.Unknown;
 
-                if (this.DeploymentDirectory == null)
-                    return false;
+                    if (this.DeploymentDirectory == null)
+                        return false;
 
-                string path = Path.Combine(this.DeploymentDirectory.FullName, "JobStatus_ExitCode.txt");
-                if(!File.Exists(path))
-                    return false;
-
-                try {
-                    using(var str = new StreamReader(path)) {
-                        string l1 = str.ReadLine();
-                        status = Enum.Parse<JobStatus>(l1);
-                        string l2 = str.ReadLine();
-                        if(!l2.IsEmptyOrWhite()) {
-                            ExitCode = int.Parse(l2);
-                        }
+                    string path = Path.Combine(this.DeploymentDirectory.FullName, "JobStatus_ExitCode.txt");
+                    if (!File.Exists(path)) {
+                        tr.Info("no job status cache file");
+                        return false;
                     }
 
-                } catch (Exception) {
-                    return false;
+                    try {
+                        using (var str = new StreamReader(path)) {
+                            string l1 = str.ReadLine();
+                            status = Enum.Parse<JobStatus>(l1);
+                            tr.Info("status = " + ExitCode);
+                            string l2 = str.ReadLine();
+                            if (!l2.IsEmptyOrWhite()) {
+                                ExitCode = int.Parse(l2);
+                                tr.Info("Exit code = " + ExitCode);
+                            }
+                        }
+
+                    } catch (Exception e) {
+                        tr.Error($"{e.GetType()}: {e.Message}");
+                        return false;
+                    }
+
+                    return true;
                 }
-                return true;
             }
 
             /// <summary>
@@ -682,7 +690,7 @@ namespace BoSSS.Application.BoSSSpad {
                     } catch (Exception) {
 
                     }
-                }
+                } 
             }
 
 
@@ -693,11 +701,16 @@ namespace BoSSS.Application.BoSSSpad {
             public JobStatus Status {
                 get {
                     using(var tr = new FuncTrace()) {
-                        if (StatusCache != null)
+                        tr.Info("Trying to get status of deployment: " + ((DeploymentDirectory?.FullName) ?? "no-path-avail"));
+                        if (StatusCache != null) {
+                            tr.Info("From chache: " + StatusCache.Value); 
                             return StatusCache.Value;
+                        }
 
-                        if (m_owner.AssignedBatchProc == null)
+                        if (m_owner.AssignedBatchProc == null) {
+                            tr.Info("No batch queue asigned: " + JobStatus.PreActivation);
                             return JobStatus.PreActivation;
+                        }
 
                         JobStatus bpc_status;
                         int? ExitCode;
@@ -706,7 +719,7 @@ namespace BoSSS.Application.BoSSSpad {
                         try {
 
                             alreadyKnow = ReadExitCache(out bpc_status, out ExitCode);
-
+                            tr.Info($"From cache file: cached = {alreadyKnow}: {bpc_status}, exit code = {ExitCode}");
                             if (!alreadyKnow) {
                                 if (this.BatchProcessorIdentifierToken == null) {
                                     if(this.Session != null) {
@@ -734,6 +747,7 @@ namespace BoSSS.Application.BoSSSpad {
                             bpc_status = JobStatus.Unknown;
                             ExitCode = null;
                         }
+                        tr.Info("batch processor status: " + bpc_status);
 
 
                         if (bpc_status == JobStatus.FinishedSuccessful) {
@@ -746,13 +760,17 @@ namespace BoSSS.Application.BoSSSpad {
 
                         if (bpc_status == JobStatus.FailedOrCanceled) {
                             StatusCache = bpc_status;
-                            if (ExitCode == null || ExitCode == 0)
-                                this.ExitCodeCache = -655321;
+                            if (ExitCode == null || ExitCode == 0) {
+                                tr.Info($"status is {bpc_status}, but exit code is {ExitCode}; resetting exit code to {-655321}");
+                                ExitCode = -655321;
+                                this.ExitCodeCache = ExitCode;
+                            }
                             //    throw new ApplicationException($"Error in implementation of {m_owner.AssignedBatchProc}: job marked as {JobStatus.FailedOrCanceled}, but exit code is {ExitCodeStr} -- expecting any number except 0.");
                             if (!alreadyKnow)
                                 RememberCache(bpc_status, ExitCode);
                         }
 
+                        tr.Info($"Deployment: {bpc_status}, exit code = {ExitCodeCache}");
                         return bpc_status;
                     }
                 }
@@ -995,7 +1013,7 @@ namespace BoSSS.Application.BoSSSpad {
             for(int i = 0; i < AllNewSessions.Length; i++) {
                 var sinf = AllNewSessions[i];
                 if(sinf != null) {
-                    // delpoyment was deleted, but some session was found in the database.
+                    // deployment was deleted, but some session was found in the database.
                     m_Deployments.Add(new Deployment(sinf, this));
                 }
             }
@@ -1352,13 +1370,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="bpc"></param>
         public void Activate(BatchProcessorClient bpc) {
             using (var tr = new FuncTrace()) {
+
                 // ============================================
                 // ensure that this method is only called once.
                 // ============================================
                 if (this.AssignedBatchProc != null)
                     throw new NotSupportedException("Job can only be activated once.");
                 AssignedBatchProc = bpc;
-                //Debugger.Launch();
+                // dbg_launch();
                 if(UndocumentedSuperHack)
                     this.DeleteOldDeploymentsAndSessions();
 
@@ -1369,8 +1388,13 @@ namespace BoSSS.Application.BoSSSpad {
 
                 var stat = GetStatus(true);
                 if (stat != JobStatus.Unknown) {
-                    Console.WriteLine("No submission, because job status is: " + stat.ToString());
-                    return;
+                    int sc = this.SubmitCount;
+                    if (stat == JobStatus.FailedOrCanceled && sc < RetryCount) {
+                        Console.WriteLine($"Job is {stat}, but retry count is set to {RetryCount} and only {sc} tries yet - trying once more...");
+                    } else {
+                        Console.WriteLine("No submission, because job status is: " + stat.ToString());
+                        return;
+                    }
                 }
              
 
@@ -1525,10 +1549,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                 if(this.SubmitCount > 0 && DeploymentsSoFar.All(dep => dep.fixedStatus == JobStatus.FailedOrCanceled)) {
                     if(WriteHints) {
-                        Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
+                        Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed; RetryCount is {this.RetryCount}, so try once more.");
                         Console.WriteLine($"Hint: want to re-activate the job.");
                     }
-                    tr.Info($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed.");
+                    tr.Info($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed; RetryCount is {this.RetryCount}, so try once more.");
                     tr.Info($"Hint: want to re-activate the job.");
 
                     this.statusCache = JobStatus.FailedOrCanceled;
@@ -1713,6 +1737,7 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
                 }
+                tr.Info("copied " + files.Count + " files.");
                 Console.WriteLine("copied " + files.Count + " files.");
 
                 // additional files
@@ -1727,11 +1752,12 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // deploy runtime
                 using (new BlockTrace("DEPLOY_RUNTIME", tr)) {
-                    if (AssignedBatchProc.DeployRuntime) {
+                    if (AssignedBatchProc.DeployRuntime == true) {
                         string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
-                        string BosssBinNative = Path.Combine(BosssInstall, "bin", Path.Combine("native", "win"));
-                        MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, DeployDir, "amd64");
-                        Console.WriteLine("   copied 'amd64' runtime.");
+                        var BosssBinNative = new DirectoryInfo(Path.Combine(BosssInstall, "bin", "native", AssignedBatchProc.RuntimeLocation));
+                        MetaJobMgrIO.CopyDirectoryRec(BosssBinNative.Parent.FullName, DeployDir, BosssBinNative.Name);
+                        Console.WriteLine("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
+                        tr.Info("   copied '" + AssignedBatchProc.RuntimeLocation + "' runtime.");
                     }
                 }
 

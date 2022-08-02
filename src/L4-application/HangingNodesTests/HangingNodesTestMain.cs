@@ -24,18 +24,6 @@ namespace HangingNodesTests {
             Console.WriteLine("Starting Hanging Nodes Test!");
             BoSSS.Solution.Application.InitMPI();
 
-            // Size : 1, Phases : 3, Setup : 11
-            double[] sizes = new double[] { 1e0 };
-            byte[] setup = new byte[] { 11 };
-            RunTest(sizes, setup, 3);
-            
-            
-            //HangingNodesTests.HangingNodesTestMain.Test3Phase
-            /*
-            //double[] sizes = new double[] { 1e0 };
-            //byte[] setup = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-            //int[] phases = new int[] { 1, 2, 3 };
-
             // to test individual setups
             double[] sizes = new double[] { 1e0 };
             byte[] setup = new byte[] { 0 };
@@ -121,7 +109,6 @@ namespace HangingNodesTests {
             Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
             Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
 
-            */
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -155,6 +142,7 @@ namespace HangingNodesTests {
             RunTest(sizes, setup, 3);
         }
 
+        /*
         [Test]
         public static void SerialParallelLengthScaleComp() {
             // --test=HangingNodesTests.HangingNodesTestMain.SerialParallelLengthScaleComp
@@ -209,7 +197,7 @@ namespace HangingNodesTests {
             Assert.IsTrue(MomentumRes.Select(s => Math.Abs(s)).Max() < 1e-6);
             Assert.IsTrue(TemperatureRes.Select(s => Math.Abs(s)).Max() < 1e-6);
         }
-
+        */
 
         /// <summary>
         /// Length scale comparison for parallel vs. serial run using the <see cref="TestingIO"/>
@@ -222,8 +210,6 @@ namespace HangingNodesTests {
         /// - instead, we must compare cell values based on the location  code (<see cref="BoSSS.Platform.Utils.Geom.GeomBinTreeBranchCode"/>).
         /// </remarks>
         private static void CheckLengthScales(XNSFE solver, string filename) {
-
-
             
             var species = solver.LsTrk.SpeciesIdS.ToArray();
             var Tracker = solver.LsTrk;
@@ -233,18 +219,19 @@ namespace HangingNodesTests {
             /*
             int MPIsize = solver.MPISize;
             int jCellStrange = -1;
-            long gidStrange;
-            if(MPIsize == 1) {
-                gidStrange = 34;
-            } else if(MPIsize == 2) {
-                gidStrange = 46;
-            } else {
-                throw new NotSupportedException();
+           
+            for(int j = 0; j < J; j++) {
+                var Center_j = solver.GridData.iLogicalCells.GetCenter(j);
+                var strangeCenter = new Vector(-0.125, 0.125);
+
+                if((Center_j - strangeCenter).L2Norm() < 1.0e-8)
+                    jCellStrange = j;
             }
-            jCellStrange = solver.GridData.CurrentGlobalIdPermutation.Values.IndexWhere(gid => gid == gidStrange);
 
             if(jCellStrange >= 0) {
-                Console.Error.WriteLine($"Cell gid={gidStrange}, X={solver.GridData.iLogicalCells.GetCenter(jCellStrange)}, locIdx={jCellStrange} @ rnk{solver.MPIRank}, surf = {agg.NonAgglomeratedMetrics.CellSurface[Tracker.GetSpeciesId("B")][jCellStrange]}");
+                var phiDGcoord =  ((LevelSet)(Tracker.LevelSets[0])).Coordinates.GetRow(jCellStrange);
+                var ot = phiDGcoord.ToConcatString("(", "|", ")");
+                Console.Error.WriteLine($"Cell X={solver.GridData.iLogicalCells.GetCenter(jCellStrange)}, locIdx={jCellStrange} @ rnk{solver.MPIRank}, surf = {agg.NonAgglomeratedMetrics.CellSurface[Tracker.GetSpeciesId("B")][jCellStrange]}, bkgrCellVol = {solver.GridData.iGeomCells.GetCellVolume(jCellStrange)}, phi = {ot}");
             }
             */
 
@@ -253,9 +240,9 @@ namespace HangingNodesTests {
                 SpeciesId spc = species[iSpc];
                 string SpcName = Tracker.GetSpeciesName(spc);
 
-                //LsChecker.AddVector("LenScale-" + SpcName, agg.CellLengthScales[spc].To1DArray().Take(J).Select(a => double.IsNaN(a) ? -1.1 : a));
+                LsChecker.AddVector("LenScale-" + SpcName, agg.CellLengthScales[spc].To1DArray().Take(J).Select(a => double.IsNaN(a) ? -1.1 : a));
                 LsChecker.AddVector("Vol-" + SpcName, agg.CutCellVolumes[spc].To1DArray().Take(J).Select(a => double.IsNaN(a) ? -1.2 : a));
-                //LsChecker.AddVector("Surf-" + SpcName, agg.CellSurface[spc].To1DArray().Take(J).Select(a => double.IsNaN(a) ? -1.3 : a));
+                LsChecker.AddVector("Surf-" + SpcName, agg.CellSurface[spc].To1DArray().Take(J).Select(a => double.IsNaN(a) ? -1.3 : a));
             }
 
             LsChecker.DoIOnow();
@@ -308,6 +295,7 @@ namespace HangingNodesTests {
                 }
             }
 
+            
             if (procs == 2) {
                 foreach (double size in sizes) {
                     foreach (byte s in setup) {
@@ -324,7 +312,7 @@ namespace HangingNodesTests {
                                 solver.RunSolverMode();
                                 MomentumRes.Add(solver.CurrentResidual.Fields.Take(3).Sum(f => f.L2Norm()).MPISum());
                                 TemperatureRes.Add(solver.CurrentResidual.Fields[3].L2Norm().MPISum());
-                                CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
+                                //CheckLengthScales(solver, "sz" + size + "ph" + phase + "setup" + s);
                                 
                             } catch (Exception e) {
                                 Console.WriteLine(desc + " : failed");
@@ -337,6 +325,7 @@ namespace HangingNodesTests {
                     }
                 }
             }
+            
 
             Console.WriteLine("Finished Hanging Nodes Test with {0} procs.", procs);
             Console.WriteLine();

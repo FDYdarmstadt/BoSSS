@@ -97,11 +97,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
         public void Dispose() {
-            throw new NotImplementedException();
+            if (CoarserLevelSolver != null)
+                CoarserLevelSolver.Dispose();
         }
 
         public long UsedMemory() {
-            throw new NotImplementedException();
+            return CoarserLevelSolver?.UsedMemory() ?? 0;
         }
     }
     

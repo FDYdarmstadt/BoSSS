@@ -897,7 +897,7 @@ namespace CNS {
             //c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
             //c.DynamicLoadBalancing_CellClassifier
 
-            //Debugger.Launch();
+            // dbg_launch();
 
             c.GridPartType = GridPartType.Predefined;
             c.GridPartOptions = "hallo";

@@ -102,7 +102,10 @@ namespace BoSSS.Application.BoSSSpad {
             protected set;
         }
 
-        string DeploymentDirectoryAtRemote(Job myJob, string DeploymentDirectory) {
+        /// <summary>
+        /// translation from a local path <paramref name="DeploymentDirectory"/> to the file-system of the Unix system 
+        /// </summary>
+        public string DeploymentDirectoryAtRemote(string DeploymentDirectory) {
             if (!DeploymentBaseDirectoryAtRemote.StartsWith("/")) {
                 throw new IOException($"Deployment remote base directory for {this.ToString()} must be rooted/absolute, but '{DeploymentBaseDirectoryAtRemote}' is not.");
             }
@@ -150,6 +153,22 @@ namespace BoSSS.Application.BoSSSpad {
         /// Empty constructor for de-serialization
         /// </summary>
         private SlurmClient() : base() {
+        
+            base.RuntimeLocation = "linux/amd64-openmpi";
+        }
+
+
+        /// <summary>
+        /// Since this is specific for MS Windows systems, it defaults to `linux/amd64-openmpi`
+        /// </summary>
+        public override string RuntimeLocation {
+            get {
+                if(base.RuntimeLocation != null)
+                    return base.RuntimeLocation;
+                else
+                    return "linux/amd64-openmpi";
+            }
+            set => base.RuntimeLocation = value;
         }
 
         /// <summary>
@@ -361,7 +380,7 @@ namespace BoSSS.Application.BoSSSpad {
                 // load users .bashrc with all dependencies
                 buildSlurmScript(myJob, new string[] { "source " + "/home/" + Username + "/.bashrc" }, DeploymentDirectory);
 
-                string jobId = SSHConnection.SubmitJob(DeploymentDirectoryAtRemote(myJob, DeploymentDirectory), out var _stdout, out var _stderr);
+                string jobId = SSHConnection.SubmitJob(DeploymentDirectoryAtRemote(DeploymentDirectory), out var _stdout, out var _stderr);
                 if(jobId.IsEmptyOrWhite())
                     throw new IOException("missing job id return value from slurm command; stderr from slurm: " + _stderr + "<<<<<<<; stdout from slurm: " + _stdout + "<<<<<<<;");
 
@@ -376,7 +395,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             //string jobpath_win = "\\home\\" + Username + myJob.DeploymentDirectory.Substring(2);
             //string jobpath_unix = jobpath_win.Replace("\\", "/");
-            string jobpath_unix = DeploymentDirectoryAtRemote(myJob, DeploymentDirectory);
+            string jobpath_unix = DeploymentDirectoryAtRemote(DeploymentDirectory);
 
             string jobname = myJob.Name;
             string executiontime = this.ExecutionTime;
@@ -447,11 +466,11 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 // Set startupstring
-                string RunningToken = DeploymentDirectoryAtRemote(myJob, DeploymentDirectory) + "/isrunning.txt";
+                string RunningToken = DeploymentDirectoryAtRemote(DeploymentDirectory) + "/isrunning.txt";
                 sw.WriteLine($"touch '{RunningToken}'");
-                sw.WriteLine("cd " + DeploymentDirectoryAtRemote(myJob, DeploymentDirectory)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
+                sw.WriteLine("cd " + DeploymentDirectoryAtRemote(DeploymentDirectory)); // this ensures that any files written out (e.g. .plt-files) are placed in the deployment directory rather than ~
                 sw.WriteLine(startupstring);
-                sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(myJob, DeploymentDirectory) + "/exit.txt'");
+                sw.WriteLine("echo $? > '" + DeploymentDirectoryAtRemote(DeploymentDirectory) + "/exit.txt'");
                 sw.WriteLine($"rm '{RunningToken}'");
                 if (this.DotnetRuntime == "mono") {
                     sw.WriteLine("echo delete mono-crash-dumps, if there are any...");

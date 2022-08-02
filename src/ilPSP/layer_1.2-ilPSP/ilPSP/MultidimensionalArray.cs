@@ -129,7 +129,7 @@ namespace ilPSP {
         /// The length of the cycle indexed by <paramref name="cycleIndex"/>.
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private int GetCycle(int cycleIndex) {
+        public int GetCycle(int cycleIndex) {
             Debug.Assert(cycleIndex >= 0 && cycleIndex < m_Dimension);
             unsafe {
                 fixed (int* pCycle0 = &this.m_StorageLayout.m_Cycle0) {

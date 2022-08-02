@@ -156,5 +156,20 @@ namespace ilPSP {
             });
             return ret;
         }
+
+        /// <summary>
+        /// Efficient re-use of temporary buffers, e.g. in inner loops
+        /// </summary>
+        /// <param name="temp"></param>
+        /// <param name="I">number of rows requested</param>
+        /// <param name="K">number of columns requested</param>
+        /// <returns>an array/matrix of size <paramref name="I"/>*<paramref name="K"/></returns>
+        static public MultidimensionalArray ReuseTemp(this MultidimensionalArray temp, int I, int K) {
+            if (temp == null)
+                return MultidimensionalArray.Create(I, K);
+            if (temp.NoOfRows == I && temp.NoOfCols == K)
+                return temp;
+            return MultidimensionalArray.Create(I, K);
+        }
     }
 }

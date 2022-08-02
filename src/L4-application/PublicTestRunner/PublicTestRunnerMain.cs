@@ -1,4 +1,5 @@
 ﻿using BoSSS.Application.BoSSSpad;
+using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -98,6 +99,7 @@ namespace PublicTestRunner {
         virtual public Type[] FullTest {
             get {
                 return new Type[] {
+                        typeof(ilPSP.MultidimensionalArray_Tests),
                         typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                         typeof(AdvancedSolverTests.TestsMain),
                         typeof(BoSSS.Application.CDG_ProjectionTest.AllUpTest),
@@ -223,6 +225,12 @@ namespace PublicTestRunner {
         static public bool discoverRelease = true;
 
         /// <summary>
+        /// Timout for job-manager run
+        /// </summary>
+        public static double TimeOutSec = 24 * 60 * 60; // 24 hours;
+
+
+        /// <summary>
         /// supposed to ignore tests depending on files in the source code repo;
         /// thereby, we can run the test runner from outside the source repositiory.
         /// </summary>
@@ -344,7 +352,7 @@ namespace PublicTestRunner {
             return ret.ToArray();
         }
 
-        static (int NoOfTests, string[] tests, string[] shortnames, string[] RequiredFiles) GetTestsInAssembly(Assembly a) {
+        static (int NoOfTests, string[] tests, string[] shortnames, string[] RequiredFiles) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
             var r = new List<string>(); // full test names
             var l = new List<string>(); // short names 
             var s = new HashSet<string>();
@@ -356,6 +364,9 @@ namespace PublicTestRunner {
 
                     foreach (var m in mmm) { // loop over methods in type...
                         if (t.IsAbstract && !m.IsStatic)
+                            continue;
+
+                        if(!FilterTestMethod(m, AssemblyFilter))
                             continue;
 
                         //bool testAdded = false;
@@ -456,11 +467,11 @@ namespace PublicTestRunner {
             }
         }
 
-
+        
         /// <summary>
         /// Decides whether an assembly <paramref name="a"/> matches the filter (wildcard <paramref name="AssemblyFilter"/>) specified by the user
         /// </summary>
-        static bool FilterAssembly(Assembly a, string AssemblyFilter) {
+        static bool FilterTestAssembly(Assembly a, string AssemblyFilter) {
             if (AssemblyFilter.IsEmptyOrWhite())
                 return true;
             string[] sFilters = AssemblyFilter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
@@ -475,10 +486,56 @@ namespace PublicTestRunner {
                     expect = true;
                 }
 
+                modFilter = modFilter.Split("\\", StringSplitOptions.RemoveEmptyEntries)[0];
+
                 if (modFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == expect)
                     return true;
             }
             return false;
+        }
+        
+
+         /// <summary>
+        /// Decides whether an assembly <paramref name="m"/> matches the filter (wildcard <paramref name="AssemblyFilter"/>) specified by the user
+        /// </summary>
+        static bool FilterTestMethod(MethodInfo m, string AssemblyFilter) {
+
+            if(AssemblyFilter.IsEmptyOrWhite())
+                return true;
+            
+            string FullName = m.DeclaringType.Name + "." + m.Name;
+            Assembly a = m.DeclaringType.Assembly;
+
+            string[] sFilters = AssemblyFilter.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var filter in sFilters) {
+                string modFilter;
+                bool expect = false;
+                if(filter.StartsWith("!")) {
+                    modFilter = filter.Substring(1);
+                    expect = false;
+                } else {
+                    modFilter = filter;
+                    expect = true;
+                }
+
+                string[] AssemblyNMethodFilter = modFilter.Split("\\", StringSplitOptions.RemoveEmptyEntries);
+                string aFilter = AssemblyNMethodFilter[0];
+
+                if(aFilter.WildcardMatch(Path.GetFileNameWithoutExtension(a.Location)) == expect) {
+
+                    if(AssemblyNMethodFilter.Length < 2)
+                        return true;
+
+                    string mfilter = AssemblyNMethodFilter[1];
+
+                    
+                    if (mfilter.WildcardMatch(FullName) == expect)
+                        return true;
+
+                }
+            }
+            return false;
+
         }
 
         static public int BuildYaml() {
@@ -501,8 +558,8 @@ namespace PublicTestRunner {
                     var assln = GetAllAssembliesForTests();
                     if(assln != null) {
                         foreach(var a in assln) {
-                            if(FilterAssembly(a, null)) {
-                                var allTst4Assi = GetTestsInAssembly(a);
+                            {
+                                var allTst4Assi = GetTestsInAssembly(a, null);
                                 for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                                     allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
                                 }
@@ -514,10 +571,10 @@ namespace PublicTestRunner {
                     var ParAssln = GetAllMpiAssemblies();
                     if(ParAssln != null) {
                         foreach(var TT in ParAssln) {
-                            if(FilterAssembly(TT.Asbly, null)) {
+                            {
 
                                 var a = TT.Asbly;
-                                var allTst4Assi = GetTestsInAssembly(a);
+                                var allTst4Assi = GetTestsInAssembly(a, null);
 
                                 for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                                     allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
@@ -712,11 +769,26 @@ namespace PublicTestRunner {
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
                 // deployment of native libraries
-                DirectoryInfo NativeOverride;
-                if(!bpc.DeployRuntime) {
-                    NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_amd64"));
-                    NativeOverride.Create();
-                    MetaJobMgrIO.CopyDirectoryRec(ilPSP.Environment.NativeLibraryDir, NativeOverride.FullName, null);
+                string NativeOverride;
+                if(bpc.DeployRuntime == false) {
+                    //
+                    // DeployRuntime is false: 
+                    // this means that no copy occurs for the **individual** jobs
+                    // Therefore, we copy it centrally, at once
+                    //
+                    var _NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_amd64"));
+                    _NativeOverride.Create();
+
+                    string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
+                    string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", bpc.RuntimeLocation);
+                    MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, _NativeOverride.FullName, null);
+
+                    if(bpc is SlurmClient slurm) {
+                        NativeOverride = slurm.DeploymentDirectoryAtRemote(_NativeOverride.FullName);
+                    } else {
+                        NativeOverride = _NativeOverride.FullName;
+                    }
+
                 } else {
                     NativeOverride = null;
                 }
@@ -724,7 +796,7 @@ namespace PublicTestRunner {
                 // deployment of assemblies
                 string RelManagedPath;
                 if(TestTypeProvider.CopyManagedAssembliesCentraly) {
-                    string mngdir = RunnerPrefix +DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
+                    string mngdir = RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_managed";
                     DirectoryInfo ManagedOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, mngdir));
                     ManagedOverride.Create();
                     TestTypeProvider.GetType().Assembly.DeployAt(ManagedOverride);
@@ -743,8 +815,8 @@ namespace PublicTestRunner {
                     var assln = GetAllAssembliesForTests();
                     if(assln != null) {
                         foreach(var a in assln) {
-                            if(FilterAssembly(a, AssemblyFilter)) {
-                                var allTst4Assi = GetTestsInAssembly(a);
+                            if(FilterTestAssembly(a, AssemblyFilter)) {
+                                var allTst4Assi = GetTestsInAssembly(a, AssemblyFilter);
                                 for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                                     if(ignore_tests_w_deps && allTst4Assi.RequiredFiles.Length > 0) {
                                         Console.WriteLine($"Skipping all in {a} due to external test dependencies.");
@@ -763,10 +835,10 @@ namespace PublicTestRunner {
                     var ParAssln = GetAllMpiAssemblies();
                     if(ParAssln != null) {
                         foreach(var TT in ParAssln) {
-                            if(FilterAssembly(TT.Asbly, AssemblyFilter)) {
+                            if(FilterTestAssembly(TT.Asbly, AssemblyFilter)) {
 
                                 var a = TT.Asbly;
-                                var allTst4Assi = GetTestsInAssembly(a);
+                                var allTst4Assi = GetTestsInAssembly(a, AssemblyFilter);
 
                                 for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
                                     if(ignore_tests_w_deps && allTst4Assi.RequiredFiles.Length > 0) {
@@ -848,7 +920,7 @@ namespace PublicTestRunner {
                 var AllFinishedJobs = new List<(Job job, string ResFile, string testname, JobStatus LastStatus)>();
 
 
-                const double TimeOutSec = 24 * 55 * 60;
+                
                 using(var ot = new StreamWriter("allout-" + DateNtime + "-" + DebugOrReleaseSuffix + ".txt")) {
 
                     (Job job, string ResFile, string testname, JobStatus LastStatus)[] UpdateFinishedJobs() {
@@ -897,6 +969,7 @@ namespace PublicTestRunner {
                                     using(new BlockTrace("copy_nunit_xml_result", trr)) {
                                         try {
                                             string[] sourceFiles = Directory.GetFiles(jj.job.LatestDeployment.DeploymentDirectory.FullName, "result-*.xml");
+                                            sourceFiles = sourceFiles.Cat(Directory.GetFiles(jj.job.LatestDeployment.DeploymentDirectory.FullName, "*.html")); // output of jupyter notebooks
 
                                             foreach(var orig in sourceFiles) {
                                                 string n = Path.GetFileName(orig);
@@ -908,7 +981,7 @@ namespace PublicTestRunner {
                                             returnCode--;
                                         }
                                     }
-                                    // delete deploy directory directory
+                                    // delete deploy directory
                                     using(new BlockTrace("delete_deploy_dir", trr)) {
                                         if(s == JobStatus.FinishedSuccessful) {
                                             try {
@@ -1124,7 +1197,7 @@ namespace PublicTestRunner {
             string[] AdditionalFiles,
             string prefix,
             int NoOfMpiProcs,
-            DirectoryInfo nativeOverride,
+            string nativeOverride,
             string TestRunnerRelPath,
             int cnt) {
             using (new FuncTrace()) {
@@ -1167,7 +1240,7 @@ namespace PublicTestRunner {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
                 }
                 if (nativeOverride != null) {
-                    j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride.FullName);
+                    j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride);
                 }
                 j.NumberOfMPIProcs = NoOfMpiProcs;
                 if(TestRunnerRelPath != null)
@@ -1197,9 +1270,9 @@ namespace PublicTestRunner {
         /// Copies additional files required for some test;
         /// these files are identified via the <see cref="NUnitFileToCopyHackAttribute"/>.
         /// </summary>
-        static void MegaMurxPlusPlus(Assembly a) {
+        static void MegaMurxPlusPlus(Assembly a, string filter) {
             using (new FuncTrace()) {
-                var r = GetTestsInAssembly(a);
+                var r = GetTestsInAssembly(a, filter);
 
                 var dir = Directory.GetCurrentDirectory();
 
@@ -1260,7 +1333,7 @@ namespace PublicTestRunner {
                 int count = 0;
                 bool ret = false;
                 foreach(var a in assln) {
-                    if(!FilterAssembly(a, AssemblyFilter)) {
+                    if(!FilterTestAssembly(a, AssemblyFilter)) {
                         continue;
                     }
                     Console.WriteLine("Matching assembly: " + a.Location);
@@ -1268,7 +1341,7 @@ namespace PublicTestRunner {
                     count++;
 
                     if(MpiRank == 0) {
-                        MegaMurxPlusPlus(a);
+                        MegaMurxPlusPlus(a, AssemblyFilter);
                     }
 
                     Console.WriteLine("Waiting for all processors to catch up BEFORE starting test(s)...");
@@ -1309,7 +1382,7 @@ namespace PublicTestRunner {
                     ftr.Info("Found  " + count + " assemblies in total");
                     
                     if(count <= 0) {
-                        Console.WriteLine("Found no assembly matching: " + AssemblyFilter);
+                        Console.WriteLine("Found no assembly matching: " + AssemblyFilter + " (hint: don't provide a filename extension, e.g. '.dll' or '.exe'; assembly names are compared without using an extension, e.g. 'XNSE_Solver', not 'XNSE_Solver.exe' or 'XNSE_Solver.dll'.)");
                         return -1;
                     }
                 }
@@ -1365,12 +1438,12 @@ namespace PublicTestRunner {
         /// </param>
         /// <returns></returns>
         public static int _Main(string[] args, ITestTypeProvider ttp) {
-            if(args.Length > 5) {
+            if (args.Length > 5) {
                 Console.WriteLine($"Warning: got {args.Length} arguments -- are you using this right?");
 
                 Console.WriteLine("No of args: " + args.Length);
                 //int i = 0;
-                foreach(string arg in args) {
+                foreach (string arg in args) {
                     Console.WriteLine("    " + arg);
                 }
 
@@ -1387,7 +1460,7 @@ namespace PublicTestRunner {
             System.Diagnostics.Trace.Listeners.Add(new MyListener());
 
 
-            if(args.Length < 1) {
+            if (args.Length < 1) {
                 Console.WriteLine("Insufficient number of arguments.");
                 PrintMainUsage();
                 return -7777;
@@ -1396,10 +1469,11 @@ namespace PublicTestRunner {
             BoSSS.Solution.Application.InitMPI();
 
 
+
             int ret = -1;
-            switch(args[0]) {
+            switch (args[0]) {
                 case "nunit3":
-                if(args.Length < 2) {
+                if (args.Length < 2) {
                     Console.WriteLine("Insufficient number of arguments.");
                     PrintMainUsage();
                     return -7777;
@@ -1420,23 +1494,23 @@ namespace PublicTestRunner {
                 runRelease = true;
 #endif
 
-                if(args[0].EndsWith("release"))
+                if (args[0].EndsWith("release"))
                     runRelease = true;
-                if(args[0].EndsWith("debug"))
+                if (args[0].EndsWith("debug"))
                     runRelease = false;
                 discoverRelease = runRelease;
 
-                if(args[0].EndsWith("ignore_tests_w_deps"))
+                if (args[0].EndsWith("ignore_tests_w_deps"))
                     ignore_tests_w_deps = true;
 
                 int iQueue = 1;
                 string filter = args.Length > 1 ? args[1] : "*";
-                if(args.Length == 3) {
+                if (args.Length == 3) {
                     Console.WriteLine("arg 2 is:" + args[2]);
-                    if(args[2].StartsWith("queue#")) {
+                    if (args[2].StartsWith("queue#")) {
                         try {
                             iQueue = int.Parse(args[2].Split(new[] { '#' }, StringSplitOptions.RemoveEmptyEntries)[1]);
-                        } catch(Exception) {
+                        } catch (Exception) {
                             ret = -1;
                             Console.Error.WriteLine("Unable to parse queue number from " + args[1]);
                             PrintMainUsage();
@@ -1478,8 +1552,9 @@ namespace PublicTestRunner {
 
 
             return ret;
-
         }
+        
+
 
         static int Main(string[] args) {
             return _Main(args, new PublicTests());

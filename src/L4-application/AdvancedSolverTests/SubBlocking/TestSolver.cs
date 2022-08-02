@@ -211,10 +211,12 @@ namespace AdvancedSolverTests {
                     Op.EquationComponents["c1"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
                     Op.EquationComponents["c1"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u2"));      // Bulk form
                     Op.EquationComponents["c1"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
+                    
                     Op.EquationComponents["c2"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u1"));      // Bulk form
                     Op.EquationComponents["c2"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
                     Op.EquationComponents["c2"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u2"));      // Bulk form
                     Op.EquationComponents["c2"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
+                    
                     Op.EquationComponents["c1"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
                     Op.EquationComponents["c1"].Add(new SourceTest("u2", 11)); // Flux in Bulk Phase;
                     Op.EquationComponents["c2"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
