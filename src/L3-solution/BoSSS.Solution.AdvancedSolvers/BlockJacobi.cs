@@ -31,56 +31,36 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Block-Jacobi smoother, maybe only useful in combination with the multi-grid solver (<see cref="ClassicMultigrid"/>).
     /// </summary>
-    public class BlockJacobi : ISolverSmootherTemplate, ISolverWithCallback {
+    public class BlockJacobi : ISubsystemSolver {
+        
+        /// <summary>
+        /// Jacobi-Damping
+        /// </summary>
+        public double omega = 1.0; // jacobi - under-relax
 
-        ///// <summary>
-        ///// Configuration of <see cref="BlockJacobi"/>
-        ///// </summary>
-        //public class myConfig : ConfigBase {
-        //    /// <summary>
-        //    /// Configuration cctor of <see cref="BlockJacobi"/>
-        //    /// </summary>
-            //public myConfig() {
-                int MaxSolverIterations = 1;
-            //}
-            /// <summary>
-            /// Jacobi-Damping
-            /// </summary>
-            public double omega = 1.0; // jacobi - under-relax
+        /// <summary>
+        /// Fixed number of block-Jacobi 
+        /// </summary>
+        public int NoOfIterations = 1;
 
-            /// <summary>
-            /// Fixed number of block-Jacobi 
-            /// </summary>
-            public int NoOfIterations = 1;
-
-        //    /// <summary>
-        //    /// ~
-        //    /// </summary>
-        //    /// <returns></returns>
-        //    public override ISolverSmootherTemplate GetInstance() {
-        //        return new BlockJacobi();
-        //    }
-        //}
-
-        //myConfig m_config;
-
-        ///// <summary>
-        ///// ~
-        ///// </summary>
-        //public ConfigBase Config {
-        //    get {
-        //        if (m_config == null)
-        //            m_config = new myConfig();
-        //        return m_config;
-        //    }
-        //}
-
-        MultigridOperator m_MultigridOp;
+        IOperatorMappingPair m_MultigridOp;
 
         /// <summary>
         /// ~
         /// </summary>
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+
+        /// <summary>
+        /// ~
+        /// </summary>
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
+
+        void InitImpl(IOperatorMappingPair op) {
             using(new FuncTrace()) {
                 if(object.ReferenceEquals(op, this.m_MultigridOp))
                     return; // already initialized
@@ -88,16 +68,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose();
 
                 BlockMsrMatrix M = op.OperatorMatrix;
-                var MgMap = op.Mapping;
+                var MgMap = op.DgMapping;
                 this.m_MultigridOp = op;
 
 
-                if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if(!M.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if(!M.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
-                Mtx = M;
+                
                 int L = M.RowPartitioning.LocalLength;
 
                 /*
@@ -140,15 +120,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
-        /// <summary>
-        /// ~
-        /// </summary>
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
-            get;
-            set;
+        BlockMsrMatrix Mtx {
+            get {
+                return m_MultigridOp.OperatorMatrix;
+            }
         }
 
-        BlockMsrMatrix Mtx;
         BlockMsrMatrix Diag;
         BlockMsrMatrix invDiag;
         //double[] diag;
@@ -159,12 +136,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// ~
         /// </summary>
         bool TerminationCriterion(int iter, double r0_l2, double r_l2) {
-            return (iter <= MaxSolverIterations);
+            return (iter <= this.NoOfIterations);
         }
 
 
 
-      
+
         /// <summary>
         /// Jacobi iteration
         /// </summary>
@@ -176,23 +153,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             double iter0_ResNorm = 0;
 
-            for (int iIter = 0; true; iIter++) {
+            for(int iIter = 0; true; iIter++) {
                 ql.SetV(bl);
                 Mtx.SpMV(-1.0, xl, 1.0, ql);
-                double ResNorm = ql.L2NormPow2().MPISum().Sqrt();
+                double ResNorm = ql.MPI_L2Norm(Mtx.MPI_Comm);
 
-                if (iIter == 0) {
+                if(iIter == 0) {
                     iter0_ResNorm = ResNorm;
 
-                    if (this.IterationCallback != null) {
-                        double[] _xl = xl.ToArray();
-                        double[] _bl = bl.ToArray();
-                        Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                        this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
-                    }
+                    //if(this.IterationCallback != null) {
+                    //    double[] _xl = xl.ToArray();
+                    //    double[] _bl = bl.ToArray();
+                    //    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
+                    //    this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
+                    //}
                 }
 
-                if (!TerminationCriterion(iIter, iter0_ResNorm, ResNorm)) {
+                if(!TerminationCriterion(iIter, iter0_ResNorm, ResNorm)) {
                     m_Converged = true;
                     return;
                 }
@@ -210,12 +187,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-                if (this.IterationCallback != null) {
-                    double[] _xl = xl.ToArray();
-                    double[] _bl = bl.ToArray();
-                    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                    this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
-                }
+                //if(this.IterationCallback != null) {
+                //    double[] _xl = xl.ToArray();
+                //    double[] _bl = bl.ToArray();
+                //    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
+                //    this.IterationCallback(iIter + 1, _xl, _bl, this.m_MultigridOp);
+                //}
             }
         }
 
@@ -241,19 +218,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
-            throw new NotImplementedException();
+            //throw new Exception();
+            this.m_MultigridOp = null;
+            this.invDiag = null;
+            this.Diag = null;
         }
 
         public object Clone() {
             var clone = new BlockJacobi();
-            clone.IterationCallback = this.IterationCallback;
+            //clone.IterationCallback = this.IterationCallback;
             clone.omega = this.omega;
             clone.NoOfIterations = this.NoOfIterations;
             return clone;
         }
 
         public long UsedMemory() {
-            throw new NotImplementedException();
+            return (this.invDiag.UsedMemory + this.Diag.UsedMemory);
         }
     }
 }

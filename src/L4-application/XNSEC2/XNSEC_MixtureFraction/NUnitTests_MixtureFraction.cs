@@ -69,7 +69,7 @@ namespace BoSSS.Application.XNSEC {
                  XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
                  SurfaceStressTensor_IsotropicMode SurfTensionMode,
                  bool constantDensity,
-                 int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.classic_pardiso) {
+                 int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {
             XNSEC_Control C = new XNSEC_Control();
             int D = tst.SpatialDimension;
             // database setup
@@ -213,12 +213,12 @@ namespace BoSSS.Application.XNSEC {
 
                 var evaluator = new XNSEErrorEvaluator<XNSEC_Control>(solver);
                 double[] XNSE_Errors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
-                var combustionEvaluator = new CombustionErrorEvaluator<XNSEC_Control>(solver);
-                double[] CombustionErrors = combustionEvaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
+                var MixtureFractionEvaluator = new MixtureFractionErrorEvaluator<XNSEC_Control>(solver);
+                double[] MF_Errors= MixtureFractionEvaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
 
                 List<double> errors = new List<double>();
                 errors.AddRange(XNSE_Errors);
-                errors.AddRange(CombustionErrors);
+                errors.AddRange(MF_Errors);
                 double[] AllErrors = errors.ToArray();
 
                 double[] ErrThresh = Tst.AcceptableL2Error;
@@ -227,7 +227,6 @@ namespace BoSSS.Application.XNSEC {
                 for (int i = 0; i < ErrThresh.Length; i++) {
                     bool ok = AllErrors[i] <= ErrThresh[i];
                     Console.Write("L2 error, '{0}': \t{1}", solver.Operator.DomainVar[i], AllErrors[i]);
-
                     if (ok)
                         Console.WriteLine("   (ok)");
                     else

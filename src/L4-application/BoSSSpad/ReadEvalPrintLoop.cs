@@ -129,7 +129,7 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main).Assembly);
             //eval.ReferenceAssembly(typeof(XDGShock.Program).Assembly);
             //eval.ReferenceAssembly(typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSEMain).Assembly);
-            // eval.ReferenceAssembly(typeof(NSE_SIMPLE.NSE_SIMPLEMain).Assembly);
+            eval.ReferenceAssembly(typeof(NSE_SIMPLE.NSE_SIMPLEMain).Assembly);
             eval.ReferenceAssembly(typeof(XNSEC.XNSEC).Assembly);
             eval.ReferenceAssembly(typeof(KOmega.KOmegaSolver).Assembly);
 

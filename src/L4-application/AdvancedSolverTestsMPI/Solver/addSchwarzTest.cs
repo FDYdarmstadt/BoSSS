@@ -74,11 +74,11 @@ namespace AdvancedSolverTests.Solver {
         internal class TestSchwarz : Schwarz {
 
             public BlockMsrMatrix[] GetBlockMatrices() {
-                return base.BlockMatrices;
+                return base.blockSolvers.Select(bs => bs.SubsysMatrix).ToArray();
             }
 
             public BlockMask[] GetBlockMasks() {
-                return base.BMfullBlocks;
+                return base.blockSolvers.Select(bs => bs.RestrictionMask).ToArray();
             }
         }
 
@@ -111,9 +111,9 @@ namespace AdvancedSolverTests.Solver {
             var solver = new TestSchwarz() {
                 //m_BlockingStrategy = ,
                 m_BlockingStrategy = new TestBlockingStrat(),
-                Overlap = overlap? 1 : 0,
-                EnableOverlapScaling = overlap
             };
+            solver.config.Overlap = overlap ? 1 : 0;
+            solver.config.EnableOverlapScaling = overlap;
             solver.Init(op);
 
             return solver;

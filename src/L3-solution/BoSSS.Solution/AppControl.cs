@@ -1096,6 +1096,15 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
+        /// Serialization into a text file 
+        /// </summary>
+        public void SaveToFile(string path, FileMode fm = FileMode.Create) {
+            var code = this.Serialize();
+            File.WriteAllText(path, code);
+        }
+
+
+        /// <summary>
         /// Used for control objects in work-flow management, 
         /// Converts object to a serializable text.
         /// </summary>
@@ -1391,6 +1400,7 @@ namespace BoSSS.Solution.Control {
 
             var scriptOptions = ScriptOptions.Default;
             scriptOptions = scriptOptions.AddReferences(allAssis);
+            // Console.WriteLine("Evaluating : {0}", Script);
             object controlObj = CSharpScript.EvaluateAsync(Script, scriptOptions).Result;
 
             if(controlObj == null) {

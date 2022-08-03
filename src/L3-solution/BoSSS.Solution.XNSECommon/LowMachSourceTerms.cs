@@ -67,7 +67,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// Heat release term on energy equation
     /// </summary>
     public class LowMach_HeatSource : ReactionHeatSourceJacobi, ISpeciesFilter {
-        public LowMach_HeatSource(string spcName, double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw_MultipleSpecies EoS, double TRef, double cpRef, bool VariableOneStepParameters) : base(HeatReleaseFactor, ReactionRateConstants, molarmasses, EoS, TRef, cpRef, VariableOneStepParameters) {
+        public LowMach_HeatSource(string spcName, double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw_MultipleSpecies EoS, double TRef, double cpRef, bool VariableOneStepParameters, int NoOfChemSpecies) : base(HeatReleaseFactor, ReactionRateConstants, molarmasses, EoS, TRef, cpRef, VariableOneStepParameters, NoOfChemSpecies) {
             ValidSpecies = spcName;
         }
 
@@ -162,8 +162,17 @@ namespace BoSSS.Solution.XNSECommon {
             ValidSpecies = spcName;
             m_EoS = EoS;
             m_dt = dt;
-            m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfChemicalComponents)); // Variables for the density evaluation
-            m_ParameterOrdering = new string[] { "Density_t0", "Density" }; // Density is only added as a dummy  in order to be able to recognize it in the operator
+
+            if (m_EoS is MaterialLawMixtureFractionNew) {
+                m_ArgumentOrdering = new string[] { VariableNames.MixtureFraction };
+
+            } else {
+                m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfChemicalComponents)); // Variables for the density evaluation
+
+            }
+
+
+            m_ParameterOrdering = new string[] { "Density_t00", "Density_t0", "Density" }; // Density is only added as a dummy  in order to be able to recognize it in the operator
         }
 
         public string ValidSpecies {
@@ -218,10 +227,33 @@ namespace BoSSS.Solution.XNSECommon {
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
-            double rhoActual = m_EoS.GetDensity(U);
-            double rhoOld = cpv.Parameters[0];
 
-            return (rhoActual - rhoOld) / m_dt * V;
+            int timestepNo = (int) ( cpv.time / m_dt);
+
+         
+
+            double rho_t;
+            if (m_EoS is MaterialLawMixtureFractionNew) {
+                 rho_t = m_EoS.getDensityFromZ(U[0]);
+            } else {
+                rho_t = m_EoS.GetDensity(U);
+            }
+            double rho_t_00 = cpv.Parameters[0];
+            double rho_t_0 = cpv.Parameters[1];
+
+            double res = 0;
+            if (timestepNo == 0) {
+                throw new Exception("something went wrong");
+            } else if (timestepNo == 1) {
+              res = (rho_t - rho_t_0) / m_dt;  // implicit euler => drho/dt = (rho^t - rho^t-1) /2
+
+            } else if (timestepNo == 2) {
+                res = (3*rho_t - 4*rho_t_0+rho_t_00) /(2* m_dt);   //  2° order => drho/dt = (rho^t - rho^t-1) /2
+
+            }
+
+
+            return res* V;
 
         }
     }

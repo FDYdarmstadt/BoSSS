@@ -26,6 +26,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Reflection;
+using ilPSP.LinSolvers;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -72,12 +73,40 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            //InitMPI();
+            
+            
+            /*InitMPI();
+            var ids = new string[] {
+                "R0Lv0p0",
+                //"R0Lv0p1",
+                //"R1Lv0p0",
+                //"R1Lv0p1",
+                //"R2Lv0p0",
+                //"R2Lv0p1",
+                //"R3Lv0p0",
+                //"R3Lv0p1",
+
+                //"R0Lv1p0",
+                "R1Lv1p0",
+                //"R2Lv1p0",
+                //"R3Lv1p0"
+                
+            };
+
+            //var ids = new string[] {
+            //    "R0Lv0p0",
+            //    "R1Lv0p0",
+            //    "R2Lv0p0",
+            //    "R2Lv0p0"};
+
+            foreach (var id in ids) {
+                CellILU.Verify(id);
+            }
+            */
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest(2, Tests.TaylorCouette.Mode.TestIBM, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false, NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
-            //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me"); //*/
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);
+            //NUnit.Framework.Assert.IsTrue(false, "remove me"); 
 
             //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
             {
@@ -89,9 +118,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 //Tmeas.Memtrace.Flush();
                 //Tmeas.Memtrace.Close();
             }
+            //*/
+            ilPSP.LinSolvers.BlockMsrMatrix.PrintPerfStat();
 
-
-
+            
         }
     }
 
@@ -101,6 +131,8 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
         public override void Init(AppControl control) {
+
+
             base.Init(control);
             var ctrl = (control as XNSE_Control);
             if(ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count()<=0)
@@ -293,7 +325,6 @@ namespace BoSSS.Application.XNSE_Solver {
             int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
             int D = this.GridData.SpatialDimension;
 
-
             if (this.Control.UseSchurBlockPrec) {
                 // using a Schur complement for velocity & pressure
                 var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
@@ -315,7 +346,6 @@ namespace BoSSS.Application.XNSE_Solver {
                 for (int d = 0; d < D; d++) {
                     var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
                         DegreeS = new int[] { pVel },
-                        //DegreeS = new int[] { Math.Max(1, pVel - iLevel) }, // p-multigrid reduction
                         mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                         VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
                     };

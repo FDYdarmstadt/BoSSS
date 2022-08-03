@@ -1095,6 +1095,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         public GridData GridData {
             get {
                 InitGridData();
+                if (!object.ReferenceEquals(m_GridData.Grid, this))
+                    throw new ApplicationException("internal error in Grid-GridData pairing.");
                 return m_GridData;
             }
         }

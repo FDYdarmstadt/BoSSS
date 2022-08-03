@@ -405,7 +405,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// plot to a PNG file ('set terminal png').
         /// </summary>
         static public void SaveToGIF(this Plot2Ddata[,] _2DData, string OutfileName, GnuplotPageLayout layout = null) {
-            _2DData.ToGnuplot(layout).SaveToGIF(OutfileName);
+            using (var gp = _2DData.ToGnuplot(layout)) {
+                gp.SaveToGIF(OutfileName);
+            }
         }
 
         /// <summary>
@@ -417,7 +419,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="yRes">Vertical resolution in pixels.</param>
         /// <param name="OutfileName">Path/filename for output PNG.</param>
         static public void SaveToGIF(this Plot2Ddata _2DData, string OutfileName, int xRes = 800, int yRes = 600) {
-            _2DData.ToGnuplot().SaveToGIF(OutfileName, xRes, yRes);
+            using (var gp = _2DData.ToGnuplot()) {
+                gp.SaveToGIF(OutfileName, xRes, yRes);
+            }
         }
 
         /// <summary>
@@ -425,7 +429,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// plot to a PNG file ('set terminal svg').
         /// </summary>
         static public void SaveToSVG(this Plot2Ddata[,] _2DData, string OutfileName, GnuplotPageLayout layout = null) {
-            _2DData.ToGnuplot(layout).SaveToSVG(OutfileName);
+            using (var gp = _2DData.ToGnuplot(layout)) {
+                gp.SaveToSVG(OutfileName);
+            }
         }
 
         /// <summary>
@@ -437,7 +443,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="yRes">Vertical resolution in pixels.</param>
         /// <param name="OutfileName">Path/filename for output PNG.</param>
         static public void SaveToSVG(this Plot2Ddata _2DData, string OutfileName, int xRes = 800, int yRes = 600) {
-            _2DData.ToGnuplot().SaveToSVG(OutfileName, xRes, yRes);
+            using (var gp = _2DData.ToGnuplot()) {
+                gp.SaveToSVG(OutfileName, xRes, yRes);
+            }
         }
     }
 }

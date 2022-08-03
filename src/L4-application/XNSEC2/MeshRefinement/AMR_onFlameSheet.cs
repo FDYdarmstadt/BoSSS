@@ -44,7 +44,6 @@ namespace BoSSS.Application.XNSEC {
             maxRefinementLevel = maxRefinementLevelval;
         }
 
-        private int CallCounter = 0;
 
         /// <summary>
         /// The value of the mixture fraction at stoichiometric conditions
@@ -61,88 +60,63 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public override int[] DesiredCellChanges() {
-            //for(int j = 0; j < noOfLocalCells; j++) {
-            //    double localMinVal, localMaxVal;
-            //    double zMeanValue = MixtureFraction.GetMeanValue(j);
-            //    //MixtureFraction.Current.GetExtremalValuesInCell(out localMinVal, out localMaxVal, j);
-
-            //    for(int k = 0; k < RefinementLevel; k++) {
-            //        if(!levelNCells[k][j] && (Math.Abs(zMeanValue - 0.5) < 0.1)) {
-            //            levelNCells[k][j] = true;
-
-            //        }
-            //    }
-
-            //}
+           
 
             int J = GridData.CellPartitioning.LocalLength;
             int[] levels = new int[J];
             Cell[] cells = GridData.Grid.Cells;
+
+
             for(int j = 0; j < J; j++) {
                 int currentLevel = cells[j].RefinementLevel;
                 double localMinVal, localMaxVal;
                 MixtureFraction.GetExtremalValuesInCell(out localMinVal, out localMaxVal, j);
-                if((localMaxVal > m_zSt) && (m_zSt > localMinVal) && currentLevel < maxRefinementLevel) {
+                bool cutcell = false; ;
+                try {
+                    double lvlsetlocalMinVal, lvlsetlocalMaxVal;
+                    var lvlsetImmersedBoundary = (LevelSet)this.LsTrk.LevelSets[1];
+                    lvlsetImmersedBoundary.GetExtremalValuesInCell(out lvlsetlocalMinVal, out lvlsetlocalMaxVal, j);
+                    cutcell = (lvlsetlocalMaxVal > 0) && (0 > lvlsetlocalMinVal) ? true : false;
+                } catch {
+
+                }
+
+                if ((localMaxVal > m_zSt) && (m_zSt > localMinVal) && currentLevel < maxRefinementLevel && !cutcell) {
                     //if((Math.Abs(zMeanValue - m_zSt) < zBand) && currentLevel < maxRefinementLevel) {
                     levels[j] = 1;
+                } else if(currentLevel >0) {
+                    levels[j] = -1;
                 } else {
-                    levels[j] = 0;
+                    //
                 }
+                
+                //else if ( (localMaxVal < m_zSt || m_zSt < localMinVal) && currentLevel > 0) {
+                //    levels[j] = -1;
+                //} 
 
                 //else if(!(Math.Abs(zMeanValue - m_zSt) < zBand) && currentLevel > 0) {
                 //    levels[j] = -1;
                 //}
             }
-            Console.WriteLine("Number of refined cells around the flame sheet (z = zst)" + levels.Sum()+ ".\n");
+            Console.WriteLine("Number of refined cells around the flame sheet (z = zst)" + levels.Where(val => val > 0).Sum() + ".\n");
+            Console.WriteLine("Number of coarsened cells around the flame sheet (z = zst)" + levels.Where(val => val < 0).Sum() + ".\n");
+
+
             //}
             return levels;
         }
+
+        ///// <summary>
+        ///// the level-set which represents the fluid-ImmersedBoundary interface
+        ///// </summary>
+        //protected LevelSet LevSetImmersedBoundary {
+        //    get {
+        //        return this.LsTrk.LevelSets[1] != null ? (LevelSet)(this.LsTrk.LevelSets[1]) : null;
+        //    }
+        //}
+
     }
 
-    /// <summary>
-    /// Calculate the reaction rates field and refine in areas with high values
-    /// </summary>
-    public class AMR_onReactiveZones2 : AMRLevelIndicatorWithLevelset {
-
-        [DataMember]
-        public double refinementTreshhold;
-
-        public AMR_onReactiveZones2(bool rhoone, double[] _MolarMasses, int maxRefinementLevelval, MaterialLaw _EoS, double _refinementTreshhold) {
-            maxRefinementLevel = maxRefinementLevelval;
-            refinementTreshhold = _refinementTreshhold;
-        }
-
-        [DataMember]
-        public XDGField kReact {
-            get {
-                return (XDGField)((XNSEC)this.SolverMain).IOFields.Where(f => f.Identification == "kReact").Single();
-            }
-        }
-
-        public override int[] DesiredCellChanges() {
-            var C = ((XNSEC_Control)this.Control);
-
-            int J = GridData.CellPartitioning.LocalLength;
-            int[] levels = new int[J];
-
-            double globalMinVal, globalMaxVal;
-
-            kReact.GetExtremalValues(out globalMinVal, out globalMaxVal);
-
-            Cell[] cells = GridData.Grid.Cells;
-            for(int j = 0; j < J; j++) {
-                int currentLevel = cells[j].RefinementLevel;
-
-                double localMinVal, localMaxVal;
-                kReact.GetExtremalValuesInCell(out localMinVal, out localMaxVal, j);
-                if(localMaxVal / globalMaxVal > refinementTreshhold && currentLevel < maxRefinementLevel) {
-                    levels[j] = 1;
-                }
-            }
-
-            return levels;
-        }
-    }
 
     /// <summary>
     /// Calculate the reaction rates field and refine in areas with high values
@@ -150,15 +124,12 @@ namespace BoSSS.Application.XNSEC {
     [Serializable]
     public class AMR_onReactiveZones : AMRLevelIndicatorWithLevelset {
 
-        [DataMember]
-        public double[] MolarMasses;
 
         [DataMember]
         public double refinementTreshhold;
 
-        public AMR_onReactiveZones(double[] _MolarMasses, int maxRefinementLevelval, double _refinementTreshhold) {
+        public AMR_onReactiveZones(int maxRefinementLevelval, double _refinementTreshhold) {
             maxRefinementLevel = maxRefinementLevelval;
-            MolarMasses = _MolarMasses;
             refinementTreshhold = _refinementTreshhold;
         }
 
@@ -182,7 +153,6 @@ namespace BoSSS.Application.XNSEC {
 
             solver.XOperator.InvokeParameterUpdate(0.0, solver.CurrentState.ToArray(), solver.Parameters.ToArray()); ;
      
-            XDGField kReact = ReactionRate;
 
 
             int J = GridData.CellPartitioning.LocalLength;
@@ -191,18 +161,24 @@ namespace BoSSS.Application.XNSEC {
             //Tecplot.PlotFields(new DGField[] { kReact }, "Kreact", 0.0, 3);
             double globalMinVal, globalMaxVal;
 
-            kReact.GetExtremalValues(out globalMinVal, out globalMaxVal);
+            ReactionRate.GetExtremalValues(out globalMinVal, out globalMaxVal);
 
             Cell[] cells = GridData.Grid.Cells;
             for(int j = 0; j < J; j++) {
                 int currentLevel = cells[j].RefinementLevel;
 
                 double localMinVal, localMaxVal;
-                kReact.GetExtremalValuesInCell(out localMinVal, out localMaxVal, j);
-                if((localMaxVal / globalMaxVal > refinementTreshhold)  && currentLevel < maxRefinementLevel) {
+                ReactionRate.GetExtremalValuesInCell(out localMinVal, out localMaxVal, j);
+                if ((localMaxVal / globalMaxVal > refinementTreshhold) && currentLevel < maxRefinementLevel && localMaxVal > 1.0) {
                     levels[j] = 1;
                 }
-              
+                //else if (localMinVal < 0) {
+                //    levels[j] = 1;
+                //}
+                else if ((localMaxVal / globalMaxVal <= refinementTreshhold)) {
+                    levels[j] = -1;
+                }
+
             }
             Console.WriteLine("Number of refined cells around areas with high reaction rates: " + levels.Sum() + ".\n");
             return levels;

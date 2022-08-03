@@ -152,34 +152,43 @@ namespace BoSSS.Foundation {
                 M[iKref] = MultidimensionalArray.Create(I, I);
                 Origin2Dest[iKref] = MultidimensionalArray.Create(I, J);
 
-                var P = m_origin.Evaluate(rule.Nodes);
-                var B = m_dest.Evaluate(rule.Nodes);
+                var BsvalOrg = m_origin.Evaluate(rule.Nodes);
+                var BsvalDst = m_dest.Evaluate(rule.Nodes);
+                var BsvalDstXwgt_T = MultidimensionalArray.Create(I, rule.NoOfNodes);
 
-                MultidimensionalArray PVal;
-                MultidimensionalArray BVal;
-                for (int k = 0; k < rule.Nodes.NoOfNodes; k++) {
-                    double weight = rule.Weights[k];
-                    PVal = P.ExtractSubArrayShallow(k, -1);
-                    BVal = B.ExtractSubArrayShallow(k, -1);
-                    // Quadratur M
-                    {
-                        if (!m_dest.IsOrthonormal) {
-                            M[iKref].Multiply(weight, BVal, BVal, 1.0, "ij", "i", "j");
-                        }
-                    }               
-                    // Quadratur S
-                    {                       
-                        S[iKref].Multiply(weight, BVal, PVal, 1.0, "ij", "i", "j");                    
-                    }
-                }
+                BsvalDstXwgt_T.Multiply(1.0, BsvalDst, rule.Weights, 0.0, "nk", "kn", "k");
+                M[iKref].GEMM(1.0, BsvalDstXwgt_T, BsvalDst, 0.0);
+                S[iKref].GEMM(1.0, BsvalDstXwgt_T, BsvalOrg, 0.0);
+
+
+             
+
                 // Calculate Transformation
                 if (!m_dest.IsOrthonormal) {
-                    M[iKref].InvertSymmetrical();
-                    Origin2Dest[iKref].DGEMM(1.0, M[iKref], S[iKref], 0.0);
+                    //M[iKref].InvertSymmetrical();
+                    //Origin2Dest[iKref].DGEMM(1.0, M[iKref], S[iKref], 0.0);
+                    M[iKref].SolveSymmetricEx(Origin2Dest[iKref], S[iKref]);
                 } else {
                     Origin2Dest[iKref].Acc(1.0, S[iKref]); // in this case M is unity
                 }
 
+                /*
+                 * Test code:
+
+                double[] coordsOrg = new double[m_origin.Length];
+                double[] coordsDst = new double[m_dest.Length];
+
+                coordsOrg.FillRandom();
+                Origin2Dest[iKref].GEMV(1.0, coordsOrg, 0.0, coordsDst);
+                double[] valuesOrg = new double[rule.Nodes.NoOfNodes];
+                double[] valuesDst = new double[rule.Nodes.NoOfNodes];
+
+                BsvalOrg.GEMV(1.0, coordsOrg, 0.0, valuesOrg);
+                BsvalDst.GEMV(1.0, coordsDst, 0.0, valuesDst);
+
+                double err = valuesOrg.L2Dist(valuesDst);
+                Console.WriteLine("Error is " + err);
+                */
             }
         }
 
@@ -227,8 +236,10 @@ namespace BoSSS.Foundation {
 
                 // Calculate Transformation
                 if (!m_origin.IsOrthonormal) {
-                    M[iKref].InvertSymmetrical();
-                    Dest2Origin[iKref].DGEMM(1.0, M[iKref], S[iKref], 0.0);
+                    //M[iKref].InvertSymmetrical();
+                    //Dest2Origin[iKref].DGEMM(1.0, M[iKref], S[iKref], 0.0);
+                   
+                    M[iKref].SolveSymmetricEx(Dest2Origin[iKref], S[iKref]);
                 } else {
                     Dest2Origin[iKref].Acc(1.0, S[iKref]); // in this case M is unity
                 }
@@ -246,7 +257,7 @@ namespace BoSSS.Foundation {
                 int I = m_dest.Polynomials[iKref].Count;
                 int J = m_origin.Polynomials[iKref].Count;
                 MultidimensionalArray TinvT = MultidimensionalArray.Create(J, J);
-                TinvT.DGEMM(1.0, Dest2Origin[iKref], Origin2Dest[iKref], 0.0);
+                TinvT.GEMM(1.0, Dest2Origin[iKref], Origin2Dest[iKref], 0.0);
                 TinvT.AccEye(-1.0);
                 /*
                 Console.WriteLine("============================================================");

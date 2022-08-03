@@ -66,7 +66,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 m_OpMtx,
                 m_Mass,
                 OpConfig,
-                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray());
+                abstractOperator);
         }
 
         AggregationGridBasis[][] m_XAggB;
@@ -297,7 +297,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 // MUMPS condition number
                 // ======================
 
-                double condestFullMUMPS = (new BlockMask(FullSel)).GetSubBlockMatrix(Mtx).Condest_MUMPS();
+                double condestFullMUMPS = (new BlockMask(FullSel)).GetSubBlockMatrix_MpiSelf(Mtx).Condest_MUMPS();
                 //double condestInnerMUMPS = 1.0;
 
                 //if(InnerCellsMask.NoOfItemsLocally.MPISum() > 0) {
@@ -455,7 +455,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 m_OpMtx.CloneAs(),
                 m_Mass,
                 AlternativeOpConfig,
-                m_MultigridOp.FreeMeanValue.CloneAs());
+                m_MultigridOp.AbstractOperator);
 
         }
 

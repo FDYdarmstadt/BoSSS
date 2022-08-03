@@ -1020,7 +1020,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 50;
 
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             //C.Solver_ConvergenceCriterion = 1e-8;
 
@@ -1433,8 +1433,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
 
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 2;

@@ -180,7 +180,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int myRank = this.MpiRank;
                 if (m_Grid.NoOfUpdateCells <= 0)
                 {
-                    //Debugger.Launch();
+                    // dbg_launch();
                     throw new ApplicationException("grid contains no cells on processor " + myRank + ";");
 
                 }

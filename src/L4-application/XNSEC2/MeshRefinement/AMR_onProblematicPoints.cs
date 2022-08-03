@@ -168,10 +168,9 @@ namespace BoSSS.Application.XNSEC {
             int D = GridData.SpatialDimension;
             int[] levels = new int[J];
             Cell[] cells = GridData.Grid.Cells;
+            //System.Diagnostics. dbg_launch();
 
-
-
-            for(int p = 0; p < problematicPoints.Count; p++) {
+            for (int p = 0; p < problematicPoints.Count; p++) {
                 long GlobalID, GlobalIndex; // Index of the cell to be refined
                 bool IsInside, OnThisProcess;
                 GridData.LocatePoint(problematicPoints[p], out GlobalID, out GlobalIndex, out IsInside, out OnThisProcess);
@@ -180,14 +179,21 @@ namespace BoSSS.Application.XNSEC {
                 long j0Grd = GridData.CellPartitioning.i0;
                 int jLocal = (int)(GlobalIndex - j0Grd);
                 if(OnThisProcess) {
-                    var CellsInRadius = CellsInRadiusAroundCell(jLocal, radius);
+                    try {
+                        var CellsInRadius = CellsInRadiusAroundCell(jLocal, radius);
 
-                    for(int j = 0; j < CellsInRadius.Count; j++) {
+                        for (int j = 0; j < CellsInRadius.Count; j++) {
 
-                        int jjLocal = (CellsInRadius[j] - (int)j0Grd*0);
-                        //if(jjLocal >= 0)
+                            int jjLocal = (CellsInRadius[j] - (int)j0Grd * 0);
+                            //if(jjLocal >= 0)
                             levels[jjLocal] = 1;
-                    }
+                        }
+                    } catch (Exception) {
+                        Console.WriteLine("Problem with point (" + problematicPoints[p][0] + "," + problematicPoints[p][1] + "). jLocal is" + jLocal);
+                        
+                        continue;
+                        throw new Exception("Problem with point (" + problematicPoints[p][0] +","+ problematicPoints[p][1]+"). jLocal is" + jLocal);
+                    }                  
 
                 }
 
@@ -247,9 +253,67 @@ namespace BoSSS.Application.XNSEC {
 
 
 
+    /// <summary>
+    /// refinement on cells which are on the specified boundary
+    /// </summary>
+    [Serializable]
+    public class AMRInBoundingBox : AMRLevelIndicatorWithLevelset {
+        //[DataMember]
+        //public BoundingBox bb;
+        [DataMember]
+        public double[] point1;
+        [DataMember]
+        public double[] point2;
+        public AMRInBoundingBox(double[] p1, double[] p2) {
+            point1 = p1;
+            point2 = p2;
+        }
+
+        public override int[] DesiredCellChanges() {
 
 
 
+            int J = GridData.CellPartitioning.LocalLength;
+            int[] levels = new int[J];
+            int cellsToRefine = 0;
+            int cellsToCoarse = 0;
+            Cell[] cells = GridData.Grid.Cells;
+            var bb = new BoSSS.Platform.Utils.Geom.BoundingBox(2);
+            bb.AddPoint(point1);
+            bb.AddPoint(point2);
+            for (int j = 0; j < J; j++) {
+                int currentLevel = cells[j].RefinementLevel;
+                
+
+                bool refine = false;
+                foreach (var cell in cells) {
+                    if (bb.Contains(GridData.Cells.CellCenter.ExtractSubArrayShallow(j, -1).To1DArray()))
+                        refine = true;
+                    //try {
+                    //    if (bb.Contains(GridData.Cells.CellCenter.ExtractSubArrayShallow(j, -1).To1DArray()))
+                    //        refine = true;
+                    //} catch (Exception) {
+                    //    continue;
+                    //}
+                }
+
+                if (refine && currentLevel < maxRefinementLevel) {
+                    levels[j] = 1;
+                    cellsToRefine++;
+                } else if (!refine && currentLevel > 0) {
+                    levels[j] = -1;
+                    cellsToCoarse++;
+                }
+            }
+
+            return levels;
+        }
 
     
+    }
+
+
+
+
+
 }
