@@ -137,6 +137,8 @@ namespace BoSSS.Application.XNSEC {
             C.physicsMode = PhysicsMode.Combustion;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
+
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.DbPath = null;
             bool m_RecoilPressure = false;
             C.IncludeRecoilPressure = m_RecoilPressure;
