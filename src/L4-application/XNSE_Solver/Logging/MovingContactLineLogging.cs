@@ -175,7 +175,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     // contact point
                     NodeSet Enode_l = QR.Nodes;
                     int trf = LsTrk.GridDat.Edges.Edge2CellTrafoIndex[i0, 0];
-                    NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf);
+                    NodeSet Vnode_l = Enode_l.GetVolumeNodeSet(LsTrk.GridDat, trf, false);
                     NodeSet Vnode_g = Vnode_l.CloneAs();
                     int cell = LsTrk.GridDat.Edges.CellIndices[i0, 0];
                     LsTrk.GridDat.TransformLocal2Global(Vnode_l, Vnode_g, cell);

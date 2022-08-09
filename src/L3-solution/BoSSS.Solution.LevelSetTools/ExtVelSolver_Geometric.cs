@@ -166,7 +166,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
             private void initializeNodeSet(MultidimensionalArray NodeGrid) {
                 int D = Solver_Grid.Edges.EdgeRefElements[0].SpatialDimension;
-                this.EdgeNodes = new NodeSet(Solver_Grid.Edges.EdgeRefElements[0], NodeGrid.Lengths[0], D);
+                this.EdgeNodes = new NodeSet(Solver_Grid.Edges.EdgeRefElements[0], NodeGrid.Lengths[0], D, false);
                 this.EdgeNodes.Set(NodeGrid);
                 this.EdgeNodes.LockForever();
             }
@@ -194,14 +194,14 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
             public void createNodes(int[,] TrafoIdx, SinglePhaseField Phi, ConventionalDGField ExtProperty) {
                 int iTrafo = TrafoIdx[associatedNeighbour.Item2, associatedNeighbour.Item3];
-                NodeSet CellNodes = this.EdgeNodes.GetVolumeNodeSet(this.Solver_Grid, iTrafo);
+                NodeSet CellNodes = this.EdgeNodes.GetVolumeNodeSet(this.Solver_Grid, iTrafo, true);
 
                 //Writes Phi and ExtProperty values at edge nodes into the respective Buffer
                 Phi.Evaluate(associatedNeighbour.Item1, 1, CellNodes, this.PhiEdgeEvalBuffer);
                 ExtProperty.Evaluate(associatedNeighbour.Item1, 1, CellNodes, this.ExtEdgeEvalBuffer);
 
                 //Writes the corresponding nodes into CellNodesGlobalBuffer
-                this.Solver_Grid.TransformLocal2Global(this.EdgeNodes.GetVolumeNodeSet(this.Solver_Grid, iTrafo), this.EdgeNodesGlobal, associatedNeighbour.Item1);
+                this.Solver_Grid.TransformLocal2Global(this.EdgeNodes.GetVolumeNodeSet(this.Solver_Grid, iTrafo, false), this.EdgeNodesGlobal, associatedNeighbour.Item1);
             }
 
             public static int NumberOfEdges {

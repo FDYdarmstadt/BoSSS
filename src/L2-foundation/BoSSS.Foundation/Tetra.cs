@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 //{ -1.0, (-1.0/3.0)  *Math.Sqrt(3), (-1.0/6.0) *Math.Sqrt(3) *Math.Sqrt(2) },
                 //{ 1.0,  (-1.0/3.0)  *Math.Sqrt(3), (-1.0/6.0) *Math.Sqrt(3) *Math.Sqrt(2) }
             };
-            this.m_Vertices = new NodeSet(this, 4, 3);
+            this.m_Vertices = new NodeSet(this, 4, 3, false);
             this.m_Vertices.InitializeFrom(_Vertices);
             this.m_Vertices.LockForever();
 
@@ -143,7 +143,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             /*
             #region QUADRULE_DEF
 
-            //Keast quadrature rules imported from
+            //Least quadrature rules imported from
             //http://people.sc.fsu.edu/~burkardt/datasets/quadrature_rules_tet/quadrature_rules_tet.html
             //The rules with orders 6 and 8 have been sorted out because of
             //insufficient accuracy.

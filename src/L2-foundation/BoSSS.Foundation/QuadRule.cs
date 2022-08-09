@@ -40,7 +40,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <returns>an empty (i.e. all weights are 0.0) quadrature rule</returns>
         public static QuadRule CreateEmpty(RefElement Kref, int noOfNodes, int D) {
             QuadRule ret = new QuadRule();
-            ret.Nodes = new NodeSet(Kref, noOfNodes, D);
+            ret.Nodes = new NodeSet(Kref, noOfNodes, D, false);
             ret.Weights = MultidimensionalArray.Create(noOfNodes);
             ret.OrderOfPrecision = 0;
             return ret;

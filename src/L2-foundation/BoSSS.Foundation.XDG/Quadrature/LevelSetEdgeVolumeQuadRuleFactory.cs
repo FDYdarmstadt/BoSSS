@@ -635,7 +635,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 MultidimensionalArray nodes = allNodes.ExtractSubArrayShallow(
                     new int[] { noOfProcessedNodes, 0 },
                     new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, D - 1 });
-                NodeSet edgeNodes = new NodeSet(RefElement.FaceRefElement, RefElement.GetInverseFaceTrafo(e).Transform(nodes));
+                NodeSet edgeNodes = new NodeSet(RefElement.FaceRefElement, RefElement.GetInverseFaceTrafo(e).Transform(nodes), true);
 
                 //MultidimensionalArray monomials = Polynomial.GetMonomials(
                 //    edgeNodes, RefElement.FaceRefElement.SpatialDimension, lambdaBasis.Degree);

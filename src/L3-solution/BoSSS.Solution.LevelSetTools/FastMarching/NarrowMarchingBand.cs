@@ -1458,7 +1458,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                 int iKrefEdge = gdat.Edges.GetRefElementIndex(iEdge);
                 if(TestNodes[iKrefEdge] == null) {
-                    Debug.Assert(gdat.Edges.EdgeRefElements[iKrefEdge].SpatialDimension == 1, "Number of thest vertices maybe is high.");
+                    Debug.Assert(gdat.Edges.EdgeRefElements[iKrefEdge].SpatialDimension == 1, "Number of test vertices maybe is high.");
                     TestNodes[iKrefEdge] = gdat.Edges.EdgeRefElements[iKrefEdge].GetSubdivisionTree((LevSet.Basis.Degree + 1) * 2).GlobalVertice;
                 }
 
@@ -1467,7 +1467,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
                 int NoOfNodes = TestNodes[iKrefEdge].NoOfNodes;
                 MultidimensionalArray LevelSetValAtEdge = MultidimensionalArray.Create(1, NoOfNodes);
-                LevSet.Evaluate(jCell, 1, TestNodes[iKrefEdge].GetVolumeNodeSet(gdat, iTrafo), LevelSetValAtEdge);
+                LevSet.Evaluate(jCell, 1, TestNodes[iKrefEdge].GetVolumeNodeSet(gdat, iTrafo, false), LevelSetValAtEdge);
 
                 minis[i] = LevelSetValAtEdge.Min();
                 maxis[i] = LevelSetValAtEdge.Max();

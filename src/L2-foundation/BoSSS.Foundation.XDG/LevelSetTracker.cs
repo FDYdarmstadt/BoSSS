@@ -1357,7 +1357,7 @@ namespace BoSSS.Foundation.XDG {
 
                     // allocate memory form test node set 
                     int TotNumberOfNodes = NoOfFaces * (corners.NoOfNodes + GaussRule.NoOfNodes + BruteRule.NoOfNodes);
-                    NodeSet TstVtx = new NodeSet(Kref, TotNumberOfNodes, D);
+                    NodeSet TstVtx = new NodeSet(Kref, TotNumberOfNodes, D, true);
                     int offset = 0;
 
 
@@ -1872,7 +1872,7 @@ namespace BoSSS.Foundation.XDG {
                                 // Use the accelerated bernstein cut cell finding technique for dg levelsets
                                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 var data = this.m_DataHistories[levSetind].Current;
-                                NodeSet EdgeNodes = new NodeSet(Kref, this.TestNodes[iKref].ExtractSubArrayShallow(new int[] {0 , 0}, new int[] { _TestNodesPerFace.Sum() - 1, D - 1})); // only use edge nodes
+                                NodeSet EdgeNodes = new NodeSet(Kref, this.TestNodes[iKref].ExtractSubArrayShallow(new int[] {0 , 0}, new int[] { _TestNodesPerFace.Sum() - 1, D - 1}), true); // only use edge nodes
                                 MultidimensionalArray levSetVal = data.GetLevSetValues(EdgeNodes, j, VecLen);
 
                                 // loop over all cells in this chunk

@@ -102,7 +102,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         protected override SayeQuadRule BuildSurfaceQuadRule(MultidimensionalArray X, double X_weight, int heightDirection, int cell) {
             double weight = X_weight;
 
-            NodeSet node = new NodeSet(RefElement, X.To2DArray());
+            NodeSet node = new NodeSet(RefElement, X.To2DArray(), true);
             MultidimensionalArray gradient = ReferenceGradient(node, cell);
             RestrictToActiveSpace(gradient);
 

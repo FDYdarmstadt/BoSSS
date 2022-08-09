@@ -440,7 +440,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     trf = grdDat.Edges.Edge2CellTrafoIndex[edge, 1];
                                 }
                                 // transform edgerule to volume rule
-                                var CellNodes = EdgeNodes.GetVolumeNodeSet(grdDat, trf);                               
+                                var CellNodes = EdgeNodes.GetVolumeNodeSet(grdDat, trf, false);                               
 
                                 for (int k = 0; k < CellNodes.NoOfNodes; k++) {
                                     // Transform to referenceLineSegment
@@ -472,7 +472,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             for (int k = 0; k < subSegments.Length; k++) {
                                 // Evaluate sub segment at center to determine sign
-                                NodeSet _point = new NodeSet(this.m_RefElement, subSegments[k].GetPointOnSegment(0.0));
+                                NodeSet _point = new NodeSet(this.m_RefElement, subSegments[k].GetPointOnSegment(0.0), true);
 
                                 double weightFactor = subSegments[k].Length / referenceSegment.Length;
 
@@ -496,7 +496,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     // then the edge should be a quad rule for the opposite phase, dont ask me why, but any other way gives weird results in cells with hanging nodes.
                                     bool empty = true;
                                     if (!empty) {
-                                        NodeSet center_point = new NodeSet(this.m_RefElement, this.m_RefElement.Center);
+                                        NodeSet center_point = new NodeSet(this.m_RefElement, this.m_RefElement.Center, true);
                                         MultidimensionalArray j_levelSetValue = LevelSetData.GetLevSetValues(center_point, jCell, 1);
 
                                         int iEdge = -1;
@@ -638,7 +638,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 if(PositiveSegment)
                                     LineMeasureEmptyOrFull = true;
                             } else {
-                                NodeSet localNodes = new NodeSet(this.m_RefElement, LnMeas_nodes.Count, D);
+                                NodeSet localNodes = new NodeSet(this.m_RefElement, LnMeas_nodes.Count, D, true);
                                 for (int j = 0; j < LnMeas_nodes.Count; j++) {
                                     //for (int d = 0; d < D; d++) {
                                     //    localNodes[j, d] = LnMeas_nodes[j][d];
@@ -898,7 +898,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
                                     OrderOfPrecision = order,
                                     Weights = MultidimensionalArray.Create(PtMeas_nodes.Count),
-                                    Nodes = new NodeSet(this.m_RefElement, PtMeas_nodes.Count, D),
+                                    Nodes = new NodeSet(this.m_RefElement, PtMeas_nodes.Count, D, true),
                                     NumbersOfNodesPerFace = PtMeas_noOfNodesPerEdge
                                 };
 
@@ -997,7 +997,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 for (int e = 0; e < referenceLineSegments.Length; e++) {
                                     double[] roots = _roots[e];
                                     int K = roots.Length;
-                                    Nodes[e] = new NodeSet(this.m_RefElement, K, D);
+                                    Nodes[e] = new NodeSet(this.m_RefElement, K, D, true);
                                     var Nodes_e = Nodes[e];
 
                                     LineSegment referenceSegment = referenceLineSegments[e];
@@ -1125,7 +1125,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
                                         OrderOfPrecision = order,
                                         Weights = MultidimensionalArray.Create(SaveNodes.Count),
-                                        Nodes = new NodeSet(this.m_RefElement, SaveNodes.Count, D),
+                                        Nodes = new NodeSet(this.m_RefElement, SaveNodes.Count, D, true),
                                         NumbersOfNodesPerFace = new int[_roots.Length]
                                     };
 

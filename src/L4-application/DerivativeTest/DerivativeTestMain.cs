@@ -1111,7 +1111,7 @@ namespace BoSSS.Application.DerivativeTest {
 
                     int I = 4;
                     int K = 20;
-                    NodeSet LocNodes = new NodeSet(Kref, I * K * (R.Length - 1), 2);
+                    NodeSet LocNodes = new NodeSet(Kref, I * K * (R.Length - 1), 2, false);
                     var vtx = Kref.Vertices;
                     double alpha = 1.0 / (K - 1);
                     for(int iFace = 0; iFace < R.Length - 1; iFace++) {

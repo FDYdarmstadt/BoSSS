@@ -367,7 +367,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
 
         protected override SayeQuadRule BuildSurfaceQuadRule(MultidimensionalArray X, double X_weight, int heightDirection, int cell) {
-            NodeSet node = new NodeSet(RefElement, X.To2DArray());
+            NodeSet node = new NodeSet(RefElement, X.To2DArray(), true);
             MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
             MultidimensionalArray inverseJacobian = grid.InverseJacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
 
@@ -419,7 +419,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             MultidimensionalArray nodeArr = X.CloneAs();
             nodeArr[0, direction] += distance;
-            NodeSet node = new NodeSet(RefElement, nodeArr);
+            NodeSet node = new NodeSet(RefElement, nodeArr, false);
             return node;
         }
 
@@ -504,7 +504,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             double[] centerArr = new double[2];
             centerArr[0] = ( boundaries[0][0] + boundaries[0][1] ) / 2.0;
             centerArr[1] = ( boundaries[1][0] + boundaries[1][1] ) / 2.0;
-            this.center = new NodeSet(refElement, centerArr);
+            this.center = new NodeSet(refElement, centerArr, false);
             this.center.LockForever();
         }
 

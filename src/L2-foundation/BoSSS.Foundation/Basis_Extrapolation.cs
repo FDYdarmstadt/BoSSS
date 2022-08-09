@@ -147,7 +147,7 @@ namespace BoSSS.Foundation {
 
                         NodesGlobal.Allocate(1, nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1));
                         m_Context.TransformLocal2Global(nodes_Cell0, jCell0, 1, NodesGlobal, 0);
-                        var nodes_Cell1 = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell1), nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1));
+                        var nodes_Cell1 = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell1), nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1), false);
                         m_Context.TransformGlobal2Local(NodesGlobal.ExtractSubArrayShallow(0, -1, -1), nodes_Cell1, jCell1, null);
                         nodes_Cell1.LockForever();
 

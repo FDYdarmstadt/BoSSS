@@ -36,7 +36,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public static CellBoundaryQuadRule CreateEmpty(RefElement Kref, int noOfNodes, int D, int noOfEdges) {
             CellBoundaryQuadRule rule = new CellBoundaryQuadRule();
-            rule.Nodes = new NodeSet(Kref, noOfNodes, D);
+            rule.Nodes = new NodeSet(Kref, noOfNodes, D, false);
             rule.Weights = MultidimensionalArray.Create(noOfNodes);
             rule.OrderOfPrecision = 0;
             rule.NumbersOfNodesPerFace = new int[noOfEdges];

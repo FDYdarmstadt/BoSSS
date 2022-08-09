@@ -86,7 +86,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 // ===============
 
                 var _Vertices = new double[4, 2] { { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } };
-                this.m_Vertices = new NodeSet(this, 4, 2);
+                this.m_Vertices = new NodeSet(this, 4, 2, false);
                 this.m_Vertices.InitializeFrom(_Vertices);
                 this.m_Vertices.LockForever();
 
