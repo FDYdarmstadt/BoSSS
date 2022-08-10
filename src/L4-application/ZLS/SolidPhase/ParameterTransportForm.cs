@@ -66,7 +66,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
             double a = (inp.Parameters_IN[0] - inp.Parameters_OUT[0]) * Math.Abs(VelocityAvg * inp.Normal);
             return rho * (0.5 * (inp.Parameters_IN[0] + inp.Parameters_OUT[0]) * (VelocityAvg * inp.Normal) + 0) * (_vIN - _vOUT);
-            }
+            
 
             return rho * ( 0.5 *  (inp.Parameters_IN[0]+ inp.Parameters_OUT[0]) * (VelocityAvg * inp.Normal) 
                 +(inp.Parameters_IN[0] - inp.Parameters_OUT[0]) * 1 * (VelocityAvg * inp.Normal)) * (_vIN - _vOUT);

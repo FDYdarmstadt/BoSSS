@@ -54,7 +54,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 AddComponent(gradUGradUT);
                 */
                 
-            }
+            //}
             if(material.Viscosity != 0.0)
             {
                 var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1.0);
