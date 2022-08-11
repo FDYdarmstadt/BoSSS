@@ -242,7 +242,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         /// <param name="X"></param>
         /// <param name="name"></param>
-        private void AddSol(ref double[] X, string name) {
+        private double AddSol(ref double[] X, string name) {
             using (var ft = new FuncTrace()) {
 
                 m_UsedMoreThanOneOrthoCycle = false;
@@ -285,6 +285,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 BLAS.dscal(L, 1.0 / NormMxx, X, 1);
 
                 const int MaxOrtho = 10;
+                double MxxRemainderAfterOrthoNorm = 0;
                 for (int jj = 0; jj <= MaxOrtho; jj++) { // re-orthogonalisation, loop-limit to 10; See also book of Saad, p 156, section 6.3.2
 
                     m_UsedMoreThanOneOrthoCycle = jj > 0;
@@ -300,6 +301,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //Console.WriteLine("   orthonormalization norm reduction: " + (NormAfter/NormInitial));
 
                     double NewMxxNorm = Norm(Mxx);
+                    if (jj == 0)
+                        MxxRemainderAfterOrthoNorm = NewMxxNorm;
 
                     if (NewMxxNorm <= 1E-5) {
                         using (new BlockTrace("re-orthonormalization", ft)) {
@@ -350,6 +353,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 SolHistory.Add(X);
                 MxxHistory.Add(Mxx);
                 X = null;
+
+                return MxxRemainderAfterOrthoNorm;
             }
         }
 
@@ -423,9 +428,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="xGuess">
         /// guess for the solution (typically, preconditioner output); will be modified during the orthonormalization
         /// </param>
-        public double AddSolAndMinimizeResidual(ref double[] xGuess, double[] outX, double[] Sol0, double[] Res0, double[] outRes, string name) {
-            AddSol(ref xGuess, name);
-            return MinimizeResidual(outX, Sol0, Res0, outRes, name);
+        public double AddSolAndMinimizeResidual(ref double[] xGuess, double[] outX, double[] Sol0, double[] Res0, double[] outRes, string name) {            
+            double UsablePart = AddSol(ref xGuess, name);
+            double newResNorm = MinimizeResidual(outX, Sol0, Res0, outRes, name);
+
+            if(name != null)
+                Console.WriteLine($"   {name} \t\t\t{UsablePart:0.####e-00}\t{Alphas.Last().RelResReduction:0.####e-00}\t{newResNorm:0.####e-00}");
+
+
+            return newResNorm;
         }
     }
     /*
@@ -667,7 +678,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         }
 
-        
+        /*
         public void ScalingKakke(MultigridOperator op) { 
             int pLowVel = 4;
             int pLowPres = pLowVel - 1;
@@ -718,14 +729,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ortho.Diagonal.ScaleV(presScaleLo, maskPresLo.LocalIndices);
             ortho.Diagonal.ScaleV(presScaleHi, maskPresHi.LocalIndices);
 
-            /*
-            maskVelLo.LocalIndices.Select(idx => idx + 1).SaveToTextFile("m1.txt");
-            maskVelHi.LocalIndices.Select(idx => idx + 1).SaveToTextFile("m2.txt");
-            maskPresLo.LocalIndices.Select(idx => idx + 1).SaveToTextFile("m3.txt");
-            maskPresHi.LocalIndices.Select(idx => idx + 1).SaveToTextFile("m4.txt");
-            
-            op.OperatorMatrix.SaveToTextFileSparse("Mtx.txt");
-            */
+        
 
             //Console.WriteLine("     vL: " + maskVelLo.GetSubVec(vec).L2Norm());
             //Console.WriteLine("     vH: " + maskVelHi.GetSubVec(vec).L2Norm());
@@ -758,7 +762,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var Mtx = op.OperatorMatrix;
                 var MgMap = op.DgMapping;
                 
-                TrackMemory(1);
                 if (!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
                 if (!Mtx.ColPartition.EqualsPartition(MgMap))
@@ -832,53 +835,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
                 }
-
-
-                //if(op is MultigridOperator mgop) {
-                //    ScalingKakke(mgop);
-                //}
             }
-
-
         }
-
-
-        private void TrackMemory(int pos) {
-#if TEST
-            if (m_MgOperator.LevelIndex != 0) return;
-            long memWork = 0, memPrivate = 0, memGC = 0;
-            Process myself = Process.GetCurrentProcess();
-            {
-                try {
-                    memWork = myself.WorkingSet64 / (1024 * 1024);
-                    memPrivate = myself.PrivateMemorySize64 / (1024 * 1024);
-                    memGC = GC.GetTotalMemory(false) / (1024 * 1024);
-                    memWork = memWork.MPISum();
-                    memPrivate = memPrivate.MPISum();
-                    memGC = memGC.MPISum();
-                } catch (Exception e) {
-                    Console.WriteLine(e.Message);
-                }
-            }
-            if (m_MgOperator.Mapping.MpiRank == 0) {
-                var strw = m_MTracker;
-                if (m_MTracker == null) {
-                    m_MTracker = new StreamWriter("MemoryTrack", true);
-                    strw = m_MTracker;
-                    strw.Write("pos\t");
-                    strw.Write("workingset\t");
-                    strw.Write("private\t");
-                    strw.Write("GC\t\n");
-                }
-                strw.Write(pos + "\t");
-                strw.Write(memWork + "\t");
-                strw.Write(memPrivate + "\t");
-                strw.Write(memGC + "\t\n");
-                strw.Flush();
-            }
-#endif
-        }
-
 
         /// <summary>
         /// coarse-level correction; can be defined either
@@ -969,7 +927,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 Residual(Res0, Sol0, B);
                 Array.Copy(Res0, Res, L);
 
-
+                bool isTopLevel = ((m_MgOperator as MultigridOperator)?.LevelIndex ?? -1) == 0;
 
                 double iter0_resNorm = ortho.Norm(Res0);
                 double resNorm = iter0_resNorm;
@@ -988,8 +946,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     }
 
-                    TrackMemory(2);
-
                     // pre-smoother
                     // ------------
 
@@ -1005,7 +961,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             PreSmoother.Solve(PreCorr, Res); // Vorglättung
 
                             // orthonormalization and residual minimization
-                            resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, "presmooth");
+                            resNorm = ortho.AddSolAndMinimizeResidual(ref PreCorr, X, Sol0, Res0, Res, isTopLevel ? "presmooth" : null);
 
                         }
 
@@ -1063,7 +1019,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             // orthonormalization and residual minimization
                             //ortho.AddSol(ref vl, "coarsecor");
                             //resNorm = MinimizeResidual(X, Sol0, Res0, Res, 2);
-                            resNorm = ortho.AddSolAndMinimizeResidual(ref vl, X, Sol0, Res0, Res, "coarsecor");
+                            resNorm = ortho.AddSolAndMinimizeResidual(ref vl, X, Sol0, Res0, Res, isTopLevel ? "coarsecor" : null);
 
 
 
@@ -1125,7 +1081,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                             } else {
-                                resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, "postsmooth" + id + "--" + g);
+                                resNorm = ortho.AddSolAndMinimizeResidual(ref PostCorr, X, Sol0, Res0, Res, isTopLevel ? ("pstsmth" + id + "-" + g) : null);
 
 
 
@@ -1320,7 +1276,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
-            TrackMemory(3);
             //if (m_MTracker != null) m_MTracker.Dispose();
             if (m_verbose && m_MgOperator != null && m_MgOperator is MultigridOperator _mgop && _mgop.LevelIndex == 0) {
                 Console.WriteLine($"OrthoMG - total memory: {UsedMemory() / (1024 * 1024)} MB");

@@ -185,8 +185,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         {
             if(m_backSubs == null) {
                 var ILU = ComputeILU(this.ILU_level, m_op.OperatorMatrix);
-                //m_backSubs = new BackSubs_Optimized_SinglePrec(ILU);
-                m_backSubs = new BackSubs_Optimized(ILU);
+                m_backSubs = new BackSubs_Optimized_SinglePrec(ILU);
+                //m_backSubs = new BackSubs_Optimized(ILU);
                 //m_backSubsRef = new BackSubs_Reference(ILU);
             }
  

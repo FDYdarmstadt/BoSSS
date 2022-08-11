@@ -178,7 +178,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Debug.Assert(useDirect.MPIEquals(op.Mapping.MPI_Comm));
                     Debug.Assert(skipLevel.MPIEquals(op.Mapping.MPI_Comm));
 
-                    //useDirect = op_lv.LevelIndex > 1;
+                    //useDirect = op_lv.LevelIndex >= 1;
 
 
                     if (skipLevel) {
@@ -237,7 +237,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             PostSmoother = smoother1,
                            
                         };
-                        _levelSolver.config.m_omega = 1;
+                        _levelSolver.config.m_omega = 1; // v-cycle
+                        /*
                         if (iLevel == 0) {
                             tr.Info("Using additional ILU smoother on level " + iLevel);
                             var otherSmoother = new CellILU() {
@@ -246,11 +247,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             _levelSolver.config.NoOfPostSmootherSweeps = 4;
                             _levelSolver.AdditionalPostSmoothers = new ISolverSmootherTemplate[] { otherSmoother };
                         }
-                      
+                        */
+                        //if (iLevel == 0) {
+                        //    tr.Info("Using additional post smoother sweeps on level " + iLevel);
+                        //    _levelSolver.config.NoOfPostSmootherSweeps = 8;
+                        //}
+
+                        _levelSolver.config.NoOfPostSmootherSweeps = (int)Math.Max(2, Math.Max(maxDG, Math.Round(Math.Log10(GlobalNoBlocks[iLevel]) * 3.0) + maxDG - 2));
+                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, NoOfPostSmootherSweeps = {_levelSolver.config.NoOfPostSmootherSweeps}");
+
+
                         if (iLevel == 0) {
                             (_levelSolver).TerminationCriterion = this.DefaultTermination;
-                            if(maxDG > 3)
-                                _levelSolver.config.NoOfPostSmootherSweeps = 6;
+                            //if(maxDG > 3)
+                            //    _levelSolver.config.NoOfPostSmootherSweeps = 6;
                         } else if(iLevel == 1) {
                             (_levelSolver).TerminationCriterion = delegate (int i, double r0, double r) {
                                 var ret = (i <= 1 || r > r0 * 0.01, true);

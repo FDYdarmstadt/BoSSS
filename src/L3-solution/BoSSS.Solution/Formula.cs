@@ -234,6 +234,13 @@ namespace BoSSS.Solution.Control {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            return m_Code;
+        }
+
+        /// <summary>
         /// Evaluates the function.
         /// </summary>
         /// <param name="X">global/physical coordinates.</param>

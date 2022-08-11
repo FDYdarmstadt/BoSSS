@@ -626,7 +626,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
         /// </summary>
         public ScalarFunctionTimeDep GetVolumeForce(string species, int d) {
-            this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.VolumeForce_d(d) + "#" + species, out var ret);
+            bool bfound = this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.VolumeForce_d(d) + "#" + species, out var ret);
+            if(!bfound)
+                this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.VolumeForce_d(d), out ret);
+            //Console.WriteLine("Using volume Force: " + (ret?.ToString() ?? "NIX"));
             return ret;
         }
 
