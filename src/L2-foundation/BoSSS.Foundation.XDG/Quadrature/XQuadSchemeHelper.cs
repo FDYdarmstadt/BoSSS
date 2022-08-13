@@ -293,9 +293,8 @@ namespace BoSSS.Foundation.XDG {
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
                     if (iLevSet != jLevSet) {
-                        if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
-                            allDoublyCuts = allDoublyCuts.Union(GetCutCells(iLevSet, jLevSet));
-                        }
+                        allDoublyCuts = allDoublyCuts.Union(GetCutCells(iLevSet, jLevSet));
+
                     }
                 }
             }
@@ -308,14 +307,12 @@ namespace BoSSS.Foundation.XDG {
             foreach (var Kref in XDGSpaceMetrics.GridDat.Grid.RefElements) {
                 for (int jLevSet = 0; jLevSet < XDGSpaceMetrics.NoOfLevelSets; ++jLevSet) {
                     if (iLevSet != jLevSet) {
-                        if (!SpeciesAreSeparatedByLevSet(jLevSet, sp, sp)) {
-                            CellMask doublyCut = this.GetCutCells(iLevSet, jLevSet);
-                            if (doublyCut.Count() > 0) {
-                                var jmpJ = IdentifyWingA(jLevSet, sp);
-                                var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
-                                var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, Kref, backupFactory);
-                                LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
-                            }
+                        CellMask doublyCut = this.GetCutCells(iLevSet, jLevSet);
+                        if (doublyCut.Count() > 0) {
+                            var jmpJ = IdentifyWingA(jLevSet, sp);
+                            var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceElement_BoundaryRuleFactory(iLevSet, Kref);
+                            var surfaceFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetIntersectionRuleFactory(iLevSet, jLevSet, Kref, backupFactory);
+                            LevSetQrIns.AddFactory(surfaceFactory, doublyCut);
                         }
                     }
                 }
