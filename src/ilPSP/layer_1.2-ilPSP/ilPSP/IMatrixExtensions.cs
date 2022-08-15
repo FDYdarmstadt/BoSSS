@@ -1795,9 +1795,23 @@ namespace ilPSP {
             }
         }
 
-        static private void GramSchmidt<FullMatrix1, FullMatrix2>(FullMatrix1 Mtx, FullMatrix2 B, double[] Diag)
+        /// <summary>
+        /// Performs a Gram-Schmidt orthonormalization on a matrix <paramref name="Mtx"/>
+        /// </summary>
+        /// <param name="Mtx"></param>
+        /// <param name="B">
+        /// on exit, an upper triangular matrix so that 
+        /// <paramref name="B"/>^T * <paramref name="Mtx"/> * <paramref name="B"/> is an identity matrix.
+        /// </param>
+        /// <param name="Diag">
+        /// Not used, if Gram-Schmid performs as normal, i.e. if <paramref name="Mtx"/> is positive definite,
+        /// If the algorithm runs into some trouble, i.e. if the matrix is positive definite or close to indefinitenes, 
+        /// a negative norm may occur; 
+        /// </param>
+        static public void GramSchmidt<FullMatrix1, FullMatrix2>(this FullMatrix1 Mtx, FullMatrix2 B, double[] Diag)
             where FullMatrix1 : IMatrix
-            where FullMatrix2 : IMatrix {
+            where FullMatrix2 : IMatrix //
+        {
             B.Clear();
             int N = B.NoOfRows;
 

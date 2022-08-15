@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 
@@ -530,7 +531,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// A list of unique identifiers from the file or directory names.
         /// </returns>
-        private IEnumerable<Guid> ParseDirectory(string subdir, string searchpattern, bool searchDirs = false) {
+        private IEnumerable<Guid> ParseDirectory(string subdir, string searchpattern, bool searchDirs) {
             HashSet<Guid> ret = new HashSet<Guid>();
             DirectoryInfo ddir = new DirectoryInfo(Path.Combine(BasePath, subdir));
 
@@ -544,7 +545,13 @@ namespace BoSSS.Foundation.IO {
                     else
                         gridFiles = ddir.GetFiles(searchpattern + ".V2");
                 } else {
-                    gridFiles = ddir.GetDirectories(searchpattern);
+                     var _subdirs = ddir.GetDirectories(searchpattern);
+
+
+                    gridFiles = _subdirs.Where(dir => dir.GetFiles().Length > 0).ToArray(); // ignore empty session directories
+                    // (sometime, when a session is deleted, the session directory cannot be deleted and an empty directory remains;
+                    // this causes lots of error messages in BoSSSpad; therefore, we ignore these directories.)
+
                     i = 3;
                 }
 
@@ -587,7 +594,7 @@ namespace BoSSS.Foundation.IO {
         /// all Guid's in the 'grids' - subdirectory
         /// </summary>
         public IEnumerable<Guid> GetAllGridGUIDs() {
-            return ParseDirectory(GridsDir, "*.grid");
+            return ParseDirectory(GridsDir, "*.grid", false);
         }
 
         /// <summary>
@@ -595,7 +602,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <returns></returns>
         public IEnumerable<Guid> GetAllDataVectorGUIDs() {
-            return ParseDirectory(DistVectorDataDir, "*.1.data");
+            return ParseDirectory(DistVectorDataDir, "*.1.data", false);
         }
 
         /// <summary>

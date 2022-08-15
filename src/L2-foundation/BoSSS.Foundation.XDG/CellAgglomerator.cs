@@ -750,30 +750,34 @@ namespace BoSSS.Foundation.XDG {
 
             int N = MaxBasis.Length;
 
-            MultidimensionalArray Minv = MultidimensionalArray.Create(Esub, N, N);
+            //MultidimensionalArray Minv = MultidimensionalArray.Create(Esub, N, N);
             MultidimensionalArray M = MultidimensionalArray.Create(Esub, N, N);
             CouplingMtx = M;
-            CouplingMtx_inv = Minv;
+            //CouplingMtx_inv = Minv;
 
-            MaxBasis.GetExtrapolationMatrices(CP, M, Minv);
+            MaxBasis.GetExtrapolationMatrices(CP, M);
         }
 
 
         int CouplingMtxDegree = -1;
 
-        /// <summary>
-        /// Inverse of coupling matrix.<br/>
-        /// 1st index: agglomeration edge index, i.e. index into the items of <see cref="m_EdgeAgg"/>; <br/>
-        /// 2nd index: row index. <br/>
-        /// 3rd index: column index. <br/>
-        /// </summary>
-        MultidimensionalArray CouplingMtx_inv;
+        
+
+        ///// <summary>
+        ///// Inverse of coupling matrix.
+        ///// - 1st index: agglomeration edge index, i.e. index into the items of <see cref="m_EdgeAgg"/>; 
+        ///// - 2nd index: row index. 
+        ///// - 3rd index: column index. 
+        ///// </summary>
+        //MultidimensionalArray CouplingMtx_inv;
+
+        
 
         /// <summary>
         /// coupling matrix.<br/>
-        /// 1st index: agglomeration edge index, i.e. index into the items of <see cref="m_EdgeAgg"/>; <br/>
-        /// 2nd index: row index. <br/>
-        /// 3rd index: column index. <br/>
+        /// - 1st index: agglomeration edge index, i.e. index into the items of <see cref="m_EdgeAgg"/>; 
+        /// - 2nd index: row index. 
+        /// - 3rd index: column index. 
         /// </summary>
         MultidimensionalArray CouplingMtx;
 

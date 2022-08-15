@@ -73,40 +73,40 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            
-            
-            /*InitMPI();
-            var ids = new string[] {
-                "R0Lv0p0",
-                //"R0Lv0p1",
-                //"R1Lv0p0",
-                //"R1Lv0p1",
-                //"R2Lv0p0",
-                //"R2Lv0p1",
-                //"R3Lv0p0",
-                //"R3Lv0p1",
 
-                //"R0Lv1p0",
-                "R1Lv1p0",
-                //"R2Lv1p0",
-                //"R3Lv1p0"
-                
-            };
+            /*
+            InitMPI();
 
-            //var ids = new string[] {
-            //    "R0Lv0p0",
-            //    "R1Lv0p0",
-            //    "R2Lv0p0",
-            //    "R2Lv0p0"};
+            var mtxa = IMatrixExtensions.LoadFromTextFile(@"..\..\..\bin\release\net5.0\weirdo\indef.txt");
 
-            foreach (var id in ids) {
-                CellILU.Verify(id);
+            for (int NN = 10; NN <= mtxa.NoOfRows; NN++) {
+                Console.WriteLine("NN = " + NN);
+                var mtx = mtxa.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NN - 1, NN - 1 }).CloneAs();
+
+                var UpTri = MultidimensionalArray.Create(NN, NN);
+                var UpTri2 = MultidimensionalArray.Create(NN, NN);
+                mtx.SymmetricLDLInversion(UpTri, null);
+                mtx.GramSchmidt(UpTri2, null);
+
+
+                Console.WriteLine("UpTri vs. LDL " + UpTri2.Storage.L2Dist(UpTri.Storage));
+
+                var LoTri = UpTri.TransposeTo();
+                var Eye = LoTri.GEMM(mtx, UpTri);
+                var LoTri2 = UpTri2.TransposeTo();
+                var Eye2 = LoTri2.GEMM(mtx, UpTri2);
+                //L.SaveToTextFile(@"..\..\..\bin\release\net5.0\weirdo\GS.txt");
+                //Eye.SaveToTextFile(@"..\..\..\bin\release\net5.0\weirdo\ID.txt");
+                Eye.AccEye(-1.0);
+                Eye2.AccEye(-1.0);
+                Console.WriteLine("Ortho Error: " + Eye.InfNorm() + "    " + Eye2.InfNorm());
+
             }
-            */
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me"); 
+            NUnit.Framework.Assert.IsTrue(false, "remove me"); 
+            */
 
             //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
             {
