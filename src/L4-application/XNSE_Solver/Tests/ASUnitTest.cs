@@ -585,7 +585,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(
             [Values(2, 3)] int FlowSolverDegree,
             [Values(false, true)] bool SchurCompl,
-            [Values(NonLinearSolverCode.Newton, NonLinearSolverCode.Picard)] NonLinearSolverCode nonlinsolver
+            [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver
             ) {
             Tests.TaylorCouette.Mode modus = Tests.TaylorCouette.Mode.Test2Phase;
             TaylorCouetteConvergenceTest(FlowSolverDegree, modus, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SchurCompl, nonlinsolver: nonlinsolver);
@@ -958,15 +958,24 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="SphericalHarmonicsTest"/>
         /// </summary>
         [Test]
-        public static void SphericalHarmonoicsPostprocessingTest() {
-            // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonoicsPostprocessingTest()
+        public static void SphericalHarmonicsPostprocessingTest(
+            [Values(true, false)] bool OnQuarterDomain,
+            [Values(3, 5)] int MaxLength,
+            [Values(true, false)] bool RotationalSymmetric) {
+            // --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.SphericalHarmonicsPostprocessingTest()
+
+            if(MaxLength == 5 && (OnQuarterDomain || RotationalSymmetric))
+                return;
+
             var Tst = new SphericalHarmonicsTest();
+            Tst.ComputeOnQuarterDomain = OnQuarterDomain;
+            Tst.IsRotationalSymmetric = RotationalSymmetric;
             var C = TstObj2CtrlObj(Tst, 2, 0.1,
                 ViscosityMode.FullySymmetric, 
                 XQuadFactoryHelper.MomentFittingVariants.Saye, 
                 SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
 
-            var pp = new Logging.SphericalHarmonicsLogging();
+            var pp = new Logging.SphericalHarmonicsLogging() { MaxL = MaxLength, RotSymmetric = RotationalSymmetric};
             C.PostprocessingModules.Add(pp);
             C.SkipSolveAndEvaluateResidual = true;
 

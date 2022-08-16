@@ -1482,9 +1482,9 @@ namespace BoSSS.Solution.Control {
             if((this.RestartInfo != null) != (oCtr.RestartInfo != null))
                 return false;
             if(this.RestartInfo != null) {
-                if(!this.RestartInfo.Item1.Equals(this.RestartInfo.Item1))
+                if(!this.RestartInfo.Item1.Equals(oCtr.RestartInfo.Item1))
                     return false;
-                if(!this.RestartInfo.Item2.Equals(this.RestartInfo.Item2))
+                if(!this.RestartInfo.Item2.Equals(oCtr.RestartInfo.Item2))
                     return false;
             }
 

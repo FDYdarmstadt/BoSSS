@@ -113,16 +113,26 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns the job correlated to a control object
         /// </summary>
         public static Job GetJob(this AppControl ctrl) {
+            var ret = new List<Job>();
             foreach (var j in InteractiveShell.WorkflowMgm.AllJobs.Values) {
                 var cj = j.GetControl();
                 if (cj == null)
                     continue;
 
                 if (cj.Equals(ctrl))
-                    return j;
+                    ret.Add(j);
             }
-            Console.WriteLine("No Job assigned for given control object yet.");
-            return null;
+            if (ret.Count <= 0) {
+                Console.WriteLine("No Job assigned for given control object yet.");
+                return null;
+            } else {
+                if(ret.Count > 1) {
+                    string messeage = $"Unable to find a 1:1 correlation between control object and jobs: matching jobs {ret.ToConcatString("", ", ", "")};";
+                    throw new ApplicationException(messeage);
+                }
+
+                return ret[0];
+            }
         }
         
         /// <summary>
