@@ -432,8 +432,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             double UsablePart = AddSol(ref xGuess, name);
             double newResNorm = MinimizeResidual(outX, Sol0, Res0, outRes, name);
 
-            if(name != null)
-                Console.WriteLine($"   {name} \t\t\t{UsablePart:0.####e-00}\t{Alphas.Last().RelResReduction:0.####e-00}\t{newResNorm:0.####e-00}");
+            //if(name != null)
+            //    Console.WriteLine($"   {name} \t\t\t{UsablePart:0.####e-00}\t{Alphas.Last().RelResReduction:0.####e-00}\t{newResNorm:0.####e-00}");
 
 
             return newResNorm;
