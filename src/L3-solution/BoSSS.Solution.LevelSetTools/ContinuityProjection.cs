@@ -296,6 +296,8 @@ namespace BoSSS.Solution.LevelSetTools {
                 if(m_projector != null)
                     m_projector.Dispose();
                 m_projector = new ConstrainedDGField_Global(m_myBasis, domain);
+                //m_projector = new ConstrainedDgField_Patchwise(m_myBasis, domain);
+
             }
 
             return m_projector;
