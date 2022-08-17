@@ -472,7 +472,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             for (int k = 0; k < subSegments.Length; k++) {
                                 // Evaluate sub segment at center to determine sign
-                                NodeSet _point = new NodeSet(this.m_RefElement, subSegments[k].GetPointOnSegment(0.0), true);
+                                NodeSet _point = new NodeSet(this.m_RefElement, subSegments[k].GetPointOnSegment(0.0), false);
 
                                 double weightFactor = subSegments[k].Length / referenceSegment.Length;
 
@@ -496,8 +496,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     // then the edge should be a quad rule for the opposite phase, dont ask me why, but any other way gives weird results in cells with hanging nodes.
                                     bool empty = true;
                                     if (!empty) {
-                                        NodeSet center_point = new NodeSet(this.m_RefElement, this.m_RefElement.Center, true);
-                                        MultidimensionalArray j_levelSetValue = LevelSetData.GetLevSetValues(center_point, jCell, 1);
+                                        //NodeSet center_point = new NodeSet(this.m_RefElement, this.m_RefElement.Center, false);
+                                        MultidimensionalArray j_levelSetValue = LevelSetData.GetLevSetValues(this.m_RefElement.Center, jCell, 1);
 
                                         int iEdge = -1;
                                         int otherCell = -1;
@@ -990,15 +990,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 // ==================================================================
 
 
-                                NodeSet[] Nodes = new NodeSet[referenceLineSegments.Length];
+                                //NodeSet[] Nodes = new NodeSet[referenceLineSegments.Length];
                                 MultidimensionalArray[] LevSetNormals = new MultidimensionalArray[referenceLineSegments.Length];
                                 var simplexNormals = this.m_RefElement.FaceNormals;
                                 double[][] Innerproducts = new double[referenceLineSegments.Length][];
                                 for (int e = 0; e < referenceLineSegments.Length; e++) {
                                     double[] roots = _roots[e];
                                     int K = roots.Length;
-                                    Nodes[e] = new NodeSet(this.m_RefElement, K, D, true);
-                                    var Nodes_e = Nodes[e];
+                                    //Nodes[e] = new NodeSet(this.m_RefElement, K, D, true);
+                                    //var Nodes_e = Nodes[e];
+                                    var Nodes_e = new NodeSet(this.m_RefElement, K, D, false);
 
                                     LineSegment referenceSegment = referenceLineSegments[e];
                                     for (int k = 0; k < K; k++) {

@@ -495,7 +495,7 @@ namespace BoSSS.Solution.Statistic {
                     continue;
 
                 // collect all vertices that are really in cell j
-                vertLocal = new NodeSet(m_Context.Cells.GetRefElement(j), Z, D, true);
+                vertLocal = new NodeSet(m_Context.Cells.GetRefElement(j), Z, D, false);
                 int z = 0;
                 for (int n = 0; n < Len; n++) {
                     if (!tatsaechlich[n])

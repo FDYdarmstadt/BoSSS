@@ -111,7 +111,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                     foreach(var q in qrTemp1D) {
                         int NN = q.Item2.GetLength(0);
                         int D = this.SpatialDimension;
-                        var realQr = QuadRule.CreateEmpty(this, NN*NN, D);
+                        var realQr = QuadRule.CreateEmpty(this, NN*NN, D, true);
 
                         for(int i = 0; i < NN; i++) {
                             for(int j = 0; j < NN; j++) {

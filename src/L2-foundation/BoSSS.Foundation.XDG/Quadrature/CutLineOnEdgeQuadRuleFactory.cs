@@ -238,7 +238,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             for (int k = 0; k < subSegments.Length; k++) {
                                 // Evaluate sub segment at center to determine sign
-                                NodeSet _point = new NodeSet(this.RefElement, subSegments[k].GetPointOnSegment(0.0), true);
+                                NodeSet _point = new NodeSet(this.RefElement, subSegments[k].GetPointOnSegment(0.0), false);
                                 
                                 double scaling = edgeOfEdgeDet * subSegments[k].Length / refSegment.Length;
 

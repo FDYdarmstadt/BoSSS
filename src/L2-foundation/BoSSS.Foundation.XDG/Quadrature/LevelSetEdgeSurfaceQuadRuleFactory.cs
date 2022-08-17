@@ -243,7 +243,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         optimizedRule.Nodes.ExtractSubArrayShallow(
                            new int[] { noOfProcessedNodes, 0 },
                            new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, optimizedRule.SpatialDim - 1 }), 
-                        true);
+                        false);
                     MultidimensionalArray phiValues = EvaluatePhis(irgendwelcheNodes, cell, e);
                     
 

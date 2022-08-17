@@ -882,7 +882,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             var FaceRule = this.FaceRefElement.GetQuadratureRule(DesiredOrder);
             int D = this.SpatialDimension;
 
-            var R = CellBoundaryQuadRule.CreateEmpty(this, FaceRule.NoOfNodes*NF, D, NF);
+            var R = CellBoundaryQuadRule.CreateEmpty(this, FaceRule.NoOfNodes*NF, D, NF, true);
 
             int ncnt = 0;
             for (int iface = 0; iface < NoOfFaces; iface++) {
@@ -929,7 +929,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             // return values memalloc
             // ----------------------
             Quadrature.QuadRule ret = QuadRule.CreateEmpty(
-                this, BaseRule.Weights.Length * leaves.Length, D);
+                this, BaseRule.Weights.Length * leaves.Length, D, true);
             ret.OrderOfPrecision = BaseRule.OrderOfPrecision;
 
             // generate brute-force rule

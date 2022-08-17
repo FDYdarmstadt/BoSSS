@@ -67,7 +67,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public NodeSet ProjectOnto(NodeSet nodes)
         {
-            NodeSet projection = new NodeSet(refElement, nodes.NoOfNodes, refElement.SpatialDimension, true);
+            NodeSet projection = new NodeSet(refElement, nodes.NoOfNodes, refElement.SpatialDimension, false);
             for (int j = 0; j < nodes.NoOfNodes; ++j)
             {
                 for (int i = 0; i < fixedDims.Count; ++i)

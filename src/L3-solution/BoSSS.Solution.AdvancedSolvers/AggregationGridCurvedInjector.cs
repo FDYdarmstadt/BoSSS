@@ -420,7 +420,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints, true);
+                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints, false);
                 edge_coords.LockForever();
 
                 // evaluate the polynomials on the edge for both cells
@@ -1660,7 +1660,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints, true);
+                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints, false);
                 edge_coords.LockForever();
 
                 // evaluate the polynomials on the edge for both cells
@@ -1909,7 +1909,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints, true);
+                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints, false);
                 edge_coords.LockForever();
 
                 // evaluate the polynomials on the edge for both cells
@@ -2305,7 +2305,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 delegate (int j0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
                                     NodeSet nodes = QR.Nodes;
                                     int D = nodes.SpatialDimension;
-                                    NodeSet GlobalNodes = new NodeSet(Context.iGeomCells.GetRefElement(parts[j]), Length * nodes.NoOfNodes, D, true);
+                                    NodeSet GlobalNodes = new NodeSet(Context.iGeomCells.GetRefElement(parts[j]), Length * nodes.NoOfNodes, D, false);
                                     Context.TransformLocal2Global(nodes, j0, Length, GlobalNodes.ResizeShallow(Length, nodes.NoOfNodes, D));
 
                                     for(int d = 0; d < D; d++) {

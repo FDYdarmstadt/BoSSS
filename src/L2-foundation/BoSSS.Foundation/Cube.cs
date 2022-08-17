@@ -168,7 +168,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
                     int NN = _1Drule.Weights.GetLength(0);
                     int D = this.SpatialDimension;
-                    realQr = QuadRule.CreateEmpty(this, NN * NN * NN, D);
+                    realQr = QuadRule.CreateEmpty(this, NN * NN * NN, D, true);
 
                     for(int i = 0; i < NN; i++) {
                         for(int j = 0; j < NN; j++) {

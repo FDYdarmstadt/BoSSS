@@ -248,7 +248,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             cellMask, order, edgeQuadrature.IntegrationResults));
                     } else {
                         // => Same nodes in all cells
-                        NodeSet baseNodes = GetSeedNodes(noOfPhis);
+                        NodeSet baseNodes = GetSeedNodes(noOfPhis, true);
                         foreach (Chunk chunk in mask) {
                             QuadRule[] optimizedRules = GetOptimizedRules(
                                 baseNodes, order, chunk.i0, chunk.Len, edgeQuadrature.IntegrationResults, levelSetIndex);
@@ -303,7 +303,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
         }
 
-        private NodeSet GetSeedNodes(int noOfPhis) {
+        private NodeSet GetSeedNodes(int noOfPhis, bool useCaching) {
             bool gaussianRuleFound = false;
 
             NodeSet nodes = null;
@@ -337,7 +337,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 int noOfNodesPerDirection = (int)Math.Ceiling(Math.Pow(targetNumber, 1.0 / D));
                 double[] linearNodes = GenericBlas.Linspace(-1.0, 1.0, noOfNodesPerDirection);
 
-                nodes = new NodeSet(RefElement, noOfNodesPerDirection * noOfNodesPerDirection, D, true);
+                nodes = new NodeSet(RefElement, noOfNodesPerDirection * noOfNodesPerDirection, D, useCaching);
                 int node = 0;
                 for (int i = 0; i < noOfNodesPerDirection; i++) {
                     for (int j = 0; j < noOfNodesPerDirection; j++) {
@@ -429,7 +429,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 // next iter: x0_i <- x0_{i+1}
                 x0_i_Local.Set(x0_ip1_Local);
-                Nodes = new NodeSet(Kref, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), Nodes.Reference != 0);
+                Nodes = new NodeSet(Kref, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), true);
             }
 
 
@@ -801,7 +801,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     CellMask singleElementMask = new CellMask(
                         LevelSetData.GridDat, Chunk.GetSingleElementChunk(jCell));
 
-                    NodeSet nodes = GetSeedNodes(noOfPhis).CloneAs();
+                    NodeSet nodes = GetSeedNodes(noOfPhis, false).CloneAs();
                     AffineTrafo trafo = trafosToBoundingBox[localCellIndex2SubgridIndex[jCell]];
 
                     if (trafo == null) {
@@ -812,7 +812,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         continue;
                     }
 
-                    NodeSet mappedNodes = new NodeSet(RefElement, trafo.Transform(nodes), true);
+                    NodeSet mappedNodes = new NodeSet(RefElement, trafo.Transform(nodes), false);
                     mappedNodes.LockForever();
 
                     // Remove nodes in negative part
@@ -872,7 +872,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     NodeSet projectedNodes;
 
                     do {
-                        NodeSet baseNodes = GetSeedNodes(iteration * noOfPhis);
+                        NodeSet baseNodes = GetSeedNodes(iteration * noOfPhis, false);
                         projectedNodes = ProjectNodesOntoLevelSet(jCell, baseNodes);
                         iteration++;
                         if (iteration > maxNodeIncrementIterations) {

@@ -74,7 +74,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             foreach (QuadRule rule in rules) {
                 numberOfNodes += rule.NoOfNodes;
             }
-            CellBoundaryQuadRule combinedRule = CellBoundaryQuadRule.CreateEmpty(Cube.Instance, numberOfNodes, 3, 6);
+            CellBoundaryQuadRule combinedRule = CellBoundaryQuadRule.CreateEmpty(Cube.Instance, numberOfNodes, 3, 6, true);
             int subarrayPointer = 0;
             for (int i = 0; i < rules.Length; ++i) {
                 int subNumberOfNodes = rules[i].NoOfNodes;

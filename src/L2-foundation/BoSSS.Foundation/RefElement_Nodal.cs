@@ -111,7 +111,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 						throw new ArgumentOutOfRangeException("illegal type filter");
 			}
 
-            Nodes = new NodeSet(this, UnsortNodes.Lengths[0], UnsortNodes.Lengths[1], true);
+            Nodes = new NodeSet(this, UnsortNodes.Lengths[0], UnsortNodes.Lengths[1], TypeFilter.Length == 0);
             int NoOfNodes = UnsortType.Length;
             Type = new int[NoOfNodes];
             EntityIndex = new int[NoOfNodes];

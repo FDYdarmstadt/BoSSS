@@ -1154,7 +1154,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             // ~~~~
 
                             // physical:
-                            NodeSet FaceNodes = new NodeSet(this.RefElement, cR.Nodes.ExtractSubArrayShallow(new int[] { iNode, 0 }, new int[] { iNode + NodesPerEdge[e] - 1, D - 1 }), true);
+                            NodeSet FaceNodes = new NodeSet(this.RefElement, cR.Nodes.ExtractSubArrayShallow(new int[] { iNode, 0 }, new int[] { iNode + NodesPerEdge[e] - 1, D - 1 }), false);
                             var FaceNormals = MultidimensionalArray.Create(NodesPerEdge[e], D);
                             GridDat.Edges.GetNormalsForCell(FaceNodes, i0, e, FaceNormals);
                             // ~~~~

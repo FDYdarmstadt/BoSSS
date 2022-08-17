@@ -270,7 +270,7 @@ namespace BoSSS.Foundation.Quadrature {
 
             MultidimensionalArray NodesVol = givenRule.Nodes.ExtractSubArrayShallow(new int[] { i0, 0 }, new int[] { iE, D - 1 });
             MultidimensionalArray Weigts = givenRule.Weights.ExtractSubArrayShallow(new int[] { i0 }, new int[] { iE }).CloneAs();
-            NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD, true);
+            NodeSet Nodes = new NodeSet(this.RefElement, iE - i0 + 1, coD, qrEdge == null);
 
             volSplx.GetInverseFaceTrafo(iFace).Transform(NodesVol, Nodes);
             Nodes.LockForever();
@@ -407,7 +407,7 @@ namespace BoSSS.Foundation.Quadrature {
             }
 
             // override the Node set with the "true" nodes located on the edge and in edge local coordinates
-            Nodes = new NodeSet(this.RefElement, MultidimensionalArray.CreateWrapper(NodesOnEdge, new int[] { NoOfNodes, this.RefElement.SpatialDimension }), true);
+            Nodes = new NodeSet(this.RefElement, MultidimensionalArray.CreateWrapper(NodesOnEdge, new int[] { NoOfNodes, this.RefElement.SpatialDimension }), qrEdge == null);
             Weigts = MultidimensionalArray.CreateWrapper(WeightsOnEdge, new int[] { NoOfNodes });
             Nodes.LockForever();
 

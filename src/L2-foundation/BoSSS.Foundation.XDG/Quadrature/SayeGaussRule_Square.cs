@@ -419,7 +419,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             MultidimensionalArray nodeArr = X.CloneAs();
             nodeArr[0, direction] += distance;
-            NodeSet node = new NodeSet(RefElement, nodeArr, false);
+            NodeSet node = new NodeSet(RefElement, nodeArr, true);
             return node;
         }
 

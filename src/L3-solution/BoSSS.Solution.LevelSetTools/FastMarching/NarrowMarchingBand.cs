@@ -1404,7 +1404,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
  
         /// <summary>
         /// Finds the extremals of the level-set field on the boundary between cut- and near cells:
-        /// we need this to detect wether the level-set has left the cell.
+        /// we need this to detect whether the level-set has left the cell.
         /// </summary>
         public static void ExtremalsOnEdge(ConventionalDGField LevSet, CellMask cutCellsMask, EdgeMask em, out double[] minis, out double[] maxis) {
             GridData gdat = (GridData)(LevSet.GridDat);

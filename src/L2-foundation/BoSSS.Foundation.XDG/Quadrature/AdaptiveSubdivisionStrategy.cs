@@ -230,7 +230,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
                 vertices = volumeVertices;
             }
 
-            return new NodeSet(this.gridData.Cells.GetRefElement(cell), vertices, true);
+            return new NodeSet(this.gridData.Cells.GetRefElement(cell), vertices, false);
         }
 
         #region ISubdivisionStrategy Members

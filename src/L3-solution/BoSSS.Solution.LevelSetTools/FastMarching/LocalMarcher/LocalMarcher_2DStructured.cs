@@ -127,7 +127,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
 
                     //Build Nodeset for evaluation
                     int iTrafo = TrafoIdx[neighbor.Item2, neighbor.Item3];
-                    NodeSet CellNodes = EdgeNodes.GetVolumeNodeSet(gridDat, iTrafo, true);
+                    NodeSet CellNodes = EdgeNodes.GetVolumeNodeSet(gridDat, iTrafo, false);
 
                     //Evaluate and find global position
                     Phi.Evaluate(neighbor.Item1, 1, CellNodes, PhiEdge);

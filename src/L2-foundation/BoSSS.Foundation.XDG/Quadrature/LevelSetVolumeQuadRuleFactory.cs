@@ -418,8 +418,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         AffineTrafo trafo = trafos[localCellIndex2SubgridIndex[cell]];
                         Debug.Assert(Math.Abs(trafo.Matrix.Determinant()) > 1e-10);
 
-                        NodeSet nodes = GetNodes(noOfLambdas).CloneAs();
-                        NodeSet mappedNodes = new NodeSet(RefElement, trafo.Transform(nodes), true);
+                        NodeSet nodes = GetNodes(noOfLambdas, false).CloneAs();
+                        NodeSet mappedNodes = new NodeSet(RefElement, trafo.Transform(nodes), false);
                         mappedNodes.LockForever();
 
                         // Remove nodes in negative part
@@ -454,7 +454,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 } else {
                     // Use same nodes in all cells
                         QuadRule[] optimizedRules = GetOptimizedRules(
-                            realCutCells, GetNodes(noOfLambdas), quadResults, order);                 
+                            realCutCells, GetNodes(noOfLambdas, true), quadResults, order);                 
                     int ruleIndex = 0;
                     foreach (int cell in realCutCells.ItemEnum) {
                         result.Add(new ChunkRulePair<QuadRule>(
@@ -469,7 +469,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
         }
 
-        private NodeSet GetNodes(int noOfLambdas) {
+        private NodeSet GetNodes(int noOfLambdas, bool useCaching) {
             bool gaussianRuleFound = false;
 
             NodeSet nodes = null;
@@ -503,7 +503,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 int noOfNodesPerDirection = (int)Math.Ceiling(Math.Pow(targetNumber, 1.0 / D));
                 double[] linearNodes = GenericBlas.Linspace(-1.0, 1.0, noOfNodesPerDirection);
 
-                nodes = new NodeSet(RefElement, noOfNodesPerDirection * noOfNodesPerDirection, D, true);
+                nodes = new NodeSet(RefElement, noOfNodesPerDirection * noOfNodesPerDirection, D, useCaching);
                 int node = 0;
                 for (int i = 0; i < noOfNodesPerDirection; i++) {
                     for (int j = 0; j < noOfNodesPerDirection; j++) {
@@ -641,7 +641,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             double[] rhs = new double[LDB];
 
             AffineTrafo inverseTrafo = trafo.Invert();
-            NodeSet trafoNodes = new NodeSet(RefElement, inverseTrafo.Transform(nodes), true);
+            NodeSet trafoNodes = new NodeSet(RefElement, inverseTrafo.Transform(nodes), false);
             trafoNodes.LockForever();
 
             Basis basis = new Basis(LevelSetData.GridDat, order);
@@ -729,7 +729,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 AffineTrafo trafo = trafos[localCellIndex2SubgridIndex[cell]];
 
                 AffineTrafo inverse = trafo.Invert();
-                NS = new NodeSet(RefElement, inverse.Transform(NS), true);
+                NS = new NodeSet(RefElement, inverse.Transform(NS), false);
                 NS.LockForever();
 
                 MultidimensionalArray lambdaValues = lambdaBasis.Values.GetValues(NS);
