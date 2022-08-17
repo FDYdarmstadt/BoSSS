@@ -352,10 +352,10 @@ namespace PublicTestRunner {
             return ret.ToArray();
         }
 
-        static (int NoOfTests, string[] tests, string[] shortnames, string[] RequiredFiles) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
+        static (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string,string[]> RequiredFiles4Test) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
             var r = new List<string>(); // full test names
             var l = new List<string>(); // short names 
-            var s = new HashSet<string>();
+            var d = new Dictionary<string, string[]>();
 
             var ttt = a.GetTypes();
             foreach (var t in ttt) { // loop over types in assembly...
@@ -366,8 +366,10 @@ namespace PublicTestRunner {
                         if (t.IsAbstract && !m.IsStatic)
                             continue;
 
-                        if(!FilterTestMethod(m, AssemblyFilter))
+                        if (!FilterTestMethod(m, AssemblyFilter))
                             continue;
+
+                        var s = new HashSet<string>();
 
                         //bool testAdded = false;
                         if (m.GetCustomAttribute(typeof(TestAttribute)) != null) {
@@ -395,21 +397,26 @@ namespace PublicTestRunner {
                                     s.AddRange(LocateFile(someFile));
                                 }
                             }
+
+                            List<string> FileNamesOnly = new List<string>();
+                            foreach (string filePath in s) {
+                                string fileName = Path.GetFileName(filePath);
+                                if (FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
+                                    throw new IOException($"Dependent Filename {fileName} is not unique for test assembly {a}. (full Path {filePath}).");
+                                FileNamesOnly.Add(fileName);
+                            }
+
+
+                            d.Add(r.Last(), s.ToArray());
                         }
                     }
                 }
             }
 
-            List<string> FileNamesOnly = new List<string>();
-            foreach(string filePath in s) {
-                string fileName = Path.GetFileName(filePath);
-                if(FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
-                    throw new IOException($"Dependent Filename {fileName} is not unique for test assembly {a}. (full Path {filePath}).");
-                FileNamesOnly.Add(fileName);
-            }
+            
 
 
-            return (r.Count, r.ToArray(), l.ToArray(), s.ToArray());
+            return (r.Count, r.ToArray(), l.ToArray(), d);
         }
 
         /*
@@ -561,7 +568,7 @@ namespace PublicTestRunner {
                             {
                                 var allTst4Assi = GetTestsInAssembly(a, null);
                                 for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], 1));
                                 }
                             }
                         }
@@ -577,7 +584,7 @@ namespace PublicTestRunner {
                                 var allTst4Assi = GetTestsInAssembly(a, null);
 
                                 for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], TT.NoOfProcs));
                                 }
                             }
                         }
@@ -818,11 +825,11 @@ namespace PublicTestRunner {
                             if(FilterTestAssembly(a, AssemblyFilter)) {
                                 var allTst4Assi = GetTestsInAssembly(a, AssemblyFilter);
                                 for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                                    if(ignore_tests_w_deps && allTst4Assi.RequiredFiles.Length > 0) {
+                                    if(ignore_tests_w_deps && allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]].Length > 0) {
                                         Console.WriteLine($"Skipping all in {a} due to external test dependencies.");
                                         break;
                                     }
-                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, 1));
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], 1));
                                 }
                             }
                         }
@@ -841,12 +848,12 @@ namespace PublicTestRunner {
                                 var allTst4Assi = GetTestsInAssembly(a, AssemblyFilter);
 
                                 for(int iTest = 0; iTest < allTst4Assi.NoOfTests; iTest++) {
-                                    if(ignore_tests_w_deps && allTst4Assi.RequiredFiles.Length > 0) {
+                                    if(ignore_tests_w_deps && allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]].Length > 0) {
                                         Console.WriteLine($"Skipping all in {a} due to external test dependencies.");
                                         break;
                                     }
 
-                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles, TT.NoOfProcs));
+                                    allTests.Add((a, allTst4Assi.tests[iTest], allTst4Assi.shortnames[iTest], allTst4Assi.RequiredFiles4Test[allTst4Assi.tests[iTest]], TT.NoOfProcs));
                                 }
                             }
                         }
@@ -1270,16 +1277,22 @@ namespace PublicTestRunner {
         /// Copies additional files required for some test;
         /// these files are identified via the <see cref="NUnitFileToCopyHackAttribute"/>.
         /// </summary>
+        /// <remarks>
+        /// - This method only performs some file copy if the test runner is executed from within the source repository;
+        /// - otherwise (e.g. if tests are deployed to a HPC cluster) it does not copy anything and we hope that all required files are in place.
+        /// </remarks>
         static void MegaMurxPlusPlus(Assembly a, string filter) {
             using (new FuncTrace()) {
                 var r = GetTestsInAssembly(a, filter);
 
                 var dir = Directory.GetCurrentDirectory();
 
-                foreach (var fOrigin in r.RequiredFiles) {
-                    if (File.Exists(fOrigin)) {
-                        string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));
-                        File.Copy(fOrigin, fDest, true);
+                foreach (var t in r.tests) {
+                    foreach (var fOrigin in r.RequiredFiles4Test[t]) {
+                        if (File.Exists(fOrigin)) {
+                            string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));
+                            File.Copy(fOrigin, fDest, true);
+                        }
                     }
                 }
             }
