@@ -289,22 +289,22 @@ namespace AdvancedSolverTests.SubBlocking
                 SpeciesId[] SIdc = sbs.Mapping.UsedSpecies;
                 SpeciesId[] OtherSpec = (SIdc.Length - 1).ForLoop(i => SIdc[i + 1]);
                 if (upper)
-                    sbs.SpeciesSelector(SIdc[0]);
+                    sbs.SetSpeciesSelector(SIdc[0]);
                 else
-                    sbs.SpeciesSelector(OtherSpec);
+                    sbs.SetSpeciesSelector(OtherSpec);
             } else {
                 throw new NotSupportedException();
             }
         }
 
         private static void DefaultVarSplit(this SubBlockSelector sbs, bool upper) {
-            sbs.VariableSelector(upper ? 0 : 1);
+            sbs.SetVariableSelector(upper ? 0 : 1);
             int NoOfVar = sbs.Mapping.NoOfVariables;
             int[] OtherVars = (NoOfVar - 1).ForLoop(i => i + 1);
             if (upper)
-                sbs.VariableSelector(0);
+                sbs.SetVariableSelector(0);
             else
-                sbs.VariableSelector(OtherVars);
+                sbs.SetVariableSelector(OtherVars);
         }
 
         private static void DefaultCellSplit(this SubBlockSelector sbs, bool upper, bool islocal = true) {
@@ -341,15 +341,15 @@ namespace AdvancedSolverTests.SubBlocking
                     sbs.SetModeSelector(p => p == 1);
                     break;
                 case SelectionType.species:
-                    sbs.SpeciesSelector(A);
+                    sbs.SetSpeciesSelector(A);
                     break;
                 case SelectionType.variables:
-                    sbs.VariableSelector(1);
+                    sbs.SetVariableSelector(1);
                     break;
                 case SelectionType.all_combined:
                     sbs.SetModeSelector(p => p == 1);
-                    sbs.SpeciesSelector(A);
-                    sbs.VariableSelector(1);
+                    sbs.SetSpeciesSelector(A);
+                    sbs.SetVariableSelector(1);
                     break;
             }
         }
