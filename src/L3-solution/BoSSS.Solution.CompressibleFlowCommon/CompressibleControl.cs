@@ -45,7 +45,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// The configured Mach Number in the far field.
         /// </summary>
         [ExclusiveLowerBound(0.0)]
-        public double MachNumber;
+        public double MachNumber=1;
 
         /// <summary>
         /// The configured Reynolds number in the far field.
@@ -54,7 +54,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// This option is ignored if <see cref="DomainType"/> is equal
         /// to "Euler"
         /// </remarks>
-        public double ReynoldsNumber;
+        public double ReynoldsNumber=1.0;
 
         /// <summary>
         /// The configured Prandtl number in the far field.
@@ -63,7 +63,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// This option is ignored if <see cref="DomainType"/> is equal
         /// to "Euler"
         /// </remarks>
-        public double PrandtlNumber;
+        public double PrandtlNumber=0.71;
 
         /// <summary>
         /// The ratio of a characteristic flow velocity to the velocity of a
