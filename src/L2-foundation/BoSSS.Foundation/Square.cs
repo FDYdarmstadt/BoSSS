@@ -86,7 +86,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 // ===============
 
                 var _Vertices = new double[4, 2] { { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } };
-                this.m_Vertices = new NodeSet(this, 4, 2);
+                this.m_Vertices = new NodeSet(this, 4, 2, false);
                 this.m_Vertices.InitializeFrom(_Vertices);
                 this.m_Vertices.LockForever();
 
@@ -111,7 +111,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                     foreach(var q in qrTemp1D) {
                         int NN = q.Item2.GetLength(0);
                         int D = this.SpatialDimension;
-                        var realQr = QuadRule.CreateEmpty(this, NN*NN, D);
+                        var realQr = QuadRule.CreateEmpty(this, NN*NN, D, true);
 
                         for(int i = 0; i < NN; i++) {
                             for(int j = 0; j < NN; j++) {

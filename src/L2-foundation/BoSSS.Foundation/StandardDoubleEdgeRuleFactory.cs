@@ -69,7 +69,7 @@ namespace BoSSS.Foundation.Quadrature {
             int L = orgQr.NoOfNodes;
             int D = orgQr.Nodes.GetLength(1);
             dblQr.Median = L;
-            dblQr.Nodes = new NodeSet(this.RefElement, L * 2, D);
+            dblQr.Nodes = new NodeSet(this.RefElement, L * 2, D, true);
             dblQr.Weights = MultidimensionalArray.Create(L*2);
             dblQr.Nodes.SetSubArray(orgQr.Nodes, new int[] { 0, 0 }, new int[] { L-1, D-1 });
             dblQr.Nodes.SetSubArray(orgQr.Nodes, new int[] { L, 0 }, new int[] { 2*L-1, D-1 });

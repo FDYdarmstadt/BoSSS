@@ -105,7 +105,7 @@ namespace BoSSS.Foundation {
                 if (jCell1 < 0 || jCell1 >= JE)
                     throw new ArgumentOutOfRangeException("Cell index out of range.");
                 if(jCell0 >= J && jCell1 >= J)
-                    throw new ArgumentOutOfRangeException("At leaset one of the two cells must be locally updated.");
+                    throw new ArgumentOutOfRangeException("At least one of the two cells must be locally updated.");
 
                 bool swap;
                 if (jCell1 >= J) {
@@ -204,7 +204,7 @@ namespace BoSSS.Foundation {
 
                             _NodesGlobal.Allocate(1, nodes_Cell1.GetLength(0), nodes_Cell1.GetLength(1));
                             m_Context.TransformLocal2Global(nodes_Cell1, jCell1, 1, _NodesGlobal, 0);
-                            var nodes_Cell0 = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell1), nodes_Cell1.GetLength(0), nodes_Cell1.GetLength(1));
+                            var nodes_Cell0 = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell1), nodes_Cell1.GetLength(0), nodes_Cell1.GetLength(1), false);
                             m_Context.TransformGlobal2Local(_NodesGlobal.ExtractSubArrayShallow(0, -1, -1), nodes_Cell0, jCell0, null);
                             nodes_Cell0.LockForever();
 

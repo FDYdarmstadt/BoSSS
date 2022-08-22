@@ -501,7 +501,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         if (LocalVerticesIn is NodeSet) {
                             _LocalVerticesIn[iKref] = (NodeSet)LocalVerticesIn; 
                         } else {
-                            _LocalVerticesIn[iKref] = new NodeSet(Kref, LocalVerticesIn); // convert to node set
+                            _LocalVerticesIn[iKref] = new NodeSet(Kref, LocalVerticesIn, false); // convert to node set
                         }
                     }
 
@@ -938,7 +938,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </param>
         /// <param name="jCell">local cell index of the cell to transform</param>
         /// <param name="NewtonConvergence">
-        /// in the case of curved cells/isoparametic elements, where a Newton algorithm has to be used for the inverse transformation, 
+        /// in the case of curved cells/isoparametric elements, where a Newton algorithm has to be used for the inverse transformation, 
         /// diagnostic information whether the Newton algorithm has converged or not.
         /// The index correlates with the vertex index in <paramref name="GlobalVerticesIn"/>.
         /// </param>
@@ -1002,9 +1002,13 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 while (true) {
 
-                    // RES = GlobalVerticesIn - Trfao(x[i-1])
+                    // RES = GlobalVerticesIn - Trafo(x[i-1])
                     RES.Clear();
-                    NodeSet __LocalVerticesOut = new NodeSet(Kref, _LocalVerticesOut);
+                    NodeSet __LocalVerticesOut;
+                    if(LocalVerticesOut is NodeSet)
+                        __LocalVerticesOut = new NodeSet(Kref, _LocalVerticesOut, ((NodeSet)LocalVerticesOut).Reference != 0);
+                    else
+                        __LocalVerticesOut = new NodeSet(Kref, _LocalVerticesOut, false);
                     this.TransformLocal2Global(__LocalVerticesOut, jCell, 1, RES, 0);
                     RES.Scale(-1.0);
                     _RES.Acc(1.0, GlobalVerticesIn);

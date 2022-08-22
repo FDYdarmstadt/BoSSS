@@ -621,7 +621,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 m_grd.TransformGlobal2Local(vertCoord_glb, vertCoord_loc, jCell, 1, 0);
                 double[] vertCellCoord1 = vertCoord_loc.ExtractSubArrayShallow(0, 0, -1).To1DArray();
 
-                return new NodeSet(m_grd.Cells.RefElements[0], vertCellCoord1);
+                return new NodeSet(m_grd.Cells.RefElements[0], vertCellCoord1, false);
 
             }
 
@@ -823,8 +823,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
                             MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
 
-                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN);
-                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT);
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN, false);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT, false);
 
                             internalProjection.Evaluate(jCell_IN, 1, NS_IN, uIN);
                             internalProjection.Evaluate(jCell_OT, 1, NS_OT, uOT);

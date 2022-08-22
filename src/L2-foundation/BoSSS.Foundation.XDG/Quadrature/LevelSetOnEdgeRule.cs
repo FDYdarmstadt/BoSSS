@@ -134,7 +134,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
                 var FaceRule = refElement.FaceRefElement.GetQuadratureRule(intOrder);
                 int K = FaceRule.NoOfNodes;
-                NodeSet VolumeNodes = new NodeSet(refElement, K, D);
+                NodeSet VolumeNodes = new NodeSet(refElement, K, D, true);
                 refElement.TransformFaceCoordinates(SpecialFace, FaceRule.Nodes, VolumeNodes);
                 VolumeNodes.LockForever();
 

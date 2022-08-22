@@ -196,8 +196,8 @@ namespace BoSSS.Application.MultigridTest {
                         MultidimensionalArray Grad_uIN = MultidimensionalArray.Create(1, NoOfNodes, D);
                         MultidimensionalArray Grad_uOT = MultidimensionalArray.Create(1, NoOfNodes, D);
 
-                        NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN);
-                        NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT);
+                        NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN, false);
+                        NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT, false);
 
                         f.Evaluate(jCell_IN, 1, NS_IN, uIN);
                         f.Evaluate(jCell_OT, 1, NS_OT, uOT);

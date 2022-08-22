@@ -706,7 +706,7 @@ namespace BoSSS.Solution.Statistic {
 
                     // transform quad. nodes from cell 2 (extrapolate to) to cell 1 (extrapolate FROM)
                     ctxFine.TransformLocal2Global(xi, tmp, _2);
-                    NodeSet eta = new NodeSet(ctxFine.iGeomCells.GetRefElement(_2), K, D);
+                    NodeSet eta = new NodeSet(ctxFine.iGeomCells.GetRefElement(_2), K, D, false);
                     ctxCors.TransformGlobal2Local(tmp, eta, _1, null);
                     eta.LockForever();
 
