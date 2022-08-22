@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using BoSSS.Solution.Tecplot;
 
 namespace BoSSS.Application.ExternalBinding {
-    
+
     
     /// <summary>
     /// Wrapper around one or more DG fields to be used in the OpenFOAM binding foam-dg

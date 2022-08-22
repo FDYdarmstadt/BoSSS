@@ -40,11 +40,9 @@ namespace BoSSS.Application.ExternalBinding {
                 this.EdgeTags = new int[nBoundaries];
                 this.EdgeTypes = new string[nBoundaries];
                 for (int i = 0; i < nBoundaries; i++){
-                    Console.WriteLine("i = " + i);
                     this.Values.Add(new List<double>());
                     for (int d = 0; d < dim; d++) {
                     this.Values[i].Add(edgeValues[dim * i + d]);
-                    Console.WriteLine("d = " + d);
                 }
                     this.EdgeTags[i] = edgeTags[i];
                     this.EdgeTypes[i] = IntToBCType(edgeTypes[i]);
@@ -57,12 +55,10 @@ namespace BoSSS.Application.ExternalBinding {
                 this.EdgeTags = edgeTags;
                 this.Values = new List<List<double>>();
                 for (int i = 0; i < edgeTags.Length; i++){
-                    Console.WriteLine("i = " + i);
                     this.Values.Add(new List<double>());
                     for (int d = 0; d < dim; d++)
                     {
                         this.Values[i].Add(edgeValues[dim * i + d]);
-                        Console.WriteLine("d = " + d);
                     }
             }
                 this.EdgeTypes = edgeTypes;
