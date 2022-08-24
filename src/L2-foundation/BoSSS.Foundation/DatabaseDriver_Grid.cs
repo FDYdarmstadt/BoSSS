@@ -68,6 +68,7 @@ namespace BoSSS.Foundation.IO
                     IEqualityComparer<IGrid> referenceComparer = grid.GridSerializationHandler.BasePropertiesComparer;
 
                     if(referenceComparer.Equals(grid, gridInDatabase)) {
+                        Debugger.Launch();
                         gridInDatabase = LoadGridData(gridInDatabase);
                         if(cellComparer.Equals(grid, gridInDatabase)) {
                             grid = gridInDatabase;

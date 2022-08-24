@@ -76,9 +76,8 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         TextWriterAppender logger_output = null;
 
-        public void Dispose()
-        {
-            if(this.FsDriver is IDisposable) {
+        public void Dispose() {
+            if (this.FsDriver is IDisposable) {
                 ((IDisposable)this.FsDriver).Dispose();
 
             }
@@ -104,7 +103,7 @@ namespace BoSSS.Foundation.IO {
                 // create trace file in local directory
 
                 string tracefilename = name + "." + Rank + ".txt";
-                file = new FileStream( tracefilename, FileMode.Create, FileAccess.Write, FileShare.Read);
+                file = new FileStream(tracefilename, FileMode.Create, FileAccess.Write, FileShare.Read);
             }
 
             return file;
@@ -190,8 +189,7 @@ namespace BoSSS.Foundation.IO {
         /// <summary>
         /// Creates a new session;
         /// </summary>
-        public SessionInfo CreateNewSession(IDatabaseInfo database)
-        {
+        public SessionInfo CreateNewSession(IDatabaseInfo database) {
             return sessionsDatabaseDriver.CreateNewSession(database);
         }
 
@@ -202,8 +200,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// The GUID that was allocated to identify the vector within the storage system.
         /// </returns>
-        public Guid SaveVector<T>(IList<T> vector)
-        {
+        public Guid SaveVector<T>(IList<T> vector) {
             return standardVectorSerializer.SaveVector(vector);
         }
 
@@ -217,9 +214,8 @@ namespace BoSSS.Foundation.IO {
         /// the Guid under which the vector should be stored; must be the same
         /// on all MPI processes.
         /// </param>
-        public void SaveVector<T>(IList<T> vector, Guid id)
-        {
-            standardVectorSerializer.SaveVector(vector,id);
+        public void SaveVector<T>(IList<T> vector, Guid id) {
+            standardVectorSerializer.SaveVector(vector, id);
         }
 
         /// <summary>
@@ -230,16 +226,14 @@ namespace BoSSS.Foundation.IO {
         /// Optional partition of the vector among MPI processors: if null, a
         /// partition is defined by the loader logic.
         /// </param>
-        public IList<T> LoadVector<T>(Guid id, ref Partitioning part)
-        {
+        public IList<T> LoadVector<T>(Guid id, ref Partitioning part) {
             return standardVectorSerializer.LoadVector<T>(id, ref part);
         }
 
         /// <summary>
         /// tests whether a grid with GUID <paramref name="g"/> exists in database, or not;
         /// </summary>
-        public bool GridExists(Guid g)
-        {
+        public bool GridExists(Guid g) {
             return gridDatabaseDriver.GridExists(g);
         }
 
@@ -247,8 +241,7 @@ namespace BoSSS.Foundation.IO {
         /// Loads the grid info object for the given
         /// <paramref name="gridId"/> from the given
         /// </summary>
-        public IGridInfo LoadGridInfo(Guid gridId, IDatabaseInfo database)
-        {
+        public IGridInfo LoadGridInfo(Guid gridId, IDatabaseInfo database) {
             return gridDatabaseDriver.LoadGridInfo(gridId, database);
         }
 
@@ -263,8 +256,7 @@ namespace BoSSS.Foundation.IO {
         /// <returns>
         /// The loaded grid
         /// </returns>
-        public IGrid LoadGrid(Guid gridId, IDatabaseInfo database)
-        {
+        public IGrid LoadGrid(Guid gridId, IDatabaseInfo database) {
             return gridDatabaseDriver.LoadGrid(gridId, database);
         }
 
@@ -274,8 +266,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="grid"></param>
         /// <returns></returns>
-        public IGrid LoadGridData(IGrid grid)
-        {
+        public IGrid LoadGridData(IGrid grid) {
             return gridDatabaseDriver.LoadGridData(grid);
         }
 
@@ -286,8 +277,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="sessionId"></param>
         /// <param name="database"></param>
         /// <returns></returns>
-        public SessionInfo LoadSession(Guid sessionId, IDatabaseInfo database)
-        {
+        public SessionInfo LoadSession(Guid sessionId, IDatabaseInfo database) {
             return sessionsDatabaseDriver.LoadSession(sessionId, database);
         }
 
@@ -309,8 +299,7 @@ namespace BoSSS.Foundation.IO {
         /// Saves a session info object to a file on the disk.
         /// </summary>
         /// <param name="session">The session to be saved.</param>
-        public void SaveSessionInfo(ISessionInfo session)
-        {
+        public void SaveSessionInfo(ISessionInfo session) {
             sessionsDatabaseDriver.SaveSessionInfo(session);
         }
 
@@ -323,11 +312,10 @@ namespace BoSSS.Foundation.IO {
         /// On exit, either unchanged, or the equivalent grid.
         /// </param>
         /// <param name="EquivalentGridFound">
-        /// Inidicates that an equivalent grid was found.
+        /// Indicates that an equivalent grid was found.
         /// </param>
         /// <param name="database"></param>
-        public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database)
-        {
+        public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database) {
             return gridDatabaseDriver.SaveGridIfUnique(ref grid, out EquivalentGridFound, database);
         }
 
@@ -344,8 +332,7 @@ namespace BoSSS.Foundation.IO {
         /// <param name="database">
         /// chaos
         /// </param>
-        public Guid SaveGrid(IGrid grid, IDatabaseInfo database)
-        {
+        public Guid SaveGrid(IGrid grid, IDatabaseInfo database) {
             return gridDatabaseDriver.SaveGrid(grid, database);
         }
 
@@ -360,8 +347,7 @@ namespace BoSSS.Foundation.IO {
         /// loads a single <see cref="TimestepInfo"/>-object from the database.
         /// </summary>
         public T LoadTimestepInfo<T>(Guid timestepGuid, ISessionInfo session, IDatabaseInfo database)
-            where T : TimestepInfo
-        {
+            where T : TimestepInfo {
             return timestepDatabaseDriver.LoadTimestepInfo<T>(timestepGuid, session, database);
         }
 
@@ -370,8 +356,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="sessionGuid">ID of the session.</param>
         /// <returns>A collection of th session's timestep IDs.</returns>
-        public IEnumerable<Guid> GetTimestepGuids(Guid sessionGuid)
-        {
+        public IEnumerable<Guid> GetTimestepGuids(Guid sessionGuid) {
             return timestepDatabaseDriver.GetTimestepGuids(sessionGuid);
         }
 
@@ -381,8 +366,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         /// <param name="sessionGuid"></param>
         /// <param name="timestepGuid"></param>
-        public void RemoveTimestepGuid(Guid sessionGuid, Guid timestepGuid)
-        {
+        public void RemoveTimestepGuid(Guid sessionGuid, Guid timestepGuid) {
             timestepDatabaseDriver.RemoveTimestepGuid(sessionGuid, timestepGuid);
         }
 
@@ -390,8 +374,7 @@ namespace BoSSS.Foundation.IO {
         /// Loads a time-step from the database into previously allocated
         /// DG-fields (<paramref name="PreAllocatedFields"/>).
         /// </summary>
-        public void LoadFieldData(ITimestepInfo info, IGridData grdDat, IEnumerable<DGField> PreAllocatedFields)
-        {
+        public void LoadFieldData(ITimestepInfo info, IGridData grdDat, IEnumerable<DGField> PreAllocatedFields) {
             timestepDatabaseDriver.LoadFieldData(info, grdDat, PreAllocatedFields);
         }
 
@@ -402,8 +385,7 @@ namespace BoSSS.Foundation.IO {
         /// By using this method, it is ensured that the loaded/returned fields
         /// have the same DG polynomial degree as in the database.
         /// </remarks>
-        public IEnumerable<DGField> LoadFields(ITimestepInfo info, IGridData grdDat, IEnumerable<string> NameFilter = null)
-        {
+        public IEnumerable<DGField> LoadFields(ITimestepInfo info, IGridData grdDat, IEnumerable<string> NameFilter = null) {
             return timestepDatabaseDriver.LoadFields(info, grdDat, NameFilter);
         }
 
@@ -411,9 +393,8 @@ namespace BoSSS.Foundation.IO {
         /// Saves a time-step to the database's persistent memory.
         /// </summary>
         /// <param name="_tsi">Contains Id etc.</param>
-        public void SaveTimestep(TimestepInfo _tsi)
-        {
-            timestepDatabaseDriver.SaveTimestep( _tsi);
+        public void SaveTimestep(TimestepInfo _tsi) {
+            timestepDatabaseDriver.SaveTimestep(_tsi);
         }
     }
 }

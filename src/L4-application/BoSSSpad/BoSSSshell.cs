@@ -834,6 +834,7 @@ namespace BoSSS.Application.BoSSSpad {
             int[,] Edge2GeomCell = grd.iGeomEdges.CellIndices;
             int[] G2L = grd.iGeomCells.GeomCell2LogicalCell;
             byte[] EdgeTags = grd.iGeomEdges.EdgeTags;
+            int Jup = grd.iLogicalCells.NoOfLocalUpdatedCells;
 
             i = 0;
             foreach (var t in et2Name) { // loop over all different edge tag names...
@@ -864,7 +865,9 @@ namespace BoSSS.Application.BoSSSpad {
                                 jL = G2L[jG];
 
                             // color respective cell
-                            FI.SetMeanValue(jL, tag2color);
+                            if (jL < Jup) {
+                                FI.SetMeanValue(jL, tag2color);
+                            }
                         }
 
                     }
