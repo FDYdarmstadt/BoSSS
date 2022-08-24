@@ -47,10 +47,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                     B_Cells = B.Cells;
                 }
 
-                if (A.Cells.Length != B_Cells.Length) {
-                    Debugger.Launch();
-                    throw new ApplicationException();
+                if (A.Cells.Length.MPISum() != B_Cells.Length.MPISum()) {
+                    return false;
                 }
+
 
                 // put the cells of B into the same order as those of A
                 // ----------------------------------------------------
@@ -71,8 +71,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                     tau = null;      // Werfen wir sie dem GC zum Fraße vor!
                     invSigma = null;
 
-                    // put dg coordinates into right order
-                    Resorting.ApplyToVector(B_Cells.CloneAs(), B_Cells);
+                    // put Cells of B into the order of A
+                    var _B_Cells = new Cell[A.CellPartitioning.LocalLength];
+                    Resorting.ApplyToVector(B_Cells, _B_Cells, A.CellPartitioning);
+                    B_Cells = _B_Cells;
+                }
+
+                if (A.Cells.Length != B_Cells.Length) {
+                    //Debugger.Launch();
+                    throw new ApplicationException("local number of cells length mismatch, despite resorting");
                 }
 
                 // compare cells
@@ -82,7 +89,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     Cell Ca = A.Cells[j];
                     Cell Cb = B_Cells[j];
 
-                    Debug.Assert(Ca.GlobalID == Cb.GlobalID);
+                    Debug.Assert(Ca.GlobalID == Cb.GlobalID, "GlobalID mismatch, despite of re-sorting"); // we re-sorted the global ID's to match, so they must match
 
                     if (!ArrayTools.ListEquals(Ca.NodeIndices, Cb.NodeIndices, (ia, ib) => ia == ib)) {
                         match = 0;
@@ -172,7 +179,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                     invSigma = null;
 
                     // put dg coordinates into right order
-                    Resorting.ApplyToVector(B_BcCells.CloneAs(), B_BcCells);
+                    var _B_BcCells = new BCElement[A.BcCellPartitioning.LocalLength];
+                    Resorting.ApplyToVector(B_BcCells, _B_BcCells, A.BcCellPartitioning);
+                    B_BcCells = _B_BcCells;
+                }
+
+                if (A.BcCells.Length != B_BcCells.Length) {
+                    //Debugger.Launch();
+                    throw new ApplicationException("local number of boundary cells length mismatch, despite resorting");
                 }
 
 
@@ -183,7 +197,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     BCElement Ca = A.BcCells[j];
                     BCElement Cb = B_BcCells[j];
 
-                    Debug.Assert(Ca.GlobalID == Cb.GlobalID);
+                    Debug.Assert(Ca.GlobalID == Cb.GlobalID, "GlobalID mismatch (BcCells), despite of re-sorting"); // we re-sorted the global ID's to match, so they must match
 
                     if (!ArrayTools.ListEquals(Ca.NodeIndices, Cb.NodeIndices, (ia, ib) => ia == ib)) {
                         match = 0;
