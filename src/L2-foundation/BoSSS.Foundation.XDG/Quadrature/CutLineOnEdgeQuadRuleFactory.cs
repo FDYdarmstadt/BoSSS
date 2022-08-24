@@ -54,7 +54,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
 
             CellEdgeBoundaryQuadRule rule = new CellEdgeBoundaryQuadRule() {
-                Nodes = new NodeSet(element, noOfNodes, element.SpatialDimension),
+                Nodes = new NodeSet(element, noOfNodes, element.SpatialDimension, false),
                 Weights = MultidimensionalArray.Create(noOfNodes),
                 OrderOfPrecision = 0,
                 NumbersOfNodesPerFace = new int[element.NoOfFaces],
@@ -238,7 +238,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             for (int k = 0; k < subSegments.Length; k++) {
                                 // Evaluate sub segment at center to determine sign
-                                NodeSet _point = new NodeSet(this.RefElement, subSegments[k].GetPointOnSegment(0.0));
+                                NodeSet _point = new NodeSet(this.RefElement, subSegments[k].GetPointOnSegment(0.0), false);
                                 
                                 double scaling = edgeOfEdgeDet * subSegments[k].Length / refSegment.Length;
 
@@ -294,7 +294,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         continue;
                     }
 
-                    NodeSet localNodes = new NodeSet(this.RefElement, nodes.Count, D);
+                    NodeSet localNodes = new NodeSet(this.RefElement, nodes.Count, D, true);
                     for (int j = 0; j < nodes.Count; j++) {
                         for (int d = 0; d < D; d++) {
                             localNodes[j, d] = nodes[j][d];

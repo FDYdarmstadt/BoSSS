@@ -409,7 +409,7 @@ namespace BoSSS.Solution {
                     dimension = context.SpatialDimension;
 
                     // vertices per cell, local coordinates (from the leaves of the subdivision)
-                    localVerticeCoordinates = new NodeSet(this.Zone_Element, subdiv.GlobalVertice);
+                    localVerticeCoordinates = new NodeSet(this.Zone_Element, subdiv.GlobalVertice, false);
 
                     // create vertices of the grid
                     // ===========================

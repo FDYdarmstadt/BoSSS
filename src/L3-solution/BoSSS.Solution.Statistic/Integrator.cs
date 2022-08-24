@@ -298,7 +298,7 @@ namespace BoSSS.Solution.Statistic {
 
                 int NJ = NodesInCellj.Count;
                 if (NJ > 0) {
-                    var _QuadNodesPerCell_j = new NodeSet(grdDat.Cells.GetRefElement(j), NJ, D);
+                    var _QuadNodesPerCell_j = new NodeSet(grdDat.Cells.GetRefElement(j), NJ, D, true);
                     MaxNumberOfNodes = Math.Max(MaxNumberOfNodes, NJ);
                     for (int nn = 0; nn < NJ; nn++) {
                         for (int d = 0; d < D; d++) {

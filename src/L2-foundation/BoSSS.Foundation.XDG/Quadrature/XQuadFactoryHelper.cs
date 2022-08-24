@@ -634,7 +634,7 @@ namespace BoSSS.Foundation.XDG {
                     QuadRule compQr = new QuadRule();
                     compQr.OrderOfPrecision = qr.OrderOfPrecision;
 
-                    compQr.Nodes = new NodeSet(this.RefElement, L1 + L2, D);
+                    compQr.Nodes = new NodeSet(this.RefElement, L1 + L2, D, true);
                     compQr.Weights = MultidimensionalArray.Create(L1 + L2);
 
 

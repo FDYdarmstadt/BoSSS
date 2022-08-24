@@ -359,7 +359,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                     int P = input.Basis.Degree*3;
             
                     double[] ChebyNodes = ChebyshevNodes(P);
-                    NodeSet Nds = new NodeSet(GridDat.iGeomCells.RefElements[0], P, 1);
+                    NodeSet Nds = new NodeSet(GridDat.iGeomCells.RefElements[0], P, 1, true);
                     Nds.SetColumn(0, ChebyNodes);
                     Nds.LockForever();
                     Polynomial[] Polynomials = GetNodalPolynomials(ChebyNodes);
@@ -445,8 +445,8 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
 
                                 MultidimensionalArray NT = T.Transform(Nodes);
                                 
-                                var xNodes = new NodeSet(null, NT.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { K - 1, 0 }));
-                                var yNodes = new NodeSet(null, NT.ExtractSubArrayShallow(new int[] { 0, 1 }, new int[] { K - 1, 1 }));
+                                var xNodes = new NodeSet(null, NT.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { K - 1, 0 }), true);
+                                var yNodes = new NodeSet(null, NT.ExtractSubArrayShallow(new int[] { 0, 1 }, new int[] { K - 1, 1 }), true);
 
                                 MultidimensionalArray xPolyVals = MultidimensionalArray.Create(P, K);
                                 MultidimensionalArray yPolyVals = MultidimensionalArray.Create(P, K);
@@ -640,7 +640,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
                     }
                 }
 
-                NodeSets[f] = new NodeSet(GridData.Cells.GetRefElement(jCell), NxCell*NyCell, 2);
+                NodeSets[f] = new NodeSet(GridData.Cells.GetRefElement(jCell), NxCell*NyCell, 2, true);
                 GridData.TransformGlobal2Local(NodeSets_global[f], NodeSets[f], JS[f], null);
                 NodeSets[f].LockForever();
             }

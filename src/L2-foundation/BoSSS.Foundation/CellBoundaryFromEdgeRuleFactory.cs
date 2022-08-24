@@ -151,7 +151,7 @@ namespace BoSSS.Foundation.Quadrature {
                         int iFace = FaceIndices[iEdge, kk];
                         double scl = Scalings[iTrafo];
 
-                        NodeSet VolumeNodes = new NodeSet(this.RefElement, rule.NoOfNodes, D);
+                        NodeSet VolumeNodes = new NodeSet(this.RefElement, rule.NoOfNodes, D, true);
                         trafo.Transform(rule.Nodes, VolumeNodes);
                         VolumeNodes.LockForever();
 
@@ -209,7 +209,7 @@ namespace BoSSS.Foundation.Quadrature {
                 int L1 = cbqr.Nodes.GetLength(0);
                 int L2 = nodes.GetLength(0);
 
-                NodeSet newNodes = new NodeSet(cbqr.Nodes.RefElement, L1 + L2, D);
+                NodeSet newNodes = new NodeSet(cbqr.Nodes.RefElement, L1 + L2, D, true);
                 MultidimensionalArray newWeights = MultidimensionalArray.Create(L1 + L2);
 
                 int K = 0; // total number of nodes on all faces;

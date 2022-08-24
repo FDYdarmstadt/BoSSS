@@ -376,7 +376,7 @@ namespace BoSSS.Solution.LevelSetTools {
                 RefElement Kref = ctx.Cells.GetRefElement(jCell);
 
                 MultidimensionalArray RR = MultidimensionalArray.Create(1, L);
-                NodeSet nodes = new NodeSet(Kref, X0_Nodes);
+                NodeSet nodes = new NodeSet(Kref, X0_Nodes, false);
                 f(jCell, 1, nodes, RR);
                 
                 for (int nn = 0; nn < L; nn++) {
@@ -585,7 +585,7 @@ namespace BoSSS.Solution.LevelSetTools {
 
                     X0_loc.Set(Nodes);
 
-                    _GridData.TransformLocal2Global(new NodeSet(Kref, X0_loc), X0_glb, jCell);
+                    _GridData.TransformLocal2Global(new NodeSet(Kref, X0_loc, false), X0_glb, jCell);
 
                     X_global.ExtractSubArrayShallow(jSub, -1, -1).Set(X0_glb);
 
@@ -664,7 +664,7 @@ namespace BoSSS.Solution.LevelSetTools {
                         // ----------------------------
                         #region gradientCorrection
                         {
-                            NodeSet _X0_loc = new NodeSet(Kref, X0_loc);
+                            NodeSet _X0_loc = new NodeSet(Kref, X0_loc, false);
                             LevSet.Evaluate(jCell, 1, _X0_loc, LevSetValues, 0, 0.0);
                             LevSet.EvaluateGradient(jCell, 1, _X0_loc, LevSetGrad);
 
@@ -743,7 +743,7 @@ namespace BoSSS.Solution.LevelSetTools {
                         // sei N der normalenvektor; Korrektur:
                         // X0_neu = X0 - (I - (N^T*N))*V
                         {
-                            NodeSet _X0_loc = new NodeSet(Kref, X0_loc);
+                            NodeSet _X0_loc = new NodeSet(Kref, X0_loc, false);
                             LevSet.Evaluate(jCell, 1, _X0_loc, LevSetValues, 0, 0.0);
                             LevSet.EvaluateGradient(jCell, 1, _X0_loc, LevSetGrad);
 
@@ -794,7 +794,7 @@ namespace BoSSS.Solution.LevelSetTools {
 
 
                             _GridData.TransformGlobal2Local(x0_ip1_Global, X0_loc, jCell, null); // transform to local
-                            NodeSet _X0_loc2 = new NodeSet(Kref, X0_loc);
+                            NodeSet _X0_loc2 = new NodeSet(Kref, X0_loc, false);
                             LevSet.Evaluate(jCell, 1, _X0_loc2, LevSetValues2, 0, 0.0);
                             LevSet.EvaluateGradient(jCell, 1, _X0_loc2, LevSetGrad2);
 
@@ -1119,7 +1119,7 @@ namespace BoSSS.Solution.LevelSetTools {
                                 var _LevSetValues = LevSetValues.ExtractSubArrayShallow(new int[] { I0 }, new int[] { IE - 1 }).ResizeShallow(1, K);
                                 //var _LevSetGrad = LevSetGrad.ExtractSubArrayShallow(new int[] { I0, 0 }, new int[] { IE - 1, D - 1 }).ResizeShallow(1, K, D);
 
-                                NodeSet _X0_loc = new NodeSet(Kref, X0_loc);
+                                NodeSet _X0_loc = new NodeSet(Kref, X0_loc, false);
                                 LevSet.Evaluate(jCell, 1, _X0_loc, _LevSetValues, 0, 0.0);
                                 //LevSet.EvaluateGradient(jCell, 1, _X0_loc, _LevSetGrad);
                             }
