@@ -21,6 +21,8 @@ namespace BoSSS.Application.GridGen {
             C.savetodb = true;
             C.DbPath = @"C:\Users\flori\default_bosss_db";
 
+            C.GridName = "Hello from GridGen";
+
             C.GridBlocks = new GridGenControl.MeshBlock[] {
                 new GridGenControl.Cartesian3D() {
                     xNodes = GenericBlas.Linspace(-1, 1, 10),

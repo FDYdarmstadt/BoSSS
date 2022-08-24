@@ -98,10 +98,13 @@ namespace BoSSS.Application.GridGen {
 
             }
 
+            grd.Name = Control.GridName;
+            grd.Description = Control.Description;
             IGrid _grd = grd;
 
             this.DatabaseDriver.SaveGridIfUnique(ref _grd, out bool EquivFound, this.GetDatabase());
-            Console.WriteLine($"Note: Equivalent grid {_grd.ID} already in database; Using the grid from database.");
+            if(EquivFound)
+                Console.WriteLine($"Note: Equivalent grid {_grd.ID} already in database; Using the grid from database.");
 
             bool bkup = ilPSP.Environment.StdoutOnlyOnRank0;
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
@@ -265,7 +268,9 @@ namespace BoSSS.Application.GridGen {
             foreach(var t in BoundaryStat) {
                 Console.WriteLine("     " + t.EdgeTagName + ": " + t.Count.MPISum() + " edges.");
             }
-            Console.WriteLine("   Grid ID: " + this.Grid.ID);
+            Console.WriteLine("   Grid ID    : " + this.Grid.ID);
+            Console.WriteLine("   Grid Name  : " + this.Grid.Name);
+            Console.WriteLine("   Description: " + this.Grid.Description);
 
             dt = 1e100;
             base.TerminationKey = true;

@@ -952,7 +952,7 @@ namespace ilPSP {
 
             if (object.ReferenceEquals(C, A))
                 throw new ArgumentException("in-place GEMM is not supported");
-            if(object.ReferenceEquals(C, A))
+            if (object.ReferenceEquals(C, B))
                 throw new ArgumentException("in-place GEMM is not supported");
             if (C.NoOfCols == 0 || C.NoOfRows == 0)
                 return;

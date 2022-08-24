@@ -1,5 +1,7 @@
-﻿using BoSSS.Foundation.Grid.Classic;
+﻿using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
+using BoSSS.Foundation.IO;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Control;
 using System;
@@ -17,6 +19,10 @@ namespace BoSSS.Application.GridGen {
     [Serializable]
     [DataContract]
     public class GridGenControl : AppControl {
+
+        public override Type GetSolverType() {
+            return typeof(GridGenMain);
+        }
 
 
         /// <summary>
@@ -61,26 +67,31 @@ namespace BoSSS.Application.GridGen {
             /// <summary>
             /// 
             /// </summary>
+            [DataMember] 
             public CellType _CellType = CellType.Cube_Linear;
 
             /// <summary>
             /// 
             /// </summary>
+            [DataMember] 
             public bool periodicX = false;
 
             /// <summary>
             /// 
             /// </summary>
+            [DataMember] 
             public bool periodicY = false;
 
             /// <summary>
             /// 
             /// </summary>
+            [DataMember] 
             public bool periodicZ = false;
 
             /// <summary>
             /// 
             /// </summary>
+            [DataMember] 
             public BoundingBox[] CutOuts;
 
 
@@ -93,8 +104,22 @@ namespace BoSSS.Application.GridGen {
         }
 
         /// <summary>
+        /// Optional Name to save grid in the database, <see cref="IDatabaseEntityInfo{IGridInfo}.Name"/>
+        /// </summary>
+        [DataMember]
+        public string GridName = "Grid";
+
+
+        /// <summary>
+        /// Optional description for the grid in the database, <see cref="IGridInfo.Description"/>
+        /// </summary>
+        [DataMember]
+        public string Description = "Created by GridGen";
+
+        /// <summary>
         /// Collection of mesh blocks; if more than one block is present, the blocks patched together.
         /// </summary>
+        [DataMember]
         public MeshBlock[] GridBlocks;
 
 
@@ -103,12 +128,14 @@ namespace BoSSS.Application.GridGen {
         /// These are pairs of bounding boxes and edge tag names; the latter ones determine the boundary conditions for the solver to use.
         /// Later boundary conditions 
         /// </summary>
+        [DataMember]
         public List<(BoundingBox Region, string EdgeTagName)> BoundaryRegions = new List<(BoundingBox Region, string EdgeTagName)> ();
 
 
         /// <summary>
         /// Edge Tag names which are in any case added to the mesh.
         /// </summary>
+        [DataMember]
         public string[] EdgeTagNamesToEnsure;
 
     }
