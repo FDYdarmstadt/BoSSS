@@ -837,19 +837,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // compute lpcSub.M11*OpMtxSub.M11*rpcSub.M11
                     // (without additional mem-alloc, yeah!)
                     var Diag11 = workSub.M11;
-                    Diag11.GEMM(1.0, lpcSub.M11, OpMtxSub.M11, 0.0);
-                    OpMtxSub.M11.GEMM(1.0, Diag11, rpcSub.M11, 0.0);
-                    
-                    // invert diag
-                    if(Rank11 == N1) {
-                        OpMtxSub.M11.InvertTo(workSub.M11);
-                    } else {
-                        RankDefInvert(OpMtxSub.M11, workSub.M11);
-                    }
+                        Diag11.GEMM(1.0, lpcSub.M11, OpMtxSub.M11, 0.0);
+                        OpMtxSub.M11.GEMM(1.0, Diag11, rpcSub.M11, 0.0);
 
-                    //
-                    OpMtxSub.M11.GEMM(1.0, rpcSub.M11, OpMtxSub.M11, 0.0);
-                    workSub.M11.GEMM(1.0, OpMtxSub.M11, lpcSub.M11, 0.0);
+                        // invert diag
+                        if (Rank11 == N1) {
+                            OpMtxSub.M11.InvertTo(workSub.M11);
+                        } else {
+                            RankDefInvert(OpMtxSub.M11, workSub.M11);
+                        }
+
+                        //Copying the matrix for multiplication (dgemm)
+                        var OpMtxSub11 = default(MultidimensionalArray);
+                        OpMtxSub11 = OpMtxSub.M11.CloneAs();
+
+                        OpMtxSub.M11.GEMM(1.0, rpcSub.M11, OpMtxSub11, 0.0);
+
+                        workSub.M11.GEMM(1.0, OpMtxSub.M11, lpcSub.M11, 0.0);
                     var Q = workSub.M11;
 
                     //

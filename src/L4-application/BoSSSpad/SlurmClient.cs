@@ -413,7 +413,12 @@ namespace BoSSS.Application.BoSSSpad {
             string email = Email;
 
             using (var str = new StringWriter()) {
-                str.Write($"mpiexec {base.DotnetRuntime} ");
+                if (MPIcores > 1)
+                {
+                    str.Write($"mpiexec -n {MPIcores} {base.DotnetRuntime} ");
+                } else {
+                    str.Write($"{base.DotnetRuntime} ");
+                }
                 if (MonoDebug) { 
                     str.Write("-v --debug "); 
                 }
@@ -428,6 +433,11 @@ namespace BoSSS.Application.BoSSSpad {
                 } else {
                     str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" + 1] + quote);
                 }
+                // Add the remaining flags
+                if (!String.IsNullOrEmpty(myJob.EnvironmentVars["BOSSS_ARG_2"]))
+                {   str.Write(" " + myJob.EnvironmentVars["BOSSS_ARG_2"]); }
+                if (!String.IsNullOrEmpty(myJob.EnvironmentVars["BOSSS_ARG_3"]))
+                { str.Write(" " + myJob.EnvironmentVars["BOSSS_ARG_3"]); }
 
                 startupstring = str.ToString();
             }

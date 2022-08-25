@@ -6160,6 +6160,254 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
 
         }
+        public static XNSE_Control RotCubeDomainDecompoitionError()
+        {
+            //gives a domain decomposition error on 43th time step
+            //default parameter set with AMR
+            var C = Rotating_Something_Unsteady(4, 30, 2, true);
+            return C;
+        }
 
+        public static XNSE_Control RotCubeMemoryError()
+        {
+            var C = Rotating_Something_Unsteady(4, 20, 3, true);
+            return C;
+        }
+
+        public static XNSE_Control RotCubeFreeMeanValueError()
+        {
+            //this error does happen when number of processsors =2 but not with np=4
+            var C = Rotating_Something_Unsteady(4, 30, 2, false);
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 0.000001; //it can also happen with 0.001 depending on parameters
+            C.PhysicalParameters.IncludeConvection = true;
+            C.NoOfTimesteps = 300;
+            return C;
+        }
+        //A copy form XNSE_Solver_MPItest.cs
+        private static XNSE_Control Rotating_Something_Unsteady(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, Shape Gshape = Shape.Cube, bool UsePredefPartitioning = false)
+        {
+            XNSE_Control C = new XNSE_Control();
+            // basic database options
+            // ======================
+
+            C.savetodb = false;
+            //C.DbPath = @"D:\trash_db";
+            C.ProjectName = "XNSE/IBM_test";
+            C.ProjectDescription = "rotating cube";
+            C.Tags.Add("rotating");
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D", SpaceDim));
+
+            // DG degrees
+            // ==========
+
+            C.SetFieldOptions(k, Math.Max(2, k * 2));
+            if (UsePredefPartitioning)
+            {
+                C.GridPartType = GridPartType.Predefined;
+                C.GridPartOptions = "testgrid";
+            }
+            else
+                C.GridPartType = GridPartType.clusterHilbert;
+
+            C.SessionName = "XNSE_rotcube_test";
+            C.saveperiod = 1;
+
+
+            // grid and boundary conditions
+            // ============================
+
+            //// Create Grid
+            C.GridFunc = GridFuncFactory(SpaceDim, Res, UsePredefPartitioning);
+
+            // Physical Parameters
+            // ===================
+            const double rhoA = 1;
+            const double muA = 1;
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+            double anglev = 10;
+            double[] pos = new double[SpaceDim];
+            double particleRad = 0.261;
+
+            var PhiFunc = GenPhiFunc(anglev, Gshape, SpaceDim, particleRad, pos);
+
+            Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
+
+                if (pos.Length != X.Length)
+                    throw new ArgumentException("check dimension of center of mass");
+
+                Vector angVelo = new Vector(new double[] { 0, 0, anglev });
+                Vector CenterofMass = new Vector(pos);
+                Vector radialVector = new Vector(X) - CenterofMass;
+                Vector transVelocity = new Vector(new double[SpaceDim]);
+                Vector pointVelocity;
+
+                switch (SpaceDim)
+                {
+                    case 2:
+                        pointVelocity = new Vector(transVelocity[0] - angVelo[2] * radialVector[1], transVelocity[1] + angVelo[2] * radialVector[0]);
+                        break;
+                    case 3:
+                        pointVelocity = transVelocity + angVelo.CrossProduct(radialVector);
+                        break;
+                    default:
+                        throw new NotImplementedException("this number of dimensions is not supported");
+                }
+
+                return pointVelocity;
+            };
+
+            Func<double[], double, double> VelocityX = delegate (double[] X, double time) { return VelocityAtIB(X, time)[0]; };
+            Func<double[], double, double> VelocityY = delegate (double[] X, double time) { return VelocityAtIB(X, time)[1]; };
+            Func<double[], double, double> VelocityZ = delegate (double[] X, double time) { return VelocityAtIB(X, time)[2]; };
+
+            var PhiFuncDelegate = BoSSS.Solution.Utils.NonVectorizedScalarFunction.Vectorize(PhiFunc);
+
+            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
+            C.UseImmersedBoundary = true;
+            if (C.UseImmersedBoundary)
+            {
+                //C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
+                C.InitialValues_EvaluatorsVec.Add(VariableNames.LevelSetCGidx(1), PhiFuncDelegate);
+                C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
+                C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
+                if (SpaceDim == 3)
+                    C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
+            }
+            C.InitialValues_Evaluators.Add("Pressure", X => 0);
+            C.AddBoundaryValue("Wall");
+
+            // misc. solver options
+            // ====================
+
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.UseSchurBlockPrec = true;
+            C.AgglomerationThreshold = 0.1;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig()
+            {
+                NoOfMultigridLevels = 5,
+                ConvergenceCriterion = 1E-8,
+                MaxSolverIterations = 100,
+                //MaxKrylovDim = 30,
+                TargetBlockSize = 10000,
+                //verbose = true
+            };
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.verbose = true;
+
+            C.AdaptiveMeshRefinement = useAMR;
+            if (useAMR)
+            {
+                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+                C.AMR_startUpSweeps = 1;
+            }
+
+            C.DynamicLoadBalancing_On = useLoadBal;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0;
+
+            // Timestepping
+            // ============
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            double dt = 0.005;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.dtFixed = dt;
+            C.NoOfTimesteps = 100;
+
+            return C;
+        }
+
+        private static Func<double[], double, double> GenPhiFunc(double anglev, Shape Gshape, int SpaceDim, double particleRad, double[] pos)
+        {
+            return delegate (double[] X, double t) {
+                double angle = -(anglev * t) % (2 * Math.PI);
+                switch (Gshape)
+                {
+                    case Shape.Cube:
+                        switch (SpaceDim)
+                        {
+                            case 2:
+                                return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                    Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
+                                    + particleRad;
+                            case 3:
+                                return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+                                                        Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)), Math.Abs(X[2] - pos[2])))
+                                                        + particleRad;
+                            default:
+                                throw new NotImplementedException("Dimension not supported");
+                        };
+                    case Shape.Sphere:
+                        switch (SpaceDim)
+                        {
+                            case 2:
+                                return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
+                            case 3:
+                                return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                            default:
+                                throw new NotImplementedException("Dimension not supported");
+                        }
+                    //case Geometry.Parted:
+                    //    return -X[0] + 0.7;
+                    default:
+                        throw new NotImplementedException("Shape unknown");
+                }
+            };
+        }
+
+        public static Func<IGrid> GridFuncFactory(int SpaceDim, int Res, bool UsePredefPartitioning)
+        {
+            double xMin = -1, yMin = -1, zMin = -1;
+            double xMax = 1, yMax = 1, zMax = 1;
+
+            // Predefined Partitioning
+            Func<double[], int> MakeDebugPart = delegate (double[] X) {
+                double x = X[0];
+                double range = xMax - xMin;
+                double interval = range * 0.9 / (ilPSP.Environment.MPIEnv.MPI_Size - 1); // last rank gets only a 10% stripe of the domain
+                return (int)((x - xMin) / interval);
+            };
+
+            // The Grid Function
+            return delegate {
+
+                var _xNodes = GenericBlas.Linspace(xMin, xMax, Res + 1);
+                var _yNodes = GenericBlas.Linspace(yMin, yMax, Res + 1);
+                var _zNodes = GenericBlas.Linspace(zMin, zMax, Res + 1);
+
+                GridCommons grd;
+                switch (SpaceDim)
+                {
+                    case 2:
+                        grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
+                        break;
+                    case 3:
+                        grd = Grid3D.Cartesian3DGrid(_xNodes, _yNodes, _zNodes, Foundation.Grid.RefElements.CellType.Cube_Linear, false, false, false);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                if (UsePredefPartitioning) grd.AddPredefinedPartitioning("testgrid", MakeDebugPart);
+                grd.EdgeTagNames.Add(2, "Wall");
+                grd.DefineEdgeTags(delegate (double[] _X) {
+                    return 2;
+                });
+                return grd;
+            };
+        }
     }
 }
