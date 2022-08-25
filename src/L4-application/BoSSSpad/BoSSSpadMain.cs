@@ -130,6 +130,11 @@ namespace BoSSS.Application.BoSSSpad {
         public static int Main(string[] args) {
 
             /*
+            var a = typeof(BoSSSpadMain).Assembly;
+            var dep = new HashSet<Assembly>();
+            Job.GetAllAssemblies(a, dep, Path.GetDirectoryName(a.Location));
+
+            /*
             string path = @"c:\Users\flori\AppData\Local\BoSSS-LocalJobs\Demo_BoundaryAndInitialData-ipPoisson2021Juni10_083737\control.obj";
             string text = File.ReadAllText(path);
             var obj = Solution.Control.AppControl.Deserialize(text, new KnownTypesBinder(null));

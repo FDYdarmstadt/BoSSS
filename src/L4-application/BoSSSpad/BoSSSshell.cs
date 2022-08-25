@@ -310,7 +310,7 @@ namespace BoSSS.Application.BoSSSpad {
                 MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
                 AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
             } catch (NullReferenceException) {
-                Console.WriteLine("Trying alternative method");
+                //Console.WriteLine("Trying alternative method");
                 Type AltFormatter = typeof(Formatter);
                 MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
                 AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
