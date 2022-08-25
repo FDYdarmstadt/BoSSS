@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <RootNamespace>BoSSS.Application.BoSSSpad</RootNamespace>
     <PublishUrl>publish\</PublishUrl>
@@ -63,16 +63,16 @@
       <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Scripting.Common.3.9.0\lib\netstandard2.0\Microsoft.CodeAnalysis.Scripting.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DotNet.Interactive">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net6.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DotNet.Interactive.CSharp">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.CSharp.dll</HintPath>
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net6.0\any\Microsoft.DotNet.Interactive.CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DotNet.Interactive.Documents">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.Documents.dll</HintPath>
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net6.0\any\Microsoft.DotNet.Interactive.Documents.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DotNet.Interactive.Formatting">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net5.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
+      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.255305\tools\net6.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
     </Reference>
     <Reference Include="Mono.CSharp">
       <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
