@@ -400,9 +400,9 @@ namespace BoSSS.Application.BoSSSpad {
             string jobname = myJob.Name;
             string executiontime = this.ExecutionTime;
             int MPIcores = myJob.NumberOfMPIProcs;
-            string userName = Username;
+            //string userName = Username;
             string startupstring;
-            string quote = "\"";
+            //string quote = "\"";
             string slurmAccount = this.SlurmAccount;
             //string memPerCPU = "5000";
             //if (myJob.MemPerCPU != null) {
