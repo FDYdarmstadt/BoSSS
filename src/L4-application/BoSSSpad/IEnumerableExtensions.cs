@@ -146,7 +146,7 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// Variant of <see cref="Enumerable.Take"/> with a stride.
+        /// Variant of <see cref="Enumerable.Take{TSource}(IEnumerable{TSource}, int)"/> with a stride.
         /// </summary>
         /// <param name="timesteps"></param>
         /// <param name="noOfTimesteps"></param>

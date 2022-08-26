@@ -911,7 +911,7 @@ namespace ilPSP {
             where Matrix2 : IMatrix
             where Matrix3 : IMatrix //
         {
-            
+
             if (!transA && !transB) {
                 if (A.NoOfCols != B.NoOfRows)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
@@ -950,20 +950,21 @@ namespace ilPSP {
                     return;
             }
 
+            bool inPlace = false;
             if (object.ReferenceEquals(C, A))
-                throw new ArgumentException("in-place GEMM is not supported");
-            if(object.ReferenceEquals(C, A))
-                throw new ArgumentException("in-place GEMM is not supported");
+                inPlace = true;
+            if (object.ReferenceEquals(C, B))
+                inPlace = true;
             if (C.NoOfCols == 0 || C.NoOfRows == 0)
                 return;
+             
 
-
-            if (A is MultidimensionalArray _A && B is MultidimensionalArray _B && C is MultidimensionalArray _C) {
+            if (!inPlace && A is MultidimensionalArray _A && B is MultidimensionalArray _B && C is MultidimensionalArray _C) {
                 int a00 = _A.Index(0, 0);
                 int b00 = _B.Index(0, 0);
                 int c00 = _C.Index(0, 0);
 
-                if(_A.NoOfCols > 1 && (_A.Index(0, 1) - a00 == 1) && _B.NoOfCols > 1 && (_B.Index(0, 1) - b00 == 1) && _C.NoOfCols > 1 && (_C.Index(0, 1) - c00 == 1)) {
+                if (_A.NoOfCols > 1 && (_A.Index(0, 1) - a00 == 1) && _B.NoOfCols > 1 && (_B.Index(0, 1) - b00 == 1) && _C.NoOfCols > 1 && (_C.Index(0, 1) - c00 == 1)) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // Data layout is suitable to use BLAS DGEMM
                     // directly on MultidimenasionalArray storage.
