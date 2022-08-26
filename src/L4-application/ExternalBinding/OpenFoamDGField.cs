@@ -58,6 +58,17 @@ namespace BoSSS.Application.ExternalBinding {
             return this[Mapping.LocalUniqueCoordinateIndex(f, j, n)];
         }
 
+        /// <summary>
+        /// Obtain the mean value of a cell (useful for projection down to DG0 for use in FVM schemes)
+        /// </summary>
+        /// <param name="f">field index</param>
+        /// <param name="j">cell index</param>
+        /// <returns>value of respective dg coordinate</returns>
+        [CodeGenExport]
+        public double GetMean(int f, int j) {
+            return Mapping.Fields[f].GetMeanValue(j);
+        }
+
         IntPtr m_ForeignPtr;
 
         /// <summary>

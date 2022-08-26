@@ -60,8 +60,30 @@ namespace BoSSS.Application.ExternalBinding {
             return m_ForeignPtr;
         }
 
+
+        SinglePhaseField c;
+        SinglePhaseField phi;
+        OpenFoamMatrix _mtx;
+        OpenFoamPatchField _ptch;
+
         /// <summary>
-        ///
+        /// Returns the Laplacian auxiliary field appearing during the solution of the Cahn-Hilliard system
+        /// </summary>
+        [CodeGenExport]
+        public OpenFoamDGField GetPhi() {
+            Console.WriteLine("Test1");
+            OpenFoamDGField Phi0 = new(_ptch.Grid, 0, 1);
+            int nCells = _ptch.Grid.NumberOfCells;
+
+            // TODO projection of Phi
+            for (int j = 0; j < nCells; j++) {
+                Phi0.SetDGcoordinate(0, j, 0, phi.GetMeanValue(j));
+            }
+            return Phi0;
+        }
+
+        /// <summary>
+        /// Solves the Cahn-Hilliard equation
         /// </summary>
         [CodeGenExport]
         // public void Laplacian(OpenFoamMatrix mtx) {
@@ -69,6 +91,8 @@ namespace BoSSS.Application.ExternalBinding {
         public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
             try{
 
+                _mtx = mtx;
+                _ptch = ptch;
                 double tanh(double x){
                     // return x*x*x;
                     // return 0;
@@ -176,18 +200,6 @@ namespace BoSSS.Application.ExternalBinding {
                 Basis bPhi = mtx.ColMap.BasisS[0];
 
                 OpenFoamDGField C = mtx.Fields[0];
-                // TODO
-                // Console.WriteLine("Test1");
-                // var U = mtx.Fields[1].Fields[0] as SinglePhaseField;
-                // Console.WriteLine("Test2");
-                // var V = mtx.Fields[1].Fields[1] as SinglePhaseField;
-                // Console.WriteLine("Test3");
-                // var W = mtx.Fields[1].Fields[2] as SinglePhaseField;
-                // Console.WriteLine("Test4");
-                // SinglePhaseField Phi = new(b);
-                // var u = new SinglePhaseField(b);
-                // var v = new SinglePhaseField(b);
-                // var w = new SinglePhaseField(b);
                 var u = U.Fields[0] as SinglePhaseField;
                 var v = U.Fields[1] as SinglePhaseField;
                 var w = U.Fields[2] as SinglePhaseField;
@@ -246,9 +258,9 @@ namespace BoSSS.Application.ExternalBinding {
 
                 // TODO
 
-                SinglePhaseField c = C.Fields[0] as SinglePhaseField;
+                c = C.Fields[0] as SinglePhaseField;
                 // SinglePhaseField c = new(b);
-                SinglePhaseField phi = new(b);
+                phi = new(b);
                 // for (int j = 0; j < J; j++)
                 // {
                 //     int N = b.GetLength(j);
@@ -312,7 +324,7 @@ namespace BoSSS.Application.ExternalBinding {
                 var tp = new Tecplot(grd.Grid.GridData, 3);
                 Tecplot("plot.1", 0.0, 3, c, phi, RealLevSet, u, v, w);
 
-                for (int t = 0; t < 11; t++) {
+                for (int t = 0; t < 1; t++) {
                     TimeStepper.Solve(5 * t/10.0, 5 * 1.0/10.0);
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);
