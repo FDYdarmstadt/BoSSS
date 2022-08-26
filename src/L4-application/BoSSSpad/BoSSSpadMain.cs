@@ -44,22 +44,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Modes of operation of BoSSSpad
         /// </summary>
         private enum Modes {
-
-            ///// <summary>
-            ///// Classic worksheet mode (with a GUI)
-            ///// </summary>
-            //Worksheet,
-
-            ///// <summary>
-            ///// Interactive console mode (without a GUI)
-            ///// </summary>
-            //Console,
-
-            ///// <summary>
-            ///// Simplified interactive console mode (for embedding into other terminals, experimental)
-            ///// </summary>
-            //SimpleConsole,
-
             /// <summary>
             /// Batch execution of .bws files
             /// </summary>
@@ -120,7 +104,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             }
         }
-   */
+        */
 
 
         /// <summary>

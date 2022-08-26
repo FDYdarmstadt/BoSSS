@@ -77,9 +77,6 @@ namespace BoSSS.Application.BoSSSpad {
             BoSSS.Solution.Application.InitMPI();
             CallRandomStuff();
             try {
-
-
-
                 databases = DatabaseController.LoadDatabaseInfosFromXML();
 
                 ReloadExecutionQueues();
