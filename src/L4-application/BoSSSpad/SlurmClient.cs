@@ -413,31 +413,20 @@ namespace BoSSS.Application.BoSSSpad {
             string email = Email;
 
             using (var str = new StringWriter()) {
-                if (MPIcores > 1)
-                {
+                if (MPIcores > 1) {
                     str.Write($"mpiexec -n {MPIcores} {base.DotnetRuntime} ");
                 } else {
                     str.Write($"{base.DotnetRuntime} ");
                 }
-                if (MonoDebug) { 
-                    str.Write("-v --debug "); 
+                if (MonoDebug) {
+                    str.Write("-v --debug ");
                 }
                 str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
                 str.Write(" ");
                 str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
                 str.Write(" ");
 
-                // How the controlfile is handled (serialized or compiled at runtime)
-                if (myJob.EnvironmentVars["BOSSS_ARG_1"].Equals("control.obj")) {
-                    str.Write(jobpath_unix + "/" + myJob.EnvironmentVars["BOSSS_ARG_1"]);
-                } else {
-                    str.Write(quote + myJob.EnvironmentVars["BOSSS_ARG_" + 1] + quote);
-                }
-                // Add the remaining flags
-                if (!String.IsNullOrEmpty(myJob.EnvironmentVars["BOSSS_ARG_2"]))
-                {   str.Write(" " + myJob.EnvironmentVars["BOSSS_ARG_2"]); }
-                if (!String.IsNullOrEmpty(myJob.EnvironmentVars["BOSSS_ARG_3"]))
-                { str.Write(" " + myJob.EnvironmentVars["BOSSS_ARG_3"]); }
+
 
                 startupstring = str.ToString();
             }
@@ -473,6 +462,19 @@ namespace BoSSS.Application.BoSSSpad {
                 // Load modules
                 foreach (string arg in moduleLoad) {
                     sw.WriteLine(arg);
+                }
+
+                // Set environment variables for Job
+                foreach (var envvar in myJob.EnvironmentVars) {
+                    if (envvar.Key.ContainsWhite())
+                        throw new NotSupportedException("Unable to handle environment variable with whitespace: " + envvar.Key);
+
+                    string envValue = envvar.Value;
+                    if (envValue.ContainsWhite() || envValue.Contains("'")) {
+                        envValue = envValue.Replace("'", "'\"'\"'"); // see: https://stackoverflow.com/questions/1250079/how-to-escape-single-quotes-within-single-quoted-strings
+                        envValue = "'" + envValue + "'";
+                    }
+                    sw.WriteLine($"export {envvar.Key}={envValue}");
                 }
 
                 // Set startupstring
