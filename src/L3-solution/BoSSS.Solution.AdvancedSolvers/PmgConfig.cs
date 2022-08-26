@@ -79,13 +79,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         internal ISubsystemSolver CreateInstanceImpl__Kummer(IOperatorMappingPair level, int[][] DegreeHierarchy) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
-                //var precond = new LevelPmg();
-                //precond.config.UseHiOrderSmoothing = false;
-                //precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
-                //precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
-                //precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
-                //precond.config.EqualOrder = this.EqualOrder;
-
+                
                 var MPIcomm = level.DgMapping.MPI_Comm;
 
                 //weirdo idea:
@@ -114,6 +108,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         ISolverSmootherTemplate post, pre;
 
+                        ISolverSmootherTemplate[] aps = null;
+
                         //var bj = new BlockJacobi() {
                         //    NoOfIterations = 1,
 
@@ -137,11 +133,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             };
 
                             ((CellILU)post).id = "Lv0";
-
-                            //post = new SparseILU() {
-                            //    UsedLibrary = SparseILU.Library.Intel_MKL
-                            //};
-
+                            
+                            if (iLevel == 0) {
+                                aps = new ISolverSmootherTemplate[] {
+                                    //new VelocityPredictionSolver(),
+                                    //new PressureCorrectionSolver()
+                                };
+                            }
                         } else {
                             post = new BlockJacobi() {
                                 NoOfIterations = 1,
@@ -154,6 +152,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             CoarserLevelSolver = coarseSolver,
                             PreSmoother = pre,
                             PostSmoother = post,
+                            AdditionalPostSmoothers = aps
                         };
                         omg.config.NoOfPostSmootherSweeps = 10;
                         omg.config.m_omega = 1;
@@ -172,6 +171,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var s = new DirectSolver();
                         s.config.TestSolution = false;
                         s.ActivateCaching = (a, b) => true;
+                        s.config.UseDoublePrecision = false;
                         return s;
                     } else if (iLevel >= 2) {
                         // +++++++++++++++++++++++++++

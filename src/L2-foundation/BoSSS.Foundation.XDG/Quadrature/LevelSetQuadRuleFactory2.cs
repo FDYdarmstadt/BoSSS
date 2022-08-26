@@ -278,7 +278,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             }
                         }
 
-                        NodeSet = new NodeSet(this.Kref, _NodeSet);
+                        NodeSet = new NodeSet(this.Kref, _NodeSet, true);
                     } else {
                         for (int o = 1; o < 1000000; o++) {
                             var qr = Kref.GetBruteForceQuadRule(o, 0);
@@ -528,7 +528,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 LevSet.EvaluateGradient(j, 1, Nodes, LevSetGrad);
 
 
-                m_Context.TransformLocal2Global(new NodeSet(this.Kref, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)), j, 1, x0_i_Global, 0);
+                m_Context.TransformLocal2Global(new NodeSet(this.Kref, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), false), j, 1, x0_i_Global, 0);
 
                 for(int nn = 0; nn < NN; nn++) {
 
@@ -552,7 +552,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 // next iter: x0_i <- x0_{i+1}
                 x0_i_Local.Set(x0_ip1_Local);
-                Nodes = (new NodeSet(this.Kref, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)));
+                Nodes = (new NodeSet(this.Kref, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), true));
             }
 
             return Nodes;
@@ -765,7 +765,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             // ~~~~
 
                             // physical:
-                            var FaceNodes = new NodeSet(Kref, cR.Nodes.ExtractSubArrayShallow(new int[] { iNode, 0 }, new int[] { iNode + NodesPerEdge[e] - 1, D - 1 }));
+                            var FaceNodes = new NodeSet(Kref, cR.Nodes.ExtractSubArrayShallow(new int[] { iNode, 0 }, new int[] { iNode + NodesPerEdge[e] - 1, D - 1 }), false);
                             var FaceNormals = MultidimensionalArray.Create(NodesPerEdge[e], D);
                             GridDat.Edges.GetNormalsForCell(FaceNodes, i0, e, FaceNormals);
                             // ~~~~

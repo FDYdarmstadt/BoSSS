@@ -258,14 +258,14 @@ namespace QuadratureAndProjectionTest {
 
                 DGField field = new SinglePhaseField(basis);
                 ScalarFunction function = delegate(MultidimensionalArray input, MultidimensionalArray output) {
-                    polynomials[i].Evaluate(output, new NodeSet(rule.RefElement, input));
+                    polynomials[i].Evaluate(output, new NodeSet(rule.RefElement, input, false));
                 };
                 field.ProjectField(function);
 
                 double LInfError = 0;
                 for (int j = 0; j < rule.NoOfNodes; j++) {
                     MultidimensionalArray result = MultidimensionalArray.Create(1, 1);
-                    NodeSet point = new NodeSet(context.iGeomCells.GetRefElement(0), 1, rule.SpatialDim);
+                    NodeSet point = new NodeSet(context.iGeomCells.GetRefElement(0), 1, rule.SpatialDim, false);
                     for (int k = 0; k < rule.SpatialDim; k++) {
                         point[0, k] = rule.Nodes[j, k];
                     }

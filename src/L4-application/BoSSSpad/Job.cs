@@ -170,7 +170,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="SearchPath">
         /// Path to search for assemblies
         /// </param>
-        static void GetAllAssemblies(Assembly a, HashSet<Assembly> assiList, string SearchPath) {
+        internal static void GetAllAssemblies(Assembly a, HashSet<Assembly> assiList, string SearchPath) {
             if (assiList.Contains(a))
                 return;
             assiList.Add(a);
@@ -835,7 +835,7 @@ namespace BoSSS.Application.BoSSSpad {
             int Counter = 0;
             do {
                 string Suffix = Counter > 0 ? "-" + Counter : "";
-                string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss");
+                string DateNtime = DateTime.Now.ToString("yyyyMMMdd_HHmmss.ffffff");
                 DeployDir = Path.Combine(AssignedBatchProc.DeploymentBaseDirectory, ShortName + DateNtime + Suffix);
                 Counter++;
             } while (Directory.Exists(DeployDir) == true);
