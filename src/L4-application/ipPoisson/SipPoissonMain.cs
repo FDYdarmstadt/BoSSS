@@ -52,30 +52,7 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
-
-            //unsafe {
-            //    float[,] A = new float[2, 2];
-            //    A[0, 0] = 1;
-            //    A[1, 1] = 1;
-            //    float[] X = new float[] { 1, 1 };
-            //    float[] B = new float[] { 0.1f, 0.1f};
-
-            //    fixed (float* pX = X, pB = B, pA = A) {
-            //        BLAS.sgemv('N', 2, 2, 1.0f, pA, 2, pX, 1, 0.0f, pB, 1);
-            //    }
-            //}
-
-
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_gmres_levelpmg);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
-            //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
-            //FinalizeMPI();
-            //return;
-
-
+            
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
                 Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
