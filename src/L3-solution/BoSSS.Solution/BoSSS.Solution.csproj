@@ -49,7 +49,7 @@
       <HintPath>..\..\..\libs\System.Reflection.Metadata.5.0.0\lib\netstandard2.0\System.Reflection.Metadata.dll</HintPath>
     </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe">
-      <SpecificVersion>False</SpecificVersion>
+      <!--SpecificVersion>False</SpecificVersion-->
       <HintPath>..\..\..\libs\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="CommandLine">
