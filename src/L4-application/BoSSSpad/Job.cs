@@ -1773,27 +1773,39 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         private string[] GetManagedFileList() {
+
             List<string> files = new List<string>();
 
             string MainAssemblyDir = Path.GetDirectoryName(EntryAssembly.Location);
+            Console.WriteLine("Looking in " + MainAssemblyDir);
             foreach(var a in AllDependentAssemblies) {
                 // new rule for .NET5: if the file is located in the same directory as the entry assembly, it should be deployed;
                 // (in Jupyter, sometimes assemblies from some cache are used, therefore we cannot use the assembly location as a criterion)
-                string DelpoyAss = Path.Combine(MainAssemblyDir, Path.GetFileName(a.Location));
+                string file = Path.GetFileName(a.Location);
+                string DelpoyAss = Path.Combine(MainAssemblyDir, file);
+
+                Console.Write("---- dll: " + DelpoyAss);
 
                 if(File.Exists(DelpoyAss)) {
                     files.Add(DelpoyAss);
-
+                    Console.WriteLine("Found");
                     string a_config = Path.Combine(MainAssemblyDir, DelpoyAss + ".config");
                     string a_runtimeconfig_json = Path.Combine(MainAssemblyDir, Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json");
 
+                    
+
+
                     foreach(var a_acc in new[] { a_config, a_runtimeconfig_json }) {
-                        if(File.Exists(a_acc)) {
+                        Console.Write("---- -- " + a_config);
+                        if (File.Exists(a_acc)) {
+                            Console.WriteLine(" added.");
                             files.Add(a_acc);
+                        } else {
+                            Console.WriteLine(" missing.");
                         }
                     }
                 } else {
-                    //Console.WriteLine("SKIPPING: " + DelpoyAss + " --- " + MainAssemblyDir);
+                    Console.WriteLine("   SKIPPING --- ");
                 }
             }
 
