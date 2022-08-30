@@ -583,7 +583,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public DataTable SessionTable {
             get {
-                Debugger.Launch();
                 var adiColi = AdditionalSessionTableColums.Select(kv => new Tuple<string, Func<ISessionInfo, object>>(kv.Key, kv.Value)).ToArray();
                 return this.Sessions.GetSessionTable(adiColi);
             }

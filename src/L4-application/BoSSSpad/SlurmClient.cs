@@ -422,9 +422,9 @@ namespace BoSSS.Application.BoSSSpad {
                     str.Write("-v --debug ");
                 }
                 str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
-                str.Write(" ");
-                str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
-                str.Write(" ");
+                //str.Write(" ");
+                //str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
+                //str.Write(" ");
 
 
 

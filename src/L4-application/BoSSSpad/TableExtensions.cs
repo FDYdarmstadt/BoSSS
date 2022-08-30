@@ -44,11 +44,12 @@ namespace BoSSS.Application.BoSSSpad {
                 // dbg_launch();
 
                 Dictionary<string, object[]> Ret = new Dictionary<string, object[]>();
-                tr.Info("got" + sessions.Count() + " sessions");
+                int SScount = sessions.Count();
+                tr.Info("got" + SScount + " sessions");
 
-                for (int iSess = 0; iSess < sessions.Count(); iSess++) {
+                for (int iSess = 0; iSess < SScount; iSess++) {
                     var SS = sessions.ElementAt(iSess);
-                    tr.Info("Opening session" + SS);
+                    tr.Info("Opening " + iSess + " of " + SScount + " session " + SS);
                     var kq = SS.KeysAndQueries.ToList();
 
                     // add additional columns
