@@ -35,12 +35,13 @@ namespace BoSSS.Application.XNSEC {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
             InitMPI();
-            //DeleteOldPlotFiles();
-            //DeleteOldTextFiles();
+            DeleteOldPlotFiles();
+            DeleteOldTextFiles();
             //Debugger.Launch();
 
             //NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
-            NUnitTest.XDG_DROPLET_COMBUSTION_TEST();
+            //NUnitTest.CavityNaturalConvection();
+            //NUnitTest.XDG_DROPLET_COMBUSTION_TEST();
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_pseudo2dCombustion_MixtureFraction()", "--delplt" }, false, delegate () {
@@ -86,6 +87,8 @@ namespace BoSSS.Application.XNSEC {
                     return p;
                 });
             }
+
+            //MPI.Wrappers.csMPI.Raw.mpiFinalize();
         }
 
         #region Operator configuration

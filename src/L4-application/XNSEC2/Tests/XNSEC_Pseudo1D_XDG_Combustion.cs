@@ -36,7 +36,7 @@ namespace BoSSS.Application.XNSEC {
   
 
             var C = XDG_pseudo2dCombustion(DGp, nCells, dbPath, false);
-            C.ProjectName = "CounterDifFlame";
+            C.ProjectName = "XDGPseudo1DCombustion";
             string jobName = C.ProjectName + "P" + DGp + "K" + nCells;
             C.SessionName = "Full_" + jobName;
 
@@ -53,7 +53,7 @@ namespace BoSSS.Application.XNSEC {
             Bounds.Add(VariableNames.MassFraction3, new Tuple<double, double>(0.0 - eps, 1.0 + eps));
             C.VariableBounds = Bounds;
 
-            C.NoOfTimesteps = 1; // The steady solution will be calculated again and do AMR
+            C.NoOfTimesteps = 2; // The steady solution will be calculated again and do AMR
             C.myThermalWallType = SIPDiffusionTemperature.ThermalWallType.Adiabatic;
 
             //C.UseMixtureFractionsForCombustionInitialization = true;
@@ -92,7 +92,7 @@ namespace BoSSS.Application.XNSEC {
         static public XNSEC_Control FS_XDG_pseudo2dCombustion(int DGp = 2, int nCells = 4,  string dbPath =null) {
             var C = XDG_pseudo2dCombustion(DGp, nCells, dbPath, true);
             C.physicsMode = PhysicsMode.MixtureFraction;
-            C.ProjectName = "CounterDifFlame";
+            C.ProjectName = "XDGPseudo1DCombustion";
             string name = C.ProjectName + "P" + DGp + "K" + nCells /*+ "Ne" + NewtonConvergenceCriterion*/;
             C.SessionName = "FS_" + name;
 
@@ -104,6 +104,7 @@ namespace BoSSS.Application.XNSEC {
             Bounds.Add(VariableNames.MixtureFraction, new Tuple<double, double>(0 - eps, 1 + eps));
             C.VariableBounds = Bounds;
             //C.NonLinearSolver.MaxSolverIterations = 500;
+            C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMR_onFlameSheet(C.zSt, 4));
             //C.AMR_startUpSweeps = 4;
             C.TimesteppingMode = Solution.Control.AppControl._TimesteppingMode.Steady;
@@ -122,6 +123,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="MF"></param>
         /// <returns></returns>
         public static XNSEC_Control XDG_pseudo2dCombustion(int DGp = 2, int nCellsMult = 6,string dbpath = null, bool MF = false) {
+            // --control cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_pseudo2dCombustion()
             XNSEC_Control C;
             if (MF) {
                 C = new XNSEC_MF_Control();
@@ -134,7 +136,6 @@ namespace BoSSS.Application.XNSEC {
             C.ImmediatePlotPeriod = 1;
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
             C.NoOfTimesteps = 3;
-            C.physicsMode = PhysicsMode.Combustion;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
 
@@ -155,7 +156,7 @@ namespace BoSSS.Application.XNSEC {
 
             C.AdaptiveMeshRefinement = false;
 
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 4, levelSet = 0 });
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 4, levelSet = 0 });// refinement near interface
             //C.activeAMRlevelIndicators.Add(new BoSSS.Application.XNSEC.AMR_onFlameSheet(C.zSt, 2));
             C.SkipSolveAndEvaluateResidual = false;
             C.AgglomerationThreshold = 0.1;
@@ -289,16 +290,7 @@ namespace BoSSS.Application.XNSEC {
                 if (species == "A") {
                     return ((_2D)((x, y) => 1)).Convert_xy2X().Convert_X2Xt();
                 } else if (species == "B") {
-                    Func<double[], double, double> T = delegate (double[] X, double t) {
-                        //double Pe = 1;
-                        //double L0 = y_interface;
-                        //double L1 = 5;
-                        //double x = X[1];
-                        //double a = Pe;
-                        //double T0 = 1;
-                        //double T1 = 4;
-
-                        //double T = (-Math.Exp(a * L1) * T0 + Math.Exp(a * x) * (T0 - T1) + Math.Exp(a * L0) * T1) / (Math.Exp(a * L0) - Math.Exp(a * L1));
+                    Func<double[], double, double> T = delegate (double[] X, double t) {              
                         double T = 5;
                         return T;
                     };

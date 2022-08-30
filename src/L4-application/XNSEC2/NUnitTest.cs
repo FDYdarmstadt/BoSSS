@@ -341,7 +341,6 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("aaaaaaaaaaaa"+Math.Abs(ThermPressureCalculated - p0Reference));
                 if (Math.Abs(ThermPressureCalculated - p0Reference) > 1e-2) { 
                     throw new Exception("Error on calculation of the thermodynamic pressure. End value is not the correct one");
-                    Console.WriteLine("BLAAAAAABLAAAAAABLAAAAAABLAAAAAA");
 
                 }
                 Console.WriteLine("The test passed! ");
@@ -900,7 +899,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
             using (var p = new XNSEC_MixtureFraction()) {
-                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(3, 5, db.Path);
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(3, 4, db.Path);
 
                 p.Init(c);
                 p.RunSolverMode();
@@ -908,7 +907,7 @@ namespace BoSSS.Application.XNSEC {
 
             Console.WriteLine("Flame sheet calculation done.");
             using (var p = new XNSEC()) {
-                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dCombustion(3, 5, db.Path);
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dCombustion(3, 4, db.Path);
                 p.Init(c);
                 p.RunSolverMode();
 
