@@ -408,38 +408,47 @@ namespace BoSSS.Foundation.IO {
         /// Loads the profiling information for a session
         /// </summary>
         /// <param name="session"></param>
+        /// <param name="Ranks">
+        /// A selection of MPI ranks; there is a separate profiling log for each MPI rank; if null or empty, all profiling for all MPI ranks are returned.
+        /// </param>
         /// <returns>
-        /// An array of profiling trees, one for each MPI rank; th index into the returned array corresponds with the MPI rank.
+        /// An array of profiling trees, one for each MPI rank; the index into the returned array corresponds with <paramref name="Ranks"/>.
         /// </returns>
-        public static MethodCallRecord[] GetProfiling(this ISessionInfo session) {
+        public static MethodCallRecord[] GetProfiling(this ISessionInfo session, params int[] Ranks) {
             // find
             string sessDir = DatabaseDriver.GetSessionDirectory(session);
-            string[] TextFils = Directory.GetFiles(sessDir, "profiling_bin.*.txt");
-            if (TextFils.Count() <= 0)
+            string[] TextFiles = Directory.GetFiles(sessDir, "profiling_bin.*.txt");
+            if (TextFiles.Count() <= 0)
                 throw new IOException("Unable to find profiling information.");
 
             // sort according to process rank
-            int[] Ranks = new int[TextFils.Length];
-            for (int i = 0; i < Ranks.Length; i++) {
-                var parts = TextFils[i].Split(new string[] { "profiling_bin.", ".txt" }, StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length <= 0)
-                    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
-                Ranks[i] = int.Parse(parts.Last());
-                if (Ranks[i] < 0)
-                    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
-            }
-
             int MPISize = session.ComputeNodeNames.Count;
-            if(MPISize != Ranks.Max() + 1) {
-                Console.WriteLine("WARNING: mismatch between number of MPI ranks (" + MPISize + ") for session and max rank of profiling information (" + (Ranks.Max() + 1) + ").");
+            if (Ranks == null || Ranks.Length <= 0)
+                Ranks = MPISize.ForLoop(rnk => rnk);
+            string[] TextFilesSorted = new string[Ranks.Length];
+            for (int i = 0; i < Ranks.Length; i++) {
+                if (Ranks[i] >= MPISize || Ranks[i] < 0)
+                    throw new ArgumentException($"Illegal MPI rank specified (Rank: {Ranks[i]}). MPI size is {MPISize}, ranks are excepted in the range of 0 to {MPISize - 1} (including); Session: {session} @ {session.GetSessionDirectory()}");
+                TextFilesSorted[i] = TextFiles.SingleOrDefault(FileName => FileName.Contains("." + Ranks[i] + "."));
+                if (TextFilesSorted[i] == null)
+                    throw new IOException($"Unable to find profiling file for MPI rank {Ranks[i]}; Session: {session} @ {session.GetSessionDirectory()}");
+
+                //var parts = TextFils[i].Split(new string[] { "profiling_bin.", ".txt" }, StringSplitOptions.RemoveEmptyEntries);
+                //if (parts.Length <= 0)
+                //    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
+                //Ranks[i] = int.Parse(parts.Last());
+                                
+                //if (Ranks[i] < 0)
+                //    throw new IOException("Unable to determine file rank from path '" + parts[i] + "'.");
             }
 
+            
             // load 
             var R = new MethodCallRecord[Ranks.Max() + 1];
             for(int i = 0; i < Ranks.Length; i++) {
                 int rnk = Ranks[i];
 
-                var f = TextFils[i];
+                var f = TextFilesSorted[i];
                 var JSON = File.ReadAllText(f);
                 var mcr = MethodCallRecord.Deserialize(JSON);
 
@@ -475,9 +484,9 @@ namespace BoSSS.Foundation.IO {
                 throw new IOException("Unable to locate '" + pathf + "'.");
 
             // check if unique
-            int many = Directory.GetFiles(sessDir, namef).Length;
-            if (many > 1)
-                throw new ArgumentException("profiling is not unique, occurances: " + many);
+            var many = Directory.GetFiles(sessDir, namef);
+            if (many.Length > 1)
+                throw new ArgumentException("profiling is not unique; got " + many.ToConcatString("", ", ", ";"));
 
             // load 
             var f = pathf;
