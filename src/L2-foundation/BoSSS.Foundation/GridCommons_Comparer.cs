@@ -78,7 +78,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
 
                 if (A.Cells.Length != B_Cells.Length) {
-                    //Debugger.Launch();
                     throw new ApplicationException("local number of cells length mismatch, despite resorting");
                 }
 
@@ -185,7 +184,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
 
                 if (A.BcCells.Length != B_BcCells.Length) {
-                    //Debugger.Launch();
                     throw new ApplicationException("local number of boundary cells length mismatch, despite resorting");
                 }
 

@@ -1819,7 +1819,6 @@ namespace BoSSS.Application.BoSSSpad {
 
         private string[] GetManagedFileList() {
             using (var tr = new FuncTrace()) {
-                Debugger.Launch();
                 tr.InfoToConsole = true;
                 List<string> files = new List<string>();
 

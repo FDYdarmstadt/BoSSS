@@ -70,7 +70,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// 
         /// </summary>
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-            //Debugger.Launch();
             Func<int, int> SblkSizeFunc = delegate (int iLevel) {
                 return TargetBlockSize; 
             };
