@@ -303,6 +303,7 @@ namespace ilPSP.Utils {
         /// </summary>
         static double MachineEps {
             get {
+                Console.WriteLine(typeof(System.Configuration.ApplicationSettingsBase));
                 return BLAS.MachineEps;
             }    
         }
@@ -314,10 +315,12 @@ namespace ilPSP.Utils {
         /// <param name="a">minimum</param>
         /// <param name="b">maximum</param>
         /// <param name="n">number of nodes desired</param>
-        /// <returns>an array of length <paramref name="n"/>,
+        /// <returns>
+        /// an array of length <paramref name="n"/>,
         /// with first entry equal to <paramref name="a"/>, 
         /// last entry equal to <paramref name="b"/>, and 
-        /// all other points linear interpolated in between.</returns>
+        /// all other points linear interpolated in between. 
+        /// </returns>
         public static double[] Linspace(double a, double b, int n) {
             if (a >= b)
                 throw new ArgumentException("minimum >= maximum");

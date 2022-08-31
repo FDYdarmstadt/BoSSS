@@ -1244,6 +1244,15 @@ namespace BoSSS.Solution.Control {
                         //}
                         //na = Assembly.LoadFile(AssiFiles[0]);
                         continue;
+                    } catch (FileLoadException) {
+                        //string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
+                        //if(AssiFiles.Length != 1) {
+                        //    //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
+                        //    Console.WriteLine("Skipping: " + b.Name);
+                        //    continue;
+                        //}
+                        //na = Assembly.LoadFile(AssiFiles[0]);
+                        continue;
                     }
 
                     GetAllAssemblies(na, assiList);

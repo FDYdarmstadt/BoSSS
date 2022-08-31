@@ -154,12 +154,56 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IEnumerable<Assembly> AllDependentAssemblies {
             get {
-                HashSet<Assembly> assiList = new HashSet<Assembly>();
-                GetAllAssemblies(this.EntryAssembly, assiList, Path.GetDirectoryName(EntryAssembly.Location));
+                //HashSet<Assembly> assiList = new HashSet<Assembly>();
+                //GetAllAssemblies(this.EntryAssembly, assiList, Path.GetDirectoryName(EntryAssembly.Location));
+                var assiList = this.EntryAssembly.GetAllDependentAssemblies();
                 return assiList.ToArray();
             }
         }
 
+
+        Assembly[] GetRelevantAssemblies() {
+            using (var tr = new FuncTrace()) {
+                var files = new List<Assembly>();
+
+                var allAssis = AllDependentAssemblies;
+                Assembly mscorlib = allAssis.Single(a => a.FullName.StartsWith("mscorlib"));
+                string corLibPath = Path.GetDirectoryName(mscorlib.Location);
+
+
+                string MainAssemblyDir = Path.GetDirectoryName(EntryAssembly.Location);
+                tr.Info("MainAssemblyDir: " + MainAssemblyDir);
+                tr.Info("mscorlib dir: " + corLibPath);
+
+                foreach (var a in AllDependentAssemblies) {
+
+                    // new rule for .NET6: if the file NOT located in the same directory as mscorlib.dll, it should be deployed;
+                    // (in Jupyter, sometimes assemblies from some cache are used, therefore we cannot use the assembly location as a criterion)
+
+                    if (Path.GetDirectoryName(a.Location) == corLibPath) {
+                        tr.Info("ignoring: " + a.Location);
+                        continue;
+                    }
+
+                    files.Add(a);
+                }
+
+                return files.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// All dependent assemblies which are not part of the dotnet SDK/runtime
+        /// </summary>
+        public IEnumerable<Assembly> RelevantDependentAssemblies {
+            get {
+                return GetRelevantAssemblies();
+
+            }
+        }
+
+
+        /*
         /// <summary>
         /// Recursive collection of all dependencies of some assembly.
         /// </summary>
@@ -202,6 +246,7 @@ namespace BoSSS.Application.BoSSSpad {
                 GetAllAssemblies(na, assiList, SearchPath);
             }
         }
+        */
 
         List<Tuple<byte[], string>> m_AdditionalDeploymentFiles = new List<Tuple<byte[], string>>();
 
@@ -1773,43 +1818,41 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         private string[] GetManagedFileList() {
+            using (var tr = new FuncTrace()) {
+                Debugger.Launch();
+                tr.InfoToConsole = true;
+                List<string> files = new List<string>();
 
-            List<string> files = new List<string>();
+                var allAssis = RelevantDependentAssemblies;
+                
 
-            string MainAssemblyDir = Path.GetDirectoryName(EntryAssembly.Location);
-            Console.WriteLine("Looking in " + MainAssemblyDir);
-            foreach(var a in AllDependentAssemblies) {
-                // new rule for .NET5: if the file is located in the same directory as the entry assembly, it should be deployed;
-                // (in Jupyter, sometimes assemblies from some cache are used, therefore we cannot use the assembly location as a criterion)
-                string file = Path.GetFileName(a.Location);
-                string DelpoyAss = Path.Combine(MainAssemblyDir, file);
-
-                Console.Write("---- dll: " + DelpoyAss);
-
-                if(File.Exists(DelpoyAss)) {
-                    files.Add(DelpoyAss);
-                    Console.WriteLine("Found");
-                    string a_config = Path.Combine(MainAssemblyDir, DelpoyAss + ".config");
-                    string a_runtimeconfig_json = Path.Combine(MainAssemblyDir, Path.GetFileNameWithoutExtension(DelpoyAss) + ".runtimeconfig.json");
+                foreach (var a in allAssis) {
 
                     
+                    files.Add(a.Location);
 
 
-                    foreach(var a_acc in new[] { a_config, a_runtimeconfig_json }) {
-                        Console.Write("---- -- " + a_config);
+                    tr.Info("Found");
+                    var additionalFiles = new string[] {
+                        Path.Combine(Path.GetDirectoryName(a.Location), System.IO.Path.GetFileNameWithoutExtension(a.Location) + ".deps.json"),
+                        Path.Combine(Path.GetDirectoryName(a.Location), System.IO.Path.GetFileNameWithoutExtension(a.Location) + ".runtimeconfig.json"),
+                        a.Location + ".config" // probably obsolete?
+                    };
+
+
+                    foreach (var a_acc in additionalFiles) {
+                        tr.Info("additional file " + a_acc);
                         if (File.Exists(a_acc)) {
-                            Console.WriteLine(" added.");
+                            tr.Info(" added.");
                             files.Add(a_acc);
                         } else {
-                            Console.WriteLine(" missing.");
+                            tr.Info(" missing.");
                         }
                     }
-                } else {
-                    Console.WriteLine("   SKIPPING --- ");
-                }
-            }
+                } 
 
-            return files.ToArray();
+                return files.ToArray();
+            }
         }
     }
 
