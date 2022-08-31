@@ -3692,10 +3692,11 @@ namespace BoSSS.Solution {
         public static Type[] DllEnforcer() {
             using(var tr = new FuncTrace()) {
                 var types = new Type[] {
-                   typeof(Microsoft.CodeAnalysis.Compilation),
+                    typeof(Microsoft.CodeAnalysis.Compilation),
                     typeof(Microsoft.CodeAnalysis.CSharp.CSharpCompilation),
                     typeof(Microsoft.CodeAnalysis.Scripting.Script),
-                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript)
+                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript),
+                    typeof(System.Configuration.Configuration)
                 };
 
                 foreach(var t in types) {

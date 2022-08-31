@@ -301,9 +301,9 @@ namespace ilPSP.Utils {
         /// <summary>
         /// <see cref="BLAS.MachineEps"/>
         /// </summary>
-        static double MachineEps {
+        public static double MachineEps {
             get {
-                Console.WriteLine(typeof(System.Configuration.ApplicationSettingsBase));
+                //Console.WriteLine(typeof(System.Configuration.ApplicationSettingsBase));
                 return BLAS.MachineEps;
             }    
         }
