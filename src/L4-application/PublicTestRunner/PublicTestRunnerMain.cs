@@ -355,7 +355,10 @@ namespace PublicTestRunner {
         static (int NoOfTests, string[] tests, string[] shortnames, IDictionary<string,string[]> RequiredFiles4Test) GetTestsInAssembly(Assembly a, string AssemblyFilter) {
             var r = new List<string>(); // full test names
             var l = new List<string>(); // short names 
-            var d = new Dictionary<string, string[]>();
+            var d = new Dictionary<string, string[]>(); // pairs of (full test name | files for the test)
+
+            var g = new HashSet<string>(); // global files for all tests
+
 
             var ttt = a.GetTypes();
             foreach (var t in ttt) { // loop over types in assembly...
@@ -371,18 +374,34 @@ namespace PublicTestRunner {
 
                         var s = new HashSet<string>();
 
+
+                        if (m.GetCustomAttribute(typeof(SetUpAttribute)) != null
+                         || m.GetCustomAttribute(typeof(OneTimeSetUpAttribute)) != null) {
+                            var dc = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitFileToCopyHackAttribute;
+                            //if (dc != null)
+                            //    throw new NotSupportedException("Palacing a `NUnitFileToCopyHackAttribute` together with `SetUpAttribute` or `OneTimeSetUpAttribute` is not supported (anymore).");
+
+                            if (dc != null) {
+                                foreach (string someFile in dc.SomeFileNames) {
+                                    g.AddRange(LocateFile(someFile));
+                                }
+                            }
+                        }
+
+
                         //bool testAdded = false;
                         if (m.GetCustomAttribute(typeof(TestAttribute)) != null) {
                             r.Add(t.FullName + "." + m.Name);
                             l.Add(Path.GetFileNameWithoutExtension(a.ManifestModule.Name) + "#" + m.Name);
                             //Console.WriteLine("Added: " + r.Last());
                             //testAdded = true;
-                        }
+                            //}
 
-                        if (m.GetCustomAttribute(typeof(TestAttribute)) != null
-                           || m.GetCustomAttribute(typeof(SetUpAttribute)) != null
-                           || m.GetCustomAttribute(typeof(OneTimeSetUpAttribute)) != null) {
+                            //if (m.GetCustomAttribute(typeof(TestAttribute)) != null
+                            //   || m.GetCustomAttribute(typeof(SetUpAttribute)) != null
+                            //   || m.GetCustomAttribute(typeof(OneTimeSetUpAttribute)) != null) {
                             var dc = m.GetCustomAttribute(typeof(NUnitFileToCopyHackAttribute)) as NUnitFileToCopyHackAttribute;
+
 
                             if (dc != null) {
                                 //Console.WriteLine("Added: " + r.Last() + " depends on " + dc.SomeFileNames[0]);
@@ -397,15 +416,7 @@ namespace PublicTestRunner {
                                     s.AddRange(LocateFile(someFile));
                                 }
                             }
-
-                            List<string> FileNamesOnly = new List<string>();
-                            foreach (string filePath in s) {
-                                string fileName = Path.GetFileName(filePath);
-                                if (FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
-                                    throw new IOException($"Dependent Filename {fileName} is not unique for test assembly {a}. (full Path {filePath}).");
-                                FileNamesOnly.Add(fileName);
-                            }
-
+                            
 
                             d.Add(r.Last(), s.ToArray());
                         }
@@ -413,6 +424,23 @@ namespace PublicTestRunner {
                 }
             }
 
+
+            // add assmbly-global files for test, check uniqueness of filenames
+            foreach(var testname in d.Keys) {
+                var s = new List<string>();
+                s.AddRange(d[testname]);
+                s.AddRange(g);
+
+                List<string> FileNamesOnly = new List<string>();
+                foreach (string filePath in s) {
+                    string fileName = Path.GetFileName(filePath);
+                    if (FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
+                        throw new IOException($"Dependent Filename {fileName} is not unique for test assembly {a}. (full Path {filePath}).");
+                    FileNamesOnly.Add(fileName);
+                }
+
+                d[testname] = s.ToArray();
+            }
             
 
 
@@ -700,7 +728,7 @@ namespace PublicTestRunner {
         /// <summary>
         /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE)
         /// </summary>
-        static Mutex IOsyncMutex = new Mutex(false, "BoSSS_test_runner_IOmutex");
+        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex");
 
         /// <summary>
         /// to distinct the internalTestRunner
@@ -715,7 +743,6 @@ namespace PublicTestRunner {
             // phase 0: setup
             // ===================================
 
-            
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out var MpiSize);
             if(MpiSize != 1) {
@@ -728,7 +755,7 @@ namespace PublicTestRunner {
                 throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account (see configuration file ~/.BoSSS/etc/BatchProcessorConfig.json).");
             BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
-            //Debugger.Launch();
+
             FileStream ServerMutex;
             string DateNtime = null;
             try {
@@ -764,14 +791,13 @@ namespace PublicTestRunner {
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile("JobManagerRun-" + DateNtime);
 
-
+            
             int returnCode = 0;
             using(var tr = new FuncTrace()) {
 
                 // ===================================
                 // phase 1: discover tests
                 // ===================================
-
 
                 InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
 
@@ -780,26 +806,29 @@ namespace PublicTestRunner {
                 if(bpc.DeployRuntime == false) {
                     //
                     // DeployRuntime is false: 
-                    // this means that no copy occurs for the **individual** jobs
-                    // Therefore, we copy it centrally, at once
+                    // this means that no copy (of the native libraries) occurs for the **individual** jobs
+                    // The TestRunner, however copies it centrally, at once, to ensure that it is running using the most recent binaries
                     //
                     var _NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_amd64"));
                     _NativeOverride.Create();
 
-                    string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
-                    string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", bpc.RuntimeLocation);
-                    MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, _NativeOverride.FullName, null);
+                    if (bpc.RuntimeLocation != null) {
+                        string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
+                        string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", bpc.RuntimeLocation);
+                        MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, _NativeOverride.FullName, null);
 
-                    if(bpc is SlurmClient slurm) {
-                        NativeOverride = slurm.DeploymentDirectoryAtRemote(_NativeOverride.FullName);
+                        if (bpc is SlurmClient slurm) {
+                            NativeOverride = slurm.DeploymentDirectoryAtRemote(_NativeOverride.FullName);
+                        } else {
+                            NativeOverride = _NativeOverride.FullName;
+                        }
                     } else {
-                        NativeOverride = _NativeOverride.FullName;
+                        NativeOverride = null;    
                     }
-
                 } else {
                     NativeOverride = null;
                 }
-
+                
                 // deployment of assemblies
                 string RelManagedPath;
                 if(TestTypeProvider.CopyManagedAssembliesCentraly) {
@@ -812,6 +841,7 @@ namespace PublicTestRunner {
                 } else {
                     RelManagedPath = null;
                 }
+                
 
 
                 // collection for all tests:
@@ -1451,6 +1481,7 @@ namespace PublicTestRunner {
         /// </param>
         /// <returns></returns>
         public static int _Main(string[] args, ITestTypeProvider ttp) {
+            
             if (args.Length > 5) {
                 Console.WriteLine($"Warning: got {args.Length} arguments -- are you using this right?");
 
@@ -1471,8 +1502,7 @@ namespace PublicTestRunner {
 
             System.Diagnostics.Trace.Listeners.Clear();
             System.Diagnostics.Trace.Listeners.Add(new MyListener());
-
-
+           
             if (args.Length < 1) {
                 Console.WriteLine("Insufficient number of arguments.");
                 PrintMainUsage();
@@ -1481,8 +1511,7 @@ namespace PublicTestRunner {
 
             BoSSS.Solution.Application.InitMPI();
 
-
-
+           
             int ret = -1;
             switch (args[0]) {
                 case "nunit3":
@@ -1570,7 +1599,17 @@ namespace PublicTestRunner {
 
 
         static int Main(string[] args) {
-            return _Main(args, new PublicTests());
+            try {
+                return _Main(args, new PublicTests());
+            } catch(Exception e) {
+                // note: this seemingly useless try-catch is here since our test runner server (FDYGITRUNNER)
+                // seems to silently fail on all exceptions thrown after MPI init.
+
+                Console.Error.WriteLine(e.GetType().FullName);
+                Console.Error.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+                return -667;
+            }
         }
     }
 }
