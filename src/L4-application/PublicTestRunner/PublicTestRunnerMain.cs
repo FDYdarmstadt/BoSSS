@@ -728,7 +728,7 @@ namespace PublicTestRunner {
                 throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account (see configuration file ~/.BoSSS/etc/BatchProcessorConfig.json).");
             BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
-
+            //Debugger.Launch();
             FileStream ServerMutex;
             string DateNtime = null;
             try {
@@ -744,7 +744,7 @@ namespace PublicTestRunner {
                         using(var wrt = new StreamWriter(ServerMutex)) {
                             wrt.WriteLine("Locked by BoSSS test runner at " + DateNtime);
                         }
-                    } catch(Exception) {
+                    } catch(Exception ee) {
                         ServerMutex = null;
                         Thread.Sleep(rnd.Next(10000));
                     }
