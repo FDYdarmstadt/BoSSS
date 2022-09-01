@@ -72,6 +72,7 @@ namespace CNS.Tests.IBMTests {
         /// <summary>
         /// Test using first order DG
         /// </summary>
+        [NUnitFileToCopyHack("Tests/IBMTests/IBMCylinderTests.zip")]
         [Test]
         public static void IBMCylinder1st() {
             int dgDegree = 1;
@@ -98,6 +99,7 @@ namespace CNS.Tests.IBMTests {
         /// <summary>
         /// Test using second order DG
         /// </summary>
+        [NUnitFileToCopyHack("Tests/IBMTests/IBMCylinderTests.zip")]
         [Test]
         public static void IBMCylinder2nd() {
             int dgDegree = 2;
@@ -125,6 +127,7 @@ namespace CNS.Tests.IBMTests {
         /// <summary>
         /// Test using third order DG
         /// </summary>
+        [NUnitFileToCopyHack("Tests/IBMTests/IBMCylinderTests.zip")]
         [Test]
         public static void IBMCylinder3rd() {
             int dgDegree = 3;
