@@ -62,23 +62,27 @@ namespace BoSSS.Application.GridGen {
         /// </summary>
         protected override IGrid CreateOrLoadGrid() {
 
+            Console.Write("Grid instantiation...");
             GridCommons[] grds = new GridCommons[this.Control.GridBlocks.Length];
             for (int iBlock = 0; iBlock < grds.Length; iBlock++) {
+                Console.Write($" Block{iBlock+1}of{grds.Length}");
                 grds[iBlock] = this.Control.GridBlocks[iBlock].CreateGrid();
-
-                
+                Console.Write(".");
             }
+            Console.WriteLine(" done.");
 
             GridCommons grd;
             if(grds.Length <= 1) {
                 grd = grds[0];
             } else {
+                Console.Write("Sealing Blocks...");
                 grd = GridCommons.MergeLogically(grds);
                 grd = GridCommons.Seal(grd);
+                Console.WriteLine(" done.");
             }
 
             if (Control.BoundaryRegions.Count > 0) {
-
+                Console.WriteLine("Setting Boundary Regions...");
                 string EdgeTagNameFunc(Vector X) {
                     foreach (var pair in Control.BoundaryRegions) {
                         if (pair.Region == null)
@@ -95,16 +99,22 @@ namespace BoSSS.Application.GridGen {
 
                 grd.DefineEdgeTags(EdgeTagNameFunc, Control.EdgeTagNamesToEnsure);
 
-
+                Console.WriteLine("done.");
             }
+
+            Console.WriteLine("Grid created.");
 
             grd.Name = Control.GridName;
             grd.Description = Control.Description;
             IGrid _grd = grd;
 
+            Console.WriteLine("Saving to database...");
             this.DatabaseDriver.SaveGridIfUnique(ref _grd, out bool EquivFound, this.GetDatabase());
-            if(EquivFound)
+            if (EquivFound) {
                 Console.WriteLine($"Note: Equivalent grid {_grd.ID} already in database; Using the grid from database.");
+            } else {
+                Console.WriteLine($"Saveg grid: {_grd.ID}");
+            }
 
             bool bkup = ilPSP.Environment.StdoutOnlyOnRank0;
             ilPSP.Environment.StdoutOnlyOnRank0 = false;
