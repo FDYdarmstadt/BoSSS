@@ -1819,7 +1819,6 @@ namespace BoSSS.Application.BoSSSpad {
 
         private string[] GetManagedFileList() {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
                 List<string> files = new List<string>();
 
                 var allAssis = RelevantDependentAssemblies;
@@ -1830,8 +1829,6 @@ namespace BoSSS.Application.BoSSSpad {
                     
                     files.Add(a.Location);
 
-
-                    tr.Info("Found");
                     var additionalFiles = new string[] {
                         Path.Combine(Path.GetDirectoryName(a.Location), System.IO.Path.GetFileNameWithoutExtension(a.Location) + ".deps.json"),
                         Path.Combine(Path.GetDirectoryName(a.Location), System.IO.Path.GetFileNameWithoutExtension(a.Location) + ".runtimeconfig.json"),
