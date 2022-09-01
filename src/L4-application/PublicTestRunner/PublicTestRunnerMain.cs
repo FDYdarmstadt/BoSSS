@@ -780,26 +780,29 @@ namespace PublicTestRunner {
                 if(bpc.DeployRuntime == false) {
                     //
                     // DeployRuntime is false: 
-                    // this means that no copy occurs for the **individual** jobs
-                    // Therefore, we copy it centrally, at once
+                    // this means that no copy (of the native libraries) occurs for the **individual** jobs
+                    // The TestRunner, however copies it centrally, at once, to ensure that it is running using the most recent binaries
                     //
                     var _NativeOverride = new DirectoryInfo(Path.Combine(bpc.DeploymentBaseDirectory, RunnerPrefix + DebugOrReleaseSuffix + "_" + DateNtime + "_amd64"));
                     _NativeOverride.Create();
 
-                    string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
-                    string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", bpc.RuntimeLocation);
-                    MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, _NativeOverride.FullName, null);
+                    if (bpc.RuntimeLocation != null) {
+                        string BosssInstall = BoSSS.Foundation.IO.Utils.GetBoSSSInstallDir();
+                        string BosssBinNative = Path.Combine(BosssInstall, "bin", "native", bpc.RuntimeLocation);
+                        MetaJobMgrIO.CopyDirectoryRec(BosssBinNative, _NativeOverride.FullName, null);
 
-                    if(bpc is SlurmClient slurm) {
-                        NativeOverride = slurm.DeploymentDirectoryAtRemote(_NativeOverride.FullName);
+                        if (bpc is SlurmClient slurm) {
+                            NativeOverride = slurm.DeploymentDirectoryAtRemote(_NativeOverride.FullName);
+                        } else {
+                            NativeOverride = _NativeOverride.FullName;
+                        }
                     } else {
-                        NativeOverride = _NativeOverride.FullName;
+                        NativeOverride = null;    
                     }
-
                 } else {
                     NativeOverride = null;
                 }
-
+                
                 // deployment of assemblies
                 string RelManagedPath;
                 if(TestTypeProvider.CopyManagedAssembliesCentraly) {
