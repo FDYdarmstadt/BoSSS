@@ -102,6 +102,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public int[] levelSets; // null all level set intersections, otherwise only between those specified.
                                 // If only one is selected, intersection between this one and other levelsets are taken into account,
                                 // but intersections not involving this are not
+
+        public int FieldWidth = 0; // also refine cells arround level set intersection
+
         public override int[] DesiredCellChanges() {
 
             int J = GridData.CellPartitioning.LocalLength;
@@ -115,17 +118,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             if (levelSets.Length > 1) {
                 for (int i = 0; i < levelSets.Length; i++) {
-                    CellMask ccMask = this.LsTrk.Regions.GetCutCellMask4LevSet(levelSets.First());
+                    CellMask ccMask = this.LsTrk.Regions.GetNearMask4LevSet(levelSets.First(), FieldWidth);
                     foreach (int ls in levelSets.Skip(i + 1)) {
-                        clMask = clMask.Union(ccMask.Intersect(this.LsTrk.Regions.GetCutCellMask4LevSet(ls)));
+                        clMask = clMask.Union(ccMask.Intersect(this.LsTrk.Regions.GetNearMask4LevSet(ls, FieldWidth)));
                     }
                 }
             } else {
                 // only one level set specified, refine all intersections, this one has with any other
-                CellMask ccMask = this.LsTrk.Regions.GetCutCellMask4LevSet(levelSets[0]);
+                CellMask ccMask = this.LsTrk.Regions.GetNearMask4LevSet(levelSets[0], FieldWidth);
                 levelSets = Enumerable.Range(0, this.LsTrk.LevelSets.Count).Except(levelSets).ToArray();
                 foreach (int ls in levelSets) {
-                    clMask = clMask.Union(ccMask.Intersect(this.LsTrk.Regions.GetCutCellMask4LevSet(ls)));
+                    clMask = clMask.Union(ccMask.Intersect(this.LsTrk.Regions.GetNearMask4LevSet(ls, FieldWidth)));
                 }
             }
 
