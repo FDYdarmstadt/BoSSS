@@ -55,7 +55,15 @@ namespace BoSSS.Application.ExternalBinding {
         /// <returns>value of respective dg coordinate</returns>
         [CodeGenExport]
         public double GetDGcoordinate(int f, int j, int n) {
-            return this[Mapping.LocalUniqueCoordinateIndex(f, j, n)];
+            double ret;
+            try {
+                ret = this[Mapping.LocalUniqueCoordinateIndex(f, j, n)];
+            } catch (Exception e){
+                Console.WriteLine(e);
+                Console.WriteLine("Returning 0");
+                ret = 0;
+            }
+            return ret;
         }
 
         /// <summary>
