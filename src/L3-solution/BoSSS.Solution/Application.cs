@@ -330,6 +330,8 @@ namespace BoSSS.Solution {
                     Console.WriteLine(@"     ~~            \/__/         \/__/         \/__/         \/__/    ");
                     Console.WriteLine(@"                                                                      ");
 
+                    Console.Write(DateTime.Now);
+                    Console.Write("  ");
                     if (size <= 1)
                         Console.WriteLine("Running with 1 MPI process (single core)");
                     else

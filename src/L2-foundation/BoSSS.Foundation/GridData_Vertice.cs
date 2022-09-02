@@ -839,7 +839,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 */
 
-                NegogiateOwnership(csMPI.Raw._COMM.WORLD, VertexIndicesOnOtherProcessors, 
+                NegotiateOwnership(csMPI.Raw._COMM.WORLD, VertexIndicesOnOtherProcessors, 
                     out VerticePermuation, 
                     out NoOfPureLocal, out NoOfRelayed, out NoOfBorrowed, out NoOfPeriodicElim, out NoOfExternal, 
                     out VtxSendLists, out VtxInsertLists,
@@ -1019,9 +1019,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
         /// <summary>
-        /// Negogiation of MPI-Ownership for 'items' (e.g. vertices or edges).
+        /// Negotiation of MPI-Ownership for 'items' (e.g. vertices or edges).
         /// </summary>
-        private static void NegogiateOwnership(MPI_Comm comm, Tuple<int, int>[][] ItemIndicesOnOtherProcessors, 
+        private static void NegotiateOwnership(MPI_Comm comm, Tuple<int, int>[][] ItemIndicesOnOtherProcessors, 
             out int[] ItemPermutation, 
             out int NoOfPureLocal, out int NoOfRelayed, out int NoOfBorrowed, out int NoOfPeriodicElim, out int NoOfExternal, 
             out int[][] SendLists, out int[][] InsertLists,

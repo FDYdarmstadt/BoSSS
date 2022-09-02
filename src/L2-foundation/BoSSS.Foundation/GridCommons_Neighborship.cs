@@ -103,7 +103,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         ///   is greater or equal than the global number of cells (<see cref="NumberOfCells"/>) the neighbor is a boundary condition cell,
         ///   (<see cref="BcCells"/>).
         /// </returns>
-        public IEnumerable<Neighbour>[] GetCellNeighbourship(bool IncludeBcCells) {
+        public Neighbour[][] GetCellNeighbourship(bool IncludeBcCells) {
             ilPSP.MPICollectiveWatchDog.Watch();
             using (new FuncTrace()) {
 
@@ -117,6 +117,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 long j0 = this.CellPartitioning.i0;
                 long Jglob = this.CellPartitioning.TotalLength;
                 long j0Bc = this.BcCellPartitioning.i0;
+                int mpiRank = this.MyRank;
 
                 /*
                 System.IO.StreamWriter sw = new System.IO.StreamWriter("proc_" + this.MyRank + ".txt", append: false);
@@ -161,7 +162,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         foreach (int NodeId in CellNodes) {
                             int target_prozi = NPart.FindProcess(NodeId);
-                            if (target_prozi == MyRank) {
+                            if (target_prozi == mpiRank) {
                                 Nodes2Cells[NodeId - k0].Add(jCell_glob);
                             } else {
                                 NodeCellIndexPair Packet;
@@ -254,7 +255,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
 
 
-                            if (cell_proc == MyRank) {
+                            if (cell_proc == mpiRank) {
                                 int jCell_loc = checked((int)(jCell - local_offset));
                                 int kC;
                                 bool bfound = false;
@@ -329,7 +330,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     local_offset = Jglob + j0Bc;
                                 }
 
-                                if (cell_proc == MyRank) {
+                                if (cell_proc == mpiRank) {
 
                                     int jCell_loc = checked((int)(jCell - local_offset));
 
@@ -482,7 +483,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
 
                 //SerialisationMessenger.PoorManDebugger = null;
-                return CellNeighbours;
+                {
+                    int rL = CellNeighbours.Length;
+                    var R = new Neighbour[CellNeighbours.Length][];
+                    for(int i = 0; i < rL; i++) {
+                        R[i] = CellNeighbours[i].ToArray();
+                        CellNeighbours[i] = null;
+                        
+                    }
+                    return R;
+                }
             }
         }
 

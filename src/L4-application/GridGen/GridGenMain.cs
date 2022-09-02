@@ -57,10 +57,13 @@ namespace BoSSS.Application.GridGen {
                 () => new GridGenMain());
         }
 
+
+
         /// <summary>
         /// 
         /// </summary>
         protected override IGrid CreateOrLoadGrid() {
+
 
             Console.Write("Grid instantiation...");
             GridCommons[] grds = new GridCommons[this.Control.GridBlocks.Length];

@@ -25,9 +25,9 @@ namespace BoSSS.Application.GridGen {
 
             C.GridBlocks = new GridGenControl.MeshBlock[] {
                 new GridGenControl.Cartesian3D() {
-                    xNodes = GenericBlas.Linspace(-1, 1, 10),
-                    yNodes = GenericBlas.Linspace(-1, 1, 10),
-                    zNodes = GenericBlas.Linspace(-1, 1, 10)
+                    xNodes = GenericBlas.Linspace(-1, 1, 4),
+                    yNodes = GenericBlas.Linspace(-1, 1, 4),
+                    zNodes = GenericBlas.Linspace(-1, 1, 4)
                 }
             };
 

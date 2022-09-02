@@ -1139,7 +1139,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // compute neighborship info 
                 // =========================
 
-                var CNglb = m_Grid.GetCellNeighbourship(true);
+                GridCommons.Neighbour[][] CNglb = m_Grid.GetCellNeighbourship(true);
                 Debug.Assert(CNglb.Length == (J + J_BC));
 #if DEBUG
                 for(int j = 0; j < J; j++) {
@@ -1164,10 +1164,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // separate normal cells and boundary-condition -- cells
                 // =====================================================
 
-                m_Cells.CellNeighbours_global_tmp = new IEnumerable<GridCommons.Neighbour>[J];
+                m_Cells.CellNeighbours_global_tmp = new GridCommons.Neighbour[J][];
                 Array.Copy(CNglb, m_Cells.CellNeighbours_global_tmp, J);
 
-                var BcCNglb = new IEnumerable<GridCommons.Neighbour>[J_BC];
+                var BcCNglb = new GridCommons.Neighbour[J_BC][];
                 Array.Copy(CNglb, J, BcCNglb, 0, J_BC);
 
                 var NeighGlobalIdx = m_Cells.CellNeighbours_global_tmp;
@@ -1180,10 +1180,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                 Dictionary<int, List<long>> ExternalCells = new Dictionary<int, List<long>>();
 
                 for (int j = 0; j < J; j++) { // loop over cells
-                    int Nj = NeighGlobalIdx[j].Count();
+                    var NeighGlobalIdx_j = NeighGlobalIdx[j];
+                    int Nj = NeighGlobalIdx_j.Length;
 
                     for (int n = 0; n < Nj; n++) { // loop over faces
-                        var idx = NeighGlobalIdx[j].ElementAt(n).Neighbour_GlobalIndex;
+                        var idx = NeighGlobalIdx_j[n].Neighbour_GlobalIndex;
                         Debug.Assert(idx >= 0);
 
                         if (idx >= Jglob) {

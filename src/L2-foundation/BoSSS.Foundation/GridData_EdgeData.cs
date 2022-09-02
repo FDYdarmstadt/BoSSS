@@ -2052,7 +2052,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int[][] EdgeSendLists;
                     int[][] EdgeInsertLists;
                     Tuple<int, int>[] LocalId;
-                    NegogiateOwnership(csMPI.Raw._COMM.WORLD, EdgeIndicesOnOtherProcessors,
+                    NegotiateOwnership(csMPI.Raw._COMM.WORLD, EdgeIndicesOnOtherProcessors,
                         out EdgePermuation, out NoOfPureLocal, out NoOfShOwned, out NoOfShForeign, out NoOfPeriodicElim, out NoOfExternal,
                         out EdgeSendLists, out EdgeInsertLists,
                         out LocalId);

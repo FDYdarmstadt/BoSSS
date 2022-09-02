@@ -29,10 +29,6 @@ namespace ilPSP.Tracing {
     /// </summary>
     static public class Tracer {
 
-        //static ILog Logger = LogManager.GetLogger(typeof(Tracer));
-
-
-
         /// <summary>
         /// a list of all name-spaces for which <see cref="FuncTrace"/> should perform tracing/logging;
         /// </summary>
@@ -149,7 +145,7 @@ namespace ilPSP.Tracing {
         }
 
         internal static int Pop_MethodCallrecord(long ElapsedTicks, long Memory_increase, long PeakMemory_increase, out MethodCallRecord mcr) {
-            Debug.Assert(InstrumentationSwitch == true, "insturmentation switch off!");
+            Debug.Assert(InstrumentationSwitch == true, "instrumentation switch off!");
 
 
             Debug.Assert(!object.ReferenceEquals(Current, _Root), "root frame cannot be popped");
@@ -225,7 +221,7 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Must be initialized to write memory-tracing
         /// </summary>
-        public static TextWriter Memtrace;// = new System.IO.StreamWriter("memory_nocache." + ilPSP.Environment.MPIEnv.MPI_Rank + ".csv");
+        public static TextWriter Memtrace = null;// new System.IO.StreamWriter("memory." + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ".csv");
 
         public static int Memtrace_lineCount = 0;
         
