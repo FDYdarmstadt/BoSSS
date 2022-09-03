@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.IO;
+using BoSSS.Solution;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using ilPSP.Utils;
@@ -110,6 +111,15 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             return Ret.ToDataTable();
+        }
+
+        /// <summary>
+        /// Load all exceptions, logged for the selected sessions
+        /// </summary>
+        /// <param name="sessions"></param>
+        /// <returns></returns>
+        public static SolverExceptionLogger.ExceptionDataSet GetExceptionTable(this IEnumerable<ISessionInfo> sessions) {
+            return SolverExceptionLogger.LoadExceptions(sessions);
         }
 
         /// <summary> 

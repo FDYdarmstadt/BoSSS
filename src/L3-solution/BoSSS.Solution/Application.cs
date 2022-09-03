@@ -470,13 +470,13 @@ namespace BoSSS.Solution {
 
 
             int MPIrank = int.MinValue;
-#if DEBUG
-            {
+//#if DEBUG
+//            {
 
                 
-#else
-            try {
-#endif
+//#else
+//            try {
+//#endif
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
@@ -541,24 +541,27 @@ namespace BoSSS.Solution {
                 if (_MustFinalizeMPI)
                     FinalizeMPI();
 
-#if DEBUG
-            }
-#else
-            } catch (Exception e) {
-                Console.Error.WriteLine(e.StackTrace);
-                Console.Error.WriteLine();
-                Console.Error.WriteLine();
-                Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
-                Console.Error.WriteLine(e.Message);
-                Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine();
-                Console.Error.Flush();
-                //System.Environment.Exit(-1);
-            }
-#endif
+//#if DEBUG
+//            }
+//#else
+//            } catch (Exception e) {
+//                // handle exception logging, for automated processing in WorkflowMgm etc.
+//                // make sure the exception is appended to the stderr in session directory!
+
+//                Console.Error.WriteLine(e.StackTrace);
+//                Console.Error.WriteLine();
+//                Console.Error.WriteLine();
+//                Console.Error.WriteLine("========================================");
+//                Console.Error.WriteLine("========================================");
+//                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
+//                Console.Error.WriteLine(e.Message);
+//                Console.Error.WriteLine("========================================");
+//                Console.Error.WriteLine("========================================");
+//                Console.Error.WriteLine();
+//                Console.Error.Flush();
+//                //System.Environment.Exit(-1);
+//            }
+//#endif
         }
 
         /// <summary>
@@ -769,7 +772,7 @@ namespace BoSSS.Solution {
                 // -------
 
                 using (Application<T> app = ApplicationFactory()) {
-                    m_Logger.Info("Running application...");
+                    m_Logger.Info("Running application...");                    
                     app.Init(ctrlV2);
                     app.RunSolverMode();
                     m_Logger.Info("Application finished.");
@@ -796,6 +799,7 @@ namespace BoSSS.Solution {
         /// control object
         /// </param>
         public virtual void Init(AppControl control) {
+
             if (control != null) {
                 this.Control = (T)control;
             } else {
@@ -2020,6 +2024,22 @@ namespace BoSSS.Solution {
         protected TimestepNumber TimeStepNoRestart = null;
 
         /// <summary>
+        /// 
+        /// </summary>
+        public virtual void RunSolverMode() {
+#if RELEASE
+            try {
+#endif
+                this.RunSolverModeInternal();
+#if RELEASE
+            } catch (Exception e) {
+                SolverExceptionLogger.SaveException(e, this);
+                throw;
+            }
+#endif
+        }
+
+        /// <summary>
         /// Runs the application in the "solver"-mode. This method makes
         /// multiple calls to <see cref="RunSolverOneStep"/> method. The
         /// termination behavior is determined by the variables
@@ -2046,7 +2066,7 @@ namespace BoSSS.Solution {
         ///     <item><see cref="Queries.QueryHandler.EvaluateQueries"/></item>
         /// </list>
         /// </remarks>
-        public virtual void RunSolverMode() {
+        private void RunSolverModeInternal() {
 
             // =========================================
             // loading grid, initializing database, etc:
@@ -2215,7 +2235,6 @@ namespace BoSSS.Solution {
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
                         physTime += dt;
-
 
                         if(LsTrk != null) {
                             if(LsTrk.Regions.Time != physTime) {
