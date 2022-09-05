@@ -205,6 +205,15 @@ namespace ilPSP.Tracing {
         public bool InfoToConsole = false;
 
         /// <summary>
+        /// Enables the stdout output for all ranks
+        /// (normally, suppressed for all ranks but 0)
+        /// </summary>
+        public void StdoutOnAllRanks() {
+            m_StdoutOnlyOnRank0Bkup = ilPSP.Environment.StdoutOnlyOnRank0;
+            ilPSP.Environment.StdoutOnlyOnRank0 = true;
+        }
+
+        /// <summary>
         /// logger to write the enter/leave -- messages to;
         /// </summary>
         internal protected ILog m_Logger = null;
@@ -298,6 +307,8 @@ namespace ilPSP.Tracing {
 
             
         }
+
+        bool? m_StdoutOnlyOnRank0Bkup;
 
         /// <summary>
         /// logs an 'inclusive' block;
@@ -606,6 +617,9 @@ namespace ilPSP.Tracing {
                 WorkingSet_onExit = GetPrivateMemory();
                 PeakWorkingSet_onExit = 0;
             }
+
+            if (m_StdoutOnlyOnRank0Bkup != null)
+                ilPSP.Environment.StdoutOnlyOnRank0 = m_StdoutOnlyOnRank0Bkup.Value;
 
             LeaveLog();
         }
