@@ -22,6 +22,7 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.RefElements;
+using ilPSP;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -157,6 +158,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                         jCell_glob = (j - J) + j0Bc + Jglob;
                     }
                     return jCell_glob;
+                }
+
+                void AssertNeighborUniqueness(int j, long neighGlIdx) {
+                    if (GetCellNeighbours(j).Where(neighEntry => neighEntry.Neighbour_GlobalIndex == neighGlIdx).Count() > 0) {
+                        Debugger.Launch();
+                        throw new ApplicationException("Neighbor already added");
+                    }
                 }
 
 
@@ -349,11 +357,16 @@ namespace BoSSS.Foundation.Grid.Classic {
                         bool isOk = ConfirmNeigbor(j, jNeig, out int face_neigh);
                         if (isOk) {
 
+
+
                             {
                                 Neighbour nCN = default(Neighbour);
                                 nCN.Neighbour_GlobalIndex = GetGlobalCellIdx(jNeig);
                                 nCN.CellFaceTag.FaceIndex = _iface;
                                 nCN.CellFaceTag.ConformalNeighborship = true;
+
+                                AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
+
 
                                 GetCellNeighbours(j).Add(nCN);
                                 FaceIsDone[j, _iface] = true;
@@ -364,6 +377,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 nCN.Neighbour_GlobalIndex = GetGlobalCellIdx(j);
                                 nCN.CellFaceTag.FaceIndex = face_neigh;
                                 nCN.CellFaceTag.ConformalNeighborship = true;
+
+                                AssertNeighborUniqueness(jNeig, nCN.Neighbour_GlobalIndex);
 
                                 GetCellNeighbours(jNeig).Add(nCN);
                                 FaceIsDone[jNeig, face_neigh] = true;
@@ -435,10 +450,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     Debug.Assert(_Cell_j.CellFaceTags[w].NeighCell_GlobalID < 0 == otherNeighbours[w] < 0);
                                     if (_Cell_j.CellFaceTags[w].NeighCell_GlobalID >= 0) {
                                         if (Cell_j_Neighs.Where(neigh => neigh.Neighbour_GlobalIndex == otherNeighbours[w]).Count() <= 0) { // filter duplicates
-                                            Cell_j_Neighs.Add(new Neighbour() {
+                                            var nCN = new Neighbour() {
                                                 Neighbour_GlobalIndex = otherNeighbours[w],
                                                 CellFaceTag = _Cell_j.CellFaceTags[w],
-                                            });
+                                            };
+                                            AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
+                                            Cell_j_Neighs.Add(nCN);
 
                                             
                                         }
@@ -587,7 +604,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     foreach (int targProc in Yexc.Keys) {
                         var item = Yexc[targProc];
-                        Console.Error.WriteLine($"{mpiRank}to{targProc}: nodecellpair {item.list.Length} ");
+                        tr.Info($"{mpiRank}to{targProc}: nodecellpair {item.list.Length} ");
                     }
 
                     var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
@@ -697,7 +714,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     foreach (int targProc in Yexc.Keys) {
                         NodeCellListPair_ContainerClass item = Yexc[targProc];
                         int NoOfEntries = item.list.Sum(entry => entry.CellList.Length);
-                        tr.Info($"{mpiRank}to{targProc}: nodecelllist {item.list.Length} items with {NoOfEntries} entries");
+                        tr.Info($"{mpiRank}to{targProc}: node-cell-list {item.list.Length} items with {NoOfEntries} entries");
                     }
 
                     var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
@@ -775,7 +792,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
                             var faceVtx = Kref.FaceToVertexIndices;
-                            long[][] B = new long[faceVtx.GetLength(1)][];
+                            long[][] B = new long[faceVtx.GetLength(1)][]; // 1st index: face vertex; 2nd index: enumeration
                             for (int _iface = 0; _iface < Kref.NoOfFaces; _iface++) { // loop over faces of cell 'j' (local index) resp. 'jCellGlob' (global index)
                                 if (FaceIsDone[j, _iface])
                                     continue;
@@ -784,12 +801,25 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 long NeighIdx = Intersect(B, jCellGlob);
                                 if (NeighIdx >= 0) {
-                                    Neighbour nCN = default(Neighbour);
-                                    nCN.Neighbour_GlobalIndex = NeighIdx;
-                                    nCN.CellFaceTag.FaceIndex = _iface;
-                                    nCN.CellFaceTag.ConformalNeighborship = true;
+                                    int iFound = Cell_j_Neighs.FirstIndexWhere(CN => CN.Neighbour_GlobalIndex == NeighIdx);
 
-                                    Cell_j_Neighs.Add(nCN);
+                                    if (iFound >= 0) {
+                                        Neighbour nCN = Cell_j_Neighs[iFound];
+                                        if (nCN.CellFaceTag.FaceIndex != _iface)
+                                            throw new ApplicationException("Found two connections between cells with different face indices");
+
+                                        nCN.CellFaceTag.ConformalNeighborship = true;
+                                        Cell_j_Neighs[iFound] = nCN;
+
+                                    } else {
+
+                                        Neighbour nCN = default(Neighbour);
+                                        nCN.Neighbour_GlobalIndex = NeighIdx;
+                                        nCN.CellFaceTag.FaceIndex = _iface;
+                                        nCN.CellFaceTag.ConformalNeighborship = true;
+                                                                                
+                                        Cell_j_Neighs.Add(nCN);
+                                    }
                                 }
                             }
                         } else {
@@ -807,6 +837,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 nCN.Neighbour_GlobalIndex = NeighIdx;
                                 nCN.CellFaceTag.FaceIndex = -1;
                                 nCN.CellFaceTag.ConformalNeighborship = true;
+
+                                AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
 
                                 Cell_j_Neighs.Add(nCN);
                             }
@@ -846,20 +878,21 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// global cell index
         /// </param>
         /// <returns>
-        /// Either the global index of a neighbor cell, or a negative number if
+        /// Either the global index of a neighbor cell
+        /// (this is the set-intersection of all <paramref name="B"/>[i] - sets, excluding <paramref name="j_cell_myself"/> and should have at most 1 element), or a negative number if
         /// there is no neighbor.
         /// </returns>
         static long Intersect(long[][] B, long j_cell_myself) {
             long R;
             long[] B0 = B[0];
             long ret = long.MinValue;
-            for (int l = 0; l < B0.Length; l++) {
-                R = B0[l];
+            for (int l = 0; l < B0.Length; l++) { // loop over all 'candidate cell '
+                R = B0[l]; // global cell index of 'candidate cell'
                 if (R == j_cell_myself)
                     continue;
 
                 bool AllPassed = true;
-                for (int j = 1; j < B.Length; j++) {
+                for (int j = 1; j < B.Length; j++) { // test if 'candidate cell' is also a neighbor for all other vertices
                     bool bfound = false;
                     long[] Bj = B[j];
                     for (int k = Bj.Length - 1; k >= 0; k--) {
