@@ -11,11 +11,14 @@ using BoSSS.Solution.Tecplot;
 
 namespace BoSSS.Application.ExternalBinding {
 
-    
+
     /// <summary>
     /// Wrapper around one or more DG fields to be used in the OpenFOAM binding foam-dg
     /// </summary>
     public class OpenFoamDGField : CoordinateVector, IForeignLanguageProxy {
+
+        int m_degree;
+        int m_noOfComponents;
 
         static DGField[] CtorHelper(OpenFOAMGrid g, int degree, int NoOfComponents) {
             if(NoOfComponents <= 0)
@@ -32,6 +35,8 @@ namespace BoSSS.Application.ExternalBinding {
         public OpenFoamDGField(OpenFOAMGrid g, int degree, int NoOfComponents) 
             : base(CtorHelper(g, degree, NoOfComponents)) //
         {
+            m_degree = degree;
+            m_noOfComponents = NoOfComponents;
         }
 
         /// <summary>
@@ -55,15 +60,20 @@ namespace BoSSS.Application.ExternalBinding {
         /// <returns>value of respective dg coordinate</returns>
         [CodeGenExport]
         public double GetDGcoordinate(int f, int j, int n) {
-            double ret;
-            try {
-                ret = this[Mapping.LocalUniqueCoordinateIndex(f, j, n)];
-            } catch (Exception e){
-                Console.WriteLine(e);
-                Console.WriteLine("Returning 0");
-                ret = 0;
+            if (n > this.m_degree) {
+                return 0;
             }
-            return ret;
+            try{
+                return this[Mapping.LocalUniqueCoordinateIndex(f, j, n)];
+            } catch (Exception e) {
+                Console.WriteLine(e);
+                Console.WriteLine("f: " + f);
+                Console.WriteLine("j: " + j);
+                Console.WriteLine("n: " + n);
+                Console.WriteLine("length: " + this.Count);
+                Console.WriteLine("local unique index: " + Mapping.LocalUniqueCoordinateIndex(f, j, n));
+                throw e;
+            }
         }
 
         /// <summary>
