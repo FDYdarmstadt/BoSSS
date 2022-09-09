@@ -26,12 +26,14 @@ using System.Diagnostics;
 using MPI.Wrappers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
+using System.Drawing;
+using System.Reflection;
 
 namespace ilPSP.Utils {
     
     
     /// <summary>
-    /// This class provides an easy way of exchanging arbitrary (serializeable)
+    /// This class provides an easy way of arrays of value types of arbitrary length
     /// objects between MPI processes. Internally, it uses nonblocking MPI point-to-point 
     /// routines.
     /// </summary>
@@ -57,15 +59,17 @@ namespace ilPSP.Utils {
     /// </list>
     /// The last two steps can be repeated;
     /// </remarks>
-    public class SerialisationMessenger : IDisposable {
+    public class ArrayMessenger<T> : IDisposable 
+        where T : struct    
+    {
 
-        static int TagCnt = 1234;
+        static int TagCnt = 4567231;
 
         /// <summary>
         /// ctor
         /// </summary>
         /// <param name="_MPI_comm">the MPI communicator for this messenger (see <see cref="MPI_comm"/>);</param>
-        public SerialisationMessenger(MPI_Comm _MPI_comm) {
+        public ArrayMessenger(MPI_Comm _MPI_comm) {
             MPICollectiveWatchDog.Watch(_MPI_comm);
 
 
@@ -73,16 +77,16 @@ namespace ilPSP.Utils {
             csMPI.Raw.Comm_Rank(_MPI_comm, out m_Rank);
             csMPI.Raw.Comm_Size(_MPI_comm, out m_Size);
 
-            m_MyCommPaths = new byte[m_Size];
-            m_AllCommPaths = new byte[m_Size, m_Size];
-            m_ReceiveObjectSizes = new int[m_Size];
-            m_SendObjectSizes = new int[m_Size];
+            m_MyCommPaths = new int[m_Size];
+            m_AllCommPaths = new int[m_Size, m_Size];
+
+
             m_Requests = new MPI_Request[m_Size * 4];
             m_TransmittCalled = new BitArray(m_Size, false);
 
             unsafe {
                 int myTag = TagCnt;
-                TagCnt += 13;
+                TagCnt += 17;
 
                 if (m_Rank == 0)
                     m_MyTagOffset = myTag;
@@ -119,7 +123,7 @@ namespace ilPSP.Utils {
         int m_Rank;
 
         /// <summary>
-        /// rank of the actual process within  the MPI communicator <see cref="MPI_comm"/>;
+        /// rank of the current process within  the MPI communicator <see cref="MPI_comm"/>;
         /// </summary>
         int Rank {
             get { return m_Rank; }
@@ -146,14 +150,15 @@ namespace ilPSP.Utils {
         /// are set, <see cref="CommitCommPaths"/> is the next method to call;
         /// </summary>
         /// <param name="TargetProcRank"></param>
-        public void SetCommPath(int TargetProcRank) {
+        public void SetCommPath(int TargetProcRank, int BufferLength) {
             if (m_CommPathsCommited)
                 throw new ApplicationException("setup phase is already finished.");
             if (TargetProcRank == m_Rank)
                 throw new ArgumentException("sending data to process itself is not possible.");
-            m_MyCommPaths[TargetProcRank] = Byte.MaxValue;
+            m_MyCommPaths[TargetProcRank] = BufferLength;
         }
 
+        /*
         /// <summary>
         /// performs <see cref="SetCommPath"/> for each element in <paramref name="TargetProcRanks"/>
         /// and calls <see cref="CommitCommPaths"/>;
@@ -164,12 +169,13 @@ namespace ilPSP.Utils {
                 this.SetCommPath(p);
             this.CommitCommPaths();
         }
+        */
 
         /// <summary>
         /// an entry unequal to 0 at index p indicates that objects should be transmitted from 
         /// this process to process p.
         /// </summary>
-        byte[] m_MyCommPaths;
+        int[] m_MyCommPaths;
 
 
         /// <summary>
@@ -178,7 +184,7 @@ namespace ilPSP.Utils {
         /// 1st index: source process
         /// 2nd index: target process
         /// </summary>
-        private byte[,] m_AllCommPaths;
+        private int[,] m_AllCommPaths;
 
         
         /// <summary>
@@ -204,8 +210,8 @@ namespace ilPSP.Utils {
             //if (m_Rank == 0)
             //    Debugger.Break();
 
-            csMPI.Raw.Allgather(pSndBuf, m_MyCommPaths.Length, csMPI.Raw._DATATYPE.BYTE,
-                             pRcvBuf, m_MyCommPaths.Length, csMPI.Raw._DATATYPE.BYTE,
+            csMPI.Raw.Allgather(pSndBuf, m_MyCommPaths.Length, csMPI.Raw._DATATYPE.INT,
+                             pRcvBuf, m_MyCommPaths.Length, csMPI.Raw._DATATYPE.INT,
                              this.m_MPI_comm);
 
             myCommPathsPin.Free();
@@ -234,27 +240,27 @@ namespace ilPSP.Utils {
 
 
         /// <summary>
-        /// keys: processor rank "p";
-        /// values: memory stream for the object that has to be send to process "p";
+        /// - keys: processor rank "p";
+        /// - values: memory stream for the object that has to be send to process "p";
         /// </summary>
-        SortedDictionary<int, byte[]> m_SendBuffers = new SortedDictionary<int, byte[]>();
+        SortedDictionary<int, T[]> m_SendBuffers = new SortedDictionary<int, T[]>();
 
         /// <summary>
-        /// keys: processor rank "p";
-        /// values: garbage collector pin handle for the buffer of memory stream at key "p" in <see cref="m_SendBuffers"/>;
+        /// - keys: processor rank "p";
+        /// - values: garbage collector pin handle for the buffer of memory stream at key "p" in <see cref="m_SendBuffers"/>;
         /// </summary>
         SortedDictionary<int, GCHandle> m_SendBuffersPin = new SortedDictionary<int, GCHandle>();
 
 
         /// <summary>
-        /// keys: processor rank "p";
-        /// values: memory block for the object that is received from process "p";
+        /// - keys: processor rank "p";
+        /// - values: memory block for the object that is received from process "p";
         /// </summary>
-        SortedDictionary<int, byte[]> m_ReceiveBuffers = new SortedDictionary<int,byte[]>();
+        SortedDictionary<int, T[]> m_ReceiveBuffers = new SortedDictionary<int,T[]>();
         
         /// <summary>
-        /// keys: processor rank "p";
-        /// values: garbage collector pin handle for the buffer memory at key "p" in <see cref="m_ReceiveBuffers"/>;
+        /// - keys: processor rank "p";
+        /// - values: garbage collector pin handle for the buffer memory at key "p" in <see cref="m_ReceiveBuffers"/>;
         /// </summary>
         SortedDictionary<int, GCHandle> m_ReceiveBuffersPin = new SortedDictionary<int, GCHandle>();
 
@@ -263,95 +269,6 @@ namespace ilPSP.Utils {
         /// true indicates that the setup is finished
         /// </summary>
         bool m_CommPathsCommited;
-
-        /// <summary>
-        /// formatter used for all serialization/de-serialization (legacy)
-        /// </summary>
-        BinaryFormatter m_Formatter = new BinaryFormatter();
-
-        /// <summary>
-        /// formatter used for all serialization/de-serialization
-        /// </summary>
-        JsonSerializer jsonFormatter = new JsonSerializer() {
-            NullValueHandling = NullValueHandling.Include,
-            TypeNameHandling = TypeNameHandling.All,
-            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
-            ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-            TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
-        };
-        
-        bool m_UseJson = false;
-
-        /// <summary>
-        /// Whether to use a JSON formatter or the binary formatter
-        /// </summary>
-        public bool UseJson {
-            get {
-                return m_UseJson;
-            }
-            set {
-                if (m_CommPathsCommited || m_TransmissionInProgress)
-                    throw new NotSupportedException("Cannot be changed after setup phase.");
-                m_UseJson = value;
-            }
-
-        }
-
-        [Serializable]
-        class JsonContainer {
-            public object PayLoad;
-        }
-
-        public static bool writeSize = false;
-
-        byte[] SerializeObject(object o) {
-            using (var ms = new MemoryStream()) {
-                Stopwatch stw = new Stopwatch();
-                stw.Start();
-                if (m_UseJson) {
-                    // see: https://stackoverflow.com/questions/25741895/error-serialising-simple-string-to-bson-using-newtonsoft-json-net
-                    //var containerArray = Array.CreateInstance(o.GetType(), 1);
-                    //containerArray.SetValue(o, 0);
-                    var containerObj = new JsonContainer() { PayLoad = o };
-
-                    using (var w = new BsonWriter(ms)) {
-                        jsonFormatter.Serialize(w, containerObj);
-                    }
-                } else {
-                    m_Formatter.Serialize(ms, o);
-                }
-                stw.Stop(); 
-
-                byte[] ret = ms.GetBuffer();
-                //if (ret.Length > ms.Position) {
-                //    Array.Resize(ref ret, (int)ms.Position);
-                //}
-
-                if (writeSize) {
-                    Console.Error.WriteLine($"r{this.m_Rank}: serialized to {ret.Length/(1024.0*1024.0)} MEGAbyte! took {stw.Elapsed.TotalMilliseconds} msec(UesJSON = {m_UseJson})");
-                }
-
-                return ret;
-            }
-
-        }
-
-        object DeserializeObject(byte[] data, Type t) {
-            using (var ms = new MemoryStream(data)) {
-                if (m_UseJson) {
-                    //Type ArrayType = Array.CreateInstance(t, 0).GetType();
-
-                    using (var w = new BsonReader(ms)) {
-                        var containerObj = (JsonContainer) jsonFormatter.Deserialize(w, typeof(JsonContainer));
-                        return containerObj.PayLoad;
-                    }
-                } else {
-                    return m_Formatter.Deserialize(ms);
-                }
-            }
-        }
-
-
 
         /// <summary>
         /// see <see cref="TransmissionInProgress"/>;
@@ -375,30 +292,30 @@ namespace ilPSP.Utils {
 
 
         /// <summary>
-        /// 1st phase of the transmission process; must be called after 
-        /// <see cref="CommitCommPaths"/>.
+        /// 1st phase of the transmission process; must be called after <see cref="CommitCommPaths"/>.
         /// </summary>
         /// <param name="TargetProc"></param>
-        /// <param name="graph">
-        /// a graph of objects, which will be send to process <paramref name="TargetProc"/>
+        /// <param name="data">
+        /// array, which will be send to process <paramref name="TargetProc"/>
         /// by using serialization.
         /// </param>
-        public void Transmit(int TargetProc, object graph) {
+        public void Transmit(int TargetProc, T[] data) {
 
             // ------------------------------
             // check for correctness of usage
             // ------------------------------
 
-            if (graph == null)
+            if (data == null)
                 throw new ArgumentNullException("cannot sent 'null' - objects.");
             if (!m_CommPathsCommited) 
                 throw new ApplicationException("communication paths have to be committed first.");
             if (!m_SendBuffers.ContainsKey(TargetProc))
                 throw new ArgumentException("no communication path was set for specified processor.");
-            if( m_TransmittCalled[TargetProc] == true)
+            if (m_MyCommPaths[TargetProc] != data.Length)
+                throw new ArgumentException("length of `data` array does not match the size specified before.");
+            if ( m_TransmittCalled[TargetProc] == true)
                 throw new ApplicationException("Transmit was already called for specified target process.");
             m_TransmittCalled[TargetProc] = true;
-
 
             // -------
             // startup
@@ -407,39 +324,24 @@ namespace ilPSP.Utils {
             if (!m_TransmissionInProgress)
                 InitTransmission();
 
-            // ---------------
-            // serialize object
-            // ---------------
-
-            byte[] Buffer = SerializeObject(graph);
-            m_SendBuffers[TargetProc] = Buffer;
-#if DEBUG
-            DeserializeObject(Buffer, graph.GetType());
-#endif
-
             // ------------
             // send objects
             // ------------
 
-            // send size of object 
-            m_SendObjectSizes[TargetProc] = m_SendBuffers[TargetProc].Length;
-            csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(m_SendObjectSizes, TargetProc),
-                          4, csMPI.Raw._DATATYPE.BYTE,
-                          TargetProc, TagBufferSize + m_MyTagOffset,
-                          m_MPI_comm,
-                          out m_Requests[TargetProc]);
 
             // send buffer content
             if (m_SendBuffersPin.ContainsKey(TargetProc))
-                m_SendBuffersPin[TargetProc] = GCHandle.Alloc(Buffer, GCHandleType.Pinned);
+                m_SendBuffersPin[TargetProc] = GCHandle.Alloc(data, GCHandleType.Pinned);
             else
-                m_SendBuffersPin.Add(TargetProc, GCHandle.Alloc(Buffer, GCHandleType.Pinned));
-            if (Buffer.Length > 0) {
-                csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(Buffer, 0),
-                              Buffer.Length, csMPI.Raw._DATATYPE.BYTE,
+                m_SendBuffersPin.Add(TargetProc, GCHandle.Alloc(data, GCHandleType.Pinned));
+            
+            
+            if (data.Length > 0) {
+                csMPI.Raw.Issend(Marshal.UnsafeAddrOfPinnedArrayElement(data, 0),
+                              data.Length*sizeof_T, csMPI.Raw._DATATYPE.BYTE,
                               TargetProc, TagBufferContent + m_MyTagOffset,
                               m_MPI_comm,
-                              out m_Requests[m_Size + TargetProc]);
+                              out m_Requests[TargetProc]);
             }
 
             //if (DiagnosisFile != null) {
@@ -448,11 +350,6 @@ namespace ilPSP.Utils {
         }
 
         /*
-        /// <summary>
-        /// Dumping of send/receive blocks for debugging purpose
-        /// </summary>
-        static public string DiagnosisFile = null;
-        */
 
         /// <summary>
         /// entry at index p is reserved for the size of the object that is send to process p in bytes;
@@ -482,6 +379,8 @@ namespace ilPSP.Utils {
         /// </summary>
         const int TagBufferSize = 123;
 
+        */
+
         /// <summary>
         /// MPI tag indicating that the content of a buffer is transmitted
         /// </summary>
@@ -489,25 +388,25 @@ namespace ilPSP.Utils {
 
         /// <summary>
         /// MPI request handles for nonblocking send and receives.
-        /// Array of length of 4*<see cref="m_Size"/>:
-        /// <list type="bullet">
-        ///   <item>
-        ///   1st quarter (index 0 to <see cref="m_Size"/>-1): send handles for buffer size transmission;
-        ///   </item>
-        ///   <item>
-        ///   2nd quarter (index <see cref="m_Size"/> to 2*<see cref="m_Size"/>-1): send handles for buffer content;
-        ///   </item>
-        ///   <item>
-        ///   3rd quarter (index 2*<see cref="m_Size"/> to 3*<see cref="m_Size"/>-1): receive handles for buffer size;
-        ///   </item>
-        ///   <item>
-        ///   4th quarter (index 3*<see cref="m_Size"/> to 4*<see cref="m_Size"/>-1): receive handles for buffer content;
-        ///   </item>
-        /// </list>
+        /// Array of length of 2*<see cref="Size"/>:
+        /// - 1st half: (index 0 to <see cref="Size"/>-1): send handles for buffer content
+        /// - 2nd half: (index <see cref="Size"/> to 2*<see cref="Size"/>-1): receive handles for buffer content;
         /// </summary>
         MPI_Request[] m_Requests;
 
+        int sizeof_T {
+            get {
+                int sz = Marshal.SizeOf<T>();
+                if (typeof(T) == typeof(int))
+                    if (sz != sizeof(int))
+                        throw new ApplicationException("wrong size for int");
+                if (typeof(T) == typeof(long))
+                    if (sz != sizeof(long))
+                        throw new ApplicationException("wrong size for long");
 
+                return sz;
+            }
+        }
 
         /// <summary>
         /// 
@@ -518,8 +417,8 @@ namespace ilPSP.Utils {
                 throw new ApplicationException("internal error: transmission already in progress.");
             m_TransmissionInProgress = true;
 
-            m_SendObjectSizesPin = GCHandle.Alloc(m_SendObjectSizes, GCHandleType.Pinned);
-
+            //m_SendObjectSizesPin = GCHandle.Alloc(m_SendObjectSizes, GCHandleType.Pinned);
+            ReceiveCount = 0;
             // -------------------
             // clear request array
             // -------------------
@@ -527,27 +426,39 @@ namespace ilPSP.Utils {
             for (int i = 0; i < m_Requests.Length; i++) 
                 m_Requests[i] = csMPI.Raw.MiscConstants.MPI_REQUEST_NULL;
 
-            // --------------------------------
-            // initiate receive of buffer sizes
-            // --------------------------------
+            // ---------------------------
+            // initiate receive of buffers
+            // ---------------------------
 
-            if( m_ReceiveObjectSizesPin.IsAllocated)
-                throw new ApplicationException("internal error: gc handle already exists.");
-
-            m_ReceiveObjectSizesPin = GCHandle.Alloc(m_ReceiveObjectSizes,GCHandleType.Pinned);
-
-            for( int p = 0; p < m_Size; p++) {
+            for (int p = 0; p < m_Size; p++) {
                 if (m_AllCommPaths[p, m_Rank] != 0) {
-                    csMPI.Raw.Irecv(Marshal.UnsafeAddrOfPinnedArrayElement(m_ReceiveObjectSizes,p),
-                                 sizeof(int), csMPI.Raw._DATATYPE.BYTE,
-                                 p, TagBufferSize + m_MyTagOffset,
-                                 m_MPI_comm,
-                                 out m_Requests[2*m_Size + p]);
+
+                    int proc = p;
+                    int Len = m_AllCommPaths[p, m_Rank];
+
+                    // reallocate memory, if necessary
+                    T[] buffer = m_ReceiveBuffers[proc];
+                    if (buffer == null || buffer.Length != Len) {
+                        buffer = new T[Len];
+                        m_ReceiveBuffers[proc] = buffer;
+                    }
+
+                    // pin buffer
+                    GCHandle pin = GCHandle.Alloc(buffer, GCHandleType.Pinned);
+                    if (m_ReceiveBuffersPin.ContainsKey(proc))
+                        m_ReceiveBuffersPin[proc] = pin;
+                    else
+                        m_ReceiveBuffersPin.Add(proc, pin);
+
+                    // start nonblocking receive
+                    csMPI.Raw.Irecv(pin.AddrOfPinnedObject(),
+                                     Len * sizeof_T, csMPI.Raw._DATATYPE.BYTE,
+                                     proc, TagBufferContent + m_MyTagOffset,
+                                     m_MPI_comm,
+                                     out m_Requests[m_Size + proc]);
                 }
+
             }
-
-
-            
         }
 
         int ReceiveCount = 0;
@@ -557,24 +468,21 @@ namespace ilPSP.Utils {
         /// calls to <see cref="Transmit"/> have been done;
         /// Must be called multiple times until <paramref name="o"/> is null
         /// after return, which guarantees that all send/receive's are finished
-        /// (otherwise is very likly that MPI is in an undefined state).
+        /// (otherwise is very likely that MPI is in an undefined state).
         /// After this, the object is ready for another send/receive cycle.
         /// </summary>
         /// <param name="TargetProc">
         /// process rank which has send <paramref name="o"/> to this process.
         /// </param>
         /// <param name="o">
-        /// on exit, the received object or null, if all objects were received;
+        /// on exit, the received array or null, if all objects were received;
         /// and the communication is finished.
         /// </param>
-        /// <typeparam name="T">
-        /// type of received object
-        /// </typeparam>
         /// <returns>
         /// true, if <paramref name="o"/> contains a received object;<br/>
         /// false if the communication is finished.
         /// </returns>
-        public bool GetNext<T>(out int TargetProc, out T o) {
+        public bool GetNext(out int TargetProc, out T[] o) {
 
             int size = m_Size;
 
@@ -619,58 +527,22 @@ namespace ilPSP.Utils {
                 
 
                 if (index >= 0 && index < size) {
-                    // ++++++++++++++++++++++++++++++++++++++++++++
-                    // some send has been completed - nothing to do
-                    // ++++++++++++++++++++++++++++++++++++++++++++
-
-                } else if (index >= size && index < size*2) {
+                    
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
                     // buffer content send completed - release gc handle
                     // +++++++++++++++++++++++++++++++++++++++++++++++++
 
-                    m_SendBuffersPin[index - size].Free();
-                    m_SendBuffersPin.Remove(index - size);
+                    m_SendBuffersPin[index].Free();
+                    m_SendBuffersPin.Remove(index);
 
-                } else if (index >= size * 2 && index < size * 3) {
-                    // ++++++++++++++++++++++++++++++++++++++++++++
-                    // object size received - start content receive
-                    // ++++++++++++++++++++++++++++++++++++++++++++
-
-                    int proc = index - 2*size;
+                
                     
-                    // reallocate memory, if necessary
-                    byte[] buffer = m_ReceiveBuffers[proc];
-                    if (buffer == null) {
-                        buffer = new byte[m_ReceiveObjectSizes[proc]];
-                        m_ReceiveBuffers[proc] = buffer;
-                    } else {
-                        if (buffer.Length < m_ReceiveObjectSizes[proc]) {
-                            buffer = new byte[m_ReceiveObjectSizes[proc]];
-                            m_ReceiveBuffers[proc] = buffer; 
-                        }
-                    }
-
-                    // pin buffer
-                    GCHandle pin = GCHandle.Alloc(buffer, GCHandleType.Pinned);
-                    if (m_ReceiveBuffersPin.ContainsKey(proc))
-                        m_ReceiveBuffersPin[proc] = pin;
-                    else
-                        m_ReceiveBuffersPin.Add(proc, pin);
-
-                    // start nonblocking receive
-                    if (m_ReceiveObjectSizes[proc] > 0) {
-                        csMPI.Raw.Irecv(pin.AddrOfPinnedObject(),
-                                     m_ReceiveObjectSizes[proc], csMPI.Raw._DATATYPE.BYTE,
-                                     proc, TagBufferContent + m_MyTagOffset,
-                                     m_MPI_comm,
-                                     out m_Requests[size * 3 + proc]);
-                    }
-                } else if (index >= size * 3 && index < size * 4) {
+                } else if (index >= size  && index < size * 2) {
                     // +++++++++++++++++++++++++++++++++++++++++
                     // object received - de-serialize and return
                     // +++++++++++++++++++++++++++++++++++++++++
 
-                    int proc = index - size * 3;
+                    int proc = index - size;
 
                     // free pin
                     m_ReceiveBuffersPin[proc].Free();
@@ -681,7 +553,7 @@ namespace ilPSP.Utils {
                     //}
 
                     // deserialize
-                    o = (T)DeserializeObject(m_ReceiveBuffers[proc], typeof(T));
+                    o = m_ReceiveBuffers[proc];
                     TargetProc = proc;
                     return true;
                     
@@ -693,21 +565,15 @@ namespace ilPSP.Utils {
                     m_TransmissionInProgress = false;
                     m_TransmittCalled.SetAll(false);
 
-                    m_SendObjectSizesPin.Free();
-                    m_ReceiveObjectSizesPin.Free();
                     Debug.Assert(m_SendBuffersPin.Count == 0);
                     Debug.Assert(m_ReceiveBuffersPin.Count == 0);
 
 
-                    o = default(T);
+                    o = default(T[]);
                     TargetProc = Int32.MinValue;
                     return false;
                 } else {
-                    //if(PoorManDebugger != null)
-                    //{
-                    //    PoorManDebugger.WriteLine("are you kidding me?");
-                    //    PoorManDebugger.Flush();
-                    //}
+                   
                     throw new ApplicationException("internal error: index of request out of range.");
                 }
             }
@@ -738,11 +604,13 @@ namespace ilPSP.Utils {
             m_SendBuffersPin = null;
             m_ReceiveBuffersPin = null;
             
+            /*
             if (m_SendObjectSizesPin.IsAllocated)
                 m_SendObjectSizesPin.Free();
 
             if (m_ReceiveObjectSizesPin.IsAllocated)
                 m_ReceiveObjectSizesPin.Free();
+            */
 
             m_ReceiveBuffers = null;
             m_SendBuffers = null;
@@ -753,56 +621,70 @@ namespace ilPSP.Utils {
         /// Exchanges serialize-able data objects in between all MPI processes.
         /// </summary>
         /// <param name="objects_to_send">
-        /// Data to send.<br/>
-        /// keys: MPI rank of the process to which <em>o</em> should be send to<br/>
-        /// values: some object <em>o</em>
+        /// Data to send.
+        /// - keys: MPI rank of the process to which <em>o</em> should be send to<br/>
+        /// - values: some object <em>o</em>
         /// </param>
         /// <param name="comm"></param>
         /// <returns>
-        /// Received data.<br/>
-        /// keys: MPI rank of the process from which <em>q</em> has been received.<br/>
-        /// values: some object <em>q</em>
+        /// Received data.
+        /// - keys: MPI rank of the process from which <em>q</em> has been received.<br/>
+        /// - values: some object <em>q</em>
         /// </returns>
-        /// <param name="__UseJSON"></param>
-        public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send, MPI_Comm comm, bool __UseJSON = false) {
-            using (var sms = new SerialisationMessenger(comm)) {
-                sms.UseJson = __UseJSON;
-                //if (PoorManDebugger != null) {
-                //    PoorManDebugger.WriteLine("tag offset is " + sms.m_MyTagOffset);
-                //    PoorManDebugger.Flush();
-                //}
-                sms.SetCommPathsAndCommit(objects_to_send.Keys);
+
+        public static IDictionary<int, T[]> ExchangeData(IDictionary<int, T[]> objects_to_send, MPI_Comm comm) {
+            using (var ams = new ArrayMessenger<T>(comm)) {
+                
+
+                foreach(var kv in objects_to_send) {
+                    ams.SetCommPath(kv.Key, kv.Value.Length);
+                }
+                ams.CommitCommPaths();
 
                 foreach (var kv in objects_to_send) {
-                    sms.Transmit(kv.Key, kv.Value);
+                    ams.Transmit(kv.Key, kv.Value);
                 }
 
-                var R = new Dictionary<int, T>();
-                T obj;
+                var R = new Dictionary<int, T[]>();
+                T[] obj;
                 int rcv_rank;
-                while (sms.GetNext(out rcv_rank, out obj)) {
+                while (ams.GetNext(out rcv_rank, out obj)) {
                     R.Add(rcv_rank, obj);
                 }
 
-                //if(PoorManDebugger != null)
-                //{
-                //    PoorManDebugger.WriteLine(" leaving ExchangeData");
-                //    PoorManDebugger.Flush();
-                //}
+               
 
                 return R;
             }
         }
 
-        /*
-        public static StreamWriter PoorManDebugger; 
-        */
+        /// <summary>
+        /// Exchanges serialize-able data objects in between all MPI processes.
+        /// </summary>
+        /// <param name="comm"></param>
+        /// <param name="get_SendData">
+        /// returns the data to send for a specific rank
+        /// </param>
+        /// <param name="receiver_ranks">mpi ranks to send data to</param>
+        /// <returns>
+        /// Received data.
+        /// - keys: MPI rank of the process from which <em>q</em> has been received.<br/>
+        /// - values: some object <em>q</em>
+        /// </returns>
+        public static IDictionary<int, T[]> ExchangeData(IEnumerable<int> receiver_ranks, Func<int, T[]> get_SendData, MPI_Comm comm) {
+            var dict = new Dictionary<int, T[]>();
+            foreach (var rnk in receiver_ranks)
+                dict.Add(rnk, get_SendData(rnk));
+
+            return ExchangeData(dict, comm);
+        }
+
 
         /// <summary>
         /// equal to <see cref="ExchangeData{T}(IDictionary{int,T},MPI_Comm)"/>, acting on the WORLD-communicator
         /// </summary>
-        public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send) {
-            return ExchangeData<T>(objects_to_send, csMPI.Raw._COMM.WORLD);
+        public static IDictionary<int, T[]> ExchangeData(IDictionary<int, T[]> objects_to_send) {
+            return ExchangeData(objects_to_send, csMPI.Raw._COMM.WORLD);
         }
 
     }

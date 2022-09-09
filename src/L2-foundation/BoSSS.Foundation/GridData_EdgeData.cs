@@ -1806,11 +1806,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     // - 2nd index: enumeration
                     // - Item1: process rank R
                     // - Item2: index of edge on rank R
-                    Tuple<int, int>[][] EdgeIndicesOnOtherProcessors = new Tuple<int, int>[E][];
+                    (int MPIrank, int Index)[][] EdgeIndicesOnOtherProcessors = new (int, int)[E][];
                     using(var bt1 = new BlockTrace("LocalIndicesForeign", tr)) {
 
                         for (int e = 0; e < E; e++) {
-                            EdgeIndicesOnOtherProcessors[e] = new Tuple<int, int>[] { new Tuple<int, int>(myRank, e) };
+                            EdgeIndicesOnOtherProcessors[e] = new (int, int)[] { (myRank, e) };
                         }
 
 
@@ -2025,7 +2025,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if (matchCount != 1)
                                     throw new ApplicationException("error in algorithm");
 
-                                (new Tuple<int, int>(originRank, iEdge_foreign)).AddToArray(ref EdgeIndicesOnOtherProcessors[iEdge_local]);
+                                (originRank, iEdge_foreign).AddToArray(ref EdgeIndicesOnOtherProcessors[iEdge_local]);
                             }
                         }
                     }

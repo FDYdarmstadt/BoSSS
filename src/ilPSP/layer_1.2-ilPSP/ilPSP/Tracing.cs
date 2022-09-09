@@ -230,17 +230,18 @@ namespace ilPSP.Tracing {
         /// <summary>
         /// Must be initialized to write memory-tracing
         /// </summary>
-        public static TextWriter Memtrace = null;// new System.IO.StreamWriter("memory." + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ".csv");
+        public static TextWriter Memtrace = new System.IO.StreamWriter("memory." + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ".csv");
 
         public static int Memtrace_lineCount = 0;
         
         static long PreviousLineMem = 0;
 
-    
+
         /// <summary>
-        /// Very expensive instrumentation option, slows down by a factor of two to three!!!
+        /// - true: Very expensive instrumentation option, slows down by a factor of two to three!!!
+        /// - false: almost no overhead, does not include un-managed memory.
         /// </summary>
-        public static bool LogPrivateMem = false;
+        public static bool LogPrivateMem = true;
 
         /// <summary>
         /// current process to trace memory

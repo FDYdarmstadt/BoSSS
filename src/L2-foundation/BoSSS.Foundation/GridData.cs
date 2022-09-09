@@ -1138,7 +1138,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // compute neighborship info 
                 // =========================
-
+                
                 GridCommons.Neighbour[][] CNglb = m_Grid.GetCellNeighbourship(true);
                 Debug.Assert(CNglb.Length == (J + J_BC));
 #if DEBUG

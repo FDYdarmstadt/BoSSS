@@ -81,14 +81,107 @@ namespace BoSSS.Foundation.Grid.Classic {
         }
 
 
-        [Serializable]
         class NodeCellIndexPair_ContainerClass {
-            public NodeCellIndexPair[] list;
+            public List<NodeCellIndexPair> list = new List<NodeCellIndexPair> ();
+
+
+            /// <summary>
+            /// Optimized serialization;
+            /// </summary>
+            /// <remarks>
+            /// Fk, 08sep22: especially in MPI-parallel (64 cores or more) setups, 
+            /// the <see cref="SerialisationMessenger"/> produces memory-usage peaks which sometimes even crash the simulation due to out-of-memory.
+            /// </remarks>
+            public long[] Serialize() {
+                var R = new List<long>();
+                long L = list.Count;
+                R.Add(L);
+                for(int l = 0; l < L; l++) {
+                    var item_l = list[l];
+                    R.Add(item_l.NodeId);
+                    R.Add(item_l.GlobalCellIndex);
+                }
+
+                return R.ToArray();
+            }
+
+
+            /// <summary>
+            /// Optimized de-serialization
+            /// </summary>
+            public static NodeCellIndexPair_ContainerClass Deserialize(long[] stream) {
+                int cnt = 0;
+                long L = stream[cnt]; cnt++;
+                var R = new NodeCellIndexPair_ContainerClass();
+                R.list = new List<NodeCellIndexPair>((int)L);
+                for (int l = 0; l < L; l++) {
+                    long _NodeID = stream[cnt]; cnt++;
+                    long _GlobalCellIndex = stream[cnt]; cnt++;
+                    R.list.Add(new NodeCellIndexPair() {
+                        NodeId = _NodeID,
+                        GlobalCellIndex = _GlobalCellIndex
+                    });
+                }
+
+                return R;
+            }
         }
 
         [Serializable]
         class NodeCellListPair_ContainerClass {
-            public NodeCellListPair[] list;
+            public List<NodeCellListPair> list = new List<NodeCellListPair>();
+
+            /// <summary>
+            /// Optimized serialization;
+            /// </summary>
+            /// <remarks>
+            /// Fk, 08sep22: especially in MPI-parallel (64 cores or more) setups, 
+            /// the <see cref="SerialisationMessenger"/> produces memory-usage peaks which sometimes even crash the simulation due to out-of-memory.
+            /// </remarks>
+            public long[] Serialize() {
+                var R = new List<long>();
+                long L = list.Count;
+                R.Add(L);
+                for (int l = 0; l < L; l++) {
+                    var item_l = list[l];
+                    R.Add(item_l.NodeId);
+
+                    long LL = item_l.CellList?.Length ?? 0;
+                    R.Add(LL);
+                    for(int ll = 0; ll < LL; ll++) {
+                        R.Add(item_l.CellList[ll]);
+                    }
+                }
+
+                return R.ToArray();
+            }
+
+
+            /// <summary>
+            /// Optimized de-serialization
+            /// </summary>
+            public static NodeCellListPair_ContainerClass Deserialize(long[] stream) {
+                int cnt = 0;
+                long L = stream[cnt]; cnt++;
+                var R = new NodeCellListPair_ContainerClass();
+                R.list = new List<NodeCellListPair>((int)L);
+                for (int l = 0; l < L; l++) {
+                    long _NodeID = stream[cnt]; cnt++;
+                    long LL = stream[cnt]; cnt++;
+
+                    var _CellList = new long[LL];
+                    for (int ll = 0; ll < LL; ll++) {
+                        _CellList[ll] = stream[cnt]; cnt++;
+                    }
+
+                    R.list.Add(new NodeCellListPair() {
+                        NodeId = _NodeID,
+                        CellList = _CellList
+                    });
+                }
+
+                return R;
+            }
         }
 
         /// <summary>
@@ -500,8 +593,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     // key: MPI processor rank
                     // value: information packet
-                    Dictionary<int, List<NodeCellIndexPair>> Y =
-                        new Dictionary<int, List<NodeCellIndexPair>>();
+                    Dictionary<int, NodeCellIndexPair_ContainerClass> Y = new Dictionary<int, NodeCellIndexPair_ContainerClass>();
 
                     long NodeIdMin = long.MaxValue, NodeIdMax = long.MinValue;
 
@@ -575,13 +667,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Packet.NodeId = NodeId;
                                 Packet.GlobalCellIndex = jCell_glob;
 
-                                List<NodeCellIndexPair> Z;
-                                if (!Y.TryGetValue(target_prozi, out Z)) {
-                                    Z = new List<NodeCellIndexPair>();
+                                if (!Y.TryGetValue(target_prozi, out var Z)) {
+                                    Z = new NodeCellIndexPair_ContainerClass();
                                     Y.Add(target_prozi, Z);
                                 }
 
-                                Z.Add(Packet);
+                                Z.list.Add(Packet);
                             }
                         }
 
@@ -589,27 +680,17 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     tr.Info($"r{mpiRank}: min Node {NodeIdMin} -- max Node {NodeIdMax} // Global No Of Nodes: {NodePartitioning.TotalLength}");
 
-                    //SerialisationMessenger.DiagnosisFile = "GetCellNeighborship";
-                    //SerialisationMessenger.TestDeserialization = true;
-
-                    var Yexc = new Dictionary<int, NodeCellIndexPair_ContainerClass>();
-                    {
-                        foreach (var kv in Y) {
-                            Yexc.Add(kv.Key,
-                                new NodeCellIndexPair_ContainerClass() { list = kv.Value.ToArray() });
-                        }
-                        Y = null;
+                    
+                    foreach (int targProc in Y.Keys) {
+                        var item = Y[targProc];
+                        tr.Info($"{mpiRank}to{targProc}: nodecellpair {item.list.Count} ");
                     }
 
-
-                    foreach (int targProc in Yexc.Keys) {
-                        var item = Yexc[targProc];
-                        tr.Info($"{mpiRank}to{targProc}: nodecellpair {item.list.Length} ");
-                    }
-
-                    var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
+                    var W = ArrayMessenger<long>.ExchangeData(Y.Keys, rank => Y[rank].Serialize(), csMPI.Raw._COMM.WORLD);
                     foreach (var wp in W.Values) {
-                        foreach (NodeCellIndexPair Packet in wp.list) {
+                        var container = NodeCellIndexPair_ContainerClass.Deserialize(wp); 
+
+                        foreach (NodeCellIndexPair Packet in container.list) {
                             Nodes2Cells[Packet.NodeId - k0].Add(Packet.GlobalCellIndex);
                         }
                     }
@@ -632,7 +713,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         NodePeers[j] = new long[Cell_j.NodeIndices.Length][];
                     }
 
-                    Dictionary<int, List<NodeCellListPair>> Y = new Dictionary<int, List<NodeCellListPair>>();
+                    Dictionary<int, NodeCellListPair_ContainerClass> Y = new Dictionary<int, NodeCellListPair_ContainerClass>();
 
                     var CPart = this.CellPartitioning;
                     var BcPart = this.BcCellPartitioning;
@@ -688,38 +769,40 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     A.NodeId = k_node;
                                     A.CellList = cell_list;
 
-                                    List<NodeCellListPair> Z;
-                                    if (!Y.TryGetValue(cell_proc, out Z)) {
-                                        Z = new List<NodeCellListPair>();
+                                    
+                                    if (!Y.TryGetValue(cell_proc, out var Z)) {
+                                        Z = new NodeCellListPair_ContainerClass();
                                         Y.Add(cell_proc, Z);
                                     }
 
-                                    Z.Add(A);
+                                    Z.list.Add(A);
                                 }
                             }
                         }
                     }
 
-                    var Yexc = new Dictionary<int, NodeCellListPair_ContainerClass>();
-                    {
-                        foreach (var kv in Y) {
-                            Yexc.Add(kv.Key,
-                                new NodeCellListPair_ContainerClass() { list = kv.Value.ToArray() });
-                        }
-                        Y = null;
-                    }
+                    //var Yexc = new Dictionary<int, NodeCellListPair_ContainerClass>();
+                    //{
+                    //    foreach (var kv in Y) {
+                    //        Yexc.Add(kv.Key,
+                    //            new NodeCellListPair_ContainerClass() { list = kv.Value.ToArray() });
+                    //    }
+                    //    Y = null;
+                    //}
 
 
-                    tr.Info($"{mpiRank}: Glob No Of nodes: {NodePartitioning.TotalLength}; local no: {NodePartitioning.LocalLength}");
-                    foreach (int targProc in Yexc.Keys) {
-                        NodeCellListPair_ContainerClass item = Yexc[targProc];
-                        int NoOfEntries = item.list.Sum(entry => entry.CellList.Length);
-                        tr.Info($"{mpiRank}to{targProc}: node-cell-list {item.list.Length} items with {NoOfEntries} entries");
-                    }
+                    //tr.Info($"{mpiRank}: Glob No Of nodes: {NodePartitioning.TotalLength}; local no: {NodePartitioning.LocalLength}");
+                    //foreach (int targProc in Yexc.Keys) {
+                    //    NodeCellListPair_ContainerClass item = Yexc[targProc];
+                    //    int NoOfEntries = item.list.Sum(entry => entry.CellList.Length);
+                    //    tr.Info($"{mpiRank}to{targProc}: node-cell-list {item.list.Length} items with {NoOfEntries} entries");
+                    //}
 
-                    var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
+                    var W = ArrayMessenger<long>.ExchangeData(Y.Keys, rank => Y[rank].Serialize(), csMPI.Raw._COMM.WORLD);
                     foreach (var wp in W.Values) {
-                        foreach (var P in wp.list) {
+                        var container = NodeCellListPair_ContainerClass.Deserialize(wp);
+                        foreach (var P in container.list) {
+                            
                             long k_node = P.NodeId;
                             long[] cell_list = P.CellList;
 
@@ -833,14 +916,24 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             long NeighIdx = Intersect(B, jCellGlob);
                             if (NeighIdx >= 0) {
-                                Neighbour nCN = default(Neighbour);
-                                nCN.Neighbour_GlobalIndex = NeighIdx;
-                                nCN.CellFaceTag.FaceIndex = -1;
-                                nCN.CellFaceTag.ConformalNeighborship = true;
+                                int iFound = Cell_j_Neighs.FirstIndexWhere(CN => CN.Neighbour_GlobalIndex == NeighIdx);
 
-                                AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
+                                if (iFound >= 0) {
+                                    Neighbour nCN = Cell_j_Neighs[iFound];
+                                    
+                                    nCN.CellFaceTag.ConformalNeighborship = true;
+                                    Cell_j_Neighs[iFound] = nCN;
 
-                                Cell_j_Neighs.Add(nCN);
+                                } else {
+                                    Neighbour nCN = default(Neighbour);
+                                    nCN.Neighbour_GlobalIndex = NeighIdx;
+                                    nCN.CellFaceTag.FaceIndex = -1;
+                                    nCN.CellFaceTag.ConformalNeighborship = true;
+
+                                    AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
+
+                                    Cell_j_Neighs.Add(nCN);
+                                }
                             }
 
                         }

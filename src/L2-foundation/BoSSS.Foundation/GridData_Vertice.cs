@@ -595,16 +595,70 @@ namespace BoSSS.Foundation.Grid.Classic {
             class VertexSharingData {
 
                 /// <summary>
-                /// 1st index: cell
-                /// 2nd index: cell vertex
-                /// 3rd index: collection
+                /// - 1st index: cell
+                /// - 2nd index: cell vertex
+                /// - 3rd index: collection
                 /// </summary>
-                public Tuple<int, int>[][][] Data;
+                public (int MPIrank, int index)[][][] Data;
+
+
+                public int[] Serialize() {
+                    var R = new List<int>();
+                    int Li = Data.Length;
+                    R.Add(Li);
+                    for(int i = 0; i < Li; i++) {
+                        var Data_i = Data[i];
+                        int Lj = Data_i.Length;
+                        R.Add(Lj);
+
+                        for(int j = 0; j < Lj; j++) {
+                            var Data_i_j = Data_i[j];
+                            int Lk = Data_i_j.Length;
+                            R.Add(Lk);
+
+                            for(int k = 0; k < Lk; k++) {
+                                var Data_i_j_k = Data_i_j[k];
+                                R.Add(Data_i_j_k.MPIrank);
+                                R.Add(Data_i_j_k.index);
+                            }
+                        }
+                    }
+
+                    return R.ToArray();
+                }
+
+                static public VertexSharingData Deserialize(int[] stream) {
+                    int cnt = 0;
+                    var R = new VertexSharingData();
+                    int Li = stream[cnt]; cnt++;
+                    R.Data = new (int MPIrank, int index)[Li][][];
+
+                    for (int i = 0; i < Li; i++) {
+                        int Lj = stream[cnt]; cnt++;
+                        var Data_i = new (int MPIrank, int index)[Lj][];
+                        R.Data[i] = Data_i;
+
+                        for (int j = 0; j < Lj; j++) {
+                            int Lk = stream[cnt]; cnt++;
+                            var Data_i_j = new (int MPIrank, int index)[Lk];
+                            Data_i[j] = Data_i_j;
+
+                            for (int k = 0; k < Lk; k++) {
+                                var MPIRank = stream[cnt]; cnt++;
+                                var index = stream[cnt]; cnt++;
+                                Data_i_j[k] = (MPIRank, index);
+                            }
+                        }
+                    }
+
+                    return R;
+                }
+
             }
 
 
             internal void NegogiateSharing() {
-                using (new FuncTrace("VertexData.NegogiateSharing")) {
+                using (var tr = new FuncTrace("VertexData.NegogiateSharing")) {
                     int J = this.m_owner.Cells.NoOfLocalUpdatedCells;
                     int[][] SendLists = m_owner.Parallel.SendCommLists;
                     int[] InsertIndex = m_owner.Parallel.RcvCommListsInsertIndex;
@@ -624,9 +678,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                     // 2nd index: enum
                     // Item1: processor rank 'R'
                     // Item2: local vertex index on processor 'R'
-                    Tuple<int, int>[][] VertexIndicesOnOtherProcessors = new Tuple<int, int>[K][];
+                    (int Rank, int loc_idx)[][] VertexIndicesOnOtherProcessors = new (int, int)[K][];
                     BitArray NonExternalMarker = new BitArray(K); // false on all vertices that are "pure external" (only used by external cells)
-                    {
+                    using (var bt = new BlockTrace("DETERMINE_VERTEX_INDICES", tr)) {
+                        bt.InfoToConsole = true;
+                        bt.StdoutOnAllRanks();
+
                         // mark all vertices on locally updated cells
                         for (int j = 0; j < J; j++) {
                             int[] CV = Celldat.CellVertices[j];
@@ -637,9 +694,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                         // add the vertex index on this processor
                         for (int k = 0; k < K; k++) {
                             if (NonExternalMarker[k])
-                                VertexIndicesOnOtherProcessors[k] = new Tuple<int, int>[] { new Tuple<int, int>(myRank, k) };
+                                VertexIndicesOnOtherProcessors[k] = new (int, int)[] { (myRank, k) };
                             else
-                                VertexIndicesOnOtherProcessors[k] = new Tuple<int, int>[0];
+                                VertexIndicesOnOtherProcessors[k] = new (int, int)[0];
                         }
 
 
@@ -651,10 +708,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 // 'iVtx1' and 'iVtx2' are identical due to periodicity
 
                                 if (NonExternalMarker[iVtx2])
-                                    (new Tuple<int, int>(myRank, iVtx2)).AddToArray(ref VertexIndicesOnOtherProcessors[iVtx1]);
+                                    ((myRank, iVtx2)).AddToArray(ref VertexIndicesOnOtherProcessors[iVtx1]);
 
                                 if (NonExternalMarker[iVtx1])
-                                    (new Tuple<int, int>(myRank, iVtx1)).AddToArray(ref VertexIndicesOnOtherProcessors[iVtx2]);
+                                    ((myRank, iVtx1)).AddToArray(ref VertexIndicesOnOtherProcessors[iVtx2]);
                             }
                         }
 
@@ -664,6 +721,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
                         int SomeChange;
+                        int LoopConter = 0;
                         do {
                             // This has to be done repetitive:
                             // e.g. the center vertex x may be shared by 4 processes, 
@@ -677,11 +735,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // but each process has only two neighbours (with respect to cell-neighbourship).
                             // Thus, in one pass e.g. rank 0 only gets to know that it shares x with rank 1 and rank 2,
                             // while rank 1 gets to know that it shares x with rank 0 and rank 3.
-                            // In the secon pass, rank 1 informs rank 0 that x is also shared by rank 3, and vice-versa.
+                            // In the second pass, rank 1 informs rank 0 that x is also shared by rank 3, and vice-versa.
 
                             SomeChange = 0;
 
-                            Dictionary<int, VertexSharingData> SendData = new Dictionary<int, VertexSharingData>();
+                            Dictionary<int, int[]> SendData = new Dictionary<int, int[]>();
                             for (int proc = 0; proc < size; proc++) { // loop over MPI process ranks
                                 int[] SendList = SendLists[proc];
 
@@ -690,28 +748,34 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                 var SndItem = new VertexSharingData();
 
-                                SndItem.Data = new Tuple<int, int>[SendList.Length][][];
+                                SndItem.Data = new (int, int)[SendList.Length][][];
 
                                 for (int jj = 0; jj < SendList.Length; jj++) { // loop over all cells that will be send to processor #'proc'
                                     int jCell = SendList[jj];
                                     //var Kref = Celldat.GetRefElement(jCell);
 
                                     int[] CellVtx = Celldat.CellVertices[jCell];
-                                    SndItem.Data[jj] = new Tuple<int, int>[CellVtx.Length][];
+                                    SndItem.Data[jj] = new (int, int)[CellVtx.Length][];
 
                                     for (int i = 0; i < CellVtx.Length; i++) { // loop over cell vertices
                                         SndItem.Data[jj][i] = VertexIndicesOnOtherProcessors[CellVtx[i]];
                                     }
                                 }
 
-                                SendData.Add(proc, SndItem);
+                                int NoItems = SndItem.Data.Sum(aa => aa.Sum(aaa => aaa.Length));
+                                int[] buffer = SndItem.Serialize();
+
+                                bt.Info($"r{myRank}->{proc}: {SndItem.Data.Length} cells, {NoItems} items, size is {(NoItems*sizeof(int)*2/(1024.0*1024.0)):e0.##e-00} Megs netto; custom serialize: {(buffer.Length*sizeof(int) / (1024.0 * 1024.0)):e0.##e-00} Megs");
+                                SendData.Add(proc, SndItem.Serialize());
                             }
 
-                            var RcvData = SerialisationMessenger.ExchangeData(SendData, csMPI.Raw._COMM.WORLD);
+                            //SerialisationMessenger.writeSize = true;
+                            var RcvData = ArrayMessenger<int>.ExchangeData(SendData, csMPI.Raw._COMM.WORLD);
+                            //SerialisationMessenger.writeSize = false;
 
                             foreach (var kv in RcvData) {
                                 int proc = kv.Key;
-                                VertexSharingData RcvItem = kv.Value;
+                                VertexSharingData RcvItem = VertexSharingData.Deserialize(kv.Value);
                                 int jCell0 = InsertIndex[proc];
                                 int L = RcvItem.Data.Length;
                                 Debug.Assert(L == RcvNoOfItems[proc]);
@@ -724,14 +788,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     Debug.Assert(VtxIndex_jCell.Length == Celldat.GetRefElement(jCell).NoOfVertices);
 
                                     for (int i = 0; i < VtxIndex_jCell.Length; i++) { // loop over cell vertices
-                                        foreach (Tuple<int, int> ProcIvtx in VtxIndex_jCell[i]) {
+                                        foreach (var ProcIvtx in VtxIndex_jCell[i]) {
                                             int k = CellVtx[i];
 
-                                            bool contains = VertexIndicesOnOtherProcessors[k].Contains(ProcIvtx, delegate (Tuple<int, int> a, Tuple<int, int> b) {
-                                                bool ret1 = a.Item1 == b.Item1; // equal processor rank
-                                                bool ret2 = a.Item2 == b.Item2; // equal vertex index
-                                                                                //Debug.Assert((ret1 == false || a.Item2 == b.Item2)
-                                                                                //    || (containsPeriodic && (this.PeriodicEliminatedPoints.Keys.Contains(a.Item2) || this.PeriodicEliminatedPoints.Keys.Contains(b.Item2))));
+                                            bool contains = VertexIndicesOnOtherProcessors[k].Contains(ProcIvtx, delegate ((int rnk, int idx) a, (int rnk, int idx) b) {
+                                                bool ret1 = a.rnk == b.rnk; // equal processor rank
+                                                bool ret2 = a.idx == b.idx; // equal vertex index
+                                                                            //Debug.Assert((ret1 == false || a.Item2 == b.Item2)
+                                                                            //    || (containsPeriodic && (this.PeriodicEliminatedPoints.Keys.Contains(a.Item2) || this.PeriodicEliminatedPoints.Keys.Contains(b.Item2))));
                                                 return ret1 && ret2;
                                             });
 
@@ -762,9 +826,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                                         foreach (var T in VertexIndicesOnOtherProcessors[iVtx2]) {
 
-                                            bool contains = VertexIndicesOnOtherProcessors[iVtx1].Contains(T, delegate (Tuple<int, int> a, Tuple<int, int> b) {
-                                                bool ret1 = a.Item1 == b.Item1; // equal processor rank
-                                                bool ret2 = a.Item2 == b.Item2; // equal vertex index
+                                            bool contains = VertexIndicesOnOtherProcessors[iVtx1].Contains(T, delegate ((int rnk, int idx) a, (int rnk, int idx) b) {
+                                                bool ret1 = a.rnk == b.rnk; // equal processor rank
+                                                bool ret2 = a.idx == b.idx; // equal vertex index
                                                 return ret1 && ret2;
                                             });
 
@@ -772,7 +836,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                                                 SomeChange = 0xFFF;
                                                 T.AddToArray(ref VertexIndicesOnOtherProcessors[iVtx1]);
                                             }
-
                                         }
 
                                         // swap the indices for the second run of the 'iii'-loop
@@ -783,13 +846,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 }
                             }
 
-
-                            unsafe {
-                                int globSomeChange = 0;
-                                csMPI.Raw.Allreduce((IntPtr)(&SomeChange), (IntPtr)(&globSomeChange), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.MAX, csMPI.Raw._COMM.WORLD);
-                                SomeChange = globSomeChange;
-                            }
-
+                            SomeChange = SomeChange.MPIMax();
+                            Console.Error.WriteLine($"Ranks on other procs, iteration {LoopConter}, continue? {SomeChange != 0}");
+                            bt.Info($"Ranks on other procs, iteration {LoopConter}, continue? {SomeChange != 0}");
+                            LoopConter++;
                         } while (SomeChange != 0);
 
 
@@ -824,23 +884,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int[][] VtxInsertLists;
                     Tuple<int, int>[] PeriodicElim;
 
-                    /*
-                    using (var diag = new System.IO.StreamWriter("NegOwInput-Proc" + m_owner.MyRank + ".txt")) {
-                        for (int k = 0; k < K; k++) {
-                            diag.Write(k);
-                            diag.Write(" ");
-                            diag.Write(this.Coordinates[k, 0] + " " + this.Coordinates[k, 1]);
-                            diag.Write(" ");
-                            diag.Write(NonExternalMarker[k]);
-                            diag.Write(" ");
-                            foreach (var t in VertexIndicesOnOtherProcessors[k]) {
-                                diag.Write("(" + t.Item1 + "," + t.Item2 + ") "); 
-                            }
-                            diag.WriteLine();
-                        }
-                    }
-
-                    */
+                    
 
                     NegotiateOwnership(csMPI.Raw._COMM.WORLD, VertexIndicesOnOtherProcessors,
                         out VerticePermuation,
@@ -850,7 +894,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     // PHASE 4: apply permutation of vertices
                     // ======================================
-                    {
+                    using (new BlockTrace("APPLY_PERMUTATION", tr)) {
                         int[] invVerticePermuation = new int[K];
                         for (int k = 0; k < K; k++) {
                             invVerticePermuation[VerticePermuation[k]] = k;
@@ -1025,7 +1069,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Negotiation of MPI-Ownership for 'items' (e.g. vertices or edges).
         /// </summary>
-        private static void NegotiateOwnership(MPI_Comm comm, Tuple<int, int>[][] ItemIndicesOnOtherProcessors, 
+        private static void NegotiateOwnership(MPI_Comm comm, (int MPIrank, int idx)[][] ItemIndicesOnOtherProcessors, 
             out int[] ItemPermutation, 
             out int NoOfPureLocal, out int NoOfRelayed, out int NoOfBorrowed, out int NoOfPeriodicElim, out int NoOfExternal, 
             out int[][] SendLists, out int[][] InsertLists,
@@ -1043,8 +1087,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     if (ItemIndicesOnOtherProcessors[k] == null || ItemIndicesOnOtherProcessors[k].Length <= 0) {
                         ActiveItemsMarker[k] = false;
                     } else {
-                        var Test = ItemIndicesOnOtherProcessors[k].SingleOrDefault(t => t.Item1 == myRank && t.Item2 == k);
-                        ActiveItemsMarker[k] = (Test != null);
+                        var Test = ItemIndicesOnOtherProcessors[k].Where(t => t.MPIrank == myRank && t.idx == k).Count();
+                        ActiveItemsMarker[k] = (Test > 0);
                     }
                 }
 
@@ -1110,14 +1154,14 @@ namespace BoSSS.Foundation.Grid.Classic {
                     Debug.Assert(VS_k.Length > 0);
                     if (VS_k.Length == 1 || VS_k.Select(T => T.Item1).ToSet().Count == 1) {
                         // Vertex is purly local 
-                        Debug.Assert(VS_k[0].Item1 == myRank); // 'k's without 'myRank' should already be excluded by 'ActiveItemsMarker'
+                        Debug.Assert(VS_k[0].MPIrank == myRank); // 'k's without 'myRank' should already be excluded by 'ActiveItemsMarker'
 
                         ItemPermutation[NoOfPureLocal] = k;
                         NoOfPureLocal++;
                         Owned[k] = true;
                     } else {
-                        foreach (Tuple<int, int> t in VS_k) {
-                            int proc = t.Item1;
+                        foreach (var t in VS_k) {
+                            int proc = t.MPIrank;
                             if (proc == myRank)
                                 continue;
                             if (_SharedVertices[proc] == null) {

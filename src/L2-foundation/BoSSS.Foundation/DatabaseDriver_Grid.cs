@@ -51,7 +51,7 @@ namespace BoSSS.Foundation.IO {
         /// </param>
         /// <param name="database"></param>
         public Guid SaveGridIfUnique(ref IGrid grid, out bool EquivalentGridFound, IDatabaseInfo database) {
-            using (new FuncTrace()) {
+            using (new FuncTrace("SaveGridIfUnique")) {
                 var Grids = database.Grids;
                 foreach (var GrdInf in Grids) {
                     IGrid gridInDatabase = (IGrid)this.LoadGridInfo(GrdInf.ID, database);
