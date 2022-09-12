@@ -128,40 +128,69 @@ namespace BoSSS.Foundation.IO {
                 throw new ApplicationException("Already called."); // is seems this object is designed so that it stores at max one session per lifetime
 
             var id = si.ID;
+            int Rank = MyRank;
 
             // create tracer
             // =============
+            {
 
-            int Rank = MyRank;
+                Stream tracerfile = null;
+                if (fsDriver != null && id != Guid.Empty)
+                    tracerfile = this.FsDriver.GetNewLogStream("trace." + Rank, id);
 
-            Stream tracerfile = null;
-            if (fsDriver != null && id != Guid.Empty)
-                tracerfile = this.FsDriver.GetNewLogStream("trace." + Rank, id);
+                if (tracerfile == null && Tracer.NamespacesToLog.Length > 0 && !configAllreadyDone) {
+                    // create trace file in local directory
 
-            TextWriter tracertxt = null;
-            if (tracerfile == null && Tracer.NamespacesToLog.Length > 0 && !configAllreadyDone) {
-                // create trace file in local directory
+                    string tracefilename = "trace." + Rank + ".txt";
+                    tracerfile = new FileStream(tracefilename, FileMode.Create, FileAccess.Write, FileShare.Read);
+                }
 
-                string tracefilename = "trace." + Rank + ".txt";
-                tracerfile = new FileStream(tracefilename, FileMode.Create, FileAccess.Write, FileShare.Read);
+                TextWriter tracertxt = null;
+                if (tracerfile != null) {
+                    //var zipper = new System.IO.Compression.GZipStream(tracerfile, System.IO.Compression.CompressionMode.Compress);
+                    //tracertxt = new StreamWriter(zipper);
+                    tracertxt = new StreamWriter(tracerfile);
+                }
+
+                if (tracertxt != null) {
+                    TextWriterAppender fa = new TextWriterAppender();
+                    fa.ImmediateFlush = true;
+                    //fa.Writer = Console.Out;
+                    fa.Writer = tracertxt;
+                    fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
+                    fa.ActivateOptions();
+                    BasicConfigurator.Configure(fa);
+                    logger_output = fa;
+                    configAllreadyDone = true;
+                }
             }
 
-            if (tracerfile != null) {
-                //var zipper = new System.IO.Compression.GZipStream(tracerfile, System.IO.Compression.CompressionMode.Compress);
-                //tracertxt = new StreamWriter(zipper);
-                tracertxt = new StreamWriter(tracerfile);
+            // memory logging
+            // ==============
+
+            if (Tracer.MemtraceFile != null) {
+                Tracer.MemtraceFile.Flush();
+                Tracer.MemtraceFile.Close();
+                Tracer.MemtraceFile.Dispose();
+                Tracer.MemtraceFile = null;
             }
 
-            if (tracertxt != null) {
-                TextWriterAppender fa = new TextWriterAppender();
-                fa.ImmediateFlush = true;
-                //fa.Writer = Console.Out;
-                fa.Writer = tracertxt;
-                fa.Layout = new PatternLayout("%date %-5level %logger: %message%newline");
-                fa.ActivateOptions();
-                BasicConfigurator.Configure(fa);
-                logger_output = fa;
-                configAllreadyDone = true;
+            if (Tracer.MemoryInstrumentationLevel != MemoryInstrumentationLevel.None) {
+                Stream memlogFile = null;
+
+                if (fsDriver != null && id != Guid.Empty)
+                    memlogFile = this.FsDriver.GetNewLogStream("memory." + Rank, id);
+                if (memlogFile == null) {
+                    // create trace file in local directory
+
+                    string memlogFilename = "memory." + Rank + ".txt";
+                    memlogFile = new FileStream(memlogFilename, FileMode.Create, FileAccess.Write, FileShare.Read);
+                }
+
+
+                if(memlogFile != null) {
+                    Tracer.MemtraceFile = new StreamWriter(memlogFile);
+                }
             }
 
             /*

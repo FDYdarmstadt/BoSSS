@@ -2557,6 +2557,87 @@ namespace BoSSS.Foundation.IO {
             }
         }
 
+        /// <summary>
+        /// total memory (aka. sum) over all MPI ranks over time
+        /// </summary>
+        static public Plot2Ddata GetMPItotalMemory(this ISessionInfo sess) {
+            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+            int L = ana.NoOfTimeEntries;
+
+            var ret = new Plot2Ddata();
+
+            ret.AddDataGroup(new XYvalues(
+                $"Tot Mem [MegB] at {ana.MPIsize} cores",
+                L.ForLoop(i => (double)i),
+                ana.TotalMemMegs));
+
+            ret.Title = "Total memory of session " + sess;
+
+
+            return ret;        
+        }
+
+        /// <summary>
+        /// total memory (aka. sum) over all MPI ranks over time
+        /// </summary>
+        static public Plot2Ddata GetMPIMemory(this ISessionInfo sess) {
+            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+            int L = ana.NoOfTimeEntries;
+
+            var ret = new Plot2Ddata();
+
+            ret.AddDataGroup(new XYvalues(
+                $"Min Mem [MegB] at {ana.MPIsize} cores",
+                L.ForLoop(i => (double)i),
+                ana.MinimumMemMegs));
+
+            ret.AddDataGroup(new XYvalues(
+                $"Max Mem [MegB] at {ana.MPIsize} cores",
+                L.ForLoop(i => (double)i),
+                ana.MaximumMemMeg));
+
+            ret.AddDataGroup(new XYvalues(
+                $"Avg Mem [MegB] at {ana.MPIsize} cores",
+                L.ForLoop(i => (double)i),
+                ana.AverageMemMeg));
+
+            ret.Title = "Memory of session " + sess;
+
+
+            return ret;
+        }
+
+        /// <summary>
+        /// total memory (aka. sum) over all MPI ranks over time
+        /// </summary>
+        static public Plot2Ddata GetMPItotalMemory(this IEnumerable<ISessionInfo> sessS) {
+            var ana = new SessionsComparisonMemtrace(
+                sessS.Select(sess => new DirectoryInfo(sess.GetSessionDirectory())).ToArray());
+
+            int L = ana.NoOfTimeEntries;
+
+            var ret = new Plot2Ddata();
+            int ColorCounter = 0;
+            foreach (var tt in ana.GetTotalMemoryMegs()) {
+
+                var fmt = new PlotFormat();
+                fmt.SetLineColorFromIndex(ColorCounter); ColorCounter++;
+                fmt.WithStyle(Styles.Lines);
+
+                ret.AddDataGroup(new XYvalues(
+                    $"Tot Mem [MegB] at {tt.MPISz} cores",
+                    L.ForLoop(i => (double)i),
+                    tt.TotalMem),
+                    fmt);
+            }
+
+            ret.Title = "Total memory of sessions at " + ana.MPIsizeOfRuns.ToConcatString("", ", ", "") + " MPI cores";
+
+
+            return ret;
+        }
+
+
 
         /// <summary>
         /// 

@@ -681,8 +681,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     (int Rank, int loc_idx)[][] VertexIndicesOnOtherProcessors = new (int, int)[K][];
                     BitArray NonExternalMarker = new BitArray(K); // false on all vertices that are "pure external" (only used by external cells)
                     using (var bt = new BlockTrace("DETERMINE_VERTEX_INDICES", tr)) {
-                        bt.InfoToConsole = true;
-                        bt.StdoutOnAllRanks();
+                        //bt.InfoToConsole = true;
+                        //bt.StdoutOnAllRanks();
 
                         // mark all vertices on locally updated cells
                         for (int j = 0; j < J; j++) {
@@ -847,7 +847,6 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
 
                             SomeChange = SomeChange.MPIMax();
-                            Console.Error.WriteLine($"Ranks on other procs, iteration {LoopConter}, continue? {SomeChange != 0}");
                             bt.Info($"Ranks on other procs, iteration {LoopConter}, continue? {SomeChange != 0}");
                             LoopConter++;
                         } while (SomeChange != 0);

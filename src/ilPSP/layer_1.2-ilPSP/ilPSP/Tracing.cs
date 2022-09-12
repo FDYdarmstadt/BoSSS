@@ -58,6 +58,25 @@ namespace ilPSP.Tracing {
             }
         }
 
+        /// <summary>
+        /// Must be initialized to write memory-tracing
+        /// </summary>
+        public static TextWriter MemtraceFile;// = new System.IO.StreamWriter("memory." + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ".csv");
+
+
+        internal static System.Collections.Generic.LinkedList<string> MemtraceFileTemp = new System.Collections.Generic.LinkedList<string>();
+        
+        
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static MemoryInstrumentationLevel MemoryInstrumentationLevel {
+            get;
+            set;
+        } = MemoryInstrumentationLevel.None;
+
 
         /// <summary>
         /// Explicit switch for turning cone instrumentation on/off; this is useful when to much overhead is caused by instrumentation.
@@ -184,6 +203,30 @@ namespace ilPSP.Tracing {
         }
     }
 
+    /// <summary>
+    /// Levels of memory instrumentation during func tracing
+    /// </summary>
+    public enum MemoryInstrumentationLevel {
+
+        /// <summary>
+        /// Off
+        /// </summary>
+        None = 0,
+
+        /// <summary>
+        /// only memory managed by garbage collector, causing almost no overhead
+        /// </summary>
+        OnlyGcTotalMemory = 1,
+
+
+        /// <summary>
+        /// Garbage collector memory and un-manged private memory;
+        /// Very expensive instrumentation option, slows down the application by a factor of two to three!!!
+        /// </summary>
+        GcAndPrivateMemory = 2
+
+    }
+
 
     /// <summary>
     /// baseclass for runtime measurement of functions and blocks
@@ -197,7 +240,10 @@ namespace ilPSP.Tracing {
     /// </example>
     abstract public class Tmeas : IDisposable {
 
-               
+        public static int Memtrace_lineCount = 0;
+
+        static long PreviousLineMem = 0;
+
 
         /// <summary>
         /// Hack to write <see cref="Info"/> also to cout.
@@ -227,21 +273,7 @@ namespace ilPSP.Tracing {
             }
         }
 
-        /// <summary>
-        /// Must be initialized to write memory-tracing
-        /// </summary>
-        public static TextWriter Memtrace = new System.IO.StreamWriter("memory." + ilPSP.Environment.MPIEnv.MPI_Rank + "of" + ilPSP.Environment.MPIEnv.MPI_Size + ".csv");
-
-        public static int Memtrace_lineCount = 0;
-        
-        static long PreviousLineMem = 0;
-
-
-        /// <summary>
-        /// - true: Very expensive instrumentation option, slows down by a factor of two to three!!!
-        /// - false: almost no overhead, does not include un-managed memory.
-        /// </summary>
-        public static bool LogPrivateMem = true;
+      
 
         /// <summary>
         /// current process to trace memory
@@ -251,16 +283,22 @@ namespace ilPSP.Tracing {
                 return 0;
 
             // expensive: 
-            if(LogPrivateMem) {
-                var p = Process.GetCurrentProcess(); // process object must be fresh, otherwise old data
-                //long q = p.PeakWorkingSet64;
-                return p.WorkingSet64;
-            } else {
-                // almost no overhead, does not include un-managed memory.
-                long virt = GC.GetTotalMemory(false);
-                return virt;
-                //var p = Process.GetCurrentProcess();
-                //return p.WorkingSet64;
+            switch (Tracer.MemoryInstrumentationLevel) {
+                case MemoryInstrumentationLevel.GcAndPrivateMemory:
+                    var p = Process.GetCurrentProcess(); // process object must be fresh, otherwise old data
+                    return p.WorkingSet64;
+
+                case MemoryInstrumentationLevel.OnlyGcTotalMemory:
+                    long virt = GC.GetTotalMemory(false);
+                    return virt;
+
+                case MemoryInstrumentationLevel.None:
+                    return 0;
+
+                default:
+                    throw new NotImplementedException();
+                    //var p = Process.GetCurrentProcess();
+                    //return p.WorkingSet64;
             }
 
         }
@@ -543,63 +581,77 @@ namespace ilPSP.Tracing {
             }
 
 
-            if(Memtrace != null) {
-               
+            if (Tracer.MemoryInstrumentationLevel != MemoryInstrumentationLevel.None) {
+
+                string Line;
+                using (var Memtrace = new StringWriter()) {
 
 
-                Memtrace.Write(Memtrace_lineCount); // col 0: line number
-                Memtrace_lineCount++;
-                Memtrace.Write("\t");
-                Memtrace.Write(WorkingSet); // col 1: mem in Bytes
-                long diff = WorkingSet - PreviousLineMem;
-                PreviousLineMem = WorkingSet;
-                Memtrace.Write("\t");
-                Memtrace.Write($"{PrintMeg(WorkingSet)}"); // col 2: mem in megs
-                Memtrace.Write("\t");
-                Memtrace.Write($"{diff}"); // col 3: diff-mem in bytes
-                Memtrace.Write("\t");
-                Memtrace.Write($"{PrintMeg(diff)}"); // col 4: diff-mem in megs
-                Memtrace.Write("\t");
+                    Memtrace.Write(Memtrace_lineCount); // col 0: line number
+                    Memtrace_lineCount++;
+                    Memtrace.Write("\t");
+                    Memtrace.Write(WorkingSet); // col 1: mem in Bytes
+                    long diff = WorkingSet - PreviousLineMem;
+                    PreviousLineMem = WorkingSet;
+                    Memtrace.Write("\t");
+                    Memtrace.Write($"{PrintMeg(WorkingSet)}"); // col 2: mem in megs
+                    Memtrace.Write("\t");
+                    Memtrace.Write($"{diff}"); // col 3: diff-mem in bytes
+                    Memtrace.Write("\t");
+                    Memtrace.Write($"{PrintMeg(diff)}"); // col 4: diff-mem in megs
+                    Memtrace.Write("\t");
 
-                /*
-                long gcTot = WorkingSet;//.MPISum();
-                long gcMax = WorkingSet;//.MPIMax();
-                long gcMin = WorkingSet;//.MPIMin();
+                    /*
+                    long gcTot = WorkingSet;//.MPISum();
+                    long gcMax = WorkingSet;//.MPIMax();
+                    long gcMin = WorkingSet;//.MPIMin();
 
-                Memtrace.Write($"{gcTot}");
-                Memtrace.Write("\t");
-                Memtrace.Write($"{gcMax}");
-                Memtrace.Write("\t");
-                Memtrace.Write($"{gcMin}");
-                Memtrace.Write("\t");
-                
+                    Memtrace.Write($"{gcTot}");
+                    Memtrace.Write("\t");
+                    Memtrace.Write($"{gcMax}");
+                    Memtrace.Write("\t");
+                    Memtrace.Write($"{gcMin}");
+                    Memtrace.Write("\t");
 
-                long mpiDiff = gcTot - PreviousLineMem_mpi;
-                PreviousLineMem_mpi = gcTot;
-                Memtrace.Write($"{PrintMeg(mpiDiff)}");
-                Memtrace.Write("\t");
-                */
 
-                using(var stw = new StringWriter()) {
-                    stw.Write(Ch);
-                    var _mcr = mcr;
-                    while(_mcr != null) {
-                        stw.Write(_mcr.Name);
+                    long mpiDiff = gcTot - PreviousLineMem_mpi;
+                    PreviousLineMem_mpi = gcTot;
+                    Memtrace.Write($"{PrintMeg(mpiDiff)}");
+                    Memtrace.Write("\t");
+                    */
 
-                        //if(_mcr.Name.Contains("AggregationGridBasis.BuildInjector_Lv1"))
-                        //     dbg_launch();
+                    using (var stw = new StringWriter()) {
+                        stw.Write(Ch);
+                        var _mcr = mcr;
+                        while (_mcr != null) {
+                            stw.Write(_mcr.Name);
 
-                        _mcr = _mcr.ParrentCall;
-                        if(_mcr != null)
-                            stw.Write(">");
+
+                            _mcr = _mcr.ParrentCall;
+                            if (_mcr != null)
+                                stw.Write(">");
+                        }
+
+                        Memtrace.Write(stw.ToString());
                     }
 
-                    //if(stw.ToString().Contains("2.Execute>BoSSS.Solution.AdvancedSolvers.AggregationGridBasis.BuildInjector_Lv1"))
-                    //    Console.WriteLine("salkjdsalkdjsadjlösajfsafdkjahfkkjl");
-
-                    Memtrace.Write(stw.ToString());
+                    Line = Memtrace.ToString();
                 }
-                Memtrace.WriteLine();
+
+
+
+                if (Tracer.MemtraceFile != null) {
+                    while (Tracer.MemtraceFileTemp.Count > 0) {
+                            Tracer.MemtraceFile.WriteLine(Tracer.MemtraceFileTemp.First.Value);
+                            Tracer.MemtraceFileTemp.RemoveFirst();
+                    }
+                    Tracer.MemtraceFile.WriteLine(Line);
+                } else {
+                    Tracer.MemtraceFileTemp.AddLast(Line);
+                    while (Tracer.MemtraceFileTemp.Count > 500) {
+                        Tracer.MemtraceFileTemp.RemoveFirst();
+                    }
+                }
             }
         }
 
