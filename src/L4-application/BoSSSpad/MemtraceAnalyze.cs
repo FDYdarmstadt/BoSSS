@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using ilPSP;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -137,6 +136,39 @@ namespace BoSSS.Application.BoSSSpad {
             get {
                 return TotalMem.Select(noOfBytes => noOfBytes / (1024.0 * 1024.0)).ToArray();
             }
+        }
+
+        /// <summary>
+        /// Reports the largest memory-allocating routines in descending order
+        /// </summary>
+        public (int TimelineIndex, double Megs, string Name)[] ReportLargestAllocators() {
+
+            var ret = new List<(int TimelineIndex, double Megs, string Name)>();
+            double Scale = 1.0;
+
+            var _TotalMemMegs = TotalMemMegs;
+            var timelNames = base.GetTimeLine();
+
+            // calc allocation difference
+            double PrevMegs = 0.0;
+            for(int iLine = 0; iLine < base.NoOfTimeEntries; iLine++) {
+                ret.Add((iLine, _TotalMemMegs[iLine] - PrevMegs, timelNames[iLine]));
+                PrevMegs = _TotalMemMegs[iLine];
+            }
+
+
+            // sort
+            int ComparerFunc(ValueTuple<int,double,string> A, ValueTuple<int, double, string> B) {
+
+                double Megs_A = A.Item2;
+                double Megs_B = B.Item2;
+
+                return (int)Math.Round(Scale * (Megs_B - Megs_A));
+            }
+            ret.Sort(FuncComparerExtensions.ToComparer<ValueTuple<int, double, string>>(ComparerFunc));
+
+            // return
+            return ret.ToArray();
         }
 
     }
@@ -325,6 +357,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// memory tracing entries over time
         /// </summary>
         internal protected myRecord[] Timeline;
+
+
+
 
 
 

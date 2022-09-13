@@ -2608,6 +2608,14 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
+        /// Reports the largest memory-allocating routines in descending order
+        /// </summary>
+        static public (int TimelineIndex, double Megs, string Name)[] ReportLargestAllocators(this ISessionInfo sess) {
+            var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+            return ana.ReportLargestAllocators();
+        }
+
+        /// <summary>
         /// total memory (aka. sum) over all MPI ranks over time
         /// </summary>
         static public Plot2Ddata GetMPItotalMemory(this IEnumerable<ISessionInfo> sessS) {

@@ -183,6 +183,7 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("memprofile/memprofile.ipynb")]
         [Test]
         static public void Run__memprofile() {
+            //BoSSS.Application.TutorialTests.AllUpTest.Run__memprofile#
             NotebookRunner.DeleteDatabase("memprofile");
             NotebookRunner.DeleteDeployments("memprofile*");
             RunWorksheet("memprofile/memprofile.ipynb");
