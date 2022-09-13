@@ -419,7 +419,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     bool ConfirmNeigbor(int j, int jNeigh, out int face_neigh) {
 
-                        if (j < J) {
+                        if (jNeigh < J) {
                             var KrefNeigh = GetRefElement(jNeigh);
                             int NoOfFaces = KrefNeigh.NoOfFaces;
 
