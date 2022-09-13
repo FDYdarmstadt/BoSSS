@@ -2652,7 +2652,6 @@ namespace BoSSS.Foundation.IO {
         /// Reports the largest differences in memory allocation between the multiple runs
         /// </summary>
         static public (int TimelineIndex, double Imbalance, double[] AllocMegs, string Name)[] ReportLargestAllocatorImbalance(this IEnumerable<ISessionInfo> sessS) {
-            Debugger.Launch();
             var ana = new SessionsComparisonMemtrace(
                sessS.Select(sess => new DirectoryInfo(sess.GetSessionDirectory())).ToArray());
             return ana.ReportLargestAllocatorImbalance();
