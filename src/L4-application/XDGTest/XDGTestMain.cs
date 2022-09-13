@@ -44,6 +44,7 @@ namespace BoSSS.Application.XDGTest {
         /// 
         /// </summary>
         public XDGTestControl() {
+            //base.MemoryInstrumentationLevel = MemoryInstrumentationLevel.None;
             SetDGdegree(2);
         }
 
@@ -66,9 +67,9 @@ namespace BoSSS.Application.XDGTest {
         static void Main(string[] args) {
             InitMPI();
             DeleteOldPlotFiles();
-            VariousTests.MultipleTrackerUpdateCalls(1);
+            //VariousTests.MultipleTrackerUpdateCalls(1);
             //UnitTest.AllUp();
-            //UnitTest.RestartTest();
+            UnitTest.RestartTest();
             FinalizeMPI();
 
             /*

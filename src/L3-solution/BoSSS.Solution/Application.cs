@@ -2860,6 +2860,19 @@ namespace BoSSS.Solution {
                 IList<string> sessTags = tags.ToList();
                 sessTags.Remove(SessionInfo.NOT_TERMINATED_TAG);
                 this.CurrentSessionInfo.Tags = sessTags;
+
+                if (Tracer.MemtraceFile != null) {
+                    try {
+                        Tracer.MemtraceFile.Flush();
+                        Tracer.MemtraceFile.Close();
+                        Tracer.MemtraceFile.Dispose();
+                    } catch (IOException) {
+
+                    } finally {
+                        Tracer.MemtraceFile = null;
+                    }
+                }
+
             }
             if (m_ResLogger != null) {
                 m_ResLogger.Close();
