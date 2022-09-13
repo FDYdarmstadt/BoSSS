@@ -34,6 +34,7 @@ using System.Xml;
 using MathNet.Numerics.Interpolation;
 using static BoSSS.Solution.Gnuplot.Plot2Ddata;
 using BoSSS.Solution.Statistic;
+using BoSSS.Application.XdgPoisson3;
 
 namespace BoSSS.Foundation.IO {
 
@@ -2615,6 +2616,7 @@ namespace BoSSS.Foundation.IO {
             return ana.ReportLargestAllocators();
         }
 
+
         /// <summary>
         /// total memory (aka. sum) over all MPI ranks over time
         /// </summary>
@@ -2646,16 +2648,19 @@ namespace BoSSS.Foundation.IO {
         }
 
 
+        /// <summary>
+        /// Reports the largest differences in memory allocation between the multiple runs
+        /// </summary>
+        static public (int TimelineIndex, double Imbalance, double[] AllocMegs, string Name)[] ReportLargestAllocatorImbalance(this IEnumerable<ISessionInfo> sessS) {
+            Debugger.Launch();
+            var ana = new SessionsComparisonMemtrace(
+               sessS.Select(sess => new DirectoryInfo(sess.GetSessionDirectory())).ToArray());
+            return ana.ReportLargestAllocatorImbalance();
+        }
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="pltDat"></param>
-        /// <param name="xLabel"></param>
-        /// <param name="yLabel"></param>
-        /// <param name="convData">
-        /// if true, a log-log plot is performed
-        /// </param>
         public static void PlotData(Plot2Ddata pltDat, string xLabel, string yLabel, bool convData = false) {
 
             int lineColor = 0;

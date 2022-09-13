@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using ilPSP;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -144,10 +145,10 @@ namespace BoSSS.Application.BoSSSpad {
         public (int TimelineIndex, double Megs, string Name)[] ReportLargestAllocators() {
 
             var ret = new List<(int TimelineIndex, double Megs, string Name)>();
-            double Scale = 1.0;
 
             var _TotalMemMegs = TotalMemMegs;
             var timelNames = base.GetTimeLine();
+            double Scale = ((int.MaxValue / 16) / Math.Max(_TotalMemMegs.Max(), BLAS.MachineEps));
 
             // calc allocation difference
             double PrevMegs = 0.0;
@@ -271,19 +272,56 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
+        /// <summary>
+        /// Reports the largest differences in memory allocation between the multiple runs
+        /// </summary>
+        public (int TimelineIndex, double Imbalance, double[] AllocMegs, string Name)[] ReportLargestAllocatorImbalance() {
 
+            var ret = new List<(int TimelineIndex, double Imbalance, double[] AllocMegs, string Name)>();
+
+            var _TotalMemMegs = GetTotalMemoryMegs();
+            var timelNames = base.GetTimeLine();
+            var MPIsizes = MPIsizeOfRuns;
+            int NoOfRuns = MPIsizes.Length; ;
+
+            // calc allocation difference
+            double[] PrevMegs = new double[NoOfRuns];
+            double maxMegs = BLAS.MachineEps;
+            for (int iLine = 0; iLine < base.NoOfTimeEntries; iLine++) {
+                double[] allocMegs_iLine = new double[NoOfRuns];
+                for(int iRun = 0; iRun < NoOfRuns; iRun++) {
+                    double megs = _TotalMemMegs[iRun].TotalMem[iLine];
+                    allocMegs_iLine[iRun] = megs - PrevMegs[iRun];
+                    PrevMegs[iRun] = megs;
+                    maxMegs = Math.Max(maxMegs, megs);
+                }
+
+                double ImBalance = allocMegs_iLine.Max() - allocMegs_iLine.Min();
+
+
+                ret.Add((iLine, ImBalance, allocMegs_iLine, timelNames[iLine]));
+            }
+
+            double Scale = (int.MaxValue / 16) / maxMegs;
+            // sort
+            int ComparerFunc(ValueTuple<int, double, double[], string> A, ValueTuple<int, double, double[], string> B) {
+
+                double Megs_A = A.Item2;
+                double Megs_B = B.Item2;
+
+                return (int)Math.Round(Scale * (Megs_B - Megs_A));
+            }
+            ret.Sort(FuncComparerExtensions.ToComparer<ValueTuple<int, double, double[], string>>(ComparerFunc));
+
+            // return
+            return ret.ToArray();
+        }
+
+        /*
         static void WriteCombinedRunsOutfile(string path, IEnumerable<myRecord> CombList) {
             using (var stw = new StreamWriter(path)) {
 
-                /*
-                IEnumerable<myRecord>[] allruns;
-                {
-                    var aa = CombList.ElementAt(0).peerRun.ToArray();
-                    allruns = new IEnumerable<myRecord>[aa.Length + 1];
-                    allruns[0] = CombList;
-                    Array.Copy(aa, 0, allruns, 1, aa.Length);
-                }
-                */
+                
                 //int[] MPIsizes =   //allruns.Select(list => list.ElementAt(0).MPISize).ToArray();
                 int NoOfRuns = 1 + CombList.ElementAt(0).peerRun.Count;
 
@@ -311,7 +349,7 @@ namespace BoSSS.Application.BoSSSpad {
                 stw.Close();
             }
         }
-
+        */
 
     }
 
