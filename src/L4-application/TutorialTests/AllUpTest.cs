@@ -178,6 +178,17 @@ namespace BoSSS.Application.TutorialTests {
         }
 #endif
 
+#if !DEBUG
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("memprofile/memprofile.ipynb")]
+        [Test]
+        static public void Run__memprofile() {
+            NotebookRunner.DeleteDatabase("memprofile");
+            NotebookRunner.DeleteDeployments("memprofile*");
+            RunWorksheet("memprofile/memprofile.ipynb");
+        }
+#endif
+
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
