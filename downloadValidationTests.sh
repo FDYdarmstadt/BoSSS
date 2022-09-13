@@ -28,3 +28,5 @@ downloadFromJenkins() {
 # next ...
 downloadFromJenkins http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage4-ValidationTest-atFDYcluster/lastSuccessfulBuild/artifact/*zip*/archive.zip
 downloadFromJenkins http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage4-ValidationTest-atLichtenberg/lastSuccessfulBuild/artifact/*zip*/archive.zip
+downloadFromJenkins http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage1-Installer-Win/lastSuccessfulBuild/artifact/*zip*/archive.zip
+downloadFromJenkins http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage1-Installer-Linux/lastSuccessfulBuild/artifact/*zip*/archive.zip
