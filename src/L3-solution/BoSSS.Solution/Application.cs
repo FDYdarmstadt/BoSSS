@@ -330,6 +330,8 @@ namespace BoSSS.Solution {
                     Console.WriteLine(@"     ~~            \/__/         \/__/         \/__/         \/__/    ");
                     Console.WriteLine(@"                                                                      ");
 
+                    Console.Write(DateTime.Now);
+                    Console.Write("  ");
                     if (size <= 1)
                         Console.WriteLine("Running with 1 MPI process (single core)");
                     else
@@ -467,7 +469,7 @@ namespace BoSSS.Solution {
             Func<Application<T>> ApplicationFactory) {
 
             m_Logger.Info("Entering _Main routine...");
-
+            Tracer.MemoryInstrumentationLevel = MemoryInstrumentationLevel.GcAndPrivateMemory;
 
             int MPIrank = int.MinValue;
 //#if DEBUG
@@ -1154,6 +1156,8 @@ namespace BoSSS.Solution {
                         }
                     }
                 }
+
+                Tracer.MemoryInstrumentationLevel = this.Control.MemoryInstrumentationLevel;
             } else {
                 this.passiveIo = true;
             }
@@ -2856,6 +2860,19 @@ namespace BoSSS.Solution {
                 IList<string> sessTags = tags.ToList();
                 sessTags.Remove(SessionInfo.NOT_TERMINATED_TAG);
                 this.CurrentSessionInfo.Tags = sessTags;
+
+                if (Tracer.MemtraceFile != null) {
+                    try {
+                        Tracer.MemtraceFile.Flush();
+                        Tracer.MemtraceFile.Close();
+                        Tracer.MemtraceFile.Dispose();
+                    } catch (IOException) {
+
+                    } finally {
+                        Tracer.MemtraceFile = null;
+                    }
+                }
+
             }
             if (m_ResLogger != null) {
                 m_ResLogger.Close();
@@ -3692,10 +3709,11 @@ namespace BoSSS.Solution {
         public static Type[] DllEnforcer() {
             using(var tr = new FuncTrace()) {
                 var types = new Type[] {
-                   typeof(Microsoft.CodeAnalysis.Compilation),
+                    typeof(Microsoft.CodeAnalysis.Compilation),
                     typeof(Microsoft.CodeAnalysis.CSharp.CSharpCompilation),
                     typeof(Microsoft.CodeAnalysis.Scripting.Script),
-                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript)
+                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript),
+                    typeof(System.Configuration.Configuration)
                 };
 
                 foreach(var t in types) {

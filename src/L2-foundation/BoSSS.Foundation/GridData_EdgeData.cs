@@ -84,17 +84,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </summary>
             private EdgeMask[] m_Edges4RefElement;
             
-            ///// <summary>
-            ///// For each (edge) reference element, this method provides a
-            ///// mask containing all cells which are mapped from the specific
-            ///// reference element.
-            ///// </summary>
-            ///// <param name="iKrefIndex">
-            ///// reference element index: <see cref="EdgeRefElements"/>;
-            ///// </param>
-            //public EdgeMask GetEdges4RefElement(int iKrefIndex) {
-            //    return this.GetEdges4RefElement(this.EdgeRefElements[iKrefIndex]);
-            //}
+ 
 
             /// <summary>
             /// For each (edge) reference element, this method provides a
@@ -1816,11 +1806,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     // - 2nd index: enumeration
                     // - Item1: process rank R
                     // - Item2: index of edge on rank R
-                    Tuple<int, int>[][] EdgeIndicesOnOtherProcessors = new Tuple<int, int>[E][];
+                    (int MPIrank, int Index)[][] EdgeIndicesOnOtherProcessors = new (int, int)[E][];
                     using(var bt1 = new BlockTrace("LocalIndicesForeign", tr)) {
 
                         for (int e = 0; e < E; e++) {
-                            EdgeIndicesOnOtherProcessors[e] = new Tuple<int, int>[] { new Tuple<int, int>(myRank, e) };
+                            EdgeIndicesOnOtherProcessors[e] = new (int, int)[] { (myRank, e) };
                         }
 
 
@@ -2035,7 +2025,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if (matchCount != 1)
                                     throw new ApplicationException("error in algorithm");
 
-                                (new Tuple<int, int>(originRank, iEdge_foreign)).AddToArray(ref EdgeIndicesOnOtherProcessors[iEdge_local]);
+                                (originRank, iEdge_foreign).AddToArray(ref EdgeIndicesOnOtherProcessors[iEdge_local]);
                             }
                         }
                     }
@@ -2052,7 +2042,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int[][] EdgeSendLists;
                     int[][] EdgeInsertLists;
                     Tuple<int, int>[] LocalId;
-                    NegogiateOwnership(csMPI.Raw._COMM.WORLD, EdgeIndicesOnOtherProcessors,
+                    NegotiateOwnership(csMPI.Raw._COMM.WORLD, EdgeIndicesOnOtherProcessors,
                         out EdgePermuation, out NoOfPureLocal, out NoOfShOwned, out NoOfShForeign, out NoOfPeriodicElim, out NoOfExternal,
                         out EdgeSendLists, out EdgeInsertLists,
                         out LocalId);

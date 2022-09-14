@@ -178,11 +178,23 @@ namespace BoSSS.Application.TutorialTests {
         }
 #endif
 
+#if !DEBUG
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("memprofile/memprofile.ipynb")]
+        [Test]
+        static public void Run__memprofile() {
+            //BoSSS.Application.TutorialTests.AllUpTest.Run__memprofile#
+            NotebookRunner.DeleteDatabase("memprofile");
+            NotebookRunner.DeleteDeployments("memprofile*");
+            RunWorksheet("memprofile/memprofile.ipynb");
+        }
+#endif
+
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
         static public void RunWorksheet(string NotebookPartialPath) {
-            using(new NotebookRunner(NotebookPartialPath, DirectoryOffset)) { }
+            using(new NotebookRunner(NotebookPartialPath, DirectoryOffset, false)) { }
         }
 
     }
@@ -195,10 +207,10 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// 
         /// </summary>
-        public NotebookRunner(string __NotebookPartialPath, string __DirectoryOffset) {
+        public NotebookRunner(string __NotebookPartialPath, string __DirectoryOffset, bool __allowErrors) {
             NotebookPartialPath = __NotebookPartialPath;
             DirectoryOffset = __DirectoryOffset;
-            RunWorksheet();
+            RunWorksheet(__allowErrors);
         }
 
         /// <summary>
@@ -222,7 +234,7 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
-        void RunWorksheet() {
+        void RunWorksheet(bool allowErrors) {
 
             // locate script
             string TexFileName = NotebookPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
@@ -259,7 +271,8 @@ namespace BoSSS.Application.TutorialTests {
                 int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
 
                 Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", WorksheetName, ErrCount);
-                Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
+                if(!allowErrors)
+                    Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
                 Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
             } finally {
                 // shutting down the local mini batch processor:

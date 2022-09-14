@@ -131,6 +131,7 @@ namespace BoSSS.Application.BoSSSpad {
             //eval.ReferenceAssembly(typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSEMain).Assembly);
             eval.ReferenceAssembly(typeof(NSE_SIMPLE.NSE_SIMPLEMain).Assembly);
             eval.ReferenceAssembly(typeof(XNSEC.XNSEC).Assembly);
+            eval.ReferenceAssembly(typeof(GridGen.GridGenMain).Assembly);
             //eval.ReferenceAssembly(typeof(KOmega.KOmegaSolver).Assembly); // no 'experimental' Project must be explicitly linked to BoSSSpad; try to do this in the worksheet!
 
             //eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);

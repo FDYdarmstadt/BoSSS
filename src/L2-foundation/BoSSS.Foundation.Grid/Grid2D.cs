@@ -1955,7 +1955,6 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Number of nodes in rotational direction for each of the four ring segments.
         /// </param>
         /// <param name="NoOfRadialNodes">Number of nodes in the radial section.</param>
-        /// <param name="NoOfNodesPerSection">Number of nodes in rotational direction for each of the four ring segmants</param>
         /// <param name="type">Cell type.</param>
         /// <returns>
         /// A block-structured O-grid.
@@ -2343,16 +2342,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
 
         /// <summary>
-        /// 
+        /// Special-Purpose grid generator for helical solver project
         /// </summary>
-        /// <param name="rmin"></param>
-        /// <param name="rmax"></param>
-        /// <param name="ximin"></param>
-        /// <param name="ximax"></param>
-        /// <param name="NoOfRnodes"></param>
-        /// <param name="NoOfXinodes0"></param>
-        /// <param name=""></param>
-        /// <returns></returns>
         public static Grid2D HelicalHangingNodes(double rmin, double rmax, double ximin, double ximax, int NoOfRnodes, int NoOfXinodes0,
             int NoOfXiRefinements, int XiRefinementGrades) {
 

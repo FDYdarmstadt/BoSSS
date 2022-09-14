@@ -153,7 +153,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <summary>
             /// global indices of cell neighbors;
             /// </summary>
-            internal IEnumerable<GridCommons.Neighbour>[] CellNeighbours_global_tmp;
+            internal GridCommons.Neighbour[][] CellNeighbours_global_tmp;
 
             
             /// <summary>
