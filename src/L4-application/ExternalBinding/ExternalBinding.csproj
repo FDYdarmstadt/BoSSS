@@ -38,6 +38,6 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.NSECommon\BoSSS.Solution.NSECommon.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj" />
-    <ProjectReference Include="..\..\..\..\internal\src\private-kmmr\L4-application\CahnHilliard\CahnHilliard.csproj" />
+    <ProjectReference Include="..\CahnHilliard\CahnHilliard.csproj" />
   </ItemGroup>
 </Project>
