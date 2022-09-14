@@ -32,4 +32,8 @@
   <ItemGroup>
     <Content Include="SaveVoronoi.txt" />
   </ItemGroup>
+<<<<<<< HEAD
+=======
+
+>>>>>>> experimentalGitlab/kummer
 </Project>

@@ -78,7 +78,7 @@ namespace CNS.Tests.Ringleb {
         /// <summary>
         /// Tests the error a stiffened gas
         /// </summary>
-        //[ilPSP.NUnitFileToCopyHack("Tests/Ringleb/ringlebTests.zip")]
+        [ilPSP.NUnitFileToCopyHack("Tests/Ringleb/ringlebTests.zip")]
         [Test]
         public static void RinglebStiffenedTest() {
             Program<RinglebControl> p = null;

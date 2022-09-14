@@ -4,4 +4,8 @@
     <OutputType>Exe</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
+<<<<<<< HEAD
+=======
+
+>>>>>>> experimentalGitlab/kummer
 </Project>

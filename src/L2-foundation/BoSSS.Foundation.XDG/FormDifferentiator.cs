@@ -756,7 +756,10 @@ namespace BoSSS.Foundation.XDG {
             if (m_EdgForm is ILevelSetEquationComponentCoefficient eqc) {
                 eqc.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
             }
+            base.CoefficientUpdate(csA,csB, DomainDGdeg, TestDGdeg);
         }
+
+        
 
         private double Diff(
             ref double PertubVar, double Var,

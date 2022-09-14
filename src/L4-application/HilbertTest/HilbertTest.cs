@@ -874,6 +874,7 @@ namespace HilbertTest {
             return costmap;
         }
 
+        /*
         /// <summary>
         /// Use this for debugging ...
         /// </summary>
@@ -923,5 +924,6 @@ namespace HilbertTest {
             list.Add(HilbertIdx);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(list, "BLargh.plt", 0.0, 0);
         }
+        */
     }
 }
