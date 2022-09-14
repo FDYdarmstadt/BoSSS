@@ -343,9 +343,9 @@ namespace BoSSS.Platform.Utils.Geom {
 
         /// <summary>
         /// points, sorted according to their codes;
-        /// <br/>
-        /// 1st index: point index; <br/>
-        /// 2nd index: spatial coordinate;
+        /// 
+        /// - 1st index: point index; 
+        /// - 2nd index: spatial coordinate;
         /// </summary>
         public MultidimensionalArray Points;
 

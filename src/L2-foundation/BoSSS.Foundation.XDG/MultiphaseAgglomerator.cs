@@ -230,19 +230,7 @@ namespace BoSSS.Foundation.XDG {
 
             // perform agglomeration
             foreach (var spc in this.SpeciesList) {
-                /*
-                IEnumerable<Tuple<int, int>> ai = FindAgglomeration(
-                    this.Tracker,
-                    spc,
-                    AgglomerationThreshold,
-                    this.NonAgglomeratedMetrics.CutCellVolumes[spc],
-                    this.NonAgglomeratedMetrics.CutEdgeAreas[spc],
-                    AgglomerateNewborn, AgglomerateDecased,
-                    ExceptionOnFailedAgglomeration,
-                    oldCcm != null ? oldCcm.Select(a => a.CutCellVolumes[spc]).ToArray() : null,
-                    oldTs__AgglomerationTreshold,
-                    NewbornAndDecasedThreshold);
-                */
+                
                                 
 
                 var aggAlg = new AgglomerationAlgorithm(this.Tracker, spc, CutCellsQuadOrder,
@@ -251,9 +239,13 @@ namespace BoSSS.Foundation.XDG {
                     ExceptionOnFailedAgglomeration
                     );
 
-
-
                 var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs);
+
+                //int myRank = lsTrk.GridDat.MpiRank;
+                //foreach(var p in m_agglomeration.AggInfo.AgglomerationPairs) {
+                //    Console.Error.WriteLine($"Rnk {myRank}, Spc {lsTrk.GetSpeciesName(spc)}: loc/gid {p.jCellSource}/{lsTrk.GridDat.iLogicalCells.GetGlobalID(p.jCellSource)} -> {p.jCellTarget}/{lsTrk.GridDat.iLogicalCells.GetGlobalID(p.jCellTarget)} (lv {p.AgglomerationLevel})");
+                //}
+
                 this.DictAgglomeration.Add(spc, m_agglomeration);
             }
 
@@ -405,7 +397,7 @@ namespace BoSSS.Foundation.XDG {
                             CellMask spcMask = this.Tracker.Regions.GetSpeciesMask(Species);
 
                             MiniMapping rowMini = new MiniMapping(RowMap, Species, this.Tracker.Regions);
-                            BlockMsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask);
+                            BlockMsrMatrix LeftMul_Species = m_Agglomerator.GetRowManipulationMatrix(RowMap, rowMini.MaxDeg, rowMini.NoOfVars, rowMini.i0Func, rowMini.NFunc, false, spcMask, this.Tracker.GetSpeciesName(Species));
                             if (LeftMul == null) {
                                 LeftMul = LeftMul_Species;
                             } else {
@@ -413,9 +405,9 @@ namespace BoSSS.Foundation.XDG {
                             }
 
 
-                            if (!object.ReferenceEquals(LeftMul, RightMul) && RightMul != null) {
+                            if(RequireRight == 2) {
                                 MiniMapping colMini = new MiniMapping(ColMap, Species, this.Tracker.Regions);
-                                BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask);
+                                BlockMsrMatrix RightMul_Species = m_Agglomerator.GetRowManipulationMatrix(ColMap, colMini.MaxDeg, colMini.NoOfVars, colMini.i0Func, colMini.NFunc, false, spcMask, this.Tracker.GetSpeciesName(Species));
 
                                 if (RightMul == null) {
                                     RightMul = RightMul_Species;
@@ -467,6 +459,7 @@ namespace BoSSS.Foundation.XDG {
 
                     LeftMul.SpMV(1.0, tmp, 0.0, Rhs);
                 }
+
             }
         }
 
@@ -612,14 +605,13 @@ namespace BoSSS.Foundation.XDG {
 
                 CenterOfGravity.Storage.MPIExchange(this.Tracker.GridDat);
 
-
                 var SpeciesName = this.Tracker.GetSpeciesName(Species);
                 this.DictAgglomeration[Species].PlotAgglomerationPairs(SpeciesName + "-" + basename + ".csv", CenterOfGravity);
             }
         }
 
         /// <summary>
-        /// The volume over cut cell surface ratio, i.e. \f$ \frac{ | K^X |}{ | \partial K^X | } \f$, for each agglomerated cut-cell $K^X$.
+        /// The volume over cut cell surface ratio, i.e. \f$ \frac{ | K^X |}{ | \partial K^X | } \f$, for each **agglomerated** cut-cell $K^X$.
         /// </summary>
         public Dictionary<SpeciesId, MultidimensionalArray> CellLengthScales {
             private set;
@@ -651,201 +643,212 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Initializes <see cref="CellLengthScales"/>.
+        /// Maximum over all <see cref="CellAgglomerator.AgglomerationInfo.MaxLevel"/> member plus 1
+        /// </summary>
+        public int NumberOfAggomerationLevels {
+            get {
+                int gMaxLevel = 0;
+                foreach(var spc in this.SpeciesList) {
+                    gMaxLevel = Math.Max(this.GetAgglomerator(spc).AggInfo.MaxLevel, gMaxLevel);
+                }
+
+                return gMaxLevel + 1;
+            }
+        }
+
+        /// <summary>
+        /// Initializes <see cref="CellLengthScales"/>,
+        /// i.e. performs the agglomeration of length scales.
         /// </summary>
         void LengthScaleAgg() {
-            using (new FuncTrace()) {
+            using(new FuncTrace()) {
                 SpeciesId[] species = this.SpeciesList.ToArray();
 
                 int J = this.Tracker.GridDat.Cells.NoOfLocalUpdatedCells;
                 int JE = this.Tracker.GridDat.Cells.Count;
                 int[][] C2E = this.Tracker.GridDat.Cells.Cells2Edges;
 
-                //TestingIO Checker = CheckFile != null ? new TestingIO(this.Tracker.GridDat, CheckFile, 1) : null;
+
+                var CellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length, 3); // 1st index: cell,
+                                                                                               // 2nd index: species,
+                                                                                               // 3rd index: [surface, volume, volume fraction]
+                //var CellVolumeFracMda = MultidimensionalArray.Create(JE, species.Length); // 1st index: cell, 2nd index: species
+
+                // Init: start with non-agglomerated metrics
+                // =========================================
+
+                {
+
+                    for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                        SpeciesId spc = species[iSpc];
+                        var agginfo = this.GetAgglomerator(spc).AggInfo;
+                        BitArray aggEdgesBitMask = agginfo.AgglomerationEdges.GetBitMask();
+
+                        MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
+                        MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
+                        MultidimensionalArray VolumeFrac = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 2);
+
+                        CellSurface.Set(this.NonAgglomeratedMetrics.InterfaceArea[spc]);
+                        CellVolume.Set(this.NonAgglomeratedMetrics.CutCellVolumes[spc]);
+                        for(int j = 0; j < J; j++)
+                            VolumeFrac[j] = this.Tracker.GridDat.Cells.GetCellVolume(j); // we first accumulate all un-cut volumes and then convert this into volume fraction
 
 
-                var CellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length, 2); // 1st index: cell, 2nd index: species, 3rd index: [surface, volume]
-                var CellVolumeFracMda = MultidimensionalArray.Create(JE, species.Length); // 1st index: cell, 2nd index: species
 
-                for (int iSpc = 0; iSpc < species.Length; iSpc++) {
-                    SpeciesId spc = species[iSpc];
-                    var agginfo = this.GetAgglomerator(spc).AggInfo;
-                    BitArray aggEdgesBitMask = agginfo.AgglomerationEdges.GetBitMask();
+                        MultidimensionalArray EdgeArea = this.NonAgglomeratedMetrics.CutEdgeAreas[spc];
 
-                    MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
-                    MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
+                        // accumulate cell surface
+                        for(int j = 0; j < J; j++) {
+                            int[] edges = C2E[j];
+                            int NE = edges.Length;
 
-                    MultidimensionalArray CellVolume2 = CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc);
+                            for(int ne = 0; ne < NE; ne++) {
+                                int iEdg = Math.Abs(edges[ne]) - 1;
 
-                    CellSurface.Set(this.NonAgglomeratedMetrics.InterfaceArea[spc]);
-                    CellVolume.Set(this.NonAgglomeratedMetrics.CutCellVolumes[spc]);
-                    CellVolume2.Set(this.NonAgglomeratedMetrics.CutCellVolumes[spc]);
+                                Debug.Assert(this.Tracker.GridDat.Edges.CellIndices[iEdg, 0] == j || this.Tracker.GridDat.Edges.CellIndices[iEdg, 1] == j);
+
+                                if(!aggEdgesBitMask[iEdg]) { // exclude edges in agglomeration pairs
+                                    Debug.Assert(!(double.IsNaN(CellSurface[j]) || double.IsInfinity(CellSurface[j])));
+                                    Debug.Assert(!(double.IsNaN(EdgeArea[iEdg]) || double.IsInfinity(EdgeArea[iEdg])));
+                                    CellSurface[j] += EdgeArea[iEdg];
+                                    Debug.Assert(!(double.IsNaN(CellSurface[j]) || double.IsInfinity(CellSurface[j])));
+                                }
+                            }
+                        }
+
+                    }
+                }
 
 
+                // Perform agglomeration
+                // =====================
+                
 
-                    MultidimensionalArray EdgeArea = this.NonAgglomeratedMetrics.CutEdgeAreas[spc];
+                // forward: accumulate volume and surface in target cells
+                // ------------------------------------------------------
+                for(int iLevel = 0; iLevel < this.NumberOfAggomerationLevels; iLevel++) {
 
-                    // accumulate cell surface
-                    for (int j = 0; j < J; j++) {
-                        int[] edges = C2E[j];
-                        int NE = edges.Length;
+                    // MPI exchange:
+                    // Needed, such that all ExternalCells (i.e. Ghost cells) have the correct CellSurface
+                    CellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
+                               
 
-                        for (int ne = 0; ne < NE; ne++) {
-                            int iEdg = Math.Abs(edges[ne]) - 1;
+                    for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                        SpeciesId spc = species[iSpc];
+                        var agginfo = this.GetAgglomerator(spc).AggInfo;
 
-                            Debug.Assert(this.Tracker.GridDat.Edges.CellIndices[iEdg, 0] == j || this.Tracker.GridDat.Edges.CellIndices[iEdg, 1] == j);
+                        MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
+                        MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
+                        MultidimensionalArray VolumeFrac = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 2);
 
-                            if (!aggEdgesBitMask[iEdg]) { // exclude edges in agglomeration pairs
-                                Debug.Assert(!(double.IsNaN(CellSurface[j]) || double.IsInfinity(CellSurface[j])));
-                                Debug.Assert(!(double.IsNaN(EdgeArea[iEdg]) || double.IsInfinity(EdgeArea[iEdg])));
-                                CellSurface[j] += EdgeArea[iEdg];
-                                Debug.Assert(!(double.IsNaN(CellSurface[j]) || double.IsInfinity(CellSurface[j])));
+                        // sum agglomeration sources to targets
+                        foreach(var agg_pair in agginfo.AgglomerationPairs) {
+                            if(agg_pair.AgglomerationLevel == iLevel && agg_pair.jCellTarget < J) {
+                                CellSurface[agg_pair.jCellTarget] += CellSurface[agg_pair.jCellSource];
+                                CellVolume[agg_pair.jCellTarget] += CellVolume[agg_pair.jCellSource];
+                                VolumeFrac[agg_pair.jCellTarget] += VolumeFrac[agg_pair.jCellSource]; // we first accumulate all un-cut volumes and then convert this into volume fraction
+                            }
+                        }
+
+                        
+                    }
+
+                    
+                }
+
+                // backward: propagate accumulate volume and surface back to source cells
+                // ----------------------------------------------------------------------
+                for(int iLevel =  this.NumberOfAggomerationLevels - 1; iLevel >= 0; iLevel--) {
+                    
+                    // MPI exchange:
+                    // Needed, such that all ExternalCells (i.e. Ghost cells) have the correct CellSurface
+                    CellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
+
+                    for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                        SpeciesId spc = species[iSpc];
+                        var agginfo = this.GetAgglomerator(spc).AggInfo;
+
+                        MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
+                        MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
+                        MultidimensionalArray VolumeFrac = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 2);
+
+                        // set source to be equal to target
+                        foreach(var agg_pair in agginfo.AgglomerationPairs) {
+                            if(agg_pair.AgglomerationLevel == iLevel && agg_pair.jCellSource < J) {
+                                CellSurface[agg_pair.jCellSource] = CellSurface[agg_pair.jCellTarget];
+                                CellVolume[agg_pair.jCellSource] = CellVolume[agg_pair.jCellTarget];
+                                VolumeFrac[agg_pair.jCellSource] = VolumeFrac[agg_pair.jCellTarget]; // we first accumulate all un-cut volumes and then convert this into volume fraction
+                            }
+                        }
+
+                        if(iLevel == 0) {
+                            // convert un-cut volume into volume fraction
+                            for(int j = 0; j < J; j++) {
+                                VolumeFrac[j] = CellVolume[j] / VolumeFrac[j]; 
+                            }
+                        }
+
+                    }
+                }
+
+                // compute ratios
+                // --------------
+                var AggCellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length); // 1st index: cell, 2nd index: species
+                {
+                    // MPI exchange:
+                    // Needed, such that all ExternalCells (i.e. Ghost cells) have the correct CellSurface
+                    CellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
+
+                    for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                        SpeciesId spc = species[iSpc];
+                        MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
+                        MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
+                        MultidimensionalArray LengthScales = AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc);
+                        MultidimensionalArray VolumeFrac = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 2);
+                        
+                        // Loop includes external cells
+                        for(int j = 0; j < JE; j++) {
+                            LengthScales[j] = CellVolume[j] / CellSurface[j];
+                        }
+
+
+                        if(this.AgglomerationThreshold <= 0.0) {
+                            // special treatment for no agglomeration -- which is anyway not recommended at all
+                            // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                            CellMask spcDom = this.Tracker.Regions.GetSpeciesMask(spc);
+
+                            foreach(int j in spcDom.ItemEnum) {
+                                double Fraction = VolumeFrac[j];
+
+                                if(Fraction <= 1.0e-10)
+                                    LengthScales[j] = 1e10;
                             }
                         }
                     }
 
-                    //if(Checker != null) {
-                    //    Checker.AddVector("CellSurface" + this.Tracker.GetSpeciesName(spc), CellSurface.To1DArray().GetSubVector(0, J));
-                    //    Checker.AddVector("CellVolume" + this.Tracker.GetSpeciesName(spc), CellVolume.To1DArray().GetSubVector(0, J));
-                    //    Checker.AddVector("CellVolume2" + this.Tracker.GetSpeciesName(spc), CellVolume2.To1DArray().GetSubVector(0, J));
-                    //}
-                }
-
-                //if(Checker != null) {
-                //    Checker.DoIOnow();
-                //    foreach(string cn in Checker.ColumnNamesWithoutReserved) {
-                //        double d = Checker.RelError(cn);
-                //        Console.WriteLine($"   ------------ rel error of {cn} before comm: " + d);
-                //    }
-
-                //    Checker.CurrentData.Clear();
-                //}
-
-                // MPI exchange
-                // Needed, such that all ExternalCells (i.e. Ghost cells) have the correct CellSurface
-                CellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
-                CellVolumeFracMda.Storage.MPIExchange(this.Tracker.GridDat);
-
-                //if(Checker != null) {
-                //    for(int iSpc = 0; iSpc < species.Length; iSpc++) {
-                //        SpeciesId spc = species[iSpc];
-
-                //        MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
-                //        MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
-
-                //        MultidimensionalArray CellVolume2 = CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc);
-
-
-                //        Checker.AddVector("CellSurface" + this.Tracker.GetSpeciesName(spc), CellSurface.To1DArray().GetSubVector(0, J));
-                //        Checker.AddVector("CellVolume" + this.Tracker.GetSpeciesName(spc), CellVolume.To1DArray().GetSubVector(0, J));
-                //        Checker.AddVector("CellVolume2" + this.Tracker.GetSpeciesName(spc), CellVolume2.To1DArray().GetSubVector(0, J));
-                //    }
-
-                //    foreach(string cn in Checker.ColumnNamesWithoutReserved) {
-                //        double d = Checker.RelError(cn);
-                //        Console.WriteLine($"   ------------ rel error of {cn} AFTER comm: " + d);
-                //    }
-                //}
-
-                var AggCellLengthScalesMda = MultidimensionalArray.Create(JE, species.Length); // 1st index: cell, 2nd index: species
-                for (int iSpc = 0; iSpc < species.Length; iSpc++) {
-                    SpeciesId spc = species[iSpc];
-                    var agginfo = this.GetAgglomerator(spc).AggInfo;
-
-                    MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
-                    MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
-
-                    MultidimensionalArray CellVolume2 = CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc);
-
-                    // sum agglomeration sources to targets
-                    foreach (var agg_pair in agginfo.AgglomerationPairs) {
-                        CellSurface[agg_pair.jCellTarget] += CellSurface[agg_pair.jCellSource];
-                        CellVolume[agg_pair.jCellTarget] += CellVolume[agg_pair.jCellSource];
-                    }
-
-                    MultidimensionalArray LengthScales = AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc);
-
-                    // Loop includes external cells
-                    for (int j = 0; j < JE; j++) {
-                        LengthScales[j] = CellVolume[j] / CellSurface[j];
-                        CellVolume2[j] = CellVolume2[j] / this.Tracker.GridDat.Cells.GetCellVolume(j);
-                    }
-
-                    // set values in agglomeration sources to be equal to agglomeration targets
-                    foreach (var agg_pair in agginfo.AgglomerationPairs) {
-                        LengthScales[agg_pair.jCellSource] = LengthScales[agg_pair.jCellTarget];
-                        CellVolume2[agg_pair.jCellSource] = CellVolume2[agg_pair.jCellTarget];
-                    }
-
-                    if (this.AgglomerationThreshold <= 0.0) {
-                        // special treatment for no agglomeration -- which is anyway not recommended at all
-                        // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-                        CellMask spcDom = this.Tracker.Regions.GetSpeciesMask(spc);
-
-                        foreach (int j in spcDom.ItemEnum) {
-
-                            double unCut = this.Tracker.GridDat.Cells.GetCellVolume(j);
-                            double Fraction = CellVolume[j] / unCut;
-
-                            if (Fraction <= 1.0e-10)
-                                LengthScales[j] = 1e10;
-                        }
-                    }
-
 
                 }
-
-                // MPI exchange -> Is it really needed now???
-                // Yes! we need length scales for external/ghost cells, in order to compute fluxes at the boundaries
-                AggCellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
 
                 // store
-                this.CellLengthScales = new Dictionary<SpeciesId, MultidimensionalArray>();
-                this.CellVolumeFrac = new Dictionary<SpeciesId, MultidimensionalArray>();
-                this.CellSurface = new Dictionary<SpeciesId, MultidimensionalArray>();
-                this.CutCellVolumes = new Dictionary<SpeciesId, MultidimensionalArray>();
-                for (int iSpc = 0; iSpc < species.Length; iSpc++) {
-                    SpeciesId spc = species[iSpc];
-                    this.CellLengthScales.Add(spc, AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
-                    this.CellVolumeFrac.Add(spc, CellVolumeFracMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
-                    this.CellSurface.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
-                    this.CutCellVolumes.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
+                // =====
+                {
+                    this.CellLengthScales = new Dictionary<SpeciesId, MultidimensionalArray>();
+                    this.CellVolumeFrac = new Dictionary<SpeciesId, MultidimensionalArray>();
+                    this.CellSurface = new Dictionary<SpeciesId, MultidimensionalArray>();
+                    this.CutCellVolumes = new Dictionary<SpeciesId, MultidimensionalArray>();
+                    
+                    for(int iSpc = 0; iSpc < species.Length; iSpc++) {
+                        SpeciesId spc = species[iSpc];
+                        this.CellLengthScales.Add(spc, AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());
+                        this.CellSurface.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0).CloneAs());
+                        this.CutCellVolumes.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1).CloneAs());
+                        this.CellVolumeFrac.Add(spc, CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 2).CloneAs());
+
+                    }
                 }
             }
         }
 
-        /*
-        /// <summary>
-        /// Sometimes, this provides indeed a correct agglomeration graph.
-        /// If agglomeration fails -- which it does quite regularly -- unleash the <see cref="Katastrophenplot"/> to see the mess!
-        /// </summary>
-        /// <remarks>
-        /// Cell agglomeration is used to handle two problems:
-        /// first, for the treatment of very small cut cells and, for temporally evolving interfaces, to 
-        /// ensure an equal topology of the (agglomerated) XDG cut-cell mesh for all involved temporal levels.
-        /// - the issue of small cut cells is described in the paper:
-        ///   _Extended discontinuous Galerkin methods for two-phase flows: the spatial discretization; Kummer; IJNMF 109 (2), 2017_. 
-        /// - the agglomeration of _newborn_ and _decased_ cells is described in 
-        ///   the paper: _Time integration for extended discontinuous Galerkin methods with moving domains; Kummer, Müller, Utz; IJNMF 113 (5), 2018_.
-        /// </remarks>
-        static public IEnumerable<Tuple<int, int>> FindAgglomeration(LevelSetTracker Tracker, SpeciesId spId, double AgglomerationThreshold,
-            MultidimensionalArray CellVolumes, MultidimensionalArray edgeArea,
-            bool AgglomerateNewborn, bool AgglomerateDeceased, bool ExceptionOnFailedAgglomeration,
-            MultidimensionalArray[] oldCellVolumes, double[] oldTs__AgglomerationTreshold, double NewbornAndDecasedThreshold) //
-        {
-
-            var as_data = FindAgglomerationSources(Tracker, spId, AgglomerationThreshold,
-                CellVolumes, 
-                AgglomerateNewborn, AgglomerateDeceased,
-                oldCellVolumes, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold);
-
-            var ret = FindAgglomerationTargets(Tracker, spId, CellVolumes, edgeArea, oldCellVolumes, as_data.AgglomCellsList, as_data.AgglomCellsBitmask, as_data.AggCandidates, ExceptionOnFailedAgglomeration);
-
-            return ret;
-        }
-        */
-
-       
     }
 }

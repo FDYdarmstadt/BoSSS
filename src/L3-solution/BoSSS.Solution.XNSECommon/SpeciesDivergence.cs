@@ -53,7 +53,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
             int d = base.component;
             base.bndFunction = _bcmap.bndFunction[VariableNames.Velocity_d(d) + "#" + spcName];
-
+            
             this.m_bcmap = _bcmap;
         }
 
@@ -121,11 +121,11 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     }
 
     /// <summary>
-    /// Variable density bulk term.
+    /// Variable density bulk term. Formulation suitable for use of the Newton solver
     /// </summary>
-    public class DivergenceInSpeciesBulk_CentralDifference : Divergence_CentralDifferenceJacobian, ISpeciesFilter {   
+    public class DivergenceInSpeciesBulk_CentralDifferenceNewton : Divergence_CentralDifferenceJacobian, ISpeciesFilter {   
 
-        public DivergenceInSpeciesBulk_CentralDifference(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfChemicalSpecies) 
+        public DivergenceInSpeciesBulk_CentralDifferenceNewton(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfChemicalSpecies) 
             : base(Component, Bcmap, SpatDim, EoS, NumberOfChemicalSpecies) {
             ValidSpecies = spcName;
         }
@@ -138,7 +138,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         /// <param name="SpatDim"></param>
         /// <param name="EoS"></param>
         /// <param name="NumberOfChemicalSpecies"></param>
-        public DivergenceInSpeciesBulk_CentralDifference(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim) : base(Component, Bcmap, SpatDim) {
+        public DivergenceInSpeciesBulk_CentralDifferenceNewton(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim) : base(Component, Bcmap, SpatDim) {
             ValidSpecies = spcName;
         }
 
@@ -149,6 +149,33 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
     }
 
 
+    /// <summary>
+    /// Variable density bulk term. Formulation suitable for use of the Newton solver
+    /// </summary>
+    public class DivergenceInSpeciesBulk_CentralDifference : Divergence_CentralDifference, ISpeciesFilter {
+
+        public DivergenceInSpeciesBulk_CentralDifference(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim, MaterialLaw EoS, int NumberOfChemicalSpecies)
+            : base(Component, Bcmap, EoS, NumberOfChemicalSpecies) {
+            ValidSpecies = spcName;
+        }
+        /// <summary>
+        /// constructor for incompressible
+        /// </summary>
+        /// <param name="spcName"></param>
+        /// <param name="Component"></param>
+        /// <param name="Bcmap"></param>
+        /// <param name="SpatDim"></param>
+        /// <param name="EoS"></param>
+        /// <param name="NumberOfChemicalSpecies"></param>
+        public DivergenceInSpeciesBulk_CentralDifference(string spcName, int Component, IncompressibleBoundaryCondMap Bcmap, int SpatDim) : base(Component, Bcmap) {
+            ValidSpecies = spcName;
+        }
+
+        public string ValidSpecies {
+            get;
+            private set;
+        }
+    }
 
 
 
@@ -200,26 +227,36 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         public double InnerEdgeForm(ref CommonParams cp,
     double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
     double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-
+            
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
             double uBxN = GenericBlas.InnerProd(U_Pos, cp.Normal);
 
-            // transform from species B to A: we call this the "A-fictitious" value
-            double uAxN_fict = uBxN;
-            // transform from species A to B: we call this the "B-fictitious" value
-            double uBxN_fict = uAxN;
+            //// transform from species B to A: we call this the "A-fictitious" value
+            //double uAxN_fict = uBxN;
+            //// transform from species A to B: we call this the "B-fictitious" value
+            //double uBxN_fict = uAxN;
 
-            // compute the fluxes: note that for the continuity equation, we use not a real flux,
-            // but some kind of penalization, therefore the fluxes have opposite signs!
+            //// compute the fluxes: note that for the continuity equation, we use not a real flux,
+            //// but some kind of penalization, therefore the fluxes have opposite signs!
 
-            double FlxNeg = -Flux(uAxN, uAxN_fict, 1.0, 1.0); // flux on A-side
-            double FlxPos = -Flux(uBxN_fict , uBxN , 1.0, 1.0);  // flux on B-side
+            //double FlxNeg = -Flux(uAxN, uAxN_fict, 1.0, 1.0); // flux on A-side
+            //double FlxPos = -Flux(uBxN_fict , uBxN , 1.0, 1.0);  // flux on B-side
 
-            FlxNeg *= scaleA;
-            FlxPos *= scaleB;
+            //FlxNeg *= scaleA;
+            //FlxPos *= scaleB;
 
 
-            return FlxNeg * vA - FlxPos * vB;
+
+
+
+
+
+            double res = +0.5 * (uAxN + uBxN) * (this.rhoA * vA - this.rhoB * vB); // This is correct WITHOUT mass evaporation flux
+            //double res = 0.5 * (this.rhoA * uAxN + this.rhoB * uBxN) * (vA - vB); // This is correct WITH mass evaporation flux
+
+            //0.5 * (densityIn * Uin[Component] + densityOut * Uout[Component]) * inp.Normal[Component]
+            return res;
+            //return FlxNeg * vA - FlxPos * vB;
         }
 
         /// <summary>

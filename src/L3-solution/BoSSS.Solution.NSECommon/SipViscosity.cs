@@ -64,7 +64,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// base class for viscosity terms
     /// </summary>
-    public abstract class SipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent {
+    public abstract class SipViscosityBase : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, IEquationComponentChecking, ISupportsJacobianComponent, IDGdegreeConstraint {
 
         /// <summary>
         /// ctor.
@@ -133,6 +133,18 @@ namespace BoSSS.Solution.NSECommon {
                     throw new NotImplementedException();
             }
 
+        }
+
+        /// <summary>
+        /// checks that we have at least DG degree 1
+        /// </summary>
+        public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int CodomainDegree) {
+            if (DomainDegreesPerVariable.Min() < 1)
+                return false;
+            if (CodomainDegree < 1)
+                return false;
+
+            return true;
         }
 
         /// <summary>
@@ -312,7 +324,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// base multiplier for the penalty computation
         /// </summary>
-        protected double m_penalty_base;
+        private double m_penalty_base;
 
 
         /// <summary>
@@ -366,8 +378,8 @@ namespace BoSSS.Solution.NSECommon {
             Debug.Assert(!double.IsInfinity(m_penalty));
 
             double µ = penaltySizeFactor * m_penalty * m_penalty_base;
-            if (µ.IsNaNorInf()) {
-                string errStr = ($"Inf/NaN in penalty comp: {µ}; (m_penalty = {m_penalty}, m_penalty_base = {m_penalty_base}, jCellIn = {jCellIn}, jCellOut = {jCellOut}, cj_in = {cj[jCellIn]}, cj_out = {(jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0)}, penaltySizeFactor_A = {penaltySizeFactor_A}, penaltySizeFactor_B = {penaltySizeFactor_B})");
+            if (µ <= 0 || µ.IsNaNorInf()) {
+                string errStr = ($"Inf/NaN/Non-Positive in penalty comp: {µ}; (m_penalty = {m_penalty}, m_penalty_base = {m_penalty_base}, jCellIn = {jCellIn}, jCellOut = {jCellOut}, cj_in = {cj[jCellIn]}, cj_out = {(jCellOut >= 0 ? 1.0 / cj[jCellOut] : 0)}, penaltySizeFactor_A = {penaltySizeFactor_A}, penaltySizeFactor_B = {penaltySizeFactor_B})");
                 throw new ArithmeticException(errStr);
             }
             return µ;
@@ -492,10 +504,10 @@ namespace BoSSS.Solution.NSECommon {
     ///   -\mathrm{div} \left( \mu \nabla \vec{u} \right)
     /// \f]
     /// </summary>
-    public class SipViscosity_GradU : SipViscosityBase
-        , INonlinVolumeForm_GradV,
+    public class SipViscosity_GradU : SipViscosityBase,
+        INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
-        INonlinEdgeForm_V 
+        INonlinEdgeForm_V  //
     {
 
         /// <summary>
@@ -508,8 +520,7 @@ namespace BoSSS.Solution.NSECommon {
             //g_Neu_GradU = D.ForLoop(d => bcmap.bndFunction[VariableNames.Velocity_GradientVector(D).GetRow(iComp)[d]]);
         }
 
-        
-
+      
         public override double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
@@ -518,6 +529,7 @@ namespace BoSSS.Solution.NSECommon {
 
             if(acc != 0.0)
                 acc *= Viscosity(cpv.Parameters, U, GradU) * base.m_alpha;
+
             return -acc;
         }
 
@@ -525,7 +537,7 @@ namespace BoSSS.Solution.NSECommon {
 
         public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
             double Acc = 0.0;
-            double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);//, inp.GridDat.Cells.cj);
+            double pnlty = this.penalty(inp.GridDat, inp.jCellIn, inp.jCellOut, inp.iEdge);
             double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             double muB = this.Viscosity(inp.Parameters_OUT, _uB, _Grad_uB);
 
@@ -539,7 +551,6 @@ namespace BoSSS.Solution.NSECommon {
             double muMax = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
             //Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * muMax; // penalty term
             Acc -= (_uA[m_iComp] - _uB[m_iComp]) * (_vA - _vB) * pnlty * muMax; // penalty term 
-
             return -Acc;
         }
 
@@ -569,6 +580,7 @@ namespace BoSSS.Solution.NSECommon {
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
             double pnlty = 2 * this.penalty(inp.GridDat, inp.jCellIn, -1, inp.iEdge);//, inp.GridDat.Cells.cj);
+            
             double muA = this.Viscosity(inp.Parameters_IN, _uA, _Grad_uA);
             IncompressibleBcType edgType = base.EdgeTag2Type[inp.EdgeTag];
 
@@ -715,7 +727,6 @@ namespace BoSSS.Solution.NSECommon {
         
         
         void INonlinVolumeForm_GradV.Form(ref VolumFormParams prm, MultidimensionalArray[] U, MultidimensionalArray[] GradU, MultidimensionalArray f) {
-
             int NumofCells = prm.Len;
             int NumOfNodes = f.GetLength(1); // no of nodes per cell
             Debug.Assert(f.GetLength(0) == NumofCells);
@@ -858,7 +869,6 @@ namespace BoSSS.Solution.NSECommon {
         //*/
         
         void INonlinInnerEdgeForm_V.NonlinInternalEdge_V(ref EdgeFormParams efp, MultidimensionalArray[] Uin, MultidimensionalArray[] Uout, MultidimensionalArray[] GradUin, MultidimensionalArray[] GradUout, MultidimensionalArray fin, MultidimensionalArray fot) {
-
             int NumOfCells = efp.Len;
             Debug.Assert(fin.GetLength(0) == NumOfCells);
             Debug.Assert(fot.GetLength(0) == NumOfCells);
@@ -989,7 +999,6 @@ namespace BoSSS.Solution.NSECommon {
                                    ViscosityOption _ViscosityMode, /*ViscositySolverMode ViscSolverMode = ViscositySolverMode.FullyCoupled,*/
                                    double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null)
             : base(_penalty, iComp, D, bcmap, _ViscosityMode, constantViscosityValue, reynolds, EoS) {
-
             //this.ViscSolverMode = ViscSolverMode;
         }
 

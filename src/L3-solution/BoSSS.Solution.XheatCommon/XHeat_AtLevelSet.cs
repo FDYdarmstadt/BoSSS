@@ -1277,6 +1277,112 @@ namespace BoSSS.Solution.XheatCommon {
 
 
 
+    /// <summary>
+    /// Extension for <see cref="HeatConvectionInSpeciesBulk_Hamiltonian_Newton"/> on interface
+    /// </summary>
+    public class SpeciesConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian : MassFluxAtLevelSet_StrongCoupling, IEquationComponentCoefficient {
+
+        bool movingmesh;
+        int component; //chemical species index
+        public SpeciesConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(int _D, double _rhoA, double _rhoB, double _LFFA, double _LFFB, bool _movingmesh, double _interfaceValue, ThermalParameters thermParams, string phaseA, string phaseB, int _component) : base(_D, thermParams, phaseA, phaseB) {
+
+            m_D = _D;
+            interfaceValue = _interfaceValue;
+            capA = _rhoA;
+            capB = _rhoB;
+            LFFA = _LFFA;
+            LFFB = _LFFB;
+            component = _component;
+        }
+
+        int m_D;
+        double capA;
+        double capB;
+        double LFFA;
+        double LFFB;
+
+        //bool DirichletCond;
+        double interfaceValue;
+
+        void TransformU(ref double[] U_Neg, ref double[] U_Pos, out double[] U_NegFict, out double[] U_PosFict) {
+            U_NegFict = U_Pos;
+            U_PosFict = U_Neg;
+        }
+
+        /// <summary>
+        /// Scale of the component, used for homotopy
+        /// </summary>
+        double Scale = 1.0;
+
+        public override double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double[] U_NegFict, U_PosFict;
+
+            this.TransformU(ref U_Neg, ref U_Pos, out U_NegFict, out U_PosFict);
+
+            double[] ParamsNeg = cp.Parameters_IN;
+            double[] ParamsPos = cp.Parameters_OUT;
+            double[] ParamsPosFict, ParamsNegFict;
+            this.TransformU(ref ParamsNeg, ref ParamsPos, out ParamsNegFict, out ParamsPosFict);
+
+            // Normal velocities
+            double[] VelocityMeanIn = new double[m_D];
+            double[] VelocityMeanOut = new double[m_D];
+            double vINxN = 0.0, vOUTxN = 0.0;
+            for (int d = 0; d < m_D; d++) {
+                VelocityMeanIn[d] = U_Neg[1 + d];
+                vINxN += VelocityMeanIn[d] * cp.Normal[d];
+                VelocityMeanOut[d] = U_Pos[1 + d];
+                vOUTxN += VelocityMeanOut[d] * cp.Normal[d];
+            }
+
+            // Second variant using Roe-Type Scheme
+            // if VxN < 0 (Inflow) enforce Dirichlet condition, if > 0 (outflow), we still want to enforce saturation temperature?
+            double FlxNeg = 0.5 * (vINxN - Math.Abs(vINxN)) * (interfaceValue - U_Neg[3]);
+            FlxNeg -= 0.5 * (vINxN + Math.Abs(vINxN)) * (interfaceValue - U_Neg[3]);
+            FlxNeg += vINxN * U_Neg[3]; // Extra term from weak formulation
+
+            double FlxPos = 0.5 * (vOUTxN - Math.Abs(vOUTxN)) * (U_Pos[3] - interfaceValue);
+            FlxPos -= 0.5 * (vOUTxN + Math.Abs(vOUTxN)) * (U_Pos[3] - interfaceValue);
+            FlxPos -= vOUTxN * U_Pos[3];// Extra term from weak formulation         
+            return Scale * (capA * FlxNeg * v_Neg - capB * FlxPos * v_Pos);
+        }
+
+
+        public override void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+            base.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+
+        }
+
+        public void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+            Scale = cs.HomotopyValue;
+        }
+
+        BitArray evapMicroRegion;
+
+
+        public override IList<string> ArgumentOrdering {
+            get {
+                var bla = base.ArgumentOrdering.Cat(VariableNames.VelocityVector(m_D));
+                return bla.Cat(VariableNames.MassFraction_n(component));
+            }
+        }
+
+
+
+        public override TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.UxV;
+            }
+        }
+
+        public override IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var JacobiComp = new LevelSetFormDifferentiator(this, SpatialDimension);
+            return new IEquationComponent[] { JacobiComp };
+        }
+    }
+
 
 
     /// <summary>
@@ -1672,6 +1778,194 @@ namespace BoSSS.Solution.XheatCommon {
         }
 
     }
-    
 
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public class MassDifusivityAtLevelSet_withMassflux : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
+
+
+        public MassDifusivityAtLevelSet_withMassflux(int SpatialDim, double _kA, double _kB, double _penalty, double _Tsat, int _component, bool ZeroGradientAtContactline) {
+            this.kA = _kA;
+            this.kB = _kB;
+            this.m_penalty_base = _penalty;
+            this.m_D = SpatialDim;
+            this.component = _component;
+            //this.DirichletCond = _DiriCond;
+            this.Tsat = _Tsat;
+            this.ZeroGradientAtContactline = ZeroGradientAtContactline;
+            //m_LsTrk = lstrk;
+
+        }
+
+        double kA;
+        double kB;
+        int component;
+        double penalty;
+        int m_D;
+
+        //bool DirichletCond;
+        double Tsat;
+        bool ZeroGradientAtContactline;
+
+
+        /// <summary>
+        /// default-implementation
+        /// </summary>
+        public double InnerEdgeForm(ref CommonParams inp,
+            double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB,
+            double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
+
+            Debug.Assert(inp.jCellIn == inp.jCellOut);
+
+            double[] N = inp.Normal;
+            Debug.Assert(Grad_uA.GetLength(0) == this.ArgumentOrdering.Count);
+            Debug.Assert(Grad_uB.GetLength(0) == this.ArgumentOrdering.Count);
+            Debug.Assert(Grad_uA.GetLength(1) == m_D);
+            Debug.Assert(Grad_uB.GetLength(1) == m_D);
+
+            double Grad_uA_xN = 0, Grad_uB_xN = 0, Grad_vA_xN = 0, Grad_vB_xN = 0;
+            for (int d = 0; d < m_D; d++) {
+                Grad_uA_xN += Grad_uA[0, d] * N[d];
+                Grad_uB_xN += Grad_uB[0, d] * N[d];
+                Grad_vA_xN += Grad_vA[d] * N[d];
+                Grad_vB_xN += Grad_vB[d] * N[d];
+            }
+
+            double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
+            double wPenalty = (Math.Abs(kA) > Math.Abs(kB)) ? kA : kB;
+
+            double Ret = 0.0;
+
+            double g_D = Tsat;
+
+            if (!ZeroGradientAtContactline) {
+                // dirichlet condition from A-side
+                for (int d = 0; d < inp.D; d++) {
+                    double nd = inp.Normal[d];
+                    Ret += (kA * Grad_uA[0, d]) * (vA) * nd;
+                    Ret += (kA * Grad_vA[d]) * (uA[0] - g_D) * nd;
+                }
+
+                Ret -= wPenalty * (uA[0] - g_D) * (vA - 0) * pnlty;
+
+                // dirichlet condition from B-side
+                for (int d = 0; d < inp.D; d++) {
+                    double nd = inp.Normal[d];
+                    Ret += (kB * Grad_uB[0, d]) * (-vB) * nd;
+                    Ret += (kB * Grad_vB[d]) * (g_D - uB[0]) * nd;
+                }
+
+                Ret -= wPenalty * (g_D - uB[0]) * (0 - vB) * pnlty;
+                Ret *= -1.0;
+            } else {
+                double a = 1.0 * inp.X[0].Pow2();
+                // Robin condition from A-side
+                Ret += a * (uA[0] - g_D) * (vA - 0);
+                // Robin condition from B-side
+                Ret += a * (g_D - uB[0]) * (0 - vB);
+            }
+
+            Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
+            return Ret;
+        }
+
+        BitArray evapMicroRegion;
+
+
+        /// <summary>
+        /// base multiplier for the penalty computation
+        /// </summary>
+        protected double m_penalty_base;
+
+        /// <summary>
+        /// penalty adapted for spatial dimension and DG-degree
+        /// </summary>
+        double m_penalty;
+
+        /// <summary>
+        /// computation of penalty parameter according to:
+        /// An explicit expression for the penalty parameter of the
+        /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
+        /// look at formula (7) in cited paper
+        /// </summary>
+        protected double Penalty(int jCellIn, int jCellOut) {
+
+            double penaltySizeFactor_A = 1.0 / NegLengthScaleS[jCellIn];
+            double penaltySizeFactor_B = 1.0 / PosLengthScaleS[jCellOut];
+
+            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+            Debug.Assert(!double.IsInfinity(m_penalty));
+
+            return penaltySizeFactor * m_penalty * m_penalty_base;
+        }
+
+
+        MultidimensionalArray PosLengthScaleS;
+        MultidimensionalArray NegLengthScaleS;
+
+        /// <summary>
+        /// Update of penalty length scales.
+        /// </summary>
+        /// <param name="csA"></param>
+        /// <param name="csB"></param>
+        /// <param name="DomainDGdeg"></param>
+        /// <param name="TestDGdeg"></param>
+        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+
+            double _D = m_D;
+            double _p = DomainDGdeg.Max();
+
+            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+            m_penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
+
+            NegLengthScaleS = csA.CellLengthScales;
+            PosLengthScaleS = csB.CellLengthScales;
+
+            if (csA.UserDefinedValues.Keys.Contains("EvapMicroRegion"))
+                evapMicroRegion = (BitArray)csA.UserDefinedValues["EvapMicroRegion"];
+        }
+
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
+        public int LevelSetIndex {
+            get { return 0; }
+        }
+
+        public IList<string> ArgumentOrdering {
+            get { return new string[] { VariableNames.MassFraction_n(component)}; }
+        }
+
+        public string PositiveSpecies {
+            get { return "B"; }
+        }
+
+        public string NegativeSpecies {
+            get { return "A"; }
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.V | TermActivationFlags.UxV | TermActivationFlags.GradV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                return new string[] { };
+            }
+        }
+
+    }
 }

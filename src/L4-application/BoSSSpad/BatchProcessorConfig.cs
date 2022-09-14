@@ -20,11 +20,25 @@ namespace BoSSS.Application.BoSSSpad {
         [DataMember]
         public BatchProcessorClient[] AllQueues;
 
+        /// <summary>
+        /// Default queue, 
+        /// </summary>
+        [DataMember]
+        public int DefaultQueueIndex = 0;
+
 
         static string ConfigFilePath {
             get {
                 string settingsDir = Foundation.IO.Utils.GetBoSSSUserSettingsPath();
                 string filePath = Path.Combine(settingsDir, "etc", "BatchProcessorConfig.json");
+                return filePath;
+            }
+        }
+
+        static string DefaultQueuesProjectOverridePath {
+            get {
+                string settingsDir = Foundation.IO.Utils.GetBoSSSUserSettingsPath();
+                string filePath = Path.Combine(settingsDir, "etc", "DefaultQueuesProjectOverride.txt");
                 return filePath;
             }
         }
@@ -51,8 +65,57 @@ namespace BoSSS.Application.BoSSSpad {
 
                 return r;
             }
-
         }
+
+        /// <summary>
+        /// IO for the <see cref="DefaultQueuesProjectOverridePath"/>-file.
+        /// </summary>
+        static internal string GetDefaultBatchnameForProject(string projectName) {
+            if(projectName == null)
+                return null;
+
+            try {
+                if(!File.Exists(DefaultQueuesProjectOverridePath)) {
+                    string[] lines = new string[]{
+                    "## This file contains the default batch queue for specific BoSSS projects. ",
+                    "## Precisely, this is an override for the global `DefaultQueueIndex` set in file `BatchProcessorConfig.json`.",
+                    "## ",
+                    "## The format for each line is",
+                    "## ```",
+                    "## Project-name : queue-name",
+                    "## ```",
+                    "## where `Project-name` is set in e Jupyter Notebook using `wmg.Init(\"LinslvPerf_ConstPoissonMpi1\")`",
+                    "## and `queue-name` correlates with `BatchProcessorClient.Name`;" +
+                    "## (Note: string comparisons are case-insensitive)"
+                };
+
+                    File.WriteAllLines(DefaultQueuesProjectOverridePath, lines);
+                    return null;
+                } else {
+                    string[] lines = File.ReadAllLines(DefaultQueuesProjectOverridePath);
+                    foreach(var l in lines) {
+                        var _l = l.TrimStart();
+                        if(_l.StartsWith("##"))
+                            continue;
+
+                        var l12 = _l.Split(":", StringSplitOptions.RemoveEmptyEntries);
+                        if(l12.Length < 2)
+                            continue;
+
+                        if(l12[0].Trim().Equals(projectName, StringComparison.InvariantCultureIgnoreCase))
+                            return l12[1].Trim();
+                    }
+
+
+                    return null;
+
+                }
+            } catch(Exception e) {
+                Console.Error.WriteLine($"Error during 'DefaultQueuesProjectOverride.txt'-io: {e.GetType()}: {e.Message}");
+                return null;
+            }
+        }
+
 
         /// <summary>
         /// Saves the given configuration in the default location
@@ -95,14 +158,12 @@ namespace BoSSS.Application.BoSSSpad {
         /// Used for control objects in work-flow management, de-serializing from a string.
         /// </summary>
         public static BatchProcessorConfig Deserialize(string Str) {
-            JsonSerializer formatter = new JsonSerializer() {
+            var formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
                 ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
                 ReferenceLoopHandling = ReferenceLoopHandling.Error
-
             };
-
 
             using(var tr = new StringReader(Str)) {
                 //string typeName = tr.ReadLine();

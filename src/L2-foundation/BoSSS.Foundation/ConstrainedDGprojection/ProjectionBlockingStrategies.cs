@@ -43,16 +43,15 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// Returns lists which form the blocks of the additive-Schwarz domain decomposition.
         /// </summary>
-        /// <param name="op"></param>
         /// <returns>
         /// - outer enumeration: corresponds to domain-decomposition blocks
         /// - inner index: indices within the sub-blocks
-        /// - content: local cell indices which form the respective additive-Schwarz block (<see cref="MultigridOperator"/>
+        /// - content: local cell indices which form the respective additive-Schwarz block 
         /// </returns>
         abstract internal IEnumerable<List<int>> GetBlocking(GridData grdDat, CellMask mask);
 
         /// <summary>
-        /// Number of blocs returned by <see cref="GetBlocking(MultigridOperator)"/>
+        /// Number of blocs returned by <see cref="GetBlocking"/>
         /// </summary>
         internal abstract int GetNoOfBlocks();
     }
@@ -104,7 +103,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out MPIsize);
             //if (MPIrank == 1)
             //    NoOfParts = 1;
-            //Debugger.Launch();
+            // dbg_launch();
 
             int[] part = new int[JComp];
             {
@@ -151,10 +150,11 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             {
                 List<List<int>> _Blocks = NoOfPartsOnCurrentProcess.ForLoop(i => new List<int>((int)Math.Ceiling(1.1 * JComp / NoOfPartsOnCurrentProcess))).ToList();
-                for (int j = 0; j < JComp; j++) {
-                    _Blocks[part[j]].Add(sbgrd.SubgridIndex2LocalCellIndex[j]);
+                for (int j = 0; j < JComp; j++) { // loop over cells...
+                    _Blocks[part[j]].Add(sbgrd.SubgridIndex2LocalCellIndex[j]); // cell `j` belongs to block `part[j]`
                 }
 
+                // remove empty blocks:
                 for (int iB = 0; iB < _Blocks.Count; iB++) {
                     if (_Blocks[iB].Count <= 0) {
                         _Blocks.RemoveAt(iB);
@@ -165,8 +165,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 if (_Blocks.Count < NoOfPartsOnCurrentProcess)
                     Console.WriteLine("METIS WARNING: requested " + NoOfPartsOnCurrentProcess + " blocks, but got " + _Blocks.Count);
 
-                //cache = _Blocks.ToArray();
-                //Console.WriteLine("MetisBlocking Testcode active !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 return _Blocks.ToArray().Select(orgList => new List<int>(orgList)).ToArray();
             }
         }

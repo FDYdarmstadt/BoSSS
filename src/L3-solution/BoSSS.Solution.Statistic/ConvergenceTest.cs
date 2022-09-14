@@ -95,7 +95,7 @@ namespace BoSSS.Solution.Statistic {
         }
         */
 
-        public static void SolverConvergenceTest_Experimental(this IEnumerable<AppControl> __CS, string Title, params (string FieldName, double expectedSlope, NormType normType)[] fildNamesAndSlopes) {
+        public static (string Name, double slope, double Intercept)[] SolverConvergenceTest_Experimental(this IEnumerable<AppControl> __CS, string Title, params (string FieldName, NormType normType, double Slope, double intercept, double interceptTol)[] expectedRegressionModels) {
             int D = -1;
             var CS = __CS.ToArray();
             int NoOfMeshes = CS.Length;
@@ -103,7 +103,7 @@ namespace BoSSS.Solution.Statistic {
             if(CS.Length < 3)
                 throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact (experimental convergence).");
 
-
+            var Ret = new List<(string Name, double slope, double Intercept)>();
 
             // step 1: compute solutions on different resolutions
             // ===================================================
@@ -162,7 +162,7 @@ namespace BoSSS.Solution.Statistic {
                         //errorS.SetRow(k, LastErrors);
                         //hS[k] = evaluator.GetGrid_h();
 
-                        var solutionAtResolutions = fildNamesAndSlopes.Select(
+                        var solutionAtResolutions = expectedRegressionModels.Select(
                             ttt => solver.IOFields.Where(f => f.Identification == ttt.FieldName).Single());
 
                         solutionOnDifferentResolutions.Add(solutionAtResolutions.ToArray());
@@ -180,14 +180,18 @@ namespace BoSSS.Solution.Statistic {
             
 
 
-            // step 3: check slopes
+            // step 3: check slopes & intercepts
             // ===================================================
-            foreach(var ttt in fildNamesAndSlopes) {
+            foreach(var ttt in expectedRegressionModels) {
                 string fieldName = ttt.FieldName;
                 
-                var slope = hS.LogLogRegression(errorS[fieldName]);
+                var RegModel = hS.LogLogRegression(errorS[fieldName]);
 
-                Console.WriteLine($"Convergence slope for Error of '{fieldName}': \t{slope}\t(Expecting: {ttt.expectedSlope} in norm {ttt.normType})");
+                Console.WriteLine($"Convergence slope for Error of '{fieldName}': \t{RegModel.Slope}\tIntercept: \t{RegModel.Intercept}\t(Expecting: {ttt.Slope}/{ttt.intercept - ttt.interceptTol} to {ttt.intercept + ttt.interceptTol} in norm {ttt.normType})");
+                
+                
+
+                Ret.Add((fieldName, RegModel.Slope, RegModel.Intercept));
             }
 
             var plt = new BoSSS.Solution.Gnuplot.Plot2Ddata();
@@ -197,7 +201,7 @@ namespace BoSSS.Solution.Statistic {
             int cnt = 0;
             var allPoints = Enum.GetValues(typeof(PointTypes));
             var allColors = Enum.GetValues(typeof(LineColors));
-            foreach(var ttt in fildNamesAndSlopes) {
+            foreach(var ttt in expectedRegressionModels) {
                 plt.AddDataGroup(ttt.FieldName + "-" + ttt.normType.ToString(), hS, errorS[ttt.FieldName]);
                 plt.dataGroups.Last().Format.PointType = (PointTypes) allPoints.GetValue(cnt % allPoints.Length);
                 plt.dataGroups.Last().Format.LineColor = (LineColors) allColors.GetValue(cnt % allColors.Length);
@@ -209,18 +213,22 @@ namespace BoSSS.Solution.Statistic {
 
 
 
-            foreach(var ttt in fildNamesAndSlopes) {
+            foreach(var ttt in expectedRegressionModels) {
                 string fieldName = ttt.FieldName;
                 
-                var slope = hS.LogLogRegression(errorS[fieldName]);
+                var RegModel = hS.LogLogRegression(errorS[fieldName]);
 
-                Assert.GreaterOrEqual(slope, ttt.expectedSlope, $"Convergence Slope of {fieldName} is degenerate: got {slope}, expecting at lease {ttt.expectedSlope} in norm {ttt.normType}");
+                Assert.GreaterOrEqual(RegModel.Slope, ttt.Slope, $"Convergence Slope of {fieldName} is degenerate: got {RegModel.Slope}, expecting at lease {ttt.Slope} in norm {ttt.normType}");
+                Assert.GreaterOrEqual(RegModel.Intercept, ttt.intercept - ttt.interceptTol, $"Convergence Intercept of {fieldName} is degenerate.");
+                Assert.LessOrEqual(RegModel.Intercept, ttt.intercept + ttt.interceptTol, $"Convergence Intercept of {fieldName} overshoot.");
             }
 
 
             foreach (var s in solvers) {
                 s.Dispose();
             }
+
+            return Ret.ToArray();
         }
 
     }

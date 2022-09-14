@@ -22,6 +22,7 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using System.Diagnostics;
 using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.Control;
 
 namespace BoSSS.Application.XdgTimesteppingTest {
 
@@ -406,7 +407,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
             C.NoOfTimesteps = 1;
             C.dtFixed = 0.0005;
             C.Endtime = C.dtFixed * C.NoOfTimesteps;
-            C.LinearSolver.SolverCode = Solution.Control.LinearSolverCode.classic_mumps;
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
 

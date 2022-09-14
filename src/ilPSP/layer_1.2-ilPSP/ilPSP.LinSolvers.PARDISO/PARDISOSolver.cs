@@ -54,12 +54,12 @@ namespace ilPSP.LinSolvers.PARDISO {
         public Parallelism Parallelism {
             get {
                 return m_Parallelism;
+
             }
             set {
                 if(m_wrapper != null) {
                     throw new NotSupportedException("Cannot be changed after init.");
                 }
-
                 m_Parallelism = value;
             }
         }
@@ -930,9 +930,8 @@ namespace ilPSP.LinSolvers.PARDISO {
         }
 
         /// <summary>
-        /// Used memory for factorization in bates
+        /// Used memory for factorization in bytes
         /// </summary>
-        /// <returns></returns>
         public long UsedMemory() {
             return m_PermanentMemoryFac*1024;
         }

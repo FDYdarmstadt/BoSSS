@@ -273,7 +273,7 @@ namespace BoSSS.Solution.Utils {
                     int edge = gridData.iGeomEdges.FaceIndices[i + i0, 0];
                     int iTrf = gridData.iGeomEdges.Edge2CellTrafoIndex[i + i0, 0];
 
-                    NodeSet CellNodes = QR.Nodes.GetVolumeNodeSet(base.GridDat, iTrf);
+                    NodeSet CellNodes = QR.Nodes.GetVolumeNodeSet(base.GridDat, iTrf, true);
 
                     // Evaluate all fields
                     for (int j = 0; j < noOfFields; j++) {

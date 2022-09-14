@@ -41,6 +41,33 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Creates a job for the control object <paramref name="ctrl"/>.
+        /// The method returns immediately.
+        /// This job can still be configured (e.g. setting number of MPI processors) and must be activated (<see cref="Job.Activate(BatchProcessorClient)"/>)
+        /// to run on a batch system.
+        /// </summary>
+        /// <param name="ctrl"></param>
+        /// <returns></returns>
+        public static Job CreateJob(this AppControl ctrl) {
+            ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
+
+
+            string JobName = ctrl.SessionName;
+            int ctrl_idx = InteractiveShell.WorkflowMgm.RegisterControl(ctrl);
+            if (JobName.IsEmptyOrWhite()) {
+                JobName = "UnnamedJob_" + ctrl_idx;
+                ctrl.SessionName = JobName;
+            }
+
+            Type solverClass = ctrl.GetSolverType();
+            Job job = new Job(ctrl.SessionName, solverClass);
+            job.SetControlObject(ctrl);
+
+
+            return job;
+        }
+
+        /// <summary>
         /// Runs the solver described by the control object <paramref name="ctrl"/> on a batch system.
         /// The method returns immediately.
         /// </summary>
@@ -48,23 +75,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="BatchSys"></param>
         /// <returns></returns>
         public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys) {
-            ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
-
-
-            string JobName = ctrl.SessionName;
-            int ctrl_idx = InteractiveShell.WorkflowMgm.RegisterControl(ctrl);
-            if(JobName.IsEmptyOrWhite()) {
-                JobName = "UnnamedJob_" + ctrl_idx;
-                ctrl.SessionName = JobName;
-            }
-
-            Type solverClass = ctrl.GetSolverType();
-            Job job = new Job(JobName, solverClass);
-
-            //job.ExecutionTime = executionTime;
-            //job.NumberOfMPIProcs = NumberOfMPIProcs;
-            //job.UseComputeNodesExclusive = UseComputeNodesExclusive;
-            job.SetControlObject(ctrl);
+            var job = ctrl.CreateJob();
+            
             job.Activate(BatchSys);
             
             return job;
@@ -78,44 +90,49 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="queueIdx">
         /// Index int <see cref="InteractiveShell.ExecutionQueues"/>
         /// </param>
-        public static Job RunBatch(this AppControl ctrl, int queueIdx = 0) {
-            var b = InteractiveShell.ExecutionQueues[queueIdx];
-            return RunBatch(ctrl, InteractiveShell.ExecutionQueues[queueIdx]);
+        public static Job RunBatch(this AppControl ctrl, int queueIdx) {
+            var b = BoSSSshell.ExecutionQueues[queueIdx];
+            return RunBatch(ctrl, b);
         }
+
 
         /// <summary>
-        /// Creates a job for the control object <paramref name="ctrl"/>.
-        /// The method returns immediately.
-        /// This job can still be configured (e.g. setting number of MPI processors) and must be activated (<see cref="Job.Activate"/>)
-        /// to run on a batch system.
+        /// Runs the solver described by the control object <paramref name="ctrl"/> 
+        /// on the default batch system 
+        /// The method returns immediately after the job is deployed., i.e. it does not wait for the job to finish.
         /// </summary>
-        /// <param name="ctrl"></param>
-        /// <returns></returns>
-        public static Job CreateJob(this AppControl ctrl) {
-            ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
-
-            Type solverClass = ctrl.GetSolverType();
-            Job job = new Job(ctrl.SessionName , solverClass);
-            job.SetControlObject(ctrl);
-
-            
-            return job;
+        public static Job RunBatch(this AppControl ctrl) {
+            var b = BoSSSshell.GetDefaultQueue();
+            return RunBatch(ctrl, b);
         }
+
+
+       
 
         /// <summary>
         /// Returns the job correlated to a control object
         /// </summary>
         public static Job GetJob(this AppControl ctrl) {
+            var ret = new List<Job>();
             foreach (var j in InteractiveShell.WorkflowMgm.AllJobs.Values) {
                 var cj = j.GetControl();
                 if (cj == null)
                     continue;
 
                 if (cj.Equals(ctrl))
-                    return j;
+                    ret.Add(j);
             }
-            Console.WriteLine("No Job assigned for given control object yet.");
-            return null;
+            if (ret.Count <= 0) {
+                Console.WriteLine("No Job assigned for given control object yet.");
+                return null;
+            } else {
+                if(ret.Count > 1) {
+                    string messeage = $"Unable to find a 1:1 correlation between control object and jobs: matching jobs {ret.ToConcatString("", ", ", "")};";
+                    throw new ApplicationException(messeage);
+                }
+
+                return ret[0];
+            }
         }
         
         /// <summary>
@@ -158,7 +175,7 @@ namespace BoSSS.Application.BoSSSpad {
             job.NumberOfMPIProcs = job2rest.NumberOfMPIProcs;
             job.RetryCount = job2rest.RetryCount;
             //job.MemPerCPU = job2rest.MemPerCPU;
-            job.ExecutionTime = job2rest.ExecutionTime;
+            //job.ExecutionTime = job2rest.ExecutionTime;
             return job;
         }
 

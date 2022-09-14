@@ -211,8 +211,8 @@ namespace BoSSS.Solution.LevelSetTools {
                             MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
                             MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
 
-                            NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN);
-                            NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT);
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN, false);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT, false);
 
                             f.Evaluate(jCell_IN, 1, NS_IN, uIN);
                             f.Evaluate(jCell_OT, 1, NS_OT, uOT);
@@ -296,6 +296,8 @@ namespace BoSSS.Solution.LevelSetTools {
                 if(m_projector != null)
                     m_projector.Dispose();
                 m_projector = new ConstrainedDGField_Global(m_myBasis, domain);
+                //m_projector = new ConstrainedDgField_Patchwise(m_myBasis, domain);
+
             }
 
             return m_projector;

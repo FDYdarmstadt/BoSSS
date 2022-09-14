@@ -3117,7 +3117,7 @@ namespace CNS {
             CNSControl c = new CNSControl();
 
             //System.Threading.Thread.Sleep(10000);
-            //Debugger.Launch();
+            // dbg_launch();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
             //dbPath = @"c:\bosss_db";                                          // Local
@@ -3346,7 +3346,7 @@ namespace CNS {
             //double? lambdaMax = 10;
 
             //System.Threading.Thread.Sleep(10000);
-            //Debugger.Launch();
+            // dbg_launch();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
             //dbPath = @"c:\bosss_db";                                          // Local
@@ -3581,7 +3581,7 @@ namespace CNS {
             //double? lambdaMax = 10;
 
             //System.Threading.Thread.Sleep(10000);
-            //Debugger.Launch();
+            // dbg_launch();
 
             //dbPath = @"/work/scratch/yp19ysog/bosss_db_dmr_video";          // Lichtenberg
             //dbPath = @"c:\bosss_db";                                          // Local

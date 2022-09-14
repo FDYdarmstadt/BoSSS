@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
@@ -29,6 +29,7 @@
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
+    <ProjectReference Include="..\AdvancedSolverTestsMPI\AdvancedSolverTestsMPI.csproj" />
     <ProjectReference Include="..\AdvancedSolverTests\AdvancedSolverTests.csproj" />
     <ProjectReference Include="..\ALTSTests\ALTSTests.csproj" />
     <ProjectReference Include="..\BoSSSpad\BoSSSpad.csproj" />
@@ -43,6 +44,7 @@
     <ProjectReference Include="..\ExternalBinding.CodeGen\ExternalBinding.CodeGen.csproj" />
     <ProjectReference Include="..\ExternalBinding\ExternalBinding.csproj" />
     <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj" />
+    <ProjectReference Include="..\HangingNodesTests\HangingNodesTests.csproj" />
     <ProjectReference Include="..\HilbertTest\HilbertTest.csproj" />
     <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj" />
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />

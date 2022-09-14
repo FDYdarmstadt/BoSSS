@@ -32,13 +32,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
         MultigridOperator m_OpThisLevel;
 
         public void Init(MultigridOperator op) {
-            this.m_OpThisLevel = op;
+            using(var tr = new FuncTrace()) {
+                if(object.ReferenceEquals(op, this.m_OpThisLevel))
+                    return; // already initialized
+                else
+                    this.Dispose();
+                this.m_OpThisLevel = op;
 
-            if(op.CoarserLevel == null) {
-                throw new NotSupportedException("Multigrid algorithm cannot be used as a solver on the finest level.");
+                if(op.CoarserLevel == null) {
+                    throw new NotSupportedException("Multigrid algorithm cannot be used as a solver on the finest level.");
+                }
+
+                this.CoarserLevelSolver.Init(op.CoarserLevel);
             }
-
-            this.CoarserLevelSolver.Init(op.CoarserLevel);
         }
 
         public ISolverSmootherTemplate CoarserLevelSolver;
@@ -91,11 +97,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotImplementedException("Clone of " + this.ToString() + " TODO");
         }
         public void Dispose() {
-            throw new NotImplementedException();
+            if (CoarserLevelSolver != null)
+                CoarserLevelSolver.Dispose();
         }
 
         public long UsedMemory() {
-            throw new NotImplementedException();
+            return CoarserLevelSolver?.UsedMemory() ?? 0;
         }
     }
     

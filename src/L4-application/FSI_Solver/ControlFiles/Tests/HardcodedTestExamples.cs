@@ -67,9 +67,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = true;
-            C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.hydrodynamicsConvergenceCriterion = 1e-2;
 
 
@@ -120,12 +118,9 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 1;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.1;
             C.LevelSetSmoothing = false;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            C.LinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.NoOfMultigridLevels = 1;
 
             // Timestepping
             // ============
@@ -188,11 +183,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MinSolverIterations = 1;
             C.LSunderrelax = 1.0;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.LSunderrelax = 1;
             C.fullyCoupledSplittingMaxIterations = 100;
@@ -246,9 +238,7 @@ namespace BoSSS.Application.FSI_Solver {
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             C.LevelSetSmoothing = false;
-            C.LinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 10;
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.hydrodynamicsConvergenceCriterion = 1e-2;
 
 
@@ -318,9 +308,6 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MinSolverIterations = 1;
             C.LSunderrelax = 1.0;
 
             // Coupling Properties
@@ -374,11 +361,8 @@ namespace BoSSS.Application.FSI_Solver {
             C.LevelSetSmoothing = false;
             C.NonLinearSolver.MaxSolverIterations = 1000;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MaxSolverIterations = 1000;
-            C.LinearSolver.MinSolverIterations = 1;
             C.LSunderrelax = 1.0;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             // Coupling Properties
             // =============================

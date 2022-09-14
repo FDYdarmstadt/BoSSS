@@ -180,7 +180,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int myRank = this.MpiRank;
                 if (m_Grid.NoOfUpdateCells <= 0)
                 {
-                    //Debugger.Launch();
+                    // dbg_launch();
                     throw new ApplicationException("grid contains no cells on processor " + myRank + ";");
 
                 }
@@ -501,7 +501,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         if (LocalVerticesIn is NodeSet) {
                             _LocalVerticesIn[iKref] = (NodeSet)LocalVerticesIn; 
                         } else {
-                            _LocalVerticesIn[iKref] = new NodeSet(Kref, LocalVerticesIn); // convert to node set
+                            _LocalVerticesIn[iKref] = new NodeSet(Kref, LocalVerticesIn, false); // convert to node set
                         }
                     }
 
@@ -937,6 +937,11 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </list>
         /// </param>
         /// <param name="jCell">local cell index of the cell to transform</param>
+        /// <param name="NewtonConvergence">
+        /// in the case of curved cells/isoparametric elements, where a Newton algorithm has to be used for the inverse transformation, 
+        /// diagnostic information whether the Newton algorithm has converged or not.
+        /// The index correlates with the vertex index in <paramref name="GlobalVerticesIn"/>.
+        /// </param>
         public void TransformGlobal2Local(MultidimensionalArray GlobalVerticesIn, MultidimensionalArray LocalVerticesOut, int jCell, bool[] NewtonConvergence) {
             int N = GlobalVerticesIn.GetLength(0); // number of nodes/points
             int D = SpatialDimension;
@@ -997,9 +1002,13 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 while (true) {
 
-                    // RES = GlobalVerticesIn - Trfao(x[i-1])
+                    // RES = GlobalVerticesIn - Trafo(x[i-1])
                     RES.Clear();
-                    NodeSet __LocalVerticesOut = new NodeSet(Kref, _LocalVerticesOut);
+                    NodeSet __LocalVerticesOut;
+                    if(LocalVerticesOut is NodeSet)
+                        __LocalVerticesOut = new NodeSet(Kref, _LocalVerticesOut, ((NodeSet)LocalVerticesOut).Reference != 0);
+                    else
+                        __LocalVerticesOut = new NodeSet(Kref, _LocalVerticesOut, false);
                     this.TransformLocal2Global(__LocalVerticesOut, jCell, 1, RES, 0);
                     RES.Scale(-1.0);
                     _RES.Acc(1.0, GlobalVerticesIn);

@@ -360,7 +360,9 @@ namespace ilPSP.LinSolvers.monkey.CUDA
         //}
 
 
-
+        /// <summary>
+        /// ctor
+        /// </summary>
         public cu() : base(
               new string[] { "nvcuda.dll", "libcuda.so" },
               new string[2][][],

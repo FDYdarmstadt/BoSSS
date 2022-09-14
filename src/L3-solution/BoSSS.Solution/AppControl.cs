@@ -87,7 +87,7 @@ namespace BoSSS.Solution.Control {
             this.Tags = new List<string>();
             this.m_InitialValues_Evaluators = new Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
-            this.NoOfMultigridLevels = 0;
+            //this.NoOfMultigridLevels = 0;
         }
 
         [Serializable]
@@ -101,15 +101,16 @@ namespace BoSSS.Solution.Control {
             }
         }
 
-
+        
         /// <summary>
-        /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridLevels"/>.
+        /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridSequence"/>.
         /// </summary>
         [DataMember]
         virtual public int NoOfMultigridLevels {
             get;
             set;
         }
+        
 
 
         /// <summary>
@@ -1095,6 +1096,15 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
+        /// Serialization into a text file 
+        /// </summary>
+        public void SaveToFile(string path, FileMode fm = FileMode.Create) {
+            var code = this.Serialize();
+            File.WriteAllText(path, code);
+        }
+
+
+        /// <summary>
         /// Used for control objects in work-flow management, 
         /// Converts object to a serializable text.
         /// </summary>
@@ -1390,6 +1400,7 @@ namespace BoSSS.Solution.Control {
 
             var scriptOptions = ScriptOptions.Default;
             scriptOptions = scriptOptions.AddReferences(allAssis);
+            // Console.WriteLine("Evaluating : {0}", Script);
             object controlObj = CSharpScript.EvaluateAsync(Script, scriptOptions).Result;
 
             if(controlObj == null) {
@@ -1471,9 +1482,9 @@ namespace BoSSS.Solution.Control {
             if((this.RestartInfo != null) != (oCtr.RestartInfo != null))
                 return false;
             if(this.RestartInfo != null) {
-                if(!this.RestartInfo.Item1.Equals(this.RestartInfo.Item1))
+                if(!this.RestartInfo.Item1.Equals(oCtr.RestartInfo.Item1))
                     return false;
-                if(!this.RestartInfo.Item2.Equals(this.RestartInfo.Item2))
+                if(!this.RestartInfo.Item2.Equals(oCtr.RestartInfo.Item2))
                     return false;
             }
 

@@ -353,16 +353,9 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
             C.LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
-
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
 
             //C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
             //C.AdvancedDiscretizationOptions.surfTensionMode = SurfaceTensionMode.Curvature_Fourier;
@@ -693,14 +686,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
-
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
 
             C.AdvancedDiscretizationOptions.FilterConfiguration = CurvatureAlgorithms.FilterConfiguration.Default;
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.Curvature_Projected;
@@ -1027,17 +1014,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
 
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
-            //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
-
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.Fourier;
@@ -1178,11 +1156,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             #endregion

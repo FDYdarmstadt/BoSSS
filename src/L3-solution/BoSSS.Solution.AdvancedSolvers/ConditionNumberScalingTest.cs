@@ -116,7 +116,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
-                    double Slope = xVals.LogLogRegression(yVals);
+                    double Slope = xVals.LogLogRegressionSlope(yVals);
 
                     gp.PlotXY(xVals, yVals, logX: true, logY: true, title:yName, format:(fmt.WithLineColor(Kount).WithPointType(Kount)));
                     gp.SetXLabel(ttt.Item1.ToString());
@@ -267,7 +267,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
-                    double Slope = xVals.LogLogRegression(yVals);
+                    double Slope = xVals.LogLogRegressionSlope(yVals);
 
                     testData.Add(yName, yVals);
 
@@ -299,7 +299,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 foreach(string yName in allYNames) {
                     double[] yVals = data[yName];
 
-                    double Slope = DoubleExtensions.LogLogRegression(xVals, yVals);
+                    double Slope = DoubleExtensions.LogLogRegressionSlope(xVals, yVals);
 
                     Assert.LessOrEqual(Slope, ttt.Item3, $"Condition number slope for {ttt.Item2} to high; at max. {ttt.Item3}");
                 }

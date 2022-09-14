@@ -838,7 +838,7 @@ namespace BoSSS.Foundation.XDG {
                             var jmpA = IdentifyWingA(jLevSet, spA);
                             //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
                             IQuadRuleFactory<QuadRule> backupFactory;
-                            if(iLevSet == 1)
+                            if (iLevSet == 1)
                                 backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, Kref);
                             else
                                 backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);

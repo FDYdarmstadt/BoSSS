@@ -20,7 +20,7 @@ namespace BoSSS.Application.XNSE_Solver {
     [DataContract]
     [Serializable]
     public class XRigid {
-        
+
         [DataMember]
         private double[] m_pos;
         [DataMember]
@@ -31,8 +31,11 @@ namespace BoSSS.Application.XNSE_Solver {
         private int m_SpaceDim = 0;
         [DataMember]
         private Shape theShape = Shape.None;
+
         [NonSerialized]
         private XNSE_Control m_ctrl;
+
+
         [DataMember]
         private string m_RotationAxis = "z";
 
@@ -44,7 +47,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
         /// </summary>
         public XRigid() {
-            
+
         }
 
         public void SetParameters(double[] pos, double anglevelocity, double partRadius, int SpaceDim) {
@@ -56,19 +59,22 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public void SpecifyShape(Shape shape) {
             theShape = shape;
+            if(shape == Shape.None)
+                m_SpaceDim = 0;
         }
 
         public void SetRotationAxis(string Axis) {
-            switch (m_SpaceDim) {
+            switch(m_SpaceDim) {
                 case 3:
-                    string[] verify = new string[] { "x", "y", "z" };
-                    bool isSupported = verify.Any(s => s == Axis);
-                    if (!isSupported)
-                        throw new NotSupportedException("Axis not supported: " + Axis);
+                var verify = new string[] { "x", "y", "z" }.Take(m_SpaceDim);
+                bool isSupported = verify.Any(s => s == Axis);
+                if(!isSupported)
+                    throw new NotSupportedException("Axis not supported: " + Axis);
                 break;
+
                 case 2:
-                    if (Axis!="z")
-                        throw new NotSupportedException("Axis not supported: " + Axis);
+                if(Axis != "z")
+                    throw new NotSupportedException("Axis not supported: " + Axis + " (In 2D one can only rotate around z)");
                 break;
             }
             m_RotationAxis = Axis;

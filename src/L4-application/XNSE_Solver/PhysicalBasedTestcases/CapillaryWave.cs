@@ -45,10 +45,6 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// <summary>
         /// Control for various testing
         /// </summary>
-        /// <param name="p"></param>
-        /// <param name="xkelem"></param>
-        /// <param name="_DbPath"></param>
-        /// <returns></returns>
         public static XNSE_Control CW(int p = 2, int xkelem = 16, string _DbPath = null) {
 
             //int p = 2;
@@ -239,13 +235,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.solveKineticEnergyEquation = true;
             //C.ComputeEnergyProperties = true;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
-            //C.Solver_MaxIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -548,13 +539,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
-            //C.Solver_MaxIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.Phasefield;
@@ -695,11 +681,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
-
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             #endregion
@@ -945,13 +927,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -1183,14 +1160,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
-            //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
-            //C.Solver_MaxIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -1392,13 +1363,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
-            //C.Solver_MaxIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
 
@@ -1525,11 +1491,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
             C.NonLinearSolver.MaxSolverIterations = 100;
-            C.LinearSolver.MaxSolverIterations = 100;
-
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             #endregion

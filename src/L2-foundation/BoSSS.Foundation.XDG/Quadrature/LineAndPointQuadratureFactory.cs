@@ -420,14 +420,44 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         TotalNoOfRoots += _roots[e].Length;
                     }
 
+                    // ==================
+                    // divide non-conformal line segments
+                    // ==================
+                    double[][] subdivisions = new double[referenceLineSegments.Length][]; // collect the endpoint of edges for additional subdivisions of the subsegment in a different array, to not mess up the point measures
+                    for (int e = 0; e < referenceLineSegments.Length; e++) {
+                        // check if line segment (i.e. face) contains hanging nodes
+                        int edg = grdDat.Cells.GetEdgesForFace(jCell, e, out _, out int[] FurtherEdges);
+                        var rootList = _roots[e].ToList();
+                        if (!FurtherEdges.IsNullOrEmpty()) {
+                            // if so add an additional (artificial) roots at the hanging nodes
+                            foreach (int edge in new int[] { edg }.Concat(FurtherEdges)) {
+                                var EdgeNodes = grdDat.Edges.GetRefElement(edge).Vertices;
+                                // Transform to cell
+                                int trf;
+                                if (grdDat.Edges.CellIndices[edge, 0] == jCell) {
+                                    trf = grdDat.Edges.Edge2CellTrafoIndex[edge, 0];
+                                } else {
+                                    trf = grdDat.Edges.Edge2CellTrafoIndex[edge, 1];
+                                }
+                                // transform edgerule to volume rule
+                                var CellNodes = EdgeNodes.GetVolumeNodeSet(grdDat, trf, false);                               
 
-
+                                for (int k = 0; k < CellNodes.NoOfNodes; k++) {
+                                    // Transform to referenceLineSegment
+                                    var LineNode = referenceLineSegments[e].GetSegmentCoordinateForPoint(CellNodes.ExtractSubArrayShallow(k, -1).To1DArray());
+                                    if (!rootList.Any(r => r.ApproxEqual(LineNode, AbsTol: BLAS.MachineEps * 1e3)))
+                                        rootList.Add(LineNode);                                    
+                                }
+                            }
+                        }
+                        subdivisions[e] = rootList.OrderBy(s => s).ToArray();
+                    }
 
                     // ============================
                     // create line measure
                     // ============================
                     bool LineMeasureEmptyOrFull = false;
-                    List<LineSegment>[] ActiveSegments = new List<LineSegment>[_roots.Length];
+                    List<LineSegment>[] ActiveSegments = new List<LineSegment>[subdivisions.Length];
                     double nodesSum = 0;
                     {
                         double Fullsum = 0;
@@ -435,15 +465,15 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             ActiveSegments[e] = new List<LineSegment>();
                             LineSegment referenceSegment = referenceLineSegments[e];
                             double edgeDet = EdgeToVolumeTransformationDeterminants[e];
-                            double[] roots = _roots[e];
+                            double[] roots = subdivisions[e];
                             Fullsum += referenceSegment.Length*edgeDet;
                             LineSegment[] subSegments = referenceSegment.Split(roots);
-                            
+
 
                             for (int k = 0; k < subSegments.Length; k++) {
                                 // Evaluate sub segment at center to determine sign
-                                NodeSet _point = new NodeSet(this.m_RefElement, subSegments[k].GetPointOnSegment(0.0));
-                                
+                                NodeSet _point = new NodeSet(this.m_RefElement, subSegments[k].GetPointOnSegment(0.0), false);
+
                                 double weightFactor = subSegments[k].Length / referenceSegment.Length;
 
                                 if (weightFactor < this.Tolerance)
@@ -459,12 +489,82 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 List<double> LnMeas_weights;
                                 int[] LnMeas_noOfNodesPerEdge;
                                 bool PositiveSegment;
-                                if (levelSetValue[0, 0] <= 0) {
+                                bool Skip = false;
+                                if (levelSetValue[0, 0].Abs() < BLAS.MachineEps) {
+                                    // probably level set parallel to edge, skip this edge, no "normal" quadrature.
+                                    // alternative, check conformality of adjacent cells, edge should contain a quad rule of the opposite phase of the conformal cell.
+                                    // then the edge should be a quad rule for the opposite phase, dont ask me why, but any other way gives weird results in cells with hanging nodes.
+                                    bool empty = true;
+                                    if (!empty) {
+                                        //NodeSet center_point = new NodeSet(this.m_RefElement, this.m_RefElement.Center, false);
+                                        MultidimensionalArray j_levelSetValue = LevelSetData.GetLevSetValues(this.m_RefElement.Center, jCell, 1);
+
+                                        int iEdge = -1;
+                                        int otherCell = -1;
+                                        bool jConformal = false;
+                                        bool otherConformal = false;
+                                        foreach (int em in cell2Edge_j) {
+                                            int _iedge = Math.Abs(em) - 1;
+                                            int _inOut = em > 0 ? 0 : 1;
+
+                                            if (EdgeData.CellIndices[_iedge, _inOut] == jCell && EdgeData.FaceIndices[_iedge, _inOut] == e) {
+                                                iEdge = _iedge;
+                                                if (_inOut == 0) {
+                                                    otherCell = EdgeData.CellIndices[_iedge, 1];
+                                                    jConformal = grdDat.Edges.IsEdgeConformalWithCell1(iEdge);
+                                                    otherConformal = grdDat.Edges.IsEdgeConformalWithCell2(iEdge);
+                                                } else {
+                                                    otherCell = EdgeData.CellIndices[_iedge, 0];
+                                                    jConformal = grdDat.Edges.IsEdgeConformalWithCell2(iEdge);
+                                                    otherConformal = grdDat.Edges.IsEdgeConformalWithCell1(iEdge);
+                                                }
+                                                break;
+                                            }
+                                        }
+
+                                        if (jConformal && otherConformal) {
+                                            // both conformal evaluate levelset in globally lower index cell and choose the phase of this edge quadrature accordingly (the levelset quadrature is valid in the lower index cell...)
+                                            int J = grdDat.Cells.NoOfLocalUpdatedCells;
+                                            long jCellGlob = jCell + grdDat.CellPartitioning.i0;
+                                            long otherCellGlob = otherCell < J ? otherCell + grdDat.CellPartitioning.i0 : grdDat.Parallel.GlobalIndicesExternalCells[otherCell - J];
+                                            bool jLower = jCellGlob < otherCellGlob;
+                                            // the relevant part for conformal cells is not in which phase this quadrature holds, but for parallel simulations, that all procs use the same phase!!!
+                                            // we could probably also just use the negative phase always, but this way this is consistent with the handling of hanging nodes below, where it matters which phase we choose!
+                                            if ((jLower && j_levelSetValue[0, 0] > 0) || (!jLower && j_levelSetValue[0, 0] <= 0)) {
+                                                LnMeas_nodes = LnMeasNeg_nodes;
+                                                LnMeas_weights = LnMeasNeg_weights;
+                                                LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
+                                                PositiveSegment = false;
+                                            } else {
+                                                LnMeas_nodes = LnMeasPos_nodes;
+                                                LnMeas_weights = LnMeasPos_weights;
+                                                LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
+                                                PositiveSegment = true;
+                                            }
+                                        } else if ((jConformal && j_levelSetValue[0, 0] > 0) || (!jConformal && j_levelSetValue[0, 0] <= 0)) {
+                                            LnMeas_nodes = LnMeasNeg_nodes;
+                                            LnMeas_weights = LnMeasNeg_weights;
+                                            LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
+                                            PositiveSegment = false;
+                                        } else {
+                                            LnMeas_nodes = LnMeasPos_nodes;
+                                            LnMeas_weights = LnMeasPos_weights;
+                                            LnMeas_noOfNodesPerEdge = LnMeasPos_noOfNodesPerEdge;
+                                            PositiveSegment = true;
+                                        }
+                                    } else {
+                                        LnMeas_nodes = LnMeasNeg_nodes;
+                                        LnMeas_weights = LnMeasNeg_weights;
+                                        LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
+                                        PositiveSegment = false;
+                                        Skip = true;
+                                    }
+                                } else if (levelSetValue[0, 0] < 0) {
                                     // negative segment...
                                     LnMeas_nodes = LnMeasNeg_nodes;
                                     LnMeas_weights = LnMeasNeg_weights;
                                     LnMeas_noOfNodesPerEdge = LnMeasNeg_noOfNodesPerEdge;
-                                    PositiveSegment = false;
+                                    PositiveSegment = false;                                    
                                 } else {
                                     // positive segment
                                     LnMeas_nodes = LnMeasPos_nodes;
@@ -488,15 +588,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 //    MultidimensionalArray levelSetValue = tracker.GetLevSetValues(levSetIndex, 0, jCell, 1);
                                 //    end = levelSetValue[0, 0] > -Tolerance;
                                 //}
+                                if (!Skip) {
+                                    for (int m = 0; m < baseRule.NoOfNodes; m++) {
+                                        // Base rule _always_ is a line rule, thus Nodes[*, _0_]
+                                        Vector point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
 
-                                for (int m = 0; m < baseRule.NoOfNodes; m++) {
-                                    // Base rule _always_ is a line rule, thus Nodes[*, _0_]
-                                    Vector point = subSegments[k].GetPointOnSegment(baseRule.Nodes[m, 0]);
+                                        LnMeas_weights.Add(weightFactor * baseRule.Weights[m]);
+                                        LnMeas_nodes.Add(point);
 
-                                    LnMeas_weights.Add(weightFactor * baseRule.Weights[m]);
-                                    LnMeas_nodes.Add(point);
-
-                                    LnMeas_noOfNodesPerEdge[e]++;
+                                        LnMeas_noOfNodesPerEdge[e]++;
+                                    }
                                 }
                             }
                         }
@@ -537,7 +638,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 if(PositiveSegment)
                                     LineMeasureEmptyOrFull = true;
                             } else {
-                                NodeSet localNodes = new NodeSet(this.m_RefElement, LnMeas_nodes.Count, D);
+                                NodeSet localNodes = new NodeSet(this.m_RefElement, LnMeas_nodes.Count, D, true);
                                 for (int j = 0; j < LnMeas_nodes.Count; j++) {
                                     //for (int d = 0; d < D; d++) {
                                     //    localNodes[j, d] = LnMeas_nodes[j][d];
@@ -797,7 +898,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
                                     OrderOfPrecision = order,
                                     Weights = MultidimensionalArray.Create(PtMeas_nodes.Count),
-                                    Nodes = new NodeSet(this.m_RefElement, PtMeas_nodes.Count, D),
+                                    Nodes = new NodeSet(this.m_RefElement, PtMeas_nodes.Count, D, true),
                                     NumbersOfNodesPerFace = PtMeas_noOfNodesPerEdge
                                 };
 
@@ -889,15 +990,16 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 // ==================================================================
 
 
-                                NodeSet[] Nodes = new NodeSet[referenceLineSegments.Length];
+                                //NodeSet[] Nodes = new NodeSet[referenceLineSegments.Length];
                                 MultidimensionalArray[] LevSetNormals = new MultidimensionalArray[referenceLineSegments.Length];
                                 var simplexNormals = this.m_RefElement.FaceNormals;
                                 double[][] Innerproducts = new double[referenceLineSegments.Length][];
                                 for (int e = 0; e < referenceLineSegments.Length; e++) {
                                     double[] roots = _roots[e];
                                     int K = roots.Length;
-                                    Nodes[e] = new NodeSet(this.m_RefElement, K, D);
-                                    var Nodes_e = Nodes[e];
+                                    //Nodes[e] = new NodeSet(this.m_RefElement, K, D, true);
+                                    //var Nodes_e = Nodes[e];
+                                    var Nodes_e = new NodeSet(this.m_RefElement, K, D, false);
 
                                     LineSegment referenceSegment = referenceLineSegments[e];
                                     for (int k = 0; k < K; k++) {
@@ -1024,7 +1126,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                     CellBoundaryQuadRule subdividedRule = new CellBoundaryQuadRule() {
                                         OrderOfPrecision = order,
                                         Weights = MultidimensionalArray.Create(SaveNodes.Count),
-                                        Nodes = new NodeSet(this.m_RefElement, SaveNodes.Count, D),
+                                        Nodes = new NodeSet(this.m_RefElement, SaveNodes.Count, D, true),
                                         NumbersOfNodesPerFace = new int[_roots.Length]
                                     };
 

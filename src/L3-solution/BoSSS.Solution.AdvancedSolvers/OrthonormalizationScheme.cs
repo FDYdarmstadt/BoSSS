@@ -29,6 +29,7 @@ using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
+    /*
     /// <summary>
     /// Memory-intensive ortho-normalization scheme; should converge with similar rate as GMRES (at twice the memory consumption), 
     /// but is able to use multiple pre-conditioners, see <see cref="PrecondS"/>.
@@ -357,4 +358,5 @@ namespace BoSSS.Solution.AdvancedSolvers {
             throw new NotImplementedException();
         }
     }
+    */
 }

@@ -77,9 +77,6 @@ namespace BoSSS.Application.BoSSSpad {
             BoSSS.Solution.Application.InitMPI();
             CallRandomStuff();
             try {
-
-
-
                 databases = DatabaseController.LoadDatabaseInfosFromXML();
 
                 ReloadExecutionQueues();
@@ -95,6 +92,7 @@ namespace BoSSS.Application.BoSSSpad {
                 InteractiveShell.LastError = e;
             }
             InitTraceFile();
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" }; // try to log everyting, so we might find something useful
 
             Microsoft.DotNet.Interactive.Formatting.Formatter.RecursionLimit = 1;
             Microsoft.DotNet.Interactive.Formatting.Formatter.ListExpansionLimit = 100;
@@ -309,7 +307,7 @@ namespace BoSSS.Application.BoSSSpad {
                 MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
                 AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
             } catch (NullReferenceException) {
-                Console.WriteLine("Trying alternative method");
+                //Console.WriteLine("Trying alternative method");
                 Type AltFormatter = typeof(Formatter);
                 MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
                 AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
@@ -329,7 +327,7 @@ namespace BoSSS.Application.BoSSSpad {
                         else
                             valString = v != null ? optValFormatter(v) : "NULL";
 
-                        writer.WriteLine("#" + i + ": " + v.ToString());
+                        writer.WriteLine("#" + i + ": " + valString);
                         i++;
                     }
                 });
@@ -958,7 +956,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void ReloadExecutionQueues() {
             executionQueues = new List<BatchProcessorClient>();
-            //Debugger.Launch();
+            // dbg_launch();
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();
@@ -971,23 +969,38 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             executionQueues.AddRange(bpc.AllQueues);
+            try {
+                defaultQueue = bpc.AllQueues[bpc.DefaultQueueIndex];
+            } catch (IndexOutOfRangeException iore) {
+                Console.Error.WriteLine($"Batch processor configuration (see file ~/.BoSSS/etc/BatchProcessorConfig.json): DefaultQueueIndex={bpc.DefaultQueueIndex}, seems out-of-range, defaulting to 0-th entry. ({iore.Message})");
+                defaultQueue = bpc.AllQueues[0];
+            }
             //foreach (var q in bpc.AllQueues)
             //    _ = q.AllowedDatabases;
 
         }
 
         /// <summary>
-        /// Default execution queue, used mainly by worksheets in the Continuous Integration Workflow;
+        /// Default execution queue. 
+        /// - globally, can specified by the <see cref="BatchProcessorConfig.DefaultQueueIndex"/> in configuration file `~/.BoSSS/etc/BatchProcessorConfig.json`
+        /// - can be overwritten for each project using the file `~/.BoSSS/etc/DefaultQueuesProjectOverride.txt`
         /// </summary>
         public static BatchProcessorClient GetDefaultQueue() {
-            // quick hack 
-            if (ilPSP.Environment.MPIEnv.Hostname.Contains("fdygitrunner", StringComparison.InvariantCultureIgnoreCase))
-                return ExecutionQueues[2];
-            if (ilPSP.Environment.MPIEnv.Hostname.Contains("jenkins-linux", StringComparison.InvariantCultureIgnoreCase))
-                return ExecutionQueues[1];
+            ReloadExecutionQueues();
 
+            if(!wmg.CurrentProject.IsEmptyOrWhite()) {
+                string overrideName = BatchProcessorConfig.GetDefaultBatchnameForProject(wmg.CurrentProject);
+                if(overrideName != null) {
+                    foreach(var q in executionQueues) {
+                        if(q.Name.Equals(overrideName, StringComparison.InvariantCultureIgnoreCase)) {
+                            return q;
+                        }
+                    }
 
-            return ExecutionQueues[0];
+                }
+            }
+
+            return defaultQueue;
         }
 
 
@@ -1005,6 +1018,8 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         internal static List<BatchProcessorClient> executionQueues = null;
+
+        internal static BatchProcessorClient defaultQueue = null;
 
         /// <summary>
         /// Adds an entry to <see cref="ExecutionQueues"/>.

@@ -32,7 +32,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             //MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             //InitMPI();
-            ////Debugger.Launch();
+            //// dbg_launch();
             //BoSSS.Application.LoadBalancingTest.AllUpTest.RuntimeCostDynamicBalanceTest(1);
             //throw new NotImplementedException("remove me");
 
@@ -52,7 +52,6 @@ namespace BoSSS.Application.LoadBalancingTest {
         protected override IGrid CreateOrLoadGrid() {
             double[] nodes = GenericBlas.Linspace(-5, 5, 21);
             var grd = Grid2D.Cartesian2DGrid(nodes, nodes);
-            this.Control.LinearSolver.NoOfMultigridLevels = 1; // required for XDG-BDF timestepper
             return grd;
         }
               
@@ -345,7 +344,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                 return null;
 
             //if(MPIRank == 0)
-            //    Debugger.Launch();
+            //     dbg_launch();
             int J = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] NewPart;
             

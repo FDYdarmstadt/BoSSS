@@ -24,9 +24,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using MPI.Wrappers;
 using System.Threading;
 using System.Reflection;
+using ilPSP.LinSolvers;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -74,12 +74,39 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
 
-            //InitMPI();
+            /*
+            InitMPI();
+
+            var mtxa = IMatrixExtensions.LoadFromTextFile(@"..\..\..\bin\release\net5.0\weirdo\indef.txt");
+
+            for (int NN = 10; NN <= mtxa.NoOfRows; NN++) {
+                Console.WriteLine("NN = " + NN);
+                var mtx = mtxa.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NN - 1, NN - 1 }).CloneAs();
+
+                var UpTri = MultidimensionalArray.Create(NN, NN);
+                var UpTri2 = MultidimensionalArray.Create(NN, NN);
+                mtx.SymmetricLDLInversion(UpTri, null);
+                mtx.GramSchmidt(UpTri2, null);
+
+
+                Console.WriteLine("UpTri vs. LDL " + UpTri2.Storage.L2Dist(UpTri.Storage));
+
+                var LoTri = UpTri.TransposeTo();
+                var Eye = LoTri.GEMM(mtx, UpTri);
+                var LoTri2 = UpTri2.TransposeTo();
+                var Eye2 = LoTri2.GEMM(mtx, UpTri2);
+                //L.SaveToTextFile(@"..\..\..\bin\release\net5.0\weirdo\GS.txt");
+                //Eye.SaveToTextFile(@"..\..\..\bin\release\net5.0\weirdo\ID.txt");
+                Eye.AccEye(-1.0);
+                Eye2.AccEye(-1.0);
+                Console.WriteLine("Ortho Error: " + Eye.InfNorm() + "    " + Eye2.InfNorm());
+
+            }
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 2, 0.1, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.Curvature_Projected);
-            //csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int mpiRank);
-            //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me"); //*/
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);
+            NUnit.Framework.Assert.IsTrue(false, "remove me"); 
+            */
 
             //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
             {
@@ -91,9 +118,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 //Tmeas.Memtrace.Flush();
                 //Tmeas.Memtrace.Close();
             }
+            //*/
+            ilPSP.LinSolvers.BlockMsrMatrix.PrintPerfStat();
 
-
-
+            
         }
     }
 
@@ -103,6 +131,8 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
         public override void Init(AppControl control) {
+
+
             base.Init(control);
             var ctrl = (control as XNSE_Control);
             if(ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count()<=0)
@@ -295,7 +325,6 @@ namespace BoSSS.Application.XNSE_Solver {
             int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
             int D = this.GridData.SpatialDimension;
 
-
             if (this.Control.UseSchurBlockPrec) {
                 // using a Schur complement for velocity & pressure
                 var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
@@ -312,11 +341,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 configsLevel.Add(confMomConti);
             } else {
+                
                 // configurations for velocity
                 for (int d = 0; d < D; d++) {
                     var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
                         DegreeS = new int[] { pVel },
-                        //DegreeS = new int[] { Math.Max(1, pVel - iLevel) },
                         mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
                         VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
                     };
@@ -325,7 +354,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 // configuration for pressure
                 var configPres = new MultigridOperator.ChangeOfBasisConfig() {
                     DegreeS = new int[] { pPrs },
-                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) },
+                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) }, // p-multigrid reduction
                     mode = MultigridOperator.Mode.IdMass_DropIndefinite,
                     VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
                 };
@@ -516,7 +545,12 @@ namespace BoSSS.Application.XNSE_Solver {
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
 
-            if (this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature) BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
+            // testcode: delete if in master
+            //Console.WriteLine("!!!!!!!!!!!!!!!!! skipping IBM");
+            //return;
+
+            if (this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature) 
+                BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
 
             for (int d = 0; d < D; ++d) {
                 // so far only no slip!
@@ -570,9 +604,11 @@ namespace BoSSS.Application.XNSE_Solver {
                
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-                //if (!success) throw new Exception($"Solver did not converge for time step {TimestepNo}");
-                Console.WriteLine($"Done with time step {TimestepNo}.");
+
+                Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
                 GC.Collect();
+                if(Control.FailOnSolverFail && !success)
+                    throw new ArithmeticException("Solver did not converge.");
 
                 return dt;
             }
@@ -732,11 +768,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 }
 
                 Console.WriteLine("=============== {0} ===============", "Linear Solver Configuration");
-                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.LinearSolver.SolverCode);
-                if (this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_mumps & this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_pardiso) {
-                    Console.WriteLine("TODO");
-                }
-
+                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.LinearSolver.Name);
+                
                 Console.WriteLine("=============== {0} ===============", "Nonlinear Solver Configuration");
                 Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.NonLinearSolver.SolverCode);
                 Console.WriteLine("     {0,-30}:{1}", "Convergence Criterion", this.Control.NonLinearSolver.ConvergenceCriterion);

@@ -199,8 +199,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Computes a grid partitioning (which cell should be on which processor)
         /// using the serial METIS library -- work is only done on MPi rank 0.
         /// </summary>
-        /// <param name="cellWeightsLocal">
-        /// If not null, defines the weight associted with each cell on the current process
+        /// <param name="ListofLocalCellWeights">
+        /// If not null, defines the weight associated with each cell on the current process
         /// </param>
         /// <param name="noOfPartitioningsToChooseFrom">
         /// Tells METIS to compute
@@ -220,7 +220,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 if (size == 1) {
                     return new int[NoOfUpdateCells];
                 }
-
+                // int.MaxValue is 2^31 and fairly a big number with order of the magnitude 10^9. This exception might be wrong texted (!)
                 if (this.NumberOfCells_l > int.MaxValue) {
                     throw new Exception(String.Format(
                         "Grid contains more than {0} cells and can thus not be partitioned using METIS. Use ParMETIS instead.",

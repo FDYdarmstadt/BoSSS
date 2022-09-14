@@ -31,6 +31,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using ilPSP;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -43,22 +44,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Modes of operation of BoSSSpad
         /// </summary>
         private enum Modes {
-
-            ///// <summary>
-            ///// Classic worksheet mode (with a GUI)
-            ///// </summary>
-            //Worksheet,
-
-            ///// <summary>
-            ///// Interactive console mode (without a GUI)
-            ///// </summary>
-            //Console,
-
-            ///// <summary>
-            ///// Simplified interactive console mode (for embedding into other terminals, experimental)
-            ///// </summary>
-            //SimpleConsole,
-
             /// <summary>
             /// Batch execution of .bws files
             /// </summary>
@@ -119,7 +104,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             }
         }
-   */
+        */
 
 
         /// <summary>
@@ -127,6 +112,11 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         //[STAThread]
         public static int Main(string[] args) {
+
+            /*
+            var a = typeof(BoSSSpadMain).Assembly;
+            var dep = new HashSet<Assembly>();
+            Job.GetAllAssemblies(a, dep, Path.GetDirectoryName(a.Location));
 
             /*
             string path = @"c:\Users\flori\AppData\Local\BoSSS-LocalJobs\Demo_BoundaryAndInitialData-ipPoisson2021Juni10_083737\control.obj";
@@ -144,7 +134,7 @@ namespace BoSSS.Application.BoSSSpad {
             return 0;
             //*/
             int errCount = 0;
-
+            
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             // interpretation of command line options
@@ -166,113 +156,103 @@ namespace BoSSS.Application.BoSSSpad {
                 //        fileToOpen = args[0];
                 //    }
                 //} else 
-                if(args.Length <= 0) {
+                if (args.Length <= 0) {
                     PrintUsage();
                     return int.MinValue;
                 } else {
-                    if(!args[0].StartsWith("--")) {
+                    if (!args[0].StartsWith("--")) {
                         PrintUsage();
                         return int.MinValue;
                     }
 
                     parseModeSuccesfully = Enum<Modes>.TryParse(args[0].Substring(2), out mode);
 
-                    if(!parseModeSuccesfully) {
+                    if (!parseModeSuccesfully) {
                         PrintUsage();
                         return int.MinValue;
                     }
                 }
 
-                
 
-               
+
+
             }
 
             // launch the app
             // ==============
             bool IinitializedMPI = BoSSS.Solution.Application.InitMPI();
 
-            try
-            {
-                switch (mode)
-                {
+            try {
+                switch (mode) {
 
                     case Modes.Check:
-                        if (args.Length != 1)
-                        {
+                    if (args.Length != 1) {
+                        PrintUsage();
+                        return int.MinValue;
+                    }
+                    InstallationChecker.CheckSetup();
+                    break;
+
+                    case Modes.OldFileUpgrade: {
+                        string fileToOpen;
+                        if (args.Length != 2) {
                             PrintUsage();
                             return int.MinValue;
                         }
-                        InstallationChecker.CheckSetup();
+                        fileToOpen = args[1];
+                        OldFileToJupyter(fileToOpen);
                         break;
+                    }
 
-                    case Modes.OldFileUpgrade:
-                        {
-                            string fileToOpen;
-                            if (args.Length != 2)
-                            {
-                                PrintUsage();
-                                return int.MinValue;
-                            }
-                            fileToOpen = args[1];
-                            OldFileToJupyter(fileToOpen);
-                            break;
+
+
+                    case Modes.JupyterBatch: {
+                        string fileToOpen;
+                        if (args.Length != 2) { 
+                            Console.Error.WriteLine($"Expecting exactly two aruments, but got {args.Length} (which are {args.ToConcatString("", ",", "")}");
+                            PrintUsage();
+                            return int.MinValue;
                         }
+                        fileToOpen = args[1];
 
-
-
-                    case Modes.JupyterBatch:
-                        {
-                            string fileToOpen;
-                            if (args.Length != 2)
-                            {
-                                PrintUsage();
-                                return int.MinValue;
-                            }
-                            fileToOpen = args[1];
-
-                            errCount = RunJupyter(fileToOpen);
-                            break;
-                        }
+                        errCount = RunJupyter(fileToOpen);
+                        break;
+                    }
 
                     case Modes.Batch:
-                    case Modes.TexBatch:
-                        {
-                            string fileToOpen;
-                            if (args.Length != 2)
-                            {
-                                PrintUsage();
-                                return int.MinValue;
-                            }
-                            fileToOpen = args[1];
-                            string ConvFile = OldFileToJupyter(fileToOpen);
-                            errCount = RunJupyter(ConvFile);
-
-
-                            break;
+                    case Modes.TexBatch: {
+                        string fileToOpen;
+                        if (args.Length != 2) {
+                            PrintUsage();
+                            return int.MinValue;
                         }
+                        fileToOpen = args[1];
+                        string ConvFile = OldFileToJupyter(fileToOpen);
+                        errCount = RunJupyter(ConvFile);
 
-                    case Modes.Jupyterfile:
-                        {
-                            string fileToOpen;
-                            if (args.Length != 2)
-                            {
-                                PrintUsage();
-                                return int.MinValue;
-                            }
-                            fileToOpen = args[1];
-                            Jupyterfile(fileToOpen);
-                            break;
+
+                        break;
+                    }
+
+                    case Modes.Jupyterfile: {
+                        string fileToOpen;
+                        if (args.Length != 2) {
+                            PrintUsage();
+                            return int.MinValue;
                         }
+                        fileToOpen = args[1];
+                        Jupyterfile(fileToOpen);
+                        break;
+                    }
 
                     case Modes.RunBatch:
-                        errCount = SubprogramRunbatch.RunBatch(args.Skip(1).ToArray());
-                        break;
+                    errCount = SubprogramRunbatch.RunBatch(args.Skip(1).ToArray());
+                    break;
 
                     default:
-                        throw new NotImplementedException();
+                    throw new NotImplementedException();
                 }
-            } catch(Exception e) {
+            } catch (Exception e) {
                 Console.WriteLine(e.GetType().Name + ": " + e.Message);
                 errCount = -666;
                 //throw new AggregateException(e);
@@ -534,7 +514,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             //var data = NotebookFileFormatHandler.Serialize(fileToCreate, docNew, System.Environment.NewLine);
             using(var stw = new StreamWriter(fileToCreate)) {
-                Notebook.Write(docNew, System.Environment.NewLine, stw);
+                Notebook.Write(docNew, stw);
                 //System.IO.File.WriteAllBytes(fileToCreate, data);
                 stw.Flush();
             }
@@ -569,7 +549,7 @@ namespace BoSSS.Application.BoSSSpad {
             //var data = NotebookFileFormatHandler.Serialize(DestFile, docNew, System.Environment.NewLine);
             //System.IO.File.WriteAllBytes(DestFile, data);
             using(var stw = new StreamWriter(DestFile)) {
-                Notebook.Write(docNew, System.Environment.NewLine, stw);
+                Notebook.Write(docNew, stw);
                 //System.IO.File.WriteAllBytes(fileToCreate, data);
                 stw.Flush();
             }

@@ -378,7 +378,7 @@ namespace BoSSS.Foundation.IO {
             if (SepChars == null || SepChars.Length <= 0)
                 SepChars = new char[] { '\t', ';' };
 
-            //Debugger.Launch();
+            // dbg_launch();
 
             var raw = ReadTabulatedTextFileAsStrings(session, TextFile, SepChars);
             Dictionary<string, IList<double>> ret = new Dictionary<string, IList<double>>();
@@ -2510,6 +2510,42 @@ namespace BoSSS.Foundation.IO {
 
             return Time_Energies;
 
+        }
+
+        /// <summary>
+        /// Standard output of some session
+        /// </summary>
+        public static string GetStdout(this ISessionInfo sess, int rank = 0) {
+            var StdoutFile = sess.FilesInSessionDir("stdout." + rank + ".txt").FirstOrDefault();
+            if(StdoutFile == null || !File.Exists(StdoutFile)) {
+                Console.Error.WriteLine("Missing stdout file for session: " + sess);
+                return "";
+            }
+
+            using (FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                using (StreamReader reader = new StreamReader(stream)) {
+                    string stdout = reader.ReadToEnd();
+                    return stdout;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Standard output of some session
+        /// </summary>
+        public static string GetStderr(this ISessionInfo sess, int rank = 0) {
+            var StdoutFile = sess.FilesInSessionDir("stderr." + rank + ".txt").FirstOrDefault();
+            if (StdoutFile == null || !File.Exists(StdoutFile)) {
+                Console.Error.WriteLine("Missing stderr file for session: " + sess);
+                return "";
+            }
+
+            using (FileStream stream = File.Open(StdoutFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+                using (StreamReader reader = new StreamReader(stream)) {
+                    string stdout = reader.ReadToEnd();
+                    return stdout;
+                }
+            }
         }
 
 

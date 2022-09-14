@@ -31,10 +31,7 @@ namespace BoSSS.Platform {
     public class BlockDiagonalMatrix : IMutableMatrixEx, ICloneable, ISparseMatrix {
 
         /// <summary>
-        /// ctor. The size of the block-diagonals is determined by the block
-        /// size (see <see cref="Partitioning.BlockSize"/>) of the row and
-        /// column mapping (<paramref name="_RowPartition"/>,
-        /// <paramref name="ColPart"/>).
+        /// Constructor, the size of the block-diagonals is determined by <paramref name="RowBlkSz"/>*<paramref name="ColBlkSz"/>
         /// </summary>
         public BlockDiagonalMatrix(IPartitioning _RowPartition, IPartitioning ColPart, int RowBlkSz, int ColBlkSz) {
             if (_RowPartition.MPI_Comm != ColPart.MPI_Comm)
@@ -132,6 +129,8 @@ namespace BoSSS.Platform {
         /// <paramref name="Src"/>.
         /// </summary>        
         /// <param name="Src"></param>
+        /// <param name="ColBlkSz">number of columns per block; all blocks in the matrix have the same size</param>
+        /// <param name="RowBlkSz">number of rows per block; all blocks in the matrix have the same size</param>
         public BlockDiagonalMatrix(MsrMatrix Src, int RowBlkSz, int ColBlkSz)
             : this(Src.RowPartitioning, Src.ColPartition, RowBlkSz, ColBlkSz) //
         {
@@ -305,7 +304,7 @@ namespace BoSSS.Platform {
         /// <param name="j0">Column index offset.</param>
         /// <param name="alpha">Scaling factor for the accumulation.</param>
         /// <param name="Block">Block to add.</param>
-        /// <param param name="beta">pre-scaling</param>
+        /// <param name="beta">pre-scaling</param>
         public void AccBlock(long i0, long j0, double alpha, MultidimensionalArray Block, double beta) {
             if (Block.Dimension != 2)
                 throw new ArgumentException();

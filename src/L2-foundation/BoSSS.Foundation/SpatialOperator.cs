@@ -922,9 +922,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// returns true, if any of the equation components associated with 
-        /// variable <paramref name="CodomVar"/> contains nonlinear integrands
-        /// on edges (these are objects that implement <see cref="INonlinearFlux"/>,
-        /// <see cref="INonlinearFluxEx"/> or <see cref="IDualValueFlux"/>);
+        /// variable <paramref name="CodomVar"/> contains nonlinear integrands on edges.
         /// </summary>
         /// <param name="CodomVar">
         /// identifies the codomain variable name, must be a member of
@@ -1003,8 +1001,6 @@ namespace BoSSS.Foundation {
         /// are assumed to be 0.0;
         /// If the differential operator contains no parameters, this argument can be null;
         /// </param>
-        /// <param name="edgeQrCtx">optional quadrature instruction for edges</param>
-        /// <param name="volQrCtx">optional quadrature instruction for volumes/cells</param>
         public virtual IEvaluatorNonLin GetEvaluatorEx(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
@@ -1541,8 +1537,8 @@ namespace BoSSS.Foundation {
             }
 
             /// <summary>
-            /// evaluates the differential operator (<see cref="Owner"/>)
-            /// for the domain variables/fields in <see cref="DomainMapping"/>, i.e.
+            /// evaluates the differential operator (<see cref="EvaluatorBase.Owner"/>)
+            /// for the domain variables/fields in <see cref="EvaluatorBase.DomainMapping"/>, i.e.
             /// performs the operation
             /// <paramref name="output"/> = <paramref name="output"/>*<paramref name="beta"/> + Op(%)*<paramref name="alpha"/>
             /// </summary>
@@ -1553,7 +1549,7 @@ namespace BoSSS.Foundation {
             /// is <b>ACCUMULATED</b> here;
             /// It's up to the user to ensure that this array is initialized to 0.0,
             /// if necessary;
-            /// Indices into this vector are computed according to <see cref="CodomainMapping"/>;
+            /// Indices into this vector are computed according to <see cref="EvaluatorBase.CodomainMapping"/>;
             /// </param>
             /// <param name="outputBndEdge">
             /// Some additional output vector for boundary fluxes, used only by the local time stepping
@@ -2207,7 +2203,7 @@ namespace BoSSS.Foundation {
                         if(DeadlockWatch >= 1000)
                             throw new ApplicationException("Deadlock in parallel coloring.");
                         continue;
-                        //Debugger.Launch();
+                        // dbg_launch();
                     }
 
 
@@ -2218,7 +2214,7 @@ namespace BoSSS.Foundation {
 
                     if(gDat.MpiSize > 1) {
 
-                        //Debugger.Launch();
+                        // dbg_launch();
 
                         var ExchData = new Dictionary<int, List<Tuple<long, long>>>();
 
@@ -2398,7 +2394,7 @@ namespace BoSSS.Foundation {
 
                     if(gDat.MpiSize > 1) {
 
-                        //Debugger.Launch();
+                        // dbg_launch();
 
                         var ExchData = new Dictionary<int, List<Tuple<int, int>>>();
 
@@ -2630,7 +2626,7 @@ namespace BoSSS.Foundation {
                 for(int iCellPass = 0; iCellPass < ColorLists.Length; iCellPass++) { // loop over all cell lists...
                     int[] CellList = this.ColorLists[iCellPass];
                     int[] ExtCellList = this.ExternalColorLists[iCellPass];
-
+                    
                     int[] CoordCounter = new int[JE];
                     int[] FieldCounter = new int[JE];
 
@@ -2800,8 +2796,8 @@ namespace BoSSS.Foundation {
                                     continue; // external cell; should be treated on other proc.
 
 
-                                int i0Row = domMap.LocalUniqueCoordinateIndex(0, jRow, 0);
-                                int iERow = domMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
+                                int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
+                                int iERow = codMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
 
                                 var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow, iECol - i0Col });
 
@@ -2963,6 +2959,40 @@ namespace BoSSS.Foundation {
             JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
             JacobianOp.Commit();
             return JacobianOp;
+        }
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.IsValidDomainDegreeCombination"/>
+        /// </summary>
+        public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable) {
+            if (!this.IsCommitted)
+                throw new InvalidOperationException("Invalid prior to calling Commit().");
+
+            if (DomainDegreesPerVariable.Length != this.DomainVar.Count)
+                throw new ArgumentException("Mismatch between length of input and number of domain variables.");
+            if (CodomainDegreesPerVariable.Length != this.CodomainVar.Count)
+                throw new ArgumentException("Mismatch between length of input and number of codomain variables.");
+
+            int i = 0;
+            foreach(var cod in this.CodomainVar) {
+                foreach(var comp in this.EquationComponents[cod]) {
+                    if(comp is IDGdegreeConstraint dgconstr) {
+                        int[] argDegrees;
+                        if (comp.ArgumentOrdering != null)
+                            argDegrees = comp.ArgumentOrdering.Select(argName => DomainDegreesPerVariable[this.DomainVar.IndexWhere(domName => domName == argName)]).ToArray();
+                        else
+                            argDegrees = new int[0];
+
+                        if (dgconstr.IsValidDomainDegreeCombination(argDegrees, CodomainDegreesPerVariable[i]) == false)
+                            return false;
+                    } 
+                }
+
+                i++;
+            }
+
+
+            return true;
         }
 
         /// <summary>

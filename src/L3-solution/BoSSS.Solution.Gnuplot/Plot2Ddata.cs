@@ -282,7 +282,7 @@ namespace BoSSS.Solution.Gnuplot {
         public bool LogY2;
 
         /// <summary>
-        /// y-range minimum, optional 
+        /// x-range minimum, optional 
         /// </summary>
         [DataMember]
         public double? XrangeMin = null;
@@ -417,6 +417,12 @@ namespace BoSSS.Solution.Gnuplot {
         public int? Legend_maxrows = null;
 
         /// <summary>
+        /// Draws a box behind the key
+        /// </summary>
+        [DataMember]
+        public bool LegendBox = false;
+
+        /// <summary>
         /// Swaps entries of legend
         /// </summary>
         [DataMember]
@@ -450,22 +456,43 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// Optional Gnuplot left margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? lmargin = null;
 
         /// <summary>
         /// Optional Gnuplot right margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? rmargin = null;
 
         /// <summary>
         /// Optional Gnuplot top margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? tmargin = null;
 
         /// <summary>
         /// Optional Gnuplot bottom margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? bmargin = null;
+
+        /// <summary>
+        /// Additional gnuplot commands
+        /// </summary>
+        [DataMember]
+        public string[] GnuplotCommandsB4Plotting;
+
+
+        /// <summary>
+        /// Appends <paramref name="cmd"/> to <see cref="GnuplotCommandsB4Plotting"/>
+        /// </summary>
+        public void AddGnuplotCommand(string cmd) {
+            Array.Resize(ref GnuplotCommandsB4Plotting, (GnuplotCommandsB4Plotting?.Length ?? 0) + 1);
+            GnuplotCommandsB4Plotting[GnuplotCommandsB4Plotting.Length - 1] = cmd;
+        }
+
+
 
         /// <summary>
         /// Modify Format, so all lines look distinct
@@ -790,7 +817,13 @@ namespace BoSSS.Solution.Gnuplot {
         /// <see cref="Tuple{Double,Double}.Item2"/> denote the slope and the
         /// affine offset of the linear fit, respectively.
         /// </returns>
-        public IEnumerable<KeyValuePair<string, double>> Regression() {
+        /// <param name="SkipStart">
+        /// Exclude some points at the begining
+        /// </param>
+        /// <param name="TrimEnd">
+        /// Exclude some points at the end
+        /// </param>
+        public IEnumerable<KeyValuePair<string, double>> Regression(int SkipStart = 0, int TrimEnd = 0) {
             foreach (var group in dataGroups) {
                 double[] xValues;
                 if ((LogX && !group.UseX2) || (LogX2 && group.UseX2)) {
@@ -806,6 +839,17 @@ namespace BoSSS.Solution.Gnuplot {
                 } else {
                     yValues = group.Values;
                 }
+
+                if (SkipStart > 0) {
+                    xValues = xValues.Skip(SkipStart).ToArray();
+                    yValues = yValues.Skip(SkipStart).ToArray();
+                }
+                if (SkipStart > 0) {
+                    xValues = xValues.Take(xValues.Length - TrimEnd).ToArray();
+                    yValues = yValues.Take(xValues.Length - TrimEnd).ToArray();
+                }
+
+
                 double yAvg = yValues.Average();
 
                 double v1 = 0.0;
@@ -1263,9 +1307,9 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
-                    string command= $"set key font \",{this.LegendFont}\" ";
+                    string command = $"set key font \",{this.LegendFont}\" ";
 
-                    if ((this.LegendPosition != null) & (this.LegendAlignment != null))
+                    if ((this.LegendPosition != null) && (this.LegendAlignment != null))
                         System.Console.Error.WriteLine("legend position and legend alignment is set. Choose only one of them! Ignoring alignment ...");
 
                     if (this.LegendPosition != null) {
@@ -1312,7 +1356,10 @@ namespace BoSSS.Solution.Gnuplot {
                     if (this.LegendSwap == true)
                         command += "Left reverse ";
 
-                    System.Console.WriteLine(command);
+                    if (this.LegendBox == true)
+                        command += "box opaque ";
+
+                    //System.Console.WriteLine(command);
                     gp.Cmd(command);
                 } else {
                     gp.Cmd("set key off");
@@ -1365,8 +1412,18 @@ namespace BoSSS.Solution.Gnuplot {
                 }
             }
 
-
-
+            // ===================
+            // additional commands 
+            // ===================
+            {
+                if(this.GnuplotCommandsB4Plotting != null) {
+                    foreach(var s in this.GnuplotCommandsB4Plotting) {
+                        if (!s.IsEmptyOrWhite())
+                            gp.Cmd(s);
+                    }
+                }
+            }
+                
 
             // =================
             // finally, plotting
@@ -1379,6 +1436,10 @@ namespace BoSSS.Solution.Gnuplot {
                 gp.WriteDeferredPlotCommands();
             }
         }
+
+
+
+        
 
     }
 }

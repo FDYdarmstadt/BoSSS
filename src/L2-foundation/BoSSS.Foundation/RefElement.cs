@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         public NodeSet Center {
             get {
                 if(m_Center == null) {
-                    m_Center = new NodeSet(this, new double[Math.Max(1, this.SpatialDimension)]);
+                    m_Center = new NodeSet(this, new double[Math.Max(1, this.SpatialDimension)], false);
                 }
                 return m_Center;
             }
@@ -573,7 +573,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             if(m_FaceCenterPF == null) {
                 m_FaceCenterPF = new NodeSet[this.NoOfFaces];
                 for(int iF = 0; iF < m_FaceCenterPF.Length; iF++) {
-                    m_FaceCenterPF[iF] = new NodeSet(this, this.FaceCenters.GetRow(iF));
+                    m_FaceCenterPF[iF] = new NodeSet(this, this.FaceCenters.GetRow(iF), false);
                 }
             }
             return m_FaceCenterPF[iFace];
@@ -611,7 +611,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             int D = SpatialDimension;
             int N = ev.GetLength(1);
 
-            m_FaceCenters = new NodeSet(this, ev.GetLength(0), D);
+            m_FaceCenters = new NodeSet(this, ev.GetLength(0), D, false);
 
             // loop over all edges ...
             for (int m = 0; m < m_FaceCenters.GetLength(0); m++) {
@@ -712,7 +712,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 int D = this.SpatialDimension;
                 int K = this.FaceRefElement.NoOfVertices;
                 for(int iF = 0; iF < m_FaceVertices.Length; iF++) {
-                    m_FaceVertices[iF] = new NodeSet(this, K, D);
+                    m_FaceVertices[iF] = new NodeSet(this, K, D, true);
                     this.TransformFaceCoordinates(iF, this.FaceRefElement.Vertices, m_FaceVertices[iF]);
                     this.m_FaceVertices[iF].LockForever();
                 }
@@ -882,7 +882,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             var FaceRule = this.FaceRefElement.GetQuadratureRule(DesiredOrder);
             int D = this.SpatialDimension;
 
-            var R = CellBoundaryQuadRule.CreateEmpty(this, FaceRule.NoOfNodes*NF, D, NF);
+            var R = CellBoundaryQuadRule.CreateEmpty(this, FaceRule.NoOfNodes*NF, D, NF, true);
 
             int ncnt = 0;
             for (int iface = 0; iface < NoOfFaces; iface++) {
@@ -929,7 +929,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             // return values memalloc
             // ----------------------
             Quadrature.QuadRule ret = QuadRule.CreateEmpty(
-                this, BaseRule.Weights.Length * leaves.Length, D);
+                this, BaseRule.Weights.Length * leaves.Length, D, true);
             ret.OrderOfPrecision = BaseRule.OrderOfPrecision;
 
             // generate brute-force rule
@@ -1017,7 +1017,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         }
 
         /// <summary>
-        /// Returns a complete basis of orthonormal polynomials up to degree <see cref="MaxDeg"/>.
+        /// Returns a complete basis of orthonormal polynomials up to degree <paramref name="MaxDeg"/>.
         /// </summary>
         public PolynomialList GetOrthonormalPolynomials(int MaxDeg) {
             if(MaxDeg < 0 || MaxDeg > this.HighestSupportedPolynomialDegree) {
@@ -1130,7 +1130,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
                     int J = Vertices.GetLength(0); // No. of Vertice
 
-                    m_SubdivisonVertices[i] = new NodeSet(this, Vertices.GetLength(0), Vertices.GetLength(1));
+                    m_SubdivisonVertices[i] = new NodeSet(this, Vertices.GetLength(0), Vertices.GetLength(1), true);
 
                     for (int j = 0; j < J; j++) {
                         idx[1] = j;
@@ -1216,7 +1216,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 int J = rvtx.GetLength(0); // No. of vertices
                 int D = rvtx.GetLength(1); // spatial dim.
 
-                this.Vertices = new NodeSet(m_RefElement, J, D);
+                this.Vertices = new NodeSet(m_RefElement, J, D, true);
 
                 for (int j = 0; j < J; j++) {
                     double[] vtx = ArrayTools.GetRow(rvtx, j);
@@ -1372,7 +1372,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                     Debug.Assert(Kref.FaceToVertexIndices.GetLength(1) == NoOfVtxPerFace);
 
                     for(int _iFace = 0; _iFace < m_FaceVertices.Length; _iFace++) {
-                        m_FaceVertices[_iFace] = new NodeSet(Kref, NoOfVtxPerFace, D);
+                        m_FaceVertices[_iFace] = new NodeSet(Kref, NoOfVtxPerFace, D, true);
 
                         for(int k = 0; k < NoOfVtxPerFace; k++) {
                             int k1 = Kref.FaceToVertexIndices[_iFace, k];
@@ -1573,7 +1573,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 get {
                     if (m_GlobalVertice == null) {
                         this.GetRoot().BuildExpensiveVertexLists();
-                        m_GlobalVerticeNS = new NodeSet(this.m_RefElement, m_GlobalVertice);
+                        m_GlobalVerticeNS = new NodeSet(this.m_RefElement, m_GlobalVertice, true);
                     }
                     return m_GlobalVerticeNS;
                 }
@@ -1742,7 +1742,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 MultidimensionalArray PolyAtNodes = MultidimensionalArray.Create(Nk, Np);
                 Polys.Evaluate(qr.Nodes, PolyAtNodes);
 
-                NodeSet NodesAtRoot = new NodeSet(m_RefElement, Nk, qr.Nodes.SpatialDimension);
+                NodeSet NodesAtRoot = new NodeSet(m_RefElement, Nk, qr.Nodes.SpatialDimension, true);
                 Trafo2Root.Transform(qr.Nodes, NodesAtRoot);
                 NodesAtRoot.LockForever();
 
