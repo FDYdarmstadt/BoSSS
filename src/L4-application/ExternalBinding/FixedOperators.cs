@@ -62,20 +62,45 @@ namespace BoSSS.Application.ExternalBinding {
 
 
         SinglePhaseField c;
+        SinglePhaseField[] velocity;
         SinglePhaseField phi;
         OpenFoamMatrix _mtx;
         OpenFoamPatchField _ptch;
+        double rho0 = 1;
+        double rho1 = 2;
 
         /// <summary>
-        /// Returns the Laplacian auxiliary field appearing during the solution of the Cahn-Hilliard system
+        /// Returns the auxiliary field appearing during the solution of the Cahn-Hilliard system
+        /// </summary>
+        [CodeGenExport]
+        public OpenFoamDGField GetFlux() {
+            int D = 3;
+            OpenFoamDGField Flux = new(_ptch.Grid, 0, D);
+            int nCells = _ptch.Grid.NumberOfCells;
+
+            for (int j = 0; j < nCells; j++) {
+                double cMean = c.GetMeanValue(j);
+                double C0 = (cMean + 1.0)/2.0;
+                double C1 = 1.0 - C0;
+                for (int d = 0; d < D; d++) {
+                    double massFlux = (rho0 * C0 + rho1 * C1) / 2.0 * velocity[d].GetMeanValue(j);
+                    if (d == 1 && velocity[d].GetMeanValue(j) < 1e-10)
+                        Console.WriteLine("Hello from BoSSS " + velocity[d].GetMeanValue(j));
+                    Flux.SetDGcoordinate(d, j, 0, massFlux);
+                }
+            }
+            return Flux;
+        }
+
+        /// <summary>
+        /// Returns the auxiliary field appearing during the solution of the Cahn-Hilliard system
         /// </summary>
         [CodeGenExport]
         public OpenFoamDGField GetPhi() {
-            Console.WriteLine("Test1");
-            OpenFoamDGField Phi0 = new(_ptch.Grid, 0, 1);
+            int D = 3;
+            OpenFoamDGField Phi0 = new(_ptch.Grid, 0, D);
             int nCells = _ptch.Grid.NumberOfCells;
 
-            // TODO projection of Phi
             for (int j = 0; j < nCells; j++) {
                 Phi0.SetDGcoordinate(0, j, 0, phi.GetMeanValue(j));
             }
@@ -203,6 +228,7 @@ namespace BoSSS.Application.ExternalBinding {
                 var u = U.Fields[0] as SinglePhaseField;
                 var v = U.Fields[1] as SinglePhaseField;
                 var w = U.Fields[2] as SinglePhaseField;
+                velocity = new[]{u,v,w};
                 // u.ProjectField(((_3D)((x, y, z) => 0.05)).Vectorize());
                 // v.ProjectField(((_3D)((x, y, z) => 0.0)).Vectorize());
                 // w.ProjectField(((_3D)((x, y, z) => 0.0)).Vectorize());
@@ -293,7 +319,6 @@ namespace BoSSS.Application.ExternalBinding {
                 {
                     ParameterMap.Add(new SinglePhaseField(b));
                 }
-                // ParameterMap[3].Acc(1.0, C);
                 for (int j = 0; j < J; j++)
                 {
                     int N = b.GetLength(j);
