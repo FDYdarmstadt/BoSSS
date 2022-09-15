@@ -226,7 +226,7 @@ namespace BoSSS.Application.XNSEC {
             };
 
             bool m_BotPressureOutlet = true;
-            bool m_TopPressureOutlet = false;
+            bool m_TopPressureOutlet = true;
 
             C.GridFunc = delegate {
                 var _xNodes = GenericBlas.Linspace(0, 5, reallyPseudo2D ? 4 : cells2 + 1);

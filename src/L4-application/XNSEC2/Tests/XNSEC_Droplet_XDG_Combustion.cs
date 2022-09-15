@@ -221,8 +221,8 @@ namespace BoSSS.Application.XNSEC {
                     return 1;
             };
 
-            bool m_InsideBC_PressureOutlet = true;
-            bool m_OutsideBC_PressureOutlet = false;
+            bool m_InsideBC_PressureOutlet = false;
+            bool m_OutsideBC_PressureOutlet = true;
             C.GridFunc = delegate {
                 double co = 1; // bounding box, has to be smaller than droplet radius
 
@@ -418,7 +418,7 @@ namespace BoSSS.Application.XNSEC {
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.MixtureFraction + "#A", (X, t) => 0.0);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.Temperature + "#A", (X, t) => 1.0);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction0 + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction1 + "#A", (X, t) => 0.23);
+                C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction1 + "#A", (X, t) => 1.0);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction2 + "#A", (X, t) => 0.0);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction3 + "#A", (X, t) => 0.0);
             } else {
