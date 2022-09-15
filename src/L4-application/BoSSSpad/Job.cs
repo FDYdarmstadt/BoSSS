@@ -931,6 +931,11 @@ namespace BoSSS.Application.BoSSSpad {
                 using (new BlockTrace("DIRECTORY_QUERY", tr)) {
                     AllDirs = Directory.GetDirectories(this.AssignedBatchProc.DeploymentBaseDirectory, ShortName + "*").Select(str => new DirectoryInfo(str)).ToArray();
                 }
+                try {
+                    tr.Info("got possible deployment directories: " + AllDirs.Select(dir => dir.FullName).ToConcatString("", ", ", ""));
+                } catch (Exception ex) {
+                    tr.Warning("Exception during formatting of directory list: " + ex);
+                }
 
                 // filter appropriate ones 
                 // =======================
@@ -967,10 +972,17 @@ namespace BoSSS.Application.BoSSSpad {
                                     }
                                 }
                             } catch (Exception e) {
+                                tr.Error($"Warning: unable process deployment directory {dir}: " + e.Message);
                                 Console.Error.WriteLine($"Warning: unable process deployment directory {dir}: " + e.Message);
                             }
                         }
                     }
+                }
+
+                try {
+                    tr.Info("filtered directories: " + AllDirs.Select(dir => dir.FullName).ToConcatString("", ", ", ""));
+                } catch (Exception ex) {
+                    tr.Warning("Exception during formatting of directory list: " + ex);
                 }
 
                 // return
@@ -1436,6 +1448,7 @@ namespace BoSSS.Application.BoSSSpad {
                     int sc = this.SubmitCount;
                     if (stat == JobStatus.FailedOrCanceled && sc < RetryCount) {
                         Console.WriteLine($"Job is {stat}, but retry count is set to {RetryCount} and only {sc} tries yet - trying once more...");
+                        this.statusCache = null;
                     } else {
                         Console.WriteLine("No submission, because job status is: " + stat.ToString());
                         return;
@@ -1490,8 +1503,10 @@ namespace BoSSS.Application.BoSSSpad {
                     return JobStatus.PreActivation;
 
                 if(!WriteHints) {
-                    if(statusCache.HasValue)
+                    if (statusCache.HasValue) {
+                        tr.Info("returning cached value: " + statusCache.Value);
                         return statusCache.Value;
+                    }
                 }
 
                 // ================

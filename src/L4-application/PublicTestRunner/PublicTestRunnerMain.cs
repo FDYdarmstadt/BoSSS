@@ -1605,9 +1605,8 @@ namespace PublicTestRunner {
                 // note: this seemingly useless try-catch is here since our test runner server (FDYGITRUNNER)
                 // seems to silently fail on all exceptions thrown after MPI init.
 
-                Console.Error.WriteLine(e.GetType().FullName);
-                Console.Error.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
+                
+                Console.WriteLine(e);
                 return -667;
             }
         }
