@@ -81,9 +81,6 @@
     <Content Include="TetraQuadRules_bin.txt" />
     <Content Include="TriangleQuadRules_bin.txt" />
   </ItemGroup>
-  <!--ItemGroup>
-    <PackageReference Include="System.Runtime.Caching" Version="5.0.0" />
-  </ItemGroup-->
   <ItemGroup>
     <Compile Remove="DoubleEdgeRuleFromCellBoundaryFactory.cs" />
     <Compile Remove="LinearFluxBuilder.cs" />
