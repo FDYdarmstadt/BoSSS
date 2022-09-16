@@ -63,7 +63,14 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// Elswhere allows gradient to become zero: s^2*(1-s)^2
         /// leads to most stable results
         /// </summary>
-        SingleWellOnCutDoubleWellElse
+        SingleWellOnCutDoubleWellElse,
+
+        /// <summary>
+        /// Smooth step to enforce sufficiently large gradient, everything else we dont care
+        /// s <= 1 : 1/6+1/3s^3-1/2s^2
+        /// s > 1 : 0
+        /// </summary>
+        SmoothStep
     }
 
 
@@ -147,25 +154,26 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
 
             UpdateOperators(Restriction);
-            double Residual = double.MaxValue;
+            double residual = double.MaxValue;
             int IterationCounter = 0;
             double OldResidual = double.MaxValue;
             bool EndIteration = false;
             if (Control.PrintIterations) Console.WriteLine("Performing ReInit");
             while (!EndIteration) {
-                ReInitSingleStep(out Residual, Restriction);
+                ReInitSingleStep(out residual, Restriction);
+                //Tecplot.Tecplot.PlotFields(new DGField[] { Phi, Residual }, "Reinit-" + this.Control.Potential.ToString() + "-" + IterationCounter, 0.0, 2);
                 IterationCounter++;
-                if (Control.PrintIterations) Console.WriteLine("EllipticReInit:Step {0} \t ChangeRate-L2 {1}", IterationCounter, Residual);
-                if (Residual < ConvergenceCriterion || IterationCounter >= MaxIteration) EndIteration = true;
-                if (Residual > 5*OldResidual) {
+                if (Control.PrintIterations) Console.WriteLine("EllipticReInit:Step {0} \t ChangeRate-L2 {1}", IterationCounter, residual);
+                if (residual < ConvergenceCriterion || IterationCounter >= MaxIteration) EndIteration = true;
+                if (residual > 5*OldResidual) {
                     Console.WriteLine("!!!!!!! \t Iteration Diverged, ABORTING !!!! ");
                     EndIteration = true;
                 }
-                OldResidual = Residual;
+                OldResidual = residual;
             }
             slv.Dispose();
             if (Control.PrintIterations) Console.WriteLine("ReInit done");
-            return new Tuple<int, double> (IterationCounter,Residual);
+            return new Tuple<int, double> (IterationCounter,residual);
         }
 
         public void ReInitialize(LevelSet LS = null, SubGrid Restriction = null){
@@ -424,7 +432,7 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
         /// False, for the rest of the domain, thus the flux to the adjacent cells wil be evaluated
         /// </param>
         /// <returns></returns>
-        public void ReInitSingleStep(out double ChangeRate,SubGrid Restriction = null, bool IncludingInterface = true) {
+        public void ReInitSingleStep(out double ChangeRate, SubGrid Restriction = null, bool IncludingInterface = true) {
             if (!IncludingInterface) { throw new NotImplementedException("Untested, not yet functional!"); }
 
             using (new FuncTrace()) {
@@ -689,6 +697,10 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
                     };
                 case ReInitPotential.SingleWellOnCutDoubleWellElse: {
                         myRHSForm.DiffusionRate = ((d, b) => DiffusionRates.SingleWellOnCutDoubleWellElse(d, b));
+                        break;
+                    };
+                case ReInitPotential.SmoothStep: {
+                        myRHSForm.DiffusionRate = ((d, b) => DiffusionRates.SmoothStep(d, b));
                         break;
                     }
             }
