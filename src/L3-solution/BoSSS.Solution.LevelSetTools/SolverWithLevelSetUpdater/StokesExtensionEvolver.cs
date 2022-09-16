@@ -75,7 +75,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> VariableNames => null;
 
         // nothing to do
-        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => Reinitialize;
+        public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => Reinitialize;
 
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         static int lastReinit = 0;
-        public void Reinitialize(
+        public bool Reinitialize(
             DualLevelSet phaseInterface,
             double time,
             double dt,
@@ -179,6 +179,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
 
             int rcnt = 0;
+            bool changed = false;
 
             // Not implemented
             REINIT:
@@ -293,28 +294,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     }
                 }).Execute();
 
-            Cont_DIFF *= 1.0 / Cont_LEN;
-            Cont_CTRL *= 1.0 / Cont_LEN;
+            double h = phaseInterface.DGLevelSet.GridDat.iGeomCells.h_min.Min();
+            Cont_DIFF *= 1.0 / (Cont_LEN * h);
+            Cont_CTRL *= 1.0 / (Cont_LEN * h);
 
             Console.WriteLine("CG-DG Contour Difference : {0} || Contour Control : {1} || Contour Length : {2}", Cont_DIFF, Cont_CTRL, Cont_LEN);
 
-            if(GradJump_NORM > 1e0 && lastReinit < 0 && false) {
+            if(Cont_DIFF > 1e-3 && lastReinit < 0) {
                 Console.WriteLine("Performing Reinit");
                 var ReInit_Control = new EllipticReInitAlgoControl();
-                ReInit_Control.Potential = ReInitPotential.BastingSingleWell;
+                ReInit_Control.Potential = ReInitPotential.SmoothStep;
                 EllipticReInit.EllipticReInit ReInitPDE = new EllipticReInit.EllipticReInit(phaseInterface.Tracker, ReInit_Control, phaseInterface.DGLevelSet);
-                ReInitPDE.ReInitialize(Restriction: phaseInterface.Tracker.Regions.GetCutCellSubGrid());
-
-                BoSSS.Solution.LevelSetTools.Reinit.FastMarch.FastMarchReinit FastMarchReinitSolver = new BoSSS.Solution.LevelSetTools.Reinit.FastMarch.FastMarchReinit(phaseInterface.DGLevelSet.Basis);
-                CellMask Accepted = phaseInterface.Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex);
-                CellMask ActiveField = phaseInterface.Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex);
-                CellMask NegativeField = phaseInterface.Tracker.Regions.GetSpeciesMask("A");
-                do {
-                    ActiveField = ActiveField.Union(ActiveField.AllNeighbourCells());
-                    FastMarchReinitSolver.FirstOrderReinit(phaseInterface.DGLevelSet, Accepted, NegativeField, ActiveField);
-                    Accepted = Accepted.Union(ActiveField);
-                } while (ActiveField != CellMask.GetFullMask(m_grd));
-                lastReinit = 100;
+                ReInitPDE.ReInitialize();
+                lastReinit = 10;
+                changed = true;
             }
             lastReinit--;
 
@@ -351,6 +344,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             //    rcnt++;
             //    if (rcnt < 100) goto REINIT;
             //}
+            return changed;
         }
         }
 }

@@ -64,7 +64,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> ParameterNames => parameters;
 
         // reinitilization
-        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => Reinitialize;
+        public Func<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>, bool> AfterMovePhaseInterface => Reinitialize;
 
         /// <summary>
         /// Provides access to the internally constructed extension velocity.
@@ -139,13 +139,15 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         private EllipticReInitAlgoControl ReInit_Control;
         private int ReInit_TimestepIndex = 0;
         private int ReInit_Period = 0;
-        public void Reinitialize(
+        public bool Reinitialize(
             DualLevelSet phaseInterface,
             double time,
             double dt,
             bool incremental,
             IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            bool changed = false;
 
             // after level-set evolution and for initializing non-signed-distance level set fields
             if (ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
@@ -160,9 +162,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 CellMask ActiveField = phaseInterface.Tracker.Regions.GetNearFieldMask(1);
                 CellMask NegativeField = phaseInterface.Tracker.Regions.GetSpeciesMask("A");
                 FastMarchReinitSolver.FirstOrderReinit(phaseInterface.DGLevelSet, Accepted, NegativeField, ActiveField);
+                changed = true;
             }
 
             ReInit_TimestepIndex++;
+            return changed;
         }
     }
 }
