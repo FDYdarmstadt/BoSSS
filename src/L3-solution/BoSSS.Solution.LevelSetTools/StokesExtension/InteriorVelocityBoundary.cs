@@ -49,9 +49,11 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
             double Ret = 0;
             double pnlty = this.Penalty(inp.jCellIn, inp.jCellOut);
-            Ret += (uA[m_d] - inp.Parameters_IN[m_d]) * (vA) * pnlty;
-            Ret += (uB[m_d] - inp.Parameters_OUT[m_d]) * (vB) * pnlty;
-
+            //only enforce interface normal velocity
+            for (int dN = 0; dN<m_D; dN++) {
+                Ret += (uA[dN] - inp.Parameters_IN[dN]) * inp.Normal[dN] * vA* inp.Normal[m_d] * pnlty;
+                Ret += (uB[dN] - inp.Parameters_IN[dN]) * inp.Normal[dN] * vB* inp.Normal[m_d] * pnlty;
+            }
             return Ret;
         }
 
