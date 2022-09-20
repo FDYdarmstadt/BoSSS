@@ -78,7 +78,7 @@ namespace BoSSS.Application.LsTest {
             return C;
         }
         public static SolverWithLevelSetUpdaterTestControl SwirlingFlowSpatialConvergence(int degree, int gridRes, LevelSetEvolution lsEvo, string ProjectName, string dbPath) {
-            var Tst = new LevelSetSwirlingFlowTest(2, degree, false, 8);
+            var Tst = new LevelSetSwirlingFlowTest(2, degree, false, 2.5); // original is 8, this is for purpose of testing!!!!
             var C = LSTstObj2CtrlObj(Tst, int.MaxValue, lsEvo, LevelSetHandling.LieSplitting, gridRes, 0);
 
             C.SessionName = "SwirlingFlow_H_p" + degree + "_H" + gridRes + "_Evo" + lsEvo.ToString();
