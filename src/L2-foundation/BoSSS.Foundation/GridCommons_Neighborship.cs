@@ -255,7 +255,6 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 void AssertNeighborUniqueness(int j, long neighGlIdx) {
                     if (GetCellNeighbours(j).Where(neighEntry => neighEntry.Neighbour_GlobalIndex == neighGlIdx).Count() > 0) {
-                        Debugger.Launch();
                         throw new ApplicationException("Neighbor already added");
                     }
                 }
