@@ -321,47 +321,53 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
-            int pVel = VelocityDegree();
-            int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
-            int D = this.GridData.SpatialDimension;
+            using (var tr = new FuncTrace()) {
+                int pVel = VelocityDegree();
+                int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
+                int D = this.GridData.SpatialDimension;
 
-            if (this.Control.UseSchurBlockPrec) {
-                // using a Schur complement for velocity & pressure
-                var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
-                for (int d = 0; d < D; d++) {
-                    d.AddToArray(ref confMomConti.VarIndex);
-                    //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                    pVel.AddToArray(ref confMomConti.DegreeS);
-                }
-                D.AddToArray(ref confMomConti.VarIndex);
-                //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                pPrs.AddToArray(ref confMomConti.DegreeS);
+                if (this.Control.UseSchurBlockPrec) {
+                    tr.Info($"pre-precond, level {iLevel}: using {MultigridOperator.Mode.SchurComplement}");
 
-                confMomConti.mode = MultigridOperator.Mode.SchurComplement;
 
-                configsLevel.Add(confMomConti);
-            } else {
-                
-                // configurations for velocity
-                for (int d = 0; d < D; d++) {
-                    var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { pVel },
-                        mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                        VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
+                    // using a Schur complement for velocity & pressure
+                    var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
+                    for (int d = 0; d < D; d++) {
+                        d.AddToArray(ref confMomConti.VarIndex);
+                        //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                        pVel.AddToArray(ref confMomConti.DegreeS);
+                    }
+                    D.AddToArray(ref confMomConti.VarIndex);
+                    //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                    pPrs.AddToArray(ref confMomConti.DegreeS);
+
+                    confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+
+                    configsLevel.Add(confMomConti);
+                } else {
+                    tr.Info($"pre-precond, level {iLevel}: using {MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite} and {MultigridOperator.Mode.IdMass_DropIndefinite}");
+
+
+                    // configurations for velocity
+                    for (int d = 0; d < D; d++) {
+                        var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pVel },
+                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                            VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
+                        };
+                        configsLevel.Add(configVel_d);
+                    }
+                    // configuration for pressure
+                    var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                        DegreeS = new int[] { pPrs },
+                        //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) }, // p-multigrid reduction
+                        mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                        VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
                     };
-                    configsLevel.Add(configVel_d);
+                    configsLevel.Add(configPres);
                 }
-                // configuration for pressure
-                var configPres = new MultigridOperator.ChangeOfBasisConfig() {
-                    DegreeS = new int[] { pPrs },
-                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) }, // p-multigrid reduction
-                    mode = MultigridOperator.Mode.IdMass_DropIndefinite,
-                    VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
-                };
-                configsLevel.Add(configPres);
             }
         }
-
         /// <summary>
         /// Operator/equation assembly
         /// </summary>
@@ -601,7 +607,53 @@ namespace BoSSS.Application.XNSE_Solver {
                     // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
                     dt = base.GetTimestep();
                 }
-               
+
+
+                /*
+                
+                var C1 = new CoordinateVector(this.CurrentResidual.Fields.Select(f => f.CloneAs()).ToArray()); C1.Mapping.RenameFields("mX1", "mY1", "mC1");
+                var C2 = new CoordinateVector(this.CurrentResidual.Fields.Select(f => f.CloneAs()).ToArray()); C2.Mapping.RenameFields("mX2", "mY2", "mC2");
+                double[] aC1 = new double[C1.Length];
+                double[] aC2 = new double[C2.Length];
+                C2.Fields[2].AccConstant(2000);
+
+                var FluidSpc = new SpeciesId[] { this.LsTrk.GetSpeciesId("A"), this.LsTrk.GetSpeciesId("B") };
+                var agg = this.LsTrk.GetAgglomerator(FluidSpc, this.QuadOrder(), this.Control.AgglomerationThreshold);
+
+                Timestepping.ComputeOperatorMatrix(null, aC1, this.CurrentState, this.CurrentState.Fields.ToArray(), agg.CellLengthScales, 0.0, 1);
+                C1.SetV(aC1);
+
+                this.CurrentState.Fields[2].AccConstant(2048);
+                Timestepping.ComputeOperatorMatrix(null, aC2, this.CurrentState, this.CurrentState.Fields.ToArray(), agg.CellLengthScales, 0.0, 1);
+                C2.SetV(aC2);
+                this.CurrentState.Fields[2].AccConstant(-2048);
+
+
+                var Cd = new CoordinateVector(this.CurrentResidual.Fields.Select(f => f.CloneAs()).ToArray()); Cd.Mapping.RenameFields("mXd", "mYd", "mCd");
+                Cd.Acc(1.0, C1);
+                Cd.Acc(-1.0, C2);
+
+                double fuckDist = aC1.L2Dist(aC2);
+                Console.WriteLine("Dist is " + fuckDist);
+                Console.WriteLine("mX diff: " + Cd.Fields[0].CoordinateVector.L2Norm());
+                Console.WriteLine("mY diff: " + Cd.Fields[1].CoordinateVector.L2Norm());
+                Console.WriteLine("mC diff: " + Cd.Fields[2].CoordinateVector.L2Norm());
+
+                
+                Tecplot.PlotFields(ArrayTools.Cat(
+                    this.CurrentState.Fields,
+                    C1.Fields, C2.Fields, Cd.Fields,
+                    base.LsUpdater.LevelSets.ElementAt(0).Value.CGLevelSet,
+                    base.LsUpdater.LevelSets.ElementAt(0).Value.DGLevelSet,
+                    base.LsUpdater.LevelSets.ElementAt(1).Value.CGLevelSet,
+                    base.LsUpdater.LevelSets.ElementAt(1).Value.DGLevelSet),
+                    "fuckup",
+                    0.0, 3);
+
+
+                if (fuckDist >= 1.0e-3)
+                    throw new ArithmeticException();
+                */
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 

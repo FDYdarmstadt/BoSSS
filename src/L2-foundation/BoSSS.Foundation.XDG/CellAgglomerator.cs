@@ -205,8 +205,6 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// 
             /// </summary>
-            /// <param name="other"></param>
-            /// <returns></returns>
             public bool Equals(AgglomerationInfo other) {
                 if (other == null) {
                     return false;
@@ -216,6 +214,19 @@ namespace BoSSS.Foundation.XDG {
 
                 bool result = (this.AgglomerationPairs.SequenceEqual(other.AgglomerationPairs));
                 return result;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public override string ToString() {
+                using (var stw = new StringWriter()) {
+                    foreach (var p in AgglomerationPairs) {
+                        stw.WriteLine(p.ToString());
+                    }
+
+                    return stw.ToString();
+                }
             }
         }
 
@@ -805,7 +816,7 @@ namespace BoSSS.Foundation.XDG {
         /// <returns></returns>
         public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping map,
             int MaxDegree, int NoOfVars, Func<int, int, long> i0Func, Func<int, int, int> NjFunc,
-            bool MakeInPlace, CellMask cm, string SpeciesName = null) {
+            bool MakeInPlace, CellMask cm) {
             using(new FuncTrace()) {
 
                 if(!object.ReferenceEquals(map.GridDat, this.GridDat)) {
@@ -1003,7 +1014,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// In a vector <paramref name="V"/>, this method performs a
+        /// For a list of DG fields, this method performs a
         /// polynomial extrapolation from agglomeration target cells to agglomeration source cells.
         /// </summary>
         public void Extrapolate(CoordinateMapping DgFields) {

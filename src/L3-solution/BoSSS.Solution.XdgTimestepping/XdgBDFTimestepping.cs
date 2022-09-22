@@ -1553,64 +1553,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         using (var linearSolver = GetLinearSolver(mgOperator)) {
 
-                            /*
-                            {
-                                double velLoScale = 0.1;
-                                double velHiScale = 100;
-                                double presLoScale = 0.1;
-                                double presHiScale = 100;
-                                OrthonormalizationMultigrid.velScaleLo = velLoScale;
-                                OrthonormalizationMultigrid.velScaleHi = velHiScale;
-                                OrthonormalizationMultigrid.presScaleLo = presLoScale;
-                                OrthonormalizationMultigrid.presScaleHi = presHiScale;
-                                (linearSolver as OrthonormalizationMultigrid).ScalingKakke(mgOperator);
-                            }//*/
-
-                            /*
-                            using (var txt = new StreamWriter("CoContraVar.csv")) {
-                                foreach (double velLoScale in new double[] { 0.1, 1, 10, 100 }) {
-                                    foreach (double velHiScale in new double[] { 0.1, 1, 10, 100 }) {
-                                        foreach (double presLoScale in new double[] { 0.1, 1, 10, 100 }) {
-                                            foreach (double presHiScale in new double[] { 0.1, 1, 10, 100 }) {
-
-
-
-                                                string id = $"vL{velLoScale}_vH{velHiScale}_pL{presLoScale}_pH{presHiScale}";
-
-                                                OrthonormalizationMultigrid.velScaleLo = velLoScale;
-                                                OrthonormalizationMultigrid.velScaleHi = velHiScale;
-                                                OrthonormalizationMultigrid.presScaleLo = presLoScale;
-                                                OrthonormalizationMultigrid.presScaleHi = presHiScale;
-                                                (linearSolver as OrthonormalizationMultigrid).ScalingKakke(mgOperator);
-
-                                                var p = ConvergenceObserver.WaterfallAnalysis(linearSolver as ISolverWithCallback, mgOperator, MaMa);
-                                                Plot2Ddata[,] vars = new Plot2Ddata[1, p.Count];
-                                                vars.SetRow(0, p.Values.ToArray());
-                                                vars.ToGnuplot().SaveToGIF("waterfall-" + id + ".png", xRes: 1800, yRes: 600);
-
-
-                                                txt.Write(velLoScale);
-                                                txt.Write("\t");
-                                                txt.Write(velHiScale);
-                                                txt.Write("\t");
-                                                txt.Write(presLoScale);
-                                                txt.Write("\t");
-                                                txt.Write(presHiScale);
-                                                txt.Write("\t");
-                                                txt.Write(ConvergenceObserver.last_errReduction);
-                                                txt.Write("\t");
-                                                txt.Write(ConvergenceObserver.last_resReduction);
-                                                txt.WriteLine();
-                                            }
-                                        }
-                                    }
-                                }
-                            }//*/
-
-                            //var EigValVect = mgOperator.OperatorMatrix.MinimalEigen();
-                            //var DGevevt = mgOperator.ProlongateSolToDg(EigValVect.V, "MinimalEigen");
-                            //Tecplot.Tecplot.PlotFields(DGevevt, "Eigen", 0.0, 4);
-                            //throw new Exception("done eigen");
+                         
 
                             // try to solve the saddle-point system.
                             TimeSpan duration;

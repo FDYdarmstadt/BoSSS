@@ -76,6 +76,15 @@ namespace BoSSS.Foundation {
         }
 
 
+        /// <summary>
+        /// Assigns a new <see cref="DGField.Identification"/> to each field
+        /// </summary>
+        public void RenameFields(params string[] NewNames) {
+            for (int i = 0; i < this.m_Fields.Length; i++)
+                m_Fields[i].Identification = NewNames[i];
+        }
+
+
 
         static Basis[] GetBasisList(IList<DGField> _fields) {
             Basis[] ret = new Basis[_fields.Count];

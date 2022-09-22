@@ -311,7 +311,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// a piecewise parabolic solution.
         /// </summary>
-        public static XdgPoisson3Control PiecewiseParabola(double delta = 0.0, double muA = -20, double muB = -1) {
+        public static XdgPoisson3Control PiecewiseParabola(double delta = 0.0, double muA = -20, double muB = -1, double agg = 0.0) {
             // --control cs:BoSSS.Application.XdgPoisson3.HardCodedControl.PiecewiseParabola();
             XdgPoisson3Control R = new XdgPoisson3Control();
 
@@ -368,14 +368,14 @@ namespace BoSSS.Application.XdgPoisson3 {
             };
 
             R.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
-            R.AgglomerationThreshold = 0.0;
+            R.AgglomerationThreshold = agg;
             R.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
             return R;
         }
 
         /// <summary>
-        /// A parameter study over <see cref="PiecewiseParabola(double, double, double)"/>.
+        /// A parameter study over <see cref="PiecewiseParabola(double, double, double, double)"/>.
         /// </summary>
         public static IEnumerable<XdgPoisson3Control> PiecewiseParabola_Parameterstudy() {
             List<XdgPoisson3Control> cases = new List<XdgPoisson3Control>();

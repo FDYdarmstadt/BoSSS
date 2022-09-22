@@ -179,7 +179,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             Op.Commit();
 
         }
-       
+     
+
 
         XSpatialOperatorMk2 Op;
 

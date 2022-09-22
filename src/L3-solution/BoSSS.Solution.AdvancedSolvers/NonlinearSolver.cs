@@ -27,6 +27,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System.Diagnostics;
 using System.CodeDom;
+using BoSSS.Solution.Tecplot;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 
@@ -216,6 +217,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         protected double[] LinearizationRHS;
 
+
+        double[] lastRawOutput;
+
         /// <summary>
         /// Evaluation of the nonlinear operator.
         /// </summary>
@@ -238,6 +242,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // the real call:
             this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), false, out var abstractOp);
+            lastRawOutput = OpEvalRaw;
             if(DummyMtx != null)
                 // only evaluation ==> OpMatrix must be null
                 throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
@@ -381,8 +386,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] ResidualAfterMeanCor = new double[L];
 
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualBeforMeanCor, HomotopyValue);
-                double a = ResidualBeforMeanCor.MPI_L2Norm();
-                double aa = SolutionVec.L2Norm();
+                var rawResidualBeforMeanCor = lastRawOutput.CloneAs();
+                double SolNormA = SolutionVec.MPI_L2Norm();
 
 
                 DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
@@ -399,24 +404,55 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualAfterMeanCor, HomotopyValue);
-                double b = ResidualAfterMeanCor.MPI_L2Norm();
-                double bb = SolutionVec.L2Norm();
+                var rawResidualAfterMeanCor = lastRawOutput.CloneAs();
+                double SolNormB = SolutionVec.L2Norm();
 
-                for(int iFld = 0; iFld < flds.Length; iFld++) {
+                for (int iFld = 0; iFld < flds.Length; iFld++) {
                     if(FreeMeanValue[iFld]) {
                         flds[iFld].AccConstant(-arbitrary_distortion_value);
                     }
                 }
 
+                var C1 = new CoordinateVector(this.CurrentLin.ProlongateRhsToDg(ResidualBeforMeanCor, "m1")); C1.Mapping.RenameFields("mX1", "mY1", "mC1");
+                var C2 = new CoordinateVector(this.CurrentLin.ProlongateRhsToDg(ResidualAfterMeanCor, "m1")); C2.Mapping.RenameFields("mX2", "mY2", "mC2");
                 
+
+                var Cd = new CoordinateVector(SolutionVec.Fields.Select(f => f.CloneAs()).ToArray()); Cd.Mapping.RenameFields("mXd", "mYd", "mCd");
+                Cd.SetV(C1);
+                Cd.Acc(-1.0, C2);
+
+                Console.WriteLine("mX diff: " + Cd.Fields[0].CoordinateVector.L2Norm());
+                Console.WriteLine("mY diff: " + Cd.Fields[1].CoordinateVector.L2Norm());
+                Console.WriteLine("mC diff: " + Cd.Fields[2].CoordinateVector.L2Norm());
+
+
+                BoSSS.Solution.Tecplot.Tecplot.PlotFields(ArrayTools.Cat(
+                    SolutionVec.Fields,
+                    C1.Fields, C2.Fields, Cd.Fields//,
+                    //base.LsUpdater.LevelSets.ElementAt(0).Value.CGLevelSet,
+                    //base.LsUpdater.LevelSets.ElementAt(0).Value.DGLevelSet,
+                    //base.LsUpdater.LevelSets.ElementAt(1).Value.CGLevelSet,
+                    //base.LsUpdater.LevelSets.ElementAt(1).Value.DGLevelSet
+                    ),
+                    "fuckup",
+                    0.0, 3);
+
+
+
                 //double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
                 //ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
                 //DGField[] ResidualDifferenceDg = this.CurrentLin.ProlongateRhsToDg(ResidualDifference, "residualDifference");
                 //Tecplot.Tecplot.PlotFields(ResidualDifferenceDg, "ResidualDifference", 0, 2);
 
-                double RefVal = Math.Max(Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(a, b)*1e-7), Math.Abs(aa-bb)*1e-7);
-                if(Math.Abs(a-b) > RefVal) {
-                    throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {a}; residual after distortion {b}");
+                double Dist = ResidualBeforMeanCor.MPI_L2Dist(ResidualAfterMeanCor);
+                double ResNormA = ResidualBeforMeanCor.MPI_L2Norm();
+                double ResNormB = ResidualAfterMeanCor.MPI_L2Norm();
+
+
+
+                double RefVal = Math.Max(Math.Max(BLAS.MachineEps.Sqrt(), Math.Max(ResNormA, ResNormB) * 1e-7), Math.Abs(SolNormA - SolNormB) * 1e-7);
+                if(Dist > RefVal) {
+                    throw new ArithmeticException($"Something seems wrong with `FreeMeanValue`: drastic change of operator residual; Original residual: {ResNormA}; residual after distortion {ResNormB}; distance is {Dist}, reference value {RefVal}");
                 }
             }
 

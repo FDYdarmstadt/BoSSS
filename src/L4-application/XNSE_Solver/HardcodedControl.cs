@@ -6162,7 +6162,9 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PhysicalParameters.IncludeConvection = true;
             C.NoOfTimesteps = 300;
 
+            //C.UseSchurBlockPrec = false;
             //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+
             return C;
         }
 
