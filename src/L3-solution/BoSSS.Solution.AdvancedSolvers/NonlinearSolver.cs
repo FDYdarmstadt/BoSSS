@@ -408,7 +408,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         flds[iFld].AccConstant(-arbitrary_distortion_value);
                     }
                 }
-
+                /*
                 var C1 = new CoordinateVector(this.CurrentLin.ProlongateRhsToDg(ResidualBeforMeanCor, "m1")); C1.Mapping.RenameFields("mX1", "mY1", "mC1");
                 var C2 = new CoordinateVector(this.CurrentLin.ProlongateRhsToDg(ResidualAfterMeanCor, "m1")); C2.Mapping.RenameFields("mX2", "mY2", "mC2");
                 
@@ -432,7 +432,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     ),
                     "fuckup",
                     0.0, 3);
-
+                */
 
 
                 //double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();

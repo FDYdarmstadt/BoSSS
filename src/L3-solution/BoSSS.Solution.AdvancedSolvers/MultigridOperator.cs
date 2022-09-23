@@ -332,6 +332,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var bkup = new List<(long, long, double)>();
 
+                /*
                 Console.Error.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 Console.Error.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                 Console.Error.WriteLine("Pressure reference point deactivated");
@@ -340,8 +341,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 return bkup.ToArray();
-
-                /*
+                */
+                
 
                 if (onthisProc) {
 
@@ -384,7 +385,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
 
-                return bkup.ToArray(); */
+                return bkup.ToArray(); 
             }
                 
         }

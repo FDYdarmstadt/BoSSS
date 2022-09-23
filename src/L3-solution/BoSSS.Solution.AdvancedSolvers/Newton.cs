@@ -708,7 +708,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // fix the pressure
             // ----------------
             if(CurrentLin.FreeMeanValue.Any()) {
-                //if(itc == 0 || itc % 5 == 0) // execute this expensive test not to often.
+                if(itc == 0 || itc % 5 == 0) // execute this expensive test not to often.
                     base.TestFreeMeanValue(SolutionVec, HomotopyValue);
 
                 DGField[] flds = SolutionVec.Mapping.Fields.ToArray();
