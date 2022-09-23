@@ -49,10 +49,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// </summary>
         private JumpTypes jumpType;
 
-        /// <summary>
-        /// Index of the considered level set for <see cref="tracker"/>
-        /// </summary>
-        private int levelSetIndex;
 
         /// <summary>
         /// Factory for one- or two-dimensional integration rules for the edges
@@ -139,7 +135,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 throw new NotSupportedException();
             }
 
-            this.levelSetIndex = lsData.LevelSetIndex;
+            
             this.edgeRuleFactory = edgeRuleFactory;
             this.surfaceRuleFactory = surfaceRuleFactory;
             this.jumpType = jumpType;
@@ -693,12 +689,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// moment-fitting basis (cf. <see cref="lambdaBasis"/>) in each node
         /// of all cells in the given range
         /// </summary>
-        /// <param name="i0">
-        /// First cell in range
-        /// </param>
-        /// <param name="length">
-        /// Number of cells
-        /// </param>
         /// <returns>
         /// The values of <see cref="lambdaBasis"/> in each node
         /// <list type="bullet">
@@ -716,6 +706,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="NS">
         /// Nodes at which to evaluate.
         /// </param>
+        /// <param name="cell"></param>
         private MultidimensionalArray EvaluateLambdas(int cell, NodeSet NS) {
             int D = LevelSetData.GridDat.SpatialDimension;
             Debug.Assert(

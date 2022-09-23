@@ -74,7 +74,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         private DivergenceFreeBasis phiBasis;
 
         /// <summary>
-        /// Index of the considered level set within <see cref="tracker"/>.
+        /// Index of the considered level set within the level set tracker
         /// </summary>
         private int levelSetIndex;
 
@@ -963,7 +963,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
         /// <summary>
         /// Used for the integration over the divergence-free basis functions
-        /// (cf. <see cref="subGrid"/>) over the boundary of the current element.
+        /// over the boundary of the current element.
         /// </summary>
         private class PhiQuadrature : CellBoundaryQuadrature<CellBoundaryQuadRule> {
 

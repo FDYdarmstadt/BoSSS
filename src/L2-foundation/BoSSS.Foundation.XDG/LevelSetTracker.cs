@@ -39,25 +39,25 @@ namespace BoSSS.Foundation.XDG {
     /// the memory management of cut-cell fields, i.e. <see cref="XDGField"/> and <see cref="XDGBasis"/>
     /// </summary>
     /// <remarks>
-    /// After changing one ore more level sets, the <see cref="UpdateTracker()"/>-method must be
+    /// After changing one ore more level sets, the <see cref="UpdateTracker"/>-method must be
     /// called.
     /// </remarks>
     public partial class LevelSetTracker : IObservable<LevelSetTracker.LevelSetRegions>, IDisposable {
 
         /// <summary>
-        /// Region code (see <see cref="m_LevSetRegions"/>) indicating that all level set values in a cell are in
+        /// Region code (see <see cref="LevelSetRegions.m_LevSetRegions"/>) indicating that all level set values in a cell are in
         /// the positive far region
         /// </summary>
         public const ushort AllFARplus = 0xffff;
 
         /// <summary>
-        /// Region code (see <see cref="m_LevSetRegions"/>) indicating that all level set values in a cell are in
+        /// Region code (see <see cref="LevelSetRegions.m_LevSetRegions"/>) indicating that all level set values in a cell are in
         /// the negative far region
         /// </summary>
         public const ushort AllFARminus = 0x1111;
 
         /// <summary>
-        /// Region code (see <see cref="m_LevSetRegions"/>) indicating that all level sets cut the actual cell 
+        /// Region code (see <see cref="LevelSetRegions.m_LevSetRegions"/>) indicating that all level sets cut the actual cell 
         /// </summary>
         public const ushort AllCut = 0x8888;
 
@@ -77,24 +77,7 @@ namespace BoSSS.Foundation.XDG {
             ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levSet1);
         }
 
-        /// <summary>
-        /// Creates a level set tracker for just one level set.
-        /// </summary>
-        /// <param name="BackgroundGrid"></param>
-        /// <param name="_SpeciesTable">The species table, see <see cref="SpeciesTable"/>;</param>
-        /// <param name="levSet1"></param>
-        /// <param name="__NearRegionWidth">
-        /// width of near region, in number of cells
-        /// </param>
-        /// <param name="BruteForceDivisions"></param>
-        /// <param name="BruteForceOrder"></param>
-        /// <param name="cutCellquadType">
-        /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
-        /// </param>
-        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, string[] _SpeciesTable, ILevelSet levSet1) {
-            ConstructorCommon(BackgroundGrid, __NearRegionWidth, BruteForceOrder, BruteForceDivisions, _SpeciesTable, cutCellquadType, levSet1);
-        }
-
+       
         /// <summary>
         /// Creates a level set tracker for two level sets.
         /// </summary>
@@ -149,9 +132,9 @@ namespace BoSSS.Foundation.XDG {
             ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levSet1, levSet2, levSet3, levSet4);
         }
 
+        
         /// <summary>
-        /// Implementation of the constructor with default values for the brute
-        /// force quadrature (see <see cref="SetBruteForceQuadratureRules"/>).
+        /// 
         /// </summary>
         /// <param name="BackgroundGrid"></param>
         /// <param name="__NearRegionWidth"></param>
@@ -161,16 +144,14 @@ namespace BoSSS.Foundation.XDG {
         /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
         /// </param>       
         public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
-            ConstructorCommon(BackgroundGrid, __NearRegionWidth, 5, 2, SpeciesTable, cutCellquadType, levSets);
+            ConstructorCommon(BackgroundGrid, __NearRegionWidth, SpeciesTable, cutCellquadType, levSets);
         }
 
-        /// <summary>
-        /// Implementation of the constructor with default values for the brute
-        /// force quadrature (see <see cref="SetBruteForceQuadratureRules"/>).
-        /// </summary>
+        
         private void ConstructorCommon(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
-            ConstructorCommon(BackgroundGrid, __NearRegionWidth, 5, 2, SpeciesTable, cutCellquadType, levSets);
+            ConstructorCommon(BackgroundGrid, __NearRegionWidth, SpeciesTable, cutCellquadType, levSets);
         }
+        
 
         /// <summary>
         /// Increases <see cref="HistoryLength"/> to <paramref name="ReqLeng"/>, if the latter is smaler.
@@ -266,7 +247,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Implementation of the constructor;
         /// </summary>
-        private void ConstructorCommon(GridData griData, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, Array SpeciesTable, XQuadFactoryHelper.MomentFittingVariants cutCellQuadratureType, params ILevelSet[] levSets) {
+        private void ConstructorCommon(GridData griData, int __NearRegionWidth, Array SpeciesTable, XQuadFactoryHelper.MomentFittingVariants cutCellQuadratureType, params ILevelSet[] levSets) {
             // check args, init members
             // ========================
             m_gDat = griData;
@@ -1058,14 +1039,11 @@ namespace BoSSS.Foundation.XDG {
         /// This array, which contains exactly 3<sup>4</sup> = 81 entries, stores the number of
         /// species for each possible combination of level sets; <br/>
         /// For each level set, in each cell, we distinct between three different states:
-        /// <list type="bullet">
-        ///   <item>the cell if in the positive FAR region: <i>distance</i> == 7, i.e. the <i>code</i> is 0xf</item>
-        ///   <item>the cell if in the negative FAR region: <i>distance</i> == -1, i.e the <i>code</i> is 0x1</item>
-        ///   <item>the cell is cutted or in the near reagion: -6 &lt; <i>distance</i> &lt; 6</item>
-        /// </list>
+        /// - the cell if in the positive FAR region: <i>distance</i> == 7, i.e. the <i>code</i> is 0xf
+        /// - the cell if in the negative FAR region: <i>distance</i> == -1, i.e the <i>code</i> is 0x1
+        /// - the cell is cut or in the near region: -6 &lt; <i>distance</i> &lt; 6
         /// So, there are in total 3*4 states for some cell (for 4 level sets);
         /// </remarks>
-        /// <see cref="GetNoOfSpecies"/>
         int[] m_NoOfSpecies = new int[81];
 
         /// <summary>
@@ -1134,7 +1112,7 @@ namespace BoSSS.Foundation.XDG {
         /// and the region <paramref name="rrc"/>.
         /// </summary>
         /// <param name="rrc">
-        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpecies"/>;
+        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpeciesByRegionCode(ushort, out ReducedRegionCode)"/>;
         /// </param>
         /// <param name="LevelSetSignBytecode"></param>
         /// <returns></returns>
@@ -1167,7 +1145,7 @@ namespace BoSSS.Foundation.XDG {
         /// depends on the reduced region code <paramref name="_ReducedRegionCode"/>;
         /// </summary>
         /// <param name="_ReducedRegionCode">
-        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpecies"/>;
+        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpeciesByRegionCode(ushort, out ReducedRegionCode)"/>;
         /// </param>
         /// <param name="_SpeciesId"></param>
         /// <returns>

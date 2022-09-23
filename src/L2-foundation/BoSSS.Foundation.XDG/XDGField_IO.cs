@@ -70,10 +70,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// Computes a hash code based on 
-            /// <see cref="FieldInitializer.Identification"/> and 
-            /// <see cref="FieldInitializer.Basi
-            /// sInfo"/>.
+            /// Computes a hash code
             /// </summary>
             public override int GetHashCode() {
                 // http://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations
