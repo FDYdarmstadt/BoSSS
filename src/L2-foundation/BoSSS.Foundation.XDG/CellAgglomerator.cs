@@ -773,20 +773,11 @@ namespace BoSSS.Foundation.XDG {
         int CouplingMtxDegree = -1;
 
         
-
-        ///// <summary>
-        ///// Inverse of coupling matrix.
-        ///// - 1st index: agglomeration edge index, i.e. index into the items of <see cref="m_EdgeAgg"/>; 
-        ///// - 2nd index: row index. 
-        ///// - 3rd index: column index. 
-        ///// </summary>
-        //MultidimensionalArray CouplingMtx_inv;
-
         
 
         /// <summary>
         /// coupling matrix.<br/>
-        /// - 1st index: agglomeration edge index, i.e. index into the items of <see cref="m_EdgeAgg"/>; 
+        /// - 1st index: agglomeration edge index, i.e. index into the items of <see cref="AgglomerationInfo.AgglomerationEdges"/>; 
         /// - 2nd index: row index. 
         /// - 3rd index: column index. 
         /// </summary>

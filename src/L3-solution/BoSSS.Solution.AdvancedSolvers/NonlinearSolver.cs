@@ -218,7 +218,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         protected double[] LinearizationRHS;
 
 
-        double[] lastRawOutput;
 
         /// <summary>
         /// Evaluation of the nonlinear operator.
@@ -242,7 +241,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             // the real call:
             this.m_AssembleMatrix(out BlockMsrMatrix DummyMtx, out double[] OpEvalRaw, out BlockMsrMatrix MassMtxRaw, CurrentState.ToArray(), false, out var abstractOp);
-            lastRawOutput = OpEvalRaw;
             if(DummyMtx != null)
                 // only evaluation ==> OpMatrix must be null
                 throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
@@ -386,7 +384,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] ResidualAfterMeanCor = new double[L];
 
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualBeforMeanCor, HomotopyValue);
-                var rawResidualBeforMeanCor = lastRawOutput.CloneAs();
                 double SolNormA = SolutionVec.MPI_L2Norm();
 
 
@@ -404,7 +401,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, ResidualAfterMeanCor, HomotopyValue);
-                var rawResidualAfterMeanCor = lastRawOutput.CloneAs();
                 double SolNormB = SolutionVec.L2Norm();
 
                 for (int iFld = 0; iFld < flds.Length; iFld++) {

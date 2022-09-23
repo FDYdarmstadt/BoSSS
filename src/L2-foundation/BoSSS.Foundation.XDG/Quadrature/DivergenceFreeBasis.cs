@@ -94,14 +94,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             return P;
         }
 
-        /// <summary>
-        /// Uses <see cref="GetPolynomials2D"/> or
-        /// <see cref="GetPolynomials3D"/> to retrieve the polynomials with
-        /// order less than or equal <paramref name="order"/>
-        /// </summary>
-        /// <param name="simplex"></param>
-        /// <param name="order"></param>
-        /// <returns></returns>
         private static IEnumerable<Polynomial> GetPolynomials(RefElement simplex, int order) {
             int numberOfPolynomials;
             if (simplex.SpatialDimension == 2) {

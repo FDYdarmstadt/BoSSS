@@ -1145,10 +1145,10 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// this function is the inverse to <see cref="GetSpeciesIndex(SpeciesId,int)"/>;
+        /// this function is the inverse to <see cref="GetSpeciesIndex(ReducedRegionCode, LevelSetSignCode)"/>;
         /// </summary>
         /// <param name="_ReducedRegionCode">
-        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpecies"/>;
+        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpeciesByRegionCode(ushort, out ReducedRegionCode)"/>;
         /// </param>
         /// <param name="SpeciesIndex"></param>
         /// <returns></returns>
@@ -1219,7 +1219,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Extracts the distance layer index for level-set <paramref name="levSetInd"/>
-        /// from the code <paramref name="code"/> (see <see cref="LevelSetRegionsInfo.LevelSetRegions"/>).
+        /// from the code <paramref name="code"/> (see <see cref="LevelSetRegions.m_LevSetRegions"/>).
         /// </summary>
         /// <param name="code"></param>
         /// <param name="levSetInd"></param>
@@ -1237,7 +1237,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Encodes the distance layer index <paramref name="dist"/> for level-set <paramref name="levSetInd"/>
-        /// int the code <paramref name="code"/> (<see cref="LevelSetRegionsInfo.LevelSetRegions"/>).
+        /// int the code <paramref name="code"/> (<see cref="LevelSetRegions.m_LevSetRegions"/>).
         /// </summary>
         static public void EncodeLevelSetDist(ref ushort code, int dist, int levSetInd) {
             Debug.Assert(-7 <= dist);
@@ -1389,8 +1389,7 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// a counter that is increased every time when <see cref="UpdateTracker()"/>
-        /// is called;
+        /// a counter that is increased every time when <see cref="UpdateTracker"/> is called;
         /// </summary>
         public int VersionCnt {
             get {
@@ -1688,7 +1687,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Must be called after changing the level-set;
         /// Invoking this method updates the state of cells (e.g. cut, -near, +near, etc.), <see cref="Regions"/>.
-        /// After this update, for every <see cref="XDGField"/> the method <see cref="XDGField.UpdateMemory"/> must be invoked;
+        /// After this update, for every <see cref="XDGField"/> the method <see cref="XDGField.OnNext"/> must be invoked;
         /// </summary>
         /// <param name="__NearRegionWith">
         /// new width of near region; if smaller than 0, unchanged

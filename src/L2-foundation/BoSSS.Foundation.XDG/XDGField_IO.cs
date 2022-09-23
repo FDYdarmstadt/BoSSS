@@ -54,10 +54,7 @@ namespace BoSSS.Foundation.XDG {
             private XDGField myInstance;
 
             /// <summary>
-            /// Compares the given object <paramref name="other"/> with respect
-            /// to the 
-            /// <see cref="XDGFieldInitializer.Identification"/> and the 
-            /// <see cref="FieldInitializer.BasisInfo"/>.
+            /// Compares the given object <paramref name="other"/> 
             /// </summary>
             /// <returns></returns>
             public override bool Equals(Initializer<DGField> other) {
