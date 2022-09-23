@@ -6163,7 +6163,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.NoOfTimesteps = 300;
 
             //C.UseSchurBlockPrec = false;
-            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
             return C;
         }

@@ -607,53 +607,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
                     dt = base.GetTimestep();
                 }
-
-
-                /*
-                
-                var C1 = new CoordinateVector(this.CurrentResidual.Fields.Select(f => f.CloneAs()).ToArray()); C1.Mapping.RenameFields("mX1", "mY1", "mC1");
-                var C2 = new CoordinateVector(this.CurrentResidual.Fields.Select(f => f.CloneAs()).ToArray()); C2.Mapping.RenameFields("mX2", "mY2", "mC2");
-                double[] aC1 = new double[C1.Length];
-                double[] aC2 = new double[C2.Length];
-                C2.Fields[2].AccConstant(2000);
-
-                var FluidSpc = new SpeciesId[] { this.LsTrk.GetSpeciesId("A"), this.LsTrk.GetSpeciesId("B") };
-                var agg = this.LsTrk.GetAgglomerator(FluidSpc, this.QuadOrder(), this.Control.AgglomerationThreshold);
-
-                Timestepping.ComputeOperatorMatrix(null, aC1, this.CurrentState, this.CurrentState.Fields.ToArray(), agg.CellLengthScales, 0.0, 1);
-                C1.SetV(aC1);
-
-                this.CurrentState.Fields[2].AccConstant(2048);
-                Timestepping.ComputeOperatorMatrix(null, aC2, this.CurrentState, this.CurrentState.Fields.ToArray(), agg.CellLengthScales, 0.0, 1);
-                C2.SetV(aC2);
-                this.CurrentState.Fields[2].AccConstant(-2048);
-
-
-                var Cd = new CoordinateVector(this.CurrentResidual.Fields.Select(f => f.CloneAs()).ToArray()); Cd.Mapping.RenameFields("mXd", "mYd", "mCd");
-                Cd.Acc(1.0, C1);
-                Cd.Acc(-1.0, C2);
-
-                double fuckDist = aC1.L2Dist(aC2);
-                Console.WriteLine("Dist is " + fuckDist);
-                Console.WriteLine("mX diff: " + Cd.Fields[0].CoordinateVector.L2Norm());
-                Console.WriteLine("mY diff: " + Cd.Fields[1].CoordinateVector.L2Norm());
-                Console.WriteLine("mC diff: " + Cd.Fields[2].CoordinateVector.L2Norm());
-
-                
-                Tecplot.PlotFields(ArrayTools.Cat(
-                    this.CurrentState.Fields,
-                    C1.Fields, C2.Fields, Cd.Fields,
-                    base.LsUpdater.LevelSets.ElementAt(0).Value.CGLevelSet,
-                    base.LsUpdater.LevelSets.ElementAt(0).Value.DGLevelSet,
-                    base.LsUpdater.LevelSets.ElementAt(1).Value.CGLevelSet,
-                    base.LsUpdater.LevelSets.ElementAt(1).Value.DGLevelSet),
-                    "fuckup",
-                    0.0, 3);
-
-
-                if (fuckDist >= 1.0e-3)
-                    throw new ArithmeticException();
-                */
+               
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
