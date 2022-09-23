@@ -745,7 +745,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             // evaluate Basis:
                             MultidimensionalArray BasisValues;
-                            NodeSet volNodeSet = edgeNodeSet.GetVolumeNodeSet(grd, iTrafo);
+                            NodeSet volNodeSet = edgeNodeSet.GetVolumeNodeSet(grd, iTrafo, false);
                             if (coordSys == CoordinateSystem.Physical) {
                                 BasisValues = b.CellEval(volNodeSet, jCell, Length).ExtractSubArrayShallow(0, -1, -1);
                             } else {
@@ -991,7 +991,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                             // evaluate Basis:
                             MultidimensionalArray BasisValues;
-                            NodeSet volNodeSet = NS.GetVolumeNodeSet(grd,iNodeSet);
+                            NodeSet volNodeSet = NS.GetVolumeNodeSet(grd, iNodeSet, false);
                             if (coordSys == CoordinateSystem.Physical) {
                                 BasisValues = b.CellEval(volNodeSet, jCell, Length).ExtractSubArrayShallow(0, -1, -1);
                             } else {

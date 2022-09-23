@@ -80,6 +80,15 @@ namespace AdvancedSolverTests.Solver {
             public BlockMask[] GetBlockMasks() {
                 return base.blockSolvers.Select(bs => bs.RestrictionMask).ToArray();
             }
+
+            protected override ISubsystemSolver InitBlockSolver(MultigridOperator op, int iPart, GridAndDegRestriction BlockSolver) {
+                var ds = new DirectSolver() {
+                    
+                };
+                ds.config.UseDoublePrecision = true;
+                ds.Init(BlockSolver.OperatorRestriction);
+                return ds;
+            }
         }
 
         internal static BlockMsrMatrix GetLocalMatrix(BlockMsrMatrix Matrix) {

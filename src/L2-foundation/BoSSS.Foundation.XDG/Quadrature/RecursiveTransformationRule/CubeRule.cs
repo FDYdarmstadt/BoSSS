@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 namespace BoSSS.Foundation.XDG.Quadrature.RecursiveMappingRule {
     class CubeRule<T> {
 
-        SayeIntegrand<T, SayeArgument<T>> spaceDecomposer;
+        //SayeIntegrand<T, SayeArgument<T>> spaceDecomposer;
 
-        IList<Transformation> trafos;
+        //IList<Transformation> trafos;
 
         public CubeRule(LevelSetTracker.LevelSetData lsData, HMF.LineSegment.IRootFindingAlgorithm rooter) {
             throw new NotImplementedException();

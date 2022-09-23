@@ -93,7 +93,6 @@ namespace ilPSP {
             }
 
             txt.Flush();
-
         }
 
 
@@ -852,7 +851,20 @@ namespace ilPSP {
         {
             M.GEMV(xScaling, x, yScaling, y, transpose);
         }
-        
+
+        /// <summary>
+        /// Alias for <see cref="GEMV"/>
+        /// </summary>
+        static public double[] MatVecMul<MatrixType, VectorType1>(this MatrixType M, double xScaling, VectorType1 x, bool transpose = false)
+            where MatrixType : IMatrix
+            where VectorType1 : IList<double>//
+        {
+            double[] y = new double[transpose ? M.NoOfCols : M.NoOfRows];
+            M.GEMV(xScaling, x, 0.0, y, transpose);
+            return y;
+        }
+
+
         /// <summary>
         /// Alias for <see cref="GEMV"/>
         /// </summary>
@@ -911,7 +923,7 @@ namespace ilPSP {
             where Matrix2 : IMatrix
             where Matrix3 : IMatrix //
         {
-            
+
             if (!transA && !transB) {
                 if (A.NoOfCols != B.NoOfRows)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
@@ -950,20 +962,21 @@ namespace ilPSP {
                     return;
             }
 
+            bool inPlace = false;
             if (object.ReferenceEquals(C, A))
-                throw new ArgumentException("in-place GEMM is not supported");
-            if(object.ReferenceEquals(C, A))
-                throw new ArgumentException("in-place GEMM is not supported");
+                inPlace = true;
+            if (object.ReferenceEquals(C, B))
+                inPlace = true;
             if (C.NoOfCols == 0 || C.NoOfRows == 0)
                 return;
+             
 
-
-            if (A is MultidimensionalArray _A && B is MultidimensionalArray _B && C is MultidimensionalArray _C) {
+            if (!inPlace && A is MultidimensionalArray _A && B is MultidimensionalArray _B && C is MultidimensionalArray _C) {
                 int a00 = _A.Index(0, 0);
                 int b00 = _B.Index(0, 0);
                 int c00 = _C.Index(0, 0);
 
-                if(_A.NoOfCols > 1 && (_A.Index(0, 1) - a00 == 1) && _B.NoOfCols > 1 && (_B.Index(0, 1) - b00 == 1) && _C.NoOfCols > 1 && (_C.Index(0, 1) - c00 == 1)) {
+                if (_A.NoOfCols > 1 && (_A.Index(0, 1) - a00 == 1) && _B.NoOfCols > 1 && (_B.Index(0, 1) - b00 == 1) && _C.NoOfCols > 1 && (_C.Index(0, 1) - c00 == 1)) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // Data layout is suitable to use BLAS DGEMM
                     // directly on MultidimenasionalArray storage.
@@ -1795,9 +1808,23 @@ namespace ilPSP {
             }
         }
 
-        static private void GramSchmidt<FullMatrix1, FullMatrix2>(FullMatrix1 Mtx, FullMatrix2 B, double[] Diag)
+        /// <summary>
+        /// Performs a Gram-Schmidt orthonormalization on a matrix <paramref name="Mtx"/>
+        /// </summary>
+        /// <param name="Mtx"></param>
+        /// <param name="B">
+        /// on exit, an upper triangular matrix so that 
+        /// <paramref name="B"/>^T * <paramref name="Mtx"/> * <paramref name="B"/> is an identity matrix.
+        /// </param>
+        /// <param name="Diag">
+        /// Not used, if Gram-Schmid performs as normal, i.e. if <paramref name="Mtx"/> is positive definite,
+        /// If the algorithm runs into some trouble, i.e. if the matrix is positive definite or close to indefinitenes, 
+        /// a negative norm may occur; 
+        /// </param>
+        static public void GramSchmidt<FullMatrix1, FullMatrix2>(this FullMatrix1 Mtx, FullMatrix2 B, double[] Diag)
             where FullMatrix1 : IMatrix
-            where FullMatrix2 : IMatrix {
+            where FullMatrix2 : IMatrix //
+        {
             B.Clear();
             int N = B.NoOfRows;
 

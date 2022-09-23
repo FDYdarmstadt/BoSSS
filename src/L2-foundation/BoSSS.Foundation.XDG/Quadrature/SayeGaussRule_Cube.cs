@@ -235,7 +235,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return curvature;
         }
 
-        double safety = 2;
+        //double safety = 2;
 
         protected override bool HeightDirectionIsSuitable(
             LinearSayeSpace<Cube> arg,
@@ -494,7 +494,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             double weight = X_weight;
 
-            NodeSet node = new NodeSet(RefElement, X.To2DArray());
+            NodeSet node = new NodeSet(RefElement, X.To2DArray(), true);
             MultidimensionalArray gradient = ReferenceGradient(node, cell);
             weight *= gradient.L2Norm() / Math.Abs(gradient[heightDirection]);
 
@@ -534,7 +534,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             MultidimensionalArray nodeArr = X.CloneAs();
             nodeArr[0, direction] += distance;
-            NodeSet node = new NodeSet(RefElement, nodeArr);
+            NodeSet node = new NodeSet(RefElement, nodeArr, true);
             return node;
         }
 

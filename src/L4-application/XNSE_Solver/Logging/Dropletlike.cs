@@ -55,6 +55,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         protected override void PerformTimestepPostProcessing(int TimestepNo, double phystime) {
+
             MultidimensionalArray interP = XNSEUtils.GetInterfacePoints(this.LsTrk, this.LevSet);
             int numP = interP.Lengths[0];
             double[] Xcoord = new double[numP];

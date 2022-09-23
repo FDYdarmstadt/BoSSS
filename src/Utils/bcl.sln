@@ -1,11 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32802.440
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "bcl", "bcl\bcl.csproj", "{F07D323E-35C3-412E-BD1B-46AA5D218D10}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AllSpark", "AllSpark\AllSpark.csproj", "{E31D6EA2-D0D3-44E5-B48E-CF977F5FA28D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,12 +15,11 @@ Global
 		{F07D323E-35C3-412E-BD1B-46AA5D218D10}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F07D323E-35C3-412E-BD1B-46AA5D218D10}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F07D323E-35C3-412E-BD1B-46AA5D218D10}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E31D6EA2-D0D3-44E5-B48E-CF977F5FA28D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E31D6EA2-D0D3-44E5-B48E-CF977F5FA28D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E31D6EA2-D0D3-44E5-B48E-CF977F5FA28D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E31D6EA2-D0D3-44E5-B48E-CF977F5FA28D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1FA85A3D-0B87-48D1-B90E-3F76D71B5BB1}
 	EndGlobalSection
 EndGlobal

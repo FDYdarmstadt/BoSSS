@@ -34,7 +34,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
     /// two-dimensional volume integrals over the boundaries of cells that
     /// are intersected by the level set, i.e integrals of the form
     /// ```math
-    ///   \oint_{K_j \cap \{ \vec{x}; \varphi( \vec{x} ) < 0 \} } f \ dS
+    ///   \oint_{K_j \cap \{ \vec{x}; \varphi( \vec{x} ) \lt 0 \} } f \ dS
     /// ```
     /// In other words: If the (planar) edge
     /// of a three-dimensional element is intersected by the level set, this
@@ -110,13 +110,12 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         private int lastOrder = -1;
 
         /// <summary>
-        /// seems to be incorrectly implemented:
-        /// <summary>
+        /// 
+        /// **seems to be incorrectly implemented!!!**
+        /// 
         /// Cache for quadrature rules
-        /// <list type="bullet">
-        ///     <item>Key: Local cell index</item>
-        ///     <item>Value: Quadrature rule</item>
-        /// </list>
+        /// - Key: Local cell index
+        /// - Value: Quadrature rule
         /// </summary>
         private Dictionary<int, CellBoundaryQuadRule> cache = new Dictionary<int, CellBoundaryQuadRule>();
 
@@ -132,7 +131,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         }
 
         /// <summary>
-        /// Index of the considered level set for <see cref="tracker"/>
+        /// Index of the considered level within the level-set tracker
         /// </summary>
         private int levelSetIndex;
 
@@ -635,7 +634,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 MultidimensionalArray nodes = allNodes.ExtractSubArrayShallow(
                     new int[] { noOfProcessedNodes, 0 },
                     new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, D - 1 });
-                NodeSet edgeNodes = new NodeSet(RefElement.FaceRefElement, RefElement.GetInverseFaceTrafo(e).Transform(nodes));
+                NodeSet edgeNodes = new NodeSet(RefElement.FaceRefElement, RefElement.GetInverseFaceTrafo(e).Transform(nodes), false);
 
                 //MultidimensionalArray monomials = Polynomial.GetMonomials(
                 //    edgeNodes, RefElement.FaceRefElement.SpatialDimension, lambdaBasis.Degree);
@@ -772,10 +771,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// Heaviside function. For more details, see
             /// <see cref="CutLineQuadRuleFactory"/>
             /// </summary>
-            /// <param name="i0"></param>
-            /// <param name="Length"></param>
-            /// <param name="NoOfNodes"></param>
-            /// <param name="EvalResult"></param>
             protected override void Evaluate(int i0, int Length, CellEdgeBoundaryQuadRule CQR, MultidimensionalArray EvalResult) {
                 NodeSet QuadNodes = CQR.Nodes;
                 int noOfEdges = owner.RefElement.NoOfFaces;
@@ -904,7 +899,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 base.Execute();
             }
 
-            
+
 
             /// <summary>
             /// For each face $` E $`  of each cell in
@@ -921,10 +916,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// $` \varphi \cap E $` 
             /// (**not** $` E $`!)
             /// </summary>
-            /// <param name="i0"></param>
-            /// <param name="Length"></param>
-            /// <param name="NoOfNodes"></param>
-            /// <param name="EvalResult"></param>
             protected override void Evaluate(int i0, int Length, CellBoundaryQuadRule CBQR, MultidimensionalArray EvalResult) {
                 NodeSet QuadNodes = CBQR.Nodes;
                 int D = gridData.SpatialDimension;

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,7 +18,9 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
     /// <see cref="SphericalHarmonicsLogging{T}"/>
     /// </summary>
     [Serializable]
-    public class SphericalHarmonicsLogging : SphericalHarmonicsLogging<XNSE_Control> { }
+    public class SphericalHarmonicsLogging : SphericalHarmonicsLogging<XNSE_Control> {
+
+    }
 
     /// <summary>
     /// For single droplet/bubble computations:
@@ -43,25 +46,40 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
     public class SphericalHarmonicsLogging<T> : XNSEinSituPostProcessingModule<T> where T : XNSE_Control, new() {
         protected override string LogFileName => "SphericalHarmonics";
 
+        /// <summary>
+        /// assuming rotational symmetry, excluding the computation of modes m != 0
+        /// </summary>
+        [DataMember]
+        public bool RotSymmetric = false;
 
-        int MaxL = 3;
+        /// <summary>
+        /// maximum mode l 
+        /// </summary>
+        [DataMember]
+        public int MaxL = 1;
 
 
         /// <summary>
-        /// Spherical Harmonics mapping: from a pair to a linear index (l,m) -> idx
+        /// Spherical Harmonics mapping from a pair to a linear index: (l,m) -> idx
+        /// For the rotational symmetric case: (l,0) -> idx
         /// </summary>
         /// <param name="l">0, 1, 2, ...</param>
         /// <param name="m">-l, ... , +l</param>
         /// <returns>
         /// 0, 1, 2, 3, ...
         /// </returns>
-        static internal int SH_mapping(int l, int m) {
+        static internal int SH_mapping(int l, int m, bool rotSym = false) {
             if(l < 0)
                 throw new ArgumentOutOfRangeException();
             if(m < -l)
                 throw new ArgumentOutOfRangeException($"lo: l = {l}, m = {m}");
             if(m > l)
                 throw new ArgumentOutOfRangeException($"hi: l = {l}, m = {m}");
+            if(m != 0 && rotSym)
+                throw new ArgumentException("m unequal 0 for rotational symmetry");
+
+            if(rotSym)
+                return l;
 
             int cnt = 0;
             for(int _l = 0; _l <= l; _l++) {
@@ -79,10 +97,13 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
         /// <summary>
         /// Vector space dimension for spherical harmonics up to (including) a given <paramref name="l"/>
         /// </summary>
-
-        static internal int SH_dim(int l) {
+        static internal int SH_dim(int l, bool rotSym = false) {
             if(l < 0)
                 throw new ArgumentOutOfRangeException();
+
+            if(rotSym)
+                return l + 1;
+
             int cnt = 0;
             for(int _l = 0; _l <= l; _l++) {
                 cnt += _l + _l + 1;
@@ -95,9 +116,12 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
         /// </summary>
         /// <param name="idx"></param>
         /// <returns></returns>
-        static internal (int l, int m) SH_mappingInv(int idx) {
+        static internal (int l, int m) SH_mappingInv(int idx, bool rotSym = false) {
             if(idx < 0)
                 throw new ArgumentOutOfRangeException();
+
+            if(rotSym)
+                return (idx, 0);
             
             int i0 = 0;
             for(int _l = 0; _l <= int.MaxValue; _l++) {
@@ -118,18 +142,20 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
             int cnt = 0;
             for(int l = 0; l <= MaxL; l++) {
                 for(int m = -l; m <= l; m++) {
-                    int i = SH_mapping(l, m);
+                    if(m != 0 && RotSymmetric)
+                        continue;
+                    int i = SH_mapping(l, m, RotSymmetric);
                     if(i != cnt)
                         throw new ApplicationException($"cnt = {cnt}, i = {i}; ({l},{m})");
-                    (int _l, int _m) = SH_mappingInv(i);
+                    (int _l, int _m) = SH_mappingInv(i, RotSymmetric);
                     if(_m != m || _l != l)
                         throw new ApplicationException($"{i}: ({l},{m})!=({_l},{_m})");
                     cnt++;
                 }
                 Console.WriteLine();
             }
-            if(cnt != SH_dim(MaxL))
-                throw new ApplicationException($"cnt = {cnt}, dim = {SH_dim(MaxL - 1)}");
+            if(cnt != SH_dim(MaxL, RotSymmetric))
+                throw new ApplicationException($"cnt = {cnt}, dim = {SH_dim(MaxL - 1, RotSymmetric)}");
         }
 
 
@@ -143,7 +169,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
                 var schemeHelper = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS, qOrder).XQuadSchemeHelper;
                 var scheme = schemeHelper.GetLevelSetquadScheme(0, LsTrk.Regions.GetCutCellMask4LevSet(0).Intersect(LsTrk.Regions.GetSpeciesMask("A")));
 
-                int dim = SH_dim(MaxL);
+                int dim = SH_dim(MaxL, RotSymmetric);
 
                 MultidimensionalArray MassMatrix = MultidimensionalArray.Create(dim, dim);
                 double[] RHS = new double[dim];
@@ -162,7 +188,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
                                 (double theta, double phi) = SphericalHarmonics.GetAngular(X);
 
                                 for(int i = 0; i < dim; i++) {
-                                    (int l, int m) = SH_mappingInv(i);
+                                    (int l, int m) = SH_mappingInv(i, RotSymmetric);
                                     SH_buf[i] = SphericalHarmonics.MyRealSpherical(l, m, theta, phi);
                                 }
 
@@ -213,7 +239,7 @@ namespace BoSSS.Application.XNSE_Solver.Logging {
 
 
         protected override void WriteHeader(TextWriter textWriter) {
-            string header = SH_dim(MaxL).ForLoop(l => SH_mappingInv(l)).ToConcatString("time\t", "\t", "");
+            string header = SH_dim(MaxL, RotSymmetric).ForLoop(l => SH_mappingInv(l, RotSymmetric)).ToConcatString("time\t", "\t", "");
             Log.WriteLine(header);
             Log.Flush();
         }

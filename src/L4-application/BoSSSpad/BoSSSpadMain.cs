@@ -44,22 +44,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Modes of operation of BoSSSpad
         /// </summary>
         private enum Modes {
-
-            ///// <summary>
-            ///// Classic worksheet mode (with a GUI)
-            ///// </summary>
-            //Worksheet,
-
-            ///// <summary>
-            ///// Interactive console mode (without a GUI)
-            ///// </summary>
-            //Console,
-
-            ///// <summary>
-            ///// Simplified interactive console mode (for embedding into other terminals, experimental)
-            ///// </summary>
-            //SimpleConsole,
-
             /// <summary>
             /// Batch execution of .bws files
             /// </summary>
@@ -80,6 +64,7 @@ namespace BoSSS.Application.BoSSSpad {
             /// to Jupyter notebooks (`ipnb`)
             /// </summary>
             OldFileUpgrade,
+
 
             /// <summary>
             /// Executing a notebook in batch mode
@@ -120,7 +105,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             }
         }
-   */
+        */
 
 
         /// <summary>
@@ -128,6 +113,26 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         //[STAThread]
         public static int Main(string[] args) {
+
+            /*
+            var a = new SessionsComparisonMemtrace(new[] {
+                new DirectoryInfo(@"C:\tmp\sandbox\memprofile\sessions\0491de64-8fca-4414-9405-73c40c22e656"),
+                new DirectoryInfo(@"C:\tmp\sandbox\memprofile\sessions\7b5fad2a-83ef-4731-a994-aeb7556f92b8"),
+                new DirectoryInfo(@"C:\tmp\sandbox\memprofile\sessions\f4dff619-d47e-4129-a7aa-06ba6178d202"),
+                new DirectoryInfo(@"C:\tmp\sandbox\memprofile\sessions\fbd6f89c-730d-4e75-a00e-0649d1546ff9")
+                });
+
+            var r = a.GetTotalMemory();
+
+            var b = a.GetTimeLine();
+
+            Console.WriteLine(r[0].TotalMem.Sum() + "  " + b.Last());
+
+
+            /*
+            var a = typeof(BoSSSpadMain).Assembly;
+            var dep = new HashSet<Assembly>();
+            Job.GetAllAssemblies(a, dep, Path.GetDirectoryName(a.Location));
 
             /*
             string path = @"c:\Users\flori\AppData\Local\BoSSS-LocalJobs\Demo_BoundaryAndInitialData-ipPoisson2021Juni10_083737\control.obj";
@@ -525,7 +530,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             //var data = NotebookFileFormatHandler.Serialize(fileToCreate, docNew, System.Environment.NewLine);
             using(var stw = new StreamWriter(fileToCreate)) {
-                Notebook.Write(docNew, System.Environment.NewLine, stw);
+                Notebook.Write(docNew, stw);
                 //System.IO.File.WriteAllBytes(fileToCreate, data);
                 stw.Flush();
             }
@@ -560,7 +565,7 @@ namespace BoSSS.Application.BoSSSpad {
             //var data = NotebookFileFormatHandler.Serialize(DestFile, docNew, System.Environment.NewLine);
             //System.IO.File.WriteAllBytes(DestFile, data);
             using(var stw = new StreamWriter(DestFile)) {
-                Notebook.Write(docNew, System.Environment.NewLine, stw);
+                Notebook.Write(docNew, stw);
                 //System.IO.File.WriteAllBytes(fileToCreate, data);
                 stw.Flush();
             }

@@ -305,6 +305,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
 
             var P01SubMatrix = lMask.GetSubBlockMatrix(op.OperatorMatrix, csMPI.Raw._COMM.WORLD);
+            if (P01SubMatrix.MPI_Comm != op.OperatorMatrix.MPI_Comm)
+                throw new ApplicationException("MPI comm messup");
 
             lowSolver = new PARDISOSolver() {
                 CacheFactorization = true,
