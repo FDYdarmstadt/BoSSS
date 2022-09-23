@@ -10,33 +10,28 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Foundation.XDG.Quadrature
-{
-    class LevelSetOnEdgeRule
-    {
+namespace BoSSS.Foundation.XDG.Quadrature {
+    class LevelSetOnEdgeRule {
         GridData grddat;
 
         LevelSetTracker.LevelSetData levelSetData;
 
         int D;
 
-        public LevelSetOnEdgeRule(LevelSetTracker.LevelSetData levelSetData)
-        {
+        public LevelSetOnEdgeRule(LevelSetTracker.LevelSetData levelSetData) {
             this.levelSetData = levelSetData;
             grddat = levelSetData.GridDat;
             D = grddat.SpatialDimension;
         }
 
-        public bool IsSpecialCell(int j)
-        {
+        public bool IsSpecialCell(int j) {
             (int iLevSet, int iFace)[][] CoIncFaces = levelSetData.Region.m_LevSetCoincidingFaces;
             if (CoIncFaces == null)
                 return false;
             if (CoIncFaces[j] == null)
                 return false;
 
-            foreach (var t in CoIncFaces[j])
-            {
+            foreach (var t in CoIncFaces[j]) {
                 int levelSetIndex = levelSetData.LevelSetIndex;
                 if (t.iLevSet == levelSetIndex)
                     return true; // jetzt geht der Spass los!
@@ -44,11 +39,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return false;
         }
 
-        int GetSpecialFaceIndex(int j)
-        {
+        int GetSpecialFaceIndex(int j) {
             (int iLevSet, int iFace)[][] CoIncFaces = levelSetData.Region.m_LevSetCoincidingFaces;
-            foreach (var t in CoIncFaces[j])
-            {
+            foreach (var t in CoIncFaces[j]) {
                 int levelSetIndex = levelSetData.LevelSetIndex;
                 if (t.iLevSet == levelSetIndex)
                     return t.iFace; // jetzt geht der Spass los!
@@ -63,11 +56,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// cell is either full or empty 
         /// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         /// </summary>
-        /// <param name="intOrder"></param>
-        /// <param name="jCell"></param>
-        /// <returns></returns>
-        public (ChunkRulePair<QuadRule> surfaceRule, ChunkRulePair<QuadRule> volumeRule) ComboQuadRule(int intOrder, int jCell, int speciesSign = 1)
-        {
+        public (ChunkRulePair<QuadRule> surfaceRule, ChunkRulePair<QuadRule> volumeRule) ComboQuadRule(int intOrder, int jCell, int speciesSign = 1) {
             ChunkRulePair<QuadRule> surfaceRule = SurfaceQuadRule(intOrder, jCell);
             ChunkRulePair<QuadRule> volumeRule = VolumeQuadRule(intOrder, jCell, speciesSign);
             return (surfaceRule, volumeRule);
@@ -91,8 +80,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// <param name="intOrder"></param>
         /// <param name="jCell"></param>
         /// <returns></returns>
-        public ChunkRulePair<QuadRule> SurfaceQuadRule(int intOrder, int jCell)
-        {
+        public ChunkRulePair<QuadRule> SurfaceQuadRule(int intOrder, int jCell) {
             int SpecialFace = GetSpecialFaceIndex(jCell);
             RefElement refElement = grddat.Cells.GetRefElement(jCell);
 
@@ -104,7 +92,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 // throw new NotSupportedException("Hanging node on a edge which coincides with the level set - this should be avoided.");
                 // Console.WriteLine("Hanging node on a edge which coincides with the level set - this should be avoided.");
             }
-            int J = grddat.CellPartitioning.LocalLength;           
+            int J = grddat.CellPartitioning.LocalLength;
 
             // surface rule -- classification, using conformality of edges
             // always use conformal cell, if both conformal choose lower global index
@@ -129,8 +117,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
 
             ChunkRulePair<QuadRule> surfaceRule;
-            if (EmptyOrFool)
-            {
+            if (EmptyOrFool) {
 
                 var FaceRule = refElement.FaceRefElement.GetQuadratureRule(intOrder);
                 int K = FaceRule.NoOfNodes;
@@ -141,26 +128,21 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 double gTrF = refElement.FaceTrafoGramianSqrt[SpecialFace];
                 var metrics = this.levelSetData.GetLevelSetNormalReferenceToPhysicalMetrics(VolumeNodes, jCell, 1);
 
-                QuadRule qr_l = new QuadRule()
-                {
+                QuadRule qr_l = new QuadRule() {
                     OrderOfPrecision = intOrder,
                     Weights = MultidimensionalArray.Create(K),
                     Nodes = VolumeNodes
                 };
 
-                for (int k = 0; k < K; k++)
-                {
+                for (int k = 0; k < K; k++) {
                     qr_l.Weights[k] = FaceRule.Weights[k] * gTrF / metrics[0, k];
                 }
 
                 surfaceRule = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), qr_l);
 
-            }
-            else
-            {
+            } else {
                 // use empty rule
-                QuadRule empty = new QuadRule()
-                {
+                QuadRule empty = new QuadRule() {
                     OrderOfPrecision = intOrder,
                     Weights = MultidimensionalArray.Create(1),
                     Nodes = refElement.Center
@@ -186,13 +168,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
         ///   - the other cell is empty
         /// We use the global index here, so that the result is "stable" even if we are at an MPI boundary.
         /// </summary>
-        /// <param name="intOrder"></param>
-        /// <param name="jCell"></param>
-        /// <returns></returns>
-        public ChunkRulePair<QuadRule> VolumeQuadRule(int intOrder, int jCell, int speciesSign)
-        {
+        public ChunkRulePair<QuadRule> VolumeQuadRule(int intOrder, int jCell, int speciesSign) {
             RefElement refElement = grddat.Cells.GetRefElement(jCell);
-            
+
             //
             // Volume rule
             // -----------
@@ -205,19 +183,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 EmptyOrFoolVol = LsVals[0, 0] * speciesSign > 0;
             }
 
-            if (EmptyOrFoolVol)
-            {
+            if (EmptyOrFoolVol) {
 
                 var VolRule = refElement.GetQuadratureRule(intOrder);
 
                 volumeRule = new ChunkRulePair<QuadRule>(Chunk.GetSingleElementChunk(jCell), VolRule);
 
-            }
-            else
-            {
+            } else {
                 // use empty rule
-                QuadRule empty = new QuadRule()
-                {
+                QuadRule empty = new QuadRule() {
                     OrderOfPrecision = intOrder,
                     Weights = MultidimensionalArray.Create(1),
                     Nodes = refElement.Center

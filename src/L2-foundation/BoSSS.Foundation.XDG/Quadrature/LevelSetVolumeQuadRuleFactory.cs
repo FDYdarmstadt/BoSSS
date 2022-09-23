@@ -121,10 +121,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// cell \f$ K\f$  and 
         /// \f$ \varphi\f$  denotes the level set function
         /// </param>
-        /// <param name="levSetIndex">
-        /// Index of the considered level set in <paramref name="tracker"/>
-        /// </param>
-
+        /// <param name="jumpType"></param>
         public LevelSetVolumeQuadRuleFactory(
             LevelSetTracker.LevelSetData lsData,
             IQuadRuleFactory<CellBoundaryQuadRule> edgeRuleFactory,

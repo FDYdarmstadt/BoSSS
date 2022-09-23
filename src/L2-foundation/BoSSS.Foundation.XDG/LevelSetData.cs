@@ -78,12 +78,9 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// returns the distance layer index for level-set <paramref name="levSetInd"/>,
+            /// returns the distance layer index for level-set <paramref name="levSetIdx"/>,
             /// see also <see cref="DecodeLevelSetDist(ushort, int)"/>, <see cref="RegionsCode"/>.
             /// </summary>
-            /// <param name="levSetIdx"></param>
-            /// <param name="jCell"></param>
-            /// <returns></returns>
             public int GetLevelSetDistance(int levSetIdx, int jCell) {
                 if(levSetIdx < 0 || levSetIdx >= this.m_owner.NoOfLevelSets)
                     throw new IndexOutOfRangeException();

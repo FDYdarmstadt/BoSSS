@@ -345,7 +345,7 @@ namespace BoSSS.Foundation.XDG {
         /// returns the projection operator 
         /// </summary>
         /// <param name="RowMap"></param>
-        /// <param name="RowMapAggSw">The same shit as for <paramref name="ColMapAggSw"/>, just for rows.</param>
+        /// <param name="RowMapAggSw">Turns column agglomeration on/off fore each variable individually; default == null is on.</param>
 
         public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping RowMap, bool[] RowMapAggSw = null) {
             var tt = GetManipulationMatrices(false, RowMap, null, RowMapAggSw, null);

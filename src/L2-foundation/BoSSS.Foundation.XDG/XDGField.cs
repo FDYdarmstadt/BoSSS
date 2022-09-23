@@ -63,7 +63,7 @@ namespace BoSSS.Foundation.XDG {
     public partial class XDGField : DGField, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
-        /// an implementation of <see cref="FieldFactory{T}"/> that creates <see cref="XDGField"/>-DG-fields.
+        /// a factory that creates <see cref="XDGField"/>-DG-fields.
         /// </summary>
         /// <param name="__Basis">
         /// The basis that is used for this field;
@@ -906,7 +906,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// performs the projection of <paramref name="func"/> for each species.
+        /// performs the projection of <paramref name="f"/> for each species.
         /// </summary>
         public override void ProjectFunction(double alpha, Func<Vector, double[], int, double> f, CellQuadratureScheme scheme, params DGField[] U) {
             

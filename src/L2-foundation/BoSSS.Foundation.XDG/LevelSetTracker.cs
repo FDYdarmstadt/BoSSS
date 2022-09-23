@@ -813,7 +813,7 @@ namespace BoSSS.Foundation.XDG {
         int m_NearRegionWidth = 1;
 
         /// <summary>
-        /// Width, in Number of cells, of the near field (set as an argument of <see cref="UpdateTracker()"/>);
+        /// Width, in Number of cells, of the near field (set as an argument of <see cref="UpdateTracker"/>);
         /// </summary>
         public int NearRegionWidth {
             get {
@@ -1013,17 +1013,15 @@ namespace BoSSS.Foundation.XDG {
         /// on exit, the reduced region code for <paramref name="RegionCode"/>
         /// in an 3-adic representation; This number 
         /// is later on required as an input for
-        /// <see cref="GetSpeciesIndex(SpeciesId,int)"/>;
+        /// <see cref="GetSpeciesIndex(ReducedRegionCode, SpeciesId)"/>;
         /// The reduced region code in 3-adic representation;
         /// </param>
         /// <returns></returns>
         /// <remarks>
         /// Here, three states (the reduced region) for each of the for level sets are considered:
-        /// <list type="bullet">
-        ///   <item>positive far (FAR+)</item>
-        ///   <item>negative far (FAR-)</item>
-        ///   <item>positive near, negative near or cut</item>
-        /// </list>
+        /// - positive far (FAR+)
+        /// - negative far (FAR-)
+        /// - positive near, negative near or cut
         /// This implies, that also for cells in the near region, memory is allocated for more than one
         /// species.
         /// </remarks>

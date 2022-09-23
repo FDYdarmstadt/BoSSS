@@ -110,8 +110,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         private int lastOrder = -1;
 
         /// <summary>
-        /// seems to be incorrectly implemented:
-        /// <summary>
+        /// 
+        /// **seems to be incorrectly implemented!!!**
+        /// 
         /// Cache for quadrature rules
         /// - Key: Local cell index
         /// - Value: Quadrature rule
@@ -770,10 +771,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             /// Heaviside function. For more details, see
             /// <see cref="CutLineQuadRuleFactory"/>
             /// </summary>
-            /// <param name="i0"></param>
-            /// <param name="Length"></param>
-            /// <param name="NoOfNodes"></param>
-            /// <param name="EvalResult"></param>
             protected override void Evaluate(int i0, int Length, CellEdgeBoundaryQuadRule CQR, MultidimensionalArray EvalResult) {
                 NodeSet QuadNodes = CQR.Nodes;
                 int noOfEdges = owner.RefElement.NoOfFaces;

@@ -61,12 +61,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
         /// <summary>
         /// Retrieves all polynomial for the given <paramref name="element"/>
-        /// that must be an element of <paramref name="refElements"/>
         /// </summary>
-        /// <param name="g"></param>
-        /// <param name="element"></param>
-        /// <param name="p"></param>
-        /// <returns></returns>
         private static IEnumerable<Polynomial> GetPolynomials(
             GridData g, RefElement element, int p) {
 
