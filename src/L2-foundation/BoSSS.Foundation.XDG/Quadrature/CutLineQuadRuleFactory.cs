@@ -126,9 +126,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// Constructs a new factory
         /// </summary>
-        /// <param name="tracker">
-        /// Tracker for the considered level set
-        /// </param>
         /// <param name="Kref">
         /// Reference element index
         /// </param>

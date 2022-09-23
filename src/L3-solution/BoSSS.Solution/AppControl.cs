@@ -970,6 +970,12 @@ namespace BoSSS.Solution.Control {
         public string TracingNamespaces = null;
 
         /// <summary>
+        /// Activate/Deactivate memory allocation logging
+        /// </summary>
+        [DataMember]
+        public ilPSP.Tracing.MemoryInstrumentationLevel MemoryInstrumentationLevel = ilPSP.Tracing.MemoryInstrumentationLevel.OnlyGcTotalMemory;
+
+        /// <summary>
         /// File system path to database.
         /// </summary>
         [DataMember]
@@ -1236,6 +1242,15 @@ namespace BoSSS.Solution.Control {
                     try {
                         na = Assembly.Load(b);
                     } catch(FileNotFoundException) {
+                        //string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
+                        //if(AssiFiles.Length != 1) {
+                        //    //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
+                        //    Console.WriteLine("Skipping: " + b.Name);
+                        //    continue;
+                        //}
+                        //na = Assembly.LoadFile(AssiFiles[0]);
+                        continue;
+                    } catch (FileLoadException) {
                         //string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
                         //if(AssiFiles.Length != 1) {
                         //    //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");

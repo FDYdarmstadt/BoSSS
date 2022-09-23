@@ -397,7 +397,7 @@ namespace BoSSS.Application.BoSSSpad {
             //string jobpath_unix = jobpath_win.Replace("\\", "/");
             string jobpath_unix = DeploymentDirectoryAtRemote(DeploymentDirectory);
 
-            string jobname = myJob.Name;
+            string jobname = myJob.Name.Replace("\t", "__").Replace(" ", "_");
             string executiontime = this.ExecutionTime;
             int MPIcores = myJob.NumberOfMPIProcs;
             //string userName = Username;
@@ -422,9 +422,9 @@ namespace BoSSS.Application.BoSSSpad {
                     str.Write("-v --debug ");
                 }
                 str.Write(jobpath_unix + "/" + myJob.EntryAssemblyName);
-                str.Write(" ");
-                str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
-                str.Write(" ");
+                //str.Write(" ");
+                //str.Write(myJob.EnvironmentVars["BOSSS_ARG_" + 0]);
+                //str.Write(" ");
 
 
 

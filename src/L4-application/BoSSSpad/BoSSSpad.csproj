@@ -51,16 +51,16 @@
       <HintPath>..\..\..\libs\microsoft.aspnetcore.html.abstractions\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Html.Abstractions.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Common.3.9.0\lib\netstandard2.0\Microsoft.CodeAnalysis.dll</HintPath>
+      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Common.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.CSharp">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.3.9.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
+      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.CSharp.Scripting">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.Scripting.3.9.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll</HintPath>
+      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.Scripting.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CodeAnalysis.Scripting">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Scripting.Common.3.9.0\lib\netstandard2.0\Microsoft.CodeAnalysis.Scripting.dll</HintPath>
+      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Scripting.Common.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.Scripting.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DotNet.Interactive">
       <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
@@ -101,6 +101,7 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj" />
     <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj" />
+    <ProjectReference Include="..\GridGen\GridGen.csproj" />
     <ProjectReference Include="..\NSE_SIMPLE\SIMPLE.csproj" />
     <ProjectReference Include="..\RheologySolver2\Rheology2.csproj" />
     <ProjectReference Include="..\XdgPoisson3\XdgPoisson3.csproj" />

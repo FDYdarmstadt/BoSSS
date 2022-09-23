@@ -34,11 +34,6 @@ namespace BoSSS.Application.XNSEC {
         private static void Main(string[] args) {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            //DeleteOldTextFiles();
-            //Debugger.Launch();
-
             //NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
             ////NUnitTest.XDG_DROPLET_COMBUSTION_TEST();
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");

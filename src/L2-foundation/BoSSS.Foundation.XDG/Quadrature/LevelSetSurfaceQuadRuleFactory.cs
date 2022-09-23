@@ -74,7 +74,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         private DivergenceFreeBasis phiBasis;
 
         /// <summary>
-        /// Index of the considered level set within <see cref="tracker"/>.
+        /// Index of the considered level set within the level set tracker
         /// </summary>
         private int levelSetIndex;
 
@@ -185,8 +185,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 // than requested order because the moment-fitting is based on
                 // 'anti-derivatives' of the real integrands
                 order += 1;
-
-               
 
                 CellMask cellMask = mask as CellMask;
                 if (mask == null) {
@@ -481,19 +479,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="i0">First cell index</param>
         /// <param name="length">Number of cells</param>
         /// <param name="quadResults">
-        /// Integration results for each function in the divergence-free basis
-        /// <see cref="phiBasis"/>
-        /// <list type="bullet">
-        ///     <item>
-        ///     1st index: Cell index within the current <see cref="subGrid"/>
-        ///     </item>
-        ///     <item>
-        ///     2nd index: Local edge index of <see cref="RefElement"/>
-        ///     </item>
-        ///     <item>
-        ///     3rd index: Basis function index
-        ///     </item>
-        /// </list>
+        /// Integration results for each function in the divergence-free basis <see cref="phiBasis"/>
+        /// - 1st index: Cell index within the current sub,set of cells, see also <see cref="localCellIndex2SubgridIndex"/>
+        /// - 2nd index: Local edge index of <see cref="RefElement"/>
+        /// - 3rd index: Basis function index
         /// </param>
         /// <param name="levSetIndex"></param>
         /// <returns></returns>
@@ -974,7 +963,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
         /// <summary>
         /// Used for the integration over the divergence-free basis functions
-        /// (cf. <see cref="subGrid"/>) over the boundary of the current element.
+        /// over the boundary of the current element.
         /// </summary>
         private class PhiQuadrature : CellBoundaryQuadrature<CellBoundaryQuadRule> {
 

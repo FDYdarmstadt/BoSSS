@@ -323,12 +323,6 @@ namespace BoSSS.Foundation.XDG {
             /// Allocates memory for <see cref="m_WeightBuffer"/> and
             /// <see cref="m_ResultBuffer"/>
             /// </summary>
-            /// <param name="NoOfItems">
-            /// <see cref="CellBoundaryQuadrature{T}.AllocateBuffers"/>
-            /// </param>
-            /// <param name="ruleNodes">
-            /// <see cref="CellBoundaryQuadrature{T}.AllocateBuffers"/>
-            /// </param>
             protected override void AllocateBuffers(int NoOfItems, NodeSet ruleNodes) {
                 base.AllocateBuffers(NoOfItems, ruleNodes);
                 int NoOfNodes = ruleNodes.GetLength(0);

@@ -7,14 +7,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Solution.Tecplot;
 
 namespace BoSSS.Application.ExternalBinding {
-    
-    
+
+
     /// <summary>
     /// Wrapper around one or more DG fields to be used in the OpenFOAM binding foam-dg
     /// </summary>
     public class OpenFoamDGField : CoordinateVector, IForeignLanguageProxy {
+
+        int m_degree;
+        int m_noOfComponents;
 
         static DGField[] CtorHelper(OpenFOAMGrid g, int degree, int NoOfComponents) {
             if(NoOfComponents <= 0)
@@ -31,6 +35,8 @@ namespace BoSSS.Application.ExternalBinding {
         public OpenFoamDGField(OpenFOAMGrid g, int degree, int NoOfComponents) 
             : base(CtorHelper(g, degree, NoOfComponents)) //
         {
+            m_degree = degree;
+            m_noOfComponents = NoOfComponents;
         }
 
         /// <summary>
@@ -54,10 +60,32 @@ namespace BoSSS.Application.ExternalBinding {
         /// <returns>value of respective dg coordinate</returns>
         [CodeGenExport]
         public double GetDGcoordinate(int f, int j, int n) {
-            return this[Mapping.LocalUniqueCoordinateIndex(f, j, n)];
+            if (n > this.m_degree) {
+                return 0;
+            }
+            try{
+                return this[Mapping.LocalUniqueCoordinateIndex(f, j, n)];
+            } catch (Exception e) {
+                Console.WriteLine(e);
+                Console.WriteLine("f: " + f);
+                Console.WriteLine("j: " + j);
+                Console.WriteLine("n: " + n);
+                Console.WriteLine("length: " + this.Count);
+                Console.WriteLine("local unique index: " + Mapping.LocalUniqueCoordinateIndex(f, j, n));
+                throw e;
+            }
         }
 
-
+        /// <summary>
+        /// Obtain the mean value of a cell (useful for projection down to DG0 for use in FVM schemes)
+        /// </summary>
+        /// <param name="f">field index</param>
+        /// <param name="j">cell index</param>
+        /// <returns>value of respective dg coordinate</returns>
+        [CodeGenExport]
+        public double GetMean(int f, int j) {
+            return Mapping.Fields[f].GetMeanValue(j);
+        }
 
         IntPtr m_ForeignPtr;
 

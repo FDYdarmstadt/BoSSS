@@ -31,7 +31,6 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Statistic;
-using Microsoft.SqlServer.Server;
 
 namespace BoSSS.Solution.AdvancedSolvers {
 

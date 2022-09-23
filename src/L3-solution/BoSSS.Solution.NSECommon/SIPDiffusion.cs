@@ -47,7 +47,7 @@ namespace BoSSS.Solution.NSECommon {
     /// <summary>
     /// SIP discretization of diffusion operators for scalar transport equations (i.e. species mass transport and temperature). Analog to swipViscosity_Term1.
     /// </summary>
-    public class SIPDiffusion : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent    {
+    public class SIPDiffusion : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent {
  
         double m_Reynolds;
         double m_Schmidt;

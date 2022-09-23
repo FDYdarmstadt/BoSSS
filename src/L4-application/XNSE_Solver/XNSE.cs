@@ -321,47 +321,53 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
-            int pVel = VelocityDegree();
-            int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
-            int D = this.GridData.SpatialDimension;
+            using (var tr = new FuncTrace()) {
+                int pVel = VelocityDegree();
+                int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
+                int D = this.GridData.SpatialDimension;
 
-            if (this.Control.UseSchurBlockPrec) {
-                // using a Schur complement for velocity & pressure
-                var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
-                for (int d = 0; d < D; d++) {
-                    d.AddToArray(ref confMomConti.VarIndex);
-                    //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                    pVel.AddToArray(ref confMomConti.DegreeS);
-                }
-                D.AddToArray(ref confMomConti.VarIndex);
-                //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                pPrs.AddToArray(ref confMomConti.DegreeS);
+                if (this.Control.UseSchurBlockPrec) {
+                    tr.Info($"pre-precond, level {iLevel}: using {MultigridOperator.Mode.SchurComplement}");
 
-                confMomConti.mode = MultigridOperator.Mode.SchurComplement;
 
-                configsLevel.Add(confMomConti);
-            } else {
-                
-                // configurations for velocity
-                for (int d = 0; d < D; d++) {
-                    var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { pVel },
-                        mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                        VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
+                    // using a Schur complement for velocity & pressure
+                    var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
+                    for (int d = 0; d < D; d++) {
+                        d.AddToArray(ref confMomConti.VarIndex);
+                        //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                        pVel.AddToArray(ref confMomConti.DegreeS);
+                    }
+                    D.AddToArray(ref confMomConti.VarIndex);
+                    //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                    pPrs.AddToArray(ref confMomConti.DegreeS);
+
+                    confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+
+                    configsLevel.Add(confMomConti);
+                } else {
+                    tr.Info($"pre-precond, level {iLevel}: using {MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite} and {MultigridOperator.Mode.IdMass_DropIndefinite}");
+
+
+                    // configurations for velocity
+                    for (int d = 0; d < D; d++) {
+                        var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pVel },
+                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                            VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
+                        };
+                        configsLevel.Add(configVel_d);
+                    }
+                    // configuration for pressure
+                    var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                        DegreeS = new int[] { pPrs },
+                        //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) }, // p-multigrid reduction
+                        mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                        VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
                     };
-                    configsLevel.Add(configVel_d);
+                    configsLevel.Add(configPres);
                 }
-                // configuration for pressure
-                var configPres = new MultigridOperator.ChangeOfBasisConfig() {
-                    DegreeS = new int[] { pPrs },
-                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) }, // p-multigrid reduction
-                    mode = MultigridOperator.Mode.IdMass_DropIndefinite,
-                    VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
-                };
-                configsLevel.Add(configPres);
             }
         }
-
         /// <summary>
         /// Operator/equation assembly
         /// </summary>
