@@ -583,6 +583,7 @@ namespace BoSSS.Solution.NSECommon {
 
             m_UseBoundaryVelocityParameter = UseBoundaryVelocityParameter;
             //m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
+            m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0MeanVector(SpatDim));
             if(m_UseBoundaryVelocityParameter)
                 m_ParameterOrdering = ArrayTools.Cat(m_ParameterOrdering, VariableNames.BoundaryVelocityVector(SpatDim));
             m_ArgumentOrdering = VariableNames.VelocityVector(SpatDim); // VelocityX,VelocityY,(VelocityZ) as variables. 
@@ -860,8 +861,8 @@ namespace BoSSS.Solution.NSECommon {
             double[] VelocityMeanIn = new double[m_SpatialDimension];
             double[] VelocityMeanOut = new double[m_SpatialDimension];
             for(int d = 0; d < m_SpatialDimension; d++) {
-                VelocityMeanIn[d] = Uin[d];
-                VelocityMeanOut[d] = Uout[d];
+                VelocityMeanIn[d] = inp.Parameters_IN[d];// Uin[d];
+                VelocityMeanOut[d] = inp.Parameters_OUT[d];// Uout[d];
             }
 
             double LambdaIn;
