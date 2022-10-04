@@ -246,9 +246,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
             this.AbstractOperator = abstractOp;
             
-            EvaluationCounter++;
 #if DEBUG
-            if(EvaluationCounter % 10 == 1) { // do the following, expensive check only for every 10-th evaluation.
+            const int TEST_INTERVALL = 10;
+#else
+            const int TEST_INTERVALL = 1000;
+#endif
+            if (EvaluationCounter % TEST_INTERVALL == 0) { // do the following, expensive check only for every TEST_INTERVALL-th evaluation.
                 // Comparison of linearization and evaluation:
                 // -------------------------------------------
                 //
@@ -275,7 +278,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //     throw new ArithmeticException("Mismatch between operator linearization and evaluation.");
                 // }
             }
-#endif
+            EvaluationCounter++;
+
             CurrentLin.TransformRhsInto(OpEvalRaw, Output, ApplyRef);
         }
 
