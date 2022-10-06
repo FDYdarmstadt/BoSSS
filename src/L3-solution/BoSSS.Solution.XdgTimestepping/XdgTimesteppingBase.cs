@@ -500,9 +500,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];
-                        if (field is XDGField) {
-                            foreach (var spc in ((XDGBasis)field.Basis).Tracker.SpeciesNames) {
-                                double L2Res = ((XDGField)field).GetSpeciesShadowField(spc).L2Norm();
+                        if (field is XDGField xField) {
+                            XDGBasis xBasis = xField.Basis;
+                            foreach (var spc in xBasis.Tracker.SpeciesNames) {
+                                var cm = xBasis.Tracker.Regions.GetSpeciesMask(spc);
+                                double L2Res = ((XDGField)field).GetSpeciesShadowField(spc).L2Norm(cm);
                                 m_ResLogger.CustomValue(L2Res, m_ResidualNames[i] + "#" + spc);
                                 totResi += L2Res.Pow2();
                             }
