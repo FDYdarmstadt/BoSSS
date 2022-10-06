@@ -527,7 +527,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         protected double Norm<T1>(T1 vec)
             where T1 : IList<double> //
         {
-            return InnerProduct<T1,T1>(vec, vec);
+            return InnerProduct<T1,T1>(vec, vec).Sqrt();
 
         }
     }

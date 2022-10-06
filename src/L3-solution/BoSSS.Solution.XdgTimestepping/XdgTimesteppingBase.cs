@@ -498,13 +498,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                     //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
                     //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
 
+
+
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];
                         if (field is XDGField xField) {
                             XDGBasis xBasis = xField.Basis;
                             foreach (var spc in xBasis.Tracker.SpeciesNames) {
-                                var cm = xBasis.Tracker.Regions.GetSpeciesMask(spc);
-                                double L2Res = ((XDGField)field).GetSpeciesShadowField(spc).L2Norm(cm);
+                                //var cm = xBasis.Tracker.Regions.GetSpeciesMask(spc);
+                                //double L2Res = xField.GetSpeciesShadowField(spc).L2Norm(cm);
+                                double L2Res = xField.L2NormSpecies(spc);
                                 m_ResLogger.CustomValue(L2Res, m_ResidualNames[i] + "#" + spc);
                                 totResi += L2Res.Pow2();
                             }
