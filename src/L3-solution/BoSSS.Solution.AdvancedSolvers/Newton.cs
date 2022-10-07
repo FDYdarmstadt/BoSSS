@@ -796,7 +796,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// input: Newton step
         /// </param>
         /// <param name="HomotopyValue">
-        /// current paramter for the homotopy curve
+        /// current parameter for the homotopy curve
         /// </param>
         /// <returns>
         /// Updated Solution

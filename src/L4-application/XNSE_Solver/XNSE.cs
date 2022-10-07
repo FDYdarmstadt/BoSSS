@@ -74,7 +74,7 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
 
-            
+            /*
             InitMPI();
 
             using (var Slv = new XNSE()) {
