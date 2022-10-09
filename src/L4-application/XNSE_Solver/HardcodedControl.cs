@@ -6161,7 +6161,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             //C.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.NonLinearSolver.Globalization = Newton.GlobalizationOption.LineSearch;
+            C.NonLinearSolver.Globalization = Newton.GlobalizationOption.None;
             C.NonLinearSolver.ConvergenceCriterion = 0.0; // As accurate as possible
             C.NonLinearSolver.MinSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 20;

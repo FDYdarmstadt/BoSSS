@@ -747,13 +747,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         if (FreeMeanValue[iFld]) {
                             Console.WriteLine("Mean value in reference cell: " + MeanValues[iFld]);
-                            //flds[iFld].AccConstant(-MeanValues[iFld]);
+                            flds[iFld].AccConstant(-MeanValues[iFld]);
                             //Console.WriteLine("Mean value after correction: " + flds[iFld].GetMeanValue(RefCellLocal));
                         }
                     }
                 }
-
-
 
                 // update linearization
                 // --------------------
@@ -776,7 +774,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue, true);
                 norm_CurRes = CurRes.MPI_L2Norm();
 
+                double norm_CurResX = base.Norm(CurRes);
 
+                Console.WriteLine("Norm BEFORE going into Iter Callback: " + norm_CurResX);
                 OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
             }
         }
