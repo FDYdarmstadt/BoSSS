@@ -69,7 +69,7 @@ namespace BoSSS.Solution {
                         var Kref = KrefS[i];
                         int N = Kref.NoOfVertices + 1;
 
-                        NodeSet vertices = new NodeSet(Kref, N, D);
+                        NodeSet vertices = new NodeSet(Kref, N, D, true);
                         vertices.SetSubArray(
                             Kref.Vertices,
                             new int[] { 0, 0 },

@@ -961,7 +961,7 @@ namespace BoSSS.Foundation.Grid {
                     MultidimensionalArray vert = MultidimensionalArray.Create(N, D);
                     vert.SetSubArray(Kref.Vertices, new int[] { 0, 0 }, new int[] { N - 2, D - 1 });
 
-                    m_CFL_EvalPoints[i] = new NodeSet(Kref, vert);
+                    m_CFL_EvalPoints[i] = new NodeSet(Kref, vert, true);
                 }
                 
 

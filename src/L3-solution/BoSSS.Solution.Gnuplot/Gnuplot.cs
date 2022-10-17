@@ -118,7 +118,7 @@ namespace BoSSS.Solution.Gnuplot {
             int NN = upsampling;
             simplex = c.iGeomCells.GetRefElement(0);
 
-            localNodes = new NodeSet(simplex, NN, 1);
+            localNodes = new NodeSet(simplex, NN, 1, false);
             double left = simplex.Vertices[0, 0];
             double right = simplex.Vertices[1, 0];
             if (NN >= 2) {

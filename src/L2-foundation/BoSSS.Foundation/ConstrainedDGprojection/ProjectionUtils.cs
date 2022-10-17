@@ -151,7 +151,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             // identify face ref vertices
             NodeSet refV = m_grd.Edges.EdgeRefElements[0].Vertices;
-            NodeSet refVvol = m_grd.Edges.EdgeRefElements[0].Vertices.GetVolumeNodeSet(m_grd, iFace);
+            NodeSet refVvol = m_grd.Edges.EdgeRefElements[0].Vertices.GetVolumeNodeSet(m_grd, iFace, false);
             //var trafo = m_grd.Edges.Edge2CellTrafos[iFace];
             int idx1 = -1; int idx2 = -1;
             for (int i = 0; i < refV.Lengths[0]; i++) {

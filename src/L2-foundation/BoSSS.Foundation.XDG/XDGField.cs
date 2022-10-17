@@ -63,7 +63,7 @@ namespace BoSSS.Foundation.XDG {
     public partial class XDGField : DGField, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
-        /// an implementation of <see cref="FieldFactory{T}"/> that creates <see cref="XDGField"/>-DG-fields.
+        /// a factory that creates <see cref="XDGField"/>-DG-fields.
         /// </summary>
         /// <param name="__Basis">
         /// The basis that is used for this field;
@@ -906,7 +906,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// performs the projection of <paramref name="func"/> for each species.
+        /// performs the projection of <paramref name="f"/> for each species.
         /// </summary>
         public override void ProjectFunction(double alpha, Func<Vector, double[], int, double> f, CellQuadratureScheme scheme, params DGField[] U) {
             
@@ -1047,8 +1047,9 @@ namespace BoSSS.Foundation.XDG {
         /// An optional restriction to the domain in which the derivative is computed (it may, e.g.
         /// be only required in boundary cells, so a computation over the whole domain 
         /// would be a waste of computation power. A proper execution mask for this case would be e.g. 
-        /// <see cref="BoSSS.Foundation.Grid.GridData.BoundaryCells"/>.)<br/>
-        /// if null, the computation is carried out in the whole domain
+        /// <see cref="BoSSS.Foundation.Grid.Classic.GridData.BoundaryCells"/>.)
+        /// 
+        /// if null, the computation is carried out in the whole domain;
         /// </param>
         /// <remarks>
         /// The derivative is calculated by a cell-by-cell (symbolic) derivation of the DG polynomials, therefore the

@@ -332,6 +332,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 var bkup = new List<(long, long, double)>();
 
+                /*
+                Console.Error.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.Error.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.Error.WriteLine("Pressure reference point deactivated");
+                Console.Error.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                Console.Error.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+
+                return bkup.ToArray();
+                */
+                
+
                 if (onthisProc) {
 
                     for(int iVar = 0; iVar < m_ReferenceIndices.Length; iVar++) {
@@ -373,8 +385,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
                 }
 
-                return bkup.ToArray();
+                return bkup.ToArray(); 
             }
+                
         }
 
         ISpatialOperator m_AbstractOperator;

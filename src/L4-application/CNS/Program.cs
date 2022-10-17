@@ -49,11 +49,12 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            //Application.InitMPI(args);
+            Application.InitMPI(args);
             //CNS.Tests.IBMTests.IBMALTSTest.IBMALTSTest1_4_pos1();
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
-            //Debug.Assert(false, "remove me");
-            //return;
+            CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
+            Debug.Assert(false, "remove me");
+            return;
 
             Application<CNSControl>._Main(
                 args,

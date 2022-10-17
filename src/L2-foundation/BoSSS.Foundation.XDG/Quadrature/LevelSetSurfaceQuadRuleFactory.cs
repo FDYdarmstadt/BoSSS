@@ -74,7 +74,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         private DivergenceFreeBasis phiBasis;
 
         /// <summary>
-        /// Index of the considered level set within <see cref="tracker"/>.
+        /// Index of the considered level set within the level set tracker
         /// </summary>
         private int levelSetIndex;
 
@@ -186,8 +186,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 // 'anti-derivatives' of the real integrands
                 order += 1;
 
-               
-
                 CellMask cellMask = mask as CellMask;
                 if (mask == null) {
                     throw new ArgumentException("Cell mask required", "mask");
@@ -248,7 +246,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             cellMask, order, edgeQuadrature.IntegrationResults));
                     } else {
                         // => Same nodes in all cells
-                        NodeSet baseNodes = GetSeedNodes(noOfPhis);
+                        NodeSet baseNodes = GetSeedNodes(noOfPhis, true);
                         foreach (Chunk chunk in mask) {
                             QuadRule[] optimizedRules = GetOptimizedRules(
                                 baseNodes, order, chunk.i0, chunk.Len, edgeQuadrature.IntegrationResults, levelSetIndex);
@@ -303,7 +301,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             }
         }
 
-        private NodeSet GetSeedNodes(int noOfPhis) {
+        private NodeSet GetSeedNodes(int noOfPhis, bool useCaching) {
             bool gaussianRuleFound = false;
 
             NodeSet nodes = null;
@@ -337,7 +335,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 int noOfNodesPerDirection = (int)Math.Ceiling(Math.Pow(targetNumber, 1.0 / D));
                 double[] linearNodes = GenericBlas.Linspace(-1.0, 1.0, noOfNodesPerDirection);
 
-                nodes = new NodeSet(RefElement, noOfNodesPerDirection * noOfNodesPerDirection, D);
+                nodes = new NodeSet(RefElement, noOfNodesPerDirection * noOfNodesPerDirection, D, useCaching);
                 int node = 0;
                 for (int i = 0; i < noOfNodesPerDirection; i++) {
                     for (int j = 0; j < noOfNodesPerDirection; j++) {
@@ -402,7 +400,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 LevSet.Evaluate(j, 1, Nodes, LevSetValues, 0, 0.0);
                 LevSet.EvaluateGradient(j, 1, Nodes, LevSetGrad);
 
-                m_Context.TransformLocal2Global(new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)), j, 1, x0_i_Global, 0);
+                m_Context.TransformLocal2Global(new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), false), j, 1, x0_i_Global, 0);
 
                 for (int nn = 0; nn < NN; nn++) {
 
@@ -429,7 +427,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 // next iter: x0_i <- x0_{i+1}
                 x0_i_Local.Set(x0_ip1_Local);
-                Nodes = new NodeSet(Kref, x0_i_Local.ExtractSubArrayShallow(0, -1, -1));
+                Nodes = new NodeSet(Kref, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), true);
             }
 
 
@@ -461,9 +459,9 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
                 }
 
-                return new NodeSet(Kref, ret);
+                return new NodeSet(Kref, ret, true);
             } else {
-                return new NodeSet(Kref, x0_i_Local.ExtractSubArrayShallow(0, -1, -1));
+                return new NodeSet(Kref, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), true);
             }
         }
 
@@ -481,19 +479,10 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <param name="i0">First cell index</param>
         /// <param name="length">Number of cells</param>
         /// <param name="quadResults">
-        /// Integration results for each function in the divergence-free basis
-        /// <see cref="phiBasis"/>
-        /// <list type="bullet">
-        ///     <item>
-        ///     1st index: Cell index within the current <see cref="subGrid"/>
-        ///     </item>
-        ///     <item>
-        ///     2nd index: Local edge index of <see cref="RefElement"/>
-        ///     </item>
-        ///     <item>
-        ///     3rd index: Basis function index
-        ///     </item>
-        /// </list>
+        /// Integration results for each function in the divergence-free basis <see cref="phiBasis"/>
+        /// - 1st index: Cell index within the current sub,set of cells, see also <see cref="localCellIndex2SubgridIndex"/>
+        /// - 2nd index: Local edge index of <see cref="RefElement"/>
+        /// - 3rd index: Basis function index
         /// </param>
         /// <param name="levSetIndex"></param>
         /// <returns></returns>
@@ -748,7 +737,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 }
 
                 AffineTrafo inverse = trafo.Invert();
-                NS = new NodeSet(RefElement, inverse.Transform(NS));
+                NS = new NodeSet(RefElement, inverse.Transform(NS), true);
                 NS.LockForever();
 
                 MultidimensionalArray phiValues = phiBasis.Values.GetValues(NS);
@@ -801,7 +790,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     CellMask singleElementMask = new CellMask(
                         LevelSetData.GridDat, Chunk.GetSingleElementChunk(jCell));
 
-                    NodeSet nodes = GetSeedNodes(noOfPhis).CloneAs();
+                    NodeSet nodes = GetSeedNodes(noOfPhis, false).CloneAs();
                     AffineTrafo trafo = trafosToBoundingBox[localCellIndex2SubgridIndex[jCell]];
 
                     if (trafo == null) {
@@ -812,7 +801,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         continue;
                     }
 
-                    NodeSet mappedNodes = new NodeSet(RefElement, trafo.Transform(nodes));
+                    NodeSet mappedNodes = new NodeSet(RefElement, trafo.Transform(nodes), false);
                     mappedNodes.LockForever();
 
                     // Remove nodes in negative part
@@ -825,7 +814,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     }
 
                     NodeSet reducedNodes = new NodeSet(
-                        this.RefElement, nodesToBeCopied.Count, D);
+                        this.RefElement, nodesToBeCopied.Count, D, true);
                     for (int n = 0; n < nodesToBeCopied.Count; n++) {
                         for (int d = 0; d < D; d++) {
                             reducedNodes[n, d] = mappedNodes[nodesToBeCopied[n], d];
@@ -872,7 +861,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     NodeSet projectedNodes;
 
                     do {
-                        NodeSet baseNodes = GetSeedNodes(iteration * noOfPhis);
+                        NodeSet baseNodes = GetSeedNodes(iteration * noOfPhis, false);
                         projectedNodes = ProjectNodesOntoLevelSet(jCell, baseNodes);
                         iteration++;
                         if (iteration > maxNodeIncrementIterations) {
@@ -931,7 +920,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         double[] center = box.Min.CloneAs();
                         center.AccV(1.0, box.Max);
                         center.ScaleV(0.5);
-                        NodeSet centerNode = new NodeSet(RefElement, center);
+                        NodeSet centerNode = new NodeSet(RefElement, center, false);
                         centerNode.LockForever();
 
                         MultidimensionalArray normal = LevelSetData.GetLevelSetReferenceNormals(centerNode, cell.Value, 1);
@@ -974,7 +963,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
         /// <summary>
         /// Used for the integration over the divergence-free basis functions
-        /// (cf. <see cref="subGrid"/>) over the boundary of the current element.
+        /// over the boundary of the current element.
         /// </summary>
         private class PhiQuadrature : CellBoundaryQuadrature<CellBoundaryQuadRule> {
 
