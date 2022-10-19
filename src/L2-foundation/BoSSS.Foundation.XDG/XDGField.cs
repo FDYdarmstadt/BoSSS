@@ -1223,6 +1223,19 @@ namespace BoSSS.Foundation.XDG {
             return FieldReturn;
         }
 
+
+        public double L2NormAllSpecies(CellMask cm = null) {
+            
+
+            double acc = 0;
+            foreach (SpeciesId spc in this.Basis.Tracker.SpeciesIdS) {
+                acc += L2NormSpecies(spc, cm).Pow2();
+            }
+
+            return acc.Sqrt();
+        }
+
+
         /// <summary>
         /// <see cref="L2NormSpecies(SpeciesId, CellMask)"/>
         /// </summary>

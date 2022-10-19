@@ -620,7 +620,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         private void NewtonStep(CoordinateVector SolutionVec, int itc, double[] CurSol, double[] CurRes, double HomotopyValue, ref double norm_CurRes, ref double TrustRegionDelta) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                tr.InfoToConsole = false;
                 // computation of Newton step
                 // --------------------------
 
@@ -746,8 +746,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     for (int iFld = 0; iFld < flds.Length; iFld++) {
 
                         if (FreeMeanValue[iFld]) {
-                            Console.WriteLine("Mean value in reference cell: " + MeanValues[iFld]);
-                            //flds[iFld].AccConstant(-MeanValues[iFld]);
+                            tr.Info("Mean value in reference cell: " + MeanValues[iFld]);
+                            flds[iFld].AccConstant(-MeanValues[iFld]);
                             //Console.WriteLine("Mean value after correction: " + flds[iFld].GetMeanValue(RefCellLocal));
                         }
                     }
@@ -775,7 +775,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 double norm_CurResX = base.Norm(CurRes);
 
-                Console.WriteLine($"Norm BEFORE going into Iter Callback: {norm_CurResX:0.####E-00}");
+                tr.Info($"Norm BEFORE going into Iter Callback: {norm_CurResX:0.####E-00}");
                 OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
             }
         }

@@ -34,6 +34,8 @@ using BoSSS.Solution.LevelSetTools;
 using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Solution.Statistic;
+using BoSSS.Solution.AdvancedSolvers;
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -1189,6 +1191,53 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
            
         }
+
+#if !DEBUG
+        [Test]
+        public static void RotatingCubeTest(
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants MFV,
+            [Values(IncompressibleBcType.Pressure_Outlet)] IncompressibleBcType __OuterBcType 
+            ) {
+
+            //this error does happen when number of processors =2 but not with np=4
+            var C = HardcodedControl.Rotating_Something_Unsteady(k: 4, Res: 30, SpaceDim: 2, useAMR: false, Gshape: Shape.Cube, OuterBcType: __OuterBcType);
+
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            //C.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.Globalization = Newton.GlobalizationOption.None;
+            C.NonLinearSolver.ConvergenceCriterion = 0.0; // As accurate as possible
+            C.NonLinearSolver.MinSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 20;
+
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+            C.UseSchurBlockPrec = false;
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.NoOfTimesteps = 1;
+
+            C.CutCellQuadratureType = MFV;
+
+            C.TracingNamespaces = "BoSSS";
+
+
+            XNSE.DeleteOldPlotFiles();
+            using (var Slv = new XNSE()) {
+                Slv.Init(C);
+                Slv.RunSolverMode();
+
+                var resNorms = new List<(string id, double val)>();
+                foreach(XDGField f in Slv.CurrentResidual.Fields) {
+                    double ResNorm = f.L2NormAllSpecies();
+                    resNorms.Add((f.Identification, ResNorm));
+                    Console.WriteLine($"Residual norm of {f.Identification}: {ResNorm}");
+                }
+                foreach(var tt in resNorms)
+                    Assert.Less(tt.val, 1.0e-5, $"Residual norm of {tt.id} out of bounds.");
+            }
+            
+        }
+#endif
 
         private static void ASScalingTest(IXNSETest Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Picard) {
 #if !DEBUG

@@ -6188,7 +6188,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
         //A copy form XNSE_Solver_MPItest.cs
-        private static XNSE_Control Rotating_Something_Unsteady(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, Shape Gshape = Shape.Cube, bool UsePredefPartitioning = false, IncompressibleBcType OuterBcType = IncompressibleBcType.Wall) {
+        public static XNSE_Control Rotating_Something_Unsteady(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, Shape Gshape = Shape.Cube, bool UsePredefPartitioning = false, IncompressibleBcType OuterBcType = IncompressibleBcType.Wall) {
             XNSE_Control C = new XNSE_Control();
 
             switch(OuterBcType) {

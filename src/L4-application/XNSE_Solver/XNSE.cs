@@ -74,7 +74,7 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
 
-            
+            /*
             InitMPI();
             DeleteOldPlotFiles();
             using (var Slv = new XNSE()) {
@@ -124,8 +124,8 @@ namespace BoSSS.Application.XNSE_Solver {
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);
-            */
             NUnit.Framework.Assert.IsTrue(false, "remove me"); 
+            */
 
             {
                 XNSE._Main(args, false, delegate () {
