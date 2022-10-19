@@ -412,32 +412,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         flds[iFld].AccConstant(-arbitrary_distortion_value);
                     }
                 }
-                /*
-                var C1 = new CoordinateVector(this.CurrentLin.ProlongateRhsToDg(ResidualBeforMeanCor, "m1")); C1.Mapping.RenameFields("mX1", "mY1", "mC1");
-                var C2 = new CoordinateVector(this.CurrentLin.ProlongateRhsToDg(ResidualAfterMeanCor, "m1")); C2.Mapping.RenameFields("mX2", "mY2", "mC2");
                 
-
-                var Cd = new CoordinateVector(SolutionVec.Fields.Select(f => f.CloneAs()).ToArray()); Cd.Mapping.RenameFields("mXd", "mYd", "mCd");
-                Cd.SetV(C1);
-                Cd.Acc(-1.0, C2);
-
-                Console.WriteLine("mX diff: " + Cd.Fields[0].CoordinateVector.L2Norm());
-                Console.WriteLine("mY diff: " + Cd.Fields[1].CoordinateVector.L2Norm());
-                Console.WriteLine("mC diff: " + Cd.Fields[2].CoordinateVector.L2Norm());
-
-
-                BoSSS.Solution.Tecplot.Tecplot.PlotFields(ArrayTools.Cat(
-                    SolutionVec.Fields,
-                    C1.Fields, C2.Fields, Cd.Fields//,
-                    //base.LsUpdater.LevelSets.ElementAt(0).Value.CGLevelSet,
-                    //base.LsUpdater.LevelSets.ElementAt(0).Value.DGLevelSet,
-                    //base.LsUpdater.LevelSets.ElementAt(1).Value.CGLevelSet,
-                    //base.LsUpdater.LevelSets.ElementAt(1).Value.DGLevelSet
-                    ),
-                    "fuckup",
-                    0.0, 3);
-                */
-
 
                 //double[] ResidualDifference = ResidualAfterMeanCor.CloneAs();
                 //ResidualDifference.AccV(-1.0, ResidualBeforMeanCor);
@@ -527,9 +502,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         protected double Norm<T1>(T1 vec)
             where T1 : IList<double> //
         {
-            //return InnerProduct<T1,T1>(vec, vec).Sqrt();
+            return InnerProduct<T1,T1>(vec, vec).Sqrt();
 
-            
+            /*
             int L0 = CurrentLin.BaseGridProblemMapping.LocalLength;
             double[] tmp = new double[L0];
             //CurrentLin.TransformSolFrom(tmp, vec);
@@ -547,6 +522,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             //Console.WriteLine("New art of norm: " + norm_acc.Sqrt());
             return norm_acc.Sqrt();
+            */
         }
     }
 }
