@@ -673,13 +673,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
                 }
 
-                var DGStep = base.CurrentLin.ProlongateSolToDg(step, "step");
-                if(MultigridOperator.NixMitFreeMeanValue) {
-                    Console.WriteLine("No Matrix modification:  " + "step-" + itc);
-                }
-                Tecplot.Tecplot.PlotFields(DGStep, "step-" + itc, 0.0, 3);
-
-
+                
                 // globalization
                 // -------------
                 double[] OldSolClone;
@@ -723,7 +717,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // fix the pressure
                 // ----------------
-                if (CurrentLin.FreeMeanValue.Any() || MultigridOperator.NixMitFreeMeanValue) {
+                if (CurrentLin.FreeMeanValue.Any()) {
                     if (itc == 0 || itc % 5 == 0) // execute this expensive test not to often.
                         base.TestFreeMeanValue(SolutionVec, HomotopyValue);
 
@@ -733,8 +727,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         throw new ApplicationException();
 
                     int RefCellLocal = CurrentLin.ReferenceCell_local;
-                    RefCellLocal = 0;
-                    FreeMeanValue[2] = true;
 
                     double[] MeanValues = new double[flds.Length];
                     for (int iFld = 0; iFld < flds.Length; iFld++) {
@@ -764,9 +756,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // update linearization
                 // --------------------
                 if (itc % constant_newton_it == 0) {
-                    //base.UpdateLinearization(SolutionVec.Mapping.Fields);
-                    if(itc >= 7)
-                        MultigridOperator.NixMitFreeMeanValue = true;
+
                     base.Update(SolutionVec.Mapping.Fields, CurSol, HomotopyValue);
 
                     if (constant_newton_it != 1) {
@@ -787,9 +777,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 Console.WriteLine($"Norm BEFORE going into Iter Callback: {norm_CurResX:0.####E-00}");
                 OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
-
-
-
             }
         }
         /// <summary>

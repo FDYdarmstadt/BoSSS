@@ -483,19 +483,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool[] m__FreeMeanValue;
 
-        public static bool NixMitFreeMeanValue = false;
-
-
         /// <summary>
         /// pass-through from <see cref="ISpatialOperator.FreeMeanValue"/>
         /// </summary>
         public bool[] FreeMeanValue {
             get {
-                if(NixMitFreeMeanValue) {
-                    m__FreeMeanValue = new bool[BaseGridProblemMapping.BasisS.Count];
-                    return m__FreeMeanValue;
-                }
-
+                
 
                 if(m__FreeMeanValue == null) {
                     if (this.AbstractOperator == null) {
