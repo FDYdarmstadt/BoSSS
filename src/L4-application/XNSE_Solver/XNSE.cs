@@ -76,10 +76,13 @@ namespace BoSSS.Application.XNSE_Solver {
 
             
             InitMPI();
-
+            DeleteOldPlotFiles();
             using (var Slv = new XNSE()) {
 
-
+                //var Tst = new Tests.TaylorCouette(Tests.TaylorCouette.Mode.TestIBM);
+                //var C = Tests.ASUnitTest.TstObj2CtrlObj(Tst, 1, 0.1, ViscosityMode.FullySymmetric,
+                //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+                //    GridResolution: 1, nonlinsolver: NonLinearSolverCode.Newton, solvercode: LinearSolverCode.direct_pardiso);
                 var C = HardcodedControl.RotCubeFreeMeanValueError();
                 
 
@@ -405,7 +408,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Misc adjustments to the spatial operator before calling <see cref="ISpatialOperator.Commit"/>
         /// </summary>
-        /// <param name="XOP"></param>
         protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;

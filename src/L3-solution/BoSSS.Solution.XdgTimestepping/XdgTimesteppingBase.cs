@@ -491,30 +491,28 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var R = this.Residuals;
                     R.Clear();
 
+                    /*
                     double Norm(IList<double> V, ISparseMatrix Mass) {
                         double[] tmp = new double[V.Count];
                         Mass.SpMV(1.0, V, 0.0, tmp);
                         return V.MPI_InnerProd(tmp).Sqrt();
                     }
 
-                    Console.WriteLine($"RESILOG: w.r.t. MG OP {Norm(currentRes, Mgop.MassMatrix):1:0.####E-00}");
-
+                    Console.WriteLine($"RESILOG: w.r.t. MG OP {Norm(currentRes, Mgop.MassMatrix):0.####E-00}");
+                    */
 
                     Mgop.TransformRhsFrom(R, currentRes);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
-
+                    /*
                     //// plotting during Newton iterations:  
-                    //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
-                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
+                    var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
+                    Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
 
 
-
-
-
-                    MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1).MassMatrixFactory;
-                    var FreshMama = MassFact.GetMassMatrix(CurrentStateMapping, false);
-                    Console.WriteLine($"RESILOG: w.r.t. XDG (nonagg): {Norm(R, FreshMama):1:0.####E-00}");
-
+                    //MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1).MassMatrixFactory;
+                    //var FreshMama = MassFact.GetMassMatrix(CurrentStateMapping, false);
+                    //Console.WriteLine($"RESILOG: w.r.t. XDG (nonagg): {Norm(R, FreshMama):0.####E-00}");
+                    */
 
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];

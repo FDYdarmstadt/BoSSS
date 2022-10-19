@@ -138,10 +138,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     } else {
                         Cells2avoid = null;
                     }
-                    for(int j = 0; j < J; j++) {
+
+                    //Random rnd = new Random();
+                    //int j0 = rnd.Next(J);
+                    int j0 = 0;
+
+                    for(int _j = 0; _j < J; _j++) {
                         // ratio for selecting the reference point:
                         // We are searching for a cell where exactly one species is present;
                         // we want to be outside of cut cells and also away from the near-band
+                        int j = (_j + j0) % J;
+
 
                         if(bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
                             // cell is suitable for the reference point 
@@ -476,12 +483,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool[] m__FreeMeanValue;
 
+        public static bool NixMitFreeMeanValue = false;
+
 
         /// <summary>
         /// pass-through from <see cref="ISpatialOperator.FreeMeanValue"/>
         /// </summary>
         public bool[] FreeMeanValue {
             get {
+                if(NixMitFreeMeanValue) {
+                    m__FreeMeanValue = new bool[BaseGridProblemMapping.BasisS.Count];
+                    return m__FreeMeanValue;
+                }
+
+
                 if(m__FreeMeanValue == null) {
                     if (this.AbstractOperator == null) {
                         m__FreeMeanValue = new bool[BaseGridProblemMapping.BasisS.Count];

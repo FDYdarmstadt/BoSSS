@@ -527,8 +527,26 @@ namespace BoSSS.Solution.AdvancedSolvers {
         protected double Norm<T1>(T1 vec)
             where T1 : IList<double> //
         {
-            return InnerProduct<T1,T1>(vec, vec).Sqrt();
+            //return InnerProduct<T1,T1>(vec, vec).Sqrt();
 
+            
+            int L0 = CurrentLin.BaseGridProblemMapping.LocalLength;
+            double[] tmp = new double[L0];
+            //CurrentLin.TransformSolFrom(tmp, vec);
+            CurrentLin.TransformRhsFrom(tmp, vec);
+
+            var XFields = CurrentLin.BaseGridProblemMapping.BasisS.Select(bs => new XDGField(bs as XDGBasis)).ToArray();
+            var Coordv = new CoordinateVector(XFields);
+            Coordv.SetV(tmp);
+
+            double norm_acc = 0;
+            for (int i = 0; i < XFields.Length; i++) {
+                norm_acc += XFields[i].L2NormSpecies("A").Pow2();
+                norm_acc += XFields[i].L2NormSpecies("B").Pow2();
+            }
+
+            //Console.WriteLine("New art of norm: " + norm_acc.Sqrt());
+            return norm_acc.Sqrt();
         }
     }
 }

@@ -652,7 +652,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     using (var solver = this.PrecondConfig.CreateInstance(CurrentLin)) {
 
                         step.ClearEntries();
-                        var check = CurRes.CloneAs();
                         solver.ResetStat();
 
                         if (solver is IProgrammableTermination pt) {
@@ -673,6 +672,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 } else {
                     throw new NotImplementedException($"approximation option {ApproxJac} for the Jacobian seems not to be existent.");
                 }
+
+                var DGStep = base.CurrentLin.ProlongateSolToDg(step, "step");
+                if(MultigridOperator.NixMitFreeMeanValue) {
+                    Console.WriteLine("No Matrix modification:  " + "step-" + itc);
+                }
+                Tecplot.Tecplot.PlotFields(DGStep, "step-" + itc, 0.0, 3);
+
 
                 // globalization
                 // -------------
@@ -717,7 +723,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // fix the pressure
                 // ----------------
-                if (CurrentLin.FreeMeanValue.Any()) {
+                if (CurrentLin.FreeMeanValue.Any() || MultigridOperator.NixMitFreeMeanValue) {
                     if (itc == 0 || itc % 5 == 0) // execute this expensive test not to often.
                         base.TestFreeMeanValue(SolutionVec, HomotopyValue);
 
@@ -727,6 +733,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         throw new ApplicationException();
 
                     int RefCellLocal = CurrentLin.ReferenceCell_local;
+                    RefCellLocal = 0;
+                    FreeMeanValue[2] = true;
 
                     double[] MeanValues = new double[flds.Length];
                     for (int iFld = 0; iFld < flds.Length; iFld++) {
@@ -747,7 +755,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         if (FreeMeanValue[iFld]) {
                             Console.WriteLine("Mean value in reference cell: " + MeanValues[iFld]);
-                            flds[iFld].AccConstant(-MeanValues[iFld]);
+                            //flds[iFld].AccConstant(-MeanValues[iFld]);
                             //Console.WriteLine("Mean value after correction: " + flds[iFld].GetMeanValue(RefCellLocal));
                         }
                     }
@@ -757,7 +765,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // --------------------
                 if (itc % constant_newton_it == 0) {
                     //base.UpdateLinearization(SolutionVec.Mapping.Fields);
-
+                    if(itc >= 7)
+                        MultigridOperator.NixMitFreeMeanValue = true;
                     base.Update(SolutionVec.Mapping.Fields, CurSol, HomotopyValue);
 
                     if (constant_newton_it != 1) {
@@ -771,13 +780,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // residual evaluation & callback
                 // ------------------------------
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue, true);
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue, ApplyRef: false);
                 norm_CurRes = CurRes.MPI_L2Norm();
 
                 double norm_CurResX = base.Norm(CurRes);
 
-                Console.WriteLine("Norm BEFORE going into Iter Callback: " + norm_CurResX);
+                Console.WriteLine($"Norm BEFORE going into Iter Callback: {norm_CurResX:0.####E-00}");
                 OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
+
+
+
             }
         }
         /// <summary>
@@ -807,32 +819,50 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 double[] TempSol;
                 double[] TempRes;
 
-                double alpha = 1E-4;
-                double sigma1 = 0.5;
+                //double alpha = 1E-4;
+                //double sigma1 = 0.5;
 
 
                 // Start line search
                 double lambda = 1;
-                double lamm = 1;
+                //double lamm = 1;
                 double lamc = lambda;
-                int iarm = 0;
+                //int iarm = 0;
                 TempSol = CurSol.CloneAs();
                 TempSol.AccV(lambda, step);
                 this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
 
                 TempRes = new double[TempSol.Length];
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes, HomotopyValue);
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes, HomotopyValue, ApplyRef:true);
 
-                double nft = base.Norm(TempRes); //.L2NormPow2().MPISum().Sqrt();
                 double nf0 = base.Norm(CurRes);  //.L2NormPow2().MPISum().Sqrt();
+                double nft = base.Norm(TempRes); //.L2NormPow2().MPISum().Sqrt();
                 double ff0 = nf0 * nf0; // residual norm of current solution ^2
                 double ffc = nft * nft; //
                 double ffm = nft * nft; //
 
-                tr.Info("LineSearch: Current Solution Residual: " + nf0);
-                tr.Info("LineSearch: Full Newton Step Residual: " + nft);
-                //OnIterationCallback(0, TempSol.CloneAs(), TempRes.CloneAs(), this.CurrentLin);
+                tr.Info($"LineSearch: Current Solution Residual: {nf0:0.####E-00}");
+                tr.Info($"LineSearch: Full Newton Step Residual: {nft:0.####E-00}");
 
+                if((nft - 0.004549863).Abs() < 0.0001) {
+                    Console.WriteLine("Hello from fucked resi.");
+
+                    DGField[] CurResDG = base.CurrentLin.ProlongateRhsToDg(CurRes, "CurrRes");
+                    DGField[] TempResDG = base.CurrentLin.ProlongateRhsToDg(TempRes, "TempRes");
+
+                    Tecplot.Tecplot.PlotFields(CurResDG.Cat(TempResDG), "LineSrchRes", 0.0, 3);
+
+                    foreach(var f in TempResDG) {
+                        var xf = f as XDGField;
+                        double nrm = (xf.L2NormSpecies("A").Pow2() + xf.L2NormSpecies("B").Pow2()).Sqrt();
+                        Console.WriteLine($"     {xf.Identification}    {nrm:0.####E-00}");
+                    }
+
+                }
+
+
+
+                /*
 
                 // Control of the the step size
                 while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
@@ -851,7 +881,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
                     EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes, HomotopyValue);
-
+                    
                     nft = base.Norm(TempRes); //.L2NormPow2().MPISum().Sqrt();
                     ffm = ffc;
                     ffc = nft * nft;
@@ -860,6 +890,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info("LineSearch: Reduced     Step Residual: " + nft + " (lambda = " + lambda + ")");
                     
                 }
+                */
                 // transform solution back to 'original domain'
                 // to perform the linearization at the new point...
                 // (and for Level-Set-Updates ...)
