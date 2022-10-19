@@ -802,19 +802,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </returns>
         private void LineSearch(CoordinateVector SolutionVec, double[] CurSol, double[] CurRes, double[] step, double HomotopyValue) {
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 double[] TempSol;
                 double[] TempRes;
 
-                //double alpha = 1E-4;
-                //double sigma1 = 0.5;
-
+                double alpha = 1E-4;
+                double sigma1 = 0.5;
 
                 // Start line search
                 double lambda = 1;
-                //double lamm = 1;
+                double lamm = 1;
                 double lamc = lambda;
-                //int iarm = 0;
+                int iarm = 0;
                 TempSol = CurSol.CloneAs();
                 TempSol.AccV(lambda, step);
                 this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
@@ -830,26 +829,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 tr.Info($"LineSearch: Current Solution Residual: {nf0:0.####E-00}");
                 tr.Info($"LineSearch: Full Newton Step Residual: {nft:0.####E-00}");
-
-                if((nft - 0.004549863).Abs() < 0.0001) {
-                    Console.WriteLine("Hello from fucked resi.");
-
-                    DGField[] CurResDG = base.CurrentLin.ProlongateRhsToDg(CurRes, "CurrRes");
-                    DGField[] TempResDG = base.CurrentLin.ProlongateRhsToDg(TempRes, "TempRes");
-
-                    Tecplot.Tecplot.PlotFields(CurResDG.Cat(TempResDG), "LineSrchRes", 0.0, 3);
-
-                    foreach(var f in TempResDG) {
-                        var xf = f as XDGField;
-                        double nrm = (xf.L2NormSpecies("A").Pow2() + xf.L2NormSpecies("B").Pow2()).Sqrt();
-                        Console.WriteLine($"     {xf.Identification}    {nrm:0.####E-00}");
-                    }
-
-                }
-
-
-
-                /*
 
                 // Control of the the step size
                 while (nft >= (1 - alpha * lambda) * nf0 && iarm < maxStep) {
@@ -877,7 +856,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info("LineSearch: Reduced     Step Residual: " + nft + " (lambda = " + lambda + ")");
                     
                 }
-                */
+                
+
                 // transform solution back to 'original domain'
                 // to perform the linearization at the new point...
                 // (and for Level-Set-Updates ...)
