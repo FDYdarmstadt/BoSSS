@@ -1195,7 +1195,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 #if !DEBUG
         [Test]
         public static void RotatingCubeTest(
-            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants MFV,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants MFV,
+            [Values(Newton.GlobalizationOption.None, Newton.GlobalizationOption.LineSearch, Newton.GlobalizationOption.Dogleg)] Newton.GlobalizationOption globalizationOption,
             [Values(IncompressibleBcType.Pressure_Outlet)] IncompressibleBcType __OuterBcType 
             ) {
 
@@ -1205,7 +1206,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             //C.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.NonLinearSolver.Globalization = Newton.GlobalizationOption.None;
+            C.NonLinearSolver.Globalization = globalizationOption;
             C.NonLinearSolver.ConvergenceCriterion = 0.0; // As accurate as possible
             C.NonLinearSolver.MinSolverIterations = 10;
             C.NonLinearSolver.MaxSolverIterations = 20;

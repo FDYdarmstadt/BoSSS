@@ -882,7 +882,11 @@ namespace BoSSS.Application.MultigridTest {
         /// </summary>
         [Test]
         public static void XDG_Norm(
+#if DEBUG
+            [Values(0, 1)] int p,
+#else
             [Values(0, 1, 2, 3)] int p,
+#endif           
             [Values(0.0, 0.3)] double AggregationThreshold,
             [Values(0, 1)] int TrackerWidth,
             [Values(MultigridOperator.Mode.IdMass, MultigridOperator.Mode.IdMass_DropIndefinite, MultigridOperator.Mode.SymPart_DiagBlockEquilib, MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite, MultigridOperator.Mode.Eye)] MultigridOperator.Mode changeOfBasis) {

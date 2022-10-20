@@ -74,25 +74,11 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
 
-            /*
-            InitMPI();
-            DeleteOldPlotFiles();
-            using (var Slv = new XNSE()) {
-
-                //var Tst = new Tests.TaylorCouette(Tests.TaylorCouette.Mode.TestIBM);
-                //var C = Tests.ASUnitTest.TstObj2CtrlObj(Tst, 1, 0.1, ViscosityMode.FullySymmetric,
-                //    XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                //    GridResolution: 1, nonlinsolver: NonLinearSolverCode.Newton, solvercode: LinearSolverCode.direct_pardiso);
-                var C = HardcodedControl.RotCubeFreeMeanValueError();
-                
-
-                Slv.Init(C);
-
-                Slv.RunSolverMode();
-
-
-            }
-            NUnit.Framework.Assert.IsTrue(false, "remove me");
+            
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.RotatingCubeTest(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, Newton.GlobalizationOption.None, IncompressibleBcType.Pressure_Outlet);
+            //NUnit.Framework.Assert.IsTrue(false, "remove me");
 
 
             /*
@@ -189,7 +175,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
-            }
+            } 
 
             return quadOrder;
         }

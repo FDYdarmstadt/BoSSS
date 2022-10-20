@@ -35,10 +35,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
     /// <summary>
-    /// Implementation based on presudocode from Kelley, C.
-    /// Solving Nonlinear Equations with Newton’s Method. Fundamentals of Algorithms.
-    /// Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
+    /// Newton solver with various Globalization (i.e. enlargement of convergence radius) options.
     /// </summary>
+    /// <remarks>
+    /// Further reading:
+    /// - Pawlowski et. al., 2006, Globalization Techniques for Newton–Krylov Methods and Applications to the Fully Coupled Solution of the Navier–Stokes Equations, SIAM Review, Vol. 48, No. 4, pp 700-721.
+    /// - Pawlowski et. al., 2008, Inexact Newton Dogleg Methods, SIAM Journal on Numerical Analysis, Vol. 46, No. 4, pp 2112-2132.
+    /// - Kelley, 2003, Solving Nonlinear Equations with Newton’s Method. Fundamentals of Algorithms. Society for Industrial and Applied Mathematics, 2003. https://doi.org/10.1137/1.9780898718898.
+    /// - Kikker, Kummer, Oberlack, 2021, A fully coupled high‐order discontinuous Galerkin solver for viscoelastic fluid flow, IJNMF, No. 6, Vol. 93, 2021, 1736--1758.
+    /// </remarks>
     public class Newton : NonlinearSolver {
         /// <summary>
         /// ctor
@@ -147,11 +152,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public GlobalizationOption Globalization = GlobalizationOption.Dogleg;
 
-        ///// <summary>
-        ///// Prints the step reduction factor
-        ///// </summary>
-        //public bool printLambda = false;
-
+    
         /// <summary>
         /// Switch the use of the Homotopy-Path (<see cref="ISpatialOperator.HomotopyUpdate"/>) on/off
         /// </summary>
@@ -770,12 +771,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // residual evaluation & callback
                 // ------------------------------
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue, ApplyRef: false);
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, CurRes, HomotopyValue, ApplyRef: true);
                 norm_CurRes = CurRes.MPI_L2Norm();
 
-                double norm_CurResX = base.Norm(CurRes);
+                //double norm_CurResX = base.Norm(CurRes);
+                //tr.Info($"Norm BEFORE going into Iter Callback: {norm_CurResX:0.####E-00}");
 
-                tr.Info($"Norm BEFORE going into Iter Callback: {norm_CurResX:0.####E-00}");
                 OnIterationCallback(itc, CurSol.CloneAs(), CurRes.CloneAs(), this.CurrentLin);
             }
         }
