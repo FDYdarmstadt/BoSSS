@@ -138,10 +138,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     } else {
                         Cells2avoid = null;
                     }
-                    for(int j = 0; j < J; j++) {
+
+                    //Random rnd = new Random();
+                    //int j0 = rnd.Next(J);
+                    int j0 = 0;
+
+                    for(int _j = 0; _j < J; _j++) {
                         // ratio for selecting the reference point:
                         // We are searching for a cell where exactly one species is present;
                         // we want to be outside of cut cells and also away from the near-band
+                        int j = (_j + j0) % J;
+
 
                         if(bases[0].GetLength(j, 0) > 0 && bases[0].GetNoOfSpecies(j) == 1 && (Cells2avoid == null || Cells2avoid[j] == false)) {
                             // cell is suitable for the reference point 
@@ -476,12 +483,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         bool[] m__FreeMeanValue;
 
-
         /// <summary>
         /// pass-through from <see cref="ISpatialOperator.FreeMeanValue"/>
         /// </summary>
         public bool[] FreeMeanValue {
             get {
+                
+
                 if(m__FreeMeanValue == null) {
                     if (this.AbstractOperator == null) {
                         m__FreeMeanValue = new bool[BaseGridProblemMapping.BasisS.Count];
@@ -505,7 +513,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// agglomeration (if applicable) should already be applied.
         /// </param>
         /// <param name="MassMatrix">
-        /// Mass matrix on the original grid. If null, the identity matrix is assumed. 
+        /// Mass matrix on the original grid. If null, the identity matrix is assumed,
+        /// agglomeration (if applicable) should already be applied.
         /// </param>
         /// <param name="cobc">
         /// Configuration of the cell-wise, explicit block-preconditioning for each multigrid level.
@@ -529,7 +538,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(AbstractOperator != null) {
                     int[] degS = this.BaseGridProblemMapping.BasisS.Select(b => b.Degree).ToArray();
                     if(!AbstractOperator.IsValidDomainDegreeCombination(degS, degS)) {
-                        throw new ArgumentException($"DG degree combiation [{degS.ToConcatString("", ", ", "")}] is reported to be illegal for DG operator");
+                        throw new ArgumentException($"DG degree combination [{degS.ToConcatString("", ", ", "")}] is reported to be illegal for DG operator");
                     }
                 }
 
@@ -561,6 +570,42 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         if(MassMatrix != null) {
                             this.m_RawMassMatrix = new BlockMsrMatrix(this.Mapping, this.Mapping);
                             BlockMsrMatrix MMR = MassMatrix;
+
+                            long i0 = MMR.RowPartitioning.i0, iE = MMR.RowPartitioning.iE;
+                            //int idxInto_IIPM = 0;
+                            BitArray check = new BitArray(MMR.RowPartitioning.LocalLength);
+                            foreach(long i in IndexIntoProblemMapping_Global) {
+                                check[checked((int)(i - i0))] = true;
+                            }
+                            for(long i = i0; i < iE; i++) {
+
+                                bool notHere = true; // true, if diagonal entry `i` in mass matrix must be empty
+                                notHere = !check[checked((int)(i - i0))];
+                                /*if (idxInto_IIPM < IndexIntoProblemMapping_Global.Length) {
+                                    long IIPM = IndexIntoProblemMapping_Global[idxInto_IIPM];
+                                    Debug.Assert(idxInto_IIPM == 0 || IndexIntoProblemMapping_Global[idxInto_IIPM - 1] < IndexIntoProblemMapping_Global[idxInto_IIPM], "expecting index list to be strictly increasing");
+                                    MMR.RowPartitioning.TestIfInLocalRange(IIPM);
+                                    
+                                    if (IIPM > i) {
+                                        // mass matrix must be zero
+                                        notHere = true;
+                                    } else if (IIPM == i) {
+                                        // it is OK for the Mass Matrix to be non-zero
+                                        notHere = false;
+                                        idxInto_IIPM++;
+                                    } else {
+                                        throw new ApplicationException("error in data or algorithm");
+                                    }
+                                }*/
+
+                                if (notHere) {
+                                    double MM_ii = MMR[i, i];
+                                    if (MM_ii != 0.0)
+                                        throw new ArgumentException($"Provided mass matrix is non-zero in un-expected row/column {i}. (Forgot to apply agglomeration onto mass matrix?)");
+                                }
+                            }
+
+
                             MMR.WriteSubMatrixTo(this.m_RawMassMatrix, this.IndexIntoProblemMapping_Global, default(long[]), this.IndexIntoProblemMapping_Global, default(long[]));
                         } else {
                             this.m_RawMassMatrix = null;
@@ -859,6 +904,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// mapping: 'multigrid mapping index' --> 'full problem index'
         ///  - index: compressed index at this multigrid level
         ///  - content: index into <see cref="BaseGridProblemMapping"/> (local)
+        ///  Note: this list is not necessarily ascending, i.e. the order of species might get flipped in the multigrid operator
         /// </summary>
         int[] IndexIntoProblemMapping_Local;
 
@@ -867,70 +913,81 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// mapping: 'multigrid mapping index' --> 'full problem index'
         ///  - index: compressed index at this multigrid level
         ///  - content: index into <see cref="BaseGridProblemMapping"/> (global)
+        ///  Note: this list is not necessarily ascending, i.e. the order of species might get flipped in the multigrid operator
         /// </summary>
         long[] IndexIntoProblemMapping_Global;
 
 
         private MultigridOperator(MultigridOperator __FinerLevel, IEnumerable<AggregationGridBasis[]> basisES, UnsetteledCoordinateMapping _pm, IEnumerable<ChangeOfBasisConfig[]> cobc) {
-            using(new FuncTrace("MultigridOperator-internalCtor")) {
-                if(basisES.Count() <= 0) {
+            using (new FuncTrace("MultigridOperator-internalCtor")) {
+                if (basisES.Count() <= 0) {
                     throw new ArgumentException("At least one multigrid level is required.");
                 }
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                 this.BaseGridProblemMapping = _pm;
-                if(cobc.Count() < 1)
+                if (cobc.Count() < 1)
                     throw new ArgumentException();
                 this.m_Config = cobc.First();
                 this.FinerLevel = __FinerLevel;
 
                 this.Mapping = new MultigridMapping(_pm, basisES.First(), this.Degrees);
 
-                if(this.Mapping.LocalLength > this.BaseGridProblemMapping.LocalLength)
+                if (this.Mapping.LocalLength > this.BaseGridProblemMapping.LocalLength)
                     throw new ApplicationException("Something wrong.");
 
 
-                if(basisES.Count() > 1) {
+                if (basisES.Count() > 1) {
                     this.CoarserLevel = new MultigridOperator(this, basisES.Skip(1), _pm, cobc.Count() > 1 ? cobc.Skip(1) : cobc);
                 }
 
-                if(this.LevelIndex == 0 && this.Mapping.AggBasis.Any(agb => agb.ReqModeIndexTrafo)) {
+                if (this.LevelIndex == 0 && this.Mapping.AggBasis.Any(agb => agb.ReqModeIndexTrafo)) {
                     int J = this.Mapping.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                    if(J != BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells)
+                    if (J != BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells)
                         throw new Exception("No of local cells wrong");
                     Debug.Assert(J == this.BaseGridProblemMapping.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
                     IndexIntoProblemMapping_Local = new int[this.Mapping.LocalLength];
+                    var IndexIntoProblemMapping_Local_check = new int[this.Mapping.LocalLength,3];
 #if DEBUG
-                IndexIntoProblemMapping_Local.SetAll(-23456);
+                    IndexIntoProblemMapping_Local.SetAll(-23456);
 #endif
 
                     AggregationGridBasis[] AgBss = this.Mapping.AggBasis;
                     int[] Degrees = this.Mapping.DgDegree;
                     int NoFlds = Degrees.Length;
 
-                    for(int j = 0; j < J; j++) { // loop over cells
+                    for (int j = 0; j < J; j++) { // loop over cells
 
-                        for(int iFld = 0; iFld < NoFlds; iFld++) {
+                        for (int iFld = 0; iFld < NoFlds; iFld++) {
                             int N = AgBss[iFld].GetLength(j, Degrees[iFld]); // By using the length of the aggregate grid mapping,
-                                                                             //                                            we exclude XDG agglomerated cells.
+                                                                             // we exclude XDG agglomerated cells.
 
-                            if(N > 0) {
+                            if (N > 0) {
                                 int k0 = this.Mapping.ProblemMapping.LocalUniqueCoordinateIndex(iFld, j, 0);
                                 int i0 = this.Mapping.LocalUniqueIndex(iFld, j, 0);
-                                for(int n = 0; n < N; n++) {
+                                for (int n = 0; n < N; n++) {
                                     //X[i0 + n] = INOUT_X[k0 + n];
                                     //B[i0 + n] = IN_RHS[k0 + n];
 
                                     int n_trf = AgBss[iFld].N_Murks(j, n, N);
                                     Debug.Assert(n_trf >= 0);
 #if DEBUG
-                                Debug.Assert(IndexIntoProblemMapping_Local[i0 + n] < 0);
+                                    Debug.Assert(IndexIntoProblemMapping_Local[i0 + n] < 0);
 
 #endif
+                                    //
+                                    // Note:
+                                    // the list `IndexIntoProblemMapping_Local` is not necessarily ascending.
+                                    //
+
+
                                     IndexIntoProblemMapping_Local[i0 + n] = k0 + n_trf;
-                                    //Debug.Assert(i0 + n == 0 || IndexIntoProblemMapping_Local[i0 + n] > IndexIntoProblemMapping_Local[i0 + n - 1]);
                                     Debug.Assert(IndexIntoProblemMapping_Local[i0 + n] >= 0);
                                     Debug.Assert(IndexIntoProblemMapping_Local[i0 + n] < this.Mapping.ProblemMapping.LocalLength);
+
+                                    IndexIntoProblemMapping_Local_check[i0 + n, 0] = j;
+                                    IndexIntoProblemMapping_Local_check[i0 + n, 1] = iFld;
+                                    IndexIntoProblemMapping_Local_check[i0 + n, 2] = n;
                                 }
                             } else {
                                 // should be a cell without any species.
@@ -938,43 +995,48 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 Debug.Assert(this.Mapping.AggBasis.Where(b => !(b is XdgAggregationBasis)).Count() == 0, "all must be XDG");
                                 Debug.Assert(this.Mapping.AggBasis.Where(b => ((XdgAggregationBasis)b).GetNoOfSpecies(j) != 0).Count() == 0, "no species in any cell allowed");
 
+
+
                                 //Debug.Assert();
                             }
                         }
                     }
 
+                   
+
 #if DEBUG
-                Debug.Assert(IndexIntoProblemMapping_Local.Any(i => i < 0) == false);
+                    Debug.Assert(IndexIntoProblemMapping_Local.Any(i => i < 0) == false);
 #endif
 
-                    if(this.Mapping.ProblemMapping.MpiSize == 1) {
+                    if (this.Mapping.ProblemMapping.MpiSize == 1) {
                         this.IndexIntoProblemMapping_Global = this.IndexIntoProblemMapping_Local.Select(i => (long)i).ToArray();
                     } else {
                         this.IndexIntoProblemMapping_Global = this.IndexIntoProblemMapping_Local.Select(i => (long)i).ToArray();
                         long i0Proc = this.Mapping.ProblemMapping.i0;
                         int L = this.IndexIntoProblemMapping_Global.Length;
-                        for(int i = 0; i < L; i++) {
+                        for (int i = 0; i < L; i++) {
                             this.IndexIntoProblemMapping_Global[i] += i0Proc;
                         }
                     }
                 }
 #if DEBUG
-            if (IndexIntoProblemMapping_Local != null) {
-                long i0 = this.Mapping.ProblemMapping.i0;
-                int L = this.Mapping.ProblemMapping.LocalLength;
+                if (IndexIntoProblemMapping_Local != null) {
+                    long i0 = this.Mapping.ProblemMapping.i0;
+                    int L = this.Mapping.ProblemMapping.LocalLength;
 
-                int[] UseCount = new int[L];
-                foreach (int i in IndexIntoProblemMapping_Global) {
-                    UseCount[i - i0]++;
-                }
+                    int[] UseCount = new int[L];
+                    foreach (int i in IndexIntoProblemMapping_Global) {
+                        UseCount[i - i0]++;
+                    }
 
-                for (int l = 0; l < L; l++) {
-                    Debug.Assert(UseCount[l] <= 1);
+                    for (int l = 0; l < L; l++) {
+                        Debug.Assert(UseCount[l] <= 1);
+                    }
                 }
-            }
 #endif
             }
         }
+
         /// <summary>
         /// DG coordinate mapping which corresponds to this mesh level, resp. operator matrix (<see cref="OperatorMatrix"/>, <see cref="MassMatrix"/>).
         /// </summary>
