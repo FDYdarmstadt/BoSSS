@@ -190,6 +190,13 @@ namespace BoSSS.Application.TutorialTests {
         }
 #endif
 
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("XDGagglomeration/XDGagglomeration.ipynb")]
+        [Test]
+        static public void Run__XDGagglomeration() {
+            RunWorksheet("XDGagglomeration/XDGagglomeration.ipynb");
+        }
+
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>

@@ -141,10 +141,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="tracker"></param>
-        /// <param name="levelSetIndex"></param>
-        /// <param name="rootFindingAlgorithm"></param>
-        /// <param name="jumpType"></param>
         public CutLineOnEdgeQuadRuleFactory(LevelSetTracker.LevelSetData __lsData, LineSegment.IRootFindingAlgorithm rootFindingAlgorithm = null, JumpTypes jumpType = JumpTypes.Heaviside) {
             if (__lsData.GridDat.SpatialDimension < 3) {
                 throw new ArgumentException("Only applicable in 3d", "tracker");

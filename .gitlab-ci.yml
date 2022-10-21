@@ -30,12 +30,13 @@ test:
     - dir 
     - cd bin/Release/net6.0
 #    - cd src/L4-application/PublicTestRunner/bin/Release/net6.0
-    - bash -c "chmod +x PublicTestRunner.exe"
+#    - bash -c "chmod +x PublicTestRunner.exe"
   tags:
     - C#7.0
     - big_server    
   script:
-    - ./PublicTestRunner.exe nunit3 TutorialTests --result=result.xml    
+    -  dir PublicTestRunner*
+    - PublicTestRunner.exe nunit3 TutorialTests --result=result.xml    
   dependencies:
     - build
   needs:
@@ -64,18 +65,9 @@ pages:
     - test
   script:
     - dir src/L4-application/PublicTestRunner/bin/Release/net6.0/*.html
-    - mkdir public
-    - copy src/L4-application/PublicTestRunner/bin/Release/net6.0/*.html ./public/
-    - cd public    
-#    - c:/ProgramData/chocolatey/bin/wget.exe http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage4-ValidationTest-atLichtenberg/lastSuccessfulBuild/artifact/*zip*/archive.zip
-#    - unzip archive.zip
-#    - cp $(find . -name *.html) .
-#    - rm -r -f archive*
-#    - c:/ProgramData/chocolatey/bin/wget.exe http://130.83.248.207:8080/view/BoSSS%20Master%20Pipelines/job/BoSSS-Stage4-ValidationTest-atFDYcluster/lastSuccessfulBuild/artifact/*zip*/archive.zip
-#    - unzip archive.zip
-#    - cp $(find . -name *.html) .
-#    - rm -r -f archive*
-    - bash ../downloadValidationTests.sh
+    - ./downloadValidationTestsWrapper.bat
+    - cd public  
+    - dir
     - python ../doc/Generate-Index-Files-1.0/generate-index.py
     - dir 
   artifacts:

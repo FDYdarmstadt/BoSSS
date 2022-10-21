@@ -168,7 +168,6 @@ namespace BoSSS.Solution.LevelSetTools {
             LevelSet.AccConstant(-1, Neg);
         }
 
-
         /// <summary>
         /// computes the jump norm of field <paramref name="f"/> at inner edges on <paramref name="mask"/>
         /// </summary>
@@ -185,6 +184,26 @@ namespace BoSSS.Solution.LevelSetTools {
             }
             SubGrid maskSG = new SubGrid(mask);
             EdgeMask innerEM = maskSG.InnerEdgesMask;
+
+            return JumpNorm(f, innerEM);
+        }
+
+
+        /// <summary>
+        /// computes the jump norm of field <paramref name="f"/> at inner edges on <paramref name="mask"/>
+        /// </summary>
+        /// <param name="f"></param>
+        /// <param name="mask"> if null full mask is chosen </param>
+        /// <returns></innerEM>
+        static double JumpNorm(DGField f, EdgeMask innerEM = null) {
+            GridData grd = (GridData)f.GridDat;
+            int D = grd.SpatialDimension;
+            var e2cTrafo = grd.Edges.Edge2CellTrafos;
+
+            if (innerEM == null) {
+                innerEM = EdgeMask.GetFullMask(grd, MaskType.Geometrical);
+            }
+            
 
             f.MPIExchange();
 

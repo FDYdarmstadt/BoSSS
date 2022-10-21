@@ -123,6 +123,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     if(LsTrk != null && xop != null) {
                         Op_Agglomeration = LsTrk.GetAgglomerator(spcIDs, quadOrder, xop.AgglomerationThreshold);
+
+                        foreach(SpeciesId s in Op_Agglomeration.SpeciesList) {
+                            var agg = Op_Agglomeration.GetAgglomerator(s);
+                            Console.WriteLine($"Agglom. for species {LsTrk.GetSpeciesName(s)}: {agg.TotalNumberOfAgglomerations}");
+                                                       
+
+                            Console.WriteLine(agg.AggInfo.ToString());
+                        }
+
+
                     } else {
                         Op_Agglomeration = null;
                     }
@@ -748,7 +758,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Easy-to-use driver routine to obtain the bloc-preconditioned operator matrix.
+        /// Easy-to-use driver routine to obtain the multigrid-operator object
         /// </summary>
         /// <param name="op"></param>
         /// <param name="Mapping">
@@ -756,20 +766,38 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// Any matrix analysis is performed at this linearization point.
         /// </param>
         /// <param name="MgConfig">
-        /// provisional; not that the block preconditioning configured here has huge effects on the condition number.
+        /// provisional; note that the block preconditioning configured here has huge effects on the condition number.
         /// </param>
         /// <returns></returns>
-        static public BlockMsrMatrix GetMatrix(this ISpatialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
+        static public MultigridOperator GetMultigridOperator(this ISpatialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
 
             var G = new MatrixAssembler(op, Mapping, null, null, MgConfig);
 
-            G.AssembleMatrix(out var Op_Matrix, out var Op_Affine, out var MassMatrix, G.SolutionFields, true, out _);
+            G.AssembleMatrix(out var Op_Matrix, out var _, out var MassMatrix, G.SolutionFields, true, out _);
 
             var MultigridOp = new MultigridOperator(G.AggBasisS, Mapping,
                         Op_Matrix, MassMatrix, G.MgConfig,
                         op);
 
-            return MultigridOp.OperatorMatrix;
+            return MultigridOp;
+
+        }
+
+        /// <summary>
+        /// Easy-to-use driver routine to obtain the block-preconditioned operator matrix.
+        /// </summary>
+        /// <param name="op"></param>
+        /// <param name="Mapping">
+        /// Current Solution resp. solution approximation;
+        /// Any matrix analysis is performed at this linearization point.
+        /// </param>
+        /// <param name="MgConfig">
+        /// provisional; note that the block preconditioning configured here has huge effects on the condition number.
+        /// </param>
+        /// <returns></returns>
+        static public BlockMsrMatrix GetMatrix(this ISpatialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
+
+            return GetMultigridOperator(op, Mapping, MgConfig).OperatorMatrix;
 
         }
 
