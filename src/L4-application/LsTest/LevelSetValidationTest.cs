@@ -132,6 +132,25 @@ namespace BoSSS.Application.LsTest {
 
             return C;
         }
+
+        public static void SwirlingFlow3DSpatialConvergenceTest() {
+            var C = SwirlingFlow3DSpatialConvergence(2, 1, LevelSetEvolution.StokesExtension, "SwirlingFlow3DSpatialConvergenceTest", @"P:\cluster\Leveque3D");
+            C.ImmediatePlotPeriod = 10;
+            C.SuperSampling = 2;
+            C.dtFixed = 1.0 / (2 * 2 * 2 * 25); // h / (u * p^2)
+            C.TracingNamespaces = "*";
+            C.saveperiod = 1;
+
+            // C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("e30fe539-6dea-4944-91d9-3dd7171f01d0"), -1); // 0 - 166 (restart at 166)
+            // C.RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("1e4670ec-c61d-4b65-8d2d-c249cf06d1bb"), -1); // 166 - 199 (restart at 199)
+            //C.GridGuid = new Guid("de356268-46ca-461c-8a4b-d9cbbebb5597");
+            //C.GridFunc = null;
+
+            var s = new SolverWithLevelSetUpdaterTestCenter();
+            s.Init(C);
+            s.RunSolverMode();
+        }
+
         public static SolverWithLevelSetUpdaterTestControl SwirlingFlow3DSpatialConvergence(int degree, int gridRes, LevelSetEvolution lsEvo, string ProjectName, string dbPath) {
             var Tst = new LevelSetSwirlingFlowTest(3, degree, false, 3);
             var C = LSTstObj2CtrlObj(Tst, int.MaxValue, lsEvo, LevelSetHandling.LieSplitting, gridRes, 0);
@@ -144,14 +163,16 @@ namespace BoSSS.Application.LsTest {
             C.dtFixed = 1.0 / (100 * degree * degree * 2); // gridres max is 4, and tempres is 2 for all simulations (all using the same timestep)
             C.NoOfTimesteps = (int)(C.Endtime / C.dtFixed);
 
-            var db = DatabaseInfo.CreateOrOpen(dbPath);
-            var grd = C.GridFunc();
-            db.Controller.DBDriver.SaveGridIfUnique(ref grd, out bool found, db);
-            if (found) {
-                Console.WriteLine("Found equivalent grid in database, grid will not be saved");
-            }
-            C.SetGrid(grd);
-            C.GridFunc = null;
+            //if (dbPath != null) {
+            //    var grd = C.GridFunc();
+            //    var db = DatabaseInfo.CreateOrOpen(dbPath);
+            //    db.Controller.DBDriver.SaveGridIfUnique(ref grd, out bool found, db);
+            //    if (found) {
+            //        Console.WriteLine("Found equivalent grid in database, grid will not be saved");
+            //    }
+            //    C.SetGrid(grd);
+            //    C.GridFunc = null;
+            //}
 
             C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Res", gridRes));
             C.Paramstudy_CaseIdentification.Add(new Tuple<string, object>("Degree", degree));
@@ -556,7 +577,7 @@ namespace BoSSS.Application.LsTest {
             /// <param name="LSdegree"></param>
             /// <returns></returns>
             public double ComputeTimestep(int Resolution, int LSdegree, int AMRlevel, int temporalResolution) {
-                int gridCells1D = (25 * Resolution) * (AMRlevel + 1);
+                int gridCells1D = 25 * (Resolution) * (AMRlevel + 1);
                 double h = 1.0 * 1.0 / (double)gridCells1D;
                 double dt = h / (1.0) * 1.0; // this is grid width divided by maximum velocity, times safety factor of 1.0 (1.0 no saftey)
                 dt /= (double)(LSdegree * LSdegree);
@@ -582,9 +603,9 @@ namespace BoSSS.Application.LsTest {
             public virtual GridCommons CreateGrid(int Resolution) {
                 if (Resolution < 1)
                     throw new ArgumentException();
-
-                var xNodes = GenericBlas.Linspace(0, 1, 25 * Resolution + 1);
-                var yNodes = GenericBlas.Linspace(0, 1, 25 * Resolution + 1);
+                int baseRes = 25; 
+                var xNodes = GenericBlas.Linspace(0, 1, baseRes * Resolution + 1);
+                var yNodes = GenericBlas.Linspace(0, 1, baseRes * Resolution + 1);
 
                 GridCommons grd;
                 switch (SpatialDimension) {
@@ -592,7 +613,7 @@ namespace BoSSS.Application.LsTest {
                         grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                         break;
                     case 3:
-                        var zNodes = GenericBlas.Linspace(0, 1, 25 * Resolution + 1);
+                        var zNodes = GenericBlas.Linspace(0, 1, baseRes * Resolution + 1);
                         grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
                         break;
                     default:
