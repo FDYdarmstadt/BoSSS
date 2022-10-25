@@ -1351,166 +1351,166 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         /// <param name="levelSetStatus"></param>
         public void OnNext(LevelSetTracker.LevelSetRegions levelSetStatus) {
-            int J = this.GridDat.iLogicalCells.Count;
-            LevelSetTracker trk = m_CCBasis.Tracker;
+                int J = this.GridDat.iLogicalCells.Count;
+                LevelSetTracker trk = m_CCBasis.Tracker;
 
-            int oldTrackerVersion = m_TrackerVersion;
-            m_TrackerVersion = trk.VersionCnt;
+                int oldTrackerVersion = m_TrackerVersion;
+                m_TrackerVersion = trk.VersionCnt;
 
-            m_Coordinates.BeginResize(m_CCBasis.MaximalLength);
+                m_Coordinates.BeginResize(m_CCBasis.MaximalLength);
 
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
-                if (trk.HistoryLength < 1)
-                    throw new NotSupportedException("LevelSettracker must have a history length >= 1 in order to support 'PreserveMemory' or 'AutoExtrapolate'.");
-            }
-
-            // rearrange DG coordinates if regions have changed
-            // ================================================
-            if ((m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate)
-                && (m_TrackerVersion - oldTrackerVersion) > 0 && levelSetStatus.m_LevSetRegions_b4Update != null) {
-
-                if((m_TrackerVersion - oldTrackerVersion) > 1) {
-                    string message = $"The update behavior '{BehaveUnder_LevSetMoovement.PreserveMemory}' and '{BehaveUnder_LevSetMoovement.AutoExtrapolate}' do not work if every tracker update is paired with a 'PushStacks()' call (DGfield '" + (this.Identification ?? "no name set") + "').";
-                    //Console.WriteLine(message);
-                    throw new NotSupportedException(message);
+                if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate) {
+                    if (trk.HistoryLength < 1)
+                        throw new NotSupportedException("LevelSettracker must have a history length >= 1 in order to support 'PreserveMemory' or 'AutoExtrapolate'.");
                 }
 
-                // rearrange DG coordinates, preserve State of each species 
-                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                // rearrange DG coordinates if regions have changed
+                // ================================================
+                if ((m_UpdateBehaviour == BehaveUnder_LevSetMoovement.PreserveMemory || m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate)
+                    && (m_TrackerVersion - oldTrackerVersion) > 0 && levelSetStatus.m_LevSetRegions_b4Update != null) {
 
-                double[] coordsFull = new double[m_CCBasis.MaximalLength];
-                ushort[] OldRegionCode = levelSetStatus.m_LevSetRegions_b4Update;
-                ushort[] NewRegionCode = levelSetStatus.RegionsCode;
-                Debug.Assert(!object.ReferenceEquals(OldRegionCode, NewRegionCode));
-
-                int Nsep = m_CCBasis.DOFperSpeciesPerCell;
-                int i0CmnFull = trk.TotalNoOfSpecies * Nsep;
-                //int[] i0SepFull = new int[trk.TotalNoOfSpecies];
-                //for( int iSepc = 0; iSepc < i0SepFull.Length; iSepc++) i0SepFull[iSepc] = iSepc*Nsep;
-
-                for (int j = 0; j < J; j++) {
-
-                    ushort oldCd = OldRegionCode[j];
-                    ushort newCd = NewRegionCode[j];
-                                       
-                    if (oldCd != newCd  // quick pre-test
-                         && ReducedRegionCode.Extract(oldCd) != ReducedRegionCode.Extract(newCd)) {
-                        // something changed
-
-                        Array.Clear(coordsFull, 0, coordsFull.Length);
-
-                        // save coordinates
-                        // ----------------
-                        {
-                            ReducedRegionCode OldInd;
-                            int OldNo = trk.GetNoOfSpeciesByRegionCode(oldCd, out OldInd);
-
-                            // separate coordinates
-                            for (int iSpec = 0; iSpec < OldNo; iSpec++) {
-                                SpeciesId SpecId = trk.GetSpeciesIdFromIndex(OldInd, iSpec);
-                                int iSpecGlob = SpecId.cntnt - LevelSetTracker.___SpeciesIDOffest;
-                                int i0SepOld = iSpec * Nsep;
-                                int i0SepFull = iSpecGlob * Nsep;
-
-                                for (int _n = 0; _n < Nsep; _n++)
-                                    coordsFull[_n + i0SepFull] = m_Coordinates[j, _n + i0SepOld];
-                            }
-                        }
-
-                        // resize array
-                        // ------------
-                        m_Coordinates.Resize(j, m_CCBasis.GetLength(j));
-
-                        // write back coordinates in new order
-                        // -----------------------------------
-                        {
-                            ReducedRegionCode NewInd;
-                            int NewNo = trk.GetNoOfSpeciesByRegionCode(newCd, out NewInd);
-
-                            // separate coordinates
-                            for (int iSpec = 0; iSpec < NewNo; iSpec++) {
-                                SpeciesId SpecId = trk.GetSpeciesIdFromIndex(NewInd, iSpec);
-                                int iSpecGlob = SpecId.cntnt - LevelSetTracker.___SpeciesIDOffest;
-                                int i0SepNew = iSpec * Nsep;
-                                int i0SepFull = iSpecGlob * Nsep;
-
-                                for (int _n = 0; _n < Nsep; _n++)
-                                    m_Coordinates[j, _n + i0SepNew] = coordsFull[_n + i0SepFull];
-                            }
-                        }
-                    } else {
-                        m_Coordinates.Resize(j, m_CCBasis.GetLength(j)); // need to call resize in every case
+                    if((m_TrackerVersion - oldTrackerVersion) > 1) {
+                        string message = $"The update behavior '{BehaveUnder_LevSetMoovement.PreserveMemory}' and '{BehaveUnder_LevSetMoovement.AutoExtrapolate}' do not work if every tracker update is paired with a 'PushStacks()' call (DGfield '" + (this.Identification ?? "no name set") + "').";
+                        //Console.WriteLine(message);
+                        throw new NotSupportedException(message);
                     }
-                }
-            } else {
-                // just allocate/free memory
-                // +++++++++++++++++++++++++
 
-                for (int j = 0; j < J; j++) {
-                    int l = m_CCBasis.GetLength(j);
-                    m_Coordinates.Resize(j, l);
-                }
+                    // rearrange DG coordinates, preserve State of each species 
+                    // +++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-            }
+                    double[] coordsFull = new double[m_CCBasis.MaximalLength];
+                    ushort[] OldRegionCode = levelSetStatus.m_LevSetRegions_b4Update;
+                    ushort[] NewRegionCode = levelSetStatus.RegionsCode;
+                    Debug.Assert(!object.ReferenceEquals(OldRegionCode, NewRegionCode));
 
-            m_Coordinates.FinishResize();
+                    int Nsep = m_CCBasis.DOFperSpeciesPerCell;
+                    int i0CmnFull = trk.TotalNoOfSpecies * Nsep;
+                    //int[] i0SepFull = new int[trk.TotalNoOfSpecies];
+                    //for( int iSepc = 0; iSepc < i0SepFull.Length; iSepc++) i0SepFull[iSepc] = iSepc*Nsep;
 
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.JustReallocate)
-                // the DOF in the near band will be crap anyway...
-                m_Coordinates.Clear();
+                    for (int j = 0; j < J; j++) {
 
-            //m_TrackerVersionCnt = levelSetStatus.Version;
+                        ushort oldCd = OldRegionCode[j];
+                        ushort newCd = NewRegionCode[j];
 
-            // update MPI buffer size
-            // ======================
-            int size = this.GridDat.CellPartitioning.MpiSize;
-            if (size > 1) {
-                if (m_MPIRecvBufSize == null)
-                    m_MPIRecvBufSize = new int[size];
-                if (m_MPISendBufSize == null)
-                    m_MPISendBufSize = new int[size];
+                        if (oldCd != newCd  // quick pre-test
+                             && ReducedRegionCode.Extract(oldCd) != ReducedRegionCode.Extract(newCd)) {
+                            // something changed
 
-                for (int p = 0; p < size; p++) {
-                    // send list
-                    {
-                        int[] senditems = this.GridDat.iParallel.SendCommLists[p];
-                        if (senditems != null) {
-                            int L = senditems.Length;
+                            Array.Clear(coordsFull, 0, coordsFull.Length);
 
-                            int sz = 0;
-                            for (int l = 0; l < L; l++)
-                                sz += m_CCBasis.GetLength(senditems[l]);
-                            m_MPISendBufSize[p] = sz;
+                            // save coordinates
+                            // ----------------
+                            {
+                                ReducedRegionCode OldInd;
+                                int OldNo = trk.GetNoOfSpeciesByRegionCode(oldCd, out OldInd);
+
+                                // separate coordinates
+                                for (int iSpec = 0; iSpec < OldNo; iSpec++) {
+                                    SpeciesId SpecId = trk.GetSpeciesIdFromIndex(OldInd, iSpec);
+                                    int iSpecGlob = SpecId.cntnt - LevelSetTracker.___SpeciesIDOffest;
+                                    int i0SepOld = iSpec * Nsep;
+                                    int i0SepFull = iSpecGlob * Nsep;
+
+                                    for (int _n = 0; _n < Nsep; _n++)
+                                        coordsFull[_n + i0SepFull] = m_Coordinates[j, _n + i0SepOld];
+                                }
+                            }
+
+                            // resize array
+                            // ------------
+                            m_Coordinates.Resize(j, m_CCBasis.GetLength(j));
+
+                            // write back coordinates in new order
+                            // -----------------------------------
+                            {
+                                ReducedRegionCode NewInd;
+                                int NewNo = trk.GetNoOfSpeciesByRegionCode(newCd, out NewInd);
+
+                                // separate coordinates
+                                for (int iSpec = 0; iSpec < NewNo; iSpec++) {
+                                    SpeciesId SpecId = trk.GetSpeciesIdFromIndex(NewInd, iSpec);
+                                    int iSpecGlob = SpecId.cntnt - LevelSetTracker.___SpeciesIDOffest;
+                                    int i0SepNew = iSpec * Nsep;
+                                    int i0SepFull = iSpecGlob * Nsep;
+
+                                    for (int _n = 0; _n < Nsep; _n++)
+                                        m_Coordinates[j, _n + i0SepNew] = coordsFull[_n + i0SepFull];
+                                }
+                            }
                         } else {
-                            m_MPISendBufSize[p] = int.MinValue;
+                            m_Coordinates.Resize(j, m_CCBasis.GetLength(j)); // need to call resize in every case
                         }
                     }
+                } else {
+                    // just allocate/free memory
+                    // +++++++++++++++++++++++++
 
-                    // receive list
-                    {
-                        int L = this.GridDat.iParallel.RcvCommListsNoOfItems[p];
-                        if (L > 0) {
-                            int j0 = this.GridDat.iParallel.RcvCommListsInsertIndex[p];
-                            L += j0;
-                            int sz = 0;
-                            for (int j = j0; j < L; j++) {
-                                sz += m_CCBasis.GetLength(j);
+                    for (int j = 0; j < J; j++) {
+                        int l = m_CCBasis.GetLength(j);
+                        m_Coordinates.Resize(j, l);
+                    }
+
+                }
+
+                m_Coordinates.FinishResize();
+
+                if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.JustReallocate)
+                    // the DOF in the near band will be crap anyway...
+                    m_Coordinates.Clear();
+
+                //m_TrackerVersionCnt = levelSetStatus.Version;
+
+                    // update MPI buffer size
+                    // ======================
+                    int size = this.GridDat.CellPartitioning.MpiSize;
+                    if (size > 1) {
+                        if (m_MPIRecvBufSize == null)
+                            m_MPIRecvBufSize = new int[size];
+                        if (m_MPISendBufSize == null)
+                            m_MPISendBufSize = new int[size];
+
+                        for (int p = 0; p < size; p++) {
+                            // send list
+                            {
+                                int[] senditems = this.GridDat.iParallel.SendCommLists[p];
+                                if (senditems != null) {
+                                    int L = senditems.Length;
+
+                                    int sz = 0;
+                                    for (int l = 0; l < L; l++)
+                                        sz += m_CCBasis.GetLength(senditems[l]);
+                                    m_MPISendBufSize[p] = sz;
+                                } else {
+                                    m_MPISendBufSize[p] = int.MinValue;
+                                }
                             }
-                            m_MPIRecvBufSize[p] = sz;
-                        } else {
-                            m_MPIRecvBufSize[p] = int.MinValue;
+
+                            // receive list
+                            {
+                                int L = this.GridDat.iParallel.RcvCommListsNoOfItems[p];
+                                if (L > 0) {
+                                    int j0 = this.GridDat.iParallel.RcvCommListsInsertIndex[p];
+                                    L += j0;
+                                    int sz = 0;
+                                    for (int j = j0; j < L; j++) {
+                                        sz += m_CCBasis.GetLength(j);
+                                    }
+                                    m_MPIRecvBufSize[p] = sz;
+                                } else {
+                                    m_MPIRecvBufSize[p] = int.MinValue;
+                                }
+                            }
                         }
+                    }
+
+                // do Extrapolation, if necessary
+                if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate && trk.PopulatedHistoryLength >= 1) {
+                    foreach (var species in m_CCBasis.Tracker.SpeciesIdS) {
+                        AutoExtrapolateSpecies(species, trk.RegionsHistory[0].GetSpeciesSubGrid(species));
                     }
                 }
             }
-
-            // do Extrapolation, if necessary
-            if (m_UpdateBehaviour == BehaveUnder_LevSetMoovement.AutoExtrapolate && trk.PopulatedHistoryLength >= 1) {
-                foreach (var species in m_CCBasis.Tracker.SpeciesIdS) {
-                    AutoExtrapolateSpecies(species, trk.RegionsHistory[0].GetSpeciesSubGrid(species));
-                }
-            }
-        }
 
         #endregion
     }

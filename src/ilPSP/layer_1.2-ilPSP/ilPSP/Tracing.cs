@@ -734,6 +734,7 @@ namespace ilPSP.Tracing {
             _f = f;
             m_Logger = _f.m_Logger;
             m_timeToCout = timeToCout;
+            DoLogging = _f.DoLogging;
             base.EnterMessage("BLKENTER ", _name);
         }
 

@@ -479,8 +479,8 @@ namespace BoSSS.Foundation.XDG {
                     void ClearExternalPairs() {
                         MustDeletePair.MPIExchange(g);
 
-                        for(int j = J; j < J; j++) {
-                            if(MustDeletePair[j]) {
+                        for(int j = J; j < JE; j++) { // this dont do nothing ...
+                            if(MustDeletePair[j] && Cells2Aggpairs[j] >= 0) {
                                 int currentPair = Cells2Aggpairs[j];
                                 if(AggPairs[currentPair].jSource >= 0 || AggPairs[currentPair].jTarget >= 0)
                                     throw new ApplicationException($"Error in Algorithm: " + AggPairs[currentPair].ToString());
@@ -489,7 +489,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                         for(int j = J; j < JE; j++) {
-                            if(MustDeletePair[j]) {
+                            if(MustDeletePair[j] && Cells2Aggpairs[j] >= 0) {
                                 // the pair `Cells2Aggpairs[j]` should be removed
                                 int currentPair = Cells2Aggpairs[j];
 
