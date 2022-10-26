@@ -23,6 +23,9 @@ namespace BoSSS.Foundation.Grid {
 
         IntPtr m_ForeignPtr;
 
+        // int dimension;
+        int nPoints;
+
         public string[] BoundaryFacePatchTypes;
 
         /// <summary>
@@ -89,6 +92,7 @@ namespace BoSSS.Foundation.Grid {
             // byte** names,
             int** names,
             int* patchIDs
+            // int dimension
         ) :
             base(new[] { Cube.Instance}, new[] { Square.Instance}) //
         {
@@ -152,6 +156,8 @@ namespace BoSSS.Foundation.Grid {
                     this.BoundaryFacePatchTypes[i] = _names[_patchIDs[i]];
                 }
 
+                // this.dimension = dimension;
+                this.nPoints = nPoints;
 
                 // create BoSSS grid
                 FOAMmesh_to_BoSSS(this, nCells, _faces, _neighbour, _owner, _points, _names, _patchIDs, emptyTag);
@@ -194,10 +200,12 @@ namespace BoSSS.Foundation.Grid {
             string[] names,
             int[] patchIDs,
             int emptyTag
+            // int dimension
         ) :
             base(new[] { Cube.Instance }, new[] { Square.Instance }) //
         {
 
+            // this.dimension = dimension;
 
             // create BoSSS grid
             FOAMmesh_to_BoSSS(this, nCells, faces, neighbour, owner, points, names, patchIDs, emptyTag);
@@ -240,11 +248,31 @@ namespace BoSSS.Foundation.Grid {
 
         internal static void FOAMmesh_to_BoSSS(GridCommons grid, int nCells, int[][] faces, int[] neighbour, int[] owner, double[,] points, string[] names, int[] patchIDs, int emptyTag) {
 
-            // write everything to a file for debugging
-            File.WriteAllLines("neighbour", neighbour.Select(i=>i.ToString()).ToArray());
-            File.WriteAllLines("owner", owner.Select(i=>i.ToString()).ToArray());
-            // System.IO.File.WriteAllLines("faces", faces.Select(i=>i.ToString()).ToArray());
-            File.WriteAllLines("faces", faces.Select(line => String.Join(" ", line)));
+            // if (grid.dimension == 2){
+            //     // find degenerate dimension
+            //     int degenDim = 1; // TODO unhardcode
+            //     List<double[]> Nodes = new List<double[]>();
+            //     for (int i = 0; i < grid.nPoints; i++){
+            //         int projectedDim = 0;
+            //         double[] node = new double[2];
+            //         for (int d = 0; d < 3; d++){
+            //             if (d != degenDim){
+            //                 node[projectedDim] = points[i,d];
+            //                 projectedDim++;
+            //             }
+            //         }
+            //         Nodes.Add(node);
+            //     }
+
+
+            //     // grid.MergeAndCheckNodes
+            // }
+
+            // // write everything to a file for debugging
+            // File.WriteAllLines("neighbour", neighbour.Select(i=>i.ToString()).ToArray());
+            // File.WriteAllLines("owner", owner.Select(i=>i.ToString()).ToArray());
+            // // System.IO.File.WriteAllLines("faces", faces.Select(i=>i.ToString()).ToArray());
+            // File.WriteAllLines("faces", faces.Select(line => String.Join(" ", line)));
 
             using (var sw = new StreamWriter("points"))
             {
@@ -363,7 +391,6 @@ namespace BoSSS.Foundation.Grid {
                     cl.TransformationParams = MultidimensionalArray.Create(8, 3);
 
                     // Find point indices for bottom, i.e. 'y == -1' (in ref. coordinates):
-                    // TODO face 0 is not always the bottom one -> might be fixed by transformationparams
                     cl.NodeIndices[0] = cube_faces[0][0];
                     cl.NodeIndices[1] = cube_faces[0][1];
                     cl.NodeIndices[6] = cube_faces[0][2];
@@ -596,6 +623,8 @@ namespace BoSSS.Foundation.Grid {
             //     grid.BcCells[i].EdgeTag = (byte)(patchIDs[i - nInternalFaces] + 1);
             // }
             grid.Description = "imported form OpenFOAM";
+
+
         }
 
         static void JacobianTest(Cell cl, out bool PositiveJacobianFlag, out bool NegativeJacobianFlag, out bool Linear) {

@@ -111,8 +111,6 @@ namespace BoSSS.Application.ExternalBinding {
         /// Solves the Cahn-Hilliard equation
         /// </summary>
         [CodeGenExport]
-        // public void Laplacian(OpenFoamMatrix mtx) {
-        // public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamMatrix Umtx, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
         public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
             try{
 
@@ -244,15 +242,24 @@ namespace BoSSS.Application.ExternalBinding {
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "phi_Res");
 
                 // TODO sync from OpenFOAM
-                double cahn = 0.05;
-                double diff = 0.1;
                 double lambda = 0.0;
                 double penalty_const = 1.0;
+                // double M = 5e-11*0.02; // mobility parameter
+                // double epsilon = 0.5; // capillary width
+                double epsilon = 1e-5; // capillary width
+                // double cahn = 0.05;
+                // double M = 1; // mobility parameter
+                double M = sqrt(epsilon); // mobility parameter
+                double sigma = 0.063;
+                double lam = 3/(2 * sqrt(2)) * sigma * epsilon; // Holger's lambda
+                double diff = M * lam;
+
+                double cahn = 1.0/(epsilon * epsilon);
 
                 var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda);
                 var CHCconv = new CahnHilliardCConv(new[]{u,v,w});
-                // var CHCsource = new CahnHilliardCSource(ptch);
-                var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, cahn);
+                // var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, cahn);
+                var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, 1.0);
                 var CHPhisource = new CahnHilliardPhiSource(cahn);
                 op.EquationComponents["Res_c"].Add(CHCdiff);
                 op.EquationComponents["Res_c"].Add(CHCconv);
@@ -333,7 +340,7 @@ namespace BoSSS.Application.ExternalBinding {
                 nls.SolverCode = NonLinearSolverCode.Newton;
                 // nls.SolverCode = NonLinearSolverCode.Picard;
                 // nls.ConvergenceCriterion = 1e-5;
-                // nls.verbose = true;
+                nls.verbose = true;
                 XdgTimestepping TimeStepper = new(op,
                                                   new SinglePhaseField[]{c, phi},
                                                   new SinglePhaseField[]{Res_c, Res_phi},
@@ -349,12 +356,14 @@ namespace BoSSS.Application.ExternalBinding {
                 var tp = new Tecplot(grd.Grid.GridData, 3);
                 Tecplot("plot.1", 0.0, 3, c, phi, RealLevSet, u, v, w);
 
-                for (int t = 0; t < 1; t++) {
-                    TimeStepper.Solve(5 * t/10.0, 5 * 1.0/10.0);
+                int timesteps = 4;
+                double dt = 1e-3;
+                for (int t = 0; t < timesteps; t++) {
+                    TimeStepper.Solve(dt * t/timesteps, dt * 1.0/timesteps);
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);
                     RealTracker.UpdateTracker(0.0);
-                    Tecplot("plot." + (t+2), (t+1)/10, 3, c, phi, RealLevSet, u, v, w);
+                    Tecplot("plot." + (t+2), (t+1)/timesteps, 3, c, phi, RealLevSet, u, v, w);
                 }
                 // evaluate operator
                 // =================
