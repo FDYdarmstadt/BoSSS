@@ -55,7 +55,6 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// Create a BoSSS grid from an OpenFOAM mesh (polymesh)
         /// </summary>
-        /// <param name="ierr">output, error code; on success, set to 0</param>
         /// <param name="faces">
         /// point labels (indices) of faces, according to OpenFOAM polymesh description (array of arrays)
         /// </param>
@@ -81,6 +80,11 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="points">
         /// point coordinates, array of <paramref name="nPoints"/>*3
         /// </param>
+        /// <param name="names"></param>
+        /// <param name="nameLenghts"></param>
+        /// <param name="emptyTag"></param>
+        /// <param name="nNames"></param>
+        /// <param name="patchIDs"></param>
         [CodeGenExport]
         unsafe public OpenFOAMGrid(
             int nPoints, int nCells, int nFaces, int nInternalFaces, int nNames, int* nameLenghts, int emptyTag,
@@ -189,8 +193,13 @@ namespace BoSSS.Foundation.Grid {
         /// for each face, the owner cell label
         /// </param>
         /// <param name="points">
-        /// point coordinates, array of <paramref name="nPoints"/>*3
+        /// point coordinates
+        /// - 1st index: point index
+        /// - 2nd index: spatial direction
         /// </param>
+        /// <param name="patchIDs"></param>
+        /// <param name="emptyTag"></param>
+        /// <param name="names"></param>
         public OpenFOAMGrid(
             int nCells, 
             int[][] faces,

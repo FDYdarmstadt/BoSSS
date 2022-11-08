@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using ilPSP;
 using ilPSP.Tracing;
@@ -599,6 +600,57 @@ namespace BoSSS.Foundation {
 
                 return quacdrature.LocalLxNorms;
             }
+        }
+
+        /// <summary>
+        /// computes the jump norm of this field at edges in<paramref name="innerEM"/>
+        /// </summary>
+        /// <param name="innerEM"> if null full mask is chosen </param>
+        virtual public double JumpNorm(EdgeMask innerEM = null) {
+            var grd = this.GridDat;
+            int D = grd.SpatialDimension;
+            var e2cTrafo = grd.iGeomEdges.Edge2CellTrafos;
+
+            if (innerEM == null) {
+                innerEM = EdgeMask.GetFullMask(grd, MaskType.Geometrical);
+            }
+
+            int[,] CellIndices = grd.iGeomEdges.CellIndices;
+
+
+            this.MPIExchange();
+
+            double Unorm = 0;
+
+            EdgeQuadrature.GetQuadrature(
+                new int[] { 1 }, grd,
+                (new EdgeQuadratureScheme(true, innerEM)).Compile(grd, this.Basis.Degree * 2),
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
+                    NodeSet NS = QR.Nodes;
+                    EvalResult.Clear();
+                    int NoOfNodes = NS.NoOfNodes;
+
+                    MultidimensionalArray uIN = MultidimensionalArray.Create(Length, NoOfNodes);
+                    MultidimensionalArray uOT = MultidimensionalArray.Create(Length, NoOfNodes);
+
+                    this.EvaluateEdge(i0, Length, QR.Nodes,
+                        uIN, uOT,
+                        null, null, null, null,
+                        0, 0.0);
+
+                    var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { 0, 0, 0 }, new int[] { Length - 1, NoOfNodes - 1, -1 });
+                    uDiff.Acc(+1.0, uIN);
+                    uDiff.Acc(-1.0, uOT);
+
+                    EvalResult.ApplyAll(x => x * x);
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // SaveIntegrationResults
+                    Unorm += ResultsOfIntegration.Sum();
+                }).Execute();
+
+            Unorm = Unorm.MPISum();
+
+            return Unorm.Sqrt();
         }
 
         /// <summary>

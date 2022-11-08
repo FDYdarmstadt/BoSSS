@@ -32,12 +32,11 @@ namespace BoSSS.Application.XNSEC {
         // Main file
         //===========
         private static void Main(string[] args) {
-            //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
-
             //InitMPI();
-            //DeleteOldPlotFiles();
-            //DeleteOldTextFiles();
-            //Debugger.Launch();
+            //BoSSS.Application.XNSEC.NUnitTest.IncompressibleUnsteadyTaylorVortexTest();
+
+
+            //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
             //NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
             ////NUnitTest.XDG_DROPLET_COMBUSTION_TEST();

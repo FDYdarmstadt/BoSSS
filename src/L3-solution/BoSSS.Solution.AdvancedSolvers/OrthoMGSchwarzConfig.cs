@@ -70,7 +70,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// 
         /// </summary>
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-            //Debugger.Launch();
             Func<int, int> SblkSizeFunc = delegate (int iLevel) {
                 return TargetBlockSize; 
             };
@@ -149,9 +148,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int pCoarsest = UsepTG ? minDG : -1;
                 int[] NoBlocks = NoOfSchwarzBlocks(op, pCoarsest, SchwarzblockSize);
-                //NoBlocks[0] = 2;
-                //NoBlocks[1] = 1;
-                ////NoBlocks[2] = 1;
                 int[] GlobalNoBlocks = NoBlocks.MPISum(op.Mapping.MPI_Comm);
 
                 if (NoBlocks.Any(no => no <= 0))
