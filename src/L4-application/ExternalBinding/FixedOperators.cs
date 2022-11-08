@@ -21,6 +21,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.Utils;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.ExternalBinding {
     
@@ -230,14 +231,15 @@ namespace BoSSS.Application.ExternalBinding {
                 // u.ProjectField(((_3D)((x, y, z) => 0.05)).Vectorize());
                 // v.ProjectField(((_3D)((x, y, z) => 0.0)).Vectorize());
                 // w.ProjectField(((_3D)((x, y, z) => 0.0)).Vectorize());
-                OpenFOAMGrid ofGrid = ptch.Grid;
-                OpenFoamDGField fields = new(ofGrid, b.Degree, 2);
-                OpenFoamMatrix fullMtx = new(ofGrid, fields);
+                // OpenFOAMGrid ofGrid = ptch.Grid;
+                // OpenFoamDGField fields = new(ofGrid, b.Degree, 2);
+                // OpenFoamMatrix fullMtx = new(ofGrid, fields);
 
                 var map = new UnsetteledCoordinateMapping(b, bPhi);
 
                 int nParams = 7;
-                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "phi", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
+                // var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "phi", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
+                var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "phi", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "phi_Res");
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "phi_Res");
 
@@ -271,15 +273,16 @@ namespace BoSSS.Application.ExternalBinding {
                 double[] MassScales = new double[2];
                 MassScales[0] = 1.0;
                 // MassScales[1] = 1.0;
-                op.TemporalOperator = new ConstantTemporalOperator(op, MassScales);
+                // op.TemporalOperator = new ConstantTemporalOperator(op, MassScales);
 
                 op.LinearizationHint = LinearizationHint.GetJacobiOperator;
                 op.Commit();
 
                 var RealLevSet = new LevelSet(b, "Levset");
-                var RealTracker = new LevelSetTracker((GridData)(b.GridDat), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "A", "B" }, RealLevSet);
+                var RealTracker = new LevelSetTracker((GridData)(b.GridDat), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "a", "b" }, RealLevSet);
                 RealTracker.UpdateTracker(0.0);
                 // RealLevSet.Acc(1.0, C);
+                // RealLevSet
 
                 int J = b.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
                 // for (int j = 0; j < J; j++)
@@ -319,6 +322,9 @@ namespace BoSSS.Application.ExternalBinding {
                 RealLevSet.Acc(1.0, c);
                 RealTracker.UpdateTracker(0.0);
 
+                SubGrid subgr = RealTracker.Regions.GetNearFieldSubgrid(2);
+                SubGridBoundaryModes subgrbnd = 0;
+
                 SinglePhaseField Res_c = new(b);
                 SinglePhaseField Res_phi = new(b);
                 List<DGField> ParameterMap = new();
@@ -341,24 +347,64 @@ namespace BoSSS.Application.ExternalBinding {
                 // nls.SolverCode = NonLinearSolverCode.Picard;
                 // nls.ConvergenceCriterion = 1e-5;
                 nls.verbose = true;
-                XdgTimestepping TimeStepper = new(op,
-                                                  new SinglePhaseField[]{c, phi},
-                                                  new SinglePhaseField[]{Res_c, Res_phi},
-                                                  // TimeSteppingScheme.ExplicitEuler,
-                                                  TimeSteppingScheme.ImplicitEuler,
-                                                  null,
-                                                  null,
-                                                  ls,
-                                                  nls,
-                                                  ParameterMap,
-                                                  null);
+
+                // var ev = op.GetEvaluatorEx(
+                //     new CoordinateMapping(grd), null, map);
+
+                // ev.ActivateSubgridBoundary(subgr.VolumeMask, subgrbnd);
+
+                // ev.Evaluate<CoordinateVector>(1.0, 1.0, );
+                // ev.ComputeMatrix();
+
+                XdgSubGridTimestepping TimeStepper = new(op,
+                                                         new SinglePhaseField[]{c, phi},
+                                                         new SinglePhaseField[]{Res_c, Res_phi},
+                                                         // TimeSteppingScheme.ExplicitEuler,
+                                                         TimeSteppingScheme.ImplicitEuler,
+                                                         subgr,
+                                                         subgrbnd,
+                                                         _UpdateLevelset: (() => new LevelSetUpdater(
+                                                                               grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
+                                                                               2, new string[]{"a", "b"},
+                                                                               null,
+                                                                               RealLevSet, "d", ContinuityProjectionOption.None
+                                                                           )),
+                                                         _LevelSetHandling: LevelSetHandling.LieSplitting,
+                                                         LinearSolver: ls,
+                                                         NonLinearSolver: nls,
+                                                         _optTracker: RealTracker,
+                                                         _AgglomerationThreshold: op.AgglomerationThreshold,
+                                                         _Parameters: ParameterMap
+                                                         );
 
                 var tp = new Tecplot(grd.Grid.GridData, 3);
-                Tecplot("plot.1", 0.0, 3, c, phi, RealLevSet, u, v, w);
+                // Tecplot("plot.1", 0.0, 3, c, phi, RealLevSet, u, v, w);
 
-                int timesteps = 4;
-                double dt = 1e-3;
+                int timesteps = 3;
+                double dt = 2e-3;
                 for (int t = 0; t < timesteps; t++) {
+
+                    // var eval = op.GetMatrixBuilder(map, ParameterMap, map);
+                    // var eval = op.GetEvaluatorEx(new SinglePhaseField[]{c, phi}.ToArray(), ParameterMap, map);
+
+                    // TimeStepper.ComputeOperatorMatrix(mtx, mtx.RHSbuffer, map, TimeStepper.CurrentState,null,t*dt,t);
+
+                    // eval.ActivateSubgridBoundary(subgr.VolumeMask, subgrbnd);
+                    // TimeStepper.ActivateSubgridBoundary(subgr.VolumeMask, subgrbnd);
+                    // BlockMsrMatrix mat = new((IBlockPartitioning)mtx.ColPartition);
+                    // CoordinateVector cv = new(c,phi);
+                    // eval.ComputeMatrix(mat, cv);
+
+                    // mat.RHSbuffer.ScaleV(-1); // convert LHS affine vector to RHS
+                    // for (int i = 0; i < mat.NoOfRows; i++) {
+                    //     if (mat.GetNoOfNonZerosPerRow(i) > 0) {
+                    //         mat.SetDiagonalElement(i, 1.0);
+                    //     }
+                    // }
+                    // eval.Evaluate(1.0,1.0, cv);
+                    // eval.ComputeMatrix(mtx, mtx.RHSbuffer);
+                    // eval.ComputeMatrix<OpenFoamMatrix,double[]>(mtx, null);
+
                     TimeStepper.Solve(dt * t/timesteps, dt * 1.0/timesteps);
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);

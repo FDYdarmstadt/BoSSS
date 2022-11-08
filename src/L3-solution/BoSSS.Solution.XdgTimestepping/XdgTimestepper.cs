@@ -180,7 +180,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         XSpatialOperatorMk2 m_JacobiXdgOperator;
 
-        XSpatialOperatorMk2 GetJacobiXdgOperator() {
+        protected XSpatialOperatorMk2 GetJacobiXdgOperator() {
             if(m_JacobiXdgOperator == null) {
                 m_JacobiXdgOperator = XdgOperator.GetJacobiOperator(GridDat.SpatialDimension) as XSpatialOperatorMk2;
             }
@@ -198,7 +198,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         SpatialOperator m_JacobiDgOperator;
 
-        SpatialOperator GetJacobiDgOperator() {
+        protected SpatialOperator GetJacobiDgOperator() {
             if(m_JacobiDgOperator == null) {
                 m_JacobiDgOperator = DgOperator.GetJacobiOperator(GridDat.SpatialDimension) as SpatialOperator;
             }
@@ -607,7 +607,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         //    return 0.0;
         //}
 
-        DGField[] JacobiParameterVars = null;
+        protected DGField[] JacobiParameterVars = null;
 
 
         /// <summary>
@@ -616,7 +616,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - or evaluate the operator in the current linearization point
         /// In both cases, only the spatial component (i.e. no temporal derivatives) are linearized/evaluated.
         /// /// </summary>
-        public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
+        public virtual void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
             using(var ft = new FuncTrace()) {
                 // compute operator
                 Debug.Assert(OpAffine.L2Norm() == 0.0);
