@@ -242,8 +242,8 @@ namespace BoSSS.Application.ExternalBinding {
                 var map = new UnsetteledCoordinateMapping(b, bPhi);
 
                 int nParams = 7;
-                // var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "phi", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
-                var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "phi", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
+                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "phi", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
+                // var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "phi", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "phi_Res");
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "phi_Res");
 
@@ -373,13 +373,28 @@ namespace BoSSS.Application.ExternalBinding {
 
                     return (domfields, paramfields);
                 };
-                LevelSetUpdater lsu =new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
+                LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
                                                          2, new string[]{"a", "b"},
                                                          GetNamedInputFields,
                                                          RealLevSet, "d", ContinuityProjectionOption.None);
                 lsu.InitializeParameters(domfields, paramfields);
 
 
+                // XdgSubGridTimestepping TimeStepper = new(op,
+                //                                          new SinglePhaseField[]{c, phi},
+                //                                          new SinglePhaseField[]{Res_c, Res_phi},
+                //                                          // TimeSteppingScheme.ExplicitEuler,
+                //                                          TimeSteppingScheme.ImplicitEuler,
+                //                                          subgr,
+                //                                          subgrbnd,
+                //                                          _UpdateLevelset: (() => lsu),
+                //                                          _LevelSetHandling: LevelSetHandling.LieSplitting,
+                //                                          LinearSolver: ls,
+                //                                          NonLinearSolver: nls,
+                //                                          _optTracker: RealTracker,
+                //                                          _AgglomerationThreshold: op.AgglomerationThreshold,
+                //                                          _Parameters: ParameterMap
+                //                                          );
                 XdgSubGridTimestepping TimeStepper = new(op,
                                                          new SinglePhaseField[]{c, phi},
                                                          new SinglePhaseField[]{Res_c, Res_phi},
@@ -387,13 +402,8 @@ namespace BoSSS.Application.ExternalBinding {
                                                          TimeSteppingScheme.ImplicitEuler,
                                                          subgr,
                                                          subgrbnd,
-                                                         _UpdateLevelset: (() => lsu),
-                                                         _LevelSetHandling: LevelSetHandling.LieSplitting,
                                                          LinearSolver: ls,
-                                                         NonLinearSolver: nls,
-                                                         _optTracker: RealTracker,
-                                                         _AgglomerationThreshold: op.AgglomerationThreshold,
-                                                         _Parameters: ParameterMap
+                                                         NonLinearSolver: nls
                                                          );
 
                 var tp = new Tecplot(grd.Grid.GridData, 3);
