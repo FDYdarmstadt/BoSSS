@@ -113,7 +113,8 @@ namespace BoSSS.Application.ExternalBinding {
         /// </summary>
         [CodeGenExport]
         public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
-            try{
+            //try {
+            { 
 
                 // System.Diagnostics.Debugger.Launch();
                 // Console.WriteLine("Debugger is attached; press enter to continue");
@@ -121,13 +122,13 @@ namespace BoSSS.Application.ExternalBinding {
 
                 _mtx = mtx;
                 _ptch = ptch;
-                double tanh(double x){
+                double tanh(double x) {
                     // return x*x*x;
                     // return 0;
-                    if (x > 0.25){
+                    if (x > 0.25) {
                         return 1;
                     }
-                    if (x < -0.25){
+                    if (x < -0.25) {
                         return -1;
                     }
                     // if (x > 1.5){
@@ -136,27 +137,21 @@ namespace BoSSS.Application.ExternalBinding {
                     // if (x < -1.5){
                     //     return -1;
                     // }
-                    double fact(int n)
-                    {
+                    double fact(int n) {
                         double acc = 1;
-                        for (int i = 0; i < n; i++)
-                        {
+                        for (int i = 0; i < n; i++) {
                             acc *= i + 1;
                         }
                         return acc;
                     }
                     // return Math.Tanh(x);
                     // double bernoulli(int m, int n){
-                    double bernoulli(int n)
-                    {
-                        if (n % 2 == 1 && n > 1)
-                        {
+                    double bernoulli(int n) {
+                        if (n % 2 == 1 && n > 1) {
                             return 0;
                         }
-                        double choose(int n, int k)
-                        {
-                            if (k > n)
-                            {
+                        double choose(int n, int k) {
+                            if (k > n) {
                                 throw new ArgumentException();
                             }
                             // double denom = (fact(k) * fact(n - k));
@@ -171,50 +166,46 @@ namespace BoSSS.Application.ExternalBinding {
                             return fact(n) / (fact(k) * fact(n - k));
                         }
                         double acc = 0;
-                        for (int k = 0; k <= n; k++)
-                        {
-                            for (int r = 0; r <= k; r++)
-                            {
+                        for (int k = 0; k <= n; k++) {
+                            for (int r = 0; r <= k; r++) {
                                 acc += (pow(-1, r) * choose(k, r) * pow(r, n) / (k + 1));
                             }
                         }
                         return acc;
                     }
-                    double taylorTerm(int n)
-                    {
+                    double taylorTerm(int n) {
                         return pow(2.0, 2 * n) * (pow(2.0, 2 * n) - 1) * bernoulli(2 * n) * pow(x, 2 * n - 1) / fact(2 * n);
                     }
                     double acc = 0;
-                    for (int i = 0; i < 8; i++)
-                    {
+                    for (int i = 0; i < 8; i++) {
                         acc += taylorTerm(i);
                     }
-                    if (acc > 1){
+                    if (acc > 1) {
                         return 1;
                     }
-                    if (acc < -1){
+                    if (acc < -1) {
                         return -1;
                     }
                     return acc;
                 }
-                double pow(double x, int e){ // inefficient but who cares
+                double pow(double x, int e) { // inefficient but who cares
                     // return Math.Tanh(x);
                     double acc = 1.0;
                     for (int i = 0; i < e; i++)
                         acc *= x;
                     return acc;
                 }
-                double pow2(double x){
+                double pow2(double x) {
                     // return Math.Tanh(x);
                     return pow(x, 2);
                 }
-                double sqrt(double x){
+                double sqrt(double x) {
                     // return Math.Sqrt(x);
                     double sqrt = x / 2;
                     double temp = 0;
-                    while(sqrt - temp > 1e-10){
+                    while (sqrt - temp > 1e-10) {
                         temp = sqrt;
-                        sqrt = ( x/temp + temp) / 2;
+                        sqrt = (x / temp + temp) / 2;
                     }
                     return sqrt;
                 }
@@ -231,7 +222,7 @@ namespace BoSSS.Application.ExternalBinding {
                 var u = U.Fields[0] as SinglePhaseField;
                 var v = U.Fields[1] as SinglePhaseField;
                 var w = U.Fields[2] as SinglePhaseField;
-                velocity = new[]{u,v,w};
+                velocity = new[] { u, v, w };
                 // u.ProjectField(((_3D)((x, y, z) => 0.05)).Vectorize());
                 // v.ProjectField(((_3D)((x, y, z) => 0.0)).Vectorize());
                 // w.ProjectField(((_3D)((x, y, z) => 0.0)).Vectorize());
@@ -257,13 +248,13 @@ namespace BoSSS.Application.ExternalBinding {
                 // double M = 1; // mobility parameter
                 double M = sqrt(epsilon); // mobility parameter
                 double sigma = 0.063;
-                double lam = 3/(2 * sqrt(2)) * sigma * epsilon; // Holger's lambda
+                double lam = 3 / (2 * sqrt(2)) * sigma * epsilon; // Holger's lambda
                 double diff = M * lam;
 
-                double cahn = 1.0/(epsilon * epsilon);
+                double cahn = 1.0 / (epsilon * epsilon);
 
                 var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda);
-                var CHCconv = new CahnHilliardCConv(new[]{u,v,w});
+                var CHCconv = new CahnHilliardCConv(new[] { u, v, w });
                 // var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, cahn);
                 var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, 1.0);
                 var CHPhisource = new CahnHilliardPhiSource(cahn);
@@ -283,8 +274,8 @@ namespace BoSSS.Application.ExternalBinding {
                 op.Commit();
 
                 var RealLevSet = new LevelSet(b, "Levset");
-                var RealTracker = new LevelSetTracker((GridData)(b.GridDat), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "a", "b" }, RealLevSet);
-                RealTracker.UpdateTracker(0.0);
+                //var RealTracker = new LevelSetTracker((GridData)(b.GridDat), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "a", "b" }, RealLevSet);
+                //RealTracker.UpdateTracker(0.0);
                 // RealLevSet.Acc(1.0, C);
                 // RealLevSet
 
@@ -315,8 +306,29 @@ namespace BoSSS.Application.ExternalBinding {
                 ScalarFunction func() {
                     double radius = 1;
                     // return ((_3D)((x, y, z) => tanh((-sqrt((pow2(x - 2.5) + pow2(y - 2.5) + pow2(z - 0.5)) ) + radius)/ (sqrt(2.0) * cahn)))).Vectorize();
-                    return ((_3D)((x, y, z) => tanh((-sqrt(sqrt(sqrt((pow(x - 2.5,8) + pow(y - 2.5,8))))) + radius)/ (sqrt(2.0) * cahn)))).Vectorize();
+                    return ((_3D)((x, y, z) => tanh((-sqrt(sqrt(sqrt((pow(x - 2.5, 8) + pow(y - 2.5, 8))))) + radius) / (sqrt(2.0) * cahn)))).Vectorize();
                 }
+
+                var domfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>() { { "c", c }, { "phi", phi } });
+                var paramfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>(){
+                        {"VelocityX", u},
+                        {"VelocityY", v},
+                        {"VelocityZ", w},
+                        {"c0", c},
+                        {"LevelSetGradient[0]", c}, // TODO
+                        {"LevelSetGradient[1]", c},
+                        {"LevelSetGradient[2]", c}
+                        });
+                Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> GetNamedInputFields = delegate (DGField[] fields) {
+
+                    return (domfields, paramfields);
+                };
+                LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
+                                                         2, new string[] { "a", "b" },
+                                                         GetNamedInputFields,
+                                                         RealLevSet, "d", ContinuityProjectionOption.None);
+
+                var RealTracker = lsu.Tracker;
                 // c.Clear();
                 // c.ProjectField(func());
                 // phi.Laplacian(-cahn, c);
@@ -332,18 +344,16 @@ namespace BoSSS.Application.ExternalBinding {
                 SinglePhaseField Res_c = new(b);
                 SinglePhaseField Res_phi = new(b);
                 List<DGField> ParameterMap = new();
-                for (int i = 0; i < nParams; i++)
-                {
+                for (int i = 0; i < nParams; i++) {
                     ParameterMap.Add(new SinglePhaseField(b));
                 }
-                for (int j = 0; j < J; j++)
-                {
+                for (int j = 0; j < J; j++) {
                     int N = b.GetLength(j);
                     for (int n = 0; n < N; n++)
                         ParameterMap[3].Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
                 }
-                for (int j = 0; j < 3; j++){
-                    ParameterMap[j] = new[]{u,v,w}[j];
+                for (int j = 0; j < 3; j++) {
+                    ParameterMap[j] = new[] { u, v, w }[j];
                 }
                 NonLinearSolverConfig nls = new();
                 var ls = new DirectSolver.Config();
@@ -359,24 +369,7 @@ namespace BoSSS.Application.ExternalBinding {
 
                 // ev.Evaluate<CoordinateVector>(1.0, 1.0, );
                 // ev.ComputeMatrix();
-                var domfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>() { { "c", c }, { "phi", phi } });
-                var paramfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>(){
-                        {"VelocityX", u},
-                        {"VelocityY", v},
-                        {"VelocityZ", w},
-                        {"c0", c},
-                        {"LevelSetGradient[0]", c}, // TODO
-                        {"LevelSetGradient[1]", c},
-                        {"LevelSetGradient[2]", c}
-                        });
-                Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> GetNamedInputFields = delegate(DGField[] fields){
-
-                    return (domfields, paramfields);
-                };
-                LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
-                                                         2, new string[]{"a", "b"},
-                                                         GetNamedInputFields,
-                                                         RealLevSet, "d", ContinuityProjectionOption.None);
+               
                 lsu.InitializeParameters(domfields, paramfields);
 
 
@@ -434,11 +427,11 @@ namespace BoSSS.Application.ExternalBinding {
                     // eval.ComputeMatrix(mtx, mtx.RHSbuffer);
                     // eval.ComputeMatrix<OpenFoamMatrix,double[]>(mtx, null);
 
-                    TimeStepper.Solve(dt * t/timesteps, dt * 1.0/timesteps);
+                    TimeStepper.Solve(dt * t / timesteps, dt * 1.0 / timesteps);
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);
                     RealTracker.UpdateTracker(0.0);
-                    Tecplot("plot." + (t+2), (t+1)/timesteps, 3, c, phi, RealLevSet, u, v, w);
+                    Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, phi, RealLevSet, u, v, w);
                 }
                 // evaluate operator
                 // =================
@@ -453,12 +446,15 @@ namespace BoSSS.Application.ExternalBinding {
                 // foreach (var elem in mtx.RHSbuffer)
                 //     Console.Write(elem + " ");
                 // Console.WriteLine();
-            } catch (Exception e) {
+
+
+                //} catch (Exception e) {
                 // Console.WriteLine(e.GetType());
                 // Console.WriteLine(e.Message);
                 // Console.WriteLine(e.StackTrace);
-                Console.WriteLine(e);
-                throw e;
+                //Console.WriteLine(e);
+                //throw e;
+                //}
             }
         }
 
