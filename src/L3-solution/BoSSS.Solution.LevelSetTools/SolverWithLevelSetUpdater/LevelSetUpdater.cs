@@ -631,6 +631,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
         IReadOnlyDictionary<string, DGField> Combine(IReadOnlyDictionary<string, DGField> a, IReadOnlyDictionary<string, DGField> b) {
+            Console.WriteLine("Test1000");
+            Console.WriteLine(a == null);
+            Console.WriteLine(b == null);
             Dictionary<string, DGField> combination = new Dictionary<string, DGField>(a.Count + b.Count + 5);
             foreach(var entry in a) {
                 combination.Add(entry.Key, entry.Value);
@@ -661,8 +664,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// </summary>
         public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
 
+            Console.WriteLine("Test100");
+            Console.WriteLine(CurrentState == null);
             (IReadOnlyDictionary<string, DGField> DomainVarFields,
             IReadOnlyDictionary<string, DGField> ParameterVarFields) = GetNamedInputFields(CurrentState);
+            Console.WriteLine("Test101");
 
 
             return this.UpdateLevelSets(DomainVarFields, ParameterVarFields, time, dt, UnderRelax, incremental);

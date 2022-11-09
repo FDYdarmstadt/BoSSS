@@ -115,6 +115,10 @@ namespace BoSSS.Application.ExternalBinding {
         public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
             try{
 
+                // System.Diagnostics.Debugger.Launch();
+                // Console.WriteLine("Debugger is attached; press enter to continue");
+                // Console.ReadLine();
+
                 _mtx = mtx;
                 _ptch = ptch;
                 double tanh(double x){
@@ -355,6 +359,26 @@ namespace BoSSS.Application.ExternalBinding {
 
                 // ev.Evaluate<CoordinateVector>(1.0, 1.0, );
                 // ev.ComputeMatrix();
+                var domfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>() { { "c", c }, { "phi", phi } });
+                var paramfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>(){
+                        {"VelocityX", u},
+                        {"VelocityY", v},
+                        {"VelocityZ", w},
+                        {"c0", c},
+                        {"LevelSetGradient[0]", c}, // TODO
+                        {"LevelSetGradient[1]", c},
+                        {"LevelSetGradient[2]", c}
+                        });
+                Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> GetNamedInputFields = delegate(DGField[] fields){
+
+                    return (domfields, paramfields);
+                };
+                LevelSetUpdater lsu =new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
+                                                         2, new string[]{"a", "b"},
+                                                         GetNamedInputFields,
+                                                         RealLevSet, "d", ContinuityProjectionOption.None);
+                lsu.InitializeParameters(domfields, paramfields);
+
 
                 XdgSubGridTimestepping TimeStepper = new(op,
                                                          new SinglePhaseField[]{c, phi},
@@ -363,12 +387,7 @@ namespace BoSSS.Application.ExternalBinding {
                                                          TimeSteppingScheme.ImplicitEuler,
                                                          subgr,
                                                          subgrbnd,
-                                                         _UpdateLevelset: (() => new LevelSetUpdater(
-                                                                               grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
-                                                                               2, new string[]{"a", "b"},
-                                                                               null,
-                                                                               RealLevSet, "d", ContinuityProjectionOption.None
-                                                                           )),
+                                                         _UpdateLevelset: (() => lsu),
                                                          _LevelSetHandling: LevelSetHandling.LieSplitting,
                                                          LinearSolver: ls,
                                                          NonLinearSolver: nls,

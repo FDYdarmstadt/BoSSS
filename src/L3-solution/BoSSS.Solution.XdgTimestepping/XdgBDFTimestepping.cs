@@ -514,12 +514,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var CC0 = new SinglePhaseField(new Basis(this.m_LsTrk.GridDat, 0), "CutCells-Ls0");
                     CC0.AccConstant(1.0, base.m_LsTrk.Regions.GetCutCellMask4LevSet(0));
 
-                    var CC1 = new SinglePhaseField(new Basis(this.m_LsTrk.GridDat, 0), "CutCells-Ls1");
-                    CC1.AccConstant(1.0, base.m_LsTrk.Regions.GetCutCellMask4LevSet(1));
+                    // var CC1 = new SinglePhaseField(new Basis(this.m_LsTrk.GridDat, 0), "CutCells-Ls1");
+                    // CC1.AccConstant(1.0, base.m_LsTrk.Regions.GetCutCellMask4LevSet(1));
 
-                    Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(this.m_LsTrk.LevelSets[0]), (DGField)(this.m_LsTrk.LevelSets[1]), CC, CC0, CC1 }, "Error", 0.0, 2);
-                    
-                    throw new ArithmeticException("All cells are cut cells - check your settings!");
+                    // Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(this.m_LsTrk.LevelSets[0]), (DGField)(this.m_LsTrk.LevelSets[1]), CC, CC0, CC1 }, "Error", 0.0, 2);
+                    Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(this.m_LsTrk.LevelSets[0]), CC, CC0 }, "Error", 0.0, 2);
+
+                    // throw new ArithmeticException("All cells are cut cells - check your settings!");
                 }
             }
 
@@ -1483,8 +1484,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally, base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
                         .MPISum();
                     //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
-                    if(Jtot[0] == Jtot[1])
-                        throw new ArithmeticException("All cells are cut cells - check your settings!");
+                    // if(Jtot[0] == Jtot[1])
+                        // throw new ArithmeticException("All cells are cut cells - check your settings!");
                 }
 
                 //{
