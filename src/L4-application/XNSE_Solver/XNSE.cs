@@ -451,9 +451,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // === additional parameters === //
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            opFactory.AddParameter(v0Mean);
-            if ((config.physParams.IncludeConvection && config.isTransport) & this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
-                opFactory.AddParameter(new Velocity0(D));
+            
+            if (config.physParams.IncludeConvection && config.isTransport) {
+                opFactory.AddParameter(v0Mean);
+                if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard)
+                    opFactory.AddParameter(new Velocity0(D));
             }
 
             // === level set related parameters === //

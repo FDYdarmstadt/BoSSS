@@ -119,6 +119,12 @@ namespace BoSSS.Solution.XNSECommon {
         public double betaL = 0.0;
 
         /// <summary>
+        /// effective sliplength for the fluid-fluid interface
+        /// </summary>
+        [DataMember]
+        public double slipI = 0.0;
+
+        /// <summary>
         /// static contact angle
         /// </summary>
         [DataMember]

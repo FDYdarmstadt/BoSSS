@@ -227,6 +227,10 @@ namespace BoSSS.Application.XRheology_Solver {
             get { return MatInt; }
         }
 
+        public bool isInterfaceSlip{
+            get { throw new NotImplementedException(); }
+        }
+
         /// <summary>
         /// true if the interface pressure is prescribed i.e. for evaporation
         /// </summary>

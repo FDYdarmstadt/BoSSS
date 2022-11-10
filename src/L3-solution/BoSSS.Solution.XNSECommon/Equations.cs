@@ -420,7 +420,7 @@ namespace BoSSS.Solution.XNSECommon {
                     AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, false));
                     break;
                     case ViscosityMode.FullySymmetric:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d, false));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d, false, physParams.slipI));
                     break;
                     case ViscosityMode.Viscoelastic:
                     //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
@@ -434,6 +434,35 @@ namespace BoSSS.Solution.XNSECommon {
                     throw new NotImplementedException();
                 }
             }
+
+            // Approach over extension terms is badly conditioned
+            // if(config.isInterfaceSlip){
+            //     if (physParams.IncludeConvection && config.isTransport) {
+            //         //DefineConvectiveSlip(d, dimension, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh);   
+            //         //throw new NotImplementedException("Something missing here.");             
+            //     }
+            //     if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
+            //         throw new NotImplementedException("Something missing here.");
+            //     }
+
+            //     if (config.isViscous && (!(muA == 0.0) && !(muB == 0.0))) {
+
+            //         double penalty = dntParams.PenaltySafety;
+            //         switch (dntParams.ViscosityMode) {
+            //             case ViscosityMode.Standard:
+            //                 throw new NotImplementedException("Something missing here.");
+            //             case ViscosityMode.TransposeTermMissing:
+            //                 throw new NotImplementedException("Something missing here.");
+            //             case ViscosityMode.FullySymmetric:
+            //                 AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscositySlipAtLevelSet_FullySymmetric(dimension, physParams.slipI, muA, muB, penalty, d, false));
+            //             break;
+            //             case ViscosityMode.Viscoelastic:
+            //                 throw new NotImplementedException("Something missing here.");
+            //             default:
+            //                 throw new NotImplementedException();
+            //         }
+            //     }
+            // }
 
 
         }
