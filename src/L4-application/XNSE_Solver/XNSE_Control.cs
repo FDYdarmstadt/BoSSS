@@ -417,11 +417,11 @@ namespace BoSSS.Application.XNSE_Solver {
         public bool FailOnSolverFail = true;
 
 
-        /// <summary>
-        /// See <see cref="TimestepperInit"/>
-        /// </summary>
-        [DataMember]
-        public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
+        ///// <summary>
+        ///// See <see cref="TimestepperInit"/>
+        ///// </summary>
+        //[DataMember]
+        //public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
         ///// <summary>
         ///// defines the number of incremental timesteps in one global timestep (for incrementInit)

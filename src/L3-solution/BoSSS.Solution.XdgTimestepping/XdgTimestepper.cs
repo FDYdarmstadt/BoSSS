@@ -301,7 +301,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         {
             this.Scheme = __Scheme;
             this.XdgOperator = op;
-
+            
             if (_Parameters.IsNullOrEmpty())
                 this.Parameters = op.InvokeParameterFactory(Fields);
             else

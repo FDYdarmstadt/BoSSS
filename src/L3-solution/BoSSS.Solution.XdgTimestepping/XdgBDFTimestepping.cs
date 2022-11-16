@@ -204,8 +204,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             // other stuff
             // -----------
 
-            //if (!DelayInit)
-            InitTimestepping(true);
+            if (!DelayInit)
+                InitTimestepping(true);
         }
 
         BDFSchemeCoeffs[] m_TSCchain;

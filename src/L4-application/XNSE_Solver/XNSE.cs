@@ -74,11 +74,12 @@ namespace BoSSS.Application.XNSE_Solver {
         // ===========
         static void Main(string[] args) {
 
-            
-            //InitMPI();
-            //DeleteOldPlotFiles();
+
+            InitMPI();
+            DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.RotatingCubeTest(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, Newton.GlobalizationOption.None, IncompressibleBcType.Pressure_Outlet);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me");
+            BoSSS.Application.XNSE_Solver.Tests.RestartTests.RestartTest(true, TimeSteppingScheme.BDF3, true);
+            NUnit.Framework.Assert.IsTrue(false, "remove me");
 
 
             /*
@@ -559,13 +560,14 @@ namespace BoSSS.Application.XNSE_Solver {
                 opFactory.AddEquation(new NavierStokes("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes("B", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
-            } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+            } else {
+                if (this.Control.NonLinearSolver.SolverCode != NonLinearSolverCode.Newton)
+                    throw new ApplicationException("illegal configuration");
                 opFactory.AddEquation(new NavierStokes_Newton("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes_Newton("B", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NSEInterface_Newton("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
-            } else {
-                throw new NotSupportedException();
-            }
+            } 
+
             opFactory.AddEquation(new NSESurfaceTensionForce("A", "B", d, D, boundaryMap, config));
         }
 
@@ -820,6 +822,76 @@ namespace BoSSS.Application.XNSE_Solver {
 
 
             }
+        }
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from an analytic solution
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="Time"></param>
+        /// <param name="St"></param>
+        //protected override void BDFDelayedInitSetIntial(int TimestepIndex, double Time, DGField[] St) {
+        //    using (new FuncTrace()) {
+        //        Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, Time);
+
+        //        // level-set
+        //        // ---------
+        //        this.DGLevSet.Current.ProjectField(X => this.Control.Phi(X, Time));
+        //        this.LevSet.ProjectField(X => this.Control.Phi(X, Time));
+
+        //        this.LsTrk.UpdateTracker(Time, incremental: true);
+
+        //        // solution
+        //        // --------
+        //        int D = this.LsTrk.GridDat.SpatialDimension;
+
+        //        for (int d = 0; d < D; d++) {
+        //            XDGField _u = (XDGField)St[d];
+        //            _u.Clear();
+        //            _u.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionVelocity["A"][d](X, Time));
+        //            _u.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionVelocity["B"][d](X, Time)));
+        //        }
+        //        XDGField _p = (XDGField)St[D];
+        //        _p.Clear();
+        //        _p.GetSpeciesShadowField("A").ProjectField(X => this.Control.ExactSolutionPressure["A"](X, Time));
+        //        _p.GetSpeciesShadowField("B").ProjectField((X => this.Control.ExactSolutionPressure["B"](X, Time)));
+        //    }
+        //}
+
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from restart session
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="time"></param>
+        /// <param name="St"></param>
+        protected override void BDFDelayedInitLoadRestart(int TimestepIndex, double time, DGField[] St) {
+
+            Console.WriteLine("Timestep index {0}, time {1} ", TimestepIndex, time);
+
+            ITimestepInfo tsi_toLoad;
+            if (TimestepIndex < 0) {
+                throw new ArgumentOutOfRangeException("Not enough Timesteps to restart with desired Timestepper");
+            } else {
+                ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
+                tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
+            }
+            DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
+
+            // level-set
+            // ---------
+            //this.LsTrk.UpdateTracker(time, incremental: true);
+
+            // solution
+            // --------
+            int D = this.LsTrk.GridDat.SpatialDimension;
+
+            for (int d = 0; d < D; d++) {
+                St[d] = this.Velocity[d].CloneAs();
+            }
+            St[D] = this.Pressure.CloneAs();
         }
 
 

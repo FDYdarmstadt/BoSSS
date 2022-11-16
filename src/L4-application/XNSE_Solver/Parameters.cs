@@ -63,7 +63,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// Due to the discontinuous approximation at the interface, 
     /// and the weak enforcement of the velocity jump condition `$ [[\vec{u}]] = 0 `$
     /// the velocities of both phases do not match exactly in the discrete setting.
-    /// (The are equal in the continuous setting, however.)
+    /// (They are equal in the continuous setting, however.)
     /// 
     /// Therefore, the phase velocities are averaged according to <see cref="XNSE_Control.InterfaceVelocityAveraging"/>
     /// to obtain a single interface velocity.

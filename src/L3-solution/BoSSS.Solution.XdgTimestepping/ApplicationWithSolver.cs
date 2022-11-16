@@ -297,8 +297,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 
                 InitSolver();
                 Timestepping.RegisterResidualLogger(this.ResLogger);
-                if (Timestepping.m_BDF_Timestepper != null)
-                    Timestepping.m_BDF_Timestepper.SingleInit();
 
 
             } else {
@@ -315,6 +313,55 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             }
         }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="phystime"></param>
+        /// <param name="TimestepNo"></param>
+        protected override void AfterSolverCreation(double phystime, int TimestepNo) {
+
+            if (Timestepping.m_BDF_Timestepper != null) {
+                if (this.Control.MultiStepInit == true) {
+                    Timestepping.m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
+                    if (this.Control.RestartInfo == null) {
+                        Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
+                            // delegate for the initialization of previous timesteps from an analytic solution
+                            BDFDelayedInitSetIntial);
+                    } else {
+                        Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
+                            // delegate for the initialization of previous timesteps from restart session
+                            BDFDelayedInitLoadRestart);
+                    }
+                } else
+                    Timestepping.m_BDF_Timestepper.SingleInit();
+            }
+        }
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from an analytic solution
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="Time"></param>
+        /// <param name="St"></param>
+        protected virtual void BDFDelayedInitSetIntial(int TimestepIndex, double Time, DGField[] St) {
+            throw new NotImplementedException("initialization of previous timesteps from an analytic solution not implemented!");
+        }
+
+
+
+        /// <summary>
+        /// delegate for the initialization of previous timesteps from restart session
+        /// </summary>
+        /// <param name="TimestepIndex"></param>
+        /// <param name="time"></param>
+        /// <param name="St"></param>
+        protected virtual void BDFDelayedInitLoadRestart(int TimestepIndex, double time, DGField[] St) {
+            throw new NotImplementedException("initialization of previous timesteps from restart session not implemented!");
+        }
+
 
 
         /// <summary>

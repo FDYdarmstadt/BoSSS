@@ -1822,6 +1822,15 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
+        /// called after <see cref="CreateEquationsAndSolvers"/> for time-dependent initialization routines (e.g. delayed BDF-timestepper <see cref="DelayedTimestepperInit"/>)
+        /// </summary>
+        /// <param name="phystime"></param>
+        /// <param name="TimestepNo"></param>
+        protected virtual void AfterSolverCreation(double phystime, int TimestepNo) { 
+        }
+
+
+        /// <summary>
         /// sets initial values as defined in the control file. Override this
         /// method to set initial values for the fields;
         /// </summary>
@@ -2109,6 +2118,7 @@ namespace BoSSS.Solution {
 
                 if (this.Control.RestartInfo != null) {
                     CreateEquationsAndSolvers(null);
+                    AfterSolverCreation(physTime, i0.MajorNumber);
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
@@ -2168,6 +2178,7 @@ namespace BoSSS.Solution {
 
                 if (this.Control.RestartInfo == null) {
                     CreateEquationsAndSolvers(null);
+                    AfterSolverCreation(physTime, i0.MajorNumber);
                 }
                 {
                     tr.LogMemoryStat();
