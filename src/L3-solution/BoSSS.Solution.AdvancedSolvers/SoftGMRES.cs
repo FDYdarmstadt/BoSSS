@@ -105,6 +105,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public ISolverSmootherTemplate Precond;
 
+
+        /*
+        ISparseMatrix m_Matrix;
+
+        ISparseMatrix Matrix {
+            get {
+                if(m_Matrix == null) {
+                    m_Matrix = m_mgop.OperatorMatrix; // activate for BlockMatrixSpMV
+
+                    //var hypreMtx = new ilPSP.LinSolvers.HYPRE.IJMatrix(m_mgop.OperatorMatrix); // HYPRE
+                    //m_Matrix = hypreMtx;
+
+                    //var monkeyMtx = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(m_mgop.OperatorMatrix.ToMsrMatrix()); // Monkey
+                    //m_Matrix = monkeyMtx;
+
+                }
+                return m_Matrix; 
+            }
+        }
+        */
+
         BlockMsrMatrix Matrix => m_mgop.OperatorMatrix;
 
         public string m_SessionPath;
