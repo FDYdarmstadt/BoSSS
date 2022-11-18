@@ -523,6 +523,71 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
+        /// Constructor for conventional (non-X, but multiphase) DG
+        /// </summary>
+        // protected XdgTimestepping(
+        public XdgTimestepping(
+            SpatialOperator op,
+            IEnumerable<DGField> Fields,
+            IEnumerable<DGField> IterationResiduals,
+            TimeSteppingScheme __Scheme,
+            LevelSetTracker _optTracker,
+            Func<ISlaveTimeIntegrator> _UpdateLevelSet = null,
+            LevelSetHandling _LevelSetHandling = LevelSetHandling.None,
+            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
+            AggregationGridData[] _MultigridSequence = null,
+            ISolverFactory LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
+            IList<DGField> _Parameters = null,
+            double _AgglomerationThreshold = 0.1,
+            QueryHandler queryHandler = null) //
+        {
+            this.Scheme = __Scheme;
+            this.DgOperator = op;
+            if (_Parameters.IsNullOrEmpty())
+                this.Parameters = op.InvokeParameterFactory(Fields);
+            else
+                this.Parameters = _Parameters;
+
+            SpeciesId[] spcToCompute;
+
+            if (_optTracker == null){
+                var __LSTracker = CreateDummyTracker(Fields.First().GridDat);
+                spcToCompute = new SpeciesId[] {__LSTracker};
+            } else {
+
+                LsTrk = _optTracker;
+                foreach (var f in Fields.Cat(IterationResiduals).Cat(Parameters))
+                {
+                    if (f != null && f is XDGField xf)
+                    {
+                        if (LsTrk == null)
+                        {
+                            LsTrk = xf.Basis.Tracker;
+                        }
+                        else
+                        {
+                            if (!object.ReferenceEquals(LsTrk, xf.Basis.Tracker))
+                                throw new ArgumentException();
+                        }
+                    }
+                }
+                spcToCompute = _optTracker.SpeciesNames.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();
+            }
+
+            Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(LsTrk.LevelSets[0])}, "Test1", 0.0, 2);
+
+            ConstructorCommon(op, false,
+                              Fields, this.Parameters, IterationResiduals,
+                              spcToCompute,
+                              _UpdateLevelSet,
+                              _LevelSetHandling,
+                              _MultigridOperatorConfig,
+                              _MultigridSequence,
+                              _AgglomerationThreshold,
+                              LinearSolver, NonLinearSolver, queryHandler);
+        }
+
+        /// <summary>
         /// Constructor for conventional (single-phase, non-X) DG
         /// </summary>
         public XdgTimestepping(
@@ -536,26 +601,22 @@ namespace BoSSS.Solution.XdgTimestepping {
             IList<DGField> _Parameters = null,
             QueryHandler queryHandler = null) //
         {
-            this.Scheme = __Scheme;
-            this.DgOperator = op;
-
-            if (_Parameters.IsNullOrEmpty())
-                this.Parameters = op.InvokeParameterFactory(Fields);
-            else
-                this.Parameters = _Parameters;
-
-
-            var spc = CreateDummyTracker(Fields.First().GridDat);
-                       
-            ConstructorCommon(op, false,
-                Fields, this.Parameters, IterationResiduals,
-                new[] { spc },
-                () => new UpdateLevelsetWithNothing(this),
+            var __LSTracker = CreateDummyTracker(Fields.First().GridDat);
+            Func<ISlaveTimeIntegrator> LSUpdater = () => new UpdateLevelsetWithNothing(this);
+            new XdgTimestepping(
+            op,
+            Fields,
+            IterationResiduals,
+            __Scheme,
+                null,
+            LSUpdater,
                 LevelSetHandling.None,
-                _MultigridOperatorConfig,
-                _MultigridSequence,
-                0.0,
-                LinearSolver, NonLinearSolver, queryHandler);
+            _MultigridOperatorConfig,
+            _MultigridSequence,
+            LinearSolver, NonLinearSolver,
+            _Parameters,
+            0.0,
+            queryHandler); //
         }
 
         /// <summary>

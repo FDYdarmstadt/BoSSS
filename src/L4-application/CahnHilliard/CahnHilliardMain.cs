@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
@@ -237,7 +238,6 @@ namespace BoSSS.Application.CahnHilliard {
             RealLevSet.Acc(1.0, c);
             this.RealTracker.UpdateTracker(0.0);
         }
-
 
         /// <summary>
         /// Main routine
@@ -1453,19 +1453,35 @@ namespace BoSSS.Application.CahnHilliard {
     }
 
 
-
     /// <summary>
     /// Interior Penalty Flux, with Dirichlet boundary conditions for variable 'c'
     /// </summary>
     public class c_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace, IVolumeForm, ISupportsJacobianComponent {
 
-        public c_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+        static Foundation.CommonParamsBnd ToBndParams(Foundation.CommonParams inp)
+        {
+            Foundation.CommonParamsBnd bnp = new();
+            bnp.Normal = inp.Normal;
+            bnp.X = inp.X;
+            bnp.Parameters_IN = inp.Parameters_IN;
+            bnp.EdgeTag = 70;
+            bnp.iEdge = inp.iEdge;
+            bnp.time = inp.time;
+            bnp.GridDat = inp.GridDat;
+            return bnp;
+        }
+
+
+
+
+        public c_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap, CellMask Subgrid = null)
             : base(penalty_const, "phi") // note: in the equation for 'c', we have the Laplacian of 'phi'
         {
             m_D = D;
             m_diff = __diff;
             m_lambda = __lambda;
             m_boundaryCondMap = __boundaryCondMap;
+            m_Subgrid = Subgrid;
         }
 
         double m_diff;
@@ -1473,11 +1489,10 @@ namespace BoSSS.Application.CahnHilliard {
         double max = 0.0;
         double m_lambda;
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
+        CellMask m_Subgrid;
 
         int m_D;
         public override IList<string> ParameterOrdering => new[] { "c0" }.Cat(VariableNames.VelocityVector(m_D)).Cat(VariableNames.LevelSetGradient(m_D));
-
-
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
             double UxN = 0;
@@ -1555,46 +1570,112 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         /// <summary>
+        /// Integrand on interior mesh edges of the SIP
+        /// </summary>
+        virtual public double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
+
+            bool cellInSG = false;
+            bool cellOutSG = false;
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                cellInSG = subGridCellMask[inp.jCellIn];
+                cellOutSG = subGridCellMask[inp.jCellOut];
+            }
+
+            if (m_Subgrid != null && cellInSG == false && cellOutSG == false) {
+                throw new ApplicationException("This should not happen");
+            }
+            else if ((m_Subgrid == null) || (cellInSG == true && cellOutSG == true)) {
+                double Acc = 0.0;
+
+                double pnlty = this.GetPenalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
+                double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+                double nuB = this.Nu(inp.X, inp.Parameters_OUT, inp.jCellOut);
+
+
+                for (int d = 0; d < inp.D; d++)
+                {
+                    Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                    Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
+                }
+                Acc *= this.m_alpha;
+
+                double nuMax = (Math.Abs(nuA) > Math.Abs(nuB)) ? nuA : nuB;
+
+                Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * nuMax; // penalty term
+
+                return Acc;
+            } else if (cellInSG == true && cellOutSG == false) {
+                Foundation.CommonParamsBnd bnp = ToBndParams(inp);
+                return BoundaryEdgeFormGeneralDiri(ref bnp, _uA, _Grad_uA, _vA, _Grad_vA, _uB[0]);
+            } else if (cellInSG == false && cellOutSG == true) {
+                Foundation.CommonParamsBnd bnp = ToBndParams(inp);
+                return BoundaryEdgeFormGeneralDiri(ref bnp, _uB, _Grad_uB, _vB, _Grad_vB, _uA[0]);
+            }
+            throw new ApplicationException("If this code is reached, basic logic does not work anymore. The universe is probably doomed.");
+
+        }
+
+        /// <summary>
         /// Integrand on boundary mesh edges of the SIP
         /// </summary>
-        public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+        double BoundaryEdgeFormGeneralDiri(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA, double g_D) {
             double Acc = 0.0;
 
             double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
             double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
 
+            // inhom. Dirichlet b.c.
+            // +++++++++++++++++++++
+
+            if (g_D == 0)
+            {
+                for (int d = 0; d < inp.D; d++)
+                {
+                    double nd = inp.Normal[d];
+                    Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
+                    Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
+                }
+                Acc *= this.m_alpha;
+
+                Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
+            }
+            else
+            {
+                for (int d = 0; d < inp.D; d++)
+                {
+                    double nd = inp.Normal[d];
+                    Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
+                }
+
+                Acc *= 0.0;            //switch, 0.0 seems stable, 1.0 explodes
+                Acc *= this.m_alpha;
+
+            }
+            return Acc;
+        }
+        /// <summary>
+        /// Integrand on boundary mesh edges of the SIP
+        /// </summary>
+        double BoundaryEdgeFormGeneralNeum(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA, double g_N) {
+            double Acc = 0.0;
+            double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+            Acc += nuA * g_N * _vA * this.m_alpha;
+            return Acc;
+        }
+        /// <summary>
+        /// Integrand on boundary mesh edges of the SIP
+        /// </summary>
+        public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+
             if(this.IsDirichlet(ref inp)) {
                 // inhom. Dirichlet b.c.
                 // +++++++++++++++++++++
-
-                double g_D = this.g_Diri(ref inp);
-
-                if(g_D == 0) {
-                    for(int d = 0; d < inp.D; d++) {
-                        double nd = inp.Normal[d];
-                        Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
-                        Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
-                    }
-                    Acc *= this.m_alpha;
-
-                    Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
-                } else {
-                    for(int d = 0; d < inp.D; d++) {
-                        double nd = inp.Normal[d];
-                        Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency                        
-                    }
-
-                    Acc *= 0.0;            //switch, 0.0 seems stable, 1.0 explodes
-                    Acc *= this.m_alpha;
-
-                }
+                return BoundaryEdgeFormGeneralDiri(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, this.g_Diri(ref inp));
             } else {
 
-                double g_N = this.g_Neum(ref inp);
-
-                Acc += nuA * g_N * _vA * this.m_alpha;
+                return BoundaryEdgeFormGeneralNeum(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, this.g_Neum(ref inp));
             }
-            return Acc;
         }
 
         // linear term return self
@@ -1607,17 +1688,36 @@ namespace BoSSS.Application.CahnHilliard {
     /// Transport flux for Cahn-Hilliard
     /// </summary>
     public class c_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent, IParameterHandling {
-        public c_Flux(int D, DGField[] VelVectorStorage, BoundaryCondMap<BoundaryType> __boundaryCondMap) {
+
+        public c_Flux(int D, DGField[] VelVectorStorage, BoundaryCondMap<BoundaryType> __boundaryCondMap, CellMask Subgrid = null) {
             m_D = D;
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap?.bndFunction["c"];
             m_VelVectorStorage = VelVectorStorage;
+            m_Subgrid = Subgrid;
         }
+
+        static Foundation.CommonParamsBnd ToBndParams(Foundation.CommonParams inp)
+        {
+            Foundation.CommonParamsBnd bnp = new();
+            bnp.Normal = inp.Normal;
+            bnp.X = inp.X;
+            bnp.Parameters_IN = inp.Parameters_IN;
+            bnp.EdgeTag = 70;
+            bnp.iEdge = inp.iEdge;
+            bnp.time = inp.time;
+            bnp.GridDat = inp.GridDat;
+            return bnp;
+        }
+
+
+
 
         DGField[] m_VelVectorStorage;
         int m_D;
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
         Func<double[], double, double>[] m_bndFunc;
+        CellMask m_Subgrid;
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxGradV;
 
@@ -1664,6 +1764,18 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
+
+            bool cellInSG = false;
+            bool cellOutSG = false;
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                cellInSG = subGridCellMask[inp.jCellIn];
+                cellOutSG = subGridCellMask[inp.jCellOut];
+            }
+
+            if (m_Subgrid != null && cellInSG == false && cellOutSG == false){
+                throw new ApplicationException("This should not happen");
+            } else if ((m_Subgrid == null) || (cellInSG == true && cellOutSG == true)) {
             double UxN = 0;
             for(int d = 0; d < m_D; d++) {
                 UxN += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
@@ -1677,6 +1789,14 @@ namespace BoSSS.Application.CahnHilliard {
             }
 
             return c * UxN * (_vIN - _vOUT);
+            } else if (cellInSG == true && cellOutSG == false) {
+                Foundation.CommonParamsBnd bnp = ToBndParams(inp);
+                return BoundaryEdgeForm(ref bnp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
+            } else if (cellInSG == false && cellOutSG == true) {
+                Foundation.CommonParamsBnd bnp = ToBndParams(inp);
+                return BoundaryEdgeForm(ref bnp, _uOUT, _Grad_uOUT, _vOUT, _Grad_vOUT);
+            }
+            throw new ApplicationException("If this code is reached, basic logic does not work anymore. The universe is probably doomed.");
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -1702,7 +1822,7 @@ namespace BoSSS.Application.CahnHilliard {
     /// </summary>
     public class phi_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace, ISupportsJacobianComponent {
 
-        public phi_Diffusion(int D, double penalty_const, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+        public phi_Diffusion(int D, double penalty_const, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap, CellMask Subgrid = null)
             : base(penalty_const, "c") // note: in the equation for 'phi', we have the Laplacian of 'c'
         {
             // m_cahn = __cahn * __cahn;
@@ -1710,10 +1830,12 @@ namespace BoSSS.Application.CahnHilliard {
             m_D = D;
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap?.bndFunction["c"];
+            m_Subgrid = Subgrid;
         }
 
         double m_cahn;
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
+        CellMask m_Subgrid;
 
         int m_D;
         public override IList<string> ParameterOrdering => VariableNames.VelocityVector(m_D);
@@ -1757,47 +1879,114 @@ namespace BoSSS.Application.CahnHilliard {
             return -m_cahn;
         }
 
+        Foundation.CommonParamsBnd ToBndParams(Foundation.CommonParams inp) {
+            Foundation.CommonParamsBnd bnp = new();
+            bnp.Normal = inp.Normal;
+            bnp.X = inp.X;
+            bnp.Parameters_IN = inp.Parameters_IN;
+            bnp.EdgeTag = 70;
+            bnp.iEdge = inp.iEdge;
+            bnp.time = inp.time;
+            bnp.GridDat = inp.GridDat;
+            return bnp;
+        }
+
         /// <summary>
-        /// Integrand on boundary mesh edges of the SIP
+        /// Integrand on interior mesh edges of the SIP
         /// </summary>
-        public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+        public override double InnerEdgeForm(ref Foundation.CommonParams inp, double[] _uA, double[] _uB, double[,] _Grad_uA, double[,] _Grad_uB, double _vA, double _vB, double[] _Grad_vA, double[] _Grad_vB) {
+            bool cellInSG = false;
+            bool cellOutSG = false;
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                cellInSG = subGridCellMask[inp.jCellIn];
+                cellOutSG = subGridCellMask[inp.jCellOut];
+            }
+
+            if (m_Subgrid != null && cellInSG == false && cellOutSG == false){
+                throw new ApplicationException("This should not happen");
+            } else if ((m_Subgrid == null) || (cellInSG == true && cellOutSG == true)) {
+                double Acc = 0.0;
+
+                double pnlty = this.GetPenalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
+                double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+                double nuB = this.Nu(inp.X, inp.Parameters_OUT, inp.jCellOut);
+
+
+                for (int d = 0; d < inp.D; d++)
+                {
+                    Acc += 0.5 * (nuA * _Grad_uA[0, d] + nuB * _Grad_uB[0, d]) * (_vA - _vB) * inp.Normal[d];  // consistency term
+                    Acc += 0.5 * (nuA * _Grad_vA[d] + nuB * _Grad_vB[d]) * (_uA[0] - _uB[0]) * inp.Normal[d];  // symmetry term
+                }
+                Acc *= this.m_alpha;
+
+                double nuMax = (Math.Abs(nuA) > Math.Abs(nuB)) ? nuA : nuB;
+
+
+                Acc -= (_uA[0] - _uB[0]) * (_vA - _vB) * pnlty * nuMax; // penalty term
+
+
+                return Acc;
+            } else if (cellInSG == true && cellOutSG == false) {
+                Foundation.CommonParamsBnd bnp = ToBndParams(inp);
+                return BoundaryEdgeFormGeneralDiri(ref bnp, _uA, _Grad_uA, _vA, _Grad_vA, _uB[0]);
+            } else if (cellInSG == false && cellOutSG == true) {
+                Foundation.CommonParamsBnd bnp = ToBndParams(inp);
+                return BoundaryEdgeFormGeneralDiri(ref bnp, _uB, _Grad_uB, _vB, _Grad_vB, _uA[0]);
+            }
+            throw new ApplicationException("If this code is reached, basic logic does not work anymore. The universe is probably doomed.");
+        }
+
+        /// <summary>
+        /// General Dirichlet integrand on boundary mesh edges of the SIP
+        /// </summary>
+        protected double BoundaryEdgeFormGeneralDiri(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA, double g_D) {
             double Acc = 0.0;
 
             double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
             double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
 
-            if(this.IsDirichlet(ref inp)) {
-                // inhom. Dirichlet b.c.
-                // +++++++++++++++++++++
-
-                double g_D = this.g_Diri(ref inp);
-
-                if(g_D != 0) {
-                    for(int d = 0; d < inp.D; d++) {
-                        double nd = inp.Normal[d];
-                        Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
-                        Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
-                    }
-                    Acc *= this.m_alpha;
-
-                    Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
-                } else {
-                    for(int d = 0; d < inp.D; d++) {
-                        double nd = inp.Normal[d];
-                        Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency    
-                    }
-
-                    Acc *= 0.0;                 //switch, 0.0 seems stable, 1.0 explodes
-                    Acc *= this.m_alpha;
-
+            if (g_D != 0)
+            {
+                for (int d = 0; d < inp.D; d++)
+                {
+                    double nd = inp.Normal[d];
+                    Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
+                    Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
                 }
+                Acc *= this.m_alpha;
+
+                Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
             } else {
+                for (int d = 0; d < inp.D; d++)
+                {
+                    double nd = inp.Normal[d];
+                    Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
+                }
 
-                double g_N = this.g_Neum(ref inp);
-
-                Acc += nuA * g_N * _vA * this.m_alpha;
+                Acc *= 0.0;                 //switch, 0.0 seems stable, 1.0 explodes
+                Acc *= this.m_alpha;
             }
             return Acc;
+        }
+
+        /// <summary>
+        /// General Neumann integrand on boundary mesh edges of the SIP
+        /// </summary>
+        protected double BoundaryEdgeFormGeneralNeumann(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA, double g_N) {
+            double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
+            return nuA * g_N * _vA * this.m_alpha;
+        }
+
+        /// <summary>
+        /// Integrand on boundary mesh edges of the SIP
+        /// </summary>
+        public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            if(this.IsDirichlet(ref inp)) {
+                return BoundaryEdgeFormGeneralDiri(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, this.g_Diri(ref inp));
+            } else {
+                return BoundaryEdgeFormGeneralNeumann(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, this.g_Neum(ref inp));
+            }
         }
 
         // linear term return self
@@ -1816,16 +2005,18 @@ namespace BoSSS.Application.CahnHilliard {
         //    m_epsilon = __epsilon;
         //}
 
-        public phi_Source(bool __inc, double _cahn = 0.0) {
+        public phi_Source(bool __inc, double _cahn = 0.0, CellMask Subgrid = null) {
             m_inc = __inc;
             m_scale = _cahn;
+            m_Subgrid = Subgrid;
         }
 
 
         //double m_lambda;
         //double m_epsilon;
         bool m_inc;
-        double m_scale;
+    double m_scale;
+       CellMask m_Subgrid;
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 

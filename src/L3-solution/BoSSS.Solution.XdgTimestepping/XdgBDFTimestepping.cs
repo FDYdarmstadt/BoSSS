@@ -473,7 +473,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                         if ((newVersion - oldVersion) != 1)
                         {
-                            Console.WriteLine("Test10000");
                             throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
                         }
                     }
@@ -523,9 +522,10 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     // Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(this.m_LsTrk.LevelSets[0]), (DGField)(this.m_LsTrk.LevelSets[1]), CC, CC0, CC1 }, "Error", 0.0, 2);
                     Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(this.m_LsTrk.LevelSets[0]), CC, CC0 }, "Error", 0.0, 2);
+                    // Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(this.m_LsTrk.LevelSets[0])}, "Error", 0.0, 2);
 
-                    Console.WriteLine("WARNING: Comment this back in!");
-                    // throw new ArithmeticException("All cells are cut cells - check your settings!");
+                    // Console.WriteLine("WARNING: Comment this back in!");
+                    throw new ArithmeticException("All cells are cut cells - check your settings!");
                 }
             }
 
@@ -1462,7 +1462,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                         throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");
                     if((newVersion - oldVersion) != 1 && !coupledOperator)
                     {
-                        Console.WriteLine("Test10001");
                         throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
                     }
 
@@ -1492,9 +1491,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                         (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally, base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
                         .MPISum();
                     //Console.WriteLine("No of cells {0}, No of cut cells {1}.", Jtot[1], Jtot[0]);
-                    // if(Jtot[0] == Jtot[1])
-                    Console.WriteLine("WARNING: Comment this back in!");
-                        // throw new ArithmeticException("All cells are cut cells - check your settings!");
+                    // Console.WriteLine("WARNING: Comment this back in!");
+                    if(Jtot[0] == Jtot[1])
+                        throw new ArithmeticException("All cells are cut cells - check your settings!");
                 }
 
                 //{
@@ -2033,13 +2032,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             if ((newVersion - oldVersion) != 1 && !coupledOperator)
                 {
-                    Console.WriteLine("Test10002");
                     Console.WriteLine(newVersion);
                     Console.WriteLine(oldVersion);
                     throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");}
             if((newVersion - oldVersion) != 0 && coupledOperator)
                 {
-                            Console.WriteLine("Test10003");
                     throw new ApplicationException("Expecting exactly no call to 'UpdateTracker(...)' in 'UpdateLevelset(...)' for coupled Operators.");}
             if ((newPushCount - oldPushCount) != 0)
                 throw new ApplicationException("Calling 'LevelSetTracker.PushStacks()' is not allowed. Level-set-tracker stacks must be controlled by time-stepper.");

@@ -19,18 +19,20 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     class phi_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
     {
 
-        public phi_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+        public phi_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap, CellMask Subgrid = null)
             : base(penalty_const, "mu") // note: in the equation for 'phi', we have the Laplacian of 'mu'
         {
             m_D = D;
             m_diff = __diff;
             m_boundaryCondMap = __boundaryCondMap;
             m_lambda = __lambda;
+            m_Subgrid = Subgrid;
         }
 
         double m_diff;
         double m_lambda;
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
+        CellMask m_Subgrid;
 
         int m_D;
         public override IList<string> ParameterOrdering => null;
@@ -455,9 +457,10 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         //    m_epsilon = __epsilon;
         //}
 
-        public phi_Source(double _diff = 0.0)
+        public phi_Source(double _diff = 0.0, CellMask Subgrid = null)
         {
             m_diff = _diff;
+            m_Subgrid = Subgrid;
         }
 
 
@@ -465,6 +468,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         //double m_lambda;
         //double m_epsilon;
         double m_diff;
+        CellMask m_Subgrid;
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 

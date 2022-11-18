@@ -13,7 +13,7 @@ namespace BoSSS.Application.ExternalBinding {
             GridImportTest.ConvertFOAMGrid();
             Console.WriteLine("Running Cahn-Hilliard Test");
             var chOp = new FixedOperators();
-            OpenFOAMGrid grd = GridImportTest.GenerateFOAMGrid();
+            OpenFOAMGrid grd = GridImportTestSmall.GenerateFOAMGrid();
             OpenFoamDGField f = new(grd, 2, 2);
             OpenFoamMatrix mtx = new(grd, f);
             // var EdgeValues = new List<List<double>>();

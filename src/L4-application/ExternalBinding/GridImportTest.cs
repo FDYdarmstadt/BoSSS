@@ -342,7 +342,7 @@ namespace BoSSS.Application.ExternalBinding {
 
             return g;
         }
-        
+
         static Initializer MyInit;
 
         /// <summary>
