@@ -268,17 +268,17 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 //     Console.WriteLine();
                                 // }
 
-                                // PlotFormat format = new PlotFormat(
-                                //         Style: Styles.Points,
-                                //         pointType: PointTypes.Asterisk,
-                                //         pointSize: 0.5);
+                                PlotFormat format = new PlotFormat(
+                                        Style: Styles.Points,
+                                        pointType: PointTypes.Asterisk,
+                                        pointSize: 0.5);
 
-                                // var gp = new Gnuplot.Gnuplot(baseLineFormat: format);
-                                // gp.PlotMatrixStructure(OpMtx.ToFullMatrixOnProc0());
-                                // gp.PlotDataFile("/home/klingenberg/Downloads/matrix.png", deferred: false);
-                                // // gp.PlotDataFile("matrix.png", deferred: false);
-                                // gp.Execute();
-                                // Console.ReadLine();
+                                var gp = new Gnuplot.Gnuplot(baseLineFormat: format);
+                                gp.PlotMatrixStructure(OpMtx.ToFullMatrixOnProc0());
+                                gp.PlotDataFile("/home/klingenberg/Downloads/matrix.png", deferred: false);
+                                // gp.PlotDataFile("matrix.png", deferred: false);
+                                gp.Execute();
+                                Console.ReadLine();
                                 for (int i = 0; i < OpMtx.NoOfRows; i++)
                                 {
                                     if (OpMtx.GetNoOfNonZerosPerRow(i) > 0)

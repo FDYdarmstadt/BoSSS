@@ -270,15 +270,15 @@ namespace BoSSS.Application.ExternalBinding {
                 // TODO
 
                 c = C.Fields[0] as SinglePhaseField;
-                // // ScalarFunction func() {
-                // //     // double radius = 0.5e-3;
-                // //     // return ((_3D)((x, y, z) => tanh((-sqrt(sqrt(sqrt((pow(x - 2.5e-3, 8) + pow(y - 2.5e-3, 8))))) + radius) / (sqrt(2.0) * cahn)))).Vectorize();
-                // //     // return ((_3D)((x, y, z) => tanh(((x - 0.05) + 1 * (z))/0.01))).Vectorize();
-                // //     return ((_3D)((x, y, z) => tanh(((x - 2.5) + 0.1 * (y - 2.5))/1))).Vectorize();
-                // }
-                // c.Clear();
-                // Console.WriteLine("TODO: remove this later");
-                // c.ProjectField(func());
+                ScalarFunction func() {
+                    // double radius = 0.5e-3;
+                    // return ((_3D)((x, y, z) => tanh((-sqrt(sqrt(sqrt((pow(x - 2.5e-3, 8) + pow(y - 2.5e-3, 8))))) + radius) / (sqrt(2.0) * cahn)))).Vectorize();
+                    // return ((_3D)((x, y, z) => tanh(((x - 0.05) + 1 * (z))/0.01))).Vectorize();
+                    return ((_3D)((x, y, z) => tanh(((x - 2.5) + 0.1 * (y - 2.5))/1))).Vectorize();
+                }
+                c.Clear();
+                Console.WriteLine("TODO: remove this later");
+                c.ProjectField(func());
                 // SinglePhaseField c = new(b);
                 phi = new(b);
                 // for (int j = 0; j < J; j++)
@@ -311,7 +311,7 @@ namespace BoSSS.Application.ExternalBinding {
                 RealLevSet.Clear();
                 RealLevSet.Acc(1.0, c);
                 LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
-                                                         5, new string[] { "a", "b" },
+                                                         1, new string[] { "a", "b" },
                                                          GetNamedInputFields,
                                                          RealLevSet, "c", ContinuityProjectionOption.None);
 
