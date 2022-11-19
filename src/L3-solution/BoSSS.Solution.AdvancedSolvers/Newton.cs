@@ -820,7 +820,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
 
                 TempRes = new double[TempSol.Length];
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes, HomotopyValue, ApplyRef:true);
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes, HomotopyValue);
 
                 double nf0 = base.Norm(CurRes);  //.L2NormPow2().MPISum().Sqrt();
                 double nft = base.Norm(TempRes); //.L2NormPow2().MPISum().Sqrt();
