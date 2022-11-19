@@ -41,7 +41,7 @@ namespace BoSSS.Application.SpecFEM {
             //});
             BoSSS.Solution.Application.InitMPI();
             var AUT = new BoSSS.Application.SpecFEM.AllUpTest();
-            AUT.AllUp(false, false, 2);
+            AUT.AllUp(false, false, 1);
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -108,12 +108,12 @@ namespace BoSSS.Application.SpecFEM {
 
         internal bool Passed = false;
 
-        internal int Degree = 4;
+        internal int NodesPerEdge = 4;
 
         protected override void CreateFields() {
             
             
-            spec_basis = new SpecFemBasis((GridData) this.GridData, Degree);
+            spec_basis = new SpecFemBasis((GridData) this.GridData, NodesPerEdge);
             var dg_basis = spec_basis.ContainingDGBasis;
             //var dg_basis = new Basis(this.GridData, 2);
 
@@ -195,15 +195,15 @@ namespace BoSSS.Application.SpecFEM {
                 
             } else {
                 if(((GridCommons)this.Grid).PeriodicTrafo.Count <= 0
-                    && Degree >= 4) {
+                    && NodesPerEdge >= 4) {
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                     // do not check projection error if
                     // - periodic b.c. are used (projected data is non-periodic)
-                    // - degree is less than 4
+                    // - NodesPerEdge is less than 4, i.e. degree is less than 3
                     // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
-                    if(L2Err >= 1.0e-10)
+                    if (L2Err >= 1.0e-10)
                         Passed = false;
                 }
             }
