@@ -12,25 +12,26 @@ namespace BoSSS.Application.ExternalBinding {
             Init();
             GridImportTest.ConvertFOAMGrid();
             Console.WriteLine("Running Cahn-Hilliard Test");
+            // Console.ReadLine();
             var chOp = new FixedOperators();
             OpenFOAMGrid grd = GridImportTestSmall.GenerateFOAMGrid();
-            OpenFoamDGField f = new(grd, 2, 2);
-            OpenFoamMatrix mtx = new(grd, f);
+            OpenFoamDGField f = new OpenFoamDGField(grd, 2, 2);
+            OpenFoamMatrix mtx = new OpenFoamMatrix(grd, f);
             // var EdgeValues = new List<List<double>>();
             // foreach (var val in new double[]{1, -1, 0}){
             //     EdgeValues.Add(new List<double>{val});
             // }
             // OpenFoamPatchField cPtch = new(grd, 1, new int[]{1,2,3}, new string[]{"dirichlet","dirichlet","neumann"}, new double[]{1,-1,0});
             OpenFoamPatchField cPtch;
-            int[] safeEts = new[] { 1, 2, 3 };
+            int[] safeEts = new int[] { 1, 2, 3 };
             // int* ets = (int*)safeEts[0];
-            string[] safeEtyps = new[] { "dirichlet", "dirichlet", "neumann" };
+            string[] safeEtyps = new string[]{ "dirichlet", "dirichlet", "neumann" };
             // int* eTyps = (int*)safeEtyps[0];
-            double[] safeVals = new[] { 1.0, -1.0, 0 };
-            cPtch = new(grd, 1, safeEts, safeEtyps, safeVals);
+            double[] safeVals = new double[]{ 1.0, -1.0, 0 };
+            cPtch = new OpenFoamPatchField(grd, 1, safeEts, safeEtyps, safeVals);
 
-            double[] safeValsU = new[] { 1.0, -1.0, 0 , 0 , 0 , 0 , 0 , 0 , 0 };
-            OpenFoamPatchField uPtch = new(grd, 3, safeEts, safeEtyps, safeValsU);
+            double[] safeValsU = new double[]{ 1.0, -1.0, 0 , 0 , 0 , 0 , 0 , 0 , 0 };
+            OpenFoamPatchField uPtch = new OpenFoamPatchField(grd, 3, safeEts, safeEtyps, safeValsU);
             // unsafe {
             //     int[] safeEts = new[]{1, 2, 3};
             //     // int* ets = (int*)safeEts[0];
@@ -47,7 +48,7 @@ namespace BoSSS.Application.ExternalBinding {
             //         }
             //     }
             // }
-            OpenFoamDGField U = new(grd, 2, 3);
+            OpenFoamDGField U = new OpenFoamDGField(grd, 2, 3);
             chOp.CahnHilliard(mtx, U, cPtch, uPtch);
             Cleanup();
 

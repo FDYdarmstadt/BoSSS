@@ -76,7 +76,7 @@ namespace BoSSS.Application.ExternalBinding {
         [CodeGenExport]
         public OpenFoamDGField GetFlux() {
             int D = 3;
-            OpenFoamDGField Flux = new(_ptch.Grid, 0, D);
+            OpenFoamDGField Flux = new OpenFoamDGField(_ptch.Grid, 0, D);
             int nCells = _ptch.Grid.NumberOfCells;
 
             for (int j = 0; j < nCells; j++) {
@@ -99,7 +99,7 @@ namespace BoSSS.Application.ExternalBinding {
         [CodeGenExport]
         public OpenFoamDGField GetPhi() {
             int D = 3;
-            OpenFoamDGField Phi0 = new(_ptch.Grid, 0, D);
+            OpenFoamDGField Phi0 = new OpenFoamDGField(_ptch.Grid, 0, D);
             int nCells = _ptch.Grid.NumberOfCells;
 
             for (int j = 0; j < nCells; j++) {
@@ -138,11 +138,11 @@ namespace BoSSS.Application.ExternalBinding {
                     //     return -1;
                     // }
                     double fact(int n) {
-                        double acc = 1;
+                        double Acc = 1;
                         for (int i = 0; i < n; i++) {
-                            acc *= i + 1;
+                            Acc *= i + 1;
                         }
-                        return acc;
+                        return Acc;
                     }
                     // return Math.Tanh(x);
                     // double bernoulli(int m, int n){
@@ -150,8 +150,8 @@ namespace BoSSS.Application.ExternalBinding {
                         if (n % 2 == 1 && n > 1) {
                             return 0;
                         }
-                        double choose(int n, int k) {
-                            if (k > n) {
+                        double choose(int N, int K) {
+                            if (K > N) {
                                 throw new ArgumentException();
                             }
                             // double denom = (fact(k) * fact(n - k));
@@ -163,15 +163,15 @@ namespace BoSSS.Application.ExternalBinding {
                             //     Console.WriteLine(fact(n-k));
                             //     throw new Exception();
                             // }
-                            return fact(n) / (fact(k) * fact(n - k));
+                            return fact(N) / (fact(K) * fact(N - K));
                         }
-                        double acc = 0;
+                        double Acc = 0;
                         for (int k = 0; k <= n; k++) {
                             for (int r = 0; r <= k; r++) {
-                                acc += (pow(-1, r) * choose(k, r) * pow(r, n) / (k + 1));
+                                Acc += (pow(-1, r) * choose(k, r) * pow(r, n) / (k + 1));
                             }
                         }
-                        return acc;
+                        return Acc;
                     }
                     double taylorTerm(int n) {
                         return pow(2.0, 2 * n) * (pow(2.0, 2 * n) - 1) * bernoulli(2 * n) * pow(x, 2 * n - 1) / fact(2 * n);
@@ -201,13 +201,13 @@ namespace BoSSS.Application.ExternalBinding {
                 }
                 double sqrt(double x) {
                     // return Math.Sqrt(x);
-                    double sqrt = x / 2;
+                    double Sqrt = x / 2;
                     double temp = 0;
-                    while (sqrt - temp > 1e-10) {
-                        temp = sqrt;
-                        sqrt = (x / temp + temp) / 2;
+                    while (Sqrt - temp > 1e-10) {
+                        temp = Sqrt;
+                        Sqrt = (x / temp + temp) / 2;
                     }
-                    return sqrt;
+                    return Sqrt;
                 }
                 // grid, etc
                 // =========
@@ -276,11 +276,11 @@ namespace BoSSS.Application.ExternalBinding {
                     // return ((_3D)((x, y, z) => tanh(((x - 0.05) + 1 * (z))/0.01))).Vectorize();
                     return ((_3D)((x, y, z) => tanh(((x - 2.5) + 0.1 * (y - 2.5))/1))).Vectorize();
                 }
-                c.Clear();
-                Console.WriteLine("TODO: remove this later");
-                c.ProjectField(func());
+                // c.Clear();
+                // Console.WriteLine("TODO: remove this later");
+                // c.ProjectField(func());
                 // SinglePhaseField c = new(b);
-                phi = new(b);
+                phi = new SinglePhaseField(b);
                 // for (int j = 0; j < J; j++)
                 // {
                 //     int N = b.GetLength(j);
@@ -348,9 +348,9 @@ namespace BoSSS.Application.ExternalBinding {
                 op.LinearizationHint = LinearizationHint.GetJacobiOperator;
                 op.Commit();
 
-                SinglePhaseField Res_c = new(b);
-                SinglePhaseField Res_phi = new(b);
-                List<DGField> ParameterMap = new();
+                SinglePhaseField Res_c = new SinglePhaseField(b);
+                SinglePhaseField Res_phi = new SinglePhaseField(b);
+                List<DGField> ParameterMap = new List<DGField>();
                 for (int i = 0; i < nParams; i++) {
                     ParameterMap.Add(new SinglePhaseField(b));
                 }
@@ -362,7 +362,7 @@ namespace BoSSS.Application.ExternalBinding {
                 for (int j = 0; j < 3; j++) {
                     ParameterMap[j] = new[] { u, v, w }[j];
                 }
-                NonLinearSolverConfig nls = new();
+                NonLinearSolverConfig nls = new NonLinearSolverConfig();
                 var ls = new DirectSolver.Config();
                 nls.SolverCode = NonLinearSolverCode.Newton;
                 // nls.SolverCode = NonLinearSolverCode.Picard;
@@ -384,7 +384,7 @@ namespace BoSSS.Application.ExternalBinding {
                 Tecplot("plot.1", 0.0, 3, c, phi, RealLevSet, u, v, w);
 
                 // TODO saye instead of hmf
-                XdgSubGridTimestepping TimeStepper = new(op,
+                XdgSubGridTimestepping TimeStepper = new XdgSubGridTimestepping(op,
                                                          new SinglePhaseField[]{c, phi},
                                                          new SinglePhaseField[]{Res_c, Res_phi},
                                                          // TimeSteppingScheme.ExplicitEuler,
