@@ -59,6 +59,8 @@ namespace BoSSS.Foundation.SpecFEM {
 
         private void ConstructorCreateNodalPolynomials(Grid.Classic.GridData grdDat, int p) {
             this.GridDat = grdDat;
+            if (p < 2)
+                throw new ArgumentException($"Nober of Nodes per Edge must be at minimum 1, but {p} was supplied.");
 
             var Krefs = grdDat.Grid.RefElements;
             m_CellNodes = new NodeSet[Krefs.Length];
