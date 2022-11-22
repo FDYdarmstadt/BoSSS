@@ -73,6 +73,18 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         [Test]
+        static public void RotCube_DomainDecompoitionError() {
+            // only with 3 processors and AMR true
+
+            var C = HardcodedControl.RotCubeDomainDecompoitionError();
+
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        [Test]
         static public void RotCube_OrderNotSupportedInHMF() {
             // in 3D partially HMF was executed for surface integration, although Saye was selected 
             // For Saye the order is raised internally, to get same accuracy as with HMF
