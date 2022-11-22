@@ -681,6 +681,111 @@ namespace BoSSS.Application.XNSEC {
             return C;
         }
 
+
+        private static (string Name, double slope, double Intercept)[] XNSECSolverConvergenceTest(IXNSETest Tst, XNSEC_Control[] CS, bool useExactSolution, (string Name, double Slope, double intercept, double interceptTol)[] RegResults) {
+            int D = Tst.SpatialDimension;
+            int NoOfMeshes = CS.Length;
+            if (RegResults.Length != D + 1)
+                throw new ArgumentException("Expecting slopes for velocity and pressure.");
+
+            var Ret = new List<(string Name, double slope, double Intercept)>();
+
+            if (useExactSolution) {
+                if (NoOfMeshes < 2)
+                    throw new ArgumentException("At least two meshes required for convergence against exact solution.");
+
+                MultidimensionalArray errorS = null;
+                string[] Names = null;
+
+                double[] hS = new double[NoOfMeshes];
+                XNSEC[] solvers = new XNSEC[NoOfMeshes];
+
+                for (int k = 0; k < CS.Length; k++) {
+
+                    var C = CS[k];
+                    //using(var solver = new XNSEC()) {
+                    var solver = new XNSEC();
+                    solvers[k] = solver;
+                    {
+                        Console.WriteLine("Warning! - enabled immediate plotting");
+                        C.ImmediatePlotPeriod = 1;
+                        C.SuperSampling = 3;
+
+                        solver.Init(C);
+                        solver.RunSolverMode();
+
+                        //-------------------Evaluate Error ---------------------------------------- 
+                        var evaluator = new XNSEErrorEvaluator<XNSEC_Control>(solver);
+                        double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
+                        double[] ErrThresh = Tst.AcceptableL2Error;
+
+
+                        if (k == 0) {
+                            errorS = MultidimensionalArray.Create(NoOfMeshes, LastErrors.Length);
+                            Names = new string[LastErrors.Length];
+                            if (RegResults.Length != Names.Length)
+                                throw new ArgumentOutOfRangeException();
+                        } else {
+                            if (LastErrors.Length != Names.Length)
+                                throw new ApplicationException();
+                        }
+
+                        if (LastErrors.Length != ErrThresh.Length)
+                            throw new ApplicationException();
+                        for (int i = 0; i < ErrThresh.Length; i++) {
+                            Console.WriteLine($"L2 error, '{solver.Operator.DomainVar[i]}': \t{LastErrors[i]}");
+                            Names[i] = solver.Operator.DomainVar[i];
+                        }
+
+                        errorS.SetRow(k, LastErrors);
+                        hS[k] = evaluator.GetGrid_h();
+                    }
+
+                }
+
+                for (int i = 0; i < errorS.GetLength(1); i++) {
+                    var RegModel = hS.LogLogRegression(errorS.GetColumn(i));
+                    var RegRef = RegResults.Single(ttt => ttt.Name == Names[i]);
+                    Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{RegModel.Slope}\tIntercept: \t{RegModel.Intercept}\t(Expecting: {RegRef.Slope}, {RegRef.intercept}+/-{RegRef.interceptTol})");
+                    Ret.Add((Names[i], RegModel.Slope, RegModel.Intercept));
+                }
+
+                for (int i = 0; i < errorS.GetLength(1); i++) {
+                    var RegModel = hS.LogLogRegression(errorS.GetColumn(i));
+                    var RegRef = RegResults.Single(ttt => ttt.Name == Names[i]);
+
+
+                    Assert.GreaterOrEqual(RegModel.Slope, RegRef.Slope, $"Convergence Slope of {Names[i]} is degenerate.");
+                    Assert.GreaterOrEqual(RegModel.Intercept, RegRef.intercept - RegRef.interceptTol, $"Convergence Intercept of {Names[i]} is degenerate.");
+                    Assert.LessOrEqual(RegModel.Intercept, RegRef.intercept + RegRef.interceptTol, $"Convergence Intercept of {Names[i]} overshoot.");
+                }
+
+                foreach (var s in solvers) {
+                    s.Dispose();
+                }
+            } else {
+                if (NoOfMeshes < 3)
+                    throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact.");
+
+
+
+                BoSSS.Solution.Statistic.ConvergenceTest.SolverConvergenceTest_Experimental(
+                    CS,
+                    "Experimental Convergence",
+                    (D + 1).ForLoop(iVar => (iVar < D ? VariableNames.Velocity_d(iVar) : VariableNames.Pressure,
+                                             iVar < D ? BoSSS.Solution.Statistic.NormType.L2_approximate : BoSSS.Solution.Statistic.NormType.L2noMean_approximate,
+                                             RegResults[iVar].Slope,
+                                             RegResults[iVar].intercept, RegResults[iVar].interceptTol)));
+
+            }
+
+
+
+            return Ret.ToArray();
+
+
+        }
+
         private static XNSEC_Control TstObj2CtrlObj(IXNSECTest_Heat tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
         XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
         SurfaceStressTensor_IsotropicMode SurfTensionMode,
@@ -898,12 +1003,12 @@ namespace BoSSS.Application.XNSEC {
                 db.Controller.ClearDatabase();
             }
 
-            using (var p = new XNSEC_MixtureFraction()) {
-                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(3, 4, db.Path);
+            //using (var p = new XNSEC_MixtureFraction()) {
+            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(3, 4, db.Path);
 
-                p.Init(c);
-                p.RunSolverMode();
-            }
+            //    p.Init(c);
+            //    p.RunSolverMode();
+            //}
 
             Console.WriteLine("Flame sheet calculation done.");
             using (var p = new XNSEC()) {
@@ -940,12 +1045,12 @@ namespace BoSSS.Application.XNSEC {
                 db.Controller.ClearDatabase();
             }
 
-            using (var p = new XNSEC_MixtureFraction()) {
-                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_Droplet_2dCombustion(3, 7, db.Path);
-                //c.SkipSolveAndEvaluateResidual = true;
-                p.Init(c);
-                p.RunSolverMode();
-            }
+            //using (var p = new XNSEC_MixtureFraction()) {
+            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_Droplet_2dCombustion(3, 7, db.Path);
+            //    //c.SkipSolveAndEvaluateResidual = true;
+            //    p.Init(c);
+            //    p.RunSolverMode();
+            //}
 
             Console.WriteLine("Flame sheet calculation done.");
             using (var p = new XNSEC()) {

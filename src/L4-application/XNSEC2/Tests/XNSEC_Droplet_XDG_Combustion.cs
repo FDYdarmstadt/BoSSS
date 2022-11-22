@@ -32,7 +32,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="NewtonConvergenceCriterion"></param>
         /// <param name="dbPath"></param>
         /// <returns></returns>
-        static public XNSEC_Control Full_XDG_Droplet_2dCombustion(int DGp = 2, int nCells = 10, string dbPath = null) {
+        static public XNSEC_Control Full_XDG_Droplet_2dCombustion(int DGp = 2, int nCells = 6, string dbPath = null) {
   
 
             var C = XDG_Droplet_2dCombustion(DGp, nCells, dbPath, false);
@@ -94,7 +94,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="numOfRefinements"></param>
         /// <param name="NewtonConvergenceCriterion"></param>
         /// <returns></returns>
-        static public XNSEC_Control FS_XDG_Droplet_2dCombustion(int DGp = 2, int nCells = 10,  string dbPath =null) {
+        static public XNSEC_Control FS_XDG_Droplet_2dCombustion(int DGp = 2, int nCells = 6,  string dbPath =null) {
             var C = XDG_Droplet_2dCombustion(DGp, nCells, dbPath, true);
             C.physicsMode = PhysicsMode.MixtureFraction;
             C.ProjectName = "CounterDifFlame";
@@ -147,15 +147,17 @@ namespace BoSSS.Application.XNSEC {
             C.EnableMassFractions = true;
             C.NumberOfChemicalSpecies = C.EnableMassFractions ? 4 : 1;
 
-            C.rhoOne = false;
+            C.rhoOne = true;
             C.PhysicalParameters.IncludeConvection = true;
-            C.ThermalParameters.IncludeConvection = true;
+            C.ThermalParameters.IncludeConvection = false;
+
 
             C.SkipSolveAndEvaluateResidual = false;
             C.AgglomerationThreshold = 0.1;
             C.SetDGdegree(DGp);
             C.GravityDirection = new double[] { 0.0, 0.0, 0.0 };
-            C.HeatRelease = 5.0; 
+            C.HeatRelease = 0.0; 
+
             // Parameters
             // ==============
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
@@ -172,13 +174,15 @@ namespace BoSSS.Application.XNSEC {
             C.ImmediatePlotPeriod = 1;
             C.smoothingFactor = 10 * 0;
             double y_interface = 2.14;
-            C.AdaptiveMeshRefinement = false;
+            C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2, levelSet = 0 });
+            C.AMR_startUpSweeps = 2;
             //C.activeAMRlevelIndicators.Add(new BoSSS.Application.XNSEC.AMR_onFlameSheet(C.zSt, 2));
 
             double prescribedMass = 1e-2;
-            double[] FuelInletMassFractions = new double[] { 1.0, 0.0, 0.0, 0.0, 0.0 };
-            double[] OxidizerInletMassFractions = new double[] { 0.0, 1.0, 0.0, 0.0, 0.0 };
+            double[] FuelInletMassFractions = new double[] { 1.0, 0.0, 0.0, 0.0, 0.0 }; // CH4, O2, CO2, H2O, N2
+            //double[] OxidizerInletMassFractions = new double[] { 0.0, 1.0, 0.0, 0.0, 0.0 };            
+            double[] OxidizerInletMassFractions = new double[] { 0.0, 0.23, 0.0, 0.0, 0.77 };
             C.StoichiometricCoefficients = new double[] { -1, -1, 1, 1, 0 };
             C.YFuelInlet = FuelInletMassFractions[0];
             C.YOxInlet = OxidizerInletMassFractions[1];
@@ -197,12 +201,16 @@ namespace BoSSS.Application.XNSEC {
             C.NonLinearSolver.MaxSolverIterations = 10;
 
             C.ThermalParameters.hVap = 1;
-            C.PhysicalParameters.rho_A = 10.0;
+            C.PhysicalParameters.rho_A = 2.0;
             C.PhysicalParameters.rho_B = 1;
-            C.PhysicalParameters.mu_A = 10;
+            C.PhysicalParameters.mu_A = 2.0;
             C.PhysicalParameters.mu_B = 1;
-            C.ThermalParameters.rho_A = 10.0;
-            C.ThermalParameters.rho_B = 1;
+
+            C.ThermalParameters.c_A = 0.0;
+            C.ThermalParameters.c_A = 0.0;
+            C.ThermalParameters.k_A = 1.0;
+            C.ThermalParameters.k_B = 1.0;
+
             // Grid declaration
             // ===============
             double h = Math.Pow(2, -nCellsMult + 1); // cell length
@@ -216,6 +224,7 @@ namespace BoSSS.Application.XNSEC {
                 double y = X[1];
 
                 if (Math.Abs(x - LL) < 1e-8 | Math.Abs(y - LL) < 1e-8 || Math.Abs(x + LL) < 1e-8 || Math.Abs(y + LL) < 1e-8) {
+
                     return 2;
                 } else
                     return 1;
@@ -226,15 +235,15 @@ namespace BoSSS.Application.XNSEC {
             C.GridFunc = delegate {
                 double co = 1; // bounding box, has to be smaller than droplet radius
 
-                int n = 10;
+                int n = 20;
                 int nbb = 1;
 
-                IEnumerable<double> xs_R__ = GenericBlas.SinLinSpacing(co, co + 2 * (LL - co), 0.8, 2 * n + 1).ToList().Take(n + 1);
-                double[] xs_R = xs_R__.Skip(1).ToArray(); // this
+                IEnumerable<double> xs_R__ = GenericBlas.SinLinSpacing(co, co + 2 * (LL - co), 0.9, 2 * n + 1).ToList().Take(n + 1);
+                double[] xs_R = xs_R__.Skip(1).ToArray(); // this //left side of the grid
 
                 double[] xs_M2 = GenericBlas.Linspace(-co, co, 2 * nbb + 1).ToList().Skip(1).ToArray(); // this
 
-                var xs_L_ = xs_R__.Reverse().ToList();
+                var xs_L_ = xs_R__.Reverse().ToList(); //left side of the grid
                 xs_L_.ScaleV(-1);
                 var xs_L = xs_L_.ToArray();
 
@@ -290,13 +299,13 @@ namespace BoSSS.Application.XNSEC {
                     if (species == "A") {
                         return ((_2D)(
                              delegate (double x, double y) {
-                                 return x / (Math.Sqrt(x * x + y * y)) * prescribedMass / C.PhysicalParameters.rho_A;
+                                 return x * R/((x * x + y * y)) * prescribedMass / C.PhysicalParameters.rho_A * 1 + 0.0;
                              })
                             ).Convert_xy2X().Convert_X2Xt();
                     } else if (species == "B") {
                         return ((_2D)(
                   delegate (double x, double y) {
-                      return x / (Math.Sqrt(x * x + y * y)) * prescribedMass / C.PhysicalParameters.rho_B;
+                      return x * R/((x * x + y * y)) * prescribedMass / C.PhysicalParameters.rho_B * 1 + 0.0;
                   })
                  ).Convert_xy2X().Convert_X2Xt();
                     } else {
@@ -306,13 +315,13 @@ namespace BoSSS.Application.XNSEC {
                     if (species == "A") {
                         return ((_2D)(
                  delegate (double x, double y) {
-                     return y / (Math.Sqrt(x * x + y * y)) * prescribedMass / C.PhysicalParameters.rho_A;
+                     return y * R/((x * x + y * y)) * prescribedMass / C.PhysicalParameters.rho_A;
                  })
                 ).Convert_xy2X().Convert_X2Xt();
                     } else if (species == "B") {
                         return ((_2D)(
                  delegate (double x, double y) {
-                     return y / (Math.Sqrt(x * x + y * y)) * prescribedMass / C.PhysicalParameters.rho_B;
+                     return y * R/((x * x + y * y)) * prescribedMass / C.PhysicalParameters.rho_B;
                  })
                 ).Convert_xy2X().Convert_X2Xt();
                     } else {
@@ -390,45 +399,44 @@ namespace BoSSS.Application.XNSEC {
             C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, GetPhi());
 
 
-
             // boundary conditions
             // =================== 
 
             if (!m_InsideBC_PressureOutlet) {
-                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.Velocity_d(0) + "#A", (X, t) => (X[0] / (Math.Sqrt(X[0] * X[0] + X[1] * X[1]))) * prescribedMass / C.PhysicalParameters.rho_A);
-                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.Velocity_d(1) + "#A", (X, t) => (X[1]/(Math.Sqrt(X[0]* X[0]+ X[1]* X[1])))*prescribedMass / C.PhysicalParameters.rho_A);
+                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.Velocity_d(0) + "#A", (X, t) => (X[0] / ((X[0] * X[0] + X[1] * X[1]))) * prescribedMass * R/ C.PhysicalParameters.rho_A * 1);
+                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.Velocity_d(1) + "#A", (X, t) => (X[1]/((X[0]* X[0]+ X[1]* X[1])))*prescribedMass *R/ C.PhysicalParameters.rho_A);
                 C.AddBoundaryValue("velocity_inlet_bot", VariableNames.MixtureFraction + "#A", (X, t) => 1.0);
                 C.AddBoundaryValue("velocity_inlet_bot", VariableNames.Temperature + "#A", (X, t) => 1.0);
-                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.MassFraction0 + "#A", (X, t) => 1.0);
-                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.MassFraction1 + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.MassFraction2 + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.MassFraction3 + "#A", (X, t) => 0.0);
+                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.MassFraction0 + "#A", (X, t) => FuelInletMassFractions[0]);
+                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.MassFraction1 + "#A", (X, t) => FuelInletMassFractions[1]);
+                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.MassFraction2 + "#A", (X, t) => FuelInletMassFractions[2]);
+                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.MassFraction3 + "#A", (X, t) => FuelInletMassFractions[3]);
             } else {
                 C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.Pressure + "#A", (X, t) => m_RecoilPressure ? -prescribedMass * prescribedMass * (1 / C.PhysicalParameters.rho_A - 1 / C.PhysicalParameters.rho_B) : 0.0);
                 C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.MixtureFraction + "#A", (X, t) => 1.0);
                 C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.Temperature + "#A", (X, t) => 1.0);
-                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.MassFraction0 + "#A", (X, t) => 1.0);
-                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.MassFraction1 + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.MassFraction2 + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.MassFraction3 + "#A", (X, t) => 0.0);
+                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.MassFraction0 + "#A", (X, t) => FuelInletMassFractions[0]);
+                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.MassFraction1 + "#A", (X, t) => FuelInletMassFractions[1]);
+                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.MassFraction2 + "#A", (X, t) => FuelInletMassFractions[2]);
+                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_bot", VariableNames.MassFraction3 + "#A", (X, t) => FuelInletMassFractions[3]);
             }
             if (!m_OutsideBC_PressureOutlet) {
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.Velocity_d(0) + "#A", (X, t) => 0.0);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.Velocity_d(1) + "#A", (X, t) => 0.0);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.MixtureFraction + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("velocity_inlet_top", VariableNames.Temperature + "#A", (X, t) => 1.0);
-                C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction0 + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction1 + "#A", (X, t) => 1.0);
-                C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction2 + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction3 + "#A", (X, t) => 0.0);
+                C.AddBoundaryValue("velocity_inlet_top", VariableNames.Temperature + "#A", (X, t) => 0.2);
+                C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction0 + "#A", (X, t) => OxidizerInletMassFractions[0]);
+                C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction1 + "#A", (X, t) => OxidizerInletMassFractions[1]);
+                C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction2 + "#A", (X, t) => OxidizerInletMassFractions[2]);
+                C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction3 + "#A", (X, t) => OxidizerInletMassFractions[3]);
             } else {
                 C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.Pressure + "#A", (X, t) => 0.0);
                 C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MixtureFraction + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.Temperature + "#A", (X, t) => 1.0);
-                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction0 + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction1 + "#A", (X, t) => 1.0);
-                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction2 + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction3 + "#A", (X, t) => 0.0);
+                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.Temperature + "#A", (X, t) => 0.5 * 0.8 / (Math.Log(10) - Math.Log(100)) * Math.Log(X[0] * X[0] + X[1] * X[1]) + 1.0 - 0.8 / (Math.Log(10) - Math.Log(100)) * Math.Log(10));
+                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction0 + "#A", (X, t) => OxidizerInletMassFractions[0]);
+                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction1 + "#A", (X, t) => OxidizerInletMassFractions[1]);
+                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction2 + "#A", (X, t) => OxidizerInletMassFractions[2]);
+                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction3 + "#A", (X, t) => OxidizerInletMassFractions[3]);
             }
             return C;
         }
