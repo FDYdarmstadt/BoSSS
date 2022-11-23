@@ -78,7 +78,7 @@ namespace BoSSS.Application.XNSE_Solver {
             InitMPI();
             DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.RotatingCubeTest(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, Newton.GlobalizationOption.None, IncompressibleBcType.Pressure_Outlet);
-            BoSSS.Application.XNSE_Solver.Tests.RestartTests.RestartTest(true, TimeSteppingScheme.BDF3, true);
+            BoSSS.Application.XNSE_Solver.Tests.RestartTests.RestartTest(true, TimeSteppingScheme.BDF3, false);
             NUnit.Framework.Assert.IsTrue(false, "remove me");
 
 
@@ -650,8 +650,11 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 Console.WriteLine($"Done with time step {TimestepNo}; solver success: {success}");
                 GC.Collect();
-                if(Control.FailOnSolverFail && !success)
+                if (Control.FailOnSolverFail && !success) {
+                    PlotCurrentState(phystime, TimestepNo, this.Control.SuperSampling);
+                    SaveToDatabase(TimestepNo, phystime);
                     throw new ArithmeticException("Solver did not converge.");
+                }
 
                 return dt;
             }
@@ -878,11 +881,23 @@ namespace BoSSS.Application.XNSE_Solver {
                 ISessionInfo reloadSession = GetDatabase().Controller.GetSessionInfo(this.CurrentSessionInfo.RestartedFrom);
                 tsi_toLoad = reloadSession.Timesteps.Single(t => t.TimeStepNumber.Equals(new TimestepNumber(TimestepIndex)));
             }
-            DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
 
-            // level-set
-            // ---------
-            //this.LsTrk.UpdateTracker(time, incremental: true);
+            //IGrid grid_toLoad = DatabaseDriver.LoadGrid(tsi_toLoad.Grid.ID, GetDatabase());
+            //var gridDat_toLoad = grid_toLoad.iGridData;
+
+            //if (gridDat_toLoad.Equals(this.GridData)) {
+            //    DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
+            //} else {
+            //    throw new NotImplementedException("ToDo");
+            //    var fields = DatabaseDriver.LoadFields(tsi_toLoad, gridDat_toLoad, this.IOFields.Select(f => f.Identification)).ToList();
+            //    foreach (var ioF in this.IOFields) {
+            //        DGField field = fields.Where(f => f.Identification.Equals(ioF.Identification)).Single();
+            //        ioF.Clear();
+            //        // TODO
+            //    }
+            //}
+
+            DatabaseDriver.LoadFieldData(tsi_toLoad, this.GridData, this.IOFields);
 
             // solution
             // --------

@@ -154,7 +154,7 @@ namespace BoSSS.Foundation.XDG {
         
 
         /// <summary>
-        /// Increases <see cref="HistoryLength"/> to <paramref name="ReqLeng"/>, if the latter is smaler.
+        /// Increases <see cref="HistoryLength"/> to <paramref name="ReqLeng"/>, if the latter is smaller.
         /// </summary>
         /// <param name="ReqLeng">The requested length</param>
         /// <returns>
@@ -848,6 +848,7 @@ namespace BoSSS.Foundation.XDG {
             int PHL = PopulatedHistoryLength;
             int HL = this.HistoryLength;
 
+
             Debug.Assert(NoOfLs == m_LevelSets.Count);
             for(int iLs = 0; iLs < NoOfLs; iLs++) {
                 m_LevelSetHistories[iLs].Push((ls1) => ls1, (ls1, ls0) => ls1.CloneAs());
@@ -868,6 +869,7 @@ namespace BoSSS.Foundation.XDG {
             m_QuadFactoryHelpersHistory.Push((r1) => new Dictionary<XQuadFactoryHelper.MomentFittingVariants, XQuadFactoryHelper>(), (r1, r0) => r1);
 
             m_XDGSpaceMetricsHistory.Push((r1) => NewXDGSpaceMetricsCache(), (r1,r0) => r1);
+
 
 #if DEBUG
             for(int iLs = 0; iLs < NoOfLs; iLs++) {
@@ -1659,7 +1661,34 @@ namespace BoSSS.Foundation.XDG {
             MPIUpdate(this.Regions.m_LevSetRegions, this.GridDat);
             this.Regions.Recalc_LenToNextchange();
         }
-        
+
+
+        /// <summary>
+        /// used for cleaning up the current timestep when loading a restart
+        /// </summary>
+        /// <param name="PhysTime"></param>
+        public void ResetCurrentTimeLevel(double PhysTime) {
+
+            // invalidate everything we got so far
+            // ===================================
+
+            this.Regions.InvalidateCaches();
+            for (int iLs = 0; iLs < NoOfLevelSets; iLs++) {
+                this.DataHistories[iLs].Current.ClearCaches();
+            }
+
+            m_QuadFactoryHelpersHistory.Current.Clear();
+
+            m_XDGSpaceMetricsHistory.Current.Clear();
+
+
+            // update tracker
+            // ==============
+            UpdateTracker(PhysTime);
+
+        }
+
+
         /// <summary>
         /// Must be called after changing the level-set;
         /// Invoking this method updates the state of cells (e.g. cut, -near, +near, etc.), <see cref="Regions"/>.

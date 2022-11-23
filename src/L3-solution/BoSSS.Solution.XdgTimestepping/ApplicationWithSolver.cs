@@ -237,7 +237,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        // <summary>
+        /// <summary>
         /// Number of time-steps required for restart, e.g. 1 for Runge-Kutta and implicit/explicit Euler, 2 for BDF2, etc.
         /// </summary>
         protected override int BurstSave {
@@ -323,19 +323,23 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void AfterSolverCreation(double phystime, int TimestepNo) {
 
             if (Timestepping.m_BDF_Timestepper != null) {
-                if (this.Control.MultiStepInit == true) {
+                if (this.Control.RestartInfo != null) {
                     Timestepping.m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
-                    if (this.Control.RestartInfo == null) {
+                    Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
+                         // delegate for the initialization of previous timesteps from restart session
+                         BDFDelayedInitLoadRestart);
+
+                } else {
+                    if (this.Control.MultiStepInit == true) {
+                        Timestepping.m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
                         Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
                             // delegate for the initialization of previous timesteps from an analytic solution
                             BDFDelayedInitSetIntial);
-                    } else {
-                        Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
-                            // delegate for the initialization of previous timesteps from restart session
-                            BDFDelayedInitLoadRestart);
-                    }
-                } else
-                    Timestepping.m_BDF_Timestepper.SingleInit();
+
+                    } else
+                        Timestepping.m_BDF_Timestepper.SingleInit();
+                }
+
             }
         }
 

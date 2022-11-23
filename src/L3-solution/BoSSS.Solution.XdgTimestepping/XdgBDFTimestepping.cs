@@ -151,7 +151,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                   || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
                 m_LsTrk.IncreaseHistoryLength(1);
             } else {
-                m_LsTrk.IncreaseHistoryLength(S + 1);
+                m_LsTrk.IncreaseHistoryLength(S);
             }
 
             // mass-matrix stack
@@ -289,6 +289,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// 
         /// </summary>
         void PushStack() {
+
 
             m_PopulatedStackDepth++;
             if (m_PopulatedStackDepth > m_TSCchain[0].S)
@@ -472,15 +473,18 @@ namespace BoSSS.Solution.XdgTimestepping {
                         int newVersion = m_LsTrk.VersionCnt;
 
                         if ((newVersion - oldVersion) != 1)
-                            throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");
+                            throw new ApplicationException("Expecting exactly one call to 'UpdateTracker(...)' in 'UpdateLevelset(...)'.");    
                     }
 
+                    // reset the internal state of the LevelSetTracker
+                    m_LsTrk.ResetCurrentTimeLevel(time);    
+
                     // re-sort mass matrices
-                    {
-                        var Mtx2Update = m_Stack_MassMatrix.GetSubVector(1, m_Stack_MassMatrix.Length - 1);
-                        TimeSteppingUtils.OperatorLevelSetUpdate(m_LsTrk, Mtx2Update, CurrentStateMapping, CurrentStateMapping);
-                        Array.Copy(Mtx2Update, 0, m_Stack_MassMatrix, 1, Mtx2Update.Length);
-                    }
+                    //{
+                    //    var Mtx2Update = m_Stack_MassMatrix.GetSubVector(1, m_Stack_MassMatrix.Length - 1);
+                    //    TimeSteppingUtils.OperatorLevelSetUpdate(m_LsTrk, Mtx2Update, CurrentStateMapping, CurrentStateMapping);
+                    //    Array.Copy(Mtx2Update, 0, m_Stack_MassMatrix, 1, Mtx2Update.Length);
+                    //}
 
                     // all the other stuff (cut-cell-metrics, ...)
                     InitTimestepping(iStage == (S - 1));

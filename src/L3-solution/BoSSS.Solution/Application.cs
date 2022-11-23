@@ -2116,56 +2116,70 @@ namespace BoSSS.Solution {
 
                 m_queryHandler.QueryResults.Clear();
 
+
                 if (this.Control.RestartInfo != null) {
                     CreateEquationsAndSolvers(null);
                     AfterSolverCreation(physTime, i0.MajorNumber);
+
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                     if(LsTrk != null) {
-                        if(LsTrk.Regions.Time != physTime)
+                        if (LsTrk.Regions.Time != physTime) {
                             LsTrk.UpdateTracker(physTime);
-                        LsTrk.PushStacks();
+                            LsTrk.PushStacks();
+                        }
                     }
+
+                    //Console.WriteLine($"===== AfterSolverCreation() ...");
+                    //if (LsTrk.RegionsHistory.GetPopulatedLength() > 0) {
+                    //    foreach (int ai in LsTrk.RegionsHistory.AvailableIndices) {
+                    //        Console.WriteLine($"RegionHistory[{ai}] = {LsTrk.RegionsHistory[ai].Time}");
+                    //    }
+                    //}
+                    //Console.WriteLine($"=====");
                 }
+
 
                 // =========================================================
                 // Adaptive-Mesh-Refinement and/or load balancing on startup
                 // =========================================================
 
+                if (this.Control.RestartInfo == null) {
 
-                // load balancing solo
-                if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
-                    PlotAndSave(physTime, i0, rollingSavesTsi);
-                    MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
-                    PlotAndSave(physTime, i0, rollingSavesTsi);
-                }
+                    // load balancing solo
+                    if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
+                        PlotAndSave(physTime, i0, rollingSavesTsi);
+                        MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+                        PlotAndSave(physTime, i0, rollingSavesTsi);
+                    }
 
-                // load balancing and adaptive mesh refinement
-                if (this.Control.AdaptiveMeshRefinement) {
-                    
-                    // unprocessed initial value IO
-                    if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
-                        PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
+                    // load balancing and adaptive mesh refinement
+                    if (this.Control.AdaptiveMeshRefinement) {
 
-                    var ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(0)), physTime); // save the initial value
-                    if (this.RollingSave)
-                        rollingSavesTsi.Add(Tuple.Create(0, ts0amr));
+                        // unprocessed initial value IO
+                        if (this.Control != null && this.Control.ImmediatePlotPeriod > 0)
+                            PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(0)), this.Control.SuperSampling);
+
+                        var ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(0)), physTime); // save the initial value
+                        if (this.RollingSave)
+                            rollingSavesTsi.Add(Tuple.Create(0, ts0amr));
 
 
-                    bool initialRedist = false;
-                    for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
-                        initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
+                        bool initialRedist = false;
+                        for (int s = 1; s <= this.Control.AMR_startUpSweeps; s++) {
+                            initialRedist |= this.MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
 
-                        if (initialRedist == true) {
+                            if (initialRedist == true) {
 
-                            if (this.Control.ImmediatePlotPeriod > 0)
-                                PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
+                                if (this.Control.ImmediatePlotPeriod > 0)
+                                    PlotCurrentState(physTime, new TimestepNumber(i0.Numbers.Cat(s)), this.Control.SuperSampling);
 
-                            ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
-                            if (this.RollingSave)
-                                rollingSavesTsi[0] = Tuple.Create(0, ts0amr);
+                                ts0amr = SaveToDatabase(new TimestepNumber(i0.Numbers.Cat(s)), physTime); // save the AMR'ed initial value
+                                if (this.RollingSave)
+                                    rollingSavesTsi[0] = Tuple.Create(0, ts0amr);
 
+                            }
                         }
                     }
                 }
@@ -2179,13 +2193,20 @@ namespace BoSSS.Solution {
                 if (this.Control.RestartInfo == null) {
                     CreateEquationsAndSolvers(null);
                     AfterSolverCreation(physTime, i0.MajorNumber);
-                }
-                {
+
                     tr.LogMemoryStat();
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                     if (LsTrk != null)
                         LsTrk.PushStacks();
+
+                    //Console.WriteLine($"===== AfterSolverCreation() ...");
+                    //if (LsTrk.RegionsHistory.GetPopulatedLength() > 0) {
+                    //    foreach (int ai in LsTrk.RegionsHistory.AvailableIndices) {
+                    //        Console.WriteLine($"RegionHistory[{ai}] = {LsTrk.RegionsHistory[ai].Time}");
+                    //    }
+                    //}
+                    //Console.WriteLine($"=====");
                 }
 
                 // ========================================================================
@@ -2251,12 +2272,21 @@ namespace BoSSS.Solution {
                         tr.LogMemoryStat();
                         physTime += dt;
 
-                        if(LsTrk != null) {
+
+                        if (LsTrk != null) {
                             if(LsTrk.Regions.Time != physTime) {
                                 // correct the level-set tracker time if some solver did not correctly updated it.
                                 LsTrk.UpdateTracker(physTime);
                             }
                         }
+
+                        //Console.WriteLine($"===== AfterRunSolverOneStep() ...");
+                        //if (LsTrk.RegionsHistory.GetPopulatedLength() > 0) {
+                        //    foreach (int ai in LsTrk.RegionsHistory.AvailableIndices) {
+                        //        Console.WriteLine($"RegionHistory[{ai}] = {LsTrk.RegionsHistory[ai].Time}");
+                        //    }
+                        //}
+                        //Console.WriteLine($"=====");
 
 
                         foreach (var l in PostprocessingModules) {
@@ -2277,6 +2307,7 @@ namespace BoSSS.Solution {
                                 break;
                             }
                         }
+
 
                         if (this.RollingSave) {
                             if (tsi == null) {
