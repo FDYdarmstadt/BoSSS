@@ -105,10 +105,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.NoOfTimesteps = 6;
 
             ctrl.DbPath = DbPath;
-            ctrl.saveperiod = 3;
+            ctrl.saveperiod = 1;
             ctrl.rollingSaves = false;
-            ctrl.BurstSave = 1;
+            //ctrl.BurstSave = 1;
             ctrl.MultiStepInit = false;
+
 
             ExpectedTimeSteps = new int[] { 0, 1, 2, 3, 4, 5, 6 };
             //switch (timeStepScheme) {
@@ -119,7 +120,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             //        ExpectedTimeSteps = new int[] { 0, 2, 3, 5, 6 };
             //        break;
             //    case TimeSteppingScheme.BDF3:
-            //        ExpectedTimeSteps = new int[] { 0, 1, 2, 3, 4, 5, 6 };
+            //        ExpectedTimeSteps = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             //        break;
             //    default:
             //        throw new ArgumentException("Chosen timestepping scheme not supported for current test setting");
@@ -154,7 +155,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.PhysicalParameters.Sigma = 24.5;
             ctrl.PhysicalParameters.IncludeConvection = false;
 
-            ctrl.RestartInfo = Tuple.Create(RestartSession, new TimestepNumber(6));
+            ctrl.RestartInfo = Tuple.Create(RestartSession, new TimestepNumber(3));
 
             ctrl.InitialValues_Evaluators.Add("GravityY#A", X => -9.81e-1);
             ctrl.InitialValues_Evaluators.Add("GravityY#B", X => -9.81e-1);
@@ -179,25 +180,26 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.NoOfTimesteps = 3;
 
             ctrl.DbPath = DbPath;
-            ctrl.saveperiod = 9;
+            ctrl.saveperiod = 1;
             ctrl.rollingSaves = true;
 
-            switch (timeStepScheme) {
-                case TimeSteppingScheme.ImplicitEuler:
-                    ctrl.MultiStepInit = false;
-                    ExpectedTimeSteps = new int[] { 3, 6 };
-                    break;
-                case TimeSteppingScheme.BDF2:
-                    ctrl.MultiStepInit = true;
-                    ExpectedTimeSteps = new int[] { 3, 5, 6 };
-                    break;
-                case TimeSteppingScheme.BDF3:
-                    ctrl.MultiStepInit = true;
-                    ExpectedTimeSteps = new int[] { 3, 4, 5, 6 };
-                    break;
-                default:
-                    throw new ArgumentException("Chosen timestepping scheme not supported for current test setting");
-            }
+            ExpectedTimeSteps = new int[] { 3, 4, 5, 6 };
+            //switch (timeStepScheme) {
+            //    case TimeSteppingScheme.ImplicitEuler:
+            //        ctrl.MultiStepInit = false;
+            //        ExpectedTimeSteps = new int[] { 3, 6 };
+            //        break;
+            //    case TimeSteppingScheme.BDF2:
+            //        ctrl.MultiStepInit = true;
+            //        ExpectedTimeSteps = new int[] { 3, 5, 6 };
+            //        break;
+            //    case TimeSteppingScheme.BDF3:
+            //        ctrl.MultiStepInit = true;
+            //        ExpectedTimeSteps = new int[] { 3, 4, 5, 6 };
+            //        break;
+            //    default:
+            //        throw new ArgumentException("Chosen timestepping scheme not supported for current test setting");
+            //}
 
             ctrl.ImmediatePlotPeriod = 1;
             ctrl.SuperSampling = 2;
@@ -246,7 +248,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 var TestDb2 = DatabaseInfo.CreateOrOpen(TestDbFullPath);
                 int nGrids = 1;
                 if (AMRon) nGrids++;
-                if (AMRon && transient) nGrids++;
+                if (AMRon && transient) nGrids = 3;
                 Assert.IsTrue(TestDb2.Grids.Count() == nGrids, "Number of grids seems to be wrong.");
                 Assert.IsTrue(TestDb2.Sessions.Count() == 1, "Number of sessions seems to be wrong.");
 
@@ -281,14 +283,14 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 var TestDb3 = DatabaseInfo.CreateOrOpen(TestDbFullPath);
                 int nGrids = 1;
                 if (AMRon) nGrids++;
-                if (AMRon && transient) nGrids += 2;
-                //Assert.IsTrue(TestDb3.Grids.Count() == nGrids, "Number of grids seems to be wrong.");
-                //Assert.IsTrue(TestDb3.Sessions.Count() == 2, "Number of sessions seems to be wrong.");
+                if (AMRon && transient) nGrids = 4;
+                Assert.IsTrue(TestDb3.Grids.Count() == nGrids, "Number of grids seems to be wrong.");
+                Assert.IsTrue(TestDb3.Sessions.Count() == 2, "Number of sessions seems to be wrong.");
 
 
                 var siRestart = TestDb3.Sessions.First();
                 int[] tsiNumbers = siRestart.Timesteps.Select(tsi => tsi.TimeStepNumber.MajorNumber).ToArray();
-                //Assert.IsTrue(ExpectedTs2ndRun.ListEquals(tsiNumbers), "mismatch between saved time-steps in test database and expected saves.");
+                Assert.IsTrue(ExpectedTs2ndRun.ListEquals(tsiNumbers), "mismatch between saved time-steps in test database and expected saves.");
 
 
                 var siRef = TestDb3.Sessions.Where(s => s.ID.Equals(siRestart.RestartedFrom)).Single();
