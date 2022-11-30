@@ -1303,7 +1303,7 @@ namespace BoSSS.Foundation.XDG {
 
             //Console.WriteLine(this.Identification + ": available XDG quad orders: " + AvailOrders.ToConcatString("", ",", ";") + " using order: " + order2Pick);
 
-            var MMF = this.Basis.Tracker.GetXDGSpaceMetrics(spc, order2Pick).MassMatrixFactory;
+            var MMF = trk.GetXDGSpaceMetrics(spc, order2Pick).MassMatrixFactory;
             var MMblox = MMF.GetMassMatrixBlocks(this.Basis.NonX_Basis, spc);
 
 
