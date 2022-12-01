@@ -1019,26 +1019,24 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 for (int i = 0; i < neighbourCells.Length; i++) {
                     if (!IsPartOfLocalCells(noOfLocalCells, neighbourCells[i])) {
-                        int currentProcess = GetExternalCellProcess(neighbourCells[i]);
-                        long globalCellIndex = CellPartitioning.i0 + j;
+                        int processorToBeSent = GetExternalCellProcess(neighbourCells[i]);
+                        long globalCellIndex = CellPartitioning.i0 + j; // not globalId
 
-                        if (!boundaryCellsProcess.TryGetValue(currentProcess, out List<(long, Cell[])> exchangeCellData)) {
+                        if (!boundaryCellsProcess.TryGetValue(processorToBeSent, out List<(long, Cell[])> exchangeCellData)) {
                             exchangeCellData = new List<(long, Cell[])>();
-                            boundaryCellsProcess.Add(currentProcess, exchangeCellData);
+                            boundaryCellsProcess.Add(processorToBeSent, exchangeCellData);
                         }
 
-                        foreach (KeyValuePair<int, List<(long, Cell[])>> key in boundaryCellsProcess) {
-                            List<(long, Cell[])> list = key.Value;
-                            bool processAlreadyIncluded = false;
-                            foreach ((long, Cell[]) t in list) {
-                                if (t.Item1 == j) {
-                                    processAlreadyIncluded = true;
-                                    break;
-                                }
+                        bool IsCellAlreadyAdded = false; // there might be repeated neighbour cell info coming from both vertices and edges, so this is to avoid it.
+                        foreach ((long, Cell[]) CellsToBeSent in boundaryCellsProcess[processorToBeSent]) {
+                            if (CellsToBeSent.Item1 == globalCellIndex) {
+                                IsCellAlreadyAdded = true;
+                                break;
                             }
-                            if (!processAlreadyIncluded)
-                                exchangeCellData.Add((globalCellIndex, Cells[j]));
                         }
+
+                        if (!IsCellAlreadyAdded)
+                            exchangeCellData.Add((globalCellIndex, Cells[j])); // add cell to the list to be exchanged 
                     }
                 }
             }
