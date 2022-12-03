@@ -6141,8 +6141,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
         public static XNSE_Control RotCubeDomainDecompoitionError() {
-            //gives a domain decomposition error on 43th time step
+            //gives a domain decomposition error on 43th time step with np=3
             //default parameter set with AMR
+            //cs:BoSSS.Application.XNSE_Solver.HardcodedControl.RotCubeDomainDecompoitionError()
+
             var C = Rotating_Something_Unsteady(4, 30, 2, true);
             return C;
         }
@@ -6155,23 +6157,54 @@ namespace BoSSS.Application.XNSE_Solver {
         public static XNSE_Control RotCubeFreeMeanValueError() {
             // cs:BoSSS.Application.XNSE_Solver.HardcodedControl.RotCubeFreeMeanValueError()
 
-            //this error does happen when number of processsors =2 but not with np=4
-            var C = Rotating_Something_Unsteady(4, 30, 2, false);
+            //this error does happen when number of processors =2 but not with np=4
+            var C = Rotating_Something_Unsteady(k: 4, Res: 30, SpaceDim: 2, useAMR: false, Gshape: Shape.Cube, OuterBcType: IncompressibleBcType.Wall);
+            
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            //C.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.NonLinearSolver.ConvergenceCriterion = 0.000001; //it can also happen with 0.001 depending on parameters
+            C.NonLinearSolver.Globalization = Newton.GlobalizationOption.None;
+            C.NonLinearSolver.ConvergenceCriterion = 0.0; // As accurate as possible
+            C.NonLinearSolver.MinSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 20;
+            
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+            C.UseSchurBlockPrec = false;
+
             C.PhysicalParameters.IncludeConvection = true;
             C.NoOfTimesteps = 300;
+            C.NoOfTimesteps = 1;
 
-            //C.UseSchurBlockPrec = false;
+         
+
+            
+            //C.UseSchurBlockPrec = true;
+            
             C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            //C.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
+                        
+            C.TracingNamespaces = "BoSSS";
 
             return C;
         }
 
 
         //A copy form XNSE_Solver_MPItest.cs
-        private static XNSE_Control Rotating_Something_Unsteady(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, Shape Gshape = Shape.Cube, bool UsePredefPartitioning = false) {
+        public static XNSE_Control Rotating_Something_Unsteady(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, Shape Gshape = Shape.Cube, bool UsePredefPartitioning = false, IncompressibleBcType OuterBcType = IncompressibleBcType.Wall) {
             XNSE_Control C = new XNSE_Control();
+
+            switch(OuterBcType) {
+                case IncompressibleBcType.Wall:
+                case IncompressibleBcType.Pressure_Outlet:
+                    // ok;
+                    break;
+
+                default:
+                    throw new ArgumentException("not recommended to use boundary condition: " + OuterBcType);
+
+            }
+
+
             // basic database options
             // ======================
 
@@ -6201,7 +6234,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============================
 
             //// Create Grid
-            C.GridFunc = GridFuncFactory(SpaceDim, Res, UsePredefPartitioning);
+            C.GridFunc = GridFuncFactory(SpaceDim, Res, UsePredefPartitioning, OuterBcType);
 
             // Physical Parameters
             // ===================
@@ -6260,8 +6293,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
             }
             C.InitialValues_Evaluators.Add("Pressure", X => 0);
-            C.AddBoundaryValue("Wall");
-
+            
             // misc. solver options
             // ====================
 
@@ -6343,7 +6375,7 @@ namespace BoSSS.Application.XNSE_Solver {
             };
         }
 
-        public static Func<IGrid> GridFuncFactory(int SpaceDim, int Res, bool UsePredefPartitioning) {
+        public static Func<IGrid> GridFuncFactory(int SpaceDim, int Res, bool UsePredefPartitioning, IncompressibleBcType OuterBcType) {
             double xMin = -1, yMin = -1, zMin = -1;
             double xMax = 1, yMax = 1, zMax = 1;
 
@@ -6374,7 +6406,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         throw new ArgumentOutOfRangeException();
                 }
                 if (UsePredefPartitioning) grd.AddPredefinedPartitioning("testgrid", MakeDebugPart);
-                grd.EdgeTagNames.Add(2, "Wall");
+                grd.EdgeTagNames.Add(2, OuterBcType.ToString());
                 grd.DefineEdgeTags(delegate (double[] _X) {
                     return 2;
                 });

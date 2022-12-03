@@ -491,18 +491,37 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var R = this.Residuals;
                     R.Clear();
 
+                    /*
+                    double Norm(IList<double> V, ISparseMatrix Mass) {
+                        double[] tmp = new double[V.Count];
+                        Mass.SpMV(1.0, V, 0.0, tmp);
+                        return V.MPI_InnerProd(tmp).Sqrt();
+                    }
+
+                    Console.WriteLine($"RESILOG: w.r.t. MG OP {Norm(currentRes, Mgop.MassMatrix):0.####E-00}");
+                    */
+
                     Mgop.TransformRhsFrom(R, currentRes);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
-
+                    /*
                     //// plotting during Newton iterations:  
-                    //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
-                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
+                    var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
+                    Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
+
+
+                    //MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1).MassMatrixFactory;
+                    //var FreshMama = MassFact.GetMassMatrix(CurrentStateMapping, false);
+                    //Console.WriteLine($"RESILOG: w.r.t. XDG (nonagg): {Norm(R, FreshMama):0.####E-00}");
+                    */
 
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];
-                        if (field is XDGField) {
-                            foreach (var spc in ((XDGBasis)field.Basis).Tracker.SpeciesNames) {
-                                double L2Res = ((XDGField)field).GetSpeciesShadowField(spc).L2Norm();
+                        if (field is XDGField xField) {
+                            XDGBasis xBasis = xField.Basis;
+                            foreach (var spc in xBasis.Tracker.SpeciesNames) {
+                                //var cm = xBasis.Tracker.Regions.GetSpeciesMask(spc);
+                                //double L2Res = xField.GetSpeciesShadowField(spc).L2Norm(cm);
+                                double L2Res = xField.L2NormSpecies(spc);
                                 m_ResLogger.CustomValue(L2Res, m_ResidualNames[i] + "#" + spc);
                                 totResi += L2Res.Pow2();
                             }

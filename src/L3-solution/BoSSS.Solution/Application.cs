@@ -469,7 +469,7 @@ namespace BoSSS.Solution {
             Func<Application<T>> ApplicationFactory) {
 
             m_Logger.Info("Entering _Main routine...");
-            Tracer.MemoryInstrumentationLevel = MemoryInstrumentationLevel.GcAndPrivateMemory;
+            Tracer.MemoryInstrumentationLevel = MemoryInstrumentationLevel.None;
 
             int MPIrank = int.MinValue;
 //#if DEBUG

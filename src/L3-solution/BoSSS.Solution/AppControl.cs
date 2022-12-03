@@ -973,7 +973,7 @@ namespace BoSSS.Solution.Control {
         /// Activate/Deactivate memory allocation logging
         /// </summary>
         [DataMember]
-        public ilPSP.Tracing.MemoryInstrumentationLevel MemoryInstrumentationLevel = ilPSP.Tracing.MemoryInstrumentationLevel.OnlyGcTotalMemory;
+        public ilPSP.Tracing.MemoryInstrumentationLevel MemoryInstrumentationLevel = ilPSP.Tracing.MemoryInstrumentationLevel.None;
 
         /// <summary>
         /// File system path to database.
