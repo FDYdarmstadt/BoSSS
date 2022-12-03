@@ -245,10 +245,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // only evaluation ==> OpMatrix must be null
                 throw new ApplicationException($"The provided {typeof(OperatorEvalOrLin).Name} is not correctly implemented.");
             this.AbstractOperator = abstractOp;
-            
-            EvaluationCounter++;
+
+
 #if DEBUG
-            if(EvaluationCounter % 10 == 1) { // do the following, expensive check only for every 10-th evaluation.
+            const int TEST_INTERVALL = 10;
+#else
+            const int TEST_INTERVALL = 1000;
+#endif
+            if (EvaluationCounter % TEST_INTERVALL == 0) { // do the following, expensive check only for every TEST_INTERVALL-th evaluation.
                 // Comparison of linearization and evaluation:
                 // -------------------------------------------
                 //
@@ -271,11 +275,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 err.AccV(-1.0, OpEvalRaw);
                 double l2_err = err.MPI_L2Norm();
                 double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
-                // if(l2_err > comp) {
-                //     throw new ArithmeticException("Mismatch between operator linearization and evaluation.");
-                // }
+                
+                if (l2_err > comp) {
+                    Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err/comp} (comparison value {comp})");
+                    //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
+                }
             }
-#endif
+            EvaluationCounter++;
+
             CurrentLin.TransformRhsInto(OpEvalRaw, Output, ApplyRef);
         }
 
