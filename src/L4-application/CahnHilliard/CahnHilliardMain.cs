@@ -1460,7 +1460,7 @@ namespace BoSSS.Application.CahnHilliard {
 
         static Foundation.CommonParamsBnd ToBndParams(Foundation.CommonParams inp)
         {
-            Foundation.CommonParamsBnd bnp = new();
+            var bnp = new Foundation.CommonParamsBnd();
             bnp.Normal = inp.Normal;
             bnp.X = inp.X;
             bnp.Parameters_IN = inp.Parameters_IN;
@@ -1569,6 +1569,19 @@ namespace BoSSS.Application.CahnHilliard {
             }
         }
 
+        public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                bool cellInSG = !subGridCellMask[cpv.jCell];
+                if (cellInSG) {
+                    return 0;
+                // throw new Exception("This cell should not be evaluated");
+                }
+            }
+            return base.VolumeForm(ref cpv, U, GradU, V, GradV);
+        }
+
         /// <summary>
         /// Integrand on interior mesh edges of the SIP
         /// </summary>
@@ -1578,12 +1591,13 @@ namespace BoSSS.Application.CahnHilliard {
             bool cellOutSG = false;
             if (m_Subgrid != null) {
                 BitArray subGridCellMask = m_Subgrid.GetBitMask();
-                cellInSG = subGridCellMask[inp.jCellIn];
-                cellOutSG = subGridCellMask[inp.jCellOut];
+                cellInSG = !subGridCellMask[inp.jCellIn];
+                cellOutSG = !subGridCellMask[inp.jCellOut];
             }
 
             if (m_Subgrid != null && cellInSG == false && cellOutSG == false) {
-                throw new ApplicationException("This should not happen");
+                return 0;
+                // throw new ApplicationException("This should not happen");
             }
             else if ((m_Subgrid == null) || (cellInSG == true && cellOutSG == true)) {
                 double Acc = 0.0;
@@ -1699,7 +1713,7 @@ namespace BoSSS.Application.CahnHilliard {
 
         static Foundation.CommonParamsBnd ToBndParams(Foundation.CommonParams inp)
         {
-            Foundation.CommonParamsBnd bnp = new();
+            var bnp = new Foundation.CommonParamsBnd();
             bnp.Normal = inp.Normal;
             bnp.X = inp.X;
             bnp.Parameters_IN = inp.Parameters_IN;
@@ -1769,12 +1783,13 @@ namespace BoSSS.Application.CahnHilliard {
             bool cellOutSG = false;
             if (m_Subgrid != null) {
                 BitArray subGridCellMask = m_Subgrid.GetBitMask();
-                cellInSG = subGridCellMask[inp.jCellIn];
-                cellOutSG = subGridCellMask[inp.jCellOut];
+                cellInSG = !subGridCellMask[inp.jCellIn];
+                cellOutSG = !subGridCellMask[inp.jCellOut];
             }
 
             if (m_Subgrid != null && cellInSG == false && cellOutSG == false){
-                throw new ApplicationException("This should not happen");
+                return 0;
+                // throw new ApplicationException("This should not happen");
             } else if ((m_Subgrid == null) || (cellInSG == true && cellOutSG == true)) {
             double UxN = 0;
             for(int d = 0; d < m_D; d++) {
@@ -1800,6 +1815,15 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                bool cellInSG = !subGridCellMask[cpv.jCell];
+                if (cellInSG) {
+                    return 0;
+                // throw new Exception("This cell should not be evaluated");
+                }
+            }
             double acc = 0;
             double c = U[0];
             for(int d = 0; d < m_D; d++) {
@@ -1880,7 +1904,7 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         Foundation.CommonParamsBnd ToBndParams(Foundation.CommonParams inp) {
-            Foundation.CommonParamsBnd bnp = new();
+            var bnp = new Foundation.CommonParamsBnd();
             bnp.Normal = inp.Normal;
             bnp.X = inp.X;
             bnp.Parameters_IN = inp.Parameters_IN;
@@ -1891,6 +1915,19 @@ namespace BoSSS.Application.CahnHilliard {
             return bnp;
         }
 
+        public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                bool cellInSG = !subGridCellMask[cpv.jCell];
+                if (cellInSG) {
+                    return 0;
+                // throw new Exception("This cell should not be evaluated");
+                }
+            }
+            return base.VolumeForm(ref cpv, U, GradU, V, GradV);
+        }
+
         /// <summary>
         /// Integrand on interior mesh edges of the SIP
         /// </summary>
@@ -1899,12 +1936,15 @@ namespace BoSSS.Application.CahnHilliard {
             bool cellOutSG = false;
             if (m_Subgrid != null) {
                 BitArray subGridCellMask = m_Subgrid.GetBitMask();
-                cellInSG = subGridCellMask[inp.jCellIn];
-                cellOutSG = subGridCellMask[inp.jCellOut];
+                cellInSG = !subGridCellMask[inp.jCellIn];
+                cellOutSG = !subGridCellMask[inp.jCellOut];
             }
 
             if (m_Subgrid != null && cellInSG == false && cellOutSG == false){
-                throw new ApplicationException("This should not happen");
+                // Console.WriteLine(inp.jCellIn);
+                // Console.WriteLine(inp.jCellOut);
+                // throw new ApplicationException("This should not happen");
+                return 0;
             } else if ((m_Subgrid == null) || (cellInSG == true && cellOutSG == true)) {
                 double Acc = 0.0;
 
@@ -2042,6 +2082,14 @@ namespace BoSSS.Application.CahnHilliard {
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                bool cellInSG = !subGridCellMask[cpv.jCell];
+                if (cellInSG) {
+                    // throw new Exception("This cell should not be evaluated");
+                    return 0;
+                }
+            }
             double phi = U[0];
             double c = U[1];
             double c0 = cpv.Parameters[0];
@@ -2074,10 +2122,12 @@ namespace BoSSS.Application.CahnHilliard {
         //    m_lambda = __lambda;
         //    m_epsilon = __epsilon;
         //}
+        CellMask m_Subgrid;
 
-        public jacobi_phi_Source(bool __inc, double _cahn = 0.0) {
+        public jacobi_phi_Source(bool __inc, double _cahn = 0.0, CellMask Subgrid = null) {
             m_inc = __inc;
             m_scale = _cahn;
+            m_Subgrid = Subgrid;
         }
 
 
@@ -2110,6 +2160,14 @@ namespace BoSSS.Application.CahnHilliard {
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                bool cellInSG = !subGridCellMask[cpv.jCell];
+                if (cellInSG) {
+                    return 0;
+                // throw new Exception("This cell should not be evaluated");
+                }
+            }
             double phi = U[0];
             double c = U[1];
             double c0 = cpv.Parameters[0];
@@ -2142,8 +2200,9 @@ namespace BoSSS.Application.CahnHilliard {
         //    m_epsilon = __epsilon;
         //}
 
-        public c_Source(double _diff = 0.0) {
+        public c_Source(double _diff = 0.0, CellMask Subgrid = null) {
             m_diff = _diff;
+            m_Subgrid = Subgrid;
         }
 
 
@@ -2151,6 +2210,7 @@ namespace BoSSS.Application.CahnHilliard {
         //double m_lambda;
         //double m_epsilon;
         double m_diff;
+        CellMask m_Subgrid;
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
@@ -2175,6 +2235,14 @@ namespace BoSSS.Application.CahnHilliard {
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                bool cellInSG = !subGridCellMask[cpv.jCell];
+                if (cellInSG) {
+                    return 0;
+                // throw new Exception("This cell should not be evaluated");
+                }
+            }
             double c = U[0];
             double c0 = cpv.Parameters[0];
             // values seem shifted without this offset hack
@@ -2202,8 +2270,9 @@ namespace BoSSS.Application.CahnHilliard {
         //    m_epsilon = __epsilon;
         //}
 
-        public jacobi_c_Source(double _diff = 0.0) {
+        public jacobi_c_Source(double _diff = 0.0, CellMask Subgrid = null) {
             m_diff = _diff;
+            m_Subgrid = Subgrid;
         }
 
 
@@ -2211,6 +2280,8 @@ namespace BoSSS.Application.CahnHilliard {
         //double m_lambda;
         //double m_epsilon;
         double m_diff;
+
+        CellMask m_Subgrid;
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
@@ -2235,6 +2306,14 @@ namespace BoSSS.Application.CahnHilliard {
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                bool cellInSG = !subGridCellMask[cpv.jCell];
+                if (cellInSG) {
+                    return 0;
+                // throw new Exception("This cell should not be evaluated");
+                }
+            }
             double c = U[0];
             double c0 = cpv.Parameters[0];
             // values seem shifted without this offset hack

@@ -574,7 +574,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 spcToCompute = _optTracker.SpeciesNames.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();
             }
 
-            Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(LsTrk.LevelSets[0])}, "Test1", 0.0, 2);
+            // Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(LsTrk.LevelSets[0])}, "Test1", 0.0, 2);
 
             ConstructorCommon(op, false,
                               Fields, this.Parameters, IterationResiduals,
@@ -913,7 +913,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - true: solver algorithm successfully converged
         /// - false: something went wrong
         /// </returns>
-        public bool Solve(double phystime, double dt, bool SkipSolveAndEvaluateResidual = false) {
+        public virtual bool Solve(double phystime, double dt, bool SkipSolveAndEvaluateResidual = false) {
             bool success = false;
             if((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
@@ -962,7 +962,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return success;
         }
 
-        bool UseAdaptiveTimestepping() {
+        protected bool UseAdaptiveTimestepping() {
             if((int)this.Scheme >= 10000)
                 return true;
 

@@ -378,10 +378,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             SingleLevelSetUpdater singleUpdater = CreateSingleLevelSetUpdater(levelSet0, backgroundGrid, continuityMode);
             lsUpdaters.Add(levelSet0.Identification, singleUpdater);
 
-            Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(dgLevelSet)}, "Test2", 0.0, 2);
-            Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(cgLevelSet)}, "Test5", 0.0, 2);
-            Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(levelSet0.DGLevelSet)}, "Test4", 0.0, 2);
-            Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(this.Tracker.LevelSets[0])}, "Test3", 0.0, 2);
             //Tracker.UpdateTracker(0.0);
         }
 

@@ -640,7 +640,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Values of the gradient of <see cref="m_phi"/>
             /// </summary>
-            private MultidimensionalArray m_gradPhi;
+            public MultidimensionalArray m_gradPhi;
 
             /// <summary>
             /// Sum of L2 errors in the current process

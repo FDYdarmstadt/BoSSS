@@ -29,6 +29,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         SubGrid m_SubGrid;
         SubGridBoundaryModes m_SubGridBnd;
 
+        XdgBDFSubGridTimestepping m_Timestepper;
+
         /// <summary>
         /// Constructor for an XDG operator only evaluating on a subgrid (see <see cref="XdgOperator"/>)
         /// </summary>
@@ -104,6 +106,51 @@ namespace BoSSS.Solution.XdgTimestepping {
         {
             m_SubGrid = subGrid;
             m_SubGridBnd = subGridBnd;
+
+            int bdfOrder;
+            RungeKuttaScheme rksch;
+            DecodeScheme(this.Scheme, out rksch, out bdfOrder);
+            SpatialOperatorType _SpatialOperatorType = op.IsLinear ? SpatialOperatorType.LinearTimeDependent : SpatialOperatorType.Nonlinear;
+
+            SpeciesId[] spcToCompute = _optTracker.SpeciesNames.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();
+
+            int quadOrder = op.QuadOrderFunction(
+                Fields.Select(f => f.Basis.Degree).ToArray(),
+                Parameters.Select(f => f != null ? f.Basis.Degree : 0).ToArray(),
+                IterationResiduals.Select(f => f.Basis.Degree).ToArray());
+
+            if(_MultigridOperatorConfig == null) {
+                int NoOfVar = Fields.Count();
+                _MultigridOperatorConfig = new MultigridOperator.ChangeOfBasisConfig[1][];
+                _MultigridOperatorConfig[0] = new MultigridOperator.ChangeOfBasisConfig[NoOfVar];
+                for(int iVar = 0; iVar < NoOfVar; iVar++) {
+                    _MultigridOperatorConfig[0][iVar] = new MultigridOperator.ChangeOfBasisConfig() {
+                        DegreeS = new int[] { Fields.ElementAt(iVar).Basis.Degree },
+                        mode = MultigridOperator.Mode.Eye,
+                        VarIndex = new int[] { iVar }
+                    };
+                }
+
+            }
+
+            if (_MultigridSequence == null) {
+                _MultigridSequence = new[] { CoarseningAlgorithms.ZeroAggregation(this.GridDat) };
+            }
+
+            m_Timestepper = new XdgBDFSubGridTimestepping(Fields, _Parameters, IterationResiduals,
+                LsTrk, true,
+                this.ComputeOperatorMatrix, op, _UpdateLevelset,
+                bdfOrder,
+                _LevelSetHandling,
+                MassMatrixShapeandDependence.IsTimeDependent,
+                _SpatialOperatorType,
+                _MultigridOperatorConfig, _MultigridSequence,
+                spcToCompute, quadOrder,
+                _AgglomerationThreshold, false,
+                NonLinearSolver,
+                LinearSolver);
+
+            m_BDF_Timestepper.Config_AgglomerationThreshold = _AgglomerationThreshold;
         }
 
         /// <summary>
@@ -256,7 +303,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 op.InvokeParameterUpdate(time, __CurrentState, JacobiParameterVars);
 
                                 var mtxBuilder = op.GetMatrixBuilder(Mapping, this.JacobiParameterVars, Mapping);
-                                // mtxBuilder.ActivateSubgridBoundary(this.m_SubGrid.VolumeMask, m_SubGridBnd);
+                                if (this.m_SubGrid != null) {
+                                    mtxBuilder.ActivateSubgridBoundary(this.m_SubGrid.VolumeMask, m_SubGridBnd);
+                                }
                                 mtxBuilder.time = time;
                                 mtxBuilder.MPITtransceive = true;
                                 mtxBuilder.ComputeMatrix(OpMtx, OpAffine);
@@ -268,21 +317,23 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 //     Console.WriteLine();
                                 // }
 
-                                PlotFormat format = new PlotFormat(
-                                        Style: Styles.Points,
-                                        pointType: PointTypes.Asterisk,
-                                        pointSize: 0.5);
+                                // PlotFormat format = new PlotFormat(
+                                //         Style: Styles.Points,
+                                //         pointType: PointTypes.Asterisk,
+                                //         pointSize: 0.5);
 
-                                var gp = new Gnuplot.Gnuplot(baseLineFormat: format);
-                                gp.PlotMatrixStructure(OpMtx.ToFullMatrixOnProc0());
-                                gp.PlotDataFile("/home/klingenberg/Downloads/matrix.png", deferred: false);
-                                // gp.PlotDataFile("matrix.png", deferred: false);
-                                gp.Execute();
-                                Console.ReadLine();
+                                // var gp = new Gnuplot.Gnuplot(baseLineFormat: format);
+                                // gp.PlotMatrixStructure(OpMtx.ToFullMatrixOnProc0());
+                                // gp.PlotDataFile("/home/klingenberg/Downloads/matrix.png", deferred: false);
+                                // // gp.PlotDataFile("matrix.png", deferred: false);
+                                // gp.Execute();
+                                // Console.ReadLine();
+
                                 for (int i = 0; i < OpMtx.NoOfRows; i++)
                                 {
-                                    if (OpMtx.GetNoOfNonZerosPerRow(i) > 0)
+                                    if (!(OpMtx.GetNoOfNonZerosPerRow(i) > 0))
                                     {
+                                        Console.WriteLine("changing matrix in line " + i);
                                         OpMtx.SetDiagonalElement(i, 1.0);
                                     }
                                 }
@@ -309,5 +360,54 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }
         }
+
+        /// <summary>
+        /// driver for solver calls
+        /// </summary>
+        /// <returns>
+        /// - true: solver algorithm successfully converged
+        /// - false: something went wrong
+        /// </returns>
+        public override bool Solve(double phystime, double dt, bool SkipSolveAndEvaluateResidual = false) {
+            bool success = false;
+            if(m_Timestepper == null)
+                throw new ApplicationException();
+            if(!ilPSP.DoubleExtensions.ApproxEqual(this.LsTrk.Regions.Time, phystime))
+                throw new ApplicationException($"Before timestep, mismatch in time between tracker (Regions.Time = {LsTrk.Regions.Time}) and physical time ({phystime})");
+
+
+
+            double[] AvailTimesBefore;
+            if(TimesteppingBase.Config_LevelSetHandling != LevelSetHandling.None) {
+                AvailTimesBefore = LsTrk.TimeLevelsInStack;
+                Assert.IsTrue((AvailTimesBefore[0] - phystime).Abs() < dt*1e-7, "Error in Level-Set tracker time");
+            }
+
+            if(UseAdaptiveTimestepping()) {
+
+                TimeLevel TL = new TimeLevel(this, dt, StateAtTime.Obtain(this, phystime));
+                TL.Compute();
+                success = true;
+
+            } else {
+                    success = m_Timestepper.Solve(phystime, dt, SkipSolveAndEvaluateResidual);
+            }
+ 
+            double[] AvailTimesAfter;
+            if(TimesteppingBase.Config_LevelSetHandling != LevelSetHandling.None) {
+                AvailTimesAfter = LsTrk.RegionsHistory.AvailableIndices.Select((int iHist) => LsTrk.RegionsHistory[iHist].Time).ToArray();
+                if(!AvailTimesAfter[0].ApproxEqual(phystime + dt))
+                    throw new ApplicationException($"Internal algorithm inconsistency: Error in Level-Set tracker time; expecting time {phystime + dt}, but most recent tracker time is {AvailTimesAfter[0]}");
+            }
+             
+            if(!ilPSP.DoubleExtensions.ApproxEqual(this.LsTrk.Regions.Time, phystime + dt))
+                throw new ApplicationException($"After timestep, mismatch in time between tracker (Regions.Time = {LsTrk.Regions.Time}) and physical time ({phystime + dt}), level-set handling is '{TimesteppingBase.Config_LevelSetHandling}'.");
+            
+
+            JacobiParameterVars = null;
+            
+            return success;
+        }
+
     }
 }

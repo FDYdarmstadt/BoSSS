@@ -118,11 +118,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             base.MultigridSequence = _MultigridSequence;
             base.Config_SpeciesToCompute = _SpId;
             base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
-            base.CurrentParameters = __Parameters.ToArray();
+            base.CurrentParameters = __Parameters?.ToArray();
             base.AbstractOperator = abstractOperator;
 
             if (_MultigridSequence == null || _MultigridSequence.Length < 1)
                 throw new ArgumentException("At least one grid level is required.");
+            // Console.WriteLine("Comment back in");
 
             base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
 
@@ -243,7 +244,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         //
         // stack of solution vectors
         //
-        CoordinateVector[] m_Stack_u;
+        protected CoordinateVector[] m_Stack_u;
 
 
         int m_PopulatedStackDepth = 0;
@@ -288,7 +289,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// 
         /// </summary>
-        void PushStack() {
+        protected void PushStack() {
 
             m_PopulatedStackDepth++;
             if (m_PopulatedStackDepth > m_TSCchain[0].S)
@@ -424,9 +425,9 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
 
-        int m_IterationCounter = 0;
+        protected int m_IterationCounter = 0;
 
-        bool initialized = false;
+        protected bool initialized = false;
 
         /// <summary>
         /// Initialization from a single timestep, i.e. if this time-stepper should use BDF4,
@@ -1233,9 +1234,9 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         bool CoupledIteration = true;
 
-        int m_CoupledIterations = 0;
+        protected int m_CoupledIterations = 0;
 
-        int m_InnerCoupledIterations = 0;
+        protected int m_InnerCoupledIterations = 0;
 
         Control.NonLinearSolverConfig m_nonlinconfig;
 
@@ -1270,8 +1271,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
 
-        double m_CurrentPhystime;
-        double m_CurrentDt = -1;
+        protected double m_CurrentPhystime;
+        protected double m_CurrentDt = -1;
 
 
         //static double MatrixDist(MsrMatrix _A, MsrMatrix B) {
@@ -1343,7 +1344,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return success;
         }
 
-        private void AdaptToNewTimestep(double newTimestep, double oldTimestep) {
+        protected void AdaptToNewTimestep(double newTimestep, double oldTimestep) {
             if (Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative || Config_LevelSetHandling == LevelSetHandling.Coupled_Once)
                 throw new NotImplementedException("Interpolation of mass_matrix_stack is not implemented");
 
@@ -1381,11 +1382,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             return lPoly;
         }
 
-        double m_CurrentDt_Timestep = -1;
+        protected double m_CurrentDt_Timestep = -1;
 
         bool OneTimeMgInit = false;
 
-        double fsiOldPhystime = 0;
+        protected double fsiOldPhystime = 0;
 
 
 
@@ -1409,7 +1410,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - true: solver algorithm successfully converged
         /// - false: something went wrong
         /// </returns>
-        bool Solve_Increment(double phystime, double dt, bool ComputeOnlyResidual = false) {
+        protected virtual bool Solve_Increment(double phystime, double dt, bool ComputeOnlyResidual = false) {
             using(var tr = new FuncTrace()) {
                 if(dt <= 0)
                     throw new ArgumentOutOfRangeException();
@@ -1983,7 +1984,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Bad, undocumented design! To be removed! Fk, 18feb22
         /// </summary>
-        private bool coupledOperator = false;
+        protected bool coupledOperator = false;
 
 
         /// <summary>
@@ -1991,7 +1992,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         ///  - level-set evolution
         ///  - re-sorting of matrices and vectors if the ordering of DOFs has changed.
         /// </summary>
-        private void MoveLevelSetAndRelatedStuff(DGField[] locCurSt, double PhysTime, double dt, double UnderRelax) {
+        protected void MoveLevelSetAndRelatedStuff(DGField[] locCurSt, double PhysTime, double dt, double UnderRelax) {
             if (Config_LevelSetHandling == LevelSetHandling.None) {
                 throw new ApplicationException("internal error");
             }
