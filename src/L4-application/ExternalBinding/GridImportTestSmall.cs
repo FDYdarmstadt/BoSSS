@@ -1851,13 +1851,22 @@ namespace BoSSS.Application.ExternalBinding {
 
         }
 
+        static int Max(int a, int b) {
+            if (a > b)
+            {
+                return a;
+            } else {
+                return b;
+            }
+        }
+
         /// <summary>
         /// test for <see cref="OpenFOAMGrid"/>
         /// </summary>
         [Test]
         public static void ConvertFOAMGrid() {
 
-            int nCells = Math.Max(owner.Max(), neighbour.Max()) + 1;
+            int nCells = Max(owner.Max(), neighbour.Max()) + 1;
             var g = GenerateFOAMGrid();
 
             Assert.AreEqual(g.GridData.iLogicalCells.Count, nCells, "Mismatch in expected number of cells.");
@@ -1865,7 +1874,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         public static OpenFOAMGrid GenerateFOAMGrid() {
 
-            int nCells = Math.Max(owner.Max(), neighbour.Max()) + 1;
+            int nCells = Max(owner.Max(), neighbour.Max()) + 1;
             var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points, names, patchIDs, -1);
 
             return g;
