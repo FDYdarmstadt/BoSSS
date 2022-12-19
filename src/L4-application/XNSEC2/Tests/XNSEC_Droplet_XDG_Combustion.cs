@@ -18,7 +18,38 @@ namespace BoSSS.Application.XNSEC {
     /// </summary>
     public static partial class FullNSEControlExamples {
 
+        /// <summary>
+        ///configaration for the simulation using the mixture fraction approach, where an infinite reaction rate is assumed.
+        ///Used to find adequate starting solution for the full problem.
+        /// </summary>
+        /// <param name="DGp"></param>
+        /// <param name="nCells"></param>
+        /// <param name="dbPath"></param>
+        /// <returns></returns>
+        static public XNSEC_Control FS_XDG_Droplet_2dCombustion(int DGp = 2, int nCells = 6, string dbPath = null) {
+            var C = XDG_Droplet_2dCombustion(DGp, nCells, dbPath, true); // true for MF calculation
+            C.physicsMode = PhysicsMode.MixtureFraction;
+            C.ProjectName = "DropletCombustion";
+            string name = C.ProjectName + "P" + DGp + "K" + nCells;
+            C.SessionName = "FS_" + name;
 
+            Dictionary<string, Tuple<double, double>> Bounds = new Dictionary<string, Tuple<double, double>>();
+            double eps = 0.05;
+            // Mixture fraction should by definition be between 0 and 1
+            Bounds.Add(VariableNames.MixtureFraction, new Tuple<double, double>(0 - eps, 1 + eps));
+            C.VariableBounds = Bounds;
+
+            C.AdaptiveMeshRefinement = true; // AMR at each time step
+            if (C.AdaptiveMeshRefinement) {
+                C.activeAMRlevelIndicators.Add(new AMR_onFlameSheet(C.zSt, 4));
+                C.AMR_startUpSweeps = 4;
+            }
+
+            C.TimesteppingMode = Solution.Control.AppControl._TimesteppingMode.Steady; // teady calculation, time steps used for AMR
+            C.NoOfTimesteps = 2;  
+            C.savetodb = true;
+            return C;
+        }
 
         /// <summary>
         /// Calculation of the fully coupled problem using the mixture fraction approach.
@@ -27,25 +58,18 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         /// <param name="DGp"></param>
         /// <param name="nCells"></param>
-        /// <param name="Refinements"></param>
-        /// <param name="velMultiplier"></param>
-        /// <param name="NewtonConvergenceCriterion"></param>
         /// <param name="dbPath"></param>
         /// <returns></returns>
         static public XNSEC_Control Full_XDG_Droplet_2dCombustion(int DGp = 2, int nCells = 6, string dbPath = null) {
-  
 
-            var C = XDG_Droplet_2dCombustion(DGp, nCells, dbPath, false);
-            C.ProjectName = "CounterDifFlame";
+            var C = XDG_Droplet_2dCombustion(DGp, nCells, dbPath, false); // if false, we have combustion
+            C.physicsMode = PhysicsMode.Combustion;
+            C.ProjectName = "DropletCombustion";
             string jobName = C.ProjectName + "P" + DGp + "K" + nCells;
             C.SessionName = "Full_" + jobName;
 
-            C.physicsMode = PhysicsMode.Combustion;
-            C.VariableOneStepParameters = false;
-            //C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
-            C.UseSelfMadeTemporalOperator = false;
-
-            // limiting of variable values
+            // limiting of variable values. This is a feature for the newton solver,
+            // which allows to explicitly bound yhe values of certain variable using
             Dictionary<string, Tuple<double, double>> Bounds = new Dictionary<string, Tuple<double, double>>();
             double eps = 0.05;
             Bounds.Add(VariableNames.Temperature, new Tuple<double, double>(1.0 - eps, 10)); // Min temp should be the inlet temperature.
@@ -55,14 +79,10 @@ namespace BoSSS.Application.XNSEC {
             Bounds.Add(VariableNames.MassFraction3, new Tuple<double, double>(0.0 - eps, 1.0 + eps));
             C.VariableBounds = Bounds;
 
-            C.NoOfTimesteps = 1; // The steady solution will be calculated again and do AMR
+            C.NoOfTimesteps = 2; // The steady solution will be calculated again and do AMR
             C.myThermalWallType = SIPDiffusionTemperature.ThermalWallType.Adiabatic;
 
             C.UseMixtureFractionsForCombustionInitialization = true;
-
-            C.NonLinearSolver.MaxSolverIterations = 20;
-            C.NonLinearSolver.ConvergenceCriterion= 1e-5;
-
 
             // Select the database
             DatabaseInfo dbi = DatabaseInfo.Open(C.DbPath);
@@ -73,7 +93,7 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("===========================");
                 Console.WriteLine("No session found for restart. The pure mixing case will be calculated.");
                 Console.WriteLine("===========================");
-                C.ChemicalReactionActive = false;
+                C.ChemicalReactionActive = false;// true for combustion, false for MF
             } else {
                 C.SetRestart(sess[0]);
                 Console.WriteLine("===========================");
@@ -81,83 +101,56 @@ namespace BoSSS.Application.XNSEC {
                 if (sess.Count > 1) {
                     Console.WriteLine("Warning: multiple jobs with the same name defined for restart. Using the most recent one");
                 }
+                C.ChemicalReactionActive = true;// true for combustion, false for MF
                 Console.WriteLine("===========================");
             }
             return C;
         }
 
-        /// <summary>
-        ///
-        /// </summary>
-        /// <param name="DGp"></param>
-        /// <param name="nCells"></param>
-        /// <param name="numOfRefinements"></param>
-        /// <param name="NewtonConvergenceCriterion"></param>
-        /// <returns></returns>
-        static public XNSEC_Control FS_XDG_Droplet_2dCombustion(int DGp = 2, int nCells = 6,  string dbPath =null) {
-            var C = XDG_Droplet_2dCombustion(DGp, nCells, dbPath, true);
-            C.physicsMode = PhysicsMode.MixtureFraction;
-            C.ProjectName = "CounterDifFlame";
-            string name = C.ProjectName + "P" + DGp + "K" + nCells /*+ "Ne" + NewtonConvergenceCriterion*/;
-            C.SessionName = "FS_" + name;
-
-            C.UseSelfMadeTemporalOperator = false;
-            C.AdaptiveMeshRefinement = false;
-
-
-            Dictionary<string, Tuple<double, double>> Bounds = new Dictionary<string, Tuple<double, double>>();
-            double eps = 0.05;
-            Bounds.Add(VariableNames.MixtureFraction, new Tuple<double, double>(0 - eps, 1 + eps));
-            C.VariableBounds = Bounds;
-
-            C.NonLinearSolver.MaxSolverIterations = 500;
-            C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new AMR_onFlameSheet(C.zSt,4));
-
-            C.TimesteppingMode = Solution.Control.AppControl._TimesteppingMode.Steady;
-            C.NoOfTimesteps =4;
-            C.savetodb = true;
-            return C;
-        }
-
-
 
         public static XNSEC_Control XDG_Droplet_2dCombustion(int DGp = 2, int nCellsMult = 6,string dbpath = null, bool MF = false) {
             XNSEC_Control C;
-            if (MF) {
+            if (MF) {//It it is MF calculation, use the adequate control file XNSEC_MixtureFractions.cs
                 C = new XNSEC_MF_Control();
             } else {
-                C = new XNSEC_Control();
+                C = new XNSEC_Control();// Use control file XNSEC.cs
             }
 
+            // ====================
             // Solver configuration
-            // ==============
-            C.ImmediatePlotPeriod = 1;
-
-            C.physicsMode = PhysicsMode.Combustion;
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            // =====================
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady; // steady calculation
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton; // nonlinear solver used
             C.NonLinearSolver.verbose = true;
-            C.DbPath = null;
-            bool m_RecoilPressure = false;
-            C.IncludeRecoilPressure = m_RecoilPressure;
+
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.savetodb = dbpath == null ? false : true;
             C.DbPath = dbpath;
-            C.EnableTemperature = true;
-            C.EnableMassFractions = true;
+
+            //switch for different ters in equations
+            C.EnableTemperature = true; // if true, calculation of temperature equation
+            C.EnableMassFractions = true; // if true, calculation of mass fraction equation
+            C.PhysicalParameters.IncludeConvection = true; // true for convective term in momentum equation
+            C.ThermalParameters.IncludeConvection = true; // true for convective term in heat equation
+
+            //Miscellaneous physical switches
+            bool m_RecoilPressure = false;
+            C.IncludeRecoilPressure = m_RecoilPressure;
+            C.ChemicalReactionActive = false;
             C.NumberOfChemicalSpecies = C.EnableMassFractions ? 4 : 1;
+            C.rhoOne = false; // if true, constant density will be considered in each phase (mainly for debuggi
 
-            C.rhoOne = true;
-            C.PhysicalParameters.IncludeConvection = true;
-            C.ThermalParameters.IncludeConvection = false;
-
-
+            C.AdaptiveMeshRefinement = true;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2, levelSet = 0 });// refinement near interface
+            //C.activeAMRlevelIndicators.Add(new BoSSS.Application.XNSEC.AMR_onFlameSheet(C.zSt, 2));
             C.SkipSolveAndEvaluateResidual = false;
             C.AgglomerationThreshold = 0.1;
             C.SetDGdegree(DGp);
             C.GravityDirection = new double[] { 0.0, 0.0, 0.0 };
-            C.HeatRelease = 0.0; 
 
+            C.ImmediatePlotPeriod = 1;
+
+            // ==============
             // Parameters
             // ==============
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
@@ -165,7 +158,6 @@ namespace BoSSS.Application.XNSEC {
             C.Prandtl = 1.0;
             C.Schmidt = 1.0;
             C.Damk = 1e8;
-            C.ChemicalReactionActive = true;
             C.ReactionRateConstants = new double[] { C.Damk, 15, 1, 1 };
 
             C.PenaltyViscMomentum = 1.0;
@@ -174,12 +166,7 @@ namespace BoSSS.Application.XNSEC {
             C.ImmediatePlotPeriod = 1;
             C.smoothingFactor = 10 * 0;
             double y_interface = 2.14;
-            C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2, levelSet = 0 });
-            C.AMR_startUpSweeps = 2;
-            //C.activeAMRlevelIndicators.Add(new BoSSS.Application.XNSEC.AMR_onFlameSheet(C.zSt, 2));
 
-            double prescribedMass = 1e-2;
             double[] FuelInletMassFractions = new double[] { 1.0, 0.0, 0.0, 0.0, 0.0 }; // CH4, O2, CO2, H2O, N2
             //double[] OxidizerInletMassFractions = new double[] { 0.0, 1.0, 0.0, 0.0, 0.0 };            
             double[] OxidizerInletMassFractions = new double[] { 0.0, 0.23, 0.0, 0.0, 0.77 };
@@ -189,30 +176,30 @@ namespace BoSSS.Application.XNSEC {
             C.s =1;
             C.phi = C.s * C.YFuelInlet / C.YOxInlet;
             C.zSt = 1.0 / (1.0 + C.phi);
-            C.prescribedMassflux_Evaluator = (X, t) => (prescribedMass);
-            Console.WriteLine("The flamesheet is located at points with Z = "+ C.zSt);
+
+            double prescribedMass = 1e-2; // used when mass flux is fixed
+            C.prescribedMassflux_Evaluator = (X, t) => (prescribedMass); // deactivate for changing muss flux
+            Console.WriteLine("The flamesheet is located at points with Z = " + C.zSt);
 
             C.PlotNewtonIterations = false;
-            C.ThermalParameters.T_sat = 1.0; // boundary temperature
-
-            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            C.NoOfTimesteps = 3;
+            C.ThermalParameters.T_sat = 1.0; // boundary temperature at the interface of the droplet
 
             C.NonLinearSolver.MaxSolverIterations = 10;
-
-            C.ThermalParameters.hVap = 1;
-            C.PhysicalParameters.rho_A = 2.0;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-7;
+            C.ThermalParameters.hVap = 1; // if 0 no evaporation is included. A dummy value 1 is taken to activate the evaporation terms
+            C.PhysicalParameters.rho_A = 10.0;
             C.PhysicalParameters.rho_B = 1;
-            C.PhysicalParameters.mu_A = 2.0;
-            C.PhysicalParameters.mu_B = 1;
-
-            C.ThermalParameters.c_A = 0.0;
-            C.ThermalParameters.c_A = 0.0;
-            C.ThermalParameters.k_A = 1.0;
+            C.PhysicalParameters.mu_A = 1.0;
+            C.PhysicalParameters.mu_B = 1.0;
+            C.ThermalParameters.k_A = 1.0; // This is the diffusion coefficient of the heat equation AND the mixture fraction equation (where the Lewis number is assumed equal to one)
             C.ThermalParameters.k_B = 1.0;
 
+            C.ThermalParameters.rho_A = 10.0;
+            C.ThermalParameters.rho_B = 1;
+
+            // =================
             // Grid declaration
-            // ===============
+            // =================
             double h = Math.Pow(2, -nCellsMult + 1); // cell length
             double cells = 1 / h;
             int cells2 = (int)cells;
@@ -235,7 +222,7 @@ namespace BoSSS.Application.XNSEC {
             C.GridFunc = delegate {
                 double co = 1; // bounding box, has to be smaller than droplet radius
 
-                int n = 20;
+                int n = 8; // thisvalue used for grid generation
                 int nbb = 1;
 
                 IEnumerable<double> xs_R__ = GenericBlas.SinLinSpacing(co, co + 2 * (LL - co), 0.9, 2 * n + 1).ToList().Take(n + 1);
@@ -271,17 +258,13 @@ namespace BoSSS.Application.XNSEC {
 
                 grd.DefineEdgeTags(GridEdgeTagFunc);
 
-                //var gDat = new GridData(grd);
-                //var em1 = gDat.GetBoundaryEdges();
-                //em1.SaveToTextFile("alledges2.csv", false, (double[] CoordGlobal, int LogicalItemIndex, int GeomItemIndex) => (double)gDat.iGeomEdges.EdgeTags[GeomItemIndex]);
-
                 return grd;
             };
 
 
      
 
-
+            // values for pressure
             Func<double[], double, double> GetPress(string species) {
                 if (species == "A") {
                     return ((_2D)((x, y) => C.IncludeRecoilPressure ? -prescribedMass * prescribedMass * (1 / C.PhysicalParameters.rho_A - 1 / C.PhysicalParameters.rho_B) : 0.0)).Convert_xy2X().Convert_X2Xt();
@@ -293,7 +276,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
 
-
+            //values for velocity
             Func<double[], double, double> GetU(string species, int d) {
                 if (d == 0) {
                     if (species == "A") {
@@ -331,6 +314,7 @@ namespace BoSSS.Application.XNSEC {
                     throw new ArgumentOutOfRangeException();
                 }
             }
+
 
             Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()).Sqrt() - R);         // signed distance
             //Func<double[], double> PhiFunc = (X => ((X[0] - 0.0).Pow2() + (X[1] - 0.0).Pow2()) - r.Pow2());         // quadratic
@@ -395,7 +379,7 @@ namespace BoSSS.Application.XNSEC {
             }
 
 
-            C.Phi = GetPhi();
+            // C.Phi = GetPhi();
             C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCG, GetPhi());
 
 
@@ -403,7 +387,7 @@ namespace BoSSS.Application.XNSEC {
             // =================== 
 
             if (!m_InsideBC_PressureOutlet) {
-                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.Velocity_d(0) + "#A", (X, t) => (X[0] / ((X[0] * X[0] + X[1] * X[1]))) * prescribedMass * R/ C.PhysicalParameters.rho_A * 1);
+                C.AddBoundaryValue("velocity_inlet_bot", VariableNames.Velocity_d(0) + "#A", (X, t) => (X[0] / ((X[0] * X[0] + X[1] * X[1]))) * prescribedMass * R/ C.PhysicalParameters.rho_A);
                 C.AddBoundaryValue("velocity_inlet_bot", VariableNames.Velocity_d(1) + "#A", (X, t) => (X[1]/((X[0]* X[0]+ X[1]* X[1])))*prescribedMass *R/ C.PhysicalParameters.rho_A);
                 C.AddBoundaryValue("velocity_inlet_bot", VariableNames.MixtureFraction + "#A", (X, t) => 1.0);
                 C.AddBoundaryValue("velocity_inlet_bot", VariableNames.Temperature + "#A", (X, t) => 1.0);
@@ -424,7 +408,7 @@ namespace BoSSS.Application.XNSEC {
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.Velocity_d(0) + "#A", (X, t) => 0.0);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.Velocity_d(1) + "#A", (X, t) => 0.0);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.MixtureFraction + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("velocity_inlet_top", VariableNames.Temperature + "#A", (X, t) => 0.2);
+                C.AddBoundaryValue("velocity_inlet_top", VariableNames.Temperature + "#A", (X, t) => 1.0);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction0 + "#A", (X, t) => OxidizerInletMassFractions[0]);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction1 + "#A", (X, t) => OxidizerInletMassFractions[1]);
                 C.AddBoundaryValue("velocity_inlet_top", VariableNames.MassFraction2 + "#A", (X, t) => OxidizerInletMassFractions[2]);
@@ -432,7 +416,7 @@ namespace BoSSS.Application.XNSEC {
             } else {
                 C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.Pressure + "#A", (X, t) => 0.0);
                 C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MixtureFraction + "#A", (X, t) => 0.0);
-                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.Temperature + "#A", (X, t) => 0.5 * 0.8 / (Math.Log(10) - Math.Log(100)) * Math.Log(X[0] * X[0] + X[1] * X[1]) + 1.0 - 0.8 / (Math.Log(10) - Math.Log(100)) * Math.Log(10));
+                C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.Temperature + "#A", (X, t) => 1.0); //0.5 * 0.8 / (Math.Log(10) - Math.Log(100)) * Math.Log(X[0] * X[0] + X[1] * X[1]) + 1.0 - 0.8 / (Math.Log(10) - Math.Log(100)) * Math.Log(10));
                 C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction0 + "#A", (X, t) => OxidizerInletMassFractions[0]);
                 C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction1 + "#A", (X, t) => OxidizerInletMassFractions[1]);
                 C.AddBoundaryValue("ScalarDirichlet_PressureOutlet_top", VariableNames.MassFraction2 + "#A", (X, t) => OxidizerInletMassFractions[2]);

@@ -986,7 +986,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="dg"></param>
         /// <param name="ncells"></param>
         //[Test]
-        public static void XDG_PSEUDO1D_COMBUSTION_TEST(int dg = 2, int ncells = 4) {
+        public static void XDG_PSEUDO1D_COMBUSTION_TEST(int dg = 3, int ncells = 4) {
             string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
             if (basepath.IsEmptyOrWhite())
                 basepath = System.Environment.GetEnvironmentVariable("HOME");
@@ -1003,16 +1003,17 @@ namespace BoSSS.Application.XNSEC {
                 db.Controller.ClearDatabase();
             }
 
-            //using (var p = new XNSEC_MixtureFraction()) {
-            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(3, 4, db.Path);
+            // activate for combustion calculation, if deactivated, only evaporation
+            using (var p = new XNSEC_MixtureFraction()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(dg, ncells, db.Path);
 
-            //    p.Init(c);
-            //    p.RunSolverMode();
-            //}
+                p.Init(c);
+                p.RunSolverMode();
+            }
 
             Console.WriteLine("Flame sheet calculation done.");
             using (var p = new XNSEC()) {
-                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dCombustion(3, 4, db.Path);
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dCombustion(dg, ncells, db.Path);
                 p.Init(c);
                 p.RunSolverMode();
 
@@ -1045,12 +1046,13 @@ namespace BoSSS.Application.XNSEC {
                 db.Controller.ClearDatabase();
             }
 
-            //using (var p = new XNSEC_MixtureFraction()) {
-            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_Droplet_2dCombustion(3, 7, db.Path);
-            //    //c.SkipSolveAndEvaluateResidual = true;
-            //    p.Init(c);
-            //    p.RunSolverMode();
-            //}
+            // activate for combustion calculation, if deactivated, only evaporation
+            using (var p = new XNSEC_MixtureFraction()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_Droplet_2dCombustion(3, 7, db.Path);
+                //c.SkipSolveAndEvaluateResidual = true;
+                p.Init(c);
+                p.RunSolverMode();
+            }
 
             Console.WriteLine("Flame sheet calculation done.");
             using (var p = new XNSEC()) {
