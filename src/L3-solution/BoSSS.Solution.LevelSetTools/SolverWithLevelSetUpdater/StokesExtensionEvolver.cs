@@ -300,19 +300,62 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             Console.WriteLine("CG-DG Contour Difference : {0} || Contour Control : {1} || Contour Length : {2}", Cont_DIFF, Cont_CTRL, Cont_LEN);
 
-            if(Cont_DIFF > 1e-3 && lastReinit < 0) {
+            // different persson sensor inspired norms - only computed on the cut-cell band
+            var cc = phaseInterface.Tracker.Regions.GetCutCellMask();
+            var grd = phaseInterface.DGLevelSet.GridDat;
+            double eCG_h, eCG_l, eCG_diff;
+            double eDG_h, eDG_l, eDG_diff;
+            double eCGDG;
+            double sCG, sDG, sCGDG;
+
+            int CG_Degree = phaseInterface.CGLevelSet.Basis.Degree;
+            int DG_Degree = phaseInterface.DGLevelSet.Basis.Degree;
+
+            eCG_h = CG_Degree.ForLoop(i => phaseInterface.CGLevelSet.L2NormPerMode(i, cc)).Sum();
+            eCG_l = (CG_Degree-1).ForLoop(i => phaseInterface.CGLevelSet.L2NormPerMode(i, cc)).Sum();
+            eCG_diff = phaseInterface.CGLevelSet.L2NormPerMode(CG_Degree, cc);
+
+            eDG_h = DG_Degree.ForLoop(i => phaseInterface.DGLevelSet.L2NormPerMode(i, cc)).Sum();
+            eDG_l = (DG_Degree - 1).ForLoop(i => phaseInterface.DGLevelSet.L2NormPerMode(i, cc)).Sum();
+            eDG_diff = phaseInterface.DGLevelSet.L2NormPerMode(DG_Degree, cc);
+
+            eCGDG = phaseInterface.CGLevelSet.L2Error(phaseInterface.DGLevelSet, cc);
+
+            sCG = Math.Log10(eCG_diff / eCG_h);
+            sDG = Math.Log10(eDG_diff / eDG_h);
+            sCGDG = Math.Log10(eCGDG / eCG_h);
+
+            Console.WriteLine("Energy CG - (p) : {0} || Energy CG - (p-1) : {1} || Energy Diff CG : {2}", eCG_h, eCG_l, eCG_diff);
+            Console.WriteLine("Energy DG - (p) : {0} || Energy DG - (p-1) : {1} || Energy Diff DG : {2}", eDG_h, eDG_l, eDG_diff);
+            Console.WriteLine("Energy Diff CG / DG : {0}", eCGDG);
+            Console.WriteLine("Sensor CG - (p)/(p-1) : {0} || Sensor DG - (p)/(p-1) : {1} || Sensor - CG/DG : {2}", sCG, sDG, sCGDG);
+
+
+
+            if (Cont_DIFF > 1e-3 && lastReinit < 0 && !changed) {
+
+                if (true) {
+                    Tecplot.Tecplot.PlotFields(new DGField[] { phaseInterface.DGLevelSet, phaseInterface.CGLevelSet }, "Reinit", time, 2);
+                }
+
                 Console.WriteLine("Performing Reinit");
                 var ReInit_Control = new EllipticReInitAlgoControl();
-                ReInit_Control.Potential = ReInitPotential.SmoothStep;
+                ReInit_Control.Potential = ReInitPotential.BastingSingleWell;
                 EllipticReInit.EllipticReInit ReInitPDE = new EllipticReInit.EllipticReInit(phaseInterface.Tracker, ReInit_Control, phaseInterface.DGLevelSet);
                 ReInitPDE.ReInitialize();
                 lastReinit = 10;
                 changed = true;
+
+                if (true) {
+                    Tecplot.Tecplot.PlotFields(new DGField[] { phaseInterface.DGLevelSet, phaseInterface.CGLevelSet }, "Reinit", time, 2);
+                }
+
+                goto REINIT;
             }
             lastReinit--;
 
-            double jTrsh = 0.1;
-            double gTrsh = 10.0;
+            //double jTrsh = 0.1;
+            //double gTrsh = 10.0;
 
             //if (rcnt == 0) {
             //    var jp = new JumpPenalization(JumpPenalization.jumpPenalizationTerms.JumpGradJump2, Jump_NORM * GradJump_NORM);
