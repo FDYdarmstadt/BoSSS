@@ -331,10 +331,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             Console.WriteLine("Sensor CG - (p)/(p-1) : {0} || Sensor DG - (p)/(p-1) : {1} || Sensor - CG/DG : {2}", sCG, sDG, sCGDG);
 
 
-
+            bool plotreinit = false;
             if (Cont_DIFF > 1e-3 && lastReinit < 0 && !changed) {
 
-                if (true) {
+                if (plotreinit) {
                     Tecplot.Tecplot.PlotFields(new DGField[] { phaseInterface.DGLevelSet, phaseInterface.CGLevelSet }, "Reinit", time, 2);
                 }
 
@@ -346,7 +346,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 lastReinit = 10;
                 changed = true;
 
-                if (true) {
+                if (plotreinit) {
                     Tecplot.Tecplot.PlotFields(new DGField[] { phaseInterface.DGLevelSet, phaseInterface.CGLevelSet }, "Reinit", time, 2);
                 }
 
