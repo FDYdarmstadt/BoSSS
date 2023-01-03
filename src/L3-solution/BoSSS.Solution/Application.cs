@@ -2245,7 +2245,7 @@ namespace BoSSS.Solution {
 
 
                         foreach (var l in PostprocessingModules) {
-                            l.DriverTimestepPostProcessing(i, physTime);
+                            l.DriverTimestepPostProcessing(i, physTime, !RunLoop(i + 1));
                         }
 
                         ITimestepInfo tsi = null;
