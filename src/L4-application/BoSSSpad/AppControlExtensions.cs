@@ -188,8 +188,8 @@ namespace BoSSS.Application.BoSSSpad {
             Guid rst_ID = sess.ID;
             TimestepNumber rst_ts = sess.Timesteps.Last().TimeStepNumber;
 
-            ctrl.InitialValues.Clear();
-            ctrl.InitialValues_Evaluators.Clear();
+            //ctrl.InitialValues.Clear();
+            //ctrl.InitialValues_Evaluators.Clear();
 
             ctrl.RestartInfo = Tuple.Create(rst_ID, rst_ts);
 
