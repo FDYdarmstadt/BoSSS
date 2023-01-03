@@ -420,15 +420,15 @@ namespace BoSSS.Application.XNSE_Solver {
         ///// <summary>
         ///// See <see cref="TimestepperInit"/>
         ///// </summary>
-        //[DataMember]
-        //public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
+        [DataMember]
+        public TimeStepperInit Timestepper_BDFinit = TimeStepperInit.SingleInit;
 
         ///// <summary>
         ///// defines the number of incremental timesteps in one global timestep (for incrementInit)
         ///// </summary>
         //public int incrementTimesteps = 1;
 
-       
+
         /// <summary>
         /// array of additional parameter values for some testcases
         /// </summary>

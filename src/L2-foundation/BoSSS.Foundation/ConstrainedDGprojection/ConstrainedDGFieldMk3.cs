@@ -731,6 +731,14 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             MPICollectiveWatchDog.Watch();
             //Console.WriteLine("update internal projection field");
             internalProjection.Clear();
+            if (comm == csMPI.Raw._COMM.WORLD) {
+                internalProjection.MPIExchange();
+            } else if (comm == csMPI.Raw._COMM.SELF) {
+                // noop
+            } else {
+                throw new NotImplementedException("only supported for WORLD and SELF communicator");
+            }
+
             int stride = m_Mapping.MaxTotalNoOfCoordinatesPerCell;
             internalProjection._Acc(1.0, m_Coordinates, 0, stride, true);
             if(comm == csMPI.Raw._COMM.WORLD) {

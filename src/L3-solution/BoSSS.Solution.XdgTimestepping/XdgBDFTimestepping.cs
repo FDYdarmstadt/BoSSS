@@ -267,8 +267,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             for(int i = 1; i < m_TSCchain[0].S; i++) {
                 restartInfo[i - 1] = new List<DGField>();
 
-                if(this.Config_LevelSetHandling == LevelSetHandling.Coupled_Once
-                    || this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                if(m_Stack_u[i].Fields.Where(stf => stf is XDGField).Any()) {
 
                     DGField phiField = (DGField)m_LsTrk.LevelSetHistories[0][1 - i];
                     restartInfo[i - 1].Add(phiField);

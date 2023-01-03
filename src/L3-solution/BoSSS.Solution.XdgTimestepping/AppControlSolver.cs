@@ -64,7 +64,7 @@ namespace BoSSS.Solution.Control {
         /// In the case of multi-step methods (e.g. BDF2 and higher), multiple initial values, resp. 
         /// </summary>
         [DataMember]
-        public bool MultiStepInit = true;
+        public bool MultiStepInit = false;
 
         /// <summary>
         /// Kind of timestepping to use

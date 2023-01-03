@@ -562,8 +562,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 if (dist2 != 0)
                     throw new Exception("illegal modification of DG level-set when evolving for dt = 0.");
                 double distCG = pair1.CGLevelSet.CoordinateVector.L2Distance(coords1CG);
-                if (distCG != 0)
-                    throw new Exception($"illegal modification of CG level-set when projecting a second time");
+                if (distCG > 1e-15)
+                    throw new Exception($"illegal modification of CG level-set when projecting a second time (rank {pair1.CGLevelSet.GridDat.MpiRank}: CG level-set LS distance = {distCG})");
             }
 #if TEST
             var MPIrankField = new SinglePhaseField(new Basis(this.GridData, 0), "MPIRank");

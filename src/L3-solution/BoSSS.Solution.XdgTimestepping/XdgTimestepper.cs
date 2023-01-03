@@ -987,10 +987,10 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         
-        // <summary>
+        /// <summary>
         /// Number of timesteps required for restart, e.g. 1 for Runge-Kutta and implicit/explicit Euler, 2 for BDF2, etc.
         /// </summary>
-        public int BurstSave {
+        public int BurstSaves {
             get {
                 if(m_RK_Timestepper != null) {
                     Debug.Assert(m_BDF_Timestepper == null);
