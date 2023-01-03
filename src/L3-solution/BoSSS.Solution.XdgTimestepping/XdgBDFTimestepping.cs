@@ -921,7 +921,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     updateAgglom = true;
                 }
 
-                if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting 
                     || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
                     if (m_IterationCounter == 0) {
                         if(m_CurrentAgglomeration != null)
@@ -940,7 +940,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 if (updateAgglom || m_CurrentAgglomeration == null) {
 
-                    if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+                    if (this.Config_LevelSetHandling == LevelSetHandling.LieSplitting || this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting 
                         || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
                         // Agglomeration update in the case of splitting - agglomeration does **NOT** depend on previous time-steps
 
@@ -1422,7 +1422,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //else
                 //    Console.WriteLine("Increment solve, timestep #{0}, dt = {1} ...", increment, dt);
                 dt = m_CurrentDt;
-
+                double ls_dt = dt;
 
                 // ===========================================
                 // update level-set (in the case of splitting)
@@ -1433,7 +1433,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     Debug.Assert(m_CurrentAgglomeration == null);
 
-                    double ls_dt = dt;
                     if(this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting)
                         ls_dt *= 0.5;
 
@@ -1448,7 +1447,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                     int oldPushCount = m_LsTrk.PushCount;
                     int oldVersion = m_LsTrk.VersionCnt;
-                    this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime, ls_dt, 1.0);
+                    this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime, ls_dt, LSUnderrelax);
 
                     int newPushCount = m_LsTrk.PushCount;
                     int newVersion = m_LsTrk.VersionCnt;
@@ -1728,7 +1727,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     int oldPushCount = m_LsTrk.PushCount;
                     int oldVersion = m_LsTrk.VersionCnt;
 
-                    this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime + dt * 0.5, dt * 0.5, 1.0);
+                    this.MoveLevelSetAndRelatedStuff(m_Stack_u[0].Mapping.Fields.ToArray(), phystime + ls_dt, ls_dt, LSUnderrelax);
 
                     int newPushCount = m_LsTrk.PushCount;
                     int newVersion = m_LsTrk.VersionCnt;
@@ -2044,8 +2043,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new ApplicationException("internal error");
             }
             if (m_IterationCounter > 0) {
-                if (Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative)
+                if (Config_LevelSetHandling != LevelSetHandling.Coupled_Iterative && Config_LevelSetHandling != LevelSetHandling.StrangSplitting) {
                     throw new ApplicationException("internal error");
+                }
             }
 
 
@@ -2068,8 +2068,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             if(!ilPSP.DoubleExtensions.ApproxEqual(m_LsTrk.Regions.Time, PhysTime))
                 throw new ApplicationException($"Before Level-Set update, mismatch in time between tracker (Regions.Time = {m_LsTrk.Regions.Time}) and physical time ({PhysTime}).");
-
-
 
             m_LastLevelSetResidual = this.UpdateLevelset().Update(locCurSt, PhysTime, dt, UnderRelax, (this.Config_LevelSetHandling == LevelSetHandling.StrangSplitting));
 

@@ -34,11 +34,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         virtual public LevelSetHandling Timestepper_LevelSetHandling {
             get;
             set;
-        } 
+        }
 
         /// <summary>
         /// underrelaxation of the level set movement in case of coupled iterative
         /// </summary>
+        [DataMember]
         public double LSunderrelax = 1.0;
 
 

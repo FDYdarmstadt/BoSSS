@@ -218,6 +218,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         public double IterUnderrelax = 1.0;
 
         /// <summary>
+        /// the factor for under-relaxing the level set movement 
+        /// </summary>
+        public double LSUnderrelax = 1.0;
+
+        /// <summary>
         /// convergence criteion for iterations over the level-set, c.f. return value of <see cref="DelUpdateLevelset"/>
         /// </summary>
         public double Config_LevelSetConvergenceCriterion = 1.0e-6;
