@@ -344,7 +344,7 @@ namespace BoSSS.Application.XNSEC {
                 opFactory.AddParameter(new Viscosity(EoS_A, EoS_B));
                 opFactory.AddParameter(new HeatCapacity(EoS_A, EoS_B));
             }
-            opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
+            opFactory.AddCoefficient(new Solution.XNSECommon.SlipLengths(config, VelocityDegree()));
 
 
 
