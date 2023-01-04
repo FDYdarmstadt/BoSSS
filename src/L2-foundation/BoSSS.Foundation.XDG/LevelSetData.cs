@@ -1230,6 +1230,7 @@ namespace BoSSS.Foundation.XDG {
                 this.m_NearField4LevelSet = null;
                 this.m_NearMask = null;
                 this.m_NearMask4LevelSet = null;
+                this.m_ZeroSetEdges4LevelSet = null;
                 this.m_SpeciesMask = null;
                 this.m_SpeciesSubGrids = null;
                 this.m_ColorMap4Spc = new Dict_ColorMap4Spc(this);
@@ -1276,12 +1277,54 @@ namespace BoSSS.Foundation.XDG {
                 return GetNearFieldMask(0);
             }
 
+            EdgeMask[] m_ZeroSetEdges4LevelSet;
             /// <summary>
             /// For each level-set, a mask cotaining all edges that coincide with the level-set itself.
             /// Return value can be null, if there are no such edges.
             /// </summary>
             public EdgeMask GetZeroSetEdges(int LevSetIdx) {
-                throw new NotImplementedException("todo");
+                //throw new NotImplementedException("todo");
+                if (m_ZeroSetEdges4LevelSet == null) {
+                    m_ZeroSetEdges4LevelSet = new EdgeMask[this.m_owner.NoOfLevelSets];
+                }
+
+                if (m_ZeroSetEdges4LevelSet[LevSetIdx] == null) {
+                    var CutCells = GetCutCellMask4LevSet(LevSetIdx);
+                    var CandidateEdges = CutCells.GetAllLocalEdgesMask();
+                    var ZeroSetEdges = CandidateEdges.GetBitMask();
+                    ZeroSetEdges.SetAll(false);
+
+                    var LevSet = m_owner.LevelSets[LevSetIdx];
+
+                    foreach (int edge in CandidateEdges.ItemEnum) {
+                        ZeroSetEdges[edge] = isCutEdge(edge);
+                    }
+
+                    m_ZeroSetEdges4LevelSet[LevSetIdx] = new EdgeMask(CandidateEdges.GridData, ZeroSetEdges);
+
+                    bool isCutEdge(int iedge) {
+                        int icell = GridDat.Edges.CellIndices[iedge, 0];
+                        var edgRef = GridDat.Edges.GetRefElement(iedge);
+                        NodeSet edgNodes;
+                        edgRef.GetNodeSet(15, out edgNodes, out _, out _);
+                        NodeSet evalNodes = edgNodes.GetVolumeNodeSet(GridDat, GridDat.Edges.Edge2CellTrafoIndex[iedge, 0]);
+                        MultidimensionalArray result = MultidimensionalArray.Create(1, evalNodes.NoOfNodes);
+                        LevSet.Evaluate(icell, 1, evalNodes, result);
+
+                        bool pos = false;
+                        bool neg = false;
+                        for (int i = 0; i < evalNodes.NoOfNodes; i++) {
+                            if (result[0, i] > 0) {
+                                pos = true;
+                            } else if (result[0, i] < 0) {
+                                neg = true;
+                            }
+                        }
+                        return pos && neg || (!pos && !neg);
+                    }
+                }
+
+                return m_ZeroSetEdges4LevelSet[LevSetIdx];
             }
 
 
