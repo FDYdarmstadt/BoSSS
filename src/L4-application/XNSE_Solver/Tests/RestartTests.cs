@@ -256,18 +256,18 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 [Values(false, true)] bool AMRon,
                 [Values(3, 4, 5)] int savePeriod){
 
-            if (savePeriod > 3 && !AMRon && !transient)
+            if (savePeriod > 3 && (!AMRon || !transient))
                 return;
 
-            string TestDbDir = "testdb_" + DateTime.Now.ToString("MMMdd_HHmm");
-            string TestDbFullPath = Path.Combine(Directory.GetCurrentDirectory(), TestDbDir);
+            string restartDB = "restartDB_" + transient + "_" + timestepScheme.ToString() + "_" + AMRon + "_" + savePeriod; //+ DateTime.Now.ToString("MMMdd_HHmm");
+            string restartDBfullPath = Path.Combine(Directory.GetCurrentDirectory(), restartDB);
 
             {
-                var TestDb = DatabaseInfo.CreateOrOpen(TestDbFullPath);
+                var TestDb = DatabaseInfo.CreateOrOpen(restartDBfullPath);
                 DatabaseInfo.Close(TestDb);
             }
 
-            var ctrl1 = RestartTest_ReferenceControl(TestDbFullPath, transient, timestepScheme, AMRon, savePeriod, out var ExpectedTs1stRun);
+            var ctrl1 = RestartTest_ReferenceControl(restartDBfullPath, transient, timestepScheme, AMRon, savePeriod, out var ExpectedTs1stRun);
             using (var FirstRun = new XNSE()) {
 
                 FirstRun.Init(ctrl1);
@@ -277,7 +277,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             Guid RestartSession;
             {
-                var TestDb2 = DatabaseInfo.CreateOrOpen(TestDbFullPath);
+                var TestDb2 = DatabaseInfo.CreateOrOpen(restartDBfullPath);
                 int nGrids = 1;
                 if (AMRon) nGrids++;
                 if (AMRon && transient) nGrids = 3;
@@ -298,7 +298,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
 
-            var ctrl2 = RestartTest_RestartControl(TestDbFullPath, RestartSession, transient, timestepScheme, AMRon, savePeriod, out var ExpectedTs2ndRun);
+            var ctrl2 = RestartTest_RestartControl(restartDBfullPath, RestartSession, transient, timestepScheme, AMRon, savePeriod, out var ExpectedTs2ndRun);
             using (var SecondRun = new XNSE()) {
 
                 SecondRun.Init(ctrl2);
@@ -308,7 +308,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
 
             {
-                var TestDb3 = DatabaseInfo.CreateOrOpen(TestDbFullPath);
+                var TestDb3 = DatabaseInfo.CreateOrOpen(restartDBfullPath);
                 int nGrids = 1;
                 if (AMRon) nGrids++;
                 if (AMRon && transient) nGrids = (savePeriod == 3) ? 4 : 3;
@@ -350,8 +350,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
             if (rank == 0) {
-                Console.WriteLine($"Deleting test database at {TestDbFullPath} ...");
-                Directory.Delete(TestDbFullPath, true);
+                Console.WriteLine($"Deleting test database at {restartDBfullPath} ...");
+                Directory.Delete(restartDBfullPath, true);
                 Console.WriteLine("done.");
             }
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
