@@ -49,7 +49,7 @@ namespace BoSSS.Application.XNSFE_Solver {
         public override DelCoefficientFactory Factory => SlipLengthsFactory;
 
         /// <summary>
-        /// Slip length coefficients for Generalized Navier-Stokes Boundary conditions.
+        /// provides SlipLengths, MultidimensionalArray with slip length for each cell
         /// </summary>
         /// <param name="config"></param>
         /// <param name="degU"></param>
