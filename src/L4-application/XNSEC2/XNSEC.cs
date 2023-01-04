@@ -361,7 +361,11 @@ namespace BoSSS.Application.XNSEC {
             opFactory.AddParameter(normalsParameter);
 
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
-            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, new Velocity0Mean(D, LsTrk, quadOrder));
+            var v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
+            if (config.physParams.IncludeConvection && config.isTransport) {
+                opFactory.AddParameter(v0Mean);
+            }
+            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
 
             #region SurfaceTension
 

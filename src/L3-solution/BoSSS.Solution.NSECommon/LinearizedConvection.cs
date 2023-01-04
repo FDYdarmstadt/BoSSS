@@ -615,7 +615,7 @@ namespace BoSSS.Solution.NSECommon {
             this.EoS = EoS;
             this.NumberOfReactants = NumberOfComponents;
             idx = _component; // Velocity-i as argument...
-            m_ParameterOrdering = null; // not used
+            m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0MeanVector(SpatDim)); // used for computation of penalties
 
             switch(_bcmap.PhysMode) {
                 case PhysicsMode.MixtureFraction:
