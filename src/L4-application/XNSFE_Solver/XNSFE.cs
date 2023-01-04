@@ -156,6 +156,7 @@ namespace BoSSS.Application.XNSFE_Solver {
             }
 
             opFactory.AddCoefficient(new EvapMicroRegion());
+            opFactory.AddCoefficient(new SlipLengths(config));
 
             if (config.prescribedMassflux != null)
                 opFactory.AddCoefficient(new PrescribedMassFlux(config));

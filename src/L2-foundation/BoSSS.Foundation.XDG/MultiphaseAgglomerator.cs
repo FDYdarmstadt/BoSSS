@@ -914,5 +914,28 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
+    
+    
+        /// <summary>
+        /// Prints human-readable information on the writer <paramref name="stw"/>
+        /// </summary>
+        public void PrintInfo(System.IO.TextWriter stw, bool verbose = true) {
+            var LsTrk = this.Tracker;
+
+            foreach (SpeciesId S in this.DictAgglomeration.Keys)
+                stw.WriteLine($"Species {LsTrk.GetSpeciesName(S)}, no. of agglomerated cells {GetAgglomerator(S).AggInfo.SourceCells.Count()} ");
+
+            if (!verbose)
+                return;
+
+            foreach (SpeciesId S in this.DictAgglomeration.Keys) {
+                stw.Write($"Species {LsTrk.GetSpeciesName(S)}, source cells are: ");
+                stw.Write(GetAgglomerator(S).AggInfo.SourceCells.GetSummary());
+                stw.Write(", in detail: ");
+                stw.Write(GetAgglomerator(S).AggInfo.AgglomerationPairs.ToConcatString("", ",", ";"));
+                stw.WriteLine();
+            }
+
+        }
     }
 }
