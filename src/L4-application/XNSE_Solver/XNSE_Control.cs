@@ -58,7 +58,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
-            base.LinearSolver = LinearSolverCode.classic_mumps.GetConfig(); //LinearSolver
+            base.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 0.0; //Solver_ConvergenceCriterion: solve as accurate as possible. Don't change this, Grüße von FK!
@@ -626,7 +626,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
         /// </summary>
         public ScalarFunctionTimeDep GetVolumeForce(string species, int d) {
-            this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.VolumeForce_d(d) + "#" + species, out var ret);
+            bool bfound = this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.VolumeForce_d(d) + "#" + species, out var ret);
+            if(!bfound)
+                this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.VolumeForce_d(d), out ret);
+            //Console.WriteLine("Using volume Force: " + (ret?.ToString() ?? "NIX"));
             return ret;
         }
 
@@ -751,7 +754,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         public override bool Equals(object obj) {
-            //System.Diagnostics.Debugger.Launch();
+            //System.Diagnostics. dbg_launch();
             if(!base.Equals(obj))
                 return false;
 

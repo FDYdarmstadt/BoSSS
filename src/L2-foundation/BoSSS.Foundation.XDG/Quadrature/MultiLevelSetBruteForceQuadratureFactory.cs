@@ -490,7 +490,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         trf = singleMask.GridData.iGeomEdges.Edge2CellTrafoIndex[edg, 1];
                     }
                     // transform edgerule to volume rule
-                    var nodes_t = rule_t.Nodes.GetVolumeNodeSet(singleMask.GridData, trf);
+                    var nodes_t = rule_t.Nodes.GetVolumeNodeSet(singleMask.GridData, trf, false);
                     var weights_t = rule_t.Weights;
 
                     // scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
@@ -512,7 +512,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 offset += count;
             }
             specialRule = new QuadRule();
-            specialRule.Nodes = new NodeSet(scheme.ReferenceElement, specialNodes_t);
+            specialRule.Nodes = new NodeSet(scheme.ReferenceElement, specialNodes_t, true);
             specialRule.Weights = specialWeights_t;
 
             return specialRule;

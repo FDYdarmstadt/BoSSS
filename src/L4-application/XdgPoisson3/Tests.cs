@@ -26,7 +26,7 @@ using System.Linq;
 using Code = BoSSS.Solution.Control.LinearSolverCode;
 
 namespace BoSSS.Application.XdgPoisson3 {
-    
+
     /// <summary>
     /// NUnit test routines
     /// </summary>
@@ -49,6 +49,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <param name="SolverName"></param>
         [Test]
         public static void IterativeSolverTest([Values(Code.exp_Kcycle_schwarz, Code.exp_gmres_levelpmg)] Code SolverName) {
+            //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest
             using (var solver = new XdgPoisson3Main()) {
 
                 int Res, p;
@@ -59,14 +60,49 @@ namespace BoSSS.Application.XdgPoisson3 {
                 Res = 12;
                 p = 3;
 #endif
-                var C = HardCodedControl.Ball3D(pDeg: p,Res: Res, solverCode: SolverName);
+                var C = HardCodedControl.Ball3D(pDeg: p, Res: Res, solverCode: SolverName);
 
                 solver.Init(C);
                 solver.RunSolverMode();
             }
         }
 
-        
+
+        /// <summary>
+        /// Testing of a rather simple test-case with an exact solution;
+        /// this should e.g. confirm that the agglomeration works correctly
+        /// </summary>
+        [Test]    
+        public static void ParabolaTest(
+            [Values(2,3,4)] int dgDegree,
+            [Values(0.0, 0.6)] double AggThresshold
+            ) //
+        {
+
+            using (var solver = new XdgPoisson3Main()) {
+                var C = HardCodedControl.PiecewiseParabola(dgDegree, agg: AggThresshold);
+
+                solver.Init(C);
+                solver.RunSolverMode();
+
+                double L2_ERR = (double)solver.QueryHandler.QueryResults["L2_ERR"];
+                double L2_ERR_HMF = (double)solver.QueryHandler.QueryResults["L2_ERR_HMF"];
+                double L2_ERR_HMF_A = (double)solver.QueryHandler.QueryResults["L2_ERR_HMF_A"];
+                double L2_ERR_HMF_B = (double)solver.QueryHandler.QueryResults["L2_ERR_HMF_B"];
+
+
+
+
+                Assert.Less(L2_ERR, 1e-10, "'L2_ERR' out-of-bounds");
+                Assert.Less(L2_ERR_HMF, 1e-10, "'L2_ERR' out-of-bounds");
+                Assert.Less(L2_ERR_HMF_A, 1e-10, "'L2_ERR' out-of-bounds");
+                Assert.Less(L2_ERR_HMF_B, 1e-10, "'L2_ERR' out-of-bounds");
+
+            }
+
+        }
+
+
 
 
         /// <summary>
@@ -76,13 +112,13 @@ namespace BoSSS.Application.XdgPoisson3 {
         [Test]
 #endif       
         public static void ScalingCircle2D(
-            //[Values(1)] 
-            [Values(1,2,3,4)] 
+        //[Values(1)] 
+        [Values(1,2,3,4)]
             int dgDegree
-            ) //
-        {
+        ) //
+    {
             int sz = ilPSP.Environment.MPIEnv.MPI_Size;
-            if(sz > 1) {
+            if (sz > 1) {
                 Console.WriteLine("ScalingCircle2D: skipping for more than 1 processor.");
                 return;// deactivate for multiple procs.
             }
@@ -90,17 +126,17 @@ namespace BoSSS.Application.XdgPoisson3 {
             var Controls = new List<XdgPoisson3Control>();
 
             int[] ResS = null;
-            switch(dgDegree) {
+            switch (dgDegree) {
                 case 1: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65, 128 }; break;
                 case 2: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64, 65 }; break;
                 case 3: ResS = new int[] { 8, 9, 16, 17, 32, 33, 64 }; break;
                 case 4: ResS = new int[] { 8, 9, 16, 17, 32, 33 }; break;
                 default: throw new NotImplementedException();
             }
-            
+
             foreach (int res in ResS) {
                 var C = HardCodedControl.Circle(Resolution: res, p: dgDegree);
-                C.LinearSolver = Code.classic_pardiso.GetConfig();
+                C.LinearSolver = Code.direct_pardiso.GetConfig();
                 C.savetodb = false;
 
                 Controls.Add(C);
@@ -116,7 +152,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             Slope for StencilCondNo-bndyCut-Var0: 0e00             
             */
 
-            ConditionNumberScalingTest.Perform(Controls, plot:true, title: "ScalingCircle2D");
+            ConditionNumberScalingTest.Perform(Controls, plot: true, title: "ScalingCircle2D");
         }
     }
 }

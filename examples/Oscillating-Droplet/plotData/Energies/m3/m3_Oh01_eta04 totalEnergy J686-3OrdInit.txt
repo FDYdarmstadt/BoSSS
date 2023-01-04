@@ -1,0 +1,5 @@
+Grouping:totalEnergy J686-3OrdInit
+# x 	 y
+0.0000000000000000E+000	1.4649761006416856E+001
+
+ 

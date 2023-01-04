@@ -389,7 +389,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // directly compute the Injector for the coarsest level
                     //int ilevel = agSeq.Length - 1;
 
-                    if(!maxDgBasis.IsOrthonormal) { throw new NotImplementedException("DG Basis has to be orthonormal"); }
+                    if(!maxDgBasis.IsOrthonormal) { 
+                        throw new NotImplementedException("DG Basis has to be orthonormal"); 
+                    }
 
                     // compute the direct Injector for the coarsest mesh
                     MultidimensionalArray[] InjectorCoarse = new MultidimensionalArray[agSeq[0].iLogicalCells.NoOfLocalUpdatedCells];
@@ -417,9 +419,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ++++++++++++++++++
                 // linear cell branch
                 // ++++++++++++++++++
-
-
-
 
                 // level 1
                 if(agSeq.Length >= 2) {
@@ -1062,10 +1061,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         /// <summary>
-        /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original,
+        /// The projector in the L2 Norm, from the space defined by the basis <see cref="DGBasis"/> on the original mesh,
         /// onto the DG space on the aggregate grid.
         /// **In contrast to <see cref="CompositeBasis"/>, the re-computation is performed only for cell <paramref name="jAgg"/>,
-        /// making this more efficient if only s singe cell is required.**
+        /// making this more efficient if only a singe cell is required.**
         /// </summary>
         /// <param name="jAgg"></param>
         /// <returns>
@@ -1146,13 +1145,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             R_iTarg.Multiply(1.0, Inj_j_iSrc, R_iTarg.CloneAs(), 0.0, "nm", "nk", "km");
 
-                            //if (thisMgLevel == 1 && Np == 10) {
-                            //    var check = MultidimensionalArray.Create(Np, Np);
-                            //    check.GEMM(1.0, R_iTarg, R_iTarg.Transpose(), 0.0);
-                            //    check.AccEye(-1.0);
-                            //    var bla = check.InfNorm();
-                            //    Console.WriteLine("Check norm: " + bla);
-                            //}
+                            /*
+                            {
+                                var Mama = MultidimensionalArray.Create(R_iTarg.NoOfRows, R_iTarg.NoOfCols);
+                                Mama.Multiply(1.0, R_iTarg, R_iTarg, 1.0, "lm", "im", "il");
+
+                                try {
+                                    Mama.Cholesky();
+                                } catch (ArithmeticException) {
+                                    Console.Error.WriteLine($"Runnin into indefnes on mesh lv {thisMgLevel}, reducing to {mgLevelIdx}, part {j}");
+                                }
+
+
+
+                            }
+                            */
                         }
                     }
                 }

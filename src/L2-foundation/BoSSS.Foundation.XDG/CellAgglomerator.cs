@@ -205,8 +205,6 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// 
             /// </summary>
-            /// <param name="other"></param>
-            /// <returns></returns>
             public bool Equals(AgglomerationInfo other) {
                 if (other == null) {
                     return false;
@@ -216,6 +214,19 @@ namespace BoSSS.Foundation.XDG {
 
                 bool result = (this.AgglomerationPairs.SequenceEqual(other.AgglomerationPairs));
                 return result;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public override string ToString() {
+                using (var stw = new StringWriter()) {
+                    foreach (var p in AgglomerationPairs) {
+                        stw.WriteLine(p.ToString());
+                    }
+
+                    return stw.ToString();
+                }
             }
         }
 
@@ -253,11 +264,11 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="g"></param>
         /// <param name="AgglomerationPairs">
         /// Each tuple represents one agglomeration operation:
-        ///  - 1st entry: source cell index, i.e. cell which will be removed due to agglomeration; must be in the range of locally updated cells.<br/>
+        ///  - 1st entry: source cell index, i.e. cell which will be removed due to agglomeration; must be in the range of locally updated cells.
         ///  - 2nd entry: target cell index, i.e. cell which will be enlarged due to agglomeration
         /// </param>
         /// <remarks>
-        /// The cell agglomerator eliminates (resp. tries to elimintate ;) cycles in the agglomeration graph, since 
+        /// The cell agglomerator eliminates (resp. tries to eliminate ;) cycles in the agglomeration graph, since 
         /// it cannot be guaranteed that the <see cref="AgglomerationAlgorithm"/> provides cycle-free agglomeration graphs.
         /// </remarks>
         public CellAgglomerator(GridData g, IEnumerable<(int jSource, int jTarget)> AgglomerationPairs) {
@@ -750,30 +761,25 @@ namespace BoSSS.Foundation.XDG {
 
             int N = MaxBasis.Length;
 
-            MultidimensionalArray Minv = MultidimensionalArray.Create(Esub, N, N);
+            //MultidimensionalArray Minv = MultidimensionalArray.Create(Esub, N, N);
             MultidimensionalArray M = MultidimensionalArray.Create(Esub, N, N);
             CouplingMtx = M;
-            CouplingMtx_inv = Minv;
+            //CouplingMtx_inv = Minv;
 
-            MaxBasis.GetExtrapolationMatrices(CP, M, Minv);
+            MaxBasis.GetExtrapolationMatrices(CP, M);
         }
 
 
         int CouplingMtxDegree = -1;
 
-        /// <summary>
-        /// Inverse of coupling matrix.<br/>
-        /// 1st index: agglomeration edge index, i.e. index into the items of <see cref="m_EdgeAgg"/>; <br/>
-        /// 2nd index: row index. <br/>
-        /// 3rd index: column index. <br/>
-        /// </summary>
-        MultidimensionalArray CouplingMtx_inv;
+        
+        
 
         /// <summary>
         /// coupling matrix.<br/>
-        /// 1st index: agglomeration edge index, i.e. index into the items of <see cref="m_EdgeAgg"/>; <br/>
-        /// 2nd index: row index. <br/>
-        /// 3rd index: column index. <br/>
+        /// - 1st index: agglomeration edge index, i.e. index into the items of <see cref="AgglomerationInfo.AgglomerationEdges"/>; 
+        /// - 2nd index: row index. 
+        /// - 3rd index: column index. 
         /// </summary>
         MultidimensionalArray CouplingMtx;
 
@@ -801,7 +807,7 @@ namespace BoSSS.Foundation.XDG {
         /// <returns></returns>
         public BlockMsrMatrix GetRowManipulationMatrix(UnsetteledCoordinateMapping map,
             int MaxDegree, int NoOfVars, Func<int, int, long> i0Func, Func<int, int, int> NjFunc,
-            bool MakeInPlace, CellMask cm, string SpeciesName = null) {
+            bool MakeInPlace, CellMask cm) {
             using(new FuncTrace()) {
 
                 if(!object.ReferenceEquals(map.GridDat, this.GridDat)) {
@@ -999,7 +1005,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// In a vector <paramref name="V"/>, this method performs a
+        /// For a list of DG fields, this method performs a
         /// polynomial extrapolation from agglomeration target cells to agglomeration source cells.
         /// </summary>
         public void Extrapolate(CoordinateMapping DgFields) {

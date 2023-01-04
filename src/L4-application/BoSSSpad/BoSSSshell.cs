@@ -77,9 +77,6 @@ namespace BoSSS.Application.BoSSSpad {
             BoSSS.Solution.Application.InitMPI();
             CallRandomStuff();
             try {
-
-
-
                 databases = DatabaseController.LoadDatabaseInfosFromXML();
 
                 ReloadExecutionQueues();
@@ -95,6 +92,7 @@ namespace BoSSS.Application.BoSSSpad {
                 InteractiveShell.LastError = e;
             }
             InitTraceFile();
+            ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" }; // try to log everyting, so we might find something useful
 
             Microsoft.DotNet.Interactive.Formatting.Formatter.RecursionLimit = 1;
             Microsoft.DotNet.Interactive.Formatting.Formatter.ListExpansionLimit = 100;
@@ -309,7 +307,7 @@ namespace BoSSS.Application.BoSSSpad {
                 MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypeFor");
                 AltSetMimeTypes.Invoke(null, new object[] { t, "text/plain" });
             } catch (NullReferenceException) {
-                Console.WriteLine("Trying alternative method");
+                //Console.WriteLine("Trying alternative method");
                 Type AltFormatter = typeof(Formatter);
                 MethodInfo AltSetMimeTypes = AltFormatter.GetMethod("SetPreferredMimeTypesFor");
                 AltSetMimeTypes.Invoke(null, new object[] { t, new string[] { "text/plain" } });
@@ -329,7 +327,7 @@ namespace BoSSS.Application.BoSSSpad {
                         else
                             valString = v != null ? optValFormatter(v) : "NULL";
 
-                        writer.WriteLine("#" + i + ": " + v.ToString());
+                        writer.WriteLine("#" + i + ": " + valString);
                         i++;
                     }
                 });
@@ -833,6 +831,7 @@ namespace BoSSS.Application.BoSSSpad {
             int[,] Edge2GeomCell = grd.iGeomEdges.CellIndices;
             int[] G2L = grd.iGeomCells.GeomCell2LogicalCell;
             byte[] EdgeTags = grd.iGeomEdges.EdgeTags;
+            int Jup = grd.iLogicalCells.NoOfLocalUpdatedCells;
 
             i = 0;
             foreach (var t in et2Name) { // loop over all different edge tag names...
@@ -863,7 +862,9 @@ namespace BoSSS.Application.BoSSSpad {
                                 jL = G2L[jG];
 
                             // color respective cell
-                            FI.SetMeanValue(jL, tag2color);
+                            if (jL < Jup) {
+                                FI.SetMeanValue(jL, tag2color);
+                            }
                         }
 
                     }
@@ -958,7 +959,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void ReloadExecutionQueues() {
             executionQueues = new List<BatchProcessorClient>();
-            //Debugger.Launch();
+            // dbg_launch();
             BatchProcessorConfig bpc;
             try {
                 bpc = BatchProcessorConfig.LoadOrDefault();

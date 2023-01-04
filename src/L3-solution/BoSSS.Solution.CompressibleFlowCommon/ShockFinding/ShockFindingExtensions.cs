@@ -145,7 +145,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.ShockFinding {
 
             gridData.TransformGlobal2Local(GlobalVerticesIn, LocalVerticesOut, localCellIndex, NewtonConvergence: null);
 
-            return new NodeSet(gridData.Cells.GetRefElement(localCellIndex), LocalVerticesOut);
+            return new NodeSet(gridData.Cells.GetRefElement(localCellIndex), LocalVerticesOut, true);
         }
 
         public static double[] NormalizedGradient(SinglePhaseField field, int localCellIndex, NodeSet nodeSet) {

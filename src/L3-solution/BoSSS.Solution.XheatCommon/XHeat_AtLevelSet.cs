@@ -1337,13 +1337,13 @@ namespace BoSSS.Solution.XheatCommon {
 
             // Second variant using Roe-Type Scheme
             // if VxN < 0 (Inflow) enforce Dirichlet condition, if > 0 (outflow), we still want to enforce saturation temperature?
-            double FlxNeg = 0.5 * (vINxN - Math.Abs(vINxN)) * (interfaceValue - U_Neg[0]);
-            FlxNeg -= 0.5 * (vINxN + Math.Abs(vINxN)) * (interfaceValue - U_Neg[0]);
-            FlxNeg += vINxN * U_Neg[0]; // Extra term from weak formulation
+            double FlxNeg = 0.5 * (vINxN - Math.Abs(vINxN)) * (interfaceValue - U_Neg[3]);
+            FlxNeg -= 0.5 * (vINxN + Math.Abs(vINxN)) * (interfaceValue - U_Neg[3]);
+            FlxNeg += vINxN * U_Neg[3]; // Extra term from weak formulation
 
-            double FlxPos = 0.5 * (vOUTxN - Math.Abs(vOUTxN)) * (U_Pos[0] - interfaceValue);
-            FlxPos -= 0.5 * (vOUTxN + Math.Abs(vOUTxN)) * (U_Pos[0] - interfaceValue);
-            FlxPos -= vOUTxN * U_Pos[0];// Extra term from weak formulation         
+            double FlxPos = 0.5 * (vOUTxN - Math.Abs(vOUTxN)) * (U_Pos[3] - interfaceValue);
+            FlxPos -= 0.5 * (vOUTxN + Math.Abs(vOUTxN)) * (U_Pos[3] - interfaceValue);
+            FlxPos -= vOUTxN * U_Pos[3];// Extra term from weak formulation         
             return Scale * (capA * FlxNeg * v_Neg - capB * FlxPos * v_Pos);
         }
 

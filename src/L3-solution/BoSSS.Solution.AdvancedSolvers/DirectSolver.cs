@@ -40,7 +40,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// - MUMPS (<see cref="MUMPSSolver"/>) or
     /// - LAPACK.
     /// </summary>
-    public class DirectSolver : ISolverSmootherTemplate, ISolverWithCallback {
+    public class DirectSolver : ISubsystemSolver, ISolverWithCallback {
 
         /// <summary>
         /// 
@@ -94,6 +94,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             private bool EqualsImpl(object o) {
                 var other = o as Config;
+                if (other == null)
+                    return false;
 
                 return (this.WhichSolver == other.WhichSolver);
             }
@@ -104,6 +106,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// Currently, the default is true, since the direct solvers seem unreliable.
             /// </summary>
             public bool TestSolution {
+                get;
+                set;
+            } = true;
+
+            /// <summary>
+            /// - true: use double precision floats internally (default)
+            /// - false: use single precision; might be useful for solution guesses in preconditioners; only supported for <see cref="WhichSolver"/>==<see cref="_whichSolver.PARDISO"/>.
+            /// </summary>
+            public bool UseDoublePrecision {
                 get;
                 set;
             } = true;
@@ -120,8 +131,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 return m_config;
             }
         }
-
-
 
         /// <summary>
         /// 
@@ -148,27 +157,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// MATLAB 'backslash' solver, see <see cref="ilPSP.Connectors.Matlab.Extensions.SolveMATLAB{T1, T2}(IMutableMatrixEx, T1, T2, string)"/> 
             /// </summary>
-            Matlab
+            Matlab,
+
         }
 
-
-
-
-
-        public void Init(MultigridOperator op) {
+        void InitImpl(IOperatorMappingPair op) {
             using(var tr = new FuncTrace()) {
-                if(object.ReferenceEquals(op, m_MultigridOp))
+                if(object.ReferenceEquals(op, MatrixNMapping))
                     return; // already initialized
                 else
                     this.Dispose();
 
                 var Mtx = op.OperatorMatrix;
-                var MgMap = op.Mapping;
-                m_MultigridOp = op;
+                var MgMap = op.DgMapping;
+                MatrixNMapping = op;
 
-                if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 Mtx.CheckForNanOrInfM(typeof(DirectSolver) + ", matrix definition: ");
@@ -183,7 +189,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
     
 
-        MultigridOperator m_MultigridOp;
+        IOperatorMappingPair MatrixNMapping;
 
         class MatlabSolverWrapper : ISparseSolver {
 
@@ -259,18 +265,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ISparseSolver solver;
 
             bool RunSerial = Mtx.MPI_Comm == csMPI.Raw._COMM.SELF;
-            
-            
-            switch(config.WhichSolver) {
+
+            if(config.WhichSolver != _whichSolver.PARDISO) {
+                if (!config.UseDoublePrecision)
+                    throw new NotSupportedException($"{config.WhichSolver} is not supported in single precision");
+            }
+
+
+            switch (config.WhichSolver) {
                 case _whichSolver.PARDISO:
                 bool CachingOn = false;
                 if (ActivateCaching != null) {
-                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, m_MultigridOp.LevelIndex);
+                    CachingOn = ActivateCaching.Invoke(m_ThisLevelIterations, (MatrixNMapping as MultigridOperator)?.LevelIndex ?? -1);
                 }
-                
+
+                    
                 solver = new PARDISOSolver() {
                     CacheFactorization = CachingOn,
-                    UseDoublePrecision = true,
+                    UseDoublePrecision = config.UseDoublePrecision,
                     Parallelism = RunSerial ? Parallelism.SEQ : Parallelism.OMP
                 };
                 break;
@@ -340,13 +352,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                 if(Residual != null) {
-                    //Console.Write("Checking residual (run {0}) ... ", IterCnt - 1);
-                    double RhsNorm = Residual.L2NormPow2().MPISum().Sqrt();
                     double MatrixInfNorm = m_Mtx.InfNorm();
+
+                    double RhsNorm_loc = Residual.L2NormPow2();
+
                     m_Mtx.SpMV(-1.0, X, 1.0, Residual);
 
-                    double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
-                    double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
+                    double[] normsGlobPow2 = (new[] { RhsNorm_loc, Residual.L2NormPow2(), B.L2NormPow2(), X.L2NormPow2() }).MPISum(m_Mtx.MPI_Comm);
+                    double RhsNorm = normsGlobPow2[0].Sqrt();
+                    double ResidualNorm = normsGlobPow2[1].Sqrt();
+                    double SolutionNorm = normsGlobPow2[2].Sqrt();
                     double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
                     double RelResidualNorm = ResidualNorm / Denom;
 
@@ -383,7 +398,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     double[] _xl = X.ToArray();
                     double[] _bl = B.ToArray();
                     m_Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                    this.IterationCallback(1, _xl, _bl, this.m_MultigridOp);
+                    this.IterationCallback(1, _xl, _bl, this.MatrixNMapping as MultigridOperator);
                 }
             }
         }
@@ -447,6 +462,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return m_UsedMemoryInLastCall;
         }
 
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
+
+        public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
     }
 
 

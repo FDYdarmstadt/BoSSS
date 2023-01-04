@@ -45,6 +45,9 @@ namespace BoSSS.Application.BoSSSpad{
 
         string TryConvertToBase64ImageString(object result)
         {
+            throw new NotImplementedException("this is dead code");
+
+            /*
             String base64Result = null;
             if (result != null
                 && result is System.Drawing.Image img)
@@ -58,6 +61,7 @@ namespace BoSSS.Application.BoSSSpad{
                 };
             }
             return base64Result;
+            */
         }
 
         /// <summary>

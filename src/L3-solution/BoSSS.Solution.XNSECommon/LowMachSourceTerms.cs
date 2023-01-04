@@ -67,7 +67,7 @@ namespace BoSSS.Solution.XNSECommon {
     /// Heat release term on energy equation
     /// </summary>
     public class LowMach_HeatSource : ReactionHeatSourceJacobi, ISpeciesFilter {
-        public LowMach_HeatSource(string spcName, double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw_MultipleSpecies EoS, double TRef, double cpRef, bool VariableOneStepParameters) : base(HeatReleaseFactor, ReactionRateConstants, molarmasses, EoS, TRef, cpRef, VariableOneStepParameters) {
+        public LowMach_HeatSource(string spcName, double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw_MultipleSpecies EoS, double TRef, double cpRef, bool VariableOneStepParameters, int NoOfChemSpecies) : base(HeatReleaseFactor, ReactionRateConstants, molarmasses, EoS, TRef, cpRef, VariableOneStepParameters, NoOfChemSpecies) {
             ValidSpecies = spcName;
         }
 

@@ -970,6 +970,12 @@ namespace BoSSS.Solution.Control {
         public string TracingNamespaces = null;
 
         /// <summary>
+        /// Activate/Deactivate memory allocation logging
+        /// </summary>
+        [DataMember]
+        public ilPSP.Tracing.MemoryInstrumentationLevel MemoryInstrumentationLevel = ilPSP.Tracing.MemoryInstrumentationLevel.OnlyGcTotalMemory;
+
+        /// <summary>
         /// File system path to database.
         /// </summary>
         [DataMember]
@@ -1093,6 +1099,15 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public List<InSituPostProcessingModule> PostprocessingModules = new List<InSituPostProcessingModule>();
+
+
+        /// <summary>
+        /// Serialization into a text file 
+        /// </summary>
+        public void SaveToFile(string path, FileMode fm = FileMode.Create) {
+            var code = this.Serialize();
+            File.WriteAllText(path, code);
+        }
 
 
         /// <summary>
@@ -1227,6 +1242,15 @@ namespace BoSSS.Solution.Control {
                     try {
                         na = Assembly.Load(b);
                     } catch(FileNotFoundException) {
+                        //string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
+                        //if(AssiFiles.Length != 1) {
+                        //    //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
+                        //    Console.WriteLine("Skipping: " + b.Name);
+                        //    continue;
+                        //}
+                        //na = Assembly.LoadFile(AssiFiles[0]);
+                        continue;
+                    } catch (FileLoadException) {
                         //string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
                         //if(AssiFiles.Length != 1) {
                         //    //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
@@ -1391,6 +1415,7 @@ namespace BoSSS.Solution.Control {
 
             var scriptOptions = ScriptOptions.Default;
             scriptOptions = scriptOptions.AddReferences(allAssis);
+            // Console.WriteLine("Evaluating : {0}", Script);
             object controlObj = CSharpScript.EvaluateAsync(Script, scriptOptions).Result;
 
             if(controlObj == null) {
@@ -1472,9 +1497,9 @@ namespace BoSSS.Solution.Control {
             if((this.RestartInfo != null) != (oCtr.RestartInfo != null))
                 return false;
             if(this.RestartInfo != null) {
-                if(!this.RestartInfo.Item1.Equals(this.RestartInfo.Item1))
+                if(!this.RestartInfo.Item1.Equals(oCtr.RestartInfo.Item1))
                     return false;
-                if(!this.RestartInfo.Item2.Equals(this.RestartInfo.Item2))
+                if(!this.RestartInfo.Item2.Equals(oCtr.RestartInfo.Item2))
                     return false;
             }
 

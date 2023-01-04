@@ -962,7 +962,7 @@ namespace BoSSS.Foundation {
 
                 MultidimensionalArray locVtx = outp.ExtractSubArrayShallow(0, -1, -1);
                 RefElement Kref = this.GridDat.iGeomCells.GetRefElement(j);
-                NodeSet cont = new NodeSet(Kref, locVtx);
+                NodeSet cont = new NodeSet(Kref, locVtx, false);
 
                 MultidimensionalArray res = MultidimensionalArray.Create(1, 1);
                 this.Evaluate(j, 1, cont, res);

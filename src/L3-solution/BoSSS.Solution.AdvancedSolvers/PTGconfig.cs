@@ -1,10 +1,13 @@
-﻿using System;
+﻿using ilPSP;
+using ilPSP.Tracing;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-    
+
     /// <summary>
     /// GMRES with p-two-grid preconditioner (<see cref="LevelPmg"/>).
     /// 
@@ -25,21 +28,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public bool UseDiagonalPmg = true;
 
         /// <summary>
-        /// Hack, for the treatment of incompressible flows:
-        /// - false (default): the D-th variable, where D is the spatial dimension (2 or 3), is assumed to be the pressure; the order is one lower than for velocity
-        /// - true: no special treatment of individual variables
-        /// </summary>
-        public bool EqualOrder = false;
-
-        /// <summary>
         /// If true, cell-local solvers will be used to approximate a solution to high-order modes
+        /// (this is equivalent to a Block-Jacobi approach)
         /// </summary>
         public bool UseHiOrderSmoothing = true;
-
-        /// <summary>
-        /// DG degree at low order blocks. This degree is the border, which divides into low order and high order blocks
-        /// </summary>
-        public int OrderOfCoarseSystem = 1;
 
         /// <summary>
         /// If true blocks/cells containing more than one species are completely assigned to low order block solver.
@@ -73,7 +65,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
             precond.config.OrderOfCoarseSystem = this.pMaxOfCoarseSolver;
             precond.config.FullSolveOfCutcells = this.FullSolveOfCutcells;
             precond.config.UseDiagonalPmg = this.UseDiagonalPmg;
-            precond.config.EqualOrder = this.EqualOrder;
 
             var templinearSolve = new SoftGMRES() {
                 MaxKrylovDim = MaxKrylovDim,
@@ -87,4 +78,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
     }
+
+ 
 }

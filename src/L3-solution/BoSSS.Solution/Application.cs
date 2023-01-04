@@ -330,6 +330,8 @@ namespace BoSSS.Solution {
                     Console.WriteLine(@"     ~~            \/__/         \/__/         \/__/         \/__/    ");
                     Console.WriteLine(@"                                                                      ");
 
+                    Console.Write(DateTime.Now);
+                    Console.Write("  ");
                     if (size <= 1)
                         Console.WriteLine("Running with 1 MPI process (single core)");
                     else
@@ -467,16 +469,16 @@ namespace BoSSS.Solution {
             Func<Application<T>> ApplicationFactory) {
 
             m_Logger.Info("Entering _Main routine...");
-
+            Tracer.MemoryInstrumentationLevel = MemoryInstrumentationLevel.GcAndPrivateMemory;
 
             int MPIrank = int.MinValue;
-#if DEBUG
-            {
+//#if DEBUG
+//            {
 
                 
-#else
-            try {
-#endif
+//#else
+//            try {
+//#endif
                 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
                 CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
@@ -541,24 +543,27 @@ namespace BoSSS.Solution {
                 if (_MustFinalizeMPI)
                     FinalizeMPI();
 
-#if DEBUG
-            }
-#else
-            } catch (Exception e) {
-                Console.Error.WriteLine(e.StackTrace);
-                Console.Error.WriteLine();
-                Console.Error.WriteLine();
-                Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
-                Console.Error.WriteLine(e.Message);
-                Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine("========================================");
-                Console.Error.WriteLine();
-                Console.Error.Flush();
-                //System.Environment.Exit(-1);
-            }
-#endif
+//#if DEBUG
+//            }
+//#else
+//            } catch (Exception e) {
+//                // handle exception logging, for automated processing in WorkflowMgm etc.
+//                // make sure the exception is appended to the stderr in session directory!
+
+//                Console.Error.WriteLine(e.StackTrace);
+//                Console.Error.WriteLine();
+//                Console.Error.WriteLine();
+//                Console.Error.WriteLine("========================================");
+//                Console.Error.WriteLine("========================================");
+//                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
+//                Console.Error.WriteLine(e.Message);
+//                Console.Error.WriteLine("========================================");
+//                Console.Error.WriteLine("========================================");
+//                Console.Error.WriteLine();
+//                Console.Error.Flush();
+//                //System.Environment.Exit(-1);
+//            }
+//#endif
         }
 
         /// <summary>
@@ -653,9 +658,9 @@ namespace BoSSS.Solution {
                 // control object
                 // +++++++++++++++++++++
 
+            
                 string JSON = File.ReadAllText(ControlFilePath);
                 object controlObj = AppControl.Deserialize(JSON);
-
                 ctrlV2 = controlObj as T;
 
 
@@ -769,7 +774,7 @@ namespace BoSSS.Solution {
                 // -------
 
                 using (Application<T> app = ApplicationFactory()) {
-                    m_Logger.Info("Running application...");
+                    m_Logger.Info("Running application...");                    
                     app.Init(ctrlV2);
                     app.RunSolverMode();
                     m_Logger.Info("Application finished.");
@@ -796,6 +801,7 @@ namespace BoSSS.Solution {
         /// control object
         /// </param>
         public virtual void Init(AppControl control) {
+
             if (control != null) {
                 this.Control = (T)control;
             } else {
@@ -1150,6 +1156,8 @@ namespace BoSSS.Solution {
                         }
                     }
                 }
+
+                Tracer.MemoryInstrumentationLevel = this.Control.MemoryInstrumentationLevel;
             } else {
                 this.passiveIo = true;
             }
@@ -2020,6 +2028,22 @@ namespace BoSSS.Solution {
         protected TimestepNumber TimeStepNoRestart = null;
 
         /// <summary>
+        /// 
+        /// </summary>
+        public virtual void RunSolverMode() {
+#if RELEASE
+            try {
+#endif
+                this.RunSolverModeInternal();
+#if RELEASE
+            } catch (Exception e) {
+                SolverExceptionLogger.SaveException(e, this);
+                throw;
+            }
+#endif
+        }
+
+        /// <summary>
         /// Runs the application in the "solver"-mode. This method makes
         /// multiple calls to <see cref="RunSolverOneStep"/> method. The
         /// termination behavior is determined by the variables
@@ -2046,7 +2070,7 @@ namespace BoSSS.Solution {
         ///     <item><see cref="Queries.QueryHandler.EvaluateQueries"/></item>
         /// </list>
         /// </remarks>
-        public virtual void RunSolverMode() {
+        private void RunSolverModeInternal() {
 
             // =========================================
             // loading grid, initializing database, etc:
@@ -2215,7 +2239,6 @@ namespace BoSSS.Solution {
                         tr.Info("simulated time: " + dt + " timeunits.");
                         tr.LogMemoryStat();
                         physTime += dt;
-
 
                         if(LsTrk != null) {
                             if(LsTrk.Regions.Time != physTime) {
@@ -2837,6 +2860,19 @@ namespace BoSSS.Solution {
                 IList<string> sessTags = tags.ToList();
                 sessTags.Remove(SessionInfo.NOT_TERMINATED_TAG);
                 this.CurrentSessionInfo.Tags = sessTags;
+
+                if (Tracer.MemtraceFile != null) {
+                    try {
+                        Tracer.MemtraceFile.Flush();
+                        Tracer.MemtraceFile.Close();
+                        Tracer.MemtraceFile.Dispose();
+                    } catch (IOException) {
+
+                    } finally {
+                        Tracer.MemtraceFile = null;
+                    }
+                }
+
             }
             if (m_ResLogger != null) {
                 m_ResLogger.Close();
@@ -3673,10 +3709,11 @@ namespace BoSSS.Solution {
         public static Type[] DllEnforcer() {
             using(var tr = new FuncTrace()) {
                 var types = new Type[] {
-                   typeof(Microsoft.CodeAnalysis.Compilation),
+                    typeof(Microsoft.CodeAnalysis.Compilation),
                     typeof(Microsoft.CodeAnalysis.CSharp.CSharpCompilation),
                     typeof(Microsoft.CodeAnalysis.Scripting.Script),
-                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript)
+                    typeof(Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript),
+                    typeof(System.Configuration.Configuration)
                 };
 
                 foreach(var t in types) {

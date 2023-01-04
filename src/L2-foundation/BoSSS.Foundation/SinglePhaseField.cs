@@ -623,7 +623,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// guess what?
         /// </summary>
-        new public SinglePhaseField CloneAs() {
+        new public virtual SinglePhaseField CloneAs() {
             return (SinglePhaseField)Clone();
         }
 

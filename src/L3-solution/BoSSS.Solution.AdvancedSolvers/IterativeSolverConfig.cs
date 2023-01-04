@@ -16,7 +16,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// If iterative solvers are used, the maximum number of iterations.
         /// </summary>
         [DataMember]
-        public int MaxSolverIterations = 2000;
+        public int MaxSolverIterations = 300;
 
 
         /// <summary>
@@ -88,6 +88,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             var other = o as IterativeSolverConfig;
             if(other == null)
                 return false;
+
+            // equality through reflection 
 
             var t = this.GetType();
             if(!t.Equals(other.GetType()))

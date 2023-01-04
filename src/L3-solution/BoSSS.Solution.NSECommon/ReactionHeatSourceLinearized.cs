@@ -17,13 +17,13 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
+//using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Utils;
-
+using ilPSP.Utils;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -121,8 +121,8 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="HeatReleaseFactor">Heat release computed from the sum of the product of the stoichiometric coefficient, partial heat capacity and molar mass of species alpha for all species. I.e.: sum(alpha = 1.. ns)[v_\alpha cp_alpha M_alpha]. Must be computed locally for non-constant partial heat capacities in later iterations of the code.</param>   
         /// <param name="ReactionRateConstants">0. PreExpFactor/Damköhler number, 1. ActivationTemperature, 2. MassFraction0Exponent, 3. MassFraction1Exponent</param>  
         /// <param name="EoS">MaterialLawCombustion</param>  
-        public ReactionHeatSourceJacobi(double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw_MultipleSpecies EoS, double TRef, double cpRef, bool VariableOneStepParameters) {
-            m_ArgumentOrdering = new string[] { VariableNames.Temperature, VariableNames.MassFraction0, VariableNames.MassFraction1, VariableNames.MassFraction2, VariableNames.MassFraction3 };
+        public ReactionHeatSourceJacobi(double HeatReleaseFactor, double[] ReactionRateConstants, double[] molarmasses, MaterialLaw_MultipleSpecies EoS, double TRef, double cpRef, bool VariableOneStepParameters, int NumberOfReactants) {
+            m_ArgumentOrdering = ArrayTools.Cat(new string[] { VariableNames.Temperature }, VariableNames.MassFractions(NumberOfReactants));// Y4 is not a variable!!!!;
             m_ParameterOrdering = new string[] { "kReact" };
             this.HeatReleaseFactor = HeatReleaseFactor;
             this.ReactionRateConstants = ReactionRateConstants;

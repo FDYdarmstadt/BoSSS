@@ -427,8 +427,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Integration orders of all quadrature rules for volume integrals that have been cached so far,
-        /// see <see cref="GetVolRuleFactory"/>
+        /// Integration orders of all quadrature rules for volume integrals that have been cached so far
         /// </summary>
         public int[] GetCachedVolumeOrders(int levSetIdx) {
             /*
@@ -562,8 +561,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Integration orders of all quadrature rules for volume integrals that have been cached so far,
-        /// see <see cref="GetVolRuleFactory"/>
+        /// Integration orders of all quadrature rules for volume integrals that have been cached so far
         /// </summary>
         public int[] GetCachedSurfaceOrders(int levSetIdx) {
             /*
@@ -634,7 +632,7 @@ namespace BoSSS.Foundation.XDG {
                     QuadRule compQr = new QuadRule();
                     compQr.OrderOfPrecision = qr.OrderOfPrecision;
 
-                    compQr.Nodes = new NodeSet(this.RefElement, L1 + L2, D);
+                    compQr.Nodes = new NodeSet(this.RefElement, L1 + L2, D, true);
                     compQr.Weights = MultidimensionalArray.Create(L1 + L2);
 
 

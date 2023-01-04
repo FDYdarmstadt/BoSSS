@@ -164,7 +164,7 @@ namespace BoSSS.Application.IBM_Solver {
 
             // Solver configuration
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton; // Newton GMRES will be executed if a GMRES linsolver is chosen
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
      
 
             // Timestepping

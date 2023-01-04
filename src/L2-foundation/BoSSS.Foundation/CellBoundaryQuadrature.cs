@@ -203,7 +203,7 @@ namespace BoSSS.Foundation.Quadrature {
                 for (int iFace = 0; iFace < NoOfFaces; iFace++) {
                     int Ne = NodesPerFace[iFace];
                     if(Ne > 0)
-                        NodesForFace[iFace] = new NodeSet(RefElmCell, Nodes.ExtractSubArrayShallow(new int[] { n, 0 }, new int[] { n + Ne - 1, D - 1 }));
+                        NodesForFace[iFace] = new NodeSet(RefElmCell, Nodes.ExtractSubArrayShallow(new int[] { n, 0 }, new int[] { n + Ne - 1, D - 1 }), true);
                     n += Ne;
                 }
                 Debug.Assert(n == N);

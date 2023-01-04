@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,8 +15,10 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.IO;
+using BoSSS.Solution;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
+using ilPSP.Tracing;
 using ilPSP.Utils;
 using Newtonsoft.Json;
 using System;
@@ -38,64 +40,93 @@ namespace BoSSS.Application.BoSSSpad {
         /// <paramref name="sessions"/> in one table.
         /// </summary>
         public static DataTable GetSessionTable(this IEnumerable<ISessionInfo> sessions, Tuple<string, Func<ISessionInfo, object>>[] AdditionalColums = null) {
+            using (var tr = new FuncTrace()) {
+                // dbg_launch();
 
-            Dictionary<string, object[]> Ret = new Dictionary<string, object[]>();
+                Dictionary<string, object[]> Ret = new Dictionary<string, object[]>();
+                int SScount = sessions.Count();
+                tr.Info("got" + SScount + " sessions");
 
-            for (int iSess = 0; iSess < sessions.Count(); iSess++) {
-                var SS = sessions.ElementAt(iSess);
-                var kq = SS.KeysAndQueries.ToList();
+                for (int iSess = 0; iSess < SScount; iSess++) {
+                    var SS = sessions.ElementAt(iSess);
+                    tr.Info("Opening " + iSess + " of " + SScount + " session " + SS);
+                    var kq = SS.KeysAndQueries.ToList();
 
-                // add additional columns
-                kq.Add(new KeyValuePair<string, object>("Session", SS));
-                kq.Add(new KeyValuePair<string, object>("RegularTerminated", !SS.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)));
+                    // add additional columns
+                    kq.Add(new KeyValuePair<string, object>("Session", SS));
+                    kq.Add(new KeyValuePair<string, object>("RegularTerminated", !SS.Tags.Contains(SessionInfo.NOT_TERMINATED_TAG)));
 
-                if(AdditionalColums != null) {
-                    foreach(var t in AdditionalColums) {
-                        object val;
-                        try {
-                            val = t.Item2(SS);
-                        } catch(Exception) {
-                            val = null;
+                    if (AdditionalColums != null) {
+                        foreach (var t in AdditionalColums) {
+                            tr.Info("Adding additional column: " + t.Item1);
+                            object val;
+                            try {
+                                val = t.Item2(SS);
+                            } catch (Exception) {
+                                val = null;
+                            }
+                            tr.Info("Value for column: " + t.Item1 + " is " + (val??"null"));
+
+                            if (kq.Where(kv => kv.Key == t.Item1).Count() > 0) {
+                                string addInfo;
+                                try {
+                                    addInfo = $": '{t.Item1}' == {SS.KeysAndQueries[t.Item1]}";
+                                } catch (Exception) {
+                                    addInfo = "";
+                                }
+                                throw new NotSupportedException($"Name of additional column '{t.Item1}' is not unique; it already appears in the 'KeysAndQueries' of session '{SS.ToString()}'{addInfo}.");
+                            } else {
+                                kq.Add(new KeyValuePair<string, object>(t.Item1, val));
+                            }
                         }
-                        kq.Add(new KeyValuePair<string, object>(t.Item1, val));
+
                     }
+
+
+                    // convert to table
+                    foreach (var kv in kq) {
+                        string ColumnName = kv.Key;
+                        object ValueInCol = kv.Value;
+
+                        if (Ret.ContainsKey(ColumnName)) {
+                            object[] Column = Ret[ColumnName];
+                            Debug.Assert(Column.Length == iSess);
+                            Array.Resize(ref Column, Column.Length + 1);
+                            Column[iSess] = ValueInCol;
+                            Ret[ColumnName] = Column;
+                        } else {
+                            object[] newColumn = new object[iSess + 1];
+                            newColumn[iSess] = ValueInCol;
+                            Ret.Add(ColumnName, newColumn);
+                        }
+                    }
+
+                    foreach (var kv in Ret.ToArray()) {
+                        string ColumnName = kv.Key;
+                        object[] Column = kv.Value;
+
+                        Debug.Assert((Column.Length == iSess) || (Column.Length == iSess + 1));
+
+                        if (Column.Length == iSess) {
+                            Array.Resize(ref Column, Column.Length + 1);
+                            Ret[ColumnName] = Column;
+                        }
+                    }
+
                 }
 
 
-                // convert to table
-                foreach (var kv in kq) {
-                    string ColumnName = kv.Key;
-                    object ValueInCol = kv.Value;
-
-                    if (Ret.ContainsKey(ColumnName)) {
-                        object[] Column = Ret[ColumnName];
-                        Debug.Assert(Column.Length == iSess);
-                        Array.Resize(ref Column, Column.Length + 1);
-                        Column[iSess] = ValueInCol;
-                        Ret[ColumnName] = Column;
-                    } else {
-                        object[] newColumn = new object[iSess + 1];
-                        newColumn[iSess] = ValueInCol;
-                        Ret.Add(ColumnName, newColumn);
-                    }
-                }
-
-                foreach (var kv in Ret.ToArray()) {
-                    string ColumnName = kv.Key;
-                    object[] Column = kv.Value;
-
-                    Debug.Assert((Column.Length == iSess) || (Column.Length == iSess + 1));
-
-                    if (Column.Length == iSess) {
-                        Array.Resize(ref Column, Column.Length + 1);
-                        Ret[ColumnName] = Column;
-                    }
-                }
-
+                return Ret.ToDataTable();
             }
+        }
 
-
-            return Ret.ToDataTable();
+        /// <summary>
+        /// Load all exceptions, logged for the selected sessions
+        /// </summary>
+        /// <param name="sessions"></param>
+        /// <returns></returns>
+        public static SolverExceptionLogger.ExceptionDataSet GetExceptionTable(this IEnumerable<ISessionInfo> sessions) {
+            return SolverExceptionLogger.LoadExceptions(sessions);
         }
 
         /// <summary> 
@@ -424,7 +455,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
-        /// Stores Table in JSON-File
+        /// Loads Table from JSON-File
         /// </summary>
         static public DataTable LoadFromFile(string filePath) {
             string s = File.ReadAllText(filePath);

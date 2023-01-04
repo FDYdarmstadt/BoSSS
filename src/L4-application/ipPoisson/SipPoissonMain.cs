@@ -52,16 +52,6 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_gmres_levelpmg);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
-            //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
-            //FinalizeMPI();
-            //return;
-
             
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
@@ -332,7 +322,8 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
-                 if (Control.ExactSolution_provided) {
+
+                if (Control.ExactSolution_provided) {
                     Tex.Clear();
                     Tex.ProjectField(this.Control.InitialValues_Evaluators["Tex"]);
 

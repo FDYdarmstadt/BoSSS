@@ -510,8 +510,9 @@ namespace BoSSS.Solution.NSECommon {
     public class SipViscosity_Variable : SipViscosityNewBase, INonlinVolumeForm_GradV,
         INonlinEdgeForm_GradV,
         INonlinEdgeForm_V {
+
         /// <summary>
-        /// ctor; parameter documentation see <see cref="swipViscosityBase.swipViscosityBase"/>.
+        /// ctor; parameter documentation see <see cref="SipViscosityNewBase.SipViscosityNewBase"/>.
         /// </summary>
         public SipViscosity_Variable(double _penalty, int iComp, int D, ViscosityTermsSwitch myviscosityTerms, IncompressibleBoundaryCondMap bcmap,
                                    ViscosityOption _ViscosityMode, double constantViscosityValue = double.NaN, double reynolds = double.NaN, MaterialLaw EoS = null, bool ignoreVectorized = false)

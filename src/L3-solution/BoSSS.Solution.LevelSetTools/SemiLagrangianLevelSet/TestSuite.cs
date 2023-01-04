@@ -44,7 +44,7 @@ namespace BoSSS.Application.SemiLagrangianLevelSetTestSuite
 
             _Main(args, true,
                 delegate () {
-                    //Debugger.Launch();
+                    // dbg_launch();
                     return new TestSuite();
                 });
         }

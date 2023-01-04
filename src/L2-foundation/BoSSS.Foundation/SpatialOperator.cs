@@ -471,6 +471,8 @@ namespace BoSSS.Foundation {
             } else {
                 m_ParameterVar = new string[0];
             }
+            // foreach (var elem in m_ParameterVar)
+            //     Console.WriteLine(elem);
 
             m_CodomainVar = new string[__CoDomainVar.Count];
             for(int i = 0; i < m_CodomainVar.Length; i++) {
@@ -1108,6 +1110,14 @@ namespace BoSSS.Foundation {
                     DomainMapping = DomainVarMap;
                     m_Parameters = (ParameterMap != null) ? ParameterMap.ToArray() : new DGField[0];
                     if(m_Parameters.Length != owner.ParameterVar.Count) {
+                        Console.WriteLine("m_Parameters: " + m_Parameters.Length);
+                        foreach (var elem in m_Parameters){
+                            Console.WriteLine(elem.Identification);
+                        }
+                        Console.WriteLine("owner.ParameterVar: " + owner.ParameterVar.Count);
+                        foreach (var elem in owner.ParameterVar){
+                            Console.WriteLine(elem);
+                        }
                         throw new ArgumentException("wrong number of parameter variables provided.");
                     }
 
@@ -2203,7 +2213,7 @@ namespace BoSSS.Foundation {
                         if(DeadlockWatch >= 1000)
                             throw new ApplicationException("Deadlock in parallel coloring.");
                         continue;
-                        //Debugger.Launch();
+                        // dbg_launch();
                     }
 
 
@@ -2214,7 +2224,7 @@ namespace BoSSS.Foundation {
 
                     if(gDat.MpiSize > 1) {
 
-                        //Debugger.Launch();
+                        // dbg_launch();
 
                         var ExchData = new Dictionary<int, List<Tuple<long, long>>>();
 
@@ -2394,7 +2404,7 @@ namespace BoSSS.Foundation {
 
                     if(gDat.MpiSize > 1) {
 
-                        //Debugger.Launch();
+                        // dbg_launch();
 
                         var ExchData = new Dictionary<int, List<Tuple<int, int>>>();
 
@@ -2626,7 +2636,7 @@ namespace BoSSS.Foundation {
                 for(int iCellPass = 0; iCellPass < ColorLists.Length; iCellPass++) { // loop over all cell lists...
                     int[] CellList = this.ColorLists[iCellPass];
                     int[] ExtCellList = this.ExternalColorLists[iCellPass];
-
+                    
                     int[] CoordCounter = new int[JE];
                     int[] FieldCounter = new int[JE];
 
@@ -2796,8 +2806,8 @@ namespace BoSSS.Foundation {
                                     continue; // external cell; should be treated on other proc.
 
 
-                                int i0Row = domMap.LocalUniqueCoordinateIndex(0, jRow, 0);
-                                int iERow = domMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
+                                int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
+                                int iERow = codMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
 
                                 var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow, iECol - i0Col });
 
@@ -2959,6 +2969,40 @@ namespace BoSSS.Foundation {
             JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
             JacobianOp.Commit();
             return JacobianOp;
+        }
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.IsValidDomainDegreeCombination"/>
+        /// </summary>
+        public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable) {
+            if (!this.IsCommitted)
+                throw new InvalidOperationException("Invalid prior to calling Commit().");
+
+            if (DomainDegreesPerVariable.Length != this.DomainVar.Count)
+                throw new ArgumentException("Mismatch between length of input and number of domain variables.");
+            if (CodomainDegreesPerVariable.Length != this.CodomainVar.Count)
+                throw new ArgumentException("Mismatch between length of input and number of codomain variables.");
+
+            int i = 0;
+            foreach(var cod in this.CodomainVar) {
+                foreach(var comp in this.EquationComponents[cod]) {
+                    if(comp is IDGdegreeConstraint dgconstr) {
+                        int[] argDegrees;
+                        if (comp.ArgumentOrdering != null)
+                            argDegrees = comp.ArgumentOrdering.Select(argName => DomainDegreesPerVariable[this.DomainVar.IndexWhere(domName => domName == argName)]).ToArray();
+                        else
+                            argDegrees = new int[0];
+
+                        if (dgconstr.IsValidDomainDegreeCombination(argDegrees, CodomainDegreesPerVariable[i]) == false)
+                            return false;
+                    } 
+                }
+
+                i++;
+            }
+
+
+            return true;
         }
 
         /// <summary>

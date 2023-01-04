@@ -22,6 +22,7 @@ using System.IO;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Collections.Generic;
 //using Microsoft.AspNetCore.Html;
 
 namespace BoSSS.Solution.Gnuplot {
@@ -335,6 +336,37 @@ namespace BoSSS.Solution.Gnuplot {
             return gp;
         }
 
+        /// <summary>
+        /// Multiple plot windows:
+        /// Converts <see cref="Plot2Ddata"/> into an alive Gnuplot object.
+        /// <param name="layout"> the entries corresponds to the elements in the given List<Plot2Ddata </param>
+        /// </summary>
+        public static Gnuplot ToGnuplot(this List<Plot2Ddata> _2DData, int[,] layout = null) {
+
+            if(layout == null) {
+                layout = new int[_2DData.Count, 1];
+                for(int iRow = 0; iRow < layout.GetLength(0); iRow++) {
+                    layout[iRow, 0] = iRow;
+                }
+            }
+   
+
+            Gnuplot gp = new Gnuplot();
+
+            gp.SetMultiplot(layout.GetLength(0), layout.GetLength(1));
+           
+            for(int iRow = 0; iRow < layout.GetLength(0); iRow++) {
+                for(int iCol = 0; iCol < layout.GetLength(1); iCol++) {
+                    int elem = layout[iRow, iCol];
+                    if(elem >= 0 && elem < _2DData.Count) {
+                        gp.SetSubPlot(iRow, iCol);
+                        _2DData.ElementAt(elem).ToGnuplot(gp);
+                    }
+                }
+            }
+            return gp;
+        }
+
 
         /// <summary>
         /// <see cref="Plot2Ddata"/> into an alive Gnuplot object and executes Gnuplot interactively
@@ -373,7 +405,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// plot to a PNG file ('set terminal png').
         /// </summary>
         static public void SaveToGIF(this Plot2Ddata[,] _2DData, string OutfileName, GnuplotPageLayout layout = null) {
-            _2DData.ToGnuplot(layout).SaveToGIF(OutfileName);
+            using (var gp = _2DData.ToGnuplot(layout)) {
+                gp.SaveToGIF(OutfileName);
+            }
         }
 
         /// <summary>
@@ -385,7 +419,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="yRes">Vertical resolution in pixels.</param>
         /// <param name="OutfileName">Path/filename for output PNG.</param>
         static public void SaveToGIF(this Plot2Ddata _2DData, string OutfileName, int xRes = 800, int yRes = 600) {
-            _2DData.ToGnuplot().SaveToGIF(OutfileName, xRes, yRes);
+            using (var gp = _2DData.ToGnuplot()) {
+                gp.SaveToGIF(OutfileName, xRes, yRes);
+            }
         }
 
         /// <summary>
@@ -393,7 +429,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// plot to a PNG file ('set terminal svg').
         /// </summary>
         static public void SaveToSVG(this Plot2Ddata[,] _2DData, string OutfileName, GnuplotPageLayout layout = null) {
-            _2DData.ToGnuplot(layout).SaveToSVG(OutfileName);
+            using (var gp = _2DData.ToGnuplot(layout)) {
+                gp.SaveToSVG(OutfileName);
+            }
         }
 
         /// <summary>
@@ -405,7 +443,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="yRes">Vertical resolution in pixels.</param>
         /// <param name="OutfileName">Path/filename for output PNG.</param>
         static public void SaveToSVG(this Plot2Ddata _2DData, string OutfileName, int xRes = 800, int yRes = 600) {
-            _2DData.ToGnuplot().SaveToSVG(OutfileName, xRes, yRes);
+            using (var gp = _2DData.ToGnuplot()) {
+                gp.SaveToSVG(OutfileName, xRes, yRes);
+            }
         }
     }
 }

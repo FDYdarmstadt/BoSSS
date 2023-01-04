@@ -198,7 +198,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 optimizedRule.Nodes = new NodeSet(
                     this.RefElement,
                     optimizedRule.Weights.Length,
-                    LevelSetData.GridDat.SpatialDimension);
+                    LevelSetData.GridDat.SpatialDimension,
+                    true);
                 //optimizedRule.Nodes.LockForever();
 
                 if (optimizedRule.NoOfNodes == 0) {
@@ -241,7 +242,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                     NodeSet irgendwelcheNodes = new NodeSet(this.RefElement,
                         optimizedRule.Nodes.ExtractSubArrayShallow(
                            new int[] { noOfProcessedNodes, 0 },
-                           new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, optimizedRule.SpatialDim - 1 }));
+                           new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, optimizedRule.SpatialDim - 1 }), 
+                        false);
                     MultidimensionalArray phiValues = EvaluatePhis(irgendwelcheNodes, cell, e);
                     
 
@@ -533,7 +535,8 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         newNodes.RefElement,
                         CurrentRule.Nodes.ExtractSubArrayShallow(
                             new int[] { noOfProcessedNodes, 0 },
-                            new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, CurrentRule.SpatialDim - 1 }));
+                            new int[] { noOfProcessedNodes + noOfNodesOnEdge - 1, CurrentRule.SpatialDim - 1 }), 
+                        true);
                     noOfProcessedNodes += noOfNodesOnEdge;
                     nodeSetIndex++;
                 }
