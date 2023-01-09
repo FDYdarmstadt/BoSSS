@@ -20,6 +20,7 @@ using BoSSS.Platform;
 using BoSSS.Platform.LinAlg;
 using ilPSP.Utils;
 using ilPSP;
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.XDG {
     
@@ -277,9 +278,12 @@ namespace BoSSS.Foundation.XDG {
             }
             set {
                 if (j < 0 || j >= m_NoOfCells)
-                    throw new IndexOutOfRangeException();
+                {
+                    Debugger.Launch();
+                    throw new IndexOutOfRangeException($"cell index {j} out-of-range; must be between 0 and {m_NoOfCells}.");
+                }
                 if (n < 0 || n >= m_NMax)
-                    throw new IndexOutOfRangeException();
+                    throw new IndexOutOfRangeException($"mode index {n} out-of-range; must be between 0 and {m_NMax}.");
 
                 if (n < m_NMin) {
                     m_BaseStorage[IndBase(j, n)] = value;
