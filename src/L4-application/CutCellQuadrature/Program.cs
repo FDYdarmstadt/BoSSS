@@ -159,6 +159,8 @@ namespace CutCellQuadrature {
         static void Main(string[] args) {
             InitMPI(args);
 
+            Test3DSphereVolume();
+
             foreach (var testCase in testCases) {
 
                 Program app = new Program(testCase);
