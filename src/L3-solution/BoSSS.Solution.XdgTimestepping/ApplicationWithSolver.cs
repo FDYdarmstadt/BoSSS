@@ -410,7 +410,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         /// <summary>
-        /// in case of AMR previous timestep may live on an invalid grid, therefore we need to save the fields used for restarting the timestepper on the new valid grid.
+        /// in case of AMR previous time steps may live on an invalid grid, therefore we need to save the fields used for restarting the timestepper on the new valid grid.
         /// </summary>
         /// <param name="timeStepInt"></param>
         /// <param name="physTime"></param>
@@ -440,7 +440,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     for (int ts = 1; ts < S - BurstIndex; ts++) {
 
                         var tsi = saveRestartInfoToDatabase(physTime, timeStepInt, ts);
-                        //Console.WriteLine($"timestep: {tsi} saved");
+                        Console.WriteLine($"timestep: {tsi} saved");
                         adaptedRestartInfo.Add(Tuple.Create(timeStepInt - ts, tsi, false));
 
                     }

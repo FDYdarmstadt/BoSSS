@@ -2176,7 +2176,7 @@ namespace BoSSS.Solution {
                     if(LsTrk != null) {
                         if (LsTrk.Regions.Time != physTime) {
                             LsTrk.UpdateTracker(physTime);
-                            LsTrk.PushStacks();
+                            //LsTrk.PushStacks();
                         }
                     }
 

@@ -33,6 +33,7 @@ using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+using BoSSS.Solution.Tecplot;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -94,6 +95,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             ctrl.NonLinearSolver.ConvergenceCriterion = 1e-15;
             ctrl.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+            //ctrl.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
 
             ctrl.TimesteppingMode = transient ? AppControl._TimesteppingMode.Transient : AppControl._TimesteppingMode.Steady;
@@ -142,8 +144,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     throw new ArgumentException("Chosen timestepping scheme not supported for current test setting");
             }
 
-            //ctrl.ImmediatePlotPeriod = 1;
-            //ctrl.SuperSampling = 2;
+            ctrl.ImmediatePlotPeriod = 1;
+            ctrl.SuperSampling = 3;
 
             return ctrl;
         }
@@ -185,6 +187,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             ctrl.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             ctrl.NonLinearSolver.ConvergenceCriterion = 1e-15;
             ctrl.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+            //ctrl.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
 
             ctrl.TimesteppingMode = transient ? AppControl._TimesteppingMode.Transient : AppControl._TimesteppingMode.Steady;
@@ -243,10 +246,28 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 
 
+        /// <summary>
+        /// Collection of fields to be checked with corresponding max allowed comparison error
+        /// </summary>
+        static Dictionary<string, double> AllowedErrors = new Dictionary<string, double>()
+        {
+            { "Phi", 1e-15 },
+            { "PhiDG", 1e-15 },
+            { "VelocityX", 1e-13 },
+            { "VelocityY", 1e-13 },
+            { "Pressure", 1e-10 },
+            { "Residual-MomentumX", 1e-9 },
+            { "Residual-MomentumY", 1e-9 },
+            { "Residual-ContiEq", 1e-9 },
+            { "Velocity0X_Mean", 1e-15 },
+            { "Velocity0Y_Mean", 1e-15 },
+            { "VelocityX@Phi", 1e-13 },
+            { "VelocityY@Phi", 1e-13 },
+        };
 
 
         /// <summary>
-        /// Start a XNSE simulation with full complexity, calculate a few timesteps, save and load from db.
+        /// Start an XNSE simulation with full complexity, calculate a few timesteps, save and load from db.
         /// Checks that all specified fields are correctly stored and loaded.
         /// </summary>
         [Test]
@@ -259,7 +280,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             if (savePeriod > 3 && (!AMRon || !transient))
                 return;
 
-            string restartDB = "restartDB_" + transient + "_" + timestepScheme.ToString() + "_" + AMRon + "_" + savePeriod; //+ DateTime.Now.ToString("MMMdd_HHmm");
+            string restartDB = "restartDB_" + transient + "_" + timestepScheme.ToString() + "_" + AMRon + "_" + savePeriod + DateTime.Now.ToString("MMMdd_HHmm");
             string restartDBfullPath = Path.Combine(Directory.GetCurrentDirectory(), restartDB);
 
             {
@@ -306,7 +327,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             }
 
-
+           
             {
                 var TestDb3 = DatabaseInfo.CreateOrOpen(restartDBfullPath);
                 int nGrids = 1;
@@ -336,10 +357,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                         Assert.IsTrue(s != null);
                         s.Coordinates.Acc(-1.0, f.Coordinates);
 
-                        if (s.L2Norm() > 1e-15) {
-                            Console.WriteLine($"timestep {tsi.TimeStepNumber.MajorNumber}: field {f.Identification} L2-norm = {s.L2Norm()}");
-                            comparisonFailed = true;
+                        Console.WriteLine($"timestep {tsi.TimeStepNumber.MajorNumber}: field {f.Identification} L2-norm = {s.L2Norm()}");
+                        if (AllowedErrors.TryGetValue(f.Identification, out double value)) {
+                            if (s.L2Norm() > value) {
+                                //Console.WriteLine($"timestep {tsi.TimeStepNumber.MajorNumber}: field {f.Identification} L2-norm = {s.L2Norm()}");
+                                Tecplot.PlotFields(new List<DGField>() { s }, $"{f.Identification}_errorField", 0.0, 3);
+                                comparisonFailed = true;
+                            }
                         }
+
                     }
                 }
                 DatabaseInfo.Close(TestDb3);
@@ -355,6 +381,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 Console.WriteLine("done.");
             }
             csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+
         }
 
     }

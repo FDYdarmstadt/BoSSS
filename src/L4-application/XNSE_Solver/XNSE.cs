@@ -75,11 +75,11 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
 
-            //InitMPI();
-            //DeleteOldPlotFiles();
-            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.RotatingCubeTest(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, Newton.GlobalizationOption.None, IncompressibleBcType.Pressure_Outlet);
-            //BoSSS.Application.XNSE_Solver.Tests.RestartTests.RestartTest(true, TimeSteppingScheme.ImplicitEuler, false, 3);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me");
+            InitMPI();
+            DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.RotatingCubeTest(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, Newton.GlobalizationOption.None, IncompressibleBcType.Pressure_Outlet);
+            BoSSS.Application.XNSE_Solver.Tests.RestartTests.RestartTest(true, TimeSteppingScheme.BDF3, true, 4);
+            NUnit.Framework.Assert.IsTrue(false, "remove me");
 
 
             /*

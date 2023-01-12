@@ -289,6 +289,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         void PushStack() {
 
+            Console.WriteLine("before XdgBDFTimestepping.PushStacks(): m_PopulatedStackDepth = " + m_PopulatedStackDepth);
 
             m_PopulatedStackDepth++;
             if (m_PopulatedStackDepth > m_TSCchain[0].S)
@@ -349,6 +350,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_Stack_MassMatrix[0] != null);
                 Debug.Assert(m_PrecondMassMatrix != null);
             }
+
+            Console.WriteLine("after XdgBDFTimestepping.PushStacks(): m_PopulatedStackDepth = " + m_PopulatedStackDepth);
 
         }
 
@@ -476,7 +479,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
 
                     // reset the internal state of the LevelSetTracker
-                    m_LsTrk.ResetCurrentTimeLevel(time);    
+                    m_LsTrk.ResetCurrentTimeLevel(time);
+
+                    Console.WriteLine("MultiInit - time step set");
 
                     // re-sort mass matrices
                     //{
