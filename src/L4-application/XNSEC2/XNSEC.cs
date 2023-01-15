@@ -39,9 +39,9 @@ namespace BoSSS.Application.XNSEC {
             DeleteOldTextFiles();
             //Debugger.Launch();
 
-            //NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
+            //NUnitTest.XDG_PSEUDO1D_EVAPORATION_TEST();
             //NUnitTest.CavityNaturalConvection();
-            NUnitTest.XDG_DROPLET_COMBUSTION_TEST();
+            //NUnitTest.XDG_DROPLET_COMBUSTION_TEST();
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_pseudo2dCombustion_MixtureFraction()", "--delplt" }, false, delegate () {
@@ -51,6 +51,7 @@ namespace BoSSS.Application.XNSEC {
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //-n 8 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_DropletCombustion()"
+            System.Environment.Exit(111);
 
             bool MixtureFractionCalculation = false;
             try {

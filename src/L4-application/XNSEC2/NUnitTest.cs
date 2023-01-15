@@ -981,11 +981,11 @@ namespace BoSSS.Application.XNSEC {
             Console.WriteLine("Full calculation done.");
         }
         /// <summary>
-        /// 
+        /// pseudo 1D combustion test
         /// </summary>
         /// <param name="dg"></param>
         /// <param name="ncells"></param>
-        //[Test]
+        [Test]
         public static void XDG_PSEUDO1D_COMBUSTION_TEST(int dg = 3, int ncells = 4) {
             string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
             if (basepath.IsEmptyOrWhite())
@@ -1018,17 +1018,47 @@ namespace BoSSS.Application.XNSEC {
                 p.RunSolverMode();
 
                 var temperatureXdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
+                var massFraction0Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction0).SingleOrDefault());
+                var massFraction1Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction1).SingleOrDefault());
+
                 var temp = temperatureXdg.ProjectToSinglePhaseField(4);
+                var mF0 = massFraction0Xdg.ProjectToSinglePhaseField(4);
+                var mF1 = massFraction1Xdg.ProjectToSinglePhaseField(4);
+
                 double minT; double maxT;
+                double minMF0; double maxMF0;
+                double minMF1; double maxMF1;
                 temp.GetExtremalValues(out minT, out maxT);
+                mF0.GetExtremalValues(out minMF0, out maxMF0);
+                mF1.GetExtremalValues(out minMF1, out maxMF1);
+
                 Console.WriteLine("Maximum reached temperature is {0}K", maxT);
-                if (maxT < 1.1) {
-                    throw new Exception("");
+                Console.WriteLine("Maximum reached massfraction0 is {0}", maxMF0);
+                Console.WriteLine("Maximum reached massfraction1 is {0}", maxMF1);
+
+                if (maxT < 2.6 | maxT > 2.75) {
+                    throw new Exception("Wrong value of maximum temperature");
+                }
+                if (minT < 0.95 | minT > 1.05) {
+                    throw new Exception("Wrong value of mimimum temperature");
+                }
+
+                if (maxMF0 < 0.95 | maxMF0 > 1.05) {
+                    throw new Exception("Wrong value of maximum massfraction0");
+                }
+
+                if (maxMF1 < 0.95 | maxMF1 > 1.05) {
+                    throw new Exception("Wrong value of maximum massfraction1");
                 }
             }
             Console.WriteLine("Full calculation done.");
         }
-
+        /// <summary>
+        /// 2D droplet combustion test with fixed mass flux
+        /// </summary>
+        /// <param name="dg"></param>
+        /// <param name="ncells"></param>
+        //[Test]
         public static void XDG_DROPLET_COMBUSTION_TEST(int dg = 2, int ncells = 6) {
             string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
             if (basepath.IsEmptyOrWhite())
@@ -1060,16 +1090,181 @@ namespace BoSSS.Application.XNSEC {
                 p.Init(c);
                 p.RunSolverMode();
 
+
                 var temperatureXdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
+                var massFraction0Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction0).SingleOrDefault());
+                var massFraction1Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction1).SingleOrDefault());
+
                 var temp = temperatureXdg.ProjectToSinglePhaseField(4);
+                var mF0 = massFraction0Xdg.ProjectToSinglePhaseField(4);
+                var mF1 = massFraction1Xdg.ProjectToSinglePhaseField(4);
+
                 double minT; double maxT;
+                double minMF0; double maxMF0;
+                double minMF1; double maxMF1;
                 temp.GetExtremalValues(out minT, out maxT);
+                mF0.GetExtremalValues(out minMF0, out maxMF0);
+                mF1.GetExtremalValues(out minMF1, out maxMF1);
+
                 Console.WriteLine("Maximum reached temperature is {0}K", maxT);
+                Console.WriteLine("Maximum reached massfraction0 is {0}", maxMF0);
+                Console.WriteLine("Maximum reached massfraction1 is {0}", maxMF1);
+                if (maxT < 1.7 | maxT > 1.8) {
+                    throw new Exception("Wrong value of maximum temperature");
+                }
+                if (minT < 0.9 | minT > 1.1) {
+                    throw new Exception("Wrong value of maximum temperature");
+                }
+                if (maxMF0 < 0.95 | maxMF0 > 1.05) {
+                    throw new Exception("Wrong value of maximum massfraction0");
+                }
+
+                if (maxMF1 < 0.95 | maxMF1 > 1.05) {
+                    throw new Exception("Wrong value of maximum massfraction1");
+                }
             }
             Console.WriteLine("Full calculation done.");
         }
 
 
+        /// <summary>
+        /// pseudo 1D evaporation test with fixed mass flux
+        /// </summary>
+        /// <param name="dg"></param>
+        /// <param name="ncells"></param>
+        [Test]
+        public static void XDG_PSEUDO1D_EVAPORATION_TEST(int dg = 3, int ncells = 4) {
+            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            if (basepath.IsEmptyOrWhite())
+                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string path = Path.Combine(basepath, "default_bosss_db_comb23");
+
+            bool alreadyExists = Directory.Exists(path);
+            var db = DatabaseInfo.CreateOrOpen(path);
+
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+
+            if (rank == 0 && alreadyExists) {
+                db.Controller.ClearDatabase();
+            }
+
+            // activate for combustion calculation, if deactivated, only evaporation
+            //using (var p = new XNSEC_MixtureFraction()) {
+            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dEvaporation(dg, ncells, db.Path);
+
+            //    p.Init(c);
+            //    p.RunSolverMode();
+            //}
+
+            Console.WriteLine("Flame sheet calculation done.");
+            using (var p = new XNSEC()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dEvaporation(dg, ncells, db.Path);
+                p.Init(c);
+                p.RunSolverMode();
+
+                var temperatureXdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
+                var massFraction0Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction0).SingleOrDefault());
+                var massFraction1Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction1).SingleOrDefault());
+
+                var temp = temperatureXdg.ProjectToSinglePhaseField(4);
+                var mF0 = massFraction0Xdg.ProjectToSinglePhaseField(4);
+                var mF1 = massFraction1Xdg.ProjectToSinglePhaseField(4);
+
+                double minT; double maxT;
+                double minMF0; double maxMF0;
+                double minMF1; double maxMF1;
+                temp.GetExtremalValues(out minT, out maxT);
+                mF0.GetExtremalValues(out minMF0, out maxMF0);
+                mF1.GetExtremalValues(out minMF1, out maxMF1);
+
+                Console.WriteLine("Maximum reached temperature is {0}K", maxT);
+                if (maxT < 0.95 | maxT > 1.05) {
+                    throw new Exception("Wrong value of maximum temperature");
+                }
+                if (minT < 0.15 | minT > 0.25) {
+                    throw new Exception("Wrong value of mimimum temperature");
+                }
+
+                if (maxMF0 < 0.95 | maxMF0 > 1.05) {
+                    throw new Exception("Wrong value of maximum massfraction0");
+                }
+
+                if (maxMF1 < 0.95 | maxMF1 > 1.05) {
+                    throw new Exception("Wrong value of maximum massfraction0");
+                }
+            }
+            Console.WriteLine("Full calculation done.");
+        }
+
+        /// <summary>
+        /// 2D droplet evaporation test wit fixed mass flux
+        /// </summary>
+        /// <param name="dg"></param>
+        /// <param name="ncells"></param>
+        [Test]
+        public static void XDG_DROPLET_EVAPORATION_TEST(int dg = 2, int ncells = 6) {
+            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            if (basepath.IsEmptyOrWhite())
+                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string path = Path.Combine(basepath, "default_bosss_db_comb23");
+
+            bool alreadyExists = Directory.Exists(path);
+            var db = DatabaseInfo.CreateOrOpen(path);
+
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+
+            if (rank == 0 && alreadyExists) {
+                db.Controller.ClearDatabase();
+            }
+
+            // activate for combustion calculation, if deactivated, only evaporation
+            //using (var p = new XNSEC_MixtureFraction()) {
+            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_Droplet_2dEvaporation(3, 7, db.Path);
+            //    //c.SkipSolveAndEvaluateResidual = true;
+            //    p.Init(c);
+            //    p.RunSolverMode();
+            //}
+
+            Console.WriteLine("Flame sheet calculation done.");
+            using (var p = new XNSEC()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_Droplet_2dEvaporation(3, 7, db.Path);
+                p.Init(c);
+                p.RunSolverMode();
+
+                var temperatureXdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
+                var massFraction0Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction0).SingleOrDefault());
+                var massFraction1Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction1).SingleOrDefault());
+
+                var temp = temperatureXdg.ProjectToSinglePhaseField(4);
+                var mF0 = massFraction0Xdg.ProjectToSinglePhaseField(4);
+                var mF1 = massFraction1Xdg.ProjectToSinglePhaseField(4);
+
+                double minT; double maxT;
+                double minMF0; double maxMF0;
+                double minMF1; double maxMF1;
+                temp.GetExtremalValues(out minT, out maxT);
+                mF0.GetExtremalValues(out minMF0, out maxMF0);
+                mF1.GetExtremalValues(out minMF1, out maxMF1);
+
+                Console.WriteLine("Maximum reached temperature is {0}K", maxT);
+                if (maxT < 0.95 | maxT > 1.05) {
+                    throw new Exception("Wrong value of maximum temperature");
+                }
+
+                if (maxMF0 < 0.95 | maxMF0 > 1.05) {
+                    throw new Exception("Wrong value of maximum massfraction0");
+                }
+
+                if (maxMF1 < 0.15 | maxMF1 > 0.3) {
+                    throw new Exception("Wrong value of maximum massfraction1");
+                }
+            }
+            Console.WriteLine("Full calculation done.");
+        }
 
         /// <summary>
         /// This test checks if the solution obtained with an homotopy strategy for increasing

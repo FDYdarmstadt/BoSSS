@@ -79,7 +79,7 @@ namespace BoSSS.Application.XNSEC {
             Bounds.Add(VariableNames.MassFraction3, new Tuple<double, double>(0.0 - eps, 1.0 + eps));
             C.VariableBounds = Bounds;
 
-            C.NoOfTimesteps = 2; // The steady solution will be calculated again and do AMR
+            C.NoOfTimesteps = 1; // The steady solution will be calculated again and do AMR
             C.myThermalWallType = SIPDiffusionTemperature.ThermalWallType.Adiabatic;
 
             C.UseMixtureFractionsForCombustionInitialization = true;
@@ -184,7 +184,7 @@ namespace BoSSS.Application.XNSEC {
             C.PlotNewtonIterations = false;
             C.ThermalParameters.T_sat = 1.0; // boundary temperature at the interface of the droplet
 
-            C.NonLinearSolver.MaxSolverIterations = 10;
+            C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-7;
             C.ThermalParameters.hVap = 1; // if 0 no evaporation is included. A dummy value 1 is taken to activate the evaporation terms
             C.PhysicalParameters.rho_A = 10.0;
