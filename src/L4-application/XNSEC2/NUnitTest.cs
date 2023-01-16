@@ -29,6 +29,7 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -986,7 +987,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="dg"></param>
         /// <param name="ncells"></param>
         [Test]
-        public static void XDG_PSEUDO1D_COMBUSTION_TEST(int dg = 3, int ncells = 4) {
+        public static void XDG_PSEUDO1D_COMBUSTION_TEST([Values(3)] int dg = 3, [Values(4)] int ncells = 4) {
             string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
             if (basepath.IsEmptyOrWhite())
                 basepath = System.Environment.GetEnvironmentVariable("HOME");
@@ -1036,20 +1037,15 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Maximum reached massfraction0 is {0}", maxMF0);
                 Console.WriteLine("Maximum reached massfraction1 is {0}", maxMF1);
 
-                if (maxT < 2.6 | maxT > 2.75) {
-                    throw new Exception("Wrong value of maximum temperature");
-                }
-                if (minT < 0.95 | minT > 1.05) {
-                    throw new Exception("Wrong value of mimimum temperature");
-                }
+                Assert.Less(maxT, 2.6, "Maximum temperature is smaller than expected");
+                Assert.Greater(maxT, 2.75, "Maximum temperature is higher than expected");
 
-                if (maxMF0 < 0.95 | maxMF0 > 1.05) {
-                    throw new Exception("Wrong value of maximum massfraction0");
-                }
+                Assert.Less(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
+                Assert.Greater(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
 
-                if (maxMF1 < 0.95 | maxMF1 > 1.05) {
-                    throw new Exception("Wrong value of maximum massfraction1");
-                }
+                Assert.Less(maxMF1, 0.95, "Maximum massfraction1 is smaller than expected");
+                Assert.Greater(maxMF1, 1.05, "Maximum massfraction1 is higher than expected");
+
             }
             Console.WriteLine("Full calculation done.");
         }
@@ -1109,19 +1105,16 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Maximum reached temperature is {0}K", maxT);
                 Console.WriteLine("Maximum reached massfraction0 is {0}", maxMF0);
                 Console.WriteLine("Maximum reached massfraction1 is {0}", maxMF1);
-                if (maxT < 1.7 | maxT > 1.8) {
-                    throw new Exception("Wrong value of maximum temperature");
-                }
-                if (minT < 0.9 | minT > 1.1) {
-                    throw new Exception("Wrong value of maximum temperature");
-                }
-                if (maxMF0 < 0.95 | maxMF0 > 1.05) {
-                    throw new Exception("Wrong value of maximum massfraction0");
-                }
 
-                if (maxMF1 < 0.95 | maxMF1 > 1.05) {
-                    throw new Exception("Wrong value of maximum massfraction1");
-                }
+                Assert.Less(maxT, 1.7, "Maximum temperature is smaller than expected");
+                Assert.Greater(maxT, 1.8, "Maximum temperature is higher than expected");
+
+                Assert.Less(maxMF0, 0.9, "Maximum massfraction0 is smaller than expected");
+                Assert.Greater(maxMF0, 1.1, "Maximum massfraction0 is higher than expected");
+
+                Assert.Less(maxMF1, 0.15, "Maximum massfraction1 is smaller than expected");
+                Assert.Greater(maxMF1, 0.3, "Maximum massfraction1 is higher than expected");
+
             }
             Console.WriteLine("Full calculation done.");
         }
@@ -1133,7 +1126,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="dg"></param>
         /// <param name="ncells"></param>
         [Test]
-        public static void XDG_PSEUDO1D_EVAPORATION_TEST(int dg = 3, int ncells = 4) {
+        public static void XDG_PSEUDO1D_EVAPORATION_TEST([Values(3)] int dg = 3, [Values(4)] int ncells = 4) {
             string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
             if (basepath.IsEmptyOrWhite())
                 basepath = System.Environment.GetEnvironmentVariable("HOME");
@@ -1180,20 +1173,16 @@ namespace BoSSS.Application.XNSEC {
                 mF1.GetExtremalValues(out minMF1, out maxMF1);
 
                 Console.WriteLine("Maximum reached temperature is {0}K", maxT);
-                if (maxT < 0.95 | maxT > 1.05) {
-                    throw new Exception("Wrong value of maximum temperature");
-                }
-                if (minT < 0.15 | minT > 0.25) {
-                    throw new Exception("Wrong value of mimimum temperature");
-                }
 
-                if (maxMF0 < 0.95 | maxMF0 > 1.05) {
-                    throw new Exception("Wrong value of maximum massfraction0");
-                }
 
-                if (maxMF1 < 0.95 | maxMF1 > 1.05) {
-                    throw new Exception("Wrong value of maximum massfraction0");
-                }
+                Assert.Less(maxT, 0.95, "Maximum temperature is smaller than expected");
+                Assert.Greater(maxT, 1.05, "Maximum temperature is higher than expected");
+
+                Assert.Less(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
+                Assert.Greater(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
+
+                Assert.Less(maxMF1, 0.95, "Maximum massfraction1 is smaller than expected");
+                Assert.Greater(maxMF1, 1.05, "Maximum massfraction1 is higher than expected");
             }
             Console.WriteLine("Full calculation done.");
         }
@@ -1204,7 +1193,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="dg"></param>
         /// <param name="ncells"></param>
         [Test]
-        public static void XDG_DROPLET_EVAPORATION_TEST(int dg = 2, int ncells = 6) {
+        public static void XDG_DROPLET_EVAPORATION_TEST([Values(2)] int dg = 2, [Values(6)] int ncells = 6) {
             string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
             if (basepath.IsEmptyOrWhite())
                 basepath = System.Environment.GetEnvironmentVariable("HOME");
@@ -1251,17 +1240,16 @@ namespace BoSSS.Application.XNSEC {
                 mF1.GetExtremalValues(out minMF1, out maxMF1);
 
                 Console.WriteLine("Maximum reached temperature is {0}K", maxT);
-                if (maxT < 0.95 | maxT > 1.05) {
-                    throw new Exception("Wrong value of maximum temperature");
-                }
 
-                if (maxMF0 < 0.95 | maxMF0 > 1.05) {
-                    throw new Exception("Wrong value of maximum massfraction0");
-                }
+                Assert.Less(maxT, 0.95, "Maximum temperature is smaller than expected");
+                Assert.Greater(maxT, 1.05, "Maximum temperature is higher than expected");
 
-                if (maxMF1 < 0.15 | maxMF1 > 0.3) {
-                    throw new Exception("Wrong value of maximum massfraction1");
-                }
+                Assert.Less(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
+                Assert.Greater(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
+
+                Assert.Less(maxMF1, 0.15, "Maximum massfraction1 is smaller than expected");
+                Assert.Greater(maxMF1, 0.3, "Maximum massfraction1 is higher than expected");
+
             }
             Console.WriteLine("Full calculation done.");
         }

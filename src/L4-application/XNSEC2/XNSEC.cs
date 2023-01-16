@@ -35,6 +35,8 @@ namespace BoSSS.Application.XNSEC {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
             //InitMPI();
+            //BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_EVAPORATION_TEST();
+
             //DeleteOldPlotFiles();
             //DeleteOldTextFiles();
             //Debugger.Launch();
