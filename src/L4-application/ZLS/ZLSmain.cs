@@ -14,53 +14,37 @@ namespace ZwoLevelSetSolver {
     class ZLSmain {
 
         static void Main(string[] args) {
-            BoSSS.Solution.Application.InitMPI();
-            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            //BoSSS.Solution.Application.InitMPI();
+            //BoSSS.Solution.Application.DeleteOldPlotFiles();
 
             RunSolver(args);
             //ConditionNumberScaling();
             //Tests.SolidOnlyTests.RotationConvergenceTest(2);
+            //ZwoLevelSetSolver.Tests.SolidOnlyTests.RotationConvergenceTest(2);
 
             //ParameterSweep();
-            BoSSS.Solution.Application.FinalizeMPI();
+            //BoSSS.Solution.Application.FinalizeMPI();
         }
 
         static void RunSolver(string[] args) {
-            /*
-            const int res = 32;
 
-            var C = ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(2, res);
-            C.SkipSolveAndEvaluateResidual = false;
-            C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
-            C.NonLinearSolver.ConvergenceCriterion = 0.0;
-            C.NonLinearSolver.MinSolverIterations = 20;
-            C.NonLinearSolver.MaxSolverIterations = 25;
+            //SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0; // Newton divergence when not 0.0
+            //SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
+            //SolidPhase.Continuity.ContinuityInDisplacement = true;
+            //SolidPhase.Continuity.ContinuityStabilization = true; // seems to be required
 
-            // Displacement - Divergence
-            ZLS.displacementViscosity = 0.0;
-            SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 0.0; // Newton divergence when not 0.0
-            SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
-            SolidPhase.Continuity.ContinuityInDisplacement = true;
-            SolidPhase.Continuity.ContinuityStabilization = true;
-
-            ////Velocity - Divergence : this is shit
-            //ZLS.displacementViscosity = 0.0;
-            //SolidPhase.DisplacementEvolution.onlyPenaltyPenalty = 1.0; // must be positive for Newton convergence when Zero
-            //SolidPhase.NavierCauchy.EulerAlamansiPenalty = 0.0; // seems to be not required; works for +1, 0, -1
-            //SolidPhase.Continuity.ContinuityInDisplacement = false;
-            //SolidPhase.Continuity.ContinuityStabilization = false; // seems to have no benefit for condition number
+            //var C = ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(2, 32);
+            //C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
+            //C.NonLinearSolver.ConvergenceCriterion = 0.0; // as accurate as possible
+            //C.NonLinearSolver.MaxSolverIterations = 100;
 
 
-            //C.dtFixed = 0.1;
-            C.TimesteppingMode = BoSSS.Solution.Control.AppControl._TimesteppingMode.Steady;
-            
-
-            using(var q = new ZLS()) {
-                q.Init(C);
-                q.RunSolverMode();
-                //q.OperatorAnalysis();
-            }
-            */
+            //using (var q = new ZLS()) {
+            //    q.Init(C);
+            //    q.RunSolverMode();
+            //    //q.OperatorAnalysis();
+            //}
+            //Assert.AreEqual(true, false, "Remove me");
                         
             
             ZLS._Main(args, false, delegate () {

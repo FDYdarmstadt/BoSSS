@@ -22,31 +22,11 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.RefElements;
+using ilPSP;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
     public partial class GridCommons {
-
-        /// <summary>
-        /// Helper that wraps a node index with an associated global id of a
-        /// cell that uses this particular node.
-        /// </summary>
-        [Serializable]
-        private struct NodeCellIndexPair {
-            public int NodeId;
-            public long GlobalCellIndex;
-        }
-
-        /// <summary>
-        /// Helper that wraps a node index with a list of global ids of cells
-        /// that share this node
-        /// </summary>
-        [Serializable]
-        private struct NodeCellListPair {
-            public long NodeId;
-            public long[] CellList;
-        }
-
         /// <summary>
         /// return values of <see cref="GetCellNeighbourship"/>.
         /// </summary>
@@ -79,14 +59,129 @@ namespace BoSSS.Foundation.Grid.Classic {
             //public bool EdgeMayBeEmpty;
         }
 
+        
+        /// <summary>
+        /// Helper that wraps a node index with an associated global id of a
+        /// cell that uses this particular node.
+        /// </summary>
         [Serializable]
+        private struct NodeCellIndexPair {
+            public long NodeId;
+            public long GlobalCellIndex;
+        }
+
+        /// <summary>
+        /// Helper that wraps a node index with a list of global ids of cells
+        /// that share this node
+        /// </summary>
+        [Serializable]
+        private struct NodeCellListPair {
+            public long NodeId;
+            public long[] CellList;
+        }
+
+
         class NodeCellIndexPair_ContainerClass {
-            public NodeCellIndexPair[] list;
+            public List<NodeCellIndexPair> list = new List<NodeCellIndexPair> ();
+
+
+            /// <summary>
+            /// Optimized serialization;
+            /// </summary>
+            /// <remarks>
+            /// Fk, 08sep22: especially in MPI-parallel (64 cores or more) setups, 
+            /// the <see cref="SerialisationMessenger"/> produces memory-usage peaks which sometimes even crash the simulation due to out-of-memory.
+            /// </remarks>
+            public long[] Serialize() {
+                var R = new List<long>();
+                long L = list.Count;
+                R.Add(L);
+                for(int l = 0; l < L; l++) {
+                    var item_l = list[l];
+                    R.Add(item_l.NodeId);
+                    R.Add(item_l.GlobalCellIndex);
+                }
+
+                return R.ToArray();
+            }
+
+
+            /// <summary>
+            /// Optimized de-serialization
+            /// </summary>
+            public static NodeCellIndexPair_ContainerClass Deserialize(long[] stream) {
+                int cnt = 0;
+                long L = stream[cnt]; cnt++;
+                var R = new NodeCellIndexPair_ContainerClass();
+                R.list = new List<NodeCellIndexPair>((int)L);
+                for (int l = 0; l < L; l++) {
+                    long _NodeID = stream[cnt]; cnt++;
+                    long _GlobalCellIndex = stream[cnt]; cnt++;
+                    R.list.Add(new NodeCellIndexPair() {
+                        NodeId = _NodeID,
+                        GlobalCellIndex = _GlobalCellIndex
+                    });
+                }
+
+                return R;
+            }
         }
 
         [Serializable]
         class NodeCellListPair_ContainerClass {
-            public NodeCellListPair[] list;
+            public List<NodeCellListPair> list = new List<NodeCellListPair>();
+
+            /// <summary>
+            /// Optimized serialization;
+            /// </summary>
+            /// <remarks>
+            /// Fk, 08sep22: especially in MPI-parallel (64 cores or more) setups, 
+            /// the <see cref="SerialisationMessenger"/> produces memory-usage peaks which sometimes even crash the simulation due to out-of-memory.
+            /// </remarks>
+            public long[] Serialize() {
+                var R = new List<long>();
+                long L = list.Count;
+                R.Add(L);
+                for (int l = 0; l < L; l++) {
+                    var item_l = list[l];
+                    R.Add(item_l.NodeId);
+
+                    long LL = item_l.CellList?.Length ?? 0;
+                    R.Add(LL);
+                    for(int ll = 0; ll < LL; ll++) {
+                        R.Add(item_l.CellList[ll]);
+                    }
+                }
+
+                return R.ToArray();
+            }
+
+
+            /// <summary>
+            /// Optimized de-serialization
+            /// </summary>
+            public static NodeCellListPair_ContainerClass Deserialize(long[] stream) {
+                int cnt = 0;
+                long L = stream[cnt]; cnt++;
+                var R = new NodeCellListPair_ContainerClass();
+                R.list = new List<NodeCellListPair>((int)L);
+                for (int l = 0; l < L; l++) {
+                    long _NodeID = stream[cnt]; cnt++;
+                    long LL = stream[cnt]; cnt++;
+
+                    var _CellList = new long[LL];
+                    for (int ll = 0; ll < LL; ll++) {
+                        _CellList[ll] = stream[cnt]; cnt++;
+                    }
+
+                    R.list.Add(new NodeCellListPair() {
+                        NodeId = _NodeID,
+                        CellList = _CellList
+                    });
+                }
+
+                return R;
+            }
         }
 
         /// <summary>
@@ -97,15 +192,16 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// If true, also the boundary condition cells (<see cref="BcCells"/>) will be included in the output array.
         /// </param>
         /// Cell-wise neighborship information:
-        /// - index: local cell index <em>j</em>, i.e. correlates with <see cref="Cells"/>; if <paramref name="IncludeBcCells"/> is true,
+        /// - 1st index: local cell index <em>j</em>, i.e. correlates with <see cref="Cells"/>; if <paramref name="IncludeBcCells"/> is true,
         ///   the information for boundary cells is added after the information for cells.
-        /// - content: for the index <em>j</em> the set of neighbor cells. If the global index (<see cref="Neighbour.Neighbour_GlobalIndex"/>)
+        /// - 2nd index: enumeration; for the index <em>j</em> the set of neighbor cells. If the global index (<see cref="Neighbour.Neighbour_GlobalIndex"/>)
         ///   is greater or equal than the global number of cells (<see cref="NumberOfCells"/>) the neighbor is a boundary condition cell,
         ///   (<see cref="BcCells"/>).
         /// </returns>
-        public IEnumerable<Neighbour>[] GetCellNeighbourship(bool IncludeBcCells) {
+        public Neighbour[][] GetCellNeighbourship(bool IncludeBcCells) {
             ilPSP.MPICollectiveWatchDog.Watch();
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
+                //tr.InfoToConsole = true;
 
                 var ftNeigh = GetFaceTagsNeigbourIndices(IncludeBcCells);
 
@@ -117,17 +213,376 @@ namespace BoSSS.Foundation.Grid.Classic {
                 long j0 = this.CellPartitioning.i0;
                 long Jglob = this.CellPartitioning.TotalLength;
                 long j0Bc = this.BcCellPartitioning.i0;
+                int mpiRank = this.MyRank;
 
-                /*
-                System.IO.StreamWriter sw = new System.IO.StreamWriter("proc_" + this.MyRank + ".txt", append: false);
-                sw.WriteLine("Entering stupid function....");
-                SerialisationMessenger.PoorManDebugger = sw;
-                */
+
+                Element GetCell(int j) {
+                    Element Cell_j;
+                    //RefElement Kref;
+                    //long jCell_glob;
+                    if (j < J) {
+                        Cell_j = this.Cells[j];
+                        //    Kref = this.m_RefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
+                        //    jCell_glob = j + j0;
+                    } else {
+                        Cell_j = this.BcCells[j - J];
+                        //    Kref = this.m_EdgeRefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
+                        //    jCell_glob = (j - J) + j0Bc + Jglob;
+                    }
+                    return Cell_j;
+                }
+
+                RefElement GetRefElement(int j) {
+                    RefElement Kref;
+                    var Cell_j = GetCell(j);
+                    if (j < J) {
+                        Kref = this.m_RefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
+                    } else {
+                        Kref = this.m_EdgeRefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
+                    }
+                    return Kref;
+                }
+
+                long GetGlobalCellIdx(int j) {
+                    long jCell_glob;
+                    if (j < J) {
+                        jCell_glob = j + j0;
+                    } else {
+                        jCell_glob = (j - J) + j0Bc + Jglob;
+                    }
+                    return jCell_glob;
+                }
+
+                void AssertNeighborUniqueness(int j, long neighGlIdx) {
+                    if (GetCellNeighbours(j).Where(neighEntry => neighEntry.Neighbour_GlobalIndex == neighGlIdx).Count() > 0) {
+                        throw new ApplicationException("Neighbor already added");
+                    }
+                }
+
+
+                // PART 1: local work
+                // ==================
+                //
+                // In order to reduce MPI communication, we first establish all cell-neighborship which is locally on this processor.
+                // This first requires a compression of the global nodes into a local range.
+
+
+                // compress global node id's to a local range
+                // ------------------------------------------
+                int[][] Cells_LocalNodeIndices = new int[J + J_BC][]; // 1st index: local cell index;
+                                                                      // 2nd index: correlates with respective `Element.NodeIndices`;
+                                                                      // content: node index, translated to local index range
+
+                int NoOfLocalNodes;
+                {
+                    var Global2LocalNode = new SortedDictionary<long, int>(); // key: global node; value: local node idx.; using a SordedDict should lead to an n*log(n) overall runtime behavior
+                    int LocalNodeCounter = 0;
+
+                    for (int j = 0; j < (J + J_BC); j++) {
+                        Element Cell_j = GetCell(j);
+                        var CellNodes = Cell_j.NodeIndices;
+                        int L = CellNodes.Length;
+                        var CellsLocalNodes_j = new int[L];
+                        Cells_LocalNodeIndices[j] = CellsLocalNodes_j;
+
+
+                        for (int l = 0; l < L; l++) {
+                            long GlobalNodeId = CellNodes[l];
+                            if (!Global2LocalNode.TryGetValue(GlobalNodeId, out int locIdx)) {
+                                Global2LocalNode.Add(GlobalNodeId, LocalNodeCounter);
+                                CellsLocalNodes_j[l] = LocalNodeCounter;
+                                LocalNodeCounter++;
+                            } else {
+                                CellsLocalNodes_j[l] = locIdx;
+                            }
+                        }
+                    }
+
+                    NoOfLocalNodes = LocalNodeCounter;
+                }
+
+                // build a mapping from local nodes to local cells
+                // -----------------------------------------------
+
+                var LocalNodes2Cells = new List<int>[NoOfLocalNodes];
+                {
+                    for (int j = 0; j < (J + J_BC); j++) {
+
+                        //var CellNodes = Cell_j.NodeIndices;
+                        var LocalCellNodes = Cells_LocalNodeIndices[j];
+                        foreach (int LocalNodeIdx in LocalCellNodes) {
+
+                            var Cells4Node = LocalNodes2Cells[LocalNodeIdx];
+                            if (Cells4Node == null) {
+                                Cells4Node = new List<int>();
+                                LocalNodes2Cells[LocalNodeIdx] = Cells4Node;
+                            }
+
+                            Cells4Node.Add(j);
+                        }
+                    }
+                }
+
+                List<Neighbour>[] CellNeighbours; // index: local cell index
+                List<Neighbour> GetCellNeighbours(int j) {
+                    List<Neighbour> Cell_j_Neighs = CellNeighbours[j];
+                    if (Cell_j_Neighs == null) {
+                        Cell_j_Neighs = new List<Neighbour>();
+                        CellNeighbours[j] = Cell_j_Neighs;
+                    }
+                    return Cell_j_Neighs;
+                }
+
+                bool[,] FaceIsDone; // 1st index: local cell index; 2nd index: face index
+                {
+                    CellNeighbours = new List<Neighbour>[J + J_BC];
+                    FaceIsDone = new bool[J + J_BC, RefElements.Max(_kref => _kref.NoOfFaces)];
+
+                    List<int> GetNeighborsForCell(int j, int _iface) {
+                        if (j >= J)
+                            throw new ArgumentOutOfRangeException();
+                        Element Cell_j = GetCell(j);
+                        RefElement Kref = GetRefElement(j);
+
+
+                        var faceVtxS = Kref.FaceToVertexIndices;
+                        //long[][] B = new long[faceVtx.GetLength(1)][];
+
+                        int NoOfVtxPerFace = faceVtxS.GetLength(1);
+
+                        // the following for-loop intersects the 
+                        // cells for each node of the face:
+                        int[] LocalCellNodes = Cells_LocalNodeIndices[j];
+
+                        var PossiblePeers = new List<int>();
+                        for (int iVtx = 0; iVtx < NoOfVtxPerFace; iVtx++) {
+                            int LocalNodeIdx = LocalCellNodes[faceVtxS[_iface, iVtx]];
+                            var Cells4Vtx = LocalNodes2Cells[LocalNodeIdx];
+
+                            // since we are dealing with low loop lengths here (maybe 10), the complexity
+                            // of the following algorithms should be ok
+
+                            if (iVtx == 0) {
+                                PossiblePeers.AddRange(Cells4Vtx);
+                                PossiblePeers.Remove(j); // don't consider cell 'j' itself
+                            } else {
+                                for (int kk = 0; kk < PossiblePeers.Count; kk++) {
+                                    int jNeigh = PossiblePeers[kk];
+                                    if (!Cells4Vtx.Contains(jNeigh)) {
+                                        PossiblePeers.RemoveAt(kk);
+                                        kk--;
+                                    }
+                                }
+
+                            }
+
+                        }
+
+                        return PossiblePeers;
+                    }
+
+                    List<int> GetNeighborsForBcCell(int j) {
+                        if (j < J || j >= J + J_BC)
+                            throw new ArgumentOutOfRangeException();
+
+                        Element Cell_j = GetCell(j);
+                        RefElement Kref = GetRefElement(j);
+
+                        int[] LocalCellNodes = Cells_LocalNodeIndices[j];
+
+                        var PossiblePeers = new List<int>();
+                        int NoOfVertices = Kref.NoOfVertices;
+                        for (int iVtx = 0; iVtx < NoOfVertices; iVtx++) {
+                            int LocalNodeIdx = LocalCellNodes[iVtx];
+                            var Cells4Vtx = LocalNodes2Cells[LocalNodeIdx];
+
+                            // since we are dealing with low loop lengths here (maybe 10), the complexity
+                            // of the following algorithms should be ok
+
+                            if (iVtx == 0) {
+                                PossiblePeers.AddRange(Cells4Vtx);
+                                PossiblePeers.Remove(j); // don't consider cell 'j' itself
+                            } else {
+                                for (int kk = 0; kk < PossiblePeers.Count; kk++) {
+                                    int jNeigh = PossiblePeers[kk];
+                                    if (!Cells4Vtx.Contains(jNeigh)) {
+                                        PossiblePeers.RemoveAt(kk);
+                                        kk--;
+                                    }
+                                }
+
+                            }
+                        }
+                        return PossiblePeers;
+                    }
+
+                    bool ConfirmNeigbor(int j, int jNeigh, out int face_neigh) {
+
+                        if (jNeigh < J) {
+                            var KrefNeigh = GetRefElement(jNeigh);
+                            int NoOfFaces = KrefNeigh.NoOfFaces;
+
+                            for (int iFace = 0; iFace < NoOfFaces; iFace++) {
+                                var PossNeigh = GetNeighborsForCell(jNeigh, iFace);
+                                if (PossNeigh.Contains(j)) {
+                                    face_neigh = iFace;
+                                    return true;
+                                }
+
+                            }
+
+                            face_neigh = -1;
+                            return false;
+
+                        } else {
+                            var PossNeigh = GetNeighborsForBcCell(jNeigh);
+                            face_neigh = 0;
+                            return PossNeigh.Contains(j);
+                        }
+
+
+                    }
+
+
+
+                    void AddNeighbor(int j, int jNeig, int _iface) {
+                        bool isOk = ConfirmNeigbor(j, jNeig, out int face_neigh);
+                        if (isOk) {
+
+
+
+                            {
+                                Neighbour nCN = default(Neighbour);
+                                nCN.Neighbour_GlobalIndex = GetGlobalCellIdx(jNeig);
+                                nCN.CellFaceTag.FaceIndex = _iface;
+                                nCN.CellFaceTag.ConformalNeighborship = true;
+
+                                AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
+
+
+                                GetCellNeighbours(j).Add(nCN);
+                                FaceIsDone[j, _iface] = true;
+                            }
+
+                            {
+                                Neighbour nCN = default(Neighbour);
+                                nCN.Neighbour_GlobalIndex = GetGlobalCellIdx(j);
+                                nCN.CellFaceTag.FaceIndex = face_neigh;
+                                nCN.CellFaceTag.ConformalNeighborship = true;
+
+                                AssertNeighborUniqueness(jNeig, nCN.Neighbour_GlobalIndex);
+
+                                GetCellNeighbours(jNeig).Add(nCN);
+                                FaceIsDone[jNeig, face_neigh] = true;
+                            }
+
+                        } else {
+                            string ErrString;
+                            try {
+                                ErrString = $"error in mesh; cell {GetCell(j)} is neighbor to cell {GetCell(jNeig)}, but not the other way around.";
+                            } catch (Exception e) {
+                                ErrString = $"error in mesh; further error in formatting error message for connection between cells {j} and {jNeig}; {e.GetType()} {e.Message}, ";
+                                        }
+                            tr.Error(ErrString);
+                            throw new ArgumentException(ErrString);
+                        }
+                    }
+
+
+
+                    for (int j = 0; j < J + J_BC; j++) { // loop over cells
+                        Element Cell_j = GetCell(j);
+                        RefElement Kref = GetRefElement(j);
+
+
+                        // find neighbor cells connected via grid nodes
+                        // - - - - - - - - - - - - - - - - - - - - - - - 
+
+                        if (j < J) {
+                            //normal cells: match faces
+
+                            var faceVtxS = Kref.FaceToVertexIndices;
+                            //long[][] B = new long[faceVtx.GetLength(1)][];
+
+                            int NoOfVtxPerFace = faceVtxS.GetLength(1);
+
+                            for (int _iface = 0; _iface < Kref.NoOfFaces; _iface++) { // loop over faces of cell 'j' (local index) resp. 'jCellGlob' (global index)
+                                if (FaceIsDone[j, _iface])
+                                    continue;
+
+                                var PossiblePeers = GetNeighborsForCell(j, _iface);
+
+                                foreach (int jNeig in PossiblePeers) {
+                                    AddNeighbor(j, jNeig, _iface);
+                                }
+                            }
+                        } else {
+                            // boundary-condition cell: match the whole element
+
+                            if (FaceIsDone[j, 0])
+                                continue;
+
+                            var PossiblePeers = GetNeighborsForBcCell(j);
+
+                            foreach (int jNeig in PossiblePeers) {
+                                AddNeighbor(j, jNeig, 0);
+                            }
+                        }
+
+                        // find neighbor cells connected via CellFaceTag's
+                        // - - - - - - - - - - - - - - - - - - - - - - - - 
+
+                        var otherNeighbours = ftNeigh[j]; // ftNeigh is the result of CellFaceTag-based connectivity
+                        if (j < J) {
+                            var _Cell_j = (Cell)Cell_j;
+                            var Cell_j_Neighs = GetCellNeighbours(j);
+                            Debug.Assert(((otherNeighbours == null ? 0 : otherNeighbours.Length) == ((_Cell_j.CellFaceTags == null) ? 0 : _Cell_j.CellFaceTags.Length)));
+                            if (otherNeighbours != null) {
+                                for (int w = 0; w < otherNeighbours.Length; w++) {
+                                    Debug.Assert(_Cell_j.CellFaceTags[w].NeighCell_GlobalID < 0 == otherNeighbours[w] < 0);
+                                    if (_Cell_j.CellFaceTags[w].NeighCell_GlobalID >= 0) {
+                                        if (Cell_j_Neighs.Where(neigh => neigh.Neighbour_GlobalIndex == otherNeighbours[w]).Count() <= 0) { // filter duplicates
+                                            var nCN = new Neighbour() {
+                                                Neighbour_GlobalIndex = otherNeighbours[w],
+                                                CellFaceTag = _Cell_j.CellFaceTags[w],
+                                            };
+                                            AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
+                                            Cell_j_Neighs.Add(nCN);
+
+                                            
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            var BcCell_j = (BCElement)Cell_j;
+                            var Cell_j_Neighs = GetCellNeighbours(j);
+                            Debug.Assert(((otherNeighbours == null ? 0 : otherNeighbours.Length) == ((BcCell_j.NeighCell_GlobalIDs == null) ? 0 : BcCell_j.NeighCell_GlobalIDs.Length)));
+
+                            if (otherNeighbours != null) {
+                                for (int w = 0; w < otherNeighbours.Length; w++) {
+                                    Cell_j_Neighs.Add(new Neighbour() {
+                                        Neighbour_GlobalIndex = otherNeighbours[w],
+                                        CellFaceTag = new CellFaceTag() {
+                                            EdgeTag = BcCell_j.EdgeTag,
+                                            FaceIndex = int.MinValue,
+                                            NeighCell_GlobalID = BcCell_j.NeighCell_GlobalIDs[w],
+                                            ConformalNeighborship = BcCell_j.Conformal
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // PART 2: MPI-global work
+                // =======================
 
                 // Which cells make use of a particular node?
                 //-------------------------------------------
 
-                // Index: Node index
+                // Index: local Node index
                 // Entry: Enumeration of global indices of cells that use this particular node
                 List<long>[] Nodes2Cells = new List<long>[K];
                 {
@@ -137,186 +592,136 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                     // key: MPI processor rank
                     // value: information packet
-                    Dictionary<int, List<NodeCellIndexPair>> Y =
-                        new Dictionary<int, List<NodeCellIndexPair>>();
+                    Dictionary<int, NodeCellIndexPair_ContainerClass> Y = new Dictionary<int, NodeCellIndexPair_ContainerClass>();
+
+                    long NodeIdMin = long.MaxValue, NodeIdMax = long.MinValue;
 
                     for (int j = 0; j < (J + J_BC); j++) {
-                        Element Cell_j;
-                        RefElement Kref;
-                        long jCell_glob;
+                        RefElement Kref = GetRefElement(j);
+                        int NoOfFaces = Kref.NoOfFaces;
+
                         if (j < J) {
-                            Cell_j = this.Cells[j];
-                            Kref = this.m_RefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
-                            jCell_glob = j + j0;
+                            bool Alldone = true;
+                            for (int iF = 0; iF < NoOfFaces; iF++) {
+                                Alldone = Alldone && FaceIsDone[j, iF];
+                            }
+                            if (Alldone)
+                                continue;
                         } else {
-                            Cell_j = this.BcCells[j - J];
-                            Kref = this.m_EdgeRefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
-                            jCell_glob = (j - J) + j0Bc + Jglob;
+                            if (FaceIsDone[j, 0])
+                                continue;
                         }
+
+
+                        Element Cell_j = GetCell(j);
+                        long jCell_glob = GetGlobalCellIdx(j);
+
+                        int NoOfVtx = Kref.NoOfVertices;
                         var CellNodes = Cell_j.NodeIndices;
+                        //var CellNodesLocal = Cells_LocalNodeIndices[j];
+                        if (CellNodes.Length != NoOfVtx)
+                            throw new ApplicationException();
+                        //if (CellNodesLocal.Length != NoOfVtx)
+                        //    throw new ApplicationException();
 
                         if (CellNodes.Length != Kref.NoOfVertices) {
                             throw new ApplicationException("error in data structure.");
                         }
 
-                        foreach (int NodeId in CellNodes) {
+                        bool[] VtxToInclude = new bool[NoOfVtx];
+                        int[,] Face2Vertex = Kref.FaceToVertexIndices;
+                        int NoOfFaceVtx = Face2Vertex.GetLength(1);
+
+                        if( j < J) {
+                            for(int iF = 0; iF < NoOfFaces; iF++) {
+                                if(!FaceIsDone[j, iF]) {
+                                    for(int iFaceVtx = 0; iFaceVtx < NoOfFaceVtx; iFaceVtx++) {
+                                        VtxToInclude[Face2Vertex[iF,iFaceVtx]] = true;
+                                    }
+                                }
+                            }
+                        } else {
+                            VtxToInclude.SetAll(true);
+                        }
+
+
+
+                        for (int k = 0; k < NoOfVtx; k++) {
+                            if (!VtxToInclude[k])
+                                continue;
+
+                            //Cells_LocalNodeIndices[j] ;
+                            long NodeId = CellNodes[k];
+                            //int NodeIdLocal = CellNodesLocal[k];
+
+                            //foreach (long NodeId in CellNodes) {
+                            NodeIdMin = Math.Min(NodeIdMin, NodeId);
+                            NodeIdMax = Math.Max(NodeIdMax, NodeId);
+
                             int target_prozi = NPart.FindProcess(NodeId);
-                            if (target_prozi == MyRank) {
+                            if (target_prozi == mpiRank) {
                                 Nodes2Cells[NodeId - k0].Add(jCell_glob);
                             } else {
                                 NodeCellIndexPair Packet;
                                 Packet.NodeId = NodeId;
                                 Packet.GlobalCellIndex = jCell_glob;
 
-                                List<NodeCellIndexPair> Z;
-                                if (!Y.TryGetValue(target_prozi, out Z)) {
-                                    Z = new List<NodeCellIndexPair>();
+                                if (!Y.TryGetValue(target_prozi, out var Z)) {
+                                    Z = new NodeCellIndexPair_ContainerClass();
                                     Y.Add(target_prozi, Z);
                                 }
 
-                                Z.Add(Packet);
+                                Z.list.Add(Packet);
                             }
                         }
+
                     }
 
-                    //SerialisationMessenger.DiagnosisFile = "GetCellNeighborship";
-                    //SerialisationMessenger.TestDeserialization = true;
+                    tr.Info($"r{mpiRank}: min Node {NodeIdMin} -- max Node {NodeIdMax} // Global No Of Nodes: {NodePartitioning.TotalLength}");
 
-                    var Yexc = new Dictionary<int, NodeCellIndexPair_ContainerClass>();
-                    {
-                        foreach (var kv in Y) {
-                            Yexc.Add(kv.Key,
-                                new NodeCellIndexPair_ContainerClass() { list = kv.Value.ToArray() });
-                        }
-                        Y = null;
+                    
+                    foreach (int targProc in Y.Keys) {
+                        var item = Y[targProc];
+                        tr.Info($"{mpiRank}to{targProc}: nodecellpair {item.list.Count} ");
                     }
 
-
-                    //sw.WriteLine("(1) process " + this.MyRank + " starting serialization/deserialization ...");
-
-                    //try
-                    //{
-                    var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
+                    var W = ArrayMessenger<long>.ExchangeData(Y.Keys, rank => Y[rank].Serialize(), csMPI.Raw._COMM.WORLD);
                     foreach (var wp in W.Values) {
-                        foreach (NodeCellIndexPair Packet in wp.list) {
+                        var container = NodeCellIndexPair_ContainerClass.Deserialize(wp); 
+
+                        foreach (NodeCellIndexPair Packet in container.list) {
                             Nodes2Cells[Packet.NodeId - k0].Add(Packet.GlobalCellIndex);
                         }
                     }
-                    //}
-                    //catch (Exception e)
-                    //{
-                    //    sw.WriteLine(e);
-                    //    throw e;
-                    //}
-                    //sw.Flush();
-                    //var W = SerialisationMessenger.ExchangeData(Y, csMPI.Raw._COMM.WORLD);
+
 
                 }
 
                 // For every cell, for every vertex in this cell:
-                // Which other cells die also use this node?
+                // Which other cells do also use this node?
                 //-----------------------------------------------
 
                 // 1st index: Local cell index
                 // 2nd index: Cell vertex index
-                // 3rd index: Collection of 'peer' cells
+                // 3rd index: enumeration of 'peer' cells
+                // content: global cell index
                 long[][][] NodePeers = new long[J + J_BC][][];
                 {
                     for (int j = 0; j < J + J_BC; j++) {
-                        Element Cell_j;
-                        if (j < J) {
-                            Cell_j = this.Cells[j];
-                        } else {
-                            Cell_j = this.BcCells[j - J];
-                        }
+                        Element Cell_j = GetCell(j);
                         NodePeers[j] = new long[Cell_j.NodeIndices.Length][];
                     }
 
-                    Dictionary<int, List<NodeCellListPair>> Y = new Dictionary<int, List<NodeCellListPair>>();
+                    Dictionary<int, NodeCellListPair_ContainerClass> Y = new Dictionary<int, NodeCellListPair_ContainerClass>();
 
                     var CPart = this.CellPartitioning;
                     var BcPart = this.BcCellPartitioning;
                     for (int k = 0; k < K; k++) { // loop over locally assigned nodes
                         long k_node = k + k0;
 
-                        var cell_list = Nodes2Cells[k].ToArray();
-                        foreach (int jCell in cell_list) { // loop over all cells that use node 'k'
-                            int cell_proc;
-                            long local_offset;
-                            if (jCell < Jglob) {
-                                // normal cell
-                                cell_proc = CPart.FindProcess(jCell);
-                                local_offset = j0;
-                            } else {
-                                // boundary condition cell
-                                cell_proc = BcPart.FindProcess(jCell - Jglob);
-                                local_offset = Jglob + j0Bc;
-                            }
-
-
-                            if (cell_proc == MyRank) {
-                                int jCell_loc = checked((int)(jCell - local_offset));
-                                int kC;
-                                bool bfound = false;
-
-                                Element Cell_j;
-                                int oo;
-                                if (jCell < Jglob) {
-                                    // normal cell
-                                    Cell_j = this.Cells[jCell_loc];
-                                    oo = 0;
-                                } else {
-                                    // boundary condition cell
-                                    Cell_j = this.BcCells[jCell_loc];
-                                    oo = J;
-                                }
-
-                                for (kC = 0; kC < Cell_j.NodeIndices.Length; kC++) {
-                                    if (Cell_j.NodeIndices[kC] == k_node) {
-                                        bfound = true;
-                                        break;
-                                    }
-                                }
-
-                                if (!bfound)
-                                    throw new ApplicationException("error in algorithm.");
-
-                                NodePeers[jCell_loc + oo][kC] = cell_list;
-                            } else {
-                                NodeCellListPair A;
-                                A.NodeId = k_node;
-                                A.CellList = cell_list;
-
-                                List<NodeCellListPair> Z;
-                                if (!Y.TryGetValue(cell_proc, out Z)) {
-                                    Z = new List<NodeCellListPair>();
-                                    Y.Add(cell_proc, Z);
-                                }
-
-                                Z.Add(A);
-                            }
-                        }
-                    }
-
-                    var Yexc = new Dictionary<int, NodeCellListPair_ContainerClass>();
-                    {
-                        foreach (var kv in Y) {
-                            Yexc.Add(kv.Key,
-                                new NodeCellListPair_ContainerClass() { list = kv.Value.ToArray() });
-                        }
-                        Y = null;
-                    }
-
-                    //sw.WriteLine("(2) process " + this.MyRank + " starting serialization/deserialization ...");
-                    //try
-                    //{
-                    var W = SerialisationMessenger.ExchangeData(Yexc, csMPI.Raw._COMM.WORLD);
-                    foreach (var wp in W.Values) {
-                        foreach (var P in wp.list) {
-                            long k_node = P.NodeId;
-                            long[] cell_list = P.CellList;
-
-                            foreach (int jCell in cell_list) {
+                        if (Nodes2Cells[k] != null) {
+                            var cell_list = Nodes2Cells[k].ToArray();
+                            foreach (int jCell in cell_list) { // loop over all cells that use node 'k'
                                 int cell_proc;
                                 long local_offset;
                                 if (jCell < Jglob) {
@@ -329,7 +734,91 @@ namespace BoSSS.Foundation.Grid.Classic {
                                     local_offset = Jglob + j0Bc;
                                 }
 
-                                if (cell_proc == MyRank) {
+
+                                if (cell_proc == mpiRank) {
+                                    int jCell_loc = checked((int)(jCell - local_offset));
+                                    int kC;
+                                    bool bfound = false;
+
+                                    Element Cell_j;
+                                    int oo;
+                                    if (jCell < Jglob) {
+                                        // normal cell
+                                        Cell_j = this.Cells[jCell_loc];
+                                        oo = 0;
+                                    } else {
+                                        // boundary condition cell
+                                        Cell_j = this.BcCells[jCell_loc];
+                                        oo = J;
+                                    }
+
+                                    for (kC = 0; kC < Cell_j.NodeIndices.Length; kC++) {
+                                        if (Cell_j.NodeIndices[kC] == k_node) {
+                                            bfound = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (!bfound)
+                                        throw new ApplicationException("error in algorithm.");
+
+                                    NodePeers[jCell_loc + oo][kC] = cell_list;
+                                } else {
+                                    NodeCellListPair A;
+                                    A.NodeId = k_node;
+                                    A.CellList = cell_list;
+
+                                    
+                                    if (!Y.TryGetValue(cell_proc, out var Z)) {
+                                        Z = new NodeCellListPair_ContainerClass();
+                                        Y.Add(cell_proc, Z);
+                                    }
+
+                                    Z.list.Add(A);
+                                }
+                            }
+                        }
+                    }
+
+                    //var Yexc = new Dictionary<int, NodeCellListPair_ContainerClass>();
+                    //{
+                    //    foreach (var kv in Y) {
+                    //        Yexc.Add(kv.Key,
+                    //            new NodeCellListPair_ContainerClass() { list = kv.Value.ToArray() });
+                    //    }
+                    //    Y = null;
+                    //}
+
+
+                    //tr.Info($"{mpiRank}: Glob No Of nodes: {NodePartitioning.TotalLength}; local no: {NodePartitioning.LocalLength}");
+                    //foreach (int targProc in Yexc.Keys) {
+                    //    NodeCellListPair_ContainerClass item = Yexc[targProc];
+                    //    int NoOfEntries = item.list.Sum(entry => entry.CellList.Length);
+                    //    tr.Info($"{mpiRank}to{targProc}: node-cell-list {item.list.Length} items with {NoOfEntries} entries");
+                    //}
+
+                    var W = ArrayMessenger<long>.ExchangeData(Y.Keys, rank => Y[rank].Serialize(), csMPI.Raw._COMM.WORLD);
+                    foreach (var wp in W.Values) {
+                        var container = NodeCellListPair_ContainerClass.Deserialize(wp);
+                        foreach (var P in container.list) {
+                            
+                            long k_node = P.NodeId;
+                            long[] cell_list = P.CellList;
+
+                            foreach (long jCell in cell_list) {
+                                int cell_proc;
+                                long local_offset;
+                                if (jCell < Jglob) {
+                                    // normal cell
+                                    cell_proc = CPart.FindProcess(jCell);
+                                    local_offset = j0;
+                                } else {
+                                    // boundary condition cell
+                                    cell_proc = BcPart.FindProcess(jCell - Jglob);
+                                    local_offset = Jglob + j0Bc;
+                                }
+
+                                if (cell_proc == mpiRank) {
 
                                     int jCell_loc = checked((int)(jCell - local_offset));
 
@@ -362,67 +851,63 @@ namespace BoSSS.Foundation.Grid.Classic {
                             }
                         }
                     }
-                    //}
-                    //catch (Exception e)
-                    //{
-                    //    sw.WriteLine(e);
-                    //    throw e;
-                    //}
-                    //sw.Flush();
                 }
 
                 // Assemble final result
                 // ---------------------
 
-                IEnumerable<Neighbour>[] CellNeighbours;
+                //IEnumerable<Neighbour>[] CellNeighbours;
                 {
-                    CellNeighbours = new IEnumerable<Neighbour>[J + J_BC];
+                    //CellNeighbours = new IEnumerable<Neighbour>[J + J_BC];
                     for (int j = 0; j < J + J_BC; j++) { // loop over cells
-                        //var Cell_j = this.Cells[j];
-                        //int jCellGlob = j + j0;
-                        //var Kref = this.m_GridSimplices.Single(KK => KK.SupportedTypes.Contains(Cell_j.Type));
+                        Element Cell_j = GetCell(j);
+                        RefElement Kref = GetRefElement(j);
+                        long jCellGlob = GetGlobalCellIdx(j);
 
-                        Element Cell_j;
-                        RefElement Kref;
-                        long jCellGlob;
-                        if (j < J) {
-                            Cell_j = this.Cells[j];
-                            Kref = this.m_RefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
-                            jCellGlob = j + j0;
-                        } else {
-                            Cell_j = this.BcCells[j - J];
-                            Kref = this.m_EdgeRefElements.Single(KK => KK.SupportedCellTypes.Contains(Cell_j.Type));
-                            jCellGlob = (j - J) + j0Bc + Jglob;
-                        }
-
-                        var Cell_j_Neighs = new List<Neighbour>();
-                        CellNeighbours[j] = Cell_j_Neighs;
+                        List<Neighbour> Cell_j_Neighs = GetCellNeighbours(j);
 
                         // find neighbor cells connected via grid nodes
-                        // --------------------------------------------
+                        // - - - - - - - - - - - - - - - - - - - - - - - 
 
                         if (j < J) {
                             //normal cells: match faces
 
 
                             var faceVtx = Kref.FaceToVertexIndices;
-                            long[][] B = new long[faceVtx.GetLength(1)][];
+                            long[][] B = new long[faceVtx.GetLength(1)][]; // 1st index: face vertex; 2nd index: enumeration
                             for (int _iface = 0; _iface < Kref.NoOfFaces; _iface++) { // loop over faces of cell 'j' (local index) resp. 'jCellGlob' (global index)
+                                if (FaceIsDone[j, _iface])
+                                    continue;
                                 for (int iv = 0; iv < B.Length; iv++)
                                     B[iv] = NodePeers[j][faceVtx[_iface, iv]];
 
                                 long NeighIdx = Intersect(B, jCellGlob);
                                 if (NeighIdx >= 0) {
-                                    Neighbour nCN = default(Neighbour);
-                                    nCN.Neighbour_GlobalIndex = NeighIdx;
-                                    nCN.CellFaceTag.FaceIndex = _iface;
-                                    nCN.CellFaceTag.ConformalNeighborship = true;
+                                    int iFound = Cell_j_Neighs.FirstIndexWhere(CN => CN.Neighbour_GlobalIndex == NeighIdx);
 
-                                    Cell_j_Neighs.Add(nCN);
+                                    if (iFound >= 0) {
+                                        Neighbour nCN = Cell_j_Neighs[iFound];
+                                        if (nCN.CellFaceTag.FaceIndex != _iface)
+                                            throw new ApplicationException("Found two connections between cells with different face indices");
+
+                                        nCN.CellFaceTag.ConformalNeighborship = true;
+                                        Cell_j_Neighs[iFound] = nCN;
+
+                                    } else {
+
+                                        Neighbour nCN = default(Neighbour);
+                                        nCN.Neighbour_GlobalIndex = NeighIdx;
+                                        nCN.CellFaceTag.FaceIndex = _iface;
+                                        nCN.CellFaceTag.ConformalNeighborship = true;
+                                                                                
+                                        Cell_j_Neighs.Add(nCN);
+                                    }
                                 }
                             }
                         } else {
                             // boundary-condition cell: match the whole element
+                            if (FaceIsDone[j, 0])
+                                continue;
 
                             long[][] B = new long[Kref.NoOfVertices][];
                             for (int iv = 0; iv < B.Length; iv++)
@@ -430,59 +915,44 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             long NeighIdx = Intersect(B, jCellGlob);
                             if (NeighIdx >= 0) {
-                                Neighbour nCN = default(Neighbour);
-                                nCN.Neighbour_GlobalIndex = NeighIdx;
-                                nCN.CellFaceTag.FaceIndex = -1;
-                                nCN.CellFaceTag.ConformalNeighborship = true;
+                                int iFound = Cell_j_Neighs.FirstIndexWhere(CN => CN.Neighbour_GlobalIndex == NeighIdx);
 
-                                Cell_j_Neighs.Add(nCN);
+                                if (iFound >= 0) {
+                                    Neighbour nCN = Cell_j_Neighs[iFound];
+                                    
+                                    nCN.CellFaceTag.ConformalNeighborship = true;
+                                    Cell_j_Neighs[iFound] = nCN;
+
+                                } else {
+                                    Neighbour nCN = default(Neighbour);
+                                    nCN.Neighbour_GlobalIndex = NeighIdx;
+                                    nCN.CellFaceTag.FaceIndex = -1;
+                                    nCN.CellFaceTag.ConformalNeighborship = true;
+
+                                    AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
+
+                                    Cell_j_Neighs.Add(nCN);
+                                }
                             }
 
                         }
-
-                        // find neighbor cells connected via CellFaceTag's
-                        // -----------------------------------------------
-
-                        var otherNeighbours = ftNeigh[j]; // ftNeigh is the result of CellFaceTag-based connectivity
-                        if (j < J) {
-                            var _Cell_j = (Cell)Cell_j;
-                            Debug.Assert(((otherNeighbours == null ? 0 : otherNeighbours.Length) == ((_Cell_j.CellFaceTags == null) ? 0 : _Cell_j.CellFaceTags.Length)));
-                            if (otherNeighbours != null) {
-                                for (int w = 0; w < otherNeighbours.Length; w++) {
-                                    Debug.Assert(_Cell_j.CellFaceTags[w].NeighCell_GlobalID < 0 == otherNeighbours[w] < 0);
-                                    if (_Cell_j.CellFaceTags[w].NeighCell_GlobalID >= 0) {
-                                        if (Cell_j_Neighs.Where(neigh => neigh.Neighbour_GlobalIndex == otherNeighbours[w]).Count() <= 0) { // filter duplicates
-                                            Cell_j_Neighs.Add(new Neighbour() {
-                                                Neighbour_GlobalIndex = otherNeighbours[w],
-                                                CellFaceTag = _Cell_j.CellFaceTags[w],
-                                            });
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            var BcCell_j = (BCElement)Cell_j;
-                            Debug.Assert(((otherNeighbours == null ? 0 : otherNeighbours.Length) == ((BcCell_j.NeighCell_GlobalIDs == null) ? 0 : BcCell_j.NeighCell_GlobalIDs.Length)));
-
-                            if (otherNeighbours != null) {
-                                for (int w = 0; w < otherNeighbours.Length; w++) {
-                                    Cell_j_Neighs.Add(new Neighbour() {
-                                        Neighbour_GlobalIndex = otherNeighbours[w],
-                                        CellFaceTag = new CellFaceTag() {
-                                            EdgeTag = BcCell_j.EdgeTag,
-                                            FaceIndex = int.MinValue,
-                                            NeighCell_GlobalID = BcCell_j.NeighCell_GlobalIDs[w],
-                                            ConformalNeighborship = BcCell_j.Conformal
-                                        }
-                                    });
-                                }
-                            }
-                        }
+                        
                     }
                 }
 
-                //SerialisationMessenger.PoorManDebugger = null;
-                return CellNeighbours;
+                // PART 3: Return
+                // ==============
+
+                {
+                    int rL = CellNeighbours.Length;
+                    var R = new Neighbour[CellNeighbours.Length][];
+                    for (int i = 0; i < rL; i++) {
+                        R[i] = CellNeighbours[i]?.ToArray() ?? new Neighbour[0];
+                        CellNeighbours[i] = null;
+
+                    }
+                    return R;
+                }
             }
         }
 
@@ -500,20 +970,21 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// global cell index
         /// </param>
         /// <returns>
-        /// Either the global index of a neighbor cell, or a negative number if
+        /// Either the global index of a neighbor cell
+        /// (this is the set-intersection of all <paramref name="B"/>[i] - sets, excluding <paramref name="j_cell_myself"/> and should have at most 1 element), or a negative number if
         /// there is no neighbor.
         /// </returns>
         static long Intersect(long[][] B, long j_cell_myself) {
             long R;
             long[] B0 = B[0];
             long ret = long.MinValue;
-            for (int l = 0; l < B0.Length; l++) {
-                R = B0[l];
+            for (int l = 0; l < B0.Length; l++) { // loop over all 'candidate cell '
+                R = B0[l]; // global cell index of 'candidate cell'
                 if (R == j_cell_myself)
                     continue;
 
                 bool AllPassed = true;
-                for (int j = 1; j < B.Length; j++) {
+                for (int j = 1; j < B.Length; j++) { // test if 'candidate cell' is also a neighbor for all other vertices
                     bool bfound = false;
                     long[] Bj = B[j];
                     for (int k = Bj.Length - 1; k >= 0; k--) {

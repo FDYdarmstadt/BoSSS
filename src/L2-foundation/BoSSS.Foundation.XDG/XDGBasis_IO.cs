@@ -62,11 +62,7 @@ namespace BoSSS.Foundation.XDG {
             private XDGBasis myInstance;
 
             /// <summary>
-            /// Compares the given object <paramref name="other"/> with respect
-            /// to the 
-            /// <see cref="BasisInitializer.GridGuid"/> and the 
-            /// <see cref="BasisInitializer.Degree"/> and the 
-            /// <see cref="TrackerInitializer"/>.
+            /// Compares the given object <paramref name="other"/> 
             /// </summary>
             public override bool Equals(Initializer<Basis> other) {
                 XDGBasisInitializer initializer = other as XDGBasisInitializer;
@@ -83,10 +79,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// Computes a hash code based on 
-            /// <see cref="GridGuid"/> and
-            /// <see cref="Degree"/> and 
-            /// <see cref="TrackerInitializer"/>
+            /// Computes a hash code
             /// </summary>
             public override int GetHashCode() {
                 // http://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations

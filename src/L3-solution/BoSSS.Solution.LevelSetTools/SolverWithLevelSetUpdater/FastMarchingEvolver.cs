@@ -59,7 +59,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public IList<string> ParameterNames => parameters;
 
-        // reinitilization
+        // reinitialization
         public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => Reinitialize;
 
         /// <summary>

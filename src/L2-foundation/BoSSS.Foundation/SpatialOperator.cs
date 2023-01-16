@@ -471,6 +471,8 @@ namespace BoSSS.Foundation {
             } else {
                 m_ParameterVar = new string[0];
             }
+            // foreach (var elem in m_ParameterVar)
+            //     Console.WriteLine(elem);
 
             m_CodomainVar = new string[__CoDomainVar.Count];
             for(int i = 0; i < m_CodomainVar.Length; i++) {
@@ -1108,6 +1110,14 @@ namespace BoSSS.Foundation {
                     DomainMapping = DomainVarMap;
                     m_Parameters = (ParameterMap != null) ? ParameterMap.ToArray() : new DGField[0];
                     if(m_Parameters.Length != owner.ParameterVar.Count) {
+                        Console.WriteLine("m_Parameters: " + m_Parameters.Length);
+                        foreach (var elem in m_Parameters){
+                            Console.WriteLine(elem.Identification);
+                        }
+                        Console.WriteLine("owner.ParameterVar: " + owner.ParameterVar.Count);
+                        foreach (var elem in owner.ParameterVar){
+                            Console.WriteLine(elem);
+                        }
                         throw new ArgumentException("wrong number of parameter variables provided.");
                     }
 

@@ -61,12 +61,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
         /// <summary>
         /// Retrieves all polynomial for the given <paramref name="element"/>
-        /// that must be an element of <paramref name="refElements"/>
         /// </summary>
-        /// <param name="g"></param>
-        /// <param name="element"></param>
-        /// <param name="p"></param>
-        /// <returns></returns>
         private static IEnumerable<Polynomial> GetPolynomials(
             GridData g, RefElement element, int p) {
 
@@ -94,14 +89,6 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             return P;
         }
 
-        /// <summary>
-        /// Uses <see cref="GetPolynomials2D"/> or
-        /// <see cref="GetPolynomials3D"/> to retrieve the polynomials with
-        /// order less than or equal <paramref name="order"/>
-        /// </summary>
-        /// <param name="simplex"></param>
-        /// <param name="order"></param>
-        /// <returns></returns>
         private static IEnumerable<Polynomial> GetPolynomials(RefElement simplex, int order) {
             int numberOfPolynomials;
             if (simplex.SpatialDimension == 2) {

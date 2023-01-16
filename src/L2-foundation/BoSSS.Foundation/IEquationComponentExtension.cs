@@ -359,7 +359,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// And another wrapper.
         /// </summary>
-        static public void Evaluate(this SpatialOperator op,double time, params DGField[] f) {
+        static public void Evaluate(this SpatialOperator op, double time, params DGField[] f) {
             Evaluate(op, time, null, SubGridBoundaryModes.OpenBoundary, f);
         }
 

@@ -31,9 +31,7 @@ namespace BoSSS.Application.BoSSSpad {
     public enum PlotNowMode {
         
         /// <summary>
-        /// (Default)
-        /// <see cref="GnuplotExtensions.PlotGIF(Gnuplot, int, int)"/>,
-        /// main option for old BoSSSpad GUI
+        /// Deprecated
         /// </summary>
         GIF = 0,
 
@@ -73,7 +71,8 @@ namespace BoSSS.Application.BoSSSpad {
             if (PlotMode == PlotNowMode.CairoLatex) {
                 return gp.PlotCairolatex();
             } else if(PlotMode == PlotNowMode.GIF) {
-                return gp.PlotGIF();
+                throw new NotImplementedException("Is this still used by anyone?");
+                //return gp.PlotGIF();
             } else if(PlotMode == PlotNowMode.SVG) {
                 return gp.PlotSVG();
             } else {

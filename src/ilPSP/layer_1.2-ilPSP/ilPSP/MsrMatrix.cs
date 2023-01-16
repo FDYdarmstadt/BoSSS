@@ -1412,7 +1412,44 @@ namespace ilPSP.LinSolvers {
                 return (int) Math.Max(Math.Min(a.m_ColIndex - b.m_ColIndex, int.MaxValue), int.MinValue);
             }
         }
+        /// <summary>
+        /// This Method returns the maximum entry (absolute) and its index in a given row
+        /// </summary>
+        /// <param name="rowIndex"></param>
+        /// <returns> {colIndex, Value} </returns>
+        public double[] GetMaxInRow(long rowIndex)
+        {
+            var row = this.GetRowShallow(rowIndex);
+            var ret = new double[] { row[0].ColIndex, row[0].Value };
+            for (int i = 1; i < row.Length; i++)
+            {
+                if (Math.Abs(row[i].Value) > Math.Abs(ret[1]))
+                {
+                    ret = new double[] { row[i].ColIndex, row[i].Value };
+                }
+            }
+            return ret;
+        }
 
+        /// <summary>
+        /// This Method returns the maximum entry (absolute) and its indexes 
+        /// </summary>
+        /// <returns>{rowIndex, colIndex, Value}</returns>
+        public double[] GetMax()
+        {
+            double[] max = this.GetMaxInRow(0);
+            double[] ret = new double[] { 0, max[0], max[1] };
+            for (int rowIndex = 1; rowIndex < (int)this.NoOfRows; rowIndex++)
+            {
+                var MaxValueRow = GetMaxInRow(rowIndex);
+                if (Math.Abs(ret[2]) < Math.Abs(MaxValueRow[1]))
+                {
+                    max = MaxValueRow.CloneAs();
+                    ret = new double[] { rowIndex, max[0], max[1] };
+                }
+            }
+            return ret;
+        }
         /// <summary>
         /// matrix entries;
         /// 1st index: local row index; 2nd index: no interpretation;

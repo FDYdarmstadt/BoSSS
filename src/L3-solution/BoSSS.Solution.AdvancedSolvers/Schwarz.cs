@@ -184,6 +184,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public int NoOfPartsOnCurrentProcess = 4;
 
+            public int[] GetNoOfSpeciesList(MultigridMapping MgMap) {
+                int[] NoOfSpecies = new int[MgMap.AggGrid.iLogicalCells.NoOfLocalUpdatedCells];
+                for (int jCell = 0; jCell < MgMap.AggGrid.iLogicalCells.NoOfLocalUpdatedCells; jCell++) {
+                    NoOfSpecies[jCell] = 1;
+
+                    for (int iVar = 0; iVar < MgMap.NoOfVariables; iVar++) {
+                        if (MgMap.AggBasis[iVar] is XdgAggregationBasis xb) {
+                            NoOfSpecies[jCell] = xb.GetNoOfSpecies(jCell);
+                        }
+                    }
+                }
+                return NoOfSpecies;
+            }
+
             public override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
 
                 if (cache != null) {
@@ -197,6 +211,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //    throw new ArgumentException("Column partitioning mismatch.");
 
                 var ag = MgMap.AggGrid;
+                
+                var NoOfSpecies = GetNoOfSpeciesList(MgMap);
 
                 int JComp = ag.iLogicalCells.NoOfLocalUpdatedCells; // number of local cells
                 int[] xadj = new int[JComp + 1];
@@ -244,7 +260,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 ref JComp, ref ncon,
                                 xadj,
                                 adjncy.ToArray(),
-                                null,
+                                NoOfSpecies,
                                 null,
                                 null,
                                 ref NoOfPartsOnCurrentProcess,
@@ -730,7 +746,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 blockSolvers = new GridAndDegRestriction[NoOfSchwzBlocks];
 
-                
+
                 tr.Info($"Initializing " + NoOfSchwzBlocks + " blocks on multigrid level " + op.LevelIndex);
                 for(int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     Debug.Assert(BlockCells != null);
@@ -748,83 +764,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     blockSolvers[iPart].Init(op); // will only initialize Restriction, since sub-solver is not set yet!
                                                   // initialization of sub-solver must be done manually, see below.
 
-                    if (BlockSolver.OperatorRestriction.DgMapping.TotalLength > 0) {
-                        if (m_config.UsePMGinBlocks && AnyHighOrderTerms) {
-                            // +++++++++++++++++++++
-                            // p-Multigrid in blocks
-                            // +++++++++++++++++++++
+                    ISubsystemSolver blockSolve;
+                    blockSolve = InitBlockSolver(op, iPart, BlockSolver);
 
-                            ISubsystemSolver blockSolve;
-
-                            if (op.LevelIndex >= 1 && op.DgMapping.MpiSize == 4000000) {
-                                blockSolve = new DirectSolver() {
-                                    ActivateCaching = (int NoIter, int MgLevel) => true
-                                };
-                            } else {
-                                var pmgConfig = new PmgConfig();
-                                pmgConfig.UseILU = true;// op.LevelIndex == 0;
-                                blockSolve = pmgConfig.CreateInstanceImpl__Kummer(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
-                                BlockSolver.LowerPSolver = blockSolve;
-
-                                //if(op.LevelIndex == 0)
-                                //    ((CellILU)((OrthonormalizationMultigrid)blockSolve).PostSmoother).id = "R" + op.Mapping.MpiRank + "Lv" + op.LevelIndex + "p" + iPart;
-                            }
-
-                            /*
-                            // just ILU is bad
-                            var blockSolve = new CellILU() {
-                                ILU_level = 0
-                            };
-                            */
-
-                            /*
-                            var pc = new LevelPmg() {
-                                
-                            };
-                            pc.config.UseDiagonalPmg = true;
-                            pc.config.UseHiOrderSmoothing = true;
-
-                            var blockSolve = new SoftGMRES() {
-                                MaxKrylovDim = 20,
-                                Precond = pc
-                            };
-                            //*/
-
-                            blockSolve.Init(BlockSolver.OperatorRestriction);
-                            BlockSolver.LowerPSolver = blockSolve;
-
-                            if (blockSolve is IProgrammableTermination pmg_pTerm) {
-                                int iPartCopy = iPart;
-                                pmg_pTerm.TerminationCriterion = delegate (int i, double r0, double r) {
-                                    var ret = (i <= 1 || r > r0 * 0.1, true);
-                                    //var ret = (i <= 1, true);
-                                    //if (!ret.Item1)
-                                    //    // sub-solver terminates:
-                                    //    Console.WriteLine($"Block solver {iPartCopy} lv {op.LevelIndex}: {i} {r / r0:0.###e-00} {ret}");
-                                    return ret;
-                                };
-                            }
-
-                        } else {
-
-                            // ++++++++++++++++++++++++
-                            // direct solver for blocks
-                            // ++++++++++++++++++++++++
-
-
-                            var direct = new DirectSolver() {
-                                ActivateCaching = (int NoIter, int MgLevel) => true
-                            };
-                            direct.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
-                            direct.config.TestSolution = false;
-                            
-                            direct.Init(BlockSolver.OperatorRestriction);
-                            BlockSolver.LowerPSolver = direct;
-                        }
-                    }
+                    BlockSolver.LowerPSolver = blockSolve;
                 }
 
-                
+
                 // Watchdog bomb!
                 // ==============
 
@@ -873,6 +819,93 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //if (CoarseSolver != null) 
                 //    CoarseSolver.Init(op, ExtRows);
             }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        protected virtual ISubsystemSolver InitBlockSolver(MultigridOperator op, int iPart, GridAndDegRestriction BlockSolver) {
+            ISubsystemSolver blockSolve;
+            {
+                if (BlockSolver.OperatorRestriction.DgMapping.TotalLength > 0) {
+                    if (m_config.UsePMGinBlocks && AnyHighOrderTerms) {
+                        // +++++++++++++++++++++
+                        // p-Multigrid in blocks
+                        // +++++++++++++++++++++
+
+
+                        if (op.LevelIndex >= 1 && op.DgMapping.MpiSize == 4000000) {
+                            blockSolve = new DirectSolver() {
+                                ActivateCaching = (int NoIter, int MgLevel) => true
+                            };
+                        } else {
+                            var pmgConfig = new PmgConfig();
+                            pmgConfig.UseILU = true;// op.LevelIndex == 0;
+                            blockSolve = pmgConfig.CreateInstanceImpl__Kummer(BlockSolver.OperatorRestriction, op.DGpolynomialDegreeHierarchy);
+
+
+                            //if(op.LevelIndex == 0)
+                            //    ((CellILU)((OrthonormalizationMultigrid)blockSolve).PostSmoother).id = "R" + op.Mapping.MpiRank + "Lv" + op.LevelIndex + "p" + iPart;
+                        }
+
+                        /*
+                        // just ILU is bad
+                        var blockSolve = new CellILU() {
+                            ILU_level = 0
+                        };
+                        */
+
+                        /*
+                        var pc = new LevelPmg() {
+
+                        };
+                        pc.config.UseDiagonalPmg = true;
+                        pc.config.UseHiOrderSmoothing = true;
+
+                        var blockSolve = new SoftGMRES() {
+                            MaxKrylovDim = 20,
+                            Precond = pc
+                        };
+                        //*/
+
+                        blockSolve.Init(BlockSolver.OperatorRestriction);
+                        BlockSolver.LowerPSolver = blockSolve;
+
+                        if (blockSolve is IProgrammableTermination pmg_pTerm) {
+                            int iPartCopy = iPart;
+                            pmg_pTerm.TerminationCriterion = delegate (int i, double r0, double r) {
+                                var ret = (i <= 1 || r > r0 * 0.1, true);
+                                //var ret = (i <= 1, true);
+                                //if (!ret.Item1)
+                                //    // sub-solver terminates:
+                                //    Console.WriteLine($"Block solver {iPartCopy} lv {op.LevelIndex}: {i} {r / r0:0.###e-00} {ret}");
+                                return ret;
+                            };
+                        }
+
+                    } else {
+
+                        // ++++++++++++++++++++++++
+                        // direct solver for blocks
+                        // ++++++++++++++++++++++++
+
+
+                        var direct = new DirectSolver() {
+                            ActivateCaching = (int NoIter, int MgLevel) => true
+                        };
+                        direct.config.UseDoublePrecision = false;
+                        direct.config.WhichSolver = DirectSolver._whichSolver.PARDISO;
+                        direct.config.TestSolution = false;
+
+                        direct.Init(BlockSolver.OperatorRestriction);
+                        blockSolve = direct;
+                    }
+                } else {
+                    blockSolve = null;
+                }
+            }
+
+            return blockSolve;
         }
 
         private void ModifyLowSelector(SubBlockSelector sbs, MultigridOperator op) {

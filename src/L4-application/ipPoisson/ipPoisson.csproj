@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <RootNamespace>BoSSS.Application.SipPoisson</RootNamespace>
     <ApplicationRevision>0</ApplicationRevision>
@@ -50,6 +50,7 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XdgTimestepping\BoSSS.Solution.XdgTimestepping.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj" />
+    <ProjectReference Include="..\CahnHilliard\CahnHilliard.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />

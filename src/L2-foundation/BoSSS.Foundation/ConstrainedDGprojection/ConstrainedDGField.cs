@@ -267,7 +267,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 Console.WriteLine("No of edges on inter process boundary: {0}", fixedInterProcBoundary.NoOfItemsLocally);
                 innerEM = innerEM.Except(fixedInterProcBoundary);
 
-                // add neighbours
+                // add neighbors
                 int NoLocalNeigh = 2; // Gets the neighbor and the neighbor's neighbor
                 CellMask localInterProcNeigh = localInterProcPatch;
                 BitArray localInterProcNeighBA = new BitArray(J);
@@ -357,7 +357,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             }
 
 
-            // determine interpatch domain 
+            // determine inter-patch domain 
             // ===========================
             EdgeMask interPatchEM = innerEM;
             foreach (CellMask patch in patches) {
@@ -382,7 +382,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 }
             }
             CellMask interPatchCM = new CellMask(mask.GridData, interPatchBA);
-            // add neighbours
+            // add neighbors
             int NoNeigh = 2;   
             CellMask interPatchNeigh = interPatchCM;
             BitArray interPatchNeighBA = new BitArray(J);
@@ -569,7 +569,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <param name="mask"></param>
         /// <param name="fixedBoundaryMask"></param>
         void ProjectDGFieldOnPatch(CellMask mask, EdgeMask fixedBoundaryMask = null) {
-            using (new RuntimeTracker("time patchwise projection", diagOutput)) {
+            using (new RuntimeTracker("time patch-wise projection", diagOutput)) {
                 ProjectDGFieldBase(mask, fixedBoundaryMask, true);
             }
         }
@@ -852,7 +852,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
                     NodeSet qNdsE = getEdgeInterpolationNodes(0, 0, (m_grd.SpatialDimension == 2) ? 2 : 4);
                     if (qNdsE != null) {
-                        NodeSet qNdsV = qNdsE.GetVolumeNodeSet(m_grd, trafoIdx);
+                        NodeSet qNdsV = qNdsE.GetVolumeNodeSet(m_grd, trafoIdx, false);
                         AcceptedNodes.Add(qNdsV);
 
                         MultidimensionalArray valuesEdge = MultidimensionalArray.Create(1, qNdsV.NoOfNodes);
@@ -896,7 +896,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             m_grd.TransformGlobal2Local(vertCoord_glb, vertCoord_loc, jCell, 1, 0);
             double[] vertCellCoord1 = vertCoord_loc.ExtractSubArrayShallow(0, 0, -1).To1DArray();
 
-            return new NodeSet(m_grd.Cells.RefElements[0], vertCellCoord1);
+            return new NodeSet(m_grd.Cells.RefElements[0], vertCellCoord1, false);
 
         }
 
@@ -999,7 +999,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             node++;
                         }
                     }
-                    NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+                    NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds, false);
 
                     return ndsR;
 
@@ -1163,8 +1163,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
                             MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
 
-                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN);
-                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT);
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN, false);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT, false);
 
                             internalProjection.Evaluate(jCell_IN, 1, NS_IN, uIN);
                             internalProjection.Evaluate(jCell_OT, 1, NS_OT, uOT);
@@ -1569,7 +1569,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 }
             }
             CellMask mergePatchCM = new CellMask(mask.GridData, mergePatchBA);
-            // add neighbours
+            // add neighbors
             int NoNeigh = 1;
             CellMask mergepatchNeigh = mergePatchCM;
             BitArray mergePatchNeighBA = new BitArray(J);
@@ -1781,8 +1781,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
                             MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
 
-                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN);
-                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT);
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN, false);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT, false);
 
                             localProj.Evaluate(jCell_IN, 1, NS_IN, uIN);
                             localProj.Evaluate(jCell_OT, 1, NS_OT, uOT);
@@ -2671,7 +2671,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             node++;
                         }
                     }
-                    NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+                    NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds, false);
 
                     return ndsR;
                     //*/
@@ -2759,7 +2759,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         for (int n = 0; n < NoNds; n++) {
                             refMda[n, 0] = refNds[n];
                         }
-                        return new NodeSet(m_grd.Edges.EdgeRefElements[0], refMda);
+                        return new NodeSet(m_grd.Edges.EdgeRefElements[0], refMda, false);
                         //QuadRule quad = m_grd.Edges.EdgeRefElements[0].GetQuadratureRule((degree - (fixEdgInCell - 1)) * 2);
                         //return quad.Nodes;
                     }
@@ -2786,7 +2786,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                                     node++;
                                 }
                             }
-                            return new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+                            return new NodeSet(m_grd.Edges.EdgeRefElements[0], nds, false);
                         }
                     } else {
                         QuadRule quad1D = m_grd.Edges.EdgeRefElements[0].FaceRefElement.GetQuadratureRule(degree * 2);
@@ -2801,7 +2801,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                                 node++;
                             }
                         }
-                        return new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+                        return new NodeSet(m_grd.Edges.EdgeRefElements[0], nds, false);
                     }
                     /*
                     int degreeR = degree - numEcond;
@@ -3089,7 +3089,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
                     var edgeInfo = m_grd.Edges.Info[j];
 
-                    // check for interprocess edges to be processed in a second step
+                    // check for inter-process edges to be processed in a second step
                     isInterprocEdge = false;
                     neighbourProc = -1;
                     if (edgeInfo.HasFlag(EdgeInfo.Interprocess)) {
@@ -3301,7 +3301,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             //}
 
 
-            //// non-confrom edges (only for single core in 2D so far!)
+            //// non-conform edges (only for single core in 2D so far!)
             //foreach (int j in nonConformEdges) {
 
             //    int cell1 = m_grd.Edges.CellIndices[j, 0];
@@ -3476,7 +3476,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             //}
 
 
-            //// non-confrom edges (only for single core in 2D so far!)
+            //// non-conform edges (only for single core in 2D so far!)
             //int edge = 0;
             //foreach (int j in nonConformEdges) {
 
@@ -3582,9 +3582,9 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                         throw new NotImplementedException("TODO");
                     }
                     case 2: {
-                        // condtions at vertices
+                        // conditions at vertices
                         foreach (int vert in VertAtEdge) {
-                            int lvert = GlobalVert2Local[vert];// = vert, vorher IndexOutOfRange exeption
+                            int lvert = GlobalVert2Local[vert];// = vert, before IndexOutOfRange exception
                             numVCond += NegotiateNumVCond(lvert, CondAtVert, ProcsAtInterprocVert[local2Interproc[lvert]]);
                             CondAtVert[lvert, 0] += 1;
                         }
@@ -3793,7 +3793,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             node++;
                         }
                     }
-                    NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds);
+                    NodeSet ndsR = new NodeSet(m_grd.Edges.EdgeRefElements[0], nds, false);
 
                     return ndsR;
 

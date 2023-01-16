@@ -89,9 +89,14 @@ namespace BoSSS.Application.BoSSSpad {
                 throw new ApplicationException("Unable to create local machine batch, user settings path ('.BoSSS' - directory) does not exist or unable to find.");
             }
 
+            if(System.OperatingSystem.IsWindows())
+                base.RuntimeLocation = "win\\amd64";
+            else
+                base.RuntimeLocation = "linux\\amd64-openmpi";
+
             //base.DeployDirectory = Path.Combine(userDir, "batch");
 
-            if(string.IsNullOrWhiteSpace(DeployDir)) {
+            if (string.IsNullOrWhiteSpace(DeployDir)) {
                 string localAppData = System.Environment.GetEnvironmentVariable("LOCALAPPDATA")
                     ?? System.Environment.GetEnvironmentVariable("HOME");
 

@@ -34,7 +34,7 @@ namespace BoSSS.Application.XNSEC {
         private static void Main(string[] args) {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
-            InitMPI();
+            //InitMPI();
             //DeleteOldPlotFiles();
             //DeleteOldTextFiles();
             //Debugger.Launch();
@@ -51,7 +51,7 @@ namespace BoSSS.Application.XNSEC {
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //-n 8 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_DropletCombustion()"
-            System.Environment.Exit(111);
+            //System.Environment.Exit(111);
 
             bool MixtureFractionCalculation = false;
             try {

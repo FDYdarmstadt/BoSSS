@@ -805,7 +805,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     //throw new NotImplementedException("todo");
 
                     int NoVars = BlockLen.Length;
-                    if(NoVars <= 1)
+                    if (NoVars <= 1)
                         throw new NotSupportedException("The Schur complement requires at least 2 variables, moron!");
                     int N1 = BlockLen.Take(NoVars - 1).Sum();
                     int N2 = BlockLen.Last();
@@ -839,16 +839,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     var Diag11 = workSub.M11;
                     Diag11.GEMM(1.0, lpcSub.M11, OpMtxSub.M11, 0.0);
                     OpMtxSub.M11.GEMM(1.0, Diag11, rpcSub.M11, 0.0);
-                    
+
                     // invert diag
-                    if(Rank11 == N1) {
+                    if (Rank11 == N1) {
                         OpMtxSub.M11.InvertTo(workSub.M11);
                     } else {
                         RankDefInvert(OpMtxSub.M11, workSub.M11);
                     }
 
-                    //
-                    OpMtxSub.M11.GEMM(1.0, rpcSub.M11, OpMtxSub.M11, 0.0);
+                    
+                    ////Copying the matrix for multiplication (dgemm)
+                    //var OpMtxSub11 = default(MultidimensionalArray);
+                    //OpMtxSub11 = OpMtxSub.M11.CloneAs();
+                    OpMtxSub.M11.GEMM(1.0, rpcSub.M11, OpMtxSub.M11, 0.0); // fk, 26aug22, Note: now, GEMM should be able to handle in-place correctly.
+
                     workSub.M11.GEMM(1.0, OpMtxSub.M11, lpcSub.M11, 0.0);
                     var Q = workSub.M11;
 
@@ -867,18 +871,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                     (int Rank22, int[] IndefRows22) = SymPart_DiagBlockEquilib_DropIndefinite(MamaSub.M22, OpMtxSub.M22, lpcSub.M22, rpcSub.M22, workSub.M22);
-                    
+
                     lpcSub.M21.GEMM(1.0, lpcSub.M22, workSub.M21, 0.0);
                     rpcSub.M12.GEMM(1.0, workSub.M12, rpcSub.M22, 0.0);
 
                     //OUT_LeftPC.SaveToTextFile(Path.Combine(TestPath, "Lpc.txt"));
                     //OUT_rightPC.SaveToTextFile(Path.Combine(TestPath, "Rpc.txt"));
 
-                    if(IndefRows11 != null && IndefRows22 != null)
+                    if (IndefRows11 != null && IndefRows22 != null)
                         IndefRows = ArrayTools.Cat(IndefRows11, IndefRows22);
-                    else if(IndefRows11 != null)
+                    else if (IndefRows11 != null)
                         IndefRows = IndefRows11;
-                    else if(IndefRows22 != null)
+                    else if (IndefRows22 != null)
                         IndefRows = IndefRows22;
                     else
                         IndefRows = null;

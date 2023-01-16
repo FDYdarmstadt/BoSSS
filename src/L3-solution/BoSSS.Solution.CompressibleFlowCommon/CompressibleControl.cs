@@ -20,6 +20,7 @@ using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Control;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.CompressibleFlowCommon {
 
@@ -45,7 +46,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// The configured Mach Number in the far field.
         /// </summary>
         [ExclusiveLowerBound(0.0)]
-        public double MachNumber;
+        public double MachNumber=1;
 
         /// <summary>
         /// The configured Reynolds number in the far field.
@@ -54,7 +55,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// This option is ignored if <see cref="DomainType"/> is equal
         /// to "Euler"
         /// </remarks>
-        public double ReynoldsNumber;
+        public double ReynoldsNumber=1.0;
 
         /// <summary>
         /// The configured Prandtl number in the far field.
@@ -63,7 +64,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
         /// This option is ignored if <see cref="DomainType"/> is equal
         /// to "Euler"
         /// </remarks>
-        public double PrandtlNumber;
+        public double PrandtlNumber=0.71;
 
         /// <summary>
         /// The ratio of a characteristic flow velocity to the velocity of a
@@ -148,12 +149,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
                 SaveToDB = option
             });
         }
-
+        [DataMember]
         /// <summary>
         /// Backing field for <see cref="VariableToDegreeMap"/>
         /// </summary>
         protected Dictionary<Variable, int> variableFields = new Dictionary<Variable, int>();
 
+        [DataMember]
         /// <summary>
         /// Dictionary linking field variables (including derived ones) to
         /// the desired polynomial degree

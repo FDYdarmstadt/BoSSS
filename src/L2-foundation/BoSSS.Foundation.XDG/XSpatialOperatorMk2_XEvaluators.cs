@@ -1053,7 +1053,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// calls all <see cref="IEquationComponentSpeciesNotification.SetParameter(string, SpeciesId)"/> methods
+            /// calls all <see cref="IEquationComponentSpeciesNotification.SetParameter"/> methods
             /// </summary>
             protected static void NotifySpecies(SpatialOperator Owner, LevelSetTracker lsTrk, SpeciesId id) {
                 string sNmn = lsTrk.GetSpeciesName(id);

@@ -22,6 +22,7 @@ using System.IO;
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Collections.Generic;
 //using Microsoft.AspNetCore.Html;
 
 namespace BoSSS.Solution.Gnuplot {
@@ -329,6 +330,37 @@ namespace BoSSS.Solution.Gnuplot {
                     if (_2DData[iRow, iCol] != null) {
                         gp.SetSubPlot(iRow, iCol);
                         _2DData[iRow, iCol].ToGnuplot(gp);
+                    }
+                }
+            }
+            return gp;
+        }
+
+        /// <summary>
+        /// Multiple plot windows:
+        /// Converts <see cref="Plot2Ddata"/> into an alive Gnuplot object.
+        /// <param name="layout"> the entries corresponds to the elements in the given List<Plot2Ddata </param>
+        /// </summary>
+        public static Gnuplot ToGnuplot(this List<Plot2Ddata> _2DData, int[,] layout = null) {
+
+            if(layout == null) {
+                layout = new int[_2DData.Count, 1];
+                for(int iRow = 0; iRow < layout.GetLength(0); iRow++) {
+                    layout[iRow, 0] = iRow;
+                }
+            }
+   
+
+            Gnuplot gp = new Gnuplot();
+
+            gp.SetMultiplot(layout.GetLength(0), layout.GetLength(1));
+           
+            for(int iRow = 0; iRow < layout.GetLength(0); iRow++) {
+                for(int iCol = 0; iCol < layout.GetLength(1); iCol++) {
+                    int elem = layout[iRow, iCol];
+                    if(elem >= 0 && elem < _2DData.Count) {
+                        gp.SetSubPlot(iRow, iCol);
+                        _2DData.ElementAt(elem).ToGnuplot(gp);
                     }
                 }
             }
