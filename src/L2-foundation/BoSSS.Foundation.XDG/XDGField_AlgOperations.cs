@@ -40,6 +40,7 @@ namespace BoSSS.Foundation.XDG {
 
             XSpatialOperatorMk2 src = new XSpatialOperatorMk2(0.1, species.ToArray<string>());
             src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource("A", f, Dom));
+            src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource("B", f, Dom));
             src.Commit();
 
             var ev = src.GetEvaluatorEx(
@@ -54,7 +55,7 @@ namespace BoSSS.Foundation.XDG {
             string[] arguments;
 
 
-            public TermActivationFlags VolTerms => TermActivationFlags.UxV;
+            public TermActivationFlags VolTerms => TermActivationFlags.V;
 
             public IList<string> ArgumentOrdering => arguments;
 
