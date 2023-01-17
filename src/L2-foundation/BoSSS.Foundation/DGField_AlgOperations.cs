@@ -511,7 +511,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// used by <see cref="ProjectFunction"/>
         /// </summary>
-        public class ProjectFunctionSource : INonlinearSource {
+        class ProjectFunctionSource : INonlinearSource {
 
             /// <summary>
             /// Domain variables
