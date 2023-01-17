@@ -28,7 +28,7 @@ using ilPSP.Tracing;
 namespace BoSSS.Foundation.XDG {
 
     partial class XDGField {
-        
+
         virtual public void ProjectFunction(double alpha, Func<Vector, double[], int, double> f, params XDGField[] U) {
 
             IList<string> species = U[0].Basis.Tracker.SpeciesNames;
@@ -39,15 +39,38 @@ namespace BoSSS.Foundation.XDG {
             string[] Cod = new string[] { "res" };
 
             XSpatialOperatorMk2 src = new XSpatialOperatorMk2(0.1, species.ToArray<string>());
-            
-            src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource(Dom, f));
-            
+            src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource("A", f, Dom));
             src.Commit();
 
             var ev = src.GetEvaluatorEx(
                 new CoordinateMapping(U), null, this.Mapping);
 
             ev.Evaluate(alpha, 1.0, this.CoordinateVector);
+        }
+
+        class ProjectFunctionSource : ISpeciesFilter, IVolumeForm {
+            string species;
+            Func<Vector, double[], int, double> f;
+            string[] arguments;
+
+
+            public TermActivationFlags VolTerms => TermActivationFlags.UxV;
+
+            public IList<string> ArgumentOrdering => arguments;
+
+            public IList<string> ParameterOrdering => null;
+
+            public string ValidSpecies => species;
+
+            public ProjectFunctionSource(string species, Func<Vector, double[], int, double> f,string[] Dom) {
+                this.species = species;
+                this.f = f;
+                arguments = Dom;
+            }
+
+            public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+                return f(cpv.Xglobal, U, cpv.jCell) * V;
+            }
         }
     }
 }
