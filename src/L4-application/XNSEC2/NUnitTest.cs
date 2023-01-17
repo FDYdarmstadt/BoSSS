@@ -1037,14 +1037,14 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Maximum reached massfraction0 is {0}", maxMF0);
                 Console.WriteLine("Maximum reached massfraction1 is {0}", maxMF1);
 
-                Assert.Less(maxT, 2.6, "Maximum temperature is smaller than expected");
-                Assert.Greater(maxT, 2.75, "Maximum temperature is higher than expected");
+                Assert.Greater(maxT, 2.6, "Maximum temperature is smaller than expected");
+                Assert.Less(maxT, 2.75, "Maximum temperature is higher than expected");
 
-                Assert.Less(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
-                Assert.Greater(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
+                Assert.Greater(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
+                Assert.Less(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
 
-                Assert.Less(maxMF1, 0.95, "Maximum massfraction1 is smaller than expected");
-                Assert.Greater(maxMF1, 1.05, "Maximum massfraction1 is higher than expected");
+                Assert.Greater(maxMF1, 0.95, "Maximum massfraction1 is smaller than expected");
+                Assert.Less(maxMF1, 1.05, "Maximum massfraction1 is higher than expected");
 
             }
             Console.WriteLine("Full calculation done.");
@@ -1106,14 +1106,14 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Maximum reached massfraction0 is {0}", maxMF0);
                 Console.WriteLine("Maximum reached massfraction1 is {0}", maxMF1);
 
-                Assert.Less(maxT, 1.7, "Maximum temperature is smaller than expected");
-                Assert.Greater(maxT, 1.8, "Maximum temperature is higher than expected");
+                Assert.Greater(maxT, 1.7, "Maximum temperature is smaller than expected");
+                Assert.Less(maxT, 1.8, "Maximum temperature is higher than expected");
 
-                Assert.Less(maxMF0, 0.9, "Maximum massfraction0 is smaller than expected");
-                Assert.Greater(maxMF0, 1.1, "Maximum massfraction0 is higher than expected");
+                Assert.Greater(maxMF0, 0.9, "Maximum massfraction0 is smaller than expected");
+                Assert.Less(maxMF0, 1.1, "Maximum massfraction0 is higher than expected");
 
-                Assert.Less(maxMF1, 0.15, "Maximum massfraction1 is smaller than expected");
-                Assert.Greater(maxMF1, 0.3, "Maximum massfraction1 is higher than expected");
+                Assert.Greater(maxMF1, 0.15, "Maximum massfraction1 is smaller than expected");
+                Assert.Less(maxMF1, 0.3, "Maximum massfraction1 is higher than expected");
 
             }
             Console.WriteLine("Full calculation done.");
@@ -1175,14 +1175,14 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("Maximum reached temperature is {0}K", maxT);
 
 
-                Assert.Less(maxT, 0.95, "Maximum temperature is smaller than expected");
-                Assert.Greater(maxT, 1.05, "Maximum temperature is higher than expected");
+                Assert.Greater(maxT, 0.95, "Maximum temperature is smaller than expected");
+                Assert.Less(maxT, 1.05, "Maximum temperature is higher than expected");
 
-                Assert.Less(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
-                Assert.Greater(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
+                Assert.Greater(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
+                Assert.Less(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
 
-                Assert.Less(maxMF1, 0.95, "Maximum massfraction1 is smaller than expected");
-                Assert.Greater(maxMF1, 1.05, "Maximum massfraction1 is higher than expected");
+                Assert.Greater(maxMF1, 0.95, "Maximum massfraction1 is smaller than expected");
+                Assert.Less(maxMF1, 1.05, "Maximum massfraction1 is higher than expected");
             }
             Console.WriteLine("Full calculation done.");
         }
@@ -1241,14 +1241,14 @@ namespace BoSSS.Application.XNSEC {
 
                 Console.WriteLine("Maximum reached temperature is {0}K", maxT);
 
-                Assert.Less(maxT, 0.95, "Maximum temperature is smaller than expected");
-                Assert.Greater(maxT, 1.05, "Maximum temperature is higher than expected");
+                Assert.Greater(maxT, 0.95, "Maximum temperature is smaller than expected");
+                Assert.Less(maxT, 1.05, "Maximum temperature is higher than expected");
 
-                Assert.Less(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
-                Assert.Greater(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
+                Assert.Greater(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
+                Assert.Less(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
 
-                Assert.Less(maxMF1, 0.15, "Maximum massfraction1 is smaller than expected");
-                Assert.Greater(maxMF1, 0.3, "Maximum massfraction1 is higher than expected");
+                Assert.Greater(maxMF1, 0.15, "Maximum massfraction1 is smaller than expected");
+                Assert.Less(maxMF1, 0.3, "Maximum massfraction1 is higher than expected");
 
             }
             Console.WriteLine("Full calculation done.");
