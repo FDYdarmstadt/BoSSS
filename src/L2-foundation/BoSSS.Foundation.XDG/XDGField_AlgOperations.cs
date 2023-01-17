@@ -39,7 +39,9 @@ namespace BoSSS.Foundation.XDG {
             string[] Cod = new string[] { "res" };
 
             XSpatialOperatorMk2 src = new XSpatialOperatorMk2(0.1, species.ToArray<string>());
+            
             src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource(Dom, f));
+            
             src.Commit();
 
             var ev = src.GetEvaluatorEx(

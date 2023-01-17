@@ -935,7 +935,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// performs the projection of <paramref name="f"/> for each species.
         /// </summary>
-        public void ProjectFunctionXDG(double alpha, Func<Vector, double[], int, double> f, CellQuadratureScheme scheme, params XDGField[] U) {
+        public void ProjectFunctionXDG(double alpha, Func<Vector, double[], int, double> f, params XDGField[] U) {
 
             using (new FuncTrace()) {
                 this.ProjectFunction(alpha, f, U);
