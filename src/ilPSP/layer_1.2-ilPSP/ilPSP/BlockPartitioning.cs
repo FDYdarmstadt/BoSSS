@@ -609,6 +609,14 @@ namespace ilPSP {
             }
         }
 
+        public override String ToString() {
+            string st = "";
+            var ListOfProperties = this.GetType().GetProperties();
+            foreach (var Prop in ListOfProperties)
+                st += $"{Prop.Name}: {Prop.GetValue(this)} ({Prop.PropertyType}) \n";
+
+            return st;
+        }
         public bool AllBlockSizesEqual {
             get {
                 Debug.Assert(m_FrameBlockSize != 0);

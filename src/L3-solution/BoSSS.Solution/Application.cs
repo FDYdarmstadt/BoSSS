@@ -691,6 +691,18 @@ namespace BoSSS.Solution {
             }
         }
 
+        public static void DeleteOldTextFiles() {
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.txt").Concat(dir.GetFiles("*.csv"))) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
+                }
+                Console.WriteLine(";");
+            }
+        }
+
         /// <summary>
         /// Loads a control object, resp. a series of control objects (in the case of a parameter study)
         /// form a C#-script.
