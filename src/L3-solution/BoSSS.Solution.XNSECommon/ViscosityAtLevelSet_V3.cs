@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -123,7 +123,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                 for(int dN = 0; dN < D; dN++) {
                     for(int dD = 0; dD < D; dD++) {
                         // consistency
-                        Ret -=  (wA * inp.Normal[dN] * Grad_uA[dN, dD] * inp.Normal[dD] + wB * inp.Normal[dN] * Grad_uB[dN, dD] * inp.Normal[dD]) * (vA * inp.Normal[component]);
+                        Ret -=  (wA * muA * inp.Normal[dN] * Grad_uA[dN, dD] * inp.Normal[dD] + wB * muB * inp.Normal[dN] * Grad_uB[dN, dD] * inp.Normal[dD]) * ((vA - vB) * inp.Normal[component]);
                         // symmetry
                         Ret -= (wA * muA * inp.Normal[component] * Grad_vA[dD] * inp.Normal[dD] + wB * muB * inp.Normal[component] * Grad_vB[dD] * inp.Normal[dD]) * (uA[dN] - uB[dN]) * inp.Normal[dN];
                     }
@@ -139,7 +139,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                         Ret -= (wA * muA * inp.Normal[dN] * Grad_vA[dN] * inp.Normal[component] + wB * muB * inp.Normal[dN] * Grad_vB[dN] * inp.Normal[component]) * (uA[dD] - uB[dD]) * inp.Normal[dD] ;
                     }
                     // penalty
-                    Ret += muA * ((uA[dN] - uB[dN]) * inp.Normal[dN]) * ((vA - vB) * inp.Normal[component]) * pnlty * wPenalty;
+                    // Ret += ((uA[dN] - uB[dN]) * inp.Normal[dN]) * ((vA - vB) * inp.Normal[component]) * pnlty * wPenalty;
                 }
 
                 double[,] P = new double[D, D];
