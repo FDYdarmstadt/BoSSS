@@ -1138,7 +1138,6 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Number of nodes in rotational direction for each of the four ring segments.
         /// </param>
         /// <param name="NoOfRadialNodes">Number of nodes in the radial section.</param>
-        /// <param name="NoOfNodesPerSection">Number of nodes in rotational direction for each of the four ring segmants</param>
         /// <param name="type">Cell type.</param>
         /// <param name="zNodes">Nodes along the cylinder heigh.</param>
         /// <returns>

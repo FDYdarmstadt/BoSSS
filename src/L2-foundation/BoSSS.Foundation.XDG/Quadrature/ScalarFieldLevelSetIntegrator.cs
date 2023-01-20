@@ -121,15 +121,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// \f$ 
         /// where g represents <see cref="m_Field"/>.
         /// </summary>
-        /// <param name="j0">
-        /// <see cref="LevelSetIntegrator.EvaluateIntegrand"/>
-        /// </param>
-        /// <param name="Length">
-        /// <see cref="LevelSetIntegrator.EvaluateIntegrand"/>
-        /// </param>
-        /// <param name="EvalResult">
-        /// <see cref="LevelSetIntegrator.EvaluateIntegrand"/>
-        /// </param>
         public override void EvaluateIntegrand(NodeSet N, int j0, int Length, MultidimensionalArray EvalResult) {
             using (new FuncTrace()) {
                 int D = base.m_LevSetTrk.GridDat.SpatialDimension; // spatial dimension
@@ -176,15 +167,6 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         /// using the chain rule. HEre, \f$ H(\Phi)\f$ 
         /// denotes the Hessian of the level set (i.e., the second derivatives)
         /// </summary>
-        /// <param name="j0">
-        /// <see cref="LevelSetIntegrator.EvaluateDivergenceOfIntegrand"/>
-        /// </param>
-        /// <param name="Length">
-        /// <see cref="LevelSetIntegrator.EvaluateDivergenceOfIntegrand"/>
-        /// </param>
-        /// <param name="EvalResult">
-        /// <see cref="LevelSetIntegrator.EvaluateDivergenceOfIntegrand"/>
-        /// </param>
         public override void EvaluateDivergenceOfIntegrand(NodeSet nodes, int j0, int Length, MultidimensionalArray EvalResult) {
             using (new FuncTrace()) {
                 int D = base.m_LevSetTrk.GridDat.SpatialDimension; // spatial dimension

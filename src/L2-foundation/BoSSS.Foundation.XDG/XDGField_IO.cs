@@ -54,10 +54,7 @@ namespace BoSSS.Foundation.XDG {
             private XDGField myInstance;
 
             /// <summary>
-            /// Compares the given object <paramref name="other"/> with respect
-            /// to the 
-            /// <see cref="XDGFieldInitializer.Identification"/> and the 
-            /// <see cref="FieldInitializer.BasisInfo"/>.
+            /// Compares the given object <paramref name="other"/> 
             /// </summary>
             /// <returns></returns>
             public override bool Equals(Initializer<DGField> other) {
@@ -73,10 +70,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// Computes a hash code based on 
-            /// <see cref="FieldInitializer.Identification"/> and 
-            /// <see cref="FieldInitializer.Basi
-            /// sInfo"/>.
+            /// Computes a hash code
             /// </summary>
             public override int GetHashCode() {
                 // http://stackoverflow.com/questions/1646807/quick-and-simple-hash-code-combinations

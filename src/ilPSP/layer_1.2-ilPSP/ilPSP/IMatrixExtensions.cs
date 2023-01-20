@@ -93,7 +93,6 @@ namespace ilPSP {
             }
 
             txt.Flush();
-
         }
 
 
@@ -852,7 +851,20 @@ namespace ilPSP {
         {
             M.GEMV(xScaling, x, yScaling, y, transpose);
         }
-        
+
+        /// <summary>
+        /// Alias for <see cref="GEMV"/>
+        /// </summary>
+        static public double[] MatVecMul<MatrixType, VectorType1>(this MatrixType M, double xScaling, VectorType1 x, bool transpose = false)
+            where MatrixType : IMatrix
+            where VectorType1 : IList<double>//
+        {
+            double[] y = new double[transpose ? M.NoOfCols : M.NoOfRows];
+            M.GEMV(xScaling, x, 0.0, y, transpose);
+            return y;
+        }
+
+
         /// <summary>
         /// Alias for <see cref="GEMV"/>
         /// </summary>

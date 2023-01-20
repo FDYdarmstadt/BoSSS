@@ -153,8 +153,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
         /// <summary>
         /// Ctor.
         /// </summary>
-        /// <param name="tracker"></param>
-        /// <param name="iLevSet"></param>
+        /// <param name="levelSetData"></param>
         /// <param name="_SurfaceNodesOnZeroLevset">if true, the nodes for the surface integration are 'projected' onto the zero-level-set</param>
         /// <param name="_DoCheck">
         /// if true, the accuracy of the quadrature is checked after solution of the system

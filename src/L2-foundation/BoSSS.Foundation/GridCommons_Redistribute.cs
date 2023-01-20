@@ -938,7 +938,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             return BB;
         }
 
-
+        /*
         #region for testing and debugging
         private List<long> VerdachtsCellen = new List<long>();
         public List<long> GetZellsOfChangingProc {
@@ -949,6 +949,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             get { return m_HilbertIdx; }
         }
         #endregion
+        */
 
         /// <summary>
         /// Computes a grid partitioning (which cell should be on which processor) based on a Hilbertcurve of maximum order (64 bit>nBit*nDim).
@@ -1009,7 +1010,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 }
                 long[] CellIndex = local_CellIndex.MPIGatherv(CellsPerRank);
                 ulong[] HilbertIndex = local_HilbertIndex.MPIGatherv(CellsPerRank);
-                m_HilbertIdx = local_HilbertIndex;
+                //m_HilbertIdx = local_HilbertIndex;
                 List<int[]> cellCosts = new List<int[]>();
                 if (localcellCosts != null) {
                     cellCosts = new List<int[]>() { new int[numberofcells] };
@@ -1098,7 +1099,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 //Console.WriteLine("switch at: {0}, from rank{1}->{2}", cell, oldrank, rank);
                                 //Console.WriteLine("proc{0},cluster{2}: {1}", oldrank, buckets[oldrank, CostClustermap[cell]], CostClustermap[cell]);
                                 //Console.WriteLine("proc{0},cluster{2}: {1}", rank, buckets[rank, CostClustermap[cell]], CostClustermap[cell]);
-                                VerdachtsCellen.Add(CellIndex[cell]);
+                                //VerdachtsCellen.Add(CellIndex[cell]);
                             }
                         }
                         break;

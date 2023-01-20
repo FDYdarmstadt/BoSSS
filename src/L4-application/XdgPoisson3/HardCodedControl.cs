@@ -311,7 +311,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// a piecewise parabolic solution.
         /// </summary>
-        public static XdgPoisson3Control PiecewiseParabola(double delta = 0.0, double muA = -20, double muB = -1) {
+        public static XdgPoisson3Control PiecewiseParabola(int dgDeg = 3, double delta = 0.0, double muA = -20, double muB = -1, double agg = 0.0) {
             // --control cs:BoSSS.Application.XdgPoisson3.HardCodedControl.PiecewiseParabola();
             XdgPoisson3Control R = new XdgPoisson3Control();
 
@@ -321,7 +321,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.ProjectName = "XdgPoisson3/PiecewiseParabola";
             R.savetodb = false;
 
-            R.SetDGdegree(3);
+            R.SetDGdegree(dgDeg);
 
             R.GridFunc = delegate () {
                 double[] xNodes = new double[] { -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6 };
@@ -368,14 +368,14 @@ namespace BoSSS.Application.XdgPoisson3 {
             };
 
             R.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
-            R.AgglomerationThreshold = 0.0;
+            R.AgglomerationThreshold = agg;
             R.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
             return R;
         }
 
         /// <summary>
-        /// A parameter study over <see cref="PiecewiseParabola(double, double, double)"/>.
+        /// A parameter study over <see cref="PiecewiseParabola"/>.
         /// </summary>
         public static IEnumerable<XdgPoisson3Control> PiecewiseParabola_Parameterstudy() {
             List<XdgPoisson3Control> cases = new List<XdgPoisson3Control>();
@@ -386,7 +386,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     foreach (var _delta in new double[] { 1, 3, 6, 10, 20 }) {
                         double delta = 1.0 - 1.0 / _delta;
 
-                        var C = PiecewiseParabola(delta, -1.0, -1.0);
+                        var C = PiecewiseParabola(3, delta, -1.0, -1.0);
                         C.ViscosityMode = vmode;
 
 

@@ -17,7 +17,7 @@ limitations under the License.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
+//using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Text;
 using BoSSS.Foundation;

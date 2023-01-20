@@ -70,7 +70,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// 
         /// </summary>
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
-            //Debugger.Launch();
             Func<int, int> SblkSizeFunc = delegate (int iLevel) {
                 return TargetBlockSize; 
             };
@@ -111,6 +110,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int SchwarzblockSize = targetblocksize(MGLevel);
             int LocalDOF4directSolver = GetLocalDOF(op, pCoarsest);
             double SizeFraction = (double)LocalDOF4directSolver / (double)SchwarzblockSize;
+            SizeFraction = SizeFraction.MPIMax(); //when the number of blocks are not the same on the processors, it causes deadlock in MPI processes
+            //Hard solution would be checking all MPI processes written in SubBlocks and modify them to allow different numbered block partitioning 
 
             //if(SizeFraction < 1) {
             //    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver}) < Schwarz-Block size ({SchwarzblockSize});");
@@ -149,9 +150,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 int pCoarsest = UsepTG ? minDG : -1;
                 int[] NoBlocks = NoOfSchwarzBlocks(op, pCoarsest, SchwarzblockSize);
-                //NoBlocks[0] = 2;
-                //NoBlocks[1] = 1;
-                ////NoBlocks[2] = 1;
                 int[] GlobalNoBlocks = NoBlocks.MPISum(op.Mapping.MPI_Comm);
 
                 if (NoBlocks.Any(no => no <= 0))

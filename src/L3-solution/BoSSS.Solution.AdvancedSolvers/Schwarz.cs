@@ -184,6 +184,20 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// </summary>
             public int NoOfPartsOnCurrentProcess = 4;
 
+            public int[] GetNoOfSpeciesList(MultigridMapping MgMap) {
+                int[] NoOfSpecies = new int[MgMap.AggGrid.iLogicalCells.NoOfLocalUpdatedCells];
+                for (int jCell = 0; jCell < MgMap.AggGrid.iLogicalCells.NoOfLocalUpdatedCells; jCell++) {
+                    NoOfSpecies[jCell] = 1;
+
+                    for (int iVar = 0; iVar < MgMap.NoOfVariables; iVar++) {
+                        if (MgMap.AggBasis[iVar] is XdgAggregationBasis xb) {
+                            NoOfSpecies[jCell] = xb.GetNoOfSpecies(jCell);
+                        }
+                    }
+                }
+                return NoOfSpecies;
+            }
+
             public override IEnumerable<List<int>> GetBlocking(MultigridOperator op) {
 
                 if (cache != null) {
@@ -197,6 +211,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //    throw new ArgumentException("Column partitioning mismatch.");
 
                 var ag = MgMap.AggGrid;
+                
+                var NoOfSpecies = GetNoOfSpeciesList(MgMap);
 
                 int JComp = ag.iLogicalCells.NoOfLocalUpdatedCells; // number of local cells
                 int[] xadj = new int[JComp + 1];
@@ -244,7 +260,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 ref JComp, ref ncon,
                                 xadj,
                                 adjncy.ToArray(),
-                                null,
+                                NoOfSpecies,
                                 null,
                                 null,
                                 ref NoOfPartsOnCurrentProcess,
@@ -730,7 +746,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 blockSolvers = new GridAndDegRestriction[NoOfSchwzBlocks];
 
-                
+
                 tr.Info($"Initializing " + NoOfSchwzBlocks + " blocks on multigrid level " + op.LevelIndex);
                 for(int iPart = 0; iPart < NoOfSchwzBlocks; iPart++) { // loop over parts...
                     Debug.Assert(BlockCells != null);

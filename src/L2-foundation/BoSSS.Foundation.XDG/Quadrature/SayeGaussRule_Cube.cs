@@ -235,7 +235,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return curvature;
         }
 
-        double safety = 2;
+        //double safety = 2;
 
         protected override bool HeightDirectionIsSuitable(
             LinearSayeSpace<Cube> arg,
