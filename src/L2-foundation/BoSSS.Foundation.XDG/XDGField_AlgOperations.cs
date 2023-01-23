@@ -24,29 +24,109 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 
 namespace BoSSS.Foundation.XDG {
 
     partial class XDGField {
-
-        virtual public void ProjectFunction(double alpha, Func<Vector, double[], int, double> f, params XDGField[] U) {
-
-            IList<string> species = U[0].Basis.Tracker.SpeciesNames;
+        /// <summary>
+        /// Projects a function onto an XDG Field, using all species
+        /// </summary>
+        /// <param name="alpha"></param>
+        /// <param name="f"></param>
+        /// <param name="U"></param>
+        virtual public void ProjectFunctionXDG(double alpha, Func<Vector, double[], int, double> f, params XDGField[] U)
+        {
+            ProjectFunctionXDG(alpha, f, this.Basis.Tracker.SpeciesIdS, U);
+        }
+        /// <summary>
+        /// Projects a function onto an XDG Field, only on some prescribed species
+        /// </summary>
+        /// <param name="alpha"></param>
+        /// <param name="f"></param>
+        /// <param name="speciesToEvaluateIDs"></param>
+        /// <param name="U"></param>
+        virtual public void ProjectFunctionXDG(double alpha, Func<Vector, double[], int, double> f,  IList<SpeciesId> speciesToEvaluateIDs, params XDGField[] U) {
+            var LsTrk = this.Basis.Tracker;
+            IList<string> speciesToEvaluateNames = new List<string>(); 
+            foreach (SpeciesId spcID in speciesToEvaluateIDs)
+            {
+                speciesToEvaluateNames.Add(LsTrk.GetSpeciesName(spcID));
+            }
             string[] Dom = new string[U.Length];
             for (int i = 0; i < Dom.Length; i++)
                 Dom[i] = "_" + i;
 
             string[] Cod = new string[] { "res" };
 
-            XSpatialOperatorMk2 src = new XSpatialOperatorMk2(0.1, species.ToArray<string>());
-            src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource("A", f, Dom));
-            src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource("B", f, Dom));
+            XSpatialOperatorMk2 src = new XSpatialOperatorMk2(0.1, speciesToEvaluateNames.ToArray<string>());
+
+            foreach (string spc in speciesToEvaluateNames)
+            {
+                src.EquationComponents[Cod[0]].Add(new ProjectFunctionSource(spc, f, Dom));
+            }
             src.Commit();
 
             var ev = src.GetEvaluatorEx(
                 new CoordinateMapping(U), null, this.Mapping);
 
             ev.Evaluate(alpha, 1.0, this.CoordinateVector);
+
+            //Next, in the cut cells, we need to multiply the CoordinateVector with the Inverse Mass Matrix
+            
+            int deg = this.Basis.Degree;
+            int N = this.CoordinateVector.Length;
+            double[] tmp = new double[N];
+
+            //chose a quadOrder
+            var AvailOrders = LsTrk.GetCachedOrders().Where(order => order >= 2 * deg);
+            int order2Pick = AvailOrders.Any() ? AvailOrders.Min() : 2 * deg;
+
+            var MMF = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS, order2Pick).MassMatrixFactory;
+            var MM = MMF.GetMassMatrix(this.Mapping, inverse: true);
+            
+            MM.SpMV(1.0, this.CoordinateVector, 0.0, tmp);
+
+            this.CoordinateVector.SetV(tmp);
+            ////helper Function
+            //double[] GetCoords(int j, SpeciesId spc, XDGField field)
+            //{
+            //    int iSpc = LsTrk.Regions.GetSpeciesIndex(spc, j);
+            //    if (iSpc < 0)
+            //        return null;
+            //    else
+            //        return field.Coordinates.GetRowPart(j, iSpc * N, N);
+            //}
+            //// loop over every species
+            //foreach (SpeciesId speciesId in LsTrk.SpeciesIdS)
+            //{
+            //    var speciesMask = LsTrk.Regions.GetSpeciesMask(speciesId);
+            //    var cutCellMask = LsTrk.Regions.GetCutCellMask().Intersect(speciesMask);
+
+            //    var MMF = LsTrk.GetXDGSpaceMetrics(speciesId, order2Pick).MassMatrixFactory;
+            //    var MMblox = MMF.GetMassMatrixBlocks(this.Basis.NonX_Basis, speciesId);
+
+            //    double[] tmp = new double[N];
+            //    for (int iSub = 0; iSub < MMblox.jSub2jCell.Length; iSub++) // loop over every cut cell
+            //    {
+            //        int jCell = MMblox.jSub2jCell[iSub];
+            //        double[] CoordsFTT = GetCoords(jCell, speciesId, this);
+            //        if (CoordsFTT == null)
+            //            continue; // species not present in cell; no contribution.
+
+            //        var MM_j = MMblox.MassMatrixBlocks.ExtractSubArrayShallow(new int[] { iSub, 0, 0 }, new int[] { iSub - 1, N - 1, N - 1 });
+
+            //        MM_j.GEMV(1.0, CoordsFTT, 0.0, tmp);
+            //        double denominator = CoordsFTT.InnerProd(tmp);
+
+
+            //        //if(LsTrk.GetSpeciesName(speciesId) == "A") {
+            //        //    PlotCurrentState(CurrentStepNo + "0000" + 2*jCell);
+            //        //} else {
+            //        //    PlotCurrentState(CurrentStepNo + "0000" + 2 * jCell+1);
+            //        //}
+            //    }
+            //}
         }
 
         class ProjectFunctionSource : ISpeciesFilter, IVolumeForm {
@@ -55,7 +135,7 @@ namespace BoSSS.Foundation.XDG {
             string[] arguments;
 
 
-            public TermActivationFlags VolTerms => TermActivationFlags.V;
+            public TermActivationFlags VolTerms => TermActivationFlags.UxV;
 
             public IList<string> ArgumentOrdering => arguments;
 
