@@ -24,6 +24,9 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.Grid.RefElements;
 
+// TODO: test mit norm, jump norm zum laufen bringen
+// erst dotnet, dann mono, dann openfoam
+
 namespace BoSSS.Application.ExternalBinding {
     
 
@@ -222,10 +225,10 @@ namespace BoSSS.Application.ExternalBinding {
                 c = C.Fields[0] as SinglePhaseField;
                 ScalarFunction func() {
                     double rMin = 2.0e-3 / sqrt(noOfTotalCells) * 3.0 / sqrt(2);
-                    // double radius = 0.5e-3;
-                    double radius = rMin * 1.1;
-                    return ((_3D)((x, y, z) => tanh((-sqrt((((pow(x - 1.0e-3, 2) + pow(z - 0.0e-3, 2) - pow(radius, 2)))))) * 5000))).Vectorize();
-                    // return ((_3D)((x, y, z) => tanh(((x - 0.0011) + 0.01 * z)*250))).Vectorize();
+                    double radius = 0.7e-3;
+                    // double radius = rMin * 1.3;
+                    return ((_3D)((x, y, z) => tanh((-sqrt(pow(x - 1.0e-3, 2) + pow(z - 0.0e-3, 2)) + pow(radius, 1)) * 10000))).Vectorize();
+                    // return ((_3D)((x, y, z) => tanh(((x - 0.0011) + 0.01 * z)*3750))).Vectorize();
                     // return ((_3D)((x, y, z) => Math.Tanh(((x - 0.0011) + 0.01 * z) * 5500))).Vectorize();
                     // return ((_3D)((x, y, z) => tanh(((x - 2.5) + 0.1 * (y - 2.5))/1))).Vectorize();
                 }
@@ -303,26 +306,38 @@ namespace BoSSS.Application.ExternalBinding {
                 RealLevSet.Acc(1.0, c);
                 RealTracker.UpdateTracker(0);
 
-                SubGrid subgr = RealTracker.Regions.GetNearFieldSubgrid(1);
+                SubGrid subgr = RealTracker.Regions.GetNearFieldSubgrid(6);
                 SubGridBoundaryModes subgrbnd = 0;
-                CellMask subgrMask = subgr?.VolumeMask;
+                CellMask subgrMask = subgr.VolumeMask;
                 CellMask fullMask = CellMask.GetFullMask(grd);
                 SubGrid fullSubGrd = new SubGrid(fullMask);
 
+                CellMask mask = null;
+                SubGrid sgrid = null;
                 // CellMask mask = fullMask;
                 // SubGrid sgrid = fullSubGrd;
-                CellMask mask = subgrMask;
-                SubGrid sgrid = subgr;
+                // CellMask mask = subgrMask;
+                // SubGrid sgrid = subgr;
 
                 int noOfNarrowBandCells = 0;
-                foreach (bool cellInNarrowBand in mask.GetBitMask())
-                {
-                    if (cellInNarrowBand)
+                if (mask != null) {
+                    foreach (bool cellInNarrowBand in mask.GetBitMask())
                     {
-                        noOfNarrowBandCells++;
+                        if (cellInNarrowBand)
+                        {
+                            noOfNarrowBandCells++;
+                        }
+                    }
+                    if (noOfNarrowBandCells == 0){
+                        Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
+                        // throw new ApplicationException("No interface found");
+                        // mask = fullMask;
+                        // sgrid = fullSubGrd;
+                        // Console.WriteLine("No narrow band cells detected, solving on the whole domain");
+                    } else {
+                        Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
                     }
                 }
-                Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
 
                 System.Collections.BitArray subGridCellMask = mask?.GetBitMask();
 
@@ -368,35 +383,34 @@ namespace BoSSS.Application.ExternalBinding {
                 nls.SolverCode = NonLinearSolverCode.Newton;
                 // nls.SolverCode = NonLinearSolverCode.Picard;
                 // nls.ConvergenceCriterion = 1e-5;
-                nls.MaxSolverIterations = 100;
+                // nls.MaxSolverIterations = 100;
                 nls.verbose = true;
 
                 lsu.InitializeParameters(domfields, paramfields);
-
 
                 var tp = new Tecplot(grd.Grid.GridData, 3);
                 Tecplot("plot.1", 0.0, 3, c, phi, RealLevSet, u, v, w);
 
                 // TODO saye instead of hmf
-                XdgSubGridTimestepping TimeStepper = new XdgSubGridTimestepping(op,
-                                                         new SinglePhaseField[] { c, phi },
-                                                         new SinglePhaseField[] { Res_c, Res_phi },
-                                                         // TimeSteppingScheme.ExplicitEuler,
-                                                         TimeSteppingScheme.ImplicitEuler,
-                                                         sgrid,
-                                                         subgrbnd,
-                                                         LinearSolver: ls,
-                                                         NonLinearSolver: nls,
-                                                         _UpdateLevelset: (() => lsu),
-                                                         _LevelSetHandling: LevelSetHandling.LieSplitting,
-                                                         // _LevelSetHandling: LevelSetHandling.Coupled_Once,
-                                                         _AgglomerationThreshold: 0.0,
-                                                         _optTracker: RealTracker
-                                                         );
+                // XdgSubGridTimestepping TimeStepper = new XdgSubGridTimestepping(op,
+                //                                          new SinglePhaseField[] { c, phi },
+                //                                          new SinglePhaseField[] { Res_c, Res_phi },
+                //                                          // TimeSteppingScheme.ExplicitEuler,
+                //                                          TimeSteppingScheme.ImplicitEuler,
+                //                                          sgrid,
+                //                                          subgrbnd,
+                //                                          LinearSolver: ls,
+                //                                          NonLinearSolver: nls,
+                //                                          _UpdateLevelset: (() => lsu),
+                //                                          _LevelSetHandling: LevelSetHandling.LieSplitting,
+                //                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
+                //                                          _AgglomerationThreshold: 0.0,
+                //                                          _optTracker: RealTracker
+                //                                          );
 
-                // XdgTimestepping TimeStepper = new XdgTimestepping(op,
-                //                                          new SinglePhaseField[]{c, phi},
-                //                                          new SinglePhaseField[]{Res_c, Res_phi},
+                // XdgTimestepping TimeStepperNoSG = new XdgTimestepping(opNoSG,
+                //                                          new SinglePhaseField[]{cNoSG, phiNoSG},
+                //                                          new SinglePhaseField[]{Res_cNoSG, Res_phiNoSG},
                 //                                          // TimeSteppingScheme.ExplicitEuler,
                 //                                          TimeSteppingScheme.ImplicitEuler,
                 //                                          LinearSolver: ls,
@@ -405,19 +419,42 @@ namespace BoSSS.Application.ExternalBinding {
                 //                                          // _LevelSetHandling: LevelSetHandling.LieSplitting,
                 //                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
                 //                                          _AgglomerationThreshold: 0.0,
-                //                                          _optTracker: RealTracker
+                //                                          _optTracker: RealTrackerNoSG
                 //                                          );
 
-                int timesteps = 3;
+                XdgTimestepping TimeStepper = new XdgTimestepping(op,
+                                                         new SinglePhaseField[]{c, phi},
+                                                         new SinglePhaseField[]{Res_c, Res_phi},
+                                                         // TimeSteppingScheme.ExplicitEuler,
+                                                         TimeSteppingScheme.ImplicitEuler,
+                                                         LinearSolver: ls,
+                                                         NonLinearSolver: nls,
+                                                         // _UpdateLevelset: (() => lsu),
+                                                         // _LevelSetHandling: LevelSetHandling.LieSplitting,
+                                                         // _LevelSetHandling: LevelSetHandling.Coupled_Once,
+                                                         _AgglomerationThreshold: 0.0,
+                                                         _optTracker: RealTracker
+                                                         );
+
+                int timesteps = 2;
                 double dt = 2e-3;
                 for (int t = 0; t < timesteps; t++)
                 {
                     Console.WriteLine(t);
+
+                    // RealLevSet.Clear();
+                    // RealLevSet.Acc(1.0, c);
+                    // RealTracker.UpdateTracker(t * dt);
+                    // TimeStepper.Solve(dt * t, dt);
+
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);
                     RealTracker.UpdateTracker(t * dt);
                     TimeStepper.Solve(dt * t, dt);
+
                     Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, phi, RealLevSet, u, v, w);
+                    // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, phi, RealLevSet, u, v, w, cNoSG, phiNoSG);
+
                 }
             } catch (Exception e) {
                 Console.WriteLine(e.GetType());

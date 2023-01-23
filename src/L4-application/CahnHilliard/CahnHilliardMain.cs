@@ -1574,9 +1574,9 @@ namespace BoSSS.Application.CahnHilliard {
             if (m_Subgrid != null) {
                 BitArray subGridCellMask = m_Subgrid.GetBitMask();
                 bool cellInSG = subGridCellMask[cpv.jCell];
-                if (cellInSG) {
-                    return 0;
-                // throw new Exception("This cell should not be evaluated");
+                if (!cellInSG) {
+                    // return 0;
+                    throw new Exception("This cell should not be evaluated");
                 }
             }
             return base.VolumeForm(ref cpv, U, GradU, V, GradV);
@@ -1596,8 +1596,8 @@ namespace BoSSS.Application.CahnHilliard {
             }
 
             if (m_Subgrid != null && cellInSG == false && cellOutSG == false) {
-                return 0;
-                // throw new ApplicationException("This should not happen");
+                // return 0;
+                throw new ApplicationException("This should not happen");
             }
             else if ((m_Subgrid == null) || (cellInSG == true && cellOutSG == true)) {
                 double Acc = 0.0;
@@ -1682,6 +1682,14 @@ namespace BoSSS.Application.CahnHilliard {
         /// </summary>
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
 
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                bool cellInSG = subGridCellMask[inp.jCellIn];
+                if (!cellInSG) {
+                    throw new Exception("Test");
+                    // return 0;
+                }
+            }
             if(this.IsDirichlet(ref inp)) {
                 // inhom. Dirichlet b.c.
                 // +++++++++++++++++++++
@@ -1761,7 +1769,20 @@ namespace BoSSS.Application.CahnHilliard {
         public TermActivationFlags InnerEdgeTerms => TermActivationFlags.UxV;
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
-            // TODO m_Subgrid stuff
+
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                bool cellInSG = subGridCellMask[inp.jCellIn];
+                if (!cellInSG) {
+                    return 0;
+                }
+            }
+
+            return BoundaryEdgeFormNoCheck(ref inp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
+        }
+
+        public double BoundaryEdgeFormNoCheck(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
+
             double UxN = 0;
             for(int d = 0; d < m_D; d++) {
                 UxN += (inp.Parameters_IN[d]) * inp.Normal[d];
@@ -1807,10 +1828,10 @@ namespace BoSSS.Application.CahnHilliard {
             return c * UxN * (_vIN - _vOUT);
             } else if (cellInSG == true && cellOutSG == false) {
                 Foundation.CommonParamsBnd bnp = ToBndParams(inp);
-                return BoundaryEdgeForm(ref bnp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
+                return BoundaryEdgeFormNoCheck(ref bnp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
             } else if (cellInSG == false && cellOutSG == true) {
                 Foundation.CommonParamsBnd bnp = ToBndParams(inp);
-                return BoundaryEdgeForm(ref bnp, _uOUT, _Grad_uOUT, _vOUT, _Grad_vOUT);
+                return BoundaryEdgeFormNoCheck(ref bnp, _uOUT, _Grad_uOUT, _vOUT, _Grad_vOUT);
             }
             throw new ApplicationException("If this code is reached, basic logic does not work anymore. The universe is probably doomed.");
         }
@@ -1820,7 +1841,7 @@ namespace BoSSS.Application.CahnHilliard {
             if (m_Subgrid != null) {
                 BitArray subGridCellMask = m_Subgrid.GetBitMask();
                 bool cellInSG = subGridCellMask[cpv.jCell];
-                if (cellInSG) {
+                if (!cellInSG) {
                     return 0;
                 // throw new Exception("This cell should not be evaluated");
                 }
@@ -1921,7 +1942,7 @@ namespace BoSSS.Application.CahnHilliard {
             if (m_Subgrid != null) {
                 BitArray subGridCellMask = m_Subgrid.GetBitMask();
                 bool cellInSG = subGridCellMask[cpv.jCell];
-                if (cellInSG) {
+                if (!cellInSG) {
                     return 0;
                 // throw new Exception("This cell should not be evaluated");
                 }
@@ -2023,6 +2044,15 @@ namespace BoSSS.Application.CahnHilliard {
         /// Integrand on boundary mesh edges of the SIP
         /// </summary>
         public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+
+            if (m_Subgrid != null) {
+                BitArray subGridCellMask = m_Subgrid.GetBitMask();
+                bool cellInSG = subGridCellMask[inp.jCellIn];
+                if (!cellInSG) {
+                    return 0;
+                }
+            }
+
             if(this.IsDirichlet(ref inp)) {
                 return BoundaryEdgeFormGeneralDiri(ref inp, _uA, _Grad_uA, _vA, _Grad_vA, this.g_Diri(ref inp));
             } else {
@@ -2086,7 +2116,7 @@ namespace BoSSS.Application.CahnHilliard {
             if (m_Subgrid != null) {
                 BitArray subGridCellMask = m_Subgrid.GetBitMask();
                 bool cellInSG = subGridCellMask[cpv.jCell];
-                if (cellInSG) {
+                if (!cellInSG) {
                     // throw new Exception("This cell should not be evaluated");
                     return 0;
                 }
@@ -2164,7 +2194,7 @@ namespace BoSSS.Application.CahnHilliard {
             if (m_Subgrid != null) {
                 BitArray subGridCellMask = m_Subgrid.GetBitMask();
                 bool cellInSG = subGridCellMask[cpv.jCell];
-                if (cellInSG) {
+                if (!cellInSG) {
                     return 0;
                 // throw new Exception("This cell should not be evaluated");
                 }
@@ -2239,7 +2269,7 @@ namespace BoSSS.Application.CahnHilliard {
             if (m_Subgrid != null) {
                 BitArray subGridCellMask = m_Subgrid.GetBitMask();
                 bool cellInSG = subGridCellMask[cpv.jCell];
-                if (cellInSG) {
+                if (!cellInSG) {
                     return 0;
                 // throw new Exception("This cell should not be evaluated");
                 }
@@ -2310,7 +2340,7 @@ namespace BoSSS.Application.CahnHilliard {
             if (m_Subgrid != null) {
                 BitArray subGridCellMask = m_Subgrid.GetBitMask();
                 bool cellInSG = subGridCellMask[cpv.jCell];
-                if (cellInSG) {
+                if (!cellInSG) {
                     return 0;
                 // throw new Exception("This cell should not be evaluated");
                 }
@@ -2653,6 +2683,7 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+
             double Acc = 0.0;
 
             double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
