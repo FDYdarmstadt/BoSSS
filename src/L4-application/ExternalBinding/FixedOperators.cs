@@ -1,6 +1,8 @@
-﻿using BoSSS.Foundation;
+﻿using MPI.Wrappers;
+using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Foundation.Quadrature;
 using ilPSP;
 using ilPSP.Connectors;
 using ilPSP.LinSolvers;
@@ -113,10 +115,81 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
         /// <summary>
+        /// Return the norm of the field c
+        /// </summary>
+        public double Norm(OpenFoamMatrix mtx = null, ScalarFunction InitFunc = null) {
+            if (mtx != null) {
+                OpenFoamDGField C = mtx.Fields[0];
+                c = C.Fields[0] as SinglePhaseField;
+                if (InitFunc != null){
+                    c.Clear();
+                    c.ProjectField(InitFunc);
+                }
+            }
+            return c.L2Norm();
+        }
+
+        /// <summary>
+        /// Return the jump norm of the field c
+        /// </summary>
+        public double JumpNorm() {
+            GridData grd = (GridData)c.GridDat;
+            int D = grd.SpatialDimension;
+
+            c.MPIExchange();
+
+            double Unorm = 0;
+
+            EdgeQuadrature.GetQuadrature(
+                new int[] { D + 1 }, grd,
+                (new EdgeQuadratureScheme()).Compile(grd, c.Basis.Degree * 2),
+                delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
+                    NodeSet NS = QR.Nodes;
+                    EvalResult.Clear();
+                    int NoOfNodes = NS.NoOfNodes;
+                    for (int j = 0; j < Length; j++) {
+                        int iEdge = j + i0;
+                        int jCell_IN = grd.Edges.CellIndices[iEdge, 0];
+                        int jCell_OT = grd.Edges.CellIndices[iEdge, 1];
+                        var uDiff = EvalResult.ExtractSubArrayShallow(new int[] { j, 0, 0 }, new int[] { j, NoOfNodes - 1, -1 });
+
+                        if (jCell_OT >= 0) {
+
+                            int iTrafo_IN = grd.Edges.Edge2CellTrafoIndex[iEdge, 0];
+                            int iTrafo_OT = grd.Edges.Edge2CellTrafoIndex[iEdge, 1];
+
+                            MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
+                            MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
+
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN, false);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT, false);
+
+                            c.Evaluate(jCell_IN, 1, NS_IN, uIN);
+                            c.Evaluate(jCell_OT, 1, NS_OT, uOT);
+
+                            uDiff.Acc(+1.0, uIN);
+                            uDiff.Acc(-1.0, uOT);
+                        } else {
+                            uDiff.Clear();
+                        }
+                    }
+
+                    EvalResult.ApplyAll(x => x * x);
+                },
+                delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) { // SaveIntegrationResults
+                    Unorm += ResultsOfIntegration.Sum();
+                }).Execute();
+
+            Unorm = Unorm.MPISum();
+
+            return Unorm.Sqrt();
+        }
+
+        /// <summary>
         /// Solves the Cahn-Hilliard equation
         /// </summary>
         [CodeGenExport]
-        public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
+        public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction InitFunc = null) {
             try {
                 // {
 
@@ -223,22 +296,22 @@ namespace BoSSS.Application.ExternalBinding {
                 // TODO
 
                 c = C.Fields[0] as SinglePhaseField;
-                ScalarFunction func() {
-                    double rMin = 2.0e-3 / sqrt(noOfTotalCells) * 3.0 / sqrt(2);
-                    double radius = 0.7e-3;
-                    // double radius = rMin * 1.3;
-                    return ((_3D)((x, y, z) => tanh((-sqrt(pow(x - 1.0e-3, 2) + pow(z - 0.0e-3, 2)) + pow(radius, 1)) * 10000))).Vectorize();
-                    // return ((_3D)((x, y, z) => tanh(((x - 0.0011) + 0.01 * z)*3750))).Vectorize();
-                    // return ((_3D)((x, y, z) => Math.Tanh(((x - 0.0011) + 0.01 * z) * 5500))).Vectorize();
-                    // return ((_3D)((x, y, z) => tanh(((x - 2.5) + 0.1 * (y - 2.5))/1))).Vectorize();
-                }
-                if (c.L2Norm() < 1e-20){
+                // ScalarFunction func() {
+                //     double rMin = 2.0e-3 / sqrt(noOfTotalCells) * 3.0 / sqrt(2);
+                //     double radius = 0.5e-3;
+                //     // double radius = rMin * 1.3;
+                //     return ((_3D)((x, y, z) => tanh((-sqrt(pow(x - 1.0e-3, 2) + pow(z - 0.0e-3, 2)) + pow(radius, 1)) * 50000))).Vectorize();
+                //     // return ((_3D)((x, y, z) => tanh(((x - 0.0011) + 0.01 * z)*3750))).Vectorize();
+                //     // return ((_3D)((x, y, z) => Math.Tanh(((x - 0.0011) + 0.01 * z) * 5500))).Vectorize();
+                //     // return ((_3D)((x, y, z) => tanh(((x - 2.5) + 0.1 * (y - 2.5))/1))).Vectorize();
+                // }
+                if (c.L2Norm() < 1e-20 && InitFunc != null){
                     Console.WriteLine("Zero order parameter field encountered - initializing with droplet");
                     c.Clear();
                     u.Clear();
                     v.Clear();
                     w.Clear();
-                    c.ProjectField(func());
+                    c.ProjectField(InitFunc);
                 }
                 phi = new SinglePhaseField(b);
                 // for (int j = 0; j < J; j++)
@@ -427,16 +500,16 @@ namespace BoSSS.Application.ExternalBinding {
                                                          new SinglePhaseField[]{Res_c, Res_phi},
                                                          // TimeSteppingScheme.ExplicitEuler,
                                                          TimeSteppingScheme.ImplicitEuler,
+                                                         RealTracker,
+                                                         (() => lsu),
                                                          LinearSolver: ls,
                                                          NonLinearSolver: nls,
-                                                         // _UpdateLevelset: (() => lsu),
                                                          // _LevelSetHandling: LevelSetHandling.LieSplitting,
                                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
-                                                         _AgglomerationThreshold: 0.0,
-                                                         _optTracker: RealTracker
+                                                         _AgglomerationThreshold: 0.0
                                                          );
 
-                int timesteps = 2;
+                int timesteps = 1;
                 double dt = 2e-3;
                 for (int t = 0; t < timesteps; t++)
                 {

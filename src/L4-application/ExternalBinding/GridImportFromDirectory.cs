@@ -18,7 +18,7 @@ namespace BoSSS.Application.ExternalBinding {
     static public class GridImportFromDirectory {
 
         // static string polyMeshDir = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dropletInShearFlowMedium/constant/polyMesh/";
-        static string polyMeshDir = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dropletInShearFlowSmall/constant/polyMesh/";
+        // static string polyMeshDir = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dropletInShearFlowSmall/constant/polyMesh/";
 
         static void RemoveComments(ref string input){
             // see https://stackoverflow.com/questions/3524317/regex-to-strip-line-comments-from-c-sharp/3524689#3524689
@@ -67,7 +67,7 @@ namespace BoSSS.Application.ExternalBinding {
             RemoveEmptyLines(ref input);
         }
 
-        internal static int[][] getNestedIntArray(string filename) {
+        internal static int[][] getNestedIntArray(string filename, string polyMeshDir) {
             var ret = new List<int[]>();
             string text = File.ReadAllText(polyMeshDir + filename);
             Clean(ref text);
@@ -87,7 +87,7 @@ namespace BoSSS.Application.ExternalBinding {
             return ret.ToArray();
         }
 
-        internal static int[] getIntArray(string filename) {
+        internal static int[] getIntArray(string filename, string polyMeshDir) {
             var ret = new List<int>();
             string text = File.ReadAllText(polyMeshDir + filename);
             Clean(ref text);
@@ -106,7 +106,7 @@ namespace BoSSS.Application.ExternalBinding {
             return ret.ToArray();
         }
 
-        internal static double[,] getNestedDoubleArray(string filename) {
+        internal static double[,] getNestedDoubleArray(string filename, string polyMeshDir) {
             var ret = new List<double[]>();
             string text = File.ReadAllText(polyMeshDir + filename);
             Clean(ref text);
@@ -135,20 +135,20 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
 
-        internal static int[][] getFaces() {
-            return getNestedIntArray("faces");
+        internal static int[][] getFaces(string polyMeshDir) {
+            return getNestedIntArray("faces", polyMeshDir);
         }
 
-        internal static int[] getNeighbour() {
-            return getIntArray("neighbour");
+        internal static int[] getNeighbour(string polyMeshDir) {
+            return getIntArray("neighbour", polyMeshDir);
         }
 
-        internal static int[] getOwner(){
-            return getIntArray("owner");
+        internal static int[] getOwner(string polyMeshDir){
+            return getIntArray("owner", polyMeshDir);
         }
 
-        internal static double[,] getPoints(){
-            return getNestedDoubleArray("points");
+        internal static double[,] getPoints(string polyMeshDir){
+            return getNestedDoubleArray("points", polyMeshDir);
         }
 
         internal static string[] names = new string[] {"left", "right", "empty"};
@@ -187,20 +187,21 @@ namespace BoSSS.Application.ExternalBinding {
         [Test]
         public static void ConvertFOAMGrid() {
 
-            var owner = getOwner();
-            var neighbour = getNeighbour();
+            string polyMeshDir = "./meshes/small/polyMesh/";
+            var owner = getOwner(polyMeshDir);
+            var neighbour = getNeighbour(polyMeshDir);
             int nCells = Max(owner.Max(), neighbour.Max()) + 1;
-            var g = GenerateFOAMGrid();
+            var g = GenerateFOAMGrid(polyMeshDir);
 
             Assert.AreEqual(g.GridData.iLogicalCells.Count, nCells, "Mismatch in expected number of cells.");
         }
 
-        public static OpenFOAMGrid GenerateFOAMGrid() {
+        public static OpenFOAMGrid GenerateFOAMGrid(string polyMeshDir) {
 
-            var faces = getFaces();
-            var owner = getOwner();
-            var neighbour = getNeighbour();
-            var points = getPoints();
+            var faces = getFaces(polyMeshDir);
+            var owner = getOwner(polyMeshDir);
+            var neighbour = getNeighbour(polyMeshDir);
+            var points = getPoints(polyMeshDir);
             int nCells = Max(owner.Max(), neighbour.Max()) + 1;
             var patchIDs = getPatchIDs(faces.Length);
             var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points, names, patchIDs, -1);
