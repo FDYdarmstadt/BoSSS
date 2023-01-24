@@ -66,10 +66,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup-->
   <ItemGroup>
-    <Reference Include="log4net">
-      <!--HintPath>..\..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath-->
-	  <HintPath>..\..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference>
+    <!--Reference Include="log4net">
+      <HintPath>..\..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
+    </Reference-->
     <Reference Include="Newtonsoft.Json">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
@@ -78,5 +77,9 @@
       <HintPath>..\..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="log4net" Version="2.0.15" />
+  </ItemGroup> 
   
 </Project>
