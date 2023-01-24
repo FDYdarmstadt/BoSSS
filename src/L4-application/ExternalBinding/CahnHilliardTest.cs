@@ -9,6 +9,7 @@ using NUnit.Framework;
 
 namespace BoSSS.Application.ExternalBinding {
 
+    [TestFixture]
     static public class CahnHilliardTest {
 
         [Test]
@@ -32,7 +33,9 @@ namespace BoSSS.Application.ExternalBinding {
             //     EdgeValues.Add(new List<double>{val});
             // }
             // OpenFoamPatchField cPtch = new(grd, 1, new int[]{1,2,3}, new string[]{"dirichlet","dirichlet","neumann"}, new double[]{1,-1,0});
-            foreach (var grd in new List<OpenFOAMGrid>{smallGrd, mediumGrd, largeGrd}){
+            int i = 0;
+            // foreach (var grd in new List<OpenFOAMGrid>{smallGrd, mediumGrd, largeGrd}){
+            foreach (var grd in new List<OpenFOAMGrid>{smallGrd, mediumGrd}){
                 OpenFoamDGField f = new OpenFoamDGField(grd, 2, 2);
                 OpenFoamMatrix mtx = new OpenFoamMatrix(grd, f);
                 OpenFoamPatchField cPtch;
@@ -90,23 +93,32 @@ namespace BoSSS.Application.ExternalBinding {
                 norms.Add(postNorm);
                 jumpNorms.Add(jumpNorm);
                 normRelChanges.Add(normRelChange);
-            }
-            foreach (var norm in new List<List<double>>{preNorms, norms, normRelChanges, jumpNorms})
-                {
-                    foreach (var elem in norm){
-                        Console.WriteLine(elem);
-                    }
-                    Console.WriteLine();
+
+                // move all plt files into their own directory before starting the next calculation
+                var source = new System.IO.DirectoryInfo("./");
+                System.IO.FileInfo[] files = source.GetFiles("*.plt");
+                foreach (var file in files) {
+                    file.MoveTo(new List<string>{"./small/", "./medium/", "./large/"}[i] + file.Name, true);
                 }
-            Console.WriteLine();
+                i++;
+            }
             Console.WriteLine("preNorms:");
-            Console.WriteLine(preNorms);
+            preNorms.ForEach(i => Console.WriteLine("{0}", i));
             Console.WriteLine("postNorms:");
-            Console.WriteLine(norms);
+            norms.ForEach(i => Console.WriteLine("{0}", i));
             Console.WriteLine("normrelchanges:");
-            Console.WriteLine(normRelChanges);
+            normRelChanges.ForEach(i => Console.WriteLine("{0}", i));
             Console.WriteLine("jumpNorms:");
-            Console.WriteLine(jumpNorms);
+            jumpNorms.ForEach(i => Console.WriteLine("{0}", i));
+
+            // make sure it works better with a finer grid
+            Assert.IsTrue(normRelChanges[0] > normRelChanges[1]);
+            Assert.IsTrue(jumpNorms[0] > jumpNorms[1]);
+
+            // also have some absolute constraints in place
+            Assert.IsTrue(normRelChanges[1] < 1e-4);
+            Assert.IsTrue(jumpNorms[1] < 1e-3);
+
             Cleanup();
 
         }
