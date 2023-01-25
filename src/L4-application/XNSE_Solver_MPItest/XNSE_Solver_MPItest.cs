@@ -74,7 +74,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         [Test]
         static public void RotCube_DomainDecompoitionError() {
-            // only with 3 processors and AMR true
+            // error occurs only with 3 processors and AMR true
 
             var C = HardcodedControl.RotCubeDomainDecompoitionError();
 
@@ -153,10 +153,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //this test takes too much time with 3 procs and exceed the 4 hr limit.
             int NoOfCores = ilPSP.Environment.MPIEnv.MPI_Size;
-            if (NoOfCores < 4) { // bypass the test
-                Console.WriteLine("This test is disabled for the environment less than 4 processors");
-                return;
-            }
+
+            C.NoOfTimesteps = 50;
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -174,8 +172,9 @@ namespace BoSSS.Application.XNSE_Solver {
             //ParallelRisingDroplet(3);
             BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.BadInitiallyDistributionTest(true);
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_OrderNotSupportedInHMF();
-
-            BoSSS.Solution.Application.FinalizeMPI();
+            Console.WriteLine("Finished Regularly");
+            
+            BoSSS.Solution.Application.FinalizeMPI();            
         }
 
 
