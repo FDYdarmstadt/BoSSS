@@ -93,8 +93,10 @@ namespace BoSSS.Application.ExternalBinding {
                 // move all plt files into their own directory before starting the next calculation
                 var source = new System.IO.DirectoryInfo("./");
                 System.IO.FileInfo[] files = source.GetFiles("*.plt");
+                var targetPath = new List<string>{"./small/", "./medium/", "./large/"}[i];
+                System.IO.Directory.CreateDirectory(targetPath);
                 foreach (var file in files) {
-                    file.MoveTo(new List<string>{"./small/", "./medium/", "./large/"}[i] + file.Name, true);
+                    file.MoveTo(targetPath + file.Name, true);
                 }
                 i++;
             }
