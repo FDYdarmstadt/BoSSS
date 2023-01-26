@@ -418,7 +418,8 @@ namespace BoSSS.Application.XNSEC {
                        for (int j = 0; j < Len; j++) {
                            for (int k = 0; k < K; k++) {
                                double[] densityArguments = new double[1 + m_NumberOfChemicalComponents];
-                               densityArguments[0] = tempT[j, k];
+                               densityArguments[0] = tempT[j, k] == 0 ? 1.0 : tempT[j, k];
+
 
                                for (int i = 0; i < m_NumberOfChemicalComponents; i++) {
                                    densityArguments[1 + i] = tempMFs[i][j, k];

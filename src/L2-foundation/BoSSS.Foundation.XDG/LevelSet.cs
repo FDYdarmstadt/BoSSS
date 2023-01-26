@@ -712,7 +712,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Clones this object
         /// </summary>
-        new public LevelSet CloneAs() {
+        new public virtual LevelSet CloneAs() {
             return (LevelSet)Clone();
         }
 

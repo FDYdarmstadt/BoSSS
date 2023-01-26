@@ -171,6 +171,7 @@ namespace PublicTestRunner {
                 return new (Type type, int NoOfProcs)[] {
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest), 8),
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 3),
                         (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4),
                         (typeof(MPITest.Program), 4),
                         //(typeof(HangingNodesTests.HangingNodesTestMain), 2), // fk, 29mar22: parallel runs executed directly in `release.yml` to allow serial-parallel comparison
@@ -1600,6 +1601,12 @@ namespace PublicTestRunner {
 
 
         static int Main(string[] args) {
+            Console.WriteLine($"received {args.Length} arguments.");
+            for(int i = 0; i < args.Length; i++) {
+                Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
+            }
+
+
             try {
                 return _Main(args, new PublicTests());
             } catch(Exception e) {

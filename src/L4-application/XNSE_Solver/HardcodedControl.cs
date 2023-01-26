@@ -6141,8 +6141,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
         public static XNSE_Control RotCubeDomainDecompoitionError() {
-            //gives a domain decomposition error on 43th time step
+            //gives a domain decomposition error on 43th time step with np=3
             //default parameter set with AMR
+            //cs:BoSSS.Application.XNSE_Solver.HardcodedControl.RotCubeDomainDecompoitionError()
+
             var C = Rotating_Something_Unsteady(4, 30, 2, true);
             return C;
         }
@@ -6334,7 +6336,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.dtFixed = dt;
-            C.NoOfTimesteps = 100;
+            C.NoOfTimesteps = 50;
 
             return C;
         }

@@ -110,6 +110,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             int SchwarzblockSize = targetblocksize(MGLevel);
             int LocalDOF4directSolver = GetLocalDOF(op, pCoarsest);
             double SizeFraction = (double)LocalDOF4directSolver / (double)SchwarzblockSize;
+            SizeFraction = SizeFraction.MPIMax(); //when the number of blocks are not the same on the processors, it causes deadlock in MPI processes
+            //Hard solution would be checking all MPI processes written in SubBlocks and modify them to allow different numbered block partitioning 
 
             //if(SizeFraction < 1) {
             //    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver}) < Schwarz-Block size ({SchwarzblockSize});");
