@@ -192,10 +192,15 @@ namespace BoSSS.Application.CahnHilliard {
 
         public static CahnHilliardControl EllipticDroplet(int xRes = 90, int yRes = 90, int pDG = 2)
         {
+            // Console.ReadLine();
             var RR = new CahnHilliardControl();
             RR.ProjectName = "CahnHilliard/cartesian";
 
             RR.savetodb = false;
+
+            // RR.CurvatureCorrection = false;
+            // RR.UseDirectCurvature = false;
+            // RR.ModTyp = CahnHilliardControl.ModelType.modelB;
 
             RR.SetDGdegree(pDG);
 

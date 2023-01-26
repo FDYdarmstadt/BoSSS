@@ -43,6 +43,8 @@ namespace BoSSS.Foundation {
                         int idx = op.ParameterVar.IndexOf(tt.ParameterName);
                         if (idx < 0)
                             throw new Exception($"Illegal parameter name {tt.ParameterName} provided by parameter factory -- not in the operator parameter list.");
+                        Console.WriteLine("Hello from ispopextes");
+                        Console.WriteLine(tt.ParameterName);
                         ret[idx] = tt.ParamField;
                     }
                 }
@@ -93,6 +95,8 @@ namespace BoSSS.Foundation {
                         
                             for(int i = 0; i < newParams.Length; i++) {
                                 if (newParams[i] != null)
+                                    Console.WriteLine("hello again");
+                                    Console.WriteLine(newParams[i]);
                                     ret[targIdx[i]] = newParams[i];
                             }
                         }

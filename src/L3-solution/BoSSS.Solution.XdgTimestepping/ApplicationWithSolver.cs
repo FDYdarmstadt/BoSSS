@@ -177,9 +177,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             // parameters
             var parameterFields = Operator.InvokeParameterFactory(CurrentState.Fields);
             Parameters = new List<DGField>();
+            Console.WriteLine(parameterFields.Count());
             foreach (var f in parameterFields) {
-                this.Parameters.Add(f);
-                base.RegisterField(f);
+                // if (f != null) {
+                    Console.WriteLine(f);
+                    this.Parameters.Add(f);
+                    base.RegisterField(f);
+                // }
             }            
 
         }
