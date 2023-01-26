@@ -432,6 +432,7 @@ namespace BoSSS.Application.ExternalBinding {
                 // op.TemporalOperator = new ConstantTemporalOperator(op, MassScales);
 
                 op.LinearizationHint = LinearizationHint.GetJacobiOperator;
+
                 op.Commit();
 
                 SinglePhaseField Res_c = new SinglePhaseField(b);
