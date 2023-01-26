@@ -244,6 +244,18 @@ namespace BoSSS.Application.CahnHilliard {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+            InitMPI();
+            DeleteOldPlotFiles();
+
+            using(var solver = new CahnHilliardMain()) {
+                var C = Examples.EllipticDroplet();
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 2;
+                C.NoOfTimesteps = 10;
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+            return;
             _Main(args, false, () => new CahnHilliardMain());
         }
 
@@ -313,7 +325,7 @@ namespace BoSSS.Application.CahnHilliard {
             #region variables
 
             //create Parameter and Variablelists
-            string[] paramVar = VariableNames.VelocityVector(D).Cat("c0").Cat(VariableNames.LevelSetGradient(D));
+            string[] paramVar = VariableNames.VelocityVector(D).Cat("c0");//.Cat(VariableNames.LevelSetGradient(D));
             string[] domainVar = new string[] { "c" };
             string[] codomainVar = new string[] { "Res_c" };
 
@@ -1492,7 +1504,7 @@ namespace BoSSS.Application.CahnHilliard {
         CellMask m_Subgrid;
 
         int m_D;
-        public override IList<string> ParameterOrdering => new[] { "c0" }.Cat(VariableNames.VelocityVector(m_D)).Cat(VariableNames.LevelSetGradient(m_D));
+        public override IList<string> ParameterOrdering => new[] { "c0" }.Cat(VariableNames.VelocityVector(m_D));//.Cat(VariableNames.LevelSetGradient(m_D));
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
             double UxN = 0;
@@ -1531,12 +1543,12 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         public override double Nu(double[] x, double[] p, int jCell) {
-            double n = 0.0;
+            // double n = 0.0;
 
-            for(int d = 0; d < m_D; d++) {
-                // n += p[1 + m_D + d].Pow2();
-                n += p[1 + m_D + d]*p[1 + m_D + d];
-            }
+            // for(int d = 0; d < m_D; d++) {
+            //     // n += p[1 + m_D + d].Pow2();
+            //     n += p[1 + m_D + d]*p[1 + m_D + d];
+            // }
 
             double D = 0.0;
             //if (n.Sqrt() < 1.0 / (Math.Sqrt(2) * m_diff))
