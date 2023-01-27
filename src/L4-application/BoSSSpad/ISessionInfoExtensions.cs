@@ -2608,6 +2608,11 @@ namespace BoSSS.Foundation.IO {
             return ret;
         }
 
+        static SessionMemtrace GetMemtrace(This ISessionInfo) {
+            return SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+        }
+
+
         /// <summary>
         /// Reports the largest memory-allocating routines in descending order
         /// </summary>
