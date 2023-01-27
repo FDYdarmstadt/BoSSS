@@ -19,6 +19,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="SessionDirectory"></param>
         public SessionMemtrace(DirectoryInfo SessionDirectory) {
+
             string FilePattern = $"memory.*.txt";
 
             FileInfo[] AllFiles = SessionDirectory.GetFiles(FilePattern);
@@ -674,9 +675,7 @@ namespace BoSSS.Application.BoSSSpad {
 
 
             var aa = LongestCommonSubsequence(_a.ToArray(), _b.ToArray());
-            //var r = BackTrack(aa, _a, _b, _a.Length, _b.Length, RunOrRankCombine);
-            var r = BackTrackNonRecursive(aa, _a, _b, RunOrRankCombine);
-
+            var r = BackTrackNonRecursive(aa,_a,_b, RunOrRankCombine);
             return r;
         }
 

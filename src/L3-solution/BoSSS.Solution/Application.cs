@@ -2234,7 +2234,6 @@ namespace BoSSS.Solution {
                     if (LsTrk != null)
                         LsTrk.PushStacks();
                 }
-
                 // ========================================================================
                 // initial value IO:
                 // (note: in some apps, the initial values might be tweaked in the 
@@ -2315,7 +2314,7 @@ namespace BoSSS.Solution {
                         if (this.BurstSave < 1) {
                             throw new NotSupportedException("misconfiguration of burst save variable.");
                         }
-
+                        
 
                         for (int sb = 0; sb < this.BurstSave; sb++) {
                             if ((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
@@ -2324,7 +2323,7 @@ namespace BoSSS.Solution {
                                 break;
                             }
                         }
-
+                        
                         if (this.RollingSave) {
                             if (tsi == null) {
                                 tsi = SaveToDatabase(i, physTime);
@@ -2423,7 +2422,6 @@ namespace BoSSS.Solution {
 
             //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true); 
             //PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
-
             return true;
         }
 
@@ -2686,8 +2684,6 @@ namespace BoSSS.Solution {
                         PostRestart(physTime, TimeStepNo);
 
                     ReCreateEquationAndSolvers(IsInit, remshDat, physTime);
-                    
-
                 }
                 return true;
             }
@@ -3008,7 +3004,6 @@ namespace BoSSS.Solution {
                     TryWrite("    Field: ", () => $"{f.Identification}, degree {f.Basis.Degree}, XDG: {f.Basis is XDGBasis}");
                 }
             }
-
             Console.WriteLine();
         }
 
@@ -3519,7 +3514,7 @@ namespace BoSSS.Solution {
             wrt.WriteLine("=========================================================");
 
             MethodCallRecordExtension.GetMostExpensiveCallsDetails(wrt, R);
-            
+
             wrt.WriteLine();
             wrt.WriteLine("Most memory consuming calls and blocks (sort by exclusive allocation size):");
             wrt.WriteLine("(sum over all calling parents)");
@@ -3533,7 +3528,7 @@ namespace BoSSS.Solution {
             wrt.WriteLine("==========================================================================");
 
             MethodCallRecordExtension.GetMostMemoryConsumingCallsDetails(wrt, R);
-            
+
 
             /*
             wrt.WriteLine();
@@ -3727,6 +3722,7 @@ namespace BoSSS.Solution {
             }
             */
         }
+
 
         /// <summary>
         /// This method should be overridden to support automatic numerical stability analysis of the PDE's operator

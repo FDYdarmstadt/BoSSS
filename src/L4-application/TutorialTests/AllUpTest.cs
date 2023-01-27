@@ -377,7 +377,7 @@ namespace BoSSS.Application.TutorialTests {
         /// Deletes a database <paramref name="Directory"/>
         /// 
         /// Note: the database must be located beneath the <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
-        /// of the <see "BoSSSshell.GetDefaultQueue"/>.
+        /// of the <see cref="BoSSSshell.GetDefaultQueue"/>.
         /// </summary>
         public static void DeleteDatabase(string Directory) {
 
