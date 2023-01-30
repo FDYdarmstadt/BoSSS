@@ -266,7 +266,8 @@ namespace BoSSS.Application.ExternalBinding {
 
                 // TODO sync from OpenFOAM
                 double lambda = 0.0;
-                double penalty_const = 1.0;
+                double penalty_const = 2.6;
+                // double penalty_const = 1.0;
                 // double M = 5e-11*0.02; // mobility parameter
                 // double epsilon = 0.5; // capillary width
                 double epsilon = 1e-5; // capillary width
@@ -275,9 +276,12 @@ namespace BoSSS.Application.ExternalBinding {
                 double M = sqrt(epsilon); // mobility parameter
                 double sigma = 0.063;
                 double lam = 3 / (2 * sqrt(2)) * sigma * epsilon; // Holger's lambda
-                double diff = M * lam;
 
-                double cahn = 1.0 / (epsilon * epsilon);
+                // double diff = M * lam;
+                // double cahn = 1.0 / (epsilon * epsilon);
+
+                double diff = 0.1;
+                double cahn = 1.0;
 
                 var RealLevSet = new LevelSet(b, "Levset");
                 //var RealTracker = new LevelSetTracker((GridData)(b.GridDat), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "a", "b" }, RealLevSet);
@@ -501,25 +505,23 @@ namespace BoSSS.Application.ExternalBinding {
                                                          new SinglePhaseField[]{Res_c, Res_phi},
                                                          // TimeSteppingScheme.ExplicitEuler,
                                                          TimeSteppingScheme.ImplicitEuler,
-                                                         RealTracker,
-                                                         (() => lsu),
+                                                                  null,
+                                                                  null,
                                                          LinearSolver: ls,
                                                          NonLinearSolver: nls,
+                                                         // RealTracker,
+                                                         lsu: (() => lsu)
                                                          // _LevelSetHandling: LevelSetHandling.LieSplitting,
                                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
-                                                         _AgglomerationThreshold: 0.0
+                                                         // _AgglomerationThreshold: 0.0
                                                          );
 
                 int timesteps = 1;
-                double dt = 2e-3;
+                // double dt = 2e-3;
+                double dt = 1e3;
                 for (int t = 0; t < timesteps; t++)
                 {
                     Console.WriteLine(t);
-
-                    // RealLevSet.Clear();
-                    // RealLevSet.Acc(1.0, c);
-                    // RealTracker.UpdateTracker(t * dt);
-                    // TimeStepper.Solve(dt * t, dt);
 
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);

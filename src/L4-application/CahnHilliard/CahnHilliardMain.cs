@@ -248,10 +248,12 @@ namespace BoSSS.Application.CahnHilliard {
             DeleteOldPlotFiles();
 
             using(var solver = new CahnHilliardMain()) {
-                var C = Examples.EllipticDroplet();
+                var C = Examples.EllipticDroplet(25, 25);
+                // var C = Examples.EllipticDroplet();
+                // var C = Examples.TestCartesian();
                 C.ImmediatePlotPeriod = 1;
                 C.SuperSampling = 2;
-                C.NoOfTimesteps = 10;
+                C.NoOfTimesteps = 2;
                 solver.Init(C);
                 solver.RunSolverMode();
             }

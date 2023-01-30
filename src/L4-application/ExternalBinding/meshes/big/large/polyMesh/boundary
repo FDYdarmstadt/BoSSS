@@ -9,56 +9,44 @@ FoamFile
 {
     version     2.0;
     format      ascii;
-    class       labelList;
-    note        "nPoints: 72 nCells: 25 nFaces: 110 nInternalFaces: 40";
+    class       polyBoundaryMesh;
     location    "constant/polyMesh";
-    object      neighbour;
+    object      boundary;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-
-40
-(
-1
 5
-2
-6
-3
-7
-4
-8
-9
-6
-10
-7
-11
-8
-12
-9
-13
-14
-11
-15
-12
-16
-13
-17
-14
-18
-19
-16
-20
-17
-21
-18
-22
-19
-23
-24
-21
-22
-23
-24
+(
+    top
+    {
+        type            patch;
+        nFaces          40;
+        startFace       3120;
+    }
+    bottom
+    {
+        type            patch;
+        nFaces          40;
+        startFace       3160;
+    }
+    left
+    {
+        type            patch;
+        nFaces          40;
+        startFace       3200;
+    }
+    right
+    {
+        type            patch;
+        nFaces          40;
+        startFace       3240;
+    }
+    frontAndBack
+    {
+        type            patch;
+        nFaces          3200;
+        startFace       3280;
+    }
 )
 
 

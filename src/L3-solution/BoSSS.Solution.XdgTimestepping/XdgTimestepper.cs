@@ -180,7 +180,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         XSpatialOperatorMk2 m_JacobiXdgOperator;
 
-        protected XSpatialOperatorMk2 GetJacobiXdgOperator() {
+        XSpatialOperatorMk2 GetJacobiXdgOperator() {
             if(m_JacobiXdgOperator == null) {
                 m_JacobiXdgOperator = XdgOperator.GetJacobiOperator(GridDat.SpatialDimension) as XSpatialOperatorMk2;
             }
@@ -198,7 +198,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         SpatialOperator m_JacobiDgOperator;
 
-        protected SpatialOperator GetJacobiDgOperator() {
+        SpatialOperator GetJacobiDgOperator() {
             if(m_JacobiDgOperator == null) {
                 m_JacobiDgOperator = DgOperator.GetJacobiOperator(GridDat.SpatialDimension) as SpatialOperator;
             }
@@ -523,71 +523,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         /// <summary>
-        /// Constructor for conventional (non-X, but multiphase) DG
-        /// </summary>
-        // protected XdgTimestepping(
-        public XdgTimestepping(
-            SpatialOperator op,
-            IEnumerable<DGField> Fields,
-            IEnumerable<DGField> IterationResiduals,
-            TimeSteppingScheme __Scheme,
-            LevelSetTracker _optTracker,
-            Func<ISlaveTimeIntegrator> _UpdateLevelSet = null,
-            LevelSetHandling _LevelSetHandling = LevelSetHandling.None,
-            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
-            AggregationGridData[] _MultigridSequence = null,
-            ISolverFactory LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
-            IList<DGField> _Parameters = null,
-            double _AgglomerationThreshold = 0.1,
-            QueryHandler queryHandler = null) //
-        {
-            this.Scheme = __Scheme;
-            this.DgOperator = op;
-            if (_Parameters.IsNullOrEmpty())
-                this.Parameters = op.InvokeParameterFactory(Fields);
-            else
-                this.Parameters = _Parameters;
-
-            SpeciesId[] spcToCompute;
-
-            if (_optTracker == null){
-                var __LSTracker = CreateDummyTracker(Fields.First().GridDat);
-                spcToCompute = new SpeciesId[] {__LSTracker};
-            } else {
-
-                LsTrk = _optTracker;
-                foreach (var f in Fields.Cat(IterationResiduals).Cat(Parameters))
-                {
-                    if (f != null && f is XDGField xf)
-                    {
-                        if (LsTrk == null)
-                        {
-                            LsTrk = xf.Basis.Tracker;
-                        }
-                        else
-                        {
-                            if (!object.ReferenceEquals(LsTrk, xf.Basis.Tracker))
-                                throw new ArgumentException();
-                        }
-                    }
-                }
-                spcToCompute = _optTracker.SpeciesNames.Select(spcName => LsTrk.GetSpeciesId(spcName)).ToArray();
-            }
-
-            // Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(LsTrk.LevelSets[0])}, "Test1", 0.0, 2);
-
-            ConstructorCommon(op, false,
-                              Fields, this.Parameters, IterationResiduals,
-                              spcToCompute,
-                              _UpdateLevelSet,
-                              _LevelSetHandling,
-                              _MultigridOperatorConfig,
-                              _MultigridSequence,
-                              _AgglomerationThreshold,
-                              LinearSolver, NonLinearSolver, queryHandler);
-        }
-
-        /// <summary>
         /// Constructor for conventional (single-phase, non-X) DG
         /// </summary>
         public XdgTimestepping(
@@ -599,24 +534,34 @@ namespace BoSSS.Solution.XdgTimestepping {
             AggregationGridData[] _MultigridSequence = null,
             ISolverFactory LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
             IList<DGField> _Parameters = null,
-            QueryHandler queryHandler = null) //
+            QueryHandler queryHandler = null,
+            Func<ISlaveTimeIntegrator> lsu = null
+        ) //
         {
-            var __LSTracker = CreateDummyTracker(Fields.First().GridDat);
-            Func<ISlaveTimeIntegrator> LSUpdater = () => new UpdateLevelsetWithNothing(this);
-            new XdgTimestepping(
-            op,
-            Fields,
-            IterationResiduals,
-            __Scheme,
-                null,
-            LSUpdater,
+            this.Scheme = __Scheme;
+            this.DgOperator = op;
+
+            if (_Parameters.IsNullOrEmpty())
+                this.Parameters = op.InvokeParameterFactory(Fields);
+            else
+                this.Parameters = _Parameters;
+
+
+            var spc = CreateDummyTracker(Fields.First().GridDat);
+
+            if (lsu == null){
+                lsu = () => new UpdateLevelsetWithNothing(this);
+            }
+
+            ConstructorCommon(op, false,
+                Fields, this.Parameters, IterationResiduals,
+                new[] { spc },
+                lsu,
                 LevelSetHandling.None,
-            _MultigridOperatorConfig,
-            _MultigridSequence,
-            LinearSolver, NonLinearSolver,
-            _Parameters,
-            0.0,
-            queryHandler); //
+                _MultigridOperatorConfig,
+                _MultigridSequence,
+                0.0,
+                LinearSolver, NonLinearSolver, queryHandler);
         }
 
         /// <summary>
@@ -668,7 +613,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         //    return 0.0;
         //}
 
-        protected DGField[] JacobiParameterVars = null;
+        DGField[] JacobiParameterVars = null;
 
 
         /// <summary>
@@ -677,7 +622,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - or evaluate the operator in the current linearization point
         /// In both cases, only the spatial component (i.e. no temporal derivatives) are linearized/evaluated.
         /// /// </summary>
-        public virtual void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
+        public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
             using(var ft = new FuncTrace()) {
                 // compute operator
                 Debug.Assert(OpAffine.L2Norm() == 0.0);
@@ -913,7 +858,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// - true: solver algorithm successfully converged
         /// - false: something went wrong
         /// </returns>
-        public virtual bool Solve(double phystime, double dt, bool SkipSolveAndEvaluateResidual = false) {
+        public bool Solve(double phystime, double dt, bool SkipSolveAndEvaluateResidual = false) {
             bool success = false;
             if((m_BDF_Timestepper == null) == (m_RK_Timestepper == null))
                 throw new ApplicationException();
@@ -962,7 +907,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return success;
         }
 
-        protected bool UseAdaptiveTimestepping() {
+        bool UseAdaptiveTimestepping() {
             if((int)this.Scheme >= 10000)
                 return true;
 
