@@ -244,6 +244,9 @@ namespace BoSSS.Application.CahnHilliard {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
+            //InitMPI(args);
+            //BoSSS.Application.CahnHilliard.Tests.TestProgram.TestCartesian();
+            //Assert.True(false);
             _Main(args, false, () => new CahnHilliardMain());
         }
 
@@ -275,7 +278,7 @@ namespace BoSSS.Application.CahnHilliard {
 
         BoundaryCondMap<BoundaryType> m_bcMap;
 
-        Solution.XdgTimestepping.XdgBDFTimestepping m_Timestepper;
+        //Solution.XdgTimestepping.XdgBDFTimestepping m_Timestepper;
 
         ///// <summary>
         ///// Includes assembly of the matrix.
@@ -354,7 +357,7 @@ namespace BoSSS.Application.CahnHilliard {
             // convection term
             if(this.Control.includeConvection == true) {
                 CHOp.EquationComponents["Res_c"].Add(
-                new c_Flux(D, this.Velocity.ToArray(), m_bcMap)
+                new c_Flux(D, () => this.Velocity.ToArray(), m_bcMap)
                 );
             }
 
@@ -418,28 +421,29 @@ namespace BoSSS.Application.CahnHilliard {
                         new phi_CurvatureCorrection(D, Control.cahn)
                         );
 
-                    if(!this.Control.UseDirectCurvature) {
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Source(D)
-                            );
+                        if (!this.Control.UseDirectCurvature) {
+                            CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                                new curvature_Source(D)
+                                );
 
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Divergence(D, penalty_factor, 0.001 / this.Control.cahn, LengthScales)
-                            );
-                    } else {
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Direct(D)
-                            );
-                    }
+                            CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                                new curvature_Divergence(D, penalty_factor, 0.001 / this.Control.cahn, LengthScales)
+                                );
+                        } else {
+                            CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                                new curvature_Direct(D)
+                                );
+                        }
                 }
 
                 break;
+
                 case CahnHilliardControl.ModelType.modelC:
                 throw new NotImplementedException();
-                break;
+                //break;
+                
                 default:
                 throw new ArgumentOutOfRangeException();
-                break;
             }
 
             #endregion
@@ -1480,15 +1484,14 @@ namespace BoSSS.Application.CahnHilliard {
 
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
-            double UxN = 0;
-            for(int d = 0; d < m_D; d++) {
-                UxN += (inp.Parameters_IN[d + 1]) * inp.Normal[d];
-            }
+            double UxN = (new Vector(inp.Parameters_IN, 1, inp.D))*inp.Normal;
 
             double v;
             if(UxN >= 0) {
+                // outflow
                 v = 1.0;
             } else {
+                // inflow
                 v = 0.0;
             }
 
@@ -1523,7 +1526,7 @@ namespace BoSSS.Application.CahnHilliard {
                 n += p[1 + m_D + d]*p[1 + m_D + d];
             }
 
-            double D = 0.0;
+            //double D = 0.0;
             //if (n.Sqrt() < 1.0 / (Math.Sqrt(2) * m_diff))
             //{
             //    D = 0.027 / (1 + n * m_diff.Pow2());
@@ -1598,7 +1601,7 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         // linear term return self
-        IEquationComponent[] GetJacobianComponents(int m_D) {
+        public override IEquationComponent[] GetJacobianComponents(int m_D) {
             return new IEquationComponent[] { this };
         }
     }
@@ -1607,14 +1610,15 @@ namespace BoSSS.Application.CahnHilliard {
     /// Transport flux for Cahn-Hilliard
     /// </summary>
     public class c_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent, IParameterHandling {
-        public c_Flux(int D, DGField[] VelVectorStorage, BoundaryCondMap<BoundaryType> __boundaryCondMap) {
+        public c_Flux(int D, Func<DGField[]> GetVelVector, BoundaryCondMap<BoundaryType> __boundaryCondMap) {
             m_D = D;
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap?.bndFunction["c"];
-            m_VelVectorStorage = VelVectorStorage;
+            m_GetVelVector = GetVelVector;
         }
 
-        DGField[] m_VelVectorStorage;
+        Func<DGField[]> m_GetVelVector;
+
         int m_D;
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
         Func<double[], double, double>[] m_bndFunc;
@@ -1638,7 +1642,11 @@ namespace BoSSS.Application.CahnHilliard {
             if(Arguments.Length != 1)
                 throw new ArgumentException();
 
-            return m_VelVectorStorage;
+            var Vel = m_GetVelVector();
+            if (Vel == null || Vel.Length != m_D)
+                throw new ArgumentException();
+
+            return Vel;
         }
 
 
@@ -1721,15 +1729,14 @@ namespace BoSSS.Application.CahnHilliard {
 
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
-            double UxN = 0;
-            for(int d = 0; d < m_D; d++) {
-                UxN += (inp.Parameters_IN[d]) * inp.Normal[d];
-            }
+            double UxN = (new Vector(inp.Parameters_IN, 0, inp.D))*inp.Normal;
 
             double v;
             if(UxN >= 0) {
+                // outflow
                 v = 0.0;
             } else {
+                // inflow
                 v = m_bndFunc[inp.EdgeTag](inp.X, inp.time);
             }
             return v;
@@ -1800,10 +1807,12 @@ namespace BoSSS.Application.CahnHilliard {
             return Acc;
         }
 
+        /*
         // linear term return self
-        IEquationComponent[] GetJacobianComponents(int m_D) {
+        public override IEquationComponent[] GetJacobianComponents(int m_D) {
             return new IEquationComponent[] { this };
         }
+        */
     }
 
 
