@@ -128,6 +128,17 @@ namespace BoSSS.Application.ExternalBinding {
             }
             return c.L2Norm();
         }
+        /// <summary>
+        /// Return the relative change of the norm of the field c
+        /// </summary>
+        public double NormRelChange(ScalarFunction InitFunc) {
+            double postNorm = c.L2Norm();
+            SinglePhaseField c0 = new SinglePhaseField(c.Basis);
+            c0.Clear();
+            c0.ProjectField(InitFunc);
+            double preNorm = c0.L2Norm();
+            return (postNorm - preNorm)/postNorm;
+        }
 
         /// <summary>
         /// Return the jump norm of the field c
