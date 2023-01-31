@@ -250,7 +250,7 @@ namespace BoSSS.Application.ExternalBinding {
                 double penalty_const = 1.0;
 
                 var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda);
-                var CHCconv = new CahnHilliardCConv(new[]{u,v,w});
+                var CHCconv = new CahnHilliardCConv(() => new[]{u,v,w});
                 // var CHCsource = new CahnHilliardCSource(ptch);
                 var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, cahn);
                 var CHPhisource = new CahnHilliardPhiSource(cahn);
@@ -658,7 +658,7 @@ namespace BoSSS.Application.ExternalBinding {
             }
         }
         class CahnHilliardCConv : c_Flux {
-            public CahnHilliardCConv(DGField[] Velocity)
+            public CahnHilliardCConv(Func<DGField[]> Velocity)
                 : base(3, Velocity, null){}
 
         }
