@@ -145,6 +145,7 @@ namespace BoSSS.Application.ExternalBinding {
                 solutionOnDifferentResolutions.Add(new DGField[]{field});
                 solutionOnDifferentResolutions2.Add(field);
             }
+            Console.WriteLine("fcomp" + (solutionOnDifferentResolutions2[0].Basis == solutionOnDifferentResolutions2[2].Basis));
             DGFieldComparison.ComputeErrors(
                 // solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, NormType.L2_embedded);
                 solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, NormType.L2_approximate);
