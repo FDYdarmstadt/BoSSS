@@ -713,9 +713,9 @@ namespace BoSSS.Application.BoSSSpad {
         internal static myRecord[] LongestCommonSubsequence(IEnumerable<myRecord>[] lists, bool RunOrRankCombine) {
             myRecord[] ret = lists[0].ToArray();
             for (int i = 1; i < lists.Length; i++) {
-                Console.Write($"combining {i} of {lists.Length} ...");
+                //Console.Write($"combining {i} of {lists.Length} ...");
                 ret = LongestCommonSubsequence(ret, lists[i], RunOrRankCombine);
-                Console.WriteLine("done.");
+                //Console.WriteLine("done.");
             }
             return ret;
         }
