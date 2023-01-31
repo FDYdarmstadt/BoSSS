@@ -244,9 +244,10 @@ namespace BoSSS.Application.CahnHilliard {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //InitMPI(args);
-            //BoSSS.Application.CahnHilliard.Tests.TestProgram.TestCartesian();
-            //Assert.True(false);
+            InitMPI(args);
+            DeleteOldPlotFiles();
+            BoSSS.Application.CahnHilliard.Tests.TestProgram.TestCartesian();
+            Assert.True(false);
             _Main(args, false, () => new CahnHilliardMain());
         }
 

@@ -31,6 +31,8 @@ namespace BoSSS.Application.CahnHilliard.Tests {
 
             using(var p = new CahnHilliardMain()) {
                 var ctrl = Examples.TestCartesian();
+                ctrl.ImmediatePlotPeriod = 1;
+                ctrl.SuperSampling = 3;
                 p.Init(ctrl);
                 p.RunSolverMode();
 

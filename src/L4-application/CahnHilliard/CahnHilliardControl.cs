@@ -39,7 +39,7 @@ namespace BoSSS.Application.CahnHilliard {
         public CahnHilliardControl() : base() {
             base.TimesteppingMode = _TimesteppingMode.Transient;
             base.NoOfTimesteps = 1;
-            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
         }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace BoSSS.Application.CahnHilliard {
         /// According to Biben (2003), Correction to account for arclength diffusion
         /// </summary>
         [DataMember]
-        public bool CurvatureCorrection = true;
+        public bool CurvatureCorrection = false;
 
 
         /// <summary>
