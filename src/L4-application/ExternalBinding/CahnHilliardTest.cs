@@ -145,17 +145,15 @@ namespace BoSSS.Application.ExternalBinding {
                 solutionOnDifferentResolutions.Add(new DGField[]{field});
                 solutionOnDifferentResolutions2.Add(field);
             }
-            Console.WriteLine("fcomp" + (solutionOnDifferentResolutions2[0].Basis == solutionOnDifferentResolutions2[2].Basis));
             DGFieldComparison.ComputeErrors(
-                // solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, NormType.L2_embedded);
-                solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, NormType.L2_approximate);
-            var slope = (errorS["c"][1] - errorS["c"][0])/(DOFs["c"][1] - DOFs["c"][0]);
+                solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, NormType.L2_embedded);
+            var slope = (Math.Log(errorS["c"][1]) - Math.Log(errorS["c"][0]))/(Math.Log(Math.Sqrt(1.0/DOFs["c"][1])) - Math.Log(Math.Sqrt(1.0/DOFs["c"][0])));
             Console.WriteLine("Slope: " + slope);
             Console.WriteLine("DOFs[0]: " + DOFs["c"][0]);
             Console.WriteLine("DOFs[1]: " + DOFs["c"][1]);
             Console.WriteLine("errorsS[0]: " + errorS["c"][0]);
             Console.WriteLine("errorsS[1]: " + errorS["c"][1]);
-            Assert.IsTrue(Math.Abs(slope) >= 3.0);
+            Assert.IsTrue(-slope >= 3.0);
 
             Cleanup();
 
