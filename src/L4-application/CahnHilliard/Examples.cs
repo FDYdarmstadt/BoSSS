@@ -62,15 +62,13 @@ namespace BoSSS.Application.CahnHilliard {
                 double[] yNodes = GenericBlas.Linspace(-S, S, yRes+1);
 
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                grd.EdgeTagNames.Add(1, BoundaryType.Wall.ToString());
-                grd.EdgeTagNames.Add(2, BoundaryType.Flow.ToString());
 
                 grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
+                    string et = null;
                     if (Math.Abs(Math.Abs(X[1]) - S) <= 1.0e-8)
-                        et = 1;
+                        et = BoundaryType.Wall.ToString();
                     if (Math.Abs(Math.Abs(X[0]) - S) <= 1.0e-8)
-                        et = 1;
+                        et = BoundaryType.Flow.ToString();
 
                     return et;
                 });
@@ -107,8 +105,8 @@ namespace BoSSS.Application.CahnHilliard {
 
             RR.ModTyp = CahnHilliardControl.ModelType.modelB;
             RR.CorrectionType = CahnHilliardControl.Correction.None;
-            RR.CurvatureCorrection = false;
-            RR.UseDirectCurvature = false;
+            //RR.CurvatureCorrection = false;
+            //RR.UseDirectCurvature = false;
             RR.UseFDJacobian = false;
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
@@ -202,8 +200,7 @@ namespace BoSSS.Application.CahnHilliard {
                 double[] yNodes = GenericBlas.Linspace(-15, 15, yRes + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                grd.EdgeTagNames.Add(1, BoundaryType.Wall.ToString());
-                grd.DefineEdgeTags(delegate (double[] X) { return (byte)1; });
+                grd.DefineEdgeTags((double[] X) => BoundaryType.Wall.ToString());
 
                 return grd;
             };
@@ -215,12 +212,15 @@ namespace BoSSS.Application.CahnHilliard {
             RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => 0.0 ", false));
             RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => 0.0 ", false));
 
-            RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
-
+          
             RR.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             RR.dtFixed = 1e-1;
+            RR.NoOfTimesteps = 10;
+
             RR.cahn = 1;
             RR.diff = 0.1;
+
+
 
             return RR;
         }

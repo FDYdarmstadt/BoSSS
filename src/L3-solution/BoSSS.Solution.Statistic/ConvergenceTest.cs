@@ -175,7 +175,7 @@ namespace BoSSS.Solution.Statistic {
             // ===================================================
 
             DGFieldComparison.ComputeErrors(
-                solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, NormType.L2_embedded);
+                solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, expectedRegressionModels.Select(ttt => ttt.normType).ToArray());
 
             
 
