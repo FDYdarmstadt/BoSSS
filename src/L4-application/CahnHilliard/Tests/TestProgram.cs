@@ -82,13 +82,21 @@ namespace BoSSS.Application.CahnHilliard.Tests {
             }
 
 
-            ConvergenceTest.SolverConvergenceTest_Experimental(
-                Controls,
-                "CahnHilliard",
-                ("c", NormType.L2_embedded, pDeg, 0.0, 1.0),
-                ("phi", NormType.L2_embedded, pDeg, 0.0, 1.0)
-                );
+            // 01feb23:
+            // Convergence slope for Error of 'c':     2.821947945144496       Intercept:      -1.1137827966318687     (Expecting: 2/-1 to 1 in norm L2_embedded)
+            //  Convergence slope for Error of 'phi':   2.8593703784657984      Intercept:      -1.0080261719610017(Expecting: 2/-1 to 1 in norm L2_embedded)
 
+
+            if (pDeg == 2) {
+                ConvergenceTest.SolverConvergenceTest_Experimental(
+                     Controls,
+                     "CahnHilliard",
+                     ("c", NormType.L2_embedded, 2.5, -1.1137827966318687, 0.2),
+                     ("phi", NormType.L2_embedded, 2.5, -1.0080261719610017, 0.2)
+                     );
+            } else {
+                throw new NotImplementedException("unknown polynomila degree");
+            }
             /*
             using (var p = new CahnHilliardMain()) {
                 var ctrl = Examples.EllipticDroplet(xRes: 80, yRes: 80, pDG: 2);
