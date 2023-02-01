@@ -2147,7 +2147,7 @@ namespace BoSSS.Application.CahnHilliard {
 
                 // Acc += (3.0 * c0 * c0 - 1.0) * c - 2 * Math.Pow(c0, 3.0); // linearized around c0 (Taylor expansion)
                 // Acc += (3.0 * c0 * c0 - 1.0) * c - 2 * c0*c0*c0; // linearized around c0 (Taylor expansion)
-                Acc += (c.Pow(3.0) - c) * m_scale; // for newton with jacobian no linearization is needed
+                Acc += (c.Pow(3.0) - c) * m_scale; // for newton with jacobian no linearization is needed TODO m_scale is probably wrong
             }
 
             return Acc * V ;

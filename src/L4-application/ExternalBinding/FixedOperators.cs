@@ -17,7 +17,8 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG.Quadrature.HMF;
 using BoSSS.Solution.LevelSetTools;
-using BoSSS.Application.CahnHilliard;
+// using BoSSS.Application.CahnHilliard;
+using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Utils;
@@ -270,7 +271,7 @@ namespace BoSSS.Application.ExternalBinding {
                 var map = new UnsetteledCoordinateMapping(b, bPhi);
 
                 int nParams = 7;
-                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "phi", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
+                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "phi", "mu", "VelocityX", "VelocityY", "VelocityZ", "phi0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_phi", "Res_mu");
                 // var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "phi", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "phi_Res");
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "phi_Res");
@@ -288,7 +289,7 @@ namespace BoSSS.Application.ExternalBinding {
                 double sigma = 0.063;
                 double lam = 3 / (2 * sqrt(2)) * sigma * epsilon; // Holger's lambda
 
-                // double diff = M * lam;
+                // double diff = M * lam; // around 2e-4
                 // double cahn = 1.0 / (epsilon * epsilon);
 
                 double diff = 0.1;
@@ -361,12 +362,12 @@ namespace BoSSS.Application.ExternalBinding {
                 //     // LSGradZ.SetMeanValue(i, LSGrad[2,i]);
                 // }
                 // RealLevSet.EvaluateGradient
-                var domfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>() { { "c", c }, { "phi", phi } });
+                var domfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>() { { "phi", c }, { "mu", phi } });
                 var paramfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>(){
                         {"VelocityX", u},
                         {"VelocityY", v},
                         {"VelocityZ", w},
-                        {"c0", c},
+                        {"phi0", c},
                         // {"LevelSetGradient[0]", LSGradX},
                         // {"LevelSetGradient[1]", LSGradY},
                         // {"LevelSetGradient[2]", LSGradZ}
@@ -384,7 +385,7 @@ namespace BoSSS.Application.ExternalBinding {
                 LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
                                                          6, new string[] { "a", "b" },
                                                          GetNamedInputFields,
-                                                         RealLevSet, "c", ContinuityProjectionOption.None);
+                                                         RealLevSet, "phi", ContinuityProjectionOption.None);
 
                 var RealTracker = lsu.Tracker;
                 // phi.Laplacian(-cahn, c);
@@ -431,20 +432,18 @@ namespace BoSSS.Application.ExternalBinding {
 
                 var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda, mask);
                 var CHCconv = new CahnHilliardCConv(new[] { u, v, w }, mask);
-                // var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, cahn);
-                var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, 1.0, mask);
-                var CHPhisource = new CahnHilliardPhiSource(cahn, mask);
-                op.EquationComponents["Res_c"].Add(CHCdiff);
-                op.EquationComponents["Res_c"].Add(CHCconv);
-                // op.EquationComponents["Res_c"].Add(CHCsource);
-                op.EquationComponents["Res_phi"].Add(CHPhisource);
-                op.EquationComponents["Res_phi"].Add(CHPhidiff);
+                var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, cahn, mask);
+                var CHPhisource = new CahnHilliardPhiSource(mask);
+                op.EquationComponents["Res_phi"].Add(CHCdiff);
+                // op.EquationComponents["Res_phi"].Add(CHCconv);
+                op.EquationComponents["Res_mu"].Add(CHPhisource);
+                op.EquationComponents["Res_mu"].Add(CHPhidiff);
                 // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
                 double[] MassScales = new double[2];
                 MassScales[0] = 1.0;
                 // MassScales[1] = 1.0;
-                // op.TemporalOperator = new ConstantTemporalOperator(op, MassScales);
+                op.TemporalOperator = new ConstantTemporalOperator(op, MassScales);
 
                 op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
@@ -527,19 +526,25 @@ namespace BoSSS.Application.ExternalBinding {
                                                          // _AgglomerationThreshold: 0.0
                                                          );
 
-                int timesteps = 1;
-                // double dt = 2e-3;
-                double dt = 1e3;
-                for (int t = 0; t < timesteps; t++)
+                // int timesteps = 8;
+                double endTime = 1e3;
+                double dt = 2e-5;
+                double time = 0.0;
+                // double dt = 1e3;
+                // for (int t = 0; t < timesteps; t++)
+                int t = 0;
+                while (time < endTime)
                 {
-                    Console.WriteLine(t);
-
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);
-                    RealTracker.UpdateTracker(t * dt);
-                    TimeStepper.Solve(dt * t, dt);
+                    RealTracker.UpdateTracker(time);
+                    TimeStepper.Solve(time, dt);
 
-                    Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, phi, RealLevSet, u, v, w);
+                    Tecplot("plot." + (t + 2), time, 3, c, phi, RealLevSet, u, v, w);
+
+                    time += dt;
+                    t++;
+                    dt *= 10;
                     // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, phi, RealLevSet, u, v, w, cNoSG, phiNoSG);
 
                 }
@@ -746,24 +751,24 @@ namespace BoSSS.Application.ExternalBinding {
             }
         }
 
-        class CahnHilliardPhiSource : phi_Source {
+        class CahnHilliardPhiSource : mu_Source {
 
             // OpenFoamPatchField _ptch;
 
-            public CahnHilliardPhiSource(double _cahn, CellMask Subgrid = null)
-                : base(true, _cahn, Subgrid){
+            public CahnHilliardPhiSource(CellMask Subgrid = null)
+                : base(){
             }
             // public bool GetIsDiri(ref CommonParamsBnd inp){
             //     return this.IsDirichlet(ref inp);
             // }
         }
 
-        class CahnHilliardPhiDiff : phi_Diffusion {
+        class CahnHilliardPhiDiff : mu_Diffusion {
 
             OpenFoamPatchField _ptch;
 
             public CahnHilliardPhiDiff(OpenFoamPatchField ptch, double penalty_const, double __cahn, CellMask Subgrid = null)
-                : base(3, penalty_const, __cahn, null, Subgrid){
+                : base(3, penalty_const, __cahn, null){
                 _ptch = ptch;
             }
 
@@ -795,12 +800,12 @@ namespace BoSSS.Application.ExternalBinding {
             }
         }
 
-        class CahnHilliardCDiff : c_Diffusion {
+        class CahnHilliardCDiff : phi_Diffusion {
 
             OpenFoamPatchField _ptch;
 
             public CahnHilliardCDiff(OpenFoamPatchField ptch, double penalty_const, double __diff, double __lambda, CellMask Subgrid = null)
-                : base(3, penalty_const, __diff, __lambda, null, Subgrid: Subgrid){
+                : base(3, penalty_const, __diff, __lambda, null){
                 this._ptch = ptch;
             }
             protected override bool IsDirichlet(ref CommonParamsBnd inp) {
@@ -831,9 +836,9 @@ namespace BoSSS.Application.ExternalBinding {
                 return 0;
             }
         }
-        class CahnHilliardCConv : c_Flux {
+        class CahnHilliardCConv : phi_Flux {
             public CahnHilliardCConv(DGField[] Velocity, CellMask Subgrid = null)
-                : base(3, Velocity, null, Subgrid: Subgrid){}
+                : base(3, null){} // TODO check if velocity is really communicated through parameter fields
 
         }
 

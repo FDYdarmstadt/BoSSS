@@ -81,6 +81,8 @@ namespace BoSSS.Application.ExternalBinding {
             int i = 0;
             // foreach (var grd in new List<OpenFOAMGrid>{smallGrd, mediumGrd, largeGrd}){
             foreach (var grd in new List<string>{smallGrd, mediumGrd}){
+            // i++;
+            // foreach (var grd in new List<string>{mediumGrd}){
 
                 RunDropletTest(grd, new List<string>{"./small/", "./medium/", "./large/"}[i]);
                 ScalarFunction func()
@@ -153,7 +155,7 @@ namespace BoSSS.Application.ExternalBinding {
             Console.WriteLine("DOFs[1]: " + DOFs["c"][1]);
             Console.WriteLine("errorsS[0]: " + errorS["c"][0]);
             Console.WriteLine("errorsS[1]: " + errorS["c"][1]);
-            Assert.IsTrue(-slope >= 3.0);
+            Assert.IsTrue(slope >= 3.0);
 
             Cleanup();
 
@@ -161,7 +163,10 @@ namespace BoSSS.Application.ExternalBinding {
 
         public static void Main() {
 
-            ConvergenceTest();
+            string mediumGrd = "./meshes/big/medium/polyMesh/";
+            RunDropletTest(mediumGrd);
+            // DropletTest();
+            // ConvergenceTest();
             // Init();
 
             // GridImportTest.ConvertFOAMGrid();

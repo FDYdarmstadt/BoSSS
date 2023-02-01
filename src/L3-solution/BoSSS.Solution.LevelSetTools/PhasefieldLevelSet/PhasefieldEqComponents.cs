@@ -16,7 +16,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// Interior Penalty Flux, with Dirichlet boundary conditions for variable 'phi'
     /// </summary>
-    class phi_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
+    public class phi_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
     {
 
         public phi_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap, CellMask Subgrid = null)
@@ -167,13 +167,13 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// Transport flux for Cahn-Hilliard
     /// </summary>
-    class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent
+    public class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent
     {
         public phi_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap)
         {
             m_D = D;
             m_boundaryCondMap = __boundaryCondMap;
-            m_bndFunc = m_boundaryCondMap.bndFunction["phi"];
+            m_bndFunc = m_boundaryCondMap?.bndFunction["phi"];
         }
 
         int m_D;
@@ -254,7 +254,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// Interior Penalty Flux, with Dirichlet boundary conditions for variable 'mu'
     /// </summary>
-    class mu_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
+    public class mu_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
     {
 
         public mu_Diffusion(int D, double penalty_const, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap)
@@ -263,7 +263,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             m_D = D;
             m_cahn = __cahn * __cahn;
             m_boundaryCondMap = __boundaryCondMap;
-            m_bndFunc = m_boundaryCondMap.bndFunction["phi"];
+            m_bndFunc = m_boundaryCondMap?.bndFunction["phi"];
         }
 
         double m_cahn;
@@ -383,7 +383,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// nonlinear source term in the 'phi'-equation
     /// </summary>
-    class mu_Source : IVolumeForm, ISupportsJacobianComponent
+    public class mu_Source : IVolumeForm, ISupportsJacobianComponent
     {
 
         public mu_Source()
@@ -450,7 +450,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// source term of phi in Model A
     /// </summary>
-    class phi_Source : IVolumeForm, ISupportsJacobianComponent
+    public class phi_Source : IVolumeForm, ISupportsJacobianComponent
     {
         //public phi_Source(double __lambda, double __epsilon) {
         //    m_lambda = __lambda;
