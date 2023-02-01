@@ -1,5 +1,4 @@
 ﻿using BoSSS.Application.BoSSSpad;
-using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -140,12 +139,13 @@ namespace PublicTestRunner {
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
                         typeof(LTSTests.Program),
-                        typeof(BoSSS.Application.TutorialTests.AllUpTest), 
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.XNSEC.XNSEC),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),
-                        typeof(HangingNodesTests.HangingNodesTestMain)
+                        typeof(HangingNodesTests.HangingNodesTestMain),
+                        typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain)
                     };
             }
         }
