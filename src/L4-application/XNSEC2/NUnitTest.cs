@@ -1325,7 +1325,6 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public static void COMBUSTION_CoFlowFlame_TEST() {
-            string basepath = null;
             //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
             //if (basepath.IsEmptyOrWhite())
             //    basepath = System.Environment.GetEnvironmentVariable("HOME");
