@@ -35,6 +35,32 @@ namespace BoSSS.Solution.Statistic {
     /// </summary>
     public static class DGFieldComparisonEmbedded {
 
+        static Func<DGField, double> NormTypeFactory(NormType nt) {
+            switch(nt) {
+                case NormType.H1_embedded:
+                    return ((DGField f) => f.H1Norm());
+
+                case NormType.L2_embedded:
+                    return ((DGField f) => f.L2Norm());
+
+                case NormType.L2noMean_embedded:
+                    return ((DGField f) => f.L2Norm_IgnoreMean());
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        static Func<DGField, double>[] NormTypeFactory(IList<IEnumerable<DGField>> fields, NormType nt) {
+            int L = fields.First().Count();
+            var r = NormTypeFactory(nt);
+            var rr = new Func<DGField, double>[L];
+            rr.SetAll(r);
+            return rr;
+        }
+
+
+
         /// <summary>
         /// Computes L2 norms between DG fields on different grid resolutions, i.e. for a 
         /// convergence study, where the solution on the finest grid is assumed to be exact.
@@ -56,9 +82,9 @@ namespace BoSSS.Solution.Statistic {
         /// (for each field specified in <paramref name="fields"/>).
         /// </param>
         public static void ComputeErrors_L2(IList<IEnumerable<DGField>> fields,
-            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+        out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
 
-            ComputeErrors((DGField f) => f.L2Norm(),
+            ComputeErrors(NormTypeFactory(fields, NormType.L2_embedded),
                 fields, out GridRes, out __DOFs, out Errors);
         }
 
@@ -85,7 +111,7 @@ namespace BoSSS.Solution.Statistic {
         public static void ComputeErrors_H1(IList<IEnumerable<DGField>> fields,
             out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
 
-            ComputeErrors((DGField f) => f.H1Norm(),
+            ComputeErrors(NormTypeFactory(fields, NormType.H1_embedded),
                 fields, out GridRes, out __DOFs, out Errors);
 
 
@@ -114,17 +140,48 @@ namespace BoSSS.Solution.Statistic {
         public static void ComputeErrors_L2noMean(IList<IEnumerable<DGField>> fields,
             out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
 
-            ComputeErrors((DGField f) => f.L2Norm_IgnoreMean(),
+            ComputeErrors(NormTypeFactory(fields, NormType.L2noMean_embedded),
                 fields, out GridRes, out __DOFs, out Errors);
+        }
 
 
+        /// <summary>
+        /// Computes norms (specified by <paramref name="normTypes"/>) between DG fields on different grid resolutions, i.e. for a 
+        /// convergence study, where the solution on the finest grid is assumed to be exact.
+        /// </summary>
+        /// <param name="fields">
+        /// - outer enumeration: sequence of meshes;
+        /// - inner enumeration: a set of fields on the same mesh level
+        /// </param>
+        /// <param name="normTypes">
+        /// norm selection for eacjh field; index correlates with second index into <paramref name="fields"/>
+        /// </param>
+        /// <param name="GridRes">
+        /// On exit, the resolution of the different grids.
+        /// </param>
+        /// <param name="Errors">
+        /// On exit, the L2 error 
+        /// (for each field specified in <paramref name="fields"/>)
+        /// in comparison to the solution on the finest grid.
+        /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="fields"/>).
+        /// </param>
+        public static void ComputeErrors(IList<IEnumerable<DGField>> fields, NormType[] normTypes,
+            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+
+            if (fields.First().Count() != normTypes.Length)
+                throw new ArgumentException("mismatch between number of fields and number of specified norms");
+
+            ComputeErrors(normTypes.Select(nt => NormTypeFactory(nt)).ToArray(),
+                fields, out GridRes, out __DOFs, out Errors);
         }
 
 
 
-       
         static void ComputeErrors(
-            Func<DGField, double> NormFunc,
+            Func<DGField, double>[] NormFuncS,
             IList<IEnumerable<DGField>> fields,
             out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors,
             Func<ilPSP.Vector, bool> SelectionFunc = null) {
@@ -215,7 +272,7 @@ namespace BoSSS.Solution.Statistic {
                         DGField injSol = injectedFields[index].ElementAt(iLevel);
                         Error.Acc(-1.0, injSol);
 
-                        L2Error[iLevel] = NormFunc(Error);
+                        L2Error[iLevel] = NormFuncS[index](Error);
 
                         //Console.WriteLine("done (Error is {0:0.####E-00}).", L2Error[iLevel]);
                         tr.Info(string.Format("done (Error is {0:0.####E-00}).", L2Error[iLevel]));

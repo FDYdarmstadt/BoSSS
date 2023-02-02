@@ -20,7 +20,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using ilPSP.Utils;
 
 namespace BoSSS.Foundation.IO {
 
@@ -71,7 +73,7 @@ namespace BoSSS.Foundation.IO {
                 HashSet<string> allIdentifications = new HashSet<string>(new ilPSP.FuncEqualityComparer<string>((a, b) => a.Equals(b), a => a.GetHashCode()));
                 foreach (var f in _Fields) {
                     if (f.Identification == null || f.Identification.Length <= 0) {
-                        throw new ArgumentException("Creating timesteps from fields without an identification is not supported.");
+                        throw new ArgumentException("Creating Timesteps from fields without an identification is not supported.");
                     }
 
                     if (allIdentifications.Contains(f.Identification)) {
@@ -81,6 +83,7 @@ namespace BoSSS.Foundation.IO {
                     allIdentifications.Add(f.Identification);
                 }
             }
+                       
 
             // set members:
             ID = Guid.Empty;
@@ -93,6 +96,11 @@ namespace BoSSS.Foundation.IO {
             this.m_FieldInitializers = fields.Select(f => f.Initializer).ToArray();
             CreationTime = DateTime.Now;
         }
+
+       
+
+
+
 
         /// <summary>
         /// Creates a new instance of <see cref="TimestepInfo"/>

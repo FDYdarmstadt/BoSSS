@@ -13,9 +13,9 @@
     <DocumentationFile>bin\Release\TutorialTests.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="log4net">
+    <!--Reference Include="log4net">
       <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference>
+    </Reference-->
     <Reference Include="Mono.CSharp, Version=4.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
