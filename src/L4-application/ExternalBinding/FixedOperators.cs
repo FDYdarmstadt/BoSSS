@@ -17,7 +17,8 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Foundation.XDG.Quadrature.HMF;
 using BoSSS.Solution.LevelSetTools;
-// using BoSSS.Application.CahnHilliard;
+using BoSSS.Application.CahnHilliard;
+using static BoSSS.Application.CahnHilliard.CahnHilliardMain;
 using BoSSS.Solution.LevelSetTools.PhasefieldLevelSet;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.Control;
@@ -71,7 +72,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         SinglePhaseField c;
         SinglePhaseField[] velocity;
-        SinglePhaseField phi;
+        SinglePhaseField mu;
         OpenFoamMatrix _mtx;
         OpenFoamPatchField _ptch;
         double rho0 = 1;
@@ -104,15 +105,15 @@ namespace BoSSS.Application.ExternalBinding {
         /// Returns the auxiliary field appearing during the solution of the Cahn-Hilliard system
         /// </summary>
         [CodeGenExport]
-        public OpenFoamDGField GetPhi() {
+        public OpenFoamDGField GetMu() {
             int D = 3;
-            OpenFoamDGField Phi0 = new OpenFoamDGField(_ptch.Grid, 0, D);
+            OpenFoamDGField Mu0 = new OpenFoamDGField(_ptch.Grid, 0, D);
             int nCells = _ptch.Grid.NumberOfCells;
 
             for (int j = 0; j < nCells; j++) {
-                Phi0.SetDGcoordinate(0, j, 0, phi.GetMeanValue(j));
+                Mu0.SetDGcoordinate(0, j, 0, mu.GetMeanValue(j));
             }
-            return Phi0;
+            return Mu0;
         }
 
         /// <summary>
@@ -253,7 +254,7 @@ namespace BoSSS.Application.ExternalBinding {
                 // PlotGrid("grid.plt", grd);
 
                 Basis b = mtx.ColMap.BasisS[0];
-                Basis bPhi = mtx.ColMap.BasisS[0];
+                Basis bMu = mtx.ColMap.BasisS[0];
                 int noOfTotalCells = b.GridDat.Grid.NumberOfCells;
 
                 OpenFoamDGField C = mtx.Fields[0];
@@ -268,13 +269,13 @@ namespace BoSSS.Application.ExternalBinding {
                 // OpenFoamDGField fields = new(ofGrid, b.Degree, 2);
                 // OpenFoamMatrix fullMtx = new(ofGrid, fields);
 
-                var map = new UnsetteledCoordinateMapping(b, bPhi);
+                var map = new UnsetteledCoordinateMapping(b, bMu);
 
                 int nParams = 7;
-                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "phi", "mu", "VelocityX", "VelocityY", "VelocityZ", "phi0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_phi", "Res_mu");
-                // var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "phi", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_phi");
-                // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "phi_Res");
-                // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "phi", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "phi_Res");
+                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_mu", "Res_mu");
+                // var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "mu", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
+                // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "mu_Res");
+                // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "mu_Res");
 
                 // TODO sync from OpenFOAM
                 double lambda = 0.0;
@@ -328,13 +329,13 @@ namespace BoSSS.Application.ExternalBinding {
                     w.Clear();
                     c.ProjectField(InitFunc);
                 }
-                phi = new SinglePhaseField(b);
+                mu = new SinglePhaseField(b);
                 // for (int j = 0; j < J; j++)
                 // {
                 //     int N = b.GetLength(j);
                 //     for (int n = 0; n < N; n++) {
                 //         c.Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
-                //         // phi.Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
+                //         // mu.Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
                 //     }
                 // }
 
@@ -361,12 +362,12 @@ namespace BoSSS.Application.ExternalBinding {
                 //     // LSGradZ.SetMeanValue(i, LSGrad[2,i]);
                 // }
                 // RealLevSet.EvaluateGradient
-                var domfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>() { { "phi", c }, { "mu", phi } });
+                var domfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>() { { "c", c }, { "mu", mu } });
                 var paramfields = (IReadOnlyDictionary<string, DGField>)(new Dictionary<string, DGField>(){
                         {"VelocityX", u},
                         {"VelocityY", v},
                         {"VelocityZ", w},
-                        {"phi0", c},
+                        {"c0", c},
                         // {"LevelSetGradient[0]", LSGradX},
                         // {"LevelSetGradient[1]", LSGradY},
                         // {"LevelSetGradient[2]", LSGradZ}
@@ -384,12 +385,12 @@ namespace BoSSS.Application.ExternalBinding {
                 LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
                                                          6, new string[] { "a", "b" },
                                                          GetNamedInputFields,
-                                                         RealLevSet, "phi", ContinuityProjectionOption.None);
+                                                         RealLevSet, "c", ContinuityProjectionOption.None);
 
                 var RealTracker = lsu.Tracker;
-                // phi.Laplacian(-cahn, c);
-                // phi.Acc(-1.0, c);
-                // phi.ProjectPow(1.0, c, 3.0);
+                // mu.Laplacian(-cahn, c);
+                // mu.Acc(-1.0, c);
+                // mu.ProjectPow(1.0, c, 3.0);
                 RealLevSet.Clear();
                 RealLevSet.Acc(1.0, c);
                 RealTracker.UpdateTracker(0);
@@ -431,12 +432,12 @@ namespace BoSSS.Application.ExternalBinding {
 
                 var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda, mask);
                 var CHCconv = new CahnHilliardCConv(new[] { u, v, w }, mask);
-                var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, cahn, mask);
-                var CHPhisource = new CahnHilliardPhiSource(mask);
-                op.EquationComponents["Res_phi"].Add(CHCdiff);
-                // op.EquationComponents["Res_phi"].Add(CHCconv);
-                op.EquationComponents["Res_mu"].Add(CHPhisource);
-                op.EquationComponents["Res_mu"].Add(CHPhidiff);
+                var CHMudiff = new CahnHilliardMuDiff(ptch, penalty_const, cahn, mask);
+                var CHMusource = new CahnHilliardMuSource(mask);
+                op.EquationComponents["Res_mu"].Add(CHCdiff);
+                // op.EquationComponents["Res_mu"].Add(CHCconv);
+                op.EquationComponents["Res_mu"].Add(CHMusource);
+                op.EquationComponents["Res_mu"].Add(CHMudiff);
                 // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
                 double[] MassScales = new double[2];
@@ -449,7 +450,7 @@ namespace BoSSS.Application.ExternalBinding {
                 op.Commit();
 
                 SinglePhaseField Res_c = new SinglePhaseField(b);
-                SinglePhaseField Res_phi = new SinglePhaseField(b);
+                SinglePhaseField Res_mu = new SinglePhaseField(b);
                 List<DGField> ParameterMap = new List<DGField>();
                 for (int i = 0; i < nParams; i++)
                 {
@@ -476,12 +477,12 @@ namespace BoSSS.Application.ExternalBinding {
                 lsu.InitializeParameters(domfields, paramfields);
 
                 var tp = new Tecplot(grd.Grid.GridData, 3);
-                Tecplot("plot.1", 0.0, 3, c, phi, RealLevSet, u, v, w);
+                Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w);
 
                 // TODO saye instead of hmf
                 // XdgSubGridTimestepping TimeStepper = new XdgSubGridTimestepping(op,
-                //                                          new SinglePhaseField[] { c, phi },
-                //                                          new SinglePhaseField[] { Res_c, Res_phi },
+                //                                          new SinglePhaseField[] { c, mu },
+                //                                          new SinglePhaseField[] { Res_c, Res_mu },
                 //                                          // TimeSteppingScheme.ExplicitEuler,
                 //                                          TimeSteppingScheme.ImplicitEuler,
                 //                                          sgrid,
@@ -496,8 +497,8 @@ namespace BoSSS.Application.ExternalBinding {
                 //                                          );
 
                 // XdgTimestepping TimeStepperNoSG = new XdgTimestepping(opNoSG,
-                //                                          new SinglePhaseField[]{cNoSG, phiNoSG},
-                //                                          new SinglePhaseField[]{Res_cNoSG, Res_phiNoSG},
+                //                                          new SinglePhaseField[]{cNoSG, muNoSG},
+                //                                          new SinglePhaseField[]{Res_cNoSG, Res_muNoSG},
                 //                                          // TimeSteppingScheme.ExplicitEuler,
                 //                                          TimeSteppingScheme.ImplicitEuler,
                 //                                          LinearSolver: ls,
@@ -510,8 +511,8 @@ namespace BoSSS.Application.ExternalBinding {
                 //                                          );
 
                 XdgTimestepping TimeStepper = new XdgTimestepping(op,
-                                                         new SinglePhaseField[]{c, phi},
-                                                         new SinglePhaseField[]{Res_c, Res_phi},
+                                                         new SinglePhaseField[]{c, mu},
+                                                         new SinglePhaseField[]{Res_c, Res_mu},
                                                          // TimeSteppingScheme.ExplicitEuler,
                                                          TimeSteppingScheme.ImplicitEuler,
                                                                   null,
@@ -539,12 +540,12 @@ namespace BoSSS.Application.ExternalBinding {
                     RealTracker.UpdateTracker(time);
                     TimeStepper.Solve(time, dt);
 
-                    Tecplot("plot." + (t + 2), time, 3, c, phi, RealLevSet, u, v, w);
+                    Tecplot("plot." + (t + 2), time, 3, c, mu, RealLevSet, u, v, w);
 
                     time += dt;
                     t++;
                     dt *= 10;
-                    // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, phi, RealLevSet, u, v, w, cNoSG, phiNoSG);
+                    // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, mu, RealLevSet, u, v, w, cNoSG, muNoSG);
 
                 }
             } catch (Exception e) {
@@ -750,24 +751,24 @@ namespace BoSSS.Application.ExternalBinding {
             }
         }
 
-        class CahnHilliardPhiSource : mu_Source {
+        class CahnHilliardMuSource : mu_Source {
 
             // OpenFoamPatchField _ptch;
 
-            public CahnHilliardPhiSource(CellMask Subgrid = null)
-                : base(){
+            public CahnHilliardMuSource(CellMask Subgrid = null)
+                : base("c"){
             }
             // public bool GetIsDiri(ref CommonParamsBnd inp){
             //     return this.IsDirichlet(ref inp);
             // }
         }
 
-        class CahnHilliardPhiDiff : mu_Diffusion {
+        class CahnHilliardMuDiff : mu_Diffusion {
 
             OpenFoamPatchField _ptch;
 
-            public CahnHilliardPhiDiff(OpenFoamPatchField ptch, double penalty_const, double __cahn, CellMask Subgrid = null)
-                : base(3, penalty_const, __cahn, null){
+            public CahnHilliardMuDiff(OpenFoamPatchField ptch, double penalty_const, double __cahn, CellMask Subgrid = null)
+                : base(3, penalty_const, __cahn, null, "c"){
                 _ptch = ptch;
             }
 
@@ -785,7 +786,7 @@ namespace BoSSS.Application.ExternalBinding {
                 if (inp.EdgeTag == 0){
                     throw new ApplicationException("Edge Index of a boundary edge should not be zero");
                 }
-                // Console.WriteLine("diriPhi " + _ptch.Values[inp.EdgeTag - 1][0]);
+                // Console.WriteLine("diriMu " + _ptch.Values[inp.EdgeTag - 1][0]);
                 return 0.0;
                 // return _ptch.Values[inp.EdgeTag - 1][0];
             }
@@ -799,7 +800,7 @@ namespace BoSSS.Application.ExternalBinding {
             }
         }
 
-        class CahnHilliardCDiff : phi_Diffusion {
+        class CahnHilliardCDiff : c_Diffusion {
 
             OpenFoamPatchField _ptch;
 
@@ -835,7 +836,7 @@ namespace BoSSS.Application.ExternalBinding {
                 return 0;
             }
         }
-        class CahnHilliardCConv : phi_Flux {
+        class CahnHilliardCConv : c_Flux {
             public CahnHilliardCConv(DGField[] Velocity, CellMask Subgrid = null)
                 : base(3, null){} // TODO check if velocity is really communicated through parameter fields
 

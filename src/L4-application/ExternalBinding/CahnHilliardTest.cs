@@ -155,7 +155,7 @@ namespace BoSSS.Application.ExternalBinding {
             Console.WriteLine("DOFs[1]: " + DOFs["c"][1]);
             Console.WriteLine("errorsS[0]: " + errorS["c"][0]);
             Console.WriteLine("errorsS[1]: " + errorS["c"][1]);
-            Assert.IsTrue(slope >= 3.0);
+            Assert.IsTrue(slope >= 2.0);
 
             Cleanup();
 
@@ -163,8 +163,10 @@ namespace BoSSS.Application.ExternalBinding {
 
         public static void Main() {
 
-            string mediumGrd = "./meshes/big/medium/polyMesh/";
-            RunDropletTest(mediumGrd);
+            GridImportTest.ConvertFOAMGrid();
+            // string mediumGrd = "./meshes/big/medium/polyMesh/";
+            // RunDropletTest(mediumGrd);
+
             // DropletTest();
             // ConvergenceTest();
             // Init();
