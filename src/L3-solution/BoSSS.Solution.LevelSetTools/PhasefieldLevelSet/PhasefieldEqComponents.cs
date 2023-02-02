@@ -143,19 +143,21 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// Transport flux for Cahn-Hilliard
     /// </summary>
     public class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
-        public phi_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) {
+        public phi_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap, string LevelSetName = "phi") {
             m_D = D;
             m_boundaryCondMap = __boundaryCondMap;
-            m_bndFunc = m_boundaryCondMap?.bndFunction["phi"];
+            m_bndFunc = m_boundaryCondMap?.bndFunction[LevelSetName];
+            m_LevelSetName = LevelSetName; // depending on the context, solvers might prefer a different variable name
         }
 
-        int m_D;
-        BoundaryCondMap<BoundaryType> m_boundaryCondMap;
-        Func<double[], double, double>[] m_bndFunc;
+        protected string m_LevelSetName; // depending on the context, solvers might prefer a different variable name
+        protected int m_D;
+        protected BoundaryCondMap<BoundaryType> m_boundaryCondMap;
+        protected Func<double[], double, double>[] m_bndFunc;
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxGradV;
 
-        public IList<string> ArgumentOrdering => new string[] { "phi" };
+        public IList<string> ArgumentOrdering => new string[] { m_LevelSetName };
 
         public IList<string> ParameterOrdering => VariableNames.VelocityVector(m_D);
 
@@ -216,15 +218,17 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// </summary>
     public class mu_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace {
 
-        public mu_Diffusion(int D, double penalty_const, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap)
-            : base(penalty_const, "phi") // note: in the equation for 'mu', we have the Laplacian of 'phi'
+        public mu_Diffusion(int D, double penalty_const, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap, string LevelSetName = "phi")
+            : base(penalty_const, LevelSetName) // note: in the equation for 'mu', we have the Laplacian of 'phi'
         {
             m_D = D;
             m_cahn = __cahn * __cahn;
             m_boundaryCondMap = __boundaryCondMap;
-            m_bndFunc = m_boundaryCondMap?.bndFunction["phi"];
+            m_bndFunc = m_boundaryCondMap?.bndFunction[LevelSetName];
+            m_LevelSetName = LevelSetName;
         }
 
+        protected string m_LevelSetName; // depending on the context, solvers might prefer a different variable name
         double m_cahn;
         int m_D;
         public override IList<string> ParameterOrdering => VariableNames.VelocityVector(m_D);
@@ -327,14 +331,16 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     public class mu_Source : IVolumeForm, ISupportsJacobianComponent
     {
 
-        public mu_Source()
+        public mu_Source(string LevelSetName = "phi")
         {
-
+            m_LevelSetName = LevelSetName; // depending on the context, solvers might prefer a different variable name
         }
+
+        protected string m_LevelSetName; // depending on the context, solvers might prefer a different variable name
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
-        public IList<string> ArgumentOrdering => new[] { "mu", "phi" };
+        public IList<string> ArgumentOrdering => new[] { "mu", m_LevelSetName};
 
         public IList<string> ParameterOrdering => null; // new[] { "phi0" };
 
@@ -357,18 +363,22 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
         {
-            return new IEquationComponent[] { new jacobi_mu_Source() };
+            return new IEquationComponent[] { new jacobi_mu_Source(m_LevelSetName) };
         }
 
         private class jacobi_mu_Source : IVolumeForm
         {
 
-            public jacobi_mu_Source()
+            public jacobi_mu_Source(string LevelSetName)
             {
+                m_LevelSetName = LevelSetName; // depending on the context, solvers might prefer a different variable name
             }
+
+            protected string m_LevelSetName; // depending on the context, solvers might prefer a different variable name
+
             public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
-            public IList<string> ArgumentOrdering => new[] { "mu", "phi" };
+            public IList<string> ArgumentOrdering => new[] { "mu", m_LevelSetName};
 
             public IList<string> ParameterOrdering => new[] { "phi0" };
 
@@ -398,19 +408,21 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         //    m_epsilon = __epsilon;
         //}
 
-        public phi_Source(double _diff = 0.0) {
+        public phi_Source(double _diff = 0.0, string LevelSetName = "phi") {
             m_diff = _diff;
+            m_LevelSetName = LevelSetName; // depending on the context, solvers might prefer a different variable name
         }
 
 
 
+        protected string m_LevelSetName; // depending on the context, solvers might prefer a different variable name
         //double m_lambda;
         //double m_epsilon;
         double m_diff;
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
-        public IList<string> ArgumentOrdering => new[] { "phi" };
+        public IList<string> ArgumentOrdering => new[] { m_LevelSetName};
         public IList<string> ParameterOrdering => null; //new[] { "phi0" };
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
@@ -428,19 +440,22 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
-            return new IEquationComponent[] { new jacobi_phi_Source(m_diff) };
+            return new IEquationComponent[] { new jacobi_phi_Source(m_diff, m_LevelSetName) };
         }
 
         private class jacobi_phi_Source : IVolumeForm {
             private double m_diff;
 
-            public jacobi_phi_Source(double m_diff) {
+            public jacobi_phi_Source(double m_diff, string LevelSetName) {
                 this.m_diff = m_diff;
+                m_LevelSetName = m_LevelSetName;
             }
+
+            protected string m_LevelSetName; // depending on the context, solvers might prefer a different variable name
 
             public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
-            public IList<string> ArgumentOrdering => new[] { "phi" };
+            public IList<string> ArgumentOrdering => new[] { m_LevelSetName };
 
             public IList<string> ParameterOrdering => new[] { "phi0" };
 

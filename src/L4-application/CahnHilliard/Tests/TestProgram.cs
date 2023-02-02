@@ -91,7 +91,7 @@ namespace BoSSS.Application.CahnHilliard.Tests {
                 ConvergenceTest.SolverConvergenceTest_Experimental(
                      Controls,
                      "CahnHilliard",
-                     ("phi", NormType.L2_embedded, 2.5, -1.1137827966318687, 0.2),
+                     ("c", NormType.L2_embedded, 2.5, -1.1137827966318687, 0.2),
                      ("mu", NormType.L2_embedded, 2.5, -1.0080261719610017, 0.2)
                      );
             } else {

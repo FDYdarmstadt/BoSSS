@@ -94,7 +94,7 @@ namespace BoSSS.Application.CahnHilliard {
             //RR.InitialValues_Evaluators.Add("c", X => X[0] < -0.5 ? -1.0 : Math.Tanh((-Math.Sqrt(Math.Pow(X[0] + 0.5, 2.0) + Math.Pow(X[1] - 0.0, 2.0)) + radius)/(Math.Sqrt(2) * RR.cahn)));
             //RR.InitialValues_Evaluators.Add("c", X => X[0] < -radius ? Math.Tanh((-Math.Sqrt(Math.Pow(X[0] + radius, 2.0) + Math.Pow(X[1] - 0.0, 2.0)) + radius) / (Math.Sqrt(2) * RR.cahn)) : X[0] > radius ? Math.Tanh((-Math.Sqrt(Math.Pow(X[0] - radius, 2.0) + Math.Pow(X[1] - 0.0, 2.0)) + radius) / (Math.Sqrt(2) * RR.cahn)) : Math.Tanh((-Math.Sqrt(Math.Pow(X[1], 2.0)) + radius) / (Math.Sqrt(2) * RR.cahn)));
             //RR.AddInitialValue("c", new Formula("X => X[0] < 0.5 ? (X[0] > -0.8 ? (X[1] > -0.5 ? (X[1] < 0.5 ? 1.0 : -1.0) : -1.0) : -1.0) : -1.0", false));
-            RR.InitialValues_Evaluators.Add("phi", X => Math.Tanh((-Math.Sqrt(Math.Pow(X[0] - 0.0, 2.0) + Math.Pow(X[1] - 0.0, 2.0)) + radius)/(Math.Sqrt(2) * RR.cahn)));
+            RR.InitialValues_Evaluators.Add("c", X => Math.Tanh((-Math.Sqrt(Math.Pow(X[0] - 0.0, 2.0) + Math.Pow(X[1] - 0.0, 2.0)) + radius)/(Math.Sqrt(2) * RR.cahn)));
             //RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => X[1] ", false));
             //RR.InitialValues_Evaluators.Add(VariableNames.VelocityX, X =>  Math.Exp(-Math.Pow(X[0],2.0)));
             //RR.InitialValues_Evaluators.Add(VariableNames.VelocityY, X => 2.0 * X[1] * X[0] * Math.Exp(-Math.Pow(X[0],2.0)));
@@ -168,7 +168,7 @@ namespace BoSSS.Application.CahnHilliard {
             //RR.AddInitialValue("c", new Formula("X => Math.Sqrt(X[0]*X[0] + X[1]*X[1]) < 0.5 ? 1.0 : -1.0", false));
             //RR.AddInitialValue("c", new Formula("X => X[0] < 0.5 ? (X[0] > -0.5 ? (X[1] > -0.5 ? (X[1] < 0.5 ? 1.0 : -1.0) : -1.0) : -1.0) : -1.0", false));
             //RR.AddInitialValue("c", new Formula("X => X[0] < 0.5 ? (X[0] > -0.8 ? (X[1] > -0.5 ? (X[1] < 0.5 ? 1.0 : -1.0) : -1.0) : -1.0) : -1.0", false));
-            RR.InitialValues_Evaluators.Add("phi", X => Math.Tanh((-Math.Sqrt(Math.Pow(X[0] - 0.3, 2.0) + Math.Pow(X[1] - 0.3, 2.0) + Math.Pow(X[2] - 0.0, 2.0)) + radius) / (Math.Sqrt(2) * RR.cahn)));
+            RR.InitialValues_Evaluators.Add("c", X => Math.Tanh((-Math.Sqrt(Math.Pow(X[0] - 0.3, 2.0) + Math.Pow(X[1] - 0.3, 2.0) + Math.Pow(X[2] - 0.0, 2.0)) + radius) / (Math.Sqrt(2) * RR.cahn)));
             //RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => X[1] ", false));
             RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => 0.0", false));
             RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => 0.0 ", false));
@@ -210,13 +210,13 @@ namespace BoSSS.Application.CahnHilliard {
                 return grd;
             };
 
-            RR.AddBoundaryValue(BoundaryType.Wall.ToString(), "phi", new Formula("X => -1"));
+            RR.AddBoundaryValue(BoundaryType.Wall.ToString(), "c", new Formula("X => -1"));
 
             //RR.AddInitialValue("c", new Formula("X => (X[0]*X[0] + X[1]*X[1]) < 0.25 ? 1.0 : -1.0", false));
             // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)/(1e-5 * Math.Sqrt(2))))"));
             // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)/(1e-5*Math.Sqrt(2))))"));
             // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5)*Math.Sqrt(2)))"));
-            RR.AddInitialValue("phi", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-8)*Math.Sqrt(2)))"));
+            RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-8)*Math.Sqrt(2)))"));
             RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => 0.0 ", false));
             RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => 0.0 ", false));
 
@@ -261,10 +261,10 @@ namespace BoSSS.Application.CahnHilliard {
                 return grd;
             };
 
-            RR.AddBoundaryValue(BoundaryType.Wall.ToString(), "phi", new Formula("X => -1"));
+            RR.AddBoundaryValue(BoundaryType.Wall.ToString(), "c", new Formula("X => -1"));
 
             //RR.AddInitialValue("c", new Formula("X => (X[0]*X[0] + X[1]*X[1]) < 0.25 ? 1.0 : -1.0", false));
-            RR.AddInitialValue("phi", new Formula("X => -Math.Tanh(50000 * ((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)*Math.Sqrt(2)))"));
+            RR.AddInitialValue("c", new Formula("X => -Math.Tanh(50000 * ((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)*Math.Sqrt(2)))"));
             //RR.AddInitialValue("c", new Formula("X => X[0] < 1 && X[0] > -1 && X[1] > 0 ? -1 : -Math.Tanh((Math.Sqrt(X[0]*X[0] + X[1]*X[1])-5)*Math.Sqrt(2))"));
             // RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => -X[1] ", false));
             // RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => X[0] ", false));
@@ -305,10 +305,10 @@ namespace BoSSS.Application.CahnHilliard {
                 return grd;
             };
 
-            RR.AddBoundaryValue(BoundaryType.Wall.ToString(), "phi", new Formula("X => -1"));
+            RR.AddBoundaryValue(BoundaryType.Wall.ToString(), "c", new Formula("X => -1"));
 
             //RR.AddInitialValue("c", new Formula("X => (X[0]*X[0] + X[1]*X[1]) < 0.25 ? 1.0 : -1.0", false));
-            RR.AddInitialValue("phi", new Formula("X => -Math.Tanh((Math.Sqrt(X[0]*X[0]*0.75 + X[1]*X[1])-5)*Math.Sqrt(2))"));
+            RR.AddInitialValue("c", new Formula("X => -Math.Tanh((Math.Sqrt(X[0]*X[0]*0.75 + X[1]*X[1])-5)*Math.Sqrt(2))"));
             RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => 0.0 ", false));
             RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => 0.0 ", false));
 

@@ -62,29 +62,29 @@ namespace BoSSS.Application.CahnHilliard {
     public class CahnHilliardMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSolver<CahnHilliardControl> {
 
 #pragma warning disable 649
-
+        
         /// <summary>
         /// concentration
         /// </summary>
-        [InstantiateFromControlFile("phi", "phi", IOListOption.Always)]
+        [InstantiateFromControlFile("c", "c", IOListOption.Always)]
         public SinglePhaseField c;
 
         /// <summary>
         /// potential
         /// </summary>
-        [InstantiateFromControlFile("mu", "phi", IOListOption.Always)]
+        [InstantiateFromControlFile("mu", "c", IOListOption.Always)]
         public SinglePhaseField mu;
 
         /// <summary>
         /// residual of 'c'-equation
         /// </summary>
-        [InstantiateFromControlFile("phi_Resi", "phi", IOListOption.Always)]
+        [InstantiateFromControlFile("c_Resi", "c", IOListOption.Always)]
         protected SinglePhaseField c_Resi;
 
         /// <summary>
         /// residual of 'mu'-equation
         /// </summary>
-        [InstantiateFromControlFile("mu_Resi", "phi", IOListOption.Always)]
+        [InstantiateFromControlFile("mu_Resi", "c", IOListOption.Always)]
         protected SinglePhaseField mu_Resi;
 
         ///// <summary>
@@ -126,7 +126,7 @@ namespace BoSSS.Application.CahnHilliard {
         [InstantiateFromControlFile("cex", "cex", IOListOption.Always)]
         protected SinglePhaseField cex;
 
-        [InstantiateFromControlFile("cDist", "phi", IOListOption.Always)]
+        [InstantiateFromControlFile("cDist", "c", IOListOption.Always)]
         SinglePhaseField cDist;
 #pragma warning restore 649
 
@@ -288,14 +288,14 @@ namespace BoSSS.Application.CahnHilliard {
             }
 
 
-            m_bcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "phi");
+            m_bcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "c");
 
             #region variables
 
             //create Parameter and Variablelists
             string[] paramVar = VariableNames.VelocityVector(D).Cat("c0");//.Cat(VariableNames.LevelSetGradient(D));
-            string[] domainVar = new string[] { "phi" };
-            string[] codomainVar = new string[] { "Res_phi" };
+            string[] domainVar = new string[] { "c" };
+            string[] codomainVar = new string[] { "Res_c" };
 
             switch(Control.ModTyp) {
                 case CahnHilliardControl.ModelType.modelA:
@@ -333,8 +333,8 @@ namespace BoSSS.Application.CahnHilliard {
 
             // convection term
             if(this.Control.includeConvection == true) {
-                CHOp.EquationComponents["Res_phi"].Add(
-                new phi_Flux(D, m_bcMap) // TODO check if velocity is communicated correctly
+                CHOp.EquationComponents["Res_c"].Add(
+                new c_Flux(D, m_bcMap) // TODO check if velocity is communicated correctly
                 );
             }
 
@@ -342,19 +342,19 @@ namespace BoSSS.Application.CahnHilliard {
                 case CahnHilliardControl.ModelType.modelA:
 
                 if(this.Control.includeDiffusion == true) {
-                    CHOp.EquationComponents["Res_phi"].Add(
-                    new phi_Source(Control.diff)
+                    CHOp.EquationComponents["Res_c"].Add(
+                    new c_Source(Control.diff)
                     );
                 }
 
                 if(this.Control.includeDiffusion == true) {
-                    CHOp.EquationComponents["Res_phi"].Add(
-                        new mu_Diffusion(D, penalty_factor, Control.cahn * Control.diff.Sqrt(), m_bcMap)
+                    CHOp.EquationComponents["Res_c"].Add(
+                        new mu_Diffusion(D, penalty_factor, Control.cahn * Control.diff.Sqrt(), m_bcMap, "c")
                         );
                 }
 
                 //if(Control.CurvatureCorrection == true) {
-                //    CHOp.EquationComponents["Res_phi"].Add(
+                //    CHOp.EquationComponents["Res_c"].Add(
                 //        new mu_CurvatureCorrection(D, Control.cahn * Control.diff.Sqrt(), this.Control.UseDirectCurvature)
                 //        );
 
@@ -377,20 +377,19 @@ namespace BoSSS.Application.CahnHilliard {
                 case CahnHilliardControl.ModelType.modelB:
 
                 if(this.Control.includeDiffusion == true) {
-                    CHOp.EquationComponents["Res_phi"].Add(
-                    new phi_Diffusion(D, penalty_factor, Control.diff, Control.lambda, m_bcMap)
+                    CHOp.EquationComponents["Res_c"].Add(
+                    new c_Diffusion(D, penalty_factor, Control.diff, Control.lambda, m_bcMap)
                     );
                 }
 
                 if(this.Control.includeDiffusion == true) {
                     CHOp.EquationComponents["Res_mu"].Add(
-                        new mu_Diffusion(D, penalty_factor, Control.cahn, m_bcMap)
+                        new mu_Diffusion(D, penalty_factor, Control.cahn, m_bcMap, "c")
                         );
                 }
 
                 CHOp.EquationComponents["Res_mu"].Add(
-                    //new mu_Source(Control.kappa, Control.lambda)
-                    new mu_Source()
+                    new mu_Source("c")
                     );
 
                 //if(Control.CurvatureCorrection == true) {
@@ -431,6 +430,7 @@ namespace BoSSS.Application.CahnHilliard {
             CHOp.TemporalOperator = new ConstantTemporalOperator(CHOp, MassScales);
 
             CHOp.LinearizationHint = LinearizationHint.GetJacobiOperator;
+
             CHOp.Commit();
 
             return CHOp;
@@ -1482,5 +1482,21 @@ namespace BoSSS.Application.CahnHilliard {
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "CahnHilliard-" + timestepNo + caseStr, phystime, superSampling);
         }
 
+        public class c_Flux : phi_Flux {
+            public c_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, __boundaryCondMap, "c") {}
+            protected string LevelSetName = "c"; // in this context, we prefer to name the Level Set c rather than phi
+        }
+
+        public class c_Source : phi_Source {
+
+            public c_Source(double _diff = 0.0) : base(_diff) {}
+            protected string LevelSetName = "c"; // in this context, we prefer to name the Level Set c rather than phi
+        }
+
+        public class c_Diffusion : phi_Diffusion {
+
+            public c_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+                : base(D, penalty_const, __diff, __lambda, __boundaryCondMap) {}
+        }
     }
 }
