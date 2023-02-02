@@ -289,16 +289,6 @@ namespace BoSSS.Application.ExternalBinding {
                 double sigma = 0.063;
                 double lam = 3 / (2 * sqrt(2)) * sigma * epsilon; // Holger's lambda
 
-                var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda);
-                var CHCconv = new CahnHilliardCConv(() => new[]{u,v,w});
-                // var CHCsource = new CahnHilliardCSource(ptch);
-                var CHPhidiff = new CahnHilliardPhiDiff(ptch, penalty_const, cahn);
-                var CHPhisource = new CahnHilliardPhiSource(cahn);
-                op.EquationComponents["Res_c"].Add(CHCdiff);
-                op.EquationComponents["Res_c"].Add(CHCconv);
-                // op.EquationComponents["Res_c"].Add(CHCsource);
-                op.EquationComponents["Res_phi"].Add(CHPhisource);
-                op.EquationComponents["Res_phi"].Add(CHPhidiff);
                 // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
                 double diff = 0.1;

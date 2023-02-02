@@ -84,15 +84,15 @@ namespace BoSSS.Application.CahnHilliard.Tests {
 
             // 01feb23:
             // Convergence slope for Error of 'c':     2.821947945144496       Intercept:      -1.1137827966318687     (Expecting: 2/-1 to 1 in norm L2_embedded)
-            //  Convergence slope for Error of 'phi':   2.8593703784657984      Intercept:      -1.0080261719610017(Expecting: 2/-1 to 1 in norm L2_embedded)
+            //  Convergence slope for Error of 'mu':   2.8593703784657984      Intercept:      -1.0080261719610017(Expecting: 2/-1 to 1 in norm L2_embedded)
 
 
             if (pDeg == 2) {
                 ConvergenceTest.SolverConvergenceTest_Experimental(
                      Controls,
                      "CahnHilliard",
-                     ("c", NormType.L2_embedded, 2.5, -1.1137827966318687, 0.2),
-                     ("phi", NormType.L2_embedded, 2.5, -1.0080261719610017, 0.2)
+                     ("phi", NormType.L2_embedded, 2.5, -1.1137827966318687, 0.2),
+                     ("mu", NormType.L2_embedded, 2.5, -1.0080261719610017, 0.2)
                      );
             } else {
                 throw new NotImplementedException("unknown polynomila degree");

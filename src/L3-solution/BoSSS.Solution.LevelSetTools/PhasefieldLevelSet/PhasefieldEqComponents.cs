@@ -142,7 +142,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// Transport flux for Cahn-Hilliard
     /// </summary>
-    class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
+    public class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
         public phi_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) {
             m_D = D;
             m_boundaryCondMap = __boundaryCondMap;

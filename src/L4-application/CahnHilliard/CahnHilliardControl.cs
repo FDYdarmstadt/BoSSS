@@ -56,7 +56,7 @@ namespace BoSSS.Application.CahnHilliard {
             if (p < 1)
                 throw new ArgumentOutOfRangeException("Cahn Hilliard solver, due to use of symmetric interior penalty requires a DG degree of at least 1.");
             base.FieldOptions.Clear();
-            base.AddFieldOption("c", p);
+            base.AddFieldOption("phi", p);
             base.AddFieldOption(VariableNames.Curvature, 0);
             base.AddFieldOption("Velocity*", p);
             base.AddFieldOption("cex", p + 2); // exact solution: degree times 2

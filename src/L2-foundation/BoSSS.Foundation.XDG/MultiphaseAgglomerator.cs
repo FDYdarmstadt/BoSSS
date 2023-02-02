@@ -875,14 +875,7 @@ namespace BoSSS.Foundation.XDG {
                         
                         // Loop includes external cells
                         for(int j = 0; j < JE; j++) {
-                            if (Math.Abs(CellSurface[j]) < 1e-25)
-                            {
-                                // TODO check if this is ok
-                                Console.WriteLine("WARNING: Attempting to divide by zero for CellSurface at j = " + j);
-                                LengthScales[j] = Math.Pow(CellVolume[j], 1/3);
-                            } else {
                                 LengthScales[j] = CellVolume[j] / CellSurface[j];
-                            }
                         }
 
 

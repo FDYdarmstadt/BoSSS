@@ -1778,8 +1778,7 @@ namespace BoSSS.Foundation {
 
 
                         if(base.m_SubGrid_InCells != null) {
-                            // throw new NotImplementedException("Subgrid feature is not implemented for matrix assembly");
-                            Console.WriteLine("TODO: Comment this back in!");
+                            throw new NotImplementedException("Subgrid feature is not implemented for matrix assembly");
                         }
 
                         base.UpdateCoefficients();
