@@ -7,7 +7,9 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using ilPSP.Utils;
-using static BoSSS.Solution.Gnuplot.Plot2Ddata;
+//using static BoSSS.Solution.Gnuplot.Plot2Ddata;
+using NUnit.Framework;
+
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -196,19 +198,19 @@ namespace BoSSS.Application.BoSSSpad {
             int L = NoOfTimeEntries;
 
 
-            ret.AddDataGroup(new XYvalues(
+            ret.AddDataGroup(new Plot2Ddata.XYvalues(
                 $"Min Mem [MegB] at {MPIsize} cores",
                 L.ForLoop(i => (double)i),
                 MinimumMemMegs),
                 new PlotFormat(Style: Styles.Lines, lineColor: LineColors.Blue));
 
-            ret.AddDataGroup(new XYvalues(
+            ret.AddDataGroup(new Plot2Ddata.XYvalues(
                 $"Max Mem [MegB] at {MPIsize} cores",
                 L.ForLoop(i => (double)i),
                 MaximumMemMeg),
                 new PlotFormat(Style: Styles.Lines, lineColor: LineColors.Red));
 
-            ret.AddDataGroup(new XYvalues(
+            ret.AddDataGroup(new Plot2Ddata.XYvalues(
                 $"Avg Mem [MegB] at {MPIsize} cores",
                 L.ForLoop(i => (double)i),
                 AverageMemMeg),
@@ -229,7 +231,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             var ret = new Plot2Ddata();
 
-            ret.AddDataGroup(new XYvalues(
+            ret.AddDataGroup(new Plot2Ddata.XYvalues(
                 $"Tot Mem [MegB] at {MPIsize} cores",
                 L.ForLoop(i => (double)i),
                 TotalMemMegs));
@@ -527,7 +529,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// memory tracing record
         /// </summary>
-        internal protected class myRecord : IComparable<myRecord>, IEquatable<myRecord> {
+        internal protected class myRecord : IComparable<myRecord>, IEquatable<myRecord>, ICloneable {
 
             /// <summary>
             /// parsing from single line in text file
@@ -684,6 +686,27 @@ namespace BoSSS.Application.BoSSSpad {
             public override int GetHashCode() {
                 return this.line;
             }
+
+            /// <summary>
+            /// non-shallow copy
+            /// </summary>
+            public object Clone() {
+                var r = new myRecord() {
+                    line = this.line,
+                    Mem = this.Mem,
+                    Name = this.Name,
+                };
+
+                foreach (var p in this.peerRun) {
+                    r.peerRun.Add(p.CloneAs());
+                }
+
+                foreach (var bro in this.mpiBrothers) {
+                    r.mpiBrothers.Add(bro.CloneAs());
+                }
+
+                return r;
+            }
         }
 
 
@@ -707,6 +730,10 @@ namespace BoSSS.Application.BoSSSpad {
             return ret;
         }
 
+        /// <summary>
+        /// Reference verions from Wikipedia;
+        /// Causes stack overflow for larger data sets
+        /// </summary>
         internal static myRecord[] BackTrack(int[,] c, myRecord[] s1, myRecord[] s2, int i, int j, bool RunOrRankCombine) {
             if (i == 0 || j == 0) {
                 return new myRecord[0];
@@ -726,24 +753,23 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
 
+        /// <summary>
+        /// Non-recursive version
+        /// </summary>
         internal static myRecord[] BackTrackNonRecursive(int[,] matrix, myRecord[] s1, myRecord[] s2, bool RunOrRankCombine) {
             int i = s1.Length;// self.characters.count
             int j = s2.Length;// other.characters.count
-
-
-            var charInSequence = s1.Length - 1;
-
+           
 
             var lcs = new List<myRecord>();
 
-            while (i >= 1 && j >= 1) {
+            while (i > 0 && j > 0) {
                 if (matrix[i,j] == matrix[i,j - 1]) {
                     // Indicates propagation without change: no new char was added to lcs.
                     j -= 1;
                 } else if (matrix[i,j] == matrix[i - 1,j]) {
                     // Indicates propagation without change: no new char was added to lcs.
                     i -= 1;
-                    charInSequence = charInSequence - 1;// self.index(before: charInSequence);
 
                 } else {
                     // Value on the left and above are different than current cell.
@@ -755,15 +781,10 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                         s1[i - 1].AddPeerRun(s2[j - 1]); // 
 
-
-                    i -= 1;
-
+            i -= 1;
                     j -= 1;
 
-                    charInSequence = charInSequence - 1;// self.index(before: charInSequence);
-
-                    //lcs.append(self[charInSequence])
-                    lcs.Add(s1[charInSequence]);
+                    lcs.Add(s1[i]);
 
                 }
             }
@@ -778,11 +799,24 @@ namespace BoSSS.Application.BoSSSpad {
             myRecord[] _b = b.ToArray();
 
 
+            myRecord[] _aC = null;
+            myRecord[] _bC = null;
 
+            if(_a.Length*_b.Length < 400*400) {
+                _aC = _a.Select(e => e.CloneAs()).ToArray();
+                _bC = _b.Select(e => e.CloneAs()).ToArray();
+            }
 
             var aa = LongestCommonSubsequence(_a.ToArray(), _b.ToArray());
-            //var r = BackTrack(aa, _a, _b, _a.Length, _b.Length, RunOrRankCombine);
+
+
             var r = BackTrackNonRecursive(aa, _a, _b, RunOrRankCombine);
+
+            if (_aC != null && _bC != null) {
+                var r1 = BackTrack(aa, _aC, _bC, _aC.Length, _bC.Length, RunOrRankCombine);
+                if (!r1.ListEquals(r))
+                    throw new ApplicationException("mismatch between backtracking implementations");
+            }
 
             return r;
         }
@@ -790,9 +824,9 @@ namespace BoSSS.Application.BoSSSpad {
         internal static myRecord[] LongestCommonSubsequence(IEnumerable<myRecord>[] lists, bool RunOrRankCombine) {
             myRecord[] ret = lists[0].ToArray();
             for (int i = 1; i < lists.Length; i++) {
-                Console.Write($"combining {i} of {lists.Length} ...");
+                //Console.Write($"combining {i} of {lists.Length} ...");
                 ret = LongestCommonSubsequence(ret, lists[i], RunOrRankCombine);
-                Console.WriteLine("done.");
+                //Console.WriteLine("done.");
             }
             return ret;
         }
