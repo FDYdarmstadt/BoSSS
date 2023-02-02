@@ -1,5 +1,4 @@
 ﻿using BoSSS.Application.BoSSSpad;
-using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -140,12 +139,13 @@ namespace PublicTestRunner {
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
                         typeof(LTSTests.Program),
-                        typeof(BoSSS.Application.TutorialTests.AllUpTest), 
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.XNSEC.XNSEC),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),
-                        typeof(HangingNodesTests.HangingNodesTestMain)
+                        typeof(HangingNodesTests.HangingNodesTestMain),
+                        typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain)
                     };
             }
         }
@@ -800,7 +800,7 @@ namespace PublicTestRunner {
                 // phase 1: discover tests
                 // ===================================
 
-                InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
+                InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
                 // deployment of native libraries
                 string NativeOverride;
@@ -936,7 +936,7 @@ namespace PublicTestRunner {
                             }
 
 
-                            Console.WriteLine($"Successfully submitted {j.j.Name}.");
+                            Console.WriteLine($"Successfully submitted {j.j.Name}. \n");
                             AllOpenJobs.Add(j);
                         } catch(Exception e) {
                             Console.Error.WriteLine($"{e.GetType().Name} during job submission: {e.Message}.");

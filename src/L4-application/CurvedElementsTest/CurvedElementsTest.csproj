@@ -52,11 +52,11 @@
     </BootstrapperPackage-->
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="log4net">
+    <!--Reference Include="log4net">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+    </Reference-->
+ </ItemGroup>
   <ItemGroup>
     <Content Include="bin\Debug\CurvedElementsTest.exe" />
     <Content Include="bin\Debug\CurvedElementsTest.pdb" />

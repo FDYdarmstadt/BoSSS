@@ -133,23 +133,33 @@ namespace ilPSP {
         /// <summary>
         /// 
         /// </summary>
-        public static Dictionary<string, Tuple<double, double, int>> GetFuncImbalance(MethodCallRecord[] mcrs) {
+        public static Dictionary<string, (double RelInbalance, double Imbalance, int CallCount)> GetFuncImbalance(MethodCallRecord[] mcrs) {
             return GetImbalance(mcrs, s => s.TimeExclusive.TotalSeconds);
         }
 
         /// <summary>
         /// 
         /// </summary>
-        public static Dictionary<string, Tuple<double, double, int>> GetMPIImbalance(MethodCallRecord[] mcrs) {
+        public static Dictionary<string, (double RelInbalance, double Imbalance, int CallCount)> GetMPIImbalance(MethodCallRecord[] mcrs) {
             return GetImbalance(mcrs, s => s.ExclusiveBlockingTime.TotalSeconds);
         }
 
         /// <summary>
-        /// 
+        /// Analyzes imbalances across MPI cores
         /// </summary>
-        private static Dictionary<string, Tuple<double, double, int>> GetImbalance(MethodCallRecord[] mcrs, Func<MethodCallRecord, double> TimeToCollect) {
+        /// <param name="mcrs">Instrumentation of a run;</param>
+        /// <param name="ProperyEval">
+        /// evaluates a numeric property (r.g. some measured runtime, <see cref="MethodCallRecord.ExclusiveBlockingTime"/>) which is then compared across several MPI cores
+        /// </param>
+        /// <returns>
+        /// - dictionary key: method name
+        /// - value 1 (relative imbalance): imbalance / average
+        /// - value 2 (imbalance): difference between maximum and minimum value across all MPI cores
+        /// - value 3: how often the function was called
+        /// </returns>
+        public static Dictionary<string, (double RelInbalance, double Imbalance, int CallCount)> GetImbalance(MethodCallRecord[] mcrs, Func<MethodCallRecord, double> ProperyEval) {
             var kv = new Dictionary<string, Stats>();
-            var methodImblance = new Dictionary<string, Tuple<double, double, int>>();
+            var methodImblance = new Dictionary<string, (double, double, int)>();
             List<string> method_names = new List<string>();
 
             mcrs[0].CompleteCollectiveReport().ForEach(r => method_names.Add(r.Name));
@@ -166,14 +176,14 @@ namespace ilPSP {
                 int cnt = 0;
 
                 for(int j = 0; j < times.Length; j++) {
-                    mcrs[j].FindChildren(method).ForEach(s => times[j] += TimeToCollect(s));
+                    mcrs[j].FindChildren(method).ForEach(s => times[j] += ProperyEval(s));
                 }
 
                 mcrs[0].FindChildren(method).ForEach(s => cnt += s.CallCount);
 
                 var TStats = new Stats(times);
                 kv.Add(method, TStats);
-                methodImblance.Add(method, new Tuple<double, double, int>(TStats.Imbalance / rootStat.Average, TStats.Imbalance, cnt));
+                methodImblance.Add(method, (TStats.Imbalance / rootStat.Average, TStats.Imbalance, cnt));
             }
             return methodImblance;
         }
