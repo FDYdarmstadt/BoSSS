@@ -179,11 +179,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             Parameters = new List<DGField>();
             Console.WriteLine(parameterFields.Count());
             foreach (var f in parameterFields) {
-                // if (f != null) {
-                    Console.WriteLine(f);
-                    this.Parameters.Add(f);
+                this.Parameters.Add(f);
+                if(f != null) 
+                    // in some solvers, NULL parameters are present,
+                    // i.e. the parameter is specified by the operator,
+                    // but it is not needed in any equation component and therefore set to null.
                     base.RegisterField(f);
-                // }
             }            
 
         }

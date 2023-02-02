@@ -44,13 +44,14 @@ using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Foundation.XDG;
-using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XNSECommon;
 using BoSSS.Solution.LevelSetTools;
 using BoSSS.Foundation.XDG.Quadrature.HMF;
 using System.IO;
 using BoSSS.Solution.Control;
 using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.Statistic.QuadRules;
+
 
 namespace BoSSS.Application.CahnHilliard {
 
@@ -60,49 +61,50 @@ namespace BoSSS.Application.CahnHilliard {
     public class CahnHilliardMain : BoSSS.Solution.XdgTimestepping.DgApplicationWithSolver<CahnHilliardControl> {
 
 #pragma warning disable 649
+
+        ///// <summary>
+        ///// concentration (linearization point)
+        ///// </summary>
+        //[InstantiateFromControlFile("c0", "c", IOListOption.Always)]
+        //protected SinglePhaseField c0;
+
+        ///// <summary>
+        ///// Transport velocity
+        ///// </summary>
+        //[InstantiateFromControlFile(new string[] { VariableNames.LevelSetGradient0, VariableNames.LevelSetGradient1, VariableNames.LevelSetGradient2 },
+        //    new[] { "c", "c", "c" },
+        //    true, true,
+        //    IOListOption.Always)]
+        //protected VectorField<SinglePhaseField> gradc0;
+
+        ///// <summary>
+        ///// hessian of the phasefield
+        ///// </summary>
+        //protected SinglePhaseField[,] hessc0;
+
+        ///// <summary>
+        ///// curvature
+        ///// </summary>
+        //[InstantiateFromControlFile(VariableNames.Curvature, VariableNames.Curvature, IOListOption.Always)]
+        //protected SinglePhaseField Curvature;
+
+        ///// <summary>
+        ///// curvature direct evaluation
+        ///// </summary>
+        //[InstantiateFromControlFile("D" + VariableNames.Curvature, VariableNames.Curvature, IOListOption.Always)]
+        //protected SinglePhaseField DCurvature;
+        
         /// <summary>
         /// concentration
         /// </summary>
         [InstantiateFromControlFile("c", "c", IOListOption.Always)]
-        protected SinglePhaseField c;
-
-        /// <summary>
-        /// concentration (linearization point)
-        /// </summary>
-        [InstantiateFromControlFile("c0", "c", IOListOption.Always)]
-        protected SinglePhaseField c0;
-
-        /// <summary>
-        /// Transport velocity
-        /// </summary>
-        [InstantiateFromControlFile(new string[] { VariableNames.LevelSetGradient0, VariableNames.LevelSetGradient1, VariableNames.LevelSetGradient2 },
-            new[] { "c", "c", "c" },
-            true, true,
-            IOListOption.Always)]
-        protected VectorField<SinglePhaseField> gradc0;
-
-        /// <summary>
-        /// hessian of the phasefield
-        /// </summary>
-        protected SinglePhaseField[,] hessc0;
-
-        /// <summary>
-        /// curvature
-        /// </summary>
-        [InstantiateFromControlFile(VariableNames.Curvature, VariableNames.Curvature, IOListOption.Always)]
-        protected SinglePhaseField Curvature;
-
-        /// <summary>
-        /// curvature direct evaluation
-        /// </summary>
-        [InstantiateFromControlFile("D" + VariableNames.Curvature, VariableNames.Curvature, IOListOption.Always)]
-        protected SinglePhaseField DCurvature;
+        public SinglePhaseField c;
 
         /// <summary>
         /// potential
         /// </summary>
         [InstantiateFromControlFile("phi", "c", IOListOption.Always)]
-        protected SinglePhaseField phi;
+        public SinglePhaseField phi;
 
         /// <summary>
         /// residual of 'c'-equation
@@ -116,11 +118,11 @@ namespace BoSSS.Application.CahnHilliard {
         [InstantiateFromControlFile("phi_Resi", "c", IOListOption.Always)]
         protected SinglePhaseField phi_Resi;
 
-        /// <summary>
-        /// residual of 'curvature'-equation
-        /// </summary>
-        [InstantiateFromControlFile("curvature_Resi", VariableNames.Curvature, IOListOption.Always)]
-        protected SinglePhaseField curvature_Resi;
+        ///// <summary>
+        ///// residual of 'curvature'-equation
+        ///// </summary>
+        //[InstantiateFromControlFile("curvature_Resi", VariableNames.Curvature, IOListOption.Always)]
+        //protected SinglePhaseField curvature_Resi;
 
         /// <summary>
         /// Transport velocity
@@ -131,29 +133,32 @@ namespace BoSSS.Application.CahnHilliard {
             IOListOption.Always)]
         protected VectorField<SinglePhaseField> Velocity;
 
-        /// <summary>
-        /// Transport velocity gradients
-        /// </summary>
-        [InstantiateFromControlFile(new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY },
-            null,
-            true, true,
-            IOListOption.Always)]
-        protected VectorField<SinglePhaseField> VelocityGradX;
+        ///// <summary>
+        ///// Transport velocity gradients
+        ///// </summary>
+        //[InstantiateFromControlFile(new string[] { VariableNames.VelocityX_GradientX, VariableNames.VelocityX_GradientY },
+        //    null,
+        //    true, true,
+        //    IOListOption.Always)]
+        //protected VectorField<SinglePhaseField> VelocityGradX;
 
-        /// <summary>
-        /// Transport velocity gradients
-        /// </summary>
-        [InstantiateFromControlFile(new string[] { VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY },
-            null,
-            true, true,
-            IOListOption.Always)]
-        protected VectorField<SinglePhaseField> VelocityGradY;
+        ///// <summary>
+        ///// Transport velocity gradients
+        ///// </summary>
+        //[InstantiateFromControlFile(new string[] { VariableNames.VelocityY_GradientX, VariableNames.VelocityY_GradientY },
+        //    null,
+        //    true, true,
+        //    IOListOption.Always)]
+        //protected VectorField<SinglePhaseField> VelocityGradY;
 
         /// <summary>
         /// exact solution, to determine L2-Error, see also <see cref="CahnHilliardControl.ExactSolution_provided"/>.
         /// </summary>
         [InstantiateFromControlFile("cex", "cex", IOListOption.Always)]
         protected SinglePhaseField cex;
+
+        [InstantiateFromControlFile("cDist", "c", IOListOption.Always)]
+        SinglePhaseField cDist;
 #pragma warning restore 649
 
         ///// <summary>
@@ -168,7 +173,7 @@ namespace BoSSS.Application.CahnHilliard {
 
         LevelSetTracker RealTracker;
 
-        int m_HMForder;
+
 
         protected override IEnumerable<DGField> InstantiateSolutionFields() {
             DGField[] SolutionFields = new DGField[] { c };
@@ -183,9 +188,9 @@ namespace BoSSS.Application.CahnHilliard {
                 break;
             }
 
-            if(this.Control.CurvatureCorrection) {
-                SolutionFields.Cat(Curvature);
-            }
+            //if(this.Control.CurvatureCorrection) {
+            //    SolutionFields.Cat(Curvature);
+            //}
 
             return SolutionFields;
         }
@@ -209,9 +214,9 @@ namespace BoSSS.Application.CahnHilliard {
                 break;
             }
 
-            if(this.Control.CurvatureCorrection) {
-                ResidualFields.Cat(curvature_Resi);
-            }
+            //if(this.Control.CurvatureCorrection) {
+            //    ResidualFields.Cat(curvature_Resi);
+            //}
 
             return ResidualFields;
         }
@@ -237,6 +242,7 @@ namespace BoSSS.Application.CahnHilliard {
             RealLevSet.Clear();
             RealLevSet.Acc(1.0, c);
             this.RealTracker.UpdateTracker(0.0);
+            base.LsTrk = RealTracker;
         }
 
         /// <summary>
@@ -244,20 +250,11 @@ namespace BoSSS.Application.CahnHilliard {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            InitMPI();
+            InitMPI(args);
             DeleteOldPlotFiles();
+            BoSSS.Application.CahnHilliard.Tests.TestProgram.TestEllipticDropletConvergence();
+            Assert.True(false);
 
-            using(var solver = new CahnHilliardMain()) {
-                var C = Examples.EllipticDroplet(25, 25);
-                // var C = Examples.EllipticDroplet();
-                // var C = Examples.TestCartesian();
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 2;
-                C.NoOfTimesteps = 2;
-                solver.Init(C);
-                solver.RunSolverMode();
-            }
-            return;
             _Main(args, false, () => new CahnHilliardMain());
         }
 
@@ -289,7 +286,7 @@ namespace BoSSS.Application.CahnHilliard {
 
         BoundaryCondMap<BoundaryType> m_bcMap;
 
-        Solution.XdgTimestepping.XdgBDFTimestepping m_Timestepper;
+        //Solution.XdgTimestepping.XdgBDFTimestepping m_Timestepper;
 
         ///// <summary>
         ///// Includes assembly of the matrix.
@@ -343,14 +340,14 @@ namespace BoSSS.Application.CahnHilliard {
                 break;
             }
 
-            if(this.Control.CurvatureCorrection) {
-                domainVar = domainVar.Cat(VariableNames.Curvature);
-                codomainVar = codomainVar.Cat("Res_" + VariableNames.Curvature);
-            }
+            //if(this.Control.CurvatureCorrection) {
+            //    domainVar = domainVar.Cat(VariableNames.Curvature);
+            //    codomainVar = codomainVar.Cat("Res_" + VariableNames.Curvature);
+            //}
 
-            if(this.Control.UseDirectCurvature) {
-                paramVar = paramVar.Cat("D" + VariableNames.Curvature);
-            }
+            //if(this.Control.UseDirectCurvature) {
+            //    paramVar = paramVar.Cat("D" + VariableNames.Curvature);
+            //}
 
             #endregion
 
@@ -368,7 +365,7 @@ namespace BoSSS.Application.CahnHilliard {
             // convection term
             if(this.Control.includeConvection == true) {
                 CHOp.EquationComponents["Res_c"].Add(
-                new c_Flux(D, this.Velocity.ToArray(), m_bcMap)
+                new c_Flux(D, () => this.Velocity.ToArray(), m_bcMap)
                 );
             }
 
@@ -387,25 +384,25 @@ namespace BoSSS.Application.CahnHilliard {
                         );
                 }
 
-                if(Control.CurvatureCorrection == true) {
-                    CHOp.EquationComponents["Res_c"].Add(
-                        new phi_CurvatureCorrection(D, Control.cahn * Control.diff.Sqrt(), this.Control.UseDirectCurvature)
-                        );
+                //if(Control.CurvatureCorrection == true) {
+                //    CHOp.EquationComponents["Res_c"].Add(
+                //        new phi_CurvatureCorrection(D, Control.cahn * Control.diff.Sqrt(), this.Control.UseDirectCurvature)
+                //        );
 
-                    if(!this.Control.UseDirectCurvature) {
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Source(D)
-                            );
+                //    if(!this.Control.UseDirectCurvature) {
+                //        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                //            new curvature_Source(D)
+                //            );
 
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Divergence(D, penalty_factor, 0.001 / this.Control.cahn, LengthScales)
-                            );
-                    } else {
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Direct(D)
-                            );
-                    }
-                }
+                //        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                //            new curvature_Divergence(D, penalty_factor, 0.001 / this.Control.cahn, LengthScales)
+                //            );
+                //    } else {
+                //        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                //            new curvature_Direct(D)
+                //            );
+                //    }
+                //}
 
                 break;
                 case CahnHilliardControl.ModelType.modelB:
@@ -427,33 +424,34 @@ namespace BoSSS.Application.CahnHilliard {
                     new phi_Source(this.Control.includeDiffusion, Control.cahn)
                     );
 
-                if(Control.CurvatureCorrection == true) {
-                    CHOp.EquationComponents["Res_phi"].Add(
-                        new phi_CurvatureCorrection(D, Control.cahn)
-                        );
+                //if(Control.CurvatureCorrection == true) {
+                //    CHOp.EquationComponents["Res_phi"].Add(
+                //        new phi_CurvatureCorrection(D, Control.cahn)
+                //        );
 
-                    if(!this.Control.UseDirectCurvature) {
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Source(D)
-                            );
+                //        if (!this.Control.UseDirectCurvature) {
+                //            CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                //                new curvature_Source(D)
+                //                );
 
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Divergence(D, penalty_factor, 0.001 / this.Control.cahn, LengthScales)
-                            );
-                    } else {
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Direct(D)
-                            );
-                    }
-                }
+                //            CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                //                new curvature_Divergence(D, penalty_factor, 0.001 / this.Control.cahn, LengthScales)
+                //                );
+                //        } else {
+                //            CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                //                new curvature_Direct(D)
+                //                );
+                //        }
+                //}
 
                 break;
+
                 case CahnHilliardControl.ModelType.modelC:
                 throw new NotImplementedException();
-                break;
+                //break;
+                
                 default:
                 throw new ArgumentOutOfRangeException();
-                break;
             }
 
             #endregion
@@ -711,8 +709,7 @@ namespace BoSSS.Application.CahnHilliard {
 
         int reinit = 0;
 
-        [InstantiateFromControlFile("cDist", "c", IOListOption.Always)]
-        SinglePhaseField cDist;
+
 
         private void ComputeDistanceField() {
             GridData GridDat = (GridData)(c.GridDat);
@@ -743,6 +740,7 @@ namespace BoSSS.Application.CahnHilliard {
             //PlotCurrentState(0.0, reinit);
         }
 
+        /*
         [InstantiateFromControlFile("Correction", "c", IOListOption.Always)]
         SinglePhaseField Correction;
 
@@ -831,6 +829,7 @@ namespace BoSSS.Application.CahnHilliard {
                 }, (new CellQuadratureScheme()).SaveCompile(GridDat, Correction.Basis.Degree * 2 + 2));
             //PlotCurrentState(0.0, reinit);
         }
+        */
 
         void CompleteParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             UpdateParameter();
@@ -842,26 +841,26 @@ namespace BoSSS.Application.CahnHilliard {
             //gradc0.Clear();
             //gradc0.Gradient(1.0, c0);
             int D = this.GridData.SpatialDimension;
-            this.c0.Clear();
-            this.c0.Acc(1.0, this.c);
+            //this.c0.Clear();
+            //this.c0.Acc(1.0, this.c);
 
             ComputeDistanceField();
 
-            gradc0.Clear();
-            gradc0.Gradient(1.0, this.c0);
+            //gradc0.Clear();
+            //gradc0.Gradient(1.0, this.c0);
 
-            CurvatureAlgorithmsForLevelSet.ComputeHessian(this.c, out hessc0);
-            if(Control.CurvatureCorrection) {
-                VectorField<SinglePhaseField> filtgrad;
-                CurvatureAlgorithmsForLevelSet.CurvatureDriver(
-                                CurvatureAlgorithmsForLevelSet.SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                                CurvatureAlgorithmsForLevelSet.FilterConfiguration.Phasefield,
-                                this.DCurvature, out filtgrad, RealTracker,
-                                this.c.Basis.Degree * 2,
-                                this.c/*this.c0*/);
+            //CurvatureAlgorithmsForLevelSet.ComputeHessian(this.c, out hessc0);
+            //if(Control.CurvatureCorrection) {
+            //    VectorField<SinglePhaseField> filtgrad;
+            //    CurvatureAlgorithmsForLevelSet.CurvatureDriver(
+            //                    CurvatureAlgorithmsForLevelSet.SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+            //                    CurvatureAlgorithmsForLevelSet.FilterConfiguration.Phasefield,
+            //                    this.DCurvature, out filtgrad, RealTracker,
+            //                    this.c.Basis.Degree * 2,
+            //                    this.c/*this.c0*/);
 
-                ComputeCorrection();
-            }
+            //    ComputeCorrection();
+            //}
 
         }
 
@@ -886,9 +885,9 @@ namespace BoSSS.Application.CahnHilliard {
                         break;
                     }
 
-                    if(this.Control.CurvatureCorrection) {
-                        m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.Curvature));
-                    }
+                    //if(this.Control.CurvatureCorrection) {
+                    //    m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.Curvature));
+                    //}
                 }
                 return m_CurrentSolution;
             }
@@ -903,7 +902,7 @@ namespace BoSSS.Application.CahnHilliard {
             get {
                 if(m_CurrentResidual == null) {
                     m_CurrentResidual = new CoordinateVector(this.c_Resi);
-
+                    
                     switch(Control.ModTyp) {
                         case CahnHilliardControl.ModelType.modelA:
                         break;
@@ -915,9 +914,9 @@ namespace BoSSS.Application.CahnHilliard {
                         break;
                     }
 
-                    if(this.Control.CurvatureCorrection) {
-                        m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.curvature_Resi));
-                    }
+                    //if(this.Control.CurvatureCorrection) {
+                    //    m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.curvature_Resi));
+                    //}
                 }
                 return m_CurrentResidual;
             }
@@ -940,15 +939,15 @@ namespace BoSSS.Application.CahnHilliard {
                     break;
                     case CahnHilliardControl.ModelType.modelC:
                     throw new NotImplementedException();
-                    break;
+                    //break;
                     default:
                     throw new ArgumentOutOfRangeException();
-                    break;
+                    //break;
                 }
 
-                if(this.Control.CurvatureCorrection) {
-                    scale = new double[scale.Length + 1];
-                }
+                //if(this.Control.CurvatureCorrection) {
+                //    scale = new double[scale.Length + 1];
+                //}
 
                 scale[0] = 1.0;
 
@@ -1083,7 +1082,7 @@ namespace BoSSS.Application.CahnHilliard {
                 var Qnts_old = ComputeBenchmarkQuantities();
 
                 base.Timestepping.Solve(phystime, dt);
-
+                
                 RealLevSet.Clear();
                 RealLevSet.Acc(1.0, c);
                 this.RealTracker.UpdateTracker(0.0);
@@ -1112,12 +1111,12 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         /// shift the concentration field to account for mass loss or gain in the tracked phase
-        private void MassCorrection(double[] Qnts_old) {
-            double[] Qnts = ComputeBenchmarkQuantities();
-            double mass = Qnts[0];
-            double surface = Qnts[1];
-            double shape = Qnts[2];
-            double massDiff = Qnts_old[0] - mass;
+        private void MassCorrection(BenchmarkQuantities Qnts_old) {
+            var Qnts = ComputeBenchmarkQuantities();
+            double mass = Qnts.area;
+            double surface = Qnts.surface;
+            double shape = Qnts.circ;
+            double massDiff = Qnts_old.area - mass;
 
             // we assume the current phasefield is close to the equilibrium tangenshyperbolicus form
             SinglePhaseField cNew = new SinglePhaseField(phi.Basis);
@@ -1155,9 +1154,9 @@ namespace BoSSS.Application.CahnHilliard {
                 this.RealTracker.UpdateTracker(0.0);
 
                 Qnts = ComputeBenchmarkQuantities();
-                mass = Qnts[0];
+                mass = Qnts.area;
 
-                correction = -(massDiff) / ((Qnts_old[0] - mass - massDiff) / (correction));
+                correction = -(massDiff) / ((Qnts_old.area - mass - massDiff) / (correction));
 
                 // compute and project 
                 // step one calculate distance field phiDist = 0.5 * log(Max(1+c, eps)/Max(1-c, eps)) * sqrt(2) * Cahn
@@ -1191,26 +1190,27 @@ namespace BoSSS.Application.CahnHilliard {
                 this.RealTracker.UpdateTracker(0.0);
 
                 Qnts = ComputeBenchmarkQuantities();
-                mass = Qnts[0];
-                surface = Qnts[1];
-                shape = Qnts[2];
+                mass = Qnts.area;
+                surface = Qnts.surface;
+                shape = Qnts.circ;
 
-                massDiff = Qnts_old[0] - mass;
+                massDiff = Qnts_old.area - mass;
                 i++;
             }
 
             Qnts = ComputeBenchmarkQuantities();
 
             Console.WriteLine($"Performed Mass Correction in {i} iteratins: \n" +
-                $"\told mass:           {Qnts_old[0]:N4}\n" +
+                $"\told mass:           {Qnts_old.area:N4}\n" +
                 $"\tuncorrected mass:   {mass_uc:N4}\n" +
-                $"\tcorrected mass:     {Qnts[0]:N4}");
+                $"\tcorrected mass:     {Qnts.area:N4}");
         }
 
-        private void ConservativityCorrection(double[] Qnts_old) {
+        private void ConservativityCorrection(BenchmarkQuantities Qnts_old) {
             throw new NotImplementedException();
         }
 
+        /*
         MultigridOperator.ChangeOfBasisConfig[][] MgConfig {
             get {
                 int p = this.c.Basis.Degree;
@@ -1231,15 +1231,15 @@ namespace BoSSS.Application.CahnHilliard {
                         break;
                         case CahnHilliardControl.ModelType.modelC:
                         throw new NotImplementedException();
-                        break;
+                        //break;
                         default:
                         throw new ArgumentOutOfRangeException();
-                        break;
+                        //break;
                     }
 
-                    if(this.Control.CurvatureCorrection) {
-                        config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[m + 1];
-                    }
+                    //if(this.Control.CurvatureCorrection) {
+                    //    config[iLevel] = new MultigridOperator.ChangeOfBasisConfig[m + 1];
+                    //}
 
                     config[iLevel][0] = new MultigridOperator.ChangeOfBasisConfig() {
                         VarIndex = new int[] { 0 },
@@ -1260,27 +1260,58 @@ namespace BoSSS.Application.CahnHilliard {
                         break;
                         case CahnHilliardControl.ModelType.modelC:
                         throw new NotImplementedException();
-                        break;
+                        //break;
                         default:
                         throw new ArgumentOutOfRangeException();
-                        break;
+                        //break;
                     }
 
-                    if(this.Control.CurvatureCorrection) {
-                        config[iLevel][m] = new MultigridOperator.ChangeOfBasisConfig() {
-                            VarIndex = new int[] { m },
-                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
-                            DegreeS = new int[] { Math.Max(0, this.Curvature.Basis.Degree - iLevel) }
-                        };
-                    }
+                    //if(this.Control.CurvatureCorrection) {
+                    //    config[iLevel][m] = new MultigridOperator.ChangeOfBasisConfig() {
+                    //        VarIndex = new int[] { m },
+                    //        mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                    //        DegreeS = new int[] { Math.Max(0, this.Curvature.Basis.Degree - iLevel) }
+                    //    };
+                    //}
                 }
 
                 return config;
             }
 
         }
+        */
 
-        public double[] ComputeBenchmarkQuantities() {
+        public int m_HMForder {
+            get {
+                return Math.Max(this.RealLevSet.Basis.Degree, this.c.Basis.Degree)*2;
+            }
+        }
+
+        public struct BenchmarkQuantities {
+            public BenchmarkQuantities() {
+                area = 0;
+                surface = 0;
+                circ = 0;
+                concentration = 0;
+                energy = 0;
+            }
+            public BenchmarkQuantities(double __area, double __surface, double __circ, double __concentration, double __energy)  {
+                area = __area;
+                surface = __surface;
+                circ = __circ;
+                concentration = __concentration;
+                energy = __energy;
+            }
+
+
+            public double area;
+            public double surface;
+            public double circ;
+            public double concentration;
+            public double energy;
+        }
+
+        public BenchmarkQuantities ComputeBenchmarkQuantities() {
 
             int order = 0;
             if(RealTracker.GetCachedOrders().Count > 0) {
@@ -1400,7 +1431,7 @@ namespace BoSSS.Application.CahnHilliard {
             ).Execute();
             energy = energy.MPISum();
 
-            return new double[] { area, surface, circ, concentration, energy };
+            return new BenchmarkQuantities( area, surface, circ, concentration, energy );
         }
 
         /// <summary>
@@ -1413,27 +1444,37 @@ namespace BoSSS.Application.CahnHilliard {
         /// </summary>
         /// <param name="sessionID"></param>
         public void InitLogFile(Guid sessionID) {
-            if(this.Control.savetodb) {
-                Log = base.DatabaseDriver.FsDriver.GetNewLog("Phasefield_Quantities.txt", sessionID);
-            } else {
-                Log = new StreamWriter("Phasefield_Quantities_MPI" + this.MPIRank + ".txt");
+            if (Control.StoreBenchmarkQinFile) {
+                if (this.Control.savetodb) {
+                    Log = base.DatabaseDriver.FsDriver.GetNewLog("Phasefield_Quantities.txt", sessionID);
+                } else {
+                    Log = new StreamWriter("Phasefield_Quantities_MPI" + this.MPIRank + ".txt");
+                }
             }
-
-            return;
         }
+
+        internal List<(double time, BenchmarkQuantities bq)> LogHistory = new List<(double time, BenchmarkQuantities bq)>();
+
 
         /// <summary>
         /// writes one line to the Log File
         /// </summary>
         public void WriteLogLine(TimestepNumber TimestepNo, double phystime) {
-            double[] BQnts = ComputeBenchmarkQuantities();
+            var BQnts = ComputeBenchmarkQuantities();
 
-            string line = String.Format($"{TimestepNo}\t{phystime}\t{BQnts[0]}\t{BQnts[1]}\t{BQnts[2]}\t{BQnts[3]}\t{BQnts[4]}");
-            Log.WriteLine(line);
-            Log.Flush();
+            LogHistory.Add((phystime, BQnts));
+
+            if (Log != null) {
+                string line = String.Format($"{TimestepNo}\t{phystime}\t{BQnts.area}\t{BQnts.surface}\t{BQnts.circ}\t{BQnts.concentration}\t{BQnts.energy}");
+                Log.WriteLine(line);
+                Log.Flush();
+            }
 
             return;
         }
+
+
+
 
         /// <summary>
         /// Shutdown function
@@ -1444,6 +1485,13 @@ namespace BoSSS.Application.CahnHilliard {
                 Console.WriteLine("Value of Query 'SolL2err' " + SolL2err.ToString());
             } else {
                 Console.WriteLine("query 'SolL2err' not found.");
+            }
+
+            if (Log != null) {
+                Log.Flush();
+                Log.Close();
+                Log.Dispose();
+                Log = null;
             }
         }
 
@@ -1460,7 +1508,9 @@ namespace BoSSS.Application.CahnHilliard {
             }
 
             DGField[] Fields = new DGField[0];
-            Fields = Fields.Cat(this.cex, this.c, this.phi, this.Velocity, this.gradc0, this.Curvature, this.DCurvature, this.c_Resi, this.phi_Resi, this.curvature_Resi, this.cDist, this.Correction);
+            Fields = Fields.Cat(this.cex, this.c, this.phi, this.Velocity, 
+                //this.gradc0, this.Curvature, this.DCurvature, this.curvature_Resi, this.Correction,
+                this.c_Resi, this.phi_Resi, this.cDist);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "CahnHilliard-" + timestepNo + caseStr, phystime, superSampling);
         }
 
@@ -1499,8 +1549,8 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         double m_diff;
-        double min = double.MaxValue;
-        double max = 0.0;
+        //double min = double.MaxValue;
+        //double max = 0.0;
         double m_lambda;
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
         CellMask m_Subgrid;
@@ -1509,15 +1559,14 @@ namespace BoSSS.Application.CahnHilliard {
         public override IList<string> ParameterOrdering => new[] { "c0" }.Cat(VariableNames.VelocityVector(m_D));//.Cat(VariableNames.LevelSetGradient(m_D));
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
-            double UxN = 0;
-            for(int d = 0; d < m_D; d++) {
-                UxN += (inp.Parameters_IN[d + 1]) * inp.Normal[d];
-            }
+            double UxN = (new Vector(inp.Parameters_IN, 1, inp.D))*inp.Normal;
 
             double v;
             if(UxN >= 0) {
+                // outflow
                 v = 1.0;
             } else {
+                // inflow
                 v = 0.0;
             }
 
@@ -1552,7 +1601,7 @@ namespace BoSSS.Application.CahnHilliard {
             //     n += p[1 + m_D + d]*p[1 + m_D + d];
             // }
 
-            double D = 0.0;
+            //double D = 0.0;
             //if (n.Sqrt() < 1.0 / (Math.Sqrt(2) * m_diff))
             //{
             //    D = 0.027 / (1 + n * m_diff.Pow2());
@@ -1715,7 +1764,7 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         // linear term return self
-        IEquationComponent[] GetJacobianComponents(int m_D) {
+        public override IEquationComponent[] GetJacobianComponents(int m_D) {
             return new IEquationComponent[] { this };
         }
     }
@@ -1724,8 +1773,7 @@ namespace BoSSS.Application.CahnHilliard {
     /// Transport flux for Cahn-Hilliard
     /// </summary>
     public class c_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent, IParameterHandling {
-
-        public c_Flux(int D, DGField[] VelVectorStorage, BoundaryCondMap<BoundaryType> __boundaryCondMap, CellMask Subgrid = null) {
+        public c_Flux(int D, Func<DGField[]> GetVelVector, BoundaryCondMap<BoundaryType> __boundaryCondMap) {
             m_D = D;
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap?.bndFunction["c"];
@@ -1746,10 +1794,8 @@ namespace BoSSS.Application.CahnHilliard {
             return bnp;
         }
 
+        Func<DGField[]> m_GetVelVector;
 
-
-
-        DGField[] m_VelVectorStorage;
         int m_D;
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
         Func<double[], double, double>[] m_bndFunc;
@@ -1774,7 +1820,11 @@ namespace BoSSS.Application.CahnHilliard {
             if(Arguments.Length != 1)
                 throw new ArgumentException();
 
-            return m_VelVectorStorage;
+            var Vel = m_GetVelVector();
+            if (Vel == null || Vel.Length != m_D)
+                throw new ArgumentException();
+
+            return Vel;
         }
 
 
@@ -1903,15 +1953,14 @@ namespace BoSSS.Application.CahnHilliard {
 
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
-            double UxN = 0;
-            for(int d = 0; d < m_D; d++) {
-                UxN += (inp.Parameters_IN[d]) * inp.Normal[d];
-            }
+            double UxN = (new Vector(inp.Parameters_IN, 0, inp.D))*inp.Normal;
 
             double v;
             if(UxN >= 0) {
+                // outflow
                 v = 0.0;
             } else {
+                // inflow
                 v = m_bndFunc[inp.EdgeTag](inp.X, inp.time);
             }
             return v;
@@ -2075,9 +2124,10 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         // linear term return self
-        IEquationComponent[] GetJacobianComponents(int m_D) {
+        public override IEquationComponent[] GetJacobianComponents(int m_D) {
             return new IEquationComponent[] { this };
         }
+        */
     }
 
 
@@ -2370,7 +2420,9 @@ namespace BoSSS.Application.CahnHilliard {
             return m_diff * Acc * V;
         }
     }
-
+    
+    
+    /*
     /// <summary>
     /// Correction term to counter along the interface diffusion for Model A
     /// </summary>
@@ -2538,7 +2590,7 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
     }
-
+    /*
     class curvature_Divergence : IVolumeForm, IEdgeForm, IEquationComponent, ISupportsJacobianComponent {
         public curvature_Divergence(int D, double penalty, double limit, MultidimensionalArray InverseLengthScales) {
             m_D = D;
@@ -2762,5 +2814,5 @@ namespace BoSSS.Application.CahnHilliard {
             return new IEquationComponent[] { EdgeDiff, VolDiff };
         }
     }
-
+    */
 }

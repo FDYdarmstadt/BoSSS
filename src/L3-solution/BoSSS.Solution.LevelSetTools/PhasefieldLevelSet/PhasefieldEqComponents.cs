@@ -19,55 +19,45 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     public class phi_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
     {
 
-        public phi_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap, CellMask Subgrid = null)
+        public phi_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
             : base(penalty_const, "mu") // note: in the equation for 'phi', we have the Laplacian of 'mu'
         {
             m_D = D;
             m_diff = __diff;
             m_boundaryCondMap = __boundaryCondMap;
             m_lambda = __lambda;
-            m_Subgrid = Subgrid;
         }
 
         double m_diff;
         double m_lambda;
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
-        CellMask m_Subgrid;
 
         int m_D;
         public override IList<string> ParameterOrdering => null;
 
-        protected override double g_Diri(ref CommonParamsBnd inp)
-        {
+        protected override double g_Diri(ref CommonParamsBnd inp) {
             double UxN = 0;
-            for (int d = 0; d < m_D; d++)
-            {
+            for (int d = 0; d < m_D; d++) {
                 UxN += (inp.Parameters_IN[d + 1]) * inp.Normal[d];
             }
 
             double v;
-            if (UxN >= 0)
-            {
+            if (UxN >= 0) {
                 v = 1.0;
-            }
-            else
-            {
+            } else {
                 v = 0.0;
             }
 
             return v;
         }
 
-        protected override double g_Neum(ref CommonParamsBnd inp)
-        {
+        protected override double g_Neum(ref CommonParamsBnd inp) {
             return 0.0;
         }
 
-        protected override bool IsDirichlet(ref CommonParamsBnd inp)
-        {
+        protected override bool IsDirichlet(ref CommonParamsBnd inp) {
             BoundaryType edgeType = m_boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
-            switch (edgeType)
-            {
+            switch (edgeType) {
                 case BoundaryType.Wall:
                 case BoundaryType.Slip:
                 case BoundaryType.SlipSymmetry:
@@ -83,8 +73,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             }
         }
 
-        public override double Nu(double[] x, double[] p, int jCell)
-        {
+        public override double Nu(double[] x, double[] p, int jCell) {
 
             //double n = 0.0;
             //double D = 0.0;
@@ -97,16 +86,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             //D = 0.01 * Math.Exp(-8.0 * n * m_diff.Pow2());
             //D = 1e-7;
 
-            if (m_lambda == 0.0)
-            {
+            if (m_lambda == 0.0) {
                 return -m_diff; // -D;
-            }
-            else if (m_lambda > 0.0 && m_lambda <= 1.0)
-            {
+            } else if (m_lambda > 0.0 && m_lambda <= 1.0) {
                 return -m_diff * Math.Max(1 - m_lambda * Math.Pow(p[0], 2.0), 0.0);//-D * Math.Max(1 - m_lambda * Math.Pow(p[0], 2.0),0.0);
-            }
-            else
-            {
+            } else {
                 throw new ArgumentOutOfRangeException();
             }
         }
@@ -114,25 +98,21 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Integrand on boundary mesh edges of the SIP
         /// </summary>
-        public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
-        {
+        public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
 
             double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
             double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
 
-            if (this.IsDirichlet(ref inp))
-            {
+            if (this.IsDirichlet(ref inp)) {
                 // inhom. Dirichlet b.c.
                 // +++++++++++++++++++++
 
                 double g_D = this.g_Diri(ref inp);
 
                 // inflow / outflow
-                if (g_D == 0)
-                {
-                    for (int d = 0; d < inp.D; d++)
-                    {
+                if (g_D == 0) {
+                    for (int d = 0; d < inp.D; d++) {
                         double nd = inp.Normal[d];
                         Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
                         Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
@@ -140,11 +120,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                     Acc *= this.m_alpha;
 
                     Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
-                }
-                else
-                {
-                    for (int d = 0; d < inp.D; d++)
-                    {
+                } else {
+                    for (int d = 0; d < inp.D; d++) {
                         double nd = inp.Normal[d];
                         //Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency 
                         //Acc += (nuA * 0.0) * (_vA) * nd;        // consistency, homogenous Neumann
@@ -152,9 +129,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                     Acc *= this.m_alpha;
 
                 }
-            }
-            else
-            {
+            } else {
 
                 double g_N = this.g_Neum(ref inp);
 
@@ -167,10 +142,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// Transport flux for Cahn-Hilliard
     /// </summary>
-    public class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent
-    {
-        public phi_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap)
-        {
+    class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
+        public phi_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) {
             m_D = D;
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap?.bndFunction["phi"];
@@ -190,63 +163,50 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public TermActivationFlags InnerEdgeTerms => TermActivationFlags.UxV;
 
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
-        {
+        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
             // expand for treatment of input functions, for now hardcode to -1.0
             double UxN = 0;
-            for (int d = 0; d < m_D; d++)
-            {
+            for (int d = 0; d < m_D; d++) {
                 UxN += (inp.Parameters_IN[d]) * inp.Normal[d];
             }
 
             double phi;
-            if (UxN >= 0)
-            {
+            if (UxN >= 0) {
                 phi = _uIN[0];
-            }
-            else
-            {
+            } else {
                 phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
             }
 
             return phi * UxN * _vIN;
         }
 
-        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
-        {
+        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double UxN = 0;
-            for (int d = 0; d < m_D; d++)
-            {
+            for (int d = 0; d < m_D; d++) {
                 UxN += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
             }
 
             double phi;
-            if (UxN >= 0)
-            {
+            if (UxN >= 0) {
                 phi = _uIN[0];
-            }
-            else
-            {
+            } else {
                 phi = _uOUT[0];
             }
 
             return phi * UxN * (_vIN - _vOUT);
         }
 
-        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
-        {
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             double phi = U[0];
-            for (int d = 0; d < m_D; d++)
-            {
+            for (int d = 0; d < m_D; d++) {
                 acc += phi * cpv.Parameters[d] * GradV[d];
             }
 
             return -acc;
         }
 
-        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
-        {
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new[] { this };
         }
     }
@@ -254,8 +214,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// Interior Penalty Flux, with Dirichlet boundary conditions for variable 'mu'
     /// </summary>
-    public class mu_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace
-    {
+    public class mu_Diffusion : BoSSS.Solution.NSECommon.SIPLaplace {
 
         public mu_Diffusion(int D, double penalty_const, double __cahn, BoundaryCondMap<BoundaryType> __boundaryCondMap)
             : base(penalty_const, "phi") // note: in the equation for 'mu', we have the Laplacian of 'phi'
@@ -272,37 +231,29 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
         Func<double[], double, double>[] m_bndFunc;
 
-        protected override double g_Diri(ref CommonParamsBnd inp)
-        {
+        protected override double g_Diri(ref CommonParamsBnd inp) {
             double UxN = 0;
-            for (int d = 0; d < m_D; d++)
-            {
+            for (int d = 0; d < m_D; d++) {
                 UxN += (inp.Parameters_IN[d]) * inp.Normal[d];
             }
 
             double v;
-            if (UxN >= 0)
-            {
+            if (UxN >= 0) {
                 v = 0.0;
-            }
-            else
-            {
+            } else {
                 // for now set inflow value to -1.0
                 v = -1.0; // m_bndFunc[inp.EdgeTag](inp.X, inp.time);
             }
             return v;
         }
 
-        protected override double g_Neum(ref CommonParamsBnd inp)
-        {
+        protected override double g_Neum(ref CommonParamsBnd inp) {
             return 0.0;
         }
 
-        protected override bool IsDirichlet(ref CommonParamsBnd inp)
-        {
+        protected override bool IsDirichlet(ref CommonParamsBnd inp) {
             BoundaryType edgeType = m_boundaryCondMap.EdgeTag2Type[inp.EdgeTag];
-            switch (edgeType)
-            {
+            switch (edgeType) {
                 case BoundaryType.Wall:
                 case BoundaryType.Slip:
                 case BoundaryType.SlipSymmetry:
@@ -318,33 +269,28 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             }
         }
 
-        public override double Nu(double[] x, double[] p, int jCell)
-        {
+        public override double Nu(double[] x, double[] p, int jCell) {
             return -m_cahn;
         }
 
         /// <summary>
         /// Integrand on boundary mesh edges of the SIP
         /// </summary>
-        public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
-        {
+        public override double BoundaryEdgeForm(ref Foundation.CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             double Acc = 0.0;
 
             double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
             double nuA = this.Nu(inp.X, inp.Parameters_IN, inp.jCellIn);
 
-            if (this.IsDirichlet(ref inp))
-            {
+            if (this.IsDirichlet(ref inp)) {
                 // inhom. Dirichlet b.c.
                 // +++++++++++++++++++++
 
                 double g_D = this.g_Diri(ref inp);
 
                 // inflow / outflow
-                if (g_D != 0)
-                {
-                    for (int d = 0; d < inp.D; d++)
-                    {
+                if (g_D != 0) {
+                    for (int d = 0; d < inp.D; d++) {
                         double nd = inp.Normal[d];
                         Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency
                         Acc += (nuA * _Grad_vA[d]) * (_uA[0] - g_D) * nd;  // symmetry
@@ -352,11 +298,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                     Acc *= this.m_alpha;
 
                     Acc -= nuA * (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
-                }
-                else
-                {
-                    for (int d = 0; d < inp.D; d++)
-                    {
+                } else {
+                    for (int d = 0; d < inp.D; d++) {
                         double nd = inp.Normal[d];
                         //Acc += (nuA * _Grad_uA[0, d]) * (_vA) * nd;        // consistency 
                         //Acc += (nuA * 0.0) * (_vA) * nd;        // consistency Neumann
@@ -368,9 +311,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                     Acc *= this.m_alpha;
 
                 }
-            }
-            else
-            {
+            } else {
 
                 double g_N = this.g_Neum(ref inp);
 
@@ -457,10 +398,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         //    m_epsilon = __epsilon;
         //}
 
-        public phi_Source(double _diff = 0.0, CellMask Subgrid = null)
-        {
+        public phi_Source(double _diff = 0.0) {
             m_diff = _diff;
-            m_Subgrid = Subgrid;
         }
 
 
@@ -468,15 +407,13 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         //double m_lambda;
         //double m_epsilon;
         double m_diff;
-        CellMask m_Subgrid;
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
         public IList<string> ArgumentOrdering => new[] { "phi" };
         public IList<string> ParameterOrdering => null; //new[] { "phi0" };
 
-        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
-        {
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
             double phi = U[0];
             //double phi0 = cpv.Parameters[0];
@@ -490,17 +427,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             return m_diff * Acc * V;
         }
 
-        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
-        {
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new IEquationComponent[] { new jacobi_phi_Source(m_diff) };
         }
 
-        private class jacobi_phi_Source : IVolumeForm
-        {
+        private class jacobi_phi_Source : IVolumeForm {
             private double m_diff;
 
-            public jacobi_phi_Source(double m_diff)
-            {
+            public jacobi_phi_Source(double m_diff) {
                 this.m_diff = m_diff;
             }
 
@@ -510,8 +444,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
             public IList<string> ParameterOrdering => new[] { "phi0" };
 
-            public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
-            {
+            public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
                 double phi = U[0];
                 double phi0 = cpv.Parameters[0];
 
@@ -524,6 +457,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         }
     }
 
+    /*
     /// <summary>
     /// Correction term to counter along the interface diffusion
     /// </summary>
@@ -566,6 +500,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         }
     }
 
+    
     class curvature_Direct : IEquationComponent, IVolumeForm, ISupportsJacobianComponent
     {
 
@@ -597,277 +532,280 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
     }
 
-    class curvature_Source : IEquationComponent, IVolumeForm, ISupportsJacobianComponent
-    {
+    
+  class curvature_Source : IEquationComponent, IVolumeForm, ISupportsJacobianComponent
+  {
 
-        public curvature_Source(int _D)
-        {
-            m_D = _D;
-        }
-        int m_D;
+      public curvature_Source(int _D)
+      {
+          m_D = _D;
+      }
+      int m_D;
 
-        public IList<string> ArgumentOrdering => new[] { VariableNames.Curvature };
+      public IList<string> ArgumentOrdering => new[] { VariableNames.Curvature };
 
-        public IList<string> ParameterOrdering => null;
+      public IList<string> ParameterOrdering => null;
 
-        public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
+      public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
-        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
-        {
-            double Acc = 0.0;
+      public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+      {
+          double Acc = 0.0;
 
-            Acc += -U[0] * V;
+          Acc += -U[0] * V;
 
-            return Acc;
-        }
+          return Acc;
+      }
 
-        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
-        {
-            return new[] { this };
-        }
-    }
+      public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
+      {
+          return new[] { this };
+      }
+  }
 
-    class curvature_Divergence : IVolumeForm, IEdgeForm, IEquationComponent, ISupportsJacobianComponent
-    {
-        public curvature_Divergence(int D, double penalty, double limit)
-        {
-            m_D = D;
-            m_limit = limit;
-            m_penalty = penalty;
-        }
 
-        int m_D;
-        double m_limit;
-        double m_penalty;
+  class curvature_Divergence : IVolumeForm, IEdgeForm, IEquationComponent, ISupportsJacobianComponent
+  {
+      public curvature_Divergence(int D, double penalty, double limit)
+      {
+          m_D = D;
+          m_limit = limit;
+          m_penalty = penalty;
+      }
 
-        public CellMask m_cells;
+      int m_D;
+      double m_limit;
+      double m_penalty;
 
-        public IList<string> ArgumentOrdering => new[] { "phi", VariableNames.Curvature };
+      public CellMask m_cells;
 
-        public IList<string> ParameterOrdering => null;
+      public IList<string> ArgumentOrdering => new[] { "phi", VariableNames.Curvature };
 
-        public TermActivationFlags VolTerms => TermActivationFlags.GradUxGradV;
+      public IList<string> ParameterOrdering => null;
 
-        public TermActivationFlags BoundaryEdgeTerms => TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV;
+      public TermActivationFlags VolTerms => TermActivationFlags.GradUxGradV;
 
-        public TermActivationFlags InnerEdgeTerms => TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
+      public TermActivationFlags BoundaryEdgeTerms => TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV;
 
-        /// <summary>
-        /// a little switch...
-        /// </summary>
-        protected double m_alpha = 1.0;
+      public TermActivationFlags InnerEdgeTerms => TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
 
-        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
-        {
-            double acc = 0;
+      /// <summary>
+      /// a little switch...
+      /// </summary>
+      protected double m_alpha = 1.0;
 
-            double[] grad = new double[m_D];
-            for (int d = 0; d < cpv.D; d++)
-            {
-                grad[d] = GradU[0, d];
-                acc -= GradU[0, d] * GradV[d] * this.m_alpha;
-            }
-            double norm = Math.Max(grad.L2Norm(), m_limit);
-            acc *= 1 / norm;
+      public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
+      {
+          double acc = 0;
 
-            return acc;
-        }
+          double[] grad = new double[m_D];
+          for (int d = 0; d < cpv.D; d++)
+          {
+              grad[d] = GradU[0, d];
+              acc -= GradU[0, d] * GradV[d] * this.m_alpha;
+          }
+          double norm = Math.Max(grad.L2Norm(), m_limit);
+          acc *= 1 / norm;
 
-        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
-        {
-            double Acc = 0.0;
+          return acc;
+      }
 
-            double pnlty = this.GetPenalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
+      public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
+      {
+          double Acc = 0.0;
 
-            Acc += Flux(_uIN, _uOUT, _Grad_uIN, _Grad_uOUT, inp.Normal) * (_vIN - _vOUT);
-            Acc *= this.m_alpha;
+          double pnlty = this.GetPenalty(inp.jCellIn, inp.jCellOut);//, inp.GridDat.Cells.cj);
 
-            return Acc;
-        }
+          Acc += Flux(_uIN, _uOUT, _Grad_uIN, _Grad_uOUT, inp.Normal) * (_vIN - _vOUT);
+          Acc *= this.m_alpha;
 
-        private enum FluxType
-        {
-            Central,
+          return Acc;
+      }
 
-            LaxFriedrich,
+      private enum FluxType
+      {
+          Central,
 
-            Upwind,
+          LaxFriedrich,
 
-            Godunov
-        }
+          Upwind,
 
-        private double Flux(double[] uIN, double[] uOUT, double[,] grad_uIN, double[,] grad_uOUT, Vector normal)
-        {
-            var FType = FluxType.Central;
+          Godunov
+      }
 
-            double Acc = 0.0;
+      private double Flux(double[] uIN, double[] uOUT, double[,] grad_uIN, double[,] grad_uOUT, Vector normal)
+      {
+          var FType = FluxType.Central;
 
-            double[] MeanGrad = new double[m_D];
-            double norm;
+          double Acc = 0.0;
 
-            switch (FType)
-            {
+          double[] MeanGrad = new double[m_D];
+          double norm;
 
-                case FluxType.Central:
+          switch (FType)
+          {
 
-                    for (int d = 0; d < m_D; d++)
-                        MeanGrad[d] = 0.5 * (grad_uIN[0, d] + grad_uOUT[0, d]);
+              case FluxType.Central:
 
-                    norm = Math.Max(MeanGrad.L2Norm(), m_limit);
+                  for (int d = 0; d < m_D; d++)
+                      MeanGrad[d] = 0.5 * (grad_uIN[0, d] + grad_uOUT[0, d]);
 
-                    for (int d = 0; d < m_D; d++)
-                        Acc += MeanGrad[d] / norm * normal[d];
+                  norm = Math.Max(MeanGrad.L2Norm(), m_limit);
 
-                    break;
-                case FluxType.Upwind:
+                  for (int d = 0; d < m_D; d++)
+                      Acc += MeanGrad[d] / norm * normal[d];
 
-                    // How to calculate upwind direction
-                    double P = 0.0;
+                  break;
+              case FluxType.Upwind:
 
-                    if (P > 0)
-                    {
-                        for (int d = 0; d < m_D; d++)
-                            MeanGrad[d] = grad_uIN[0, d];
-                    }
-                    else
-                    {
-                        for (int d = 0; d < m_D; d++)
-                            MeanGrad[d] = grad_uOUT[0, d];
-                    }
-
-                    norm = Math.Max(MeanGrad.L2Norm(), m_limit);
-
-                    for (int d = 0; d < m_D; d++)
-                        Acc += MeanGrad[d] / norm * normal[d];
-
-                    break;
-                case FluxType.LaxFriedrich:
-
-                    double[] GradIN = new double[m_D];
-                    double[] GradOUT = new double[m_D];
-                    double gamma = 0.0;
-
-                    for (int d = 0; d < m_D; d++)
-                    {
-                        GradIN[d] = grad_uIN[0, d];
-                        GradOUT[d] = grad_uOUT[0, d];
-                        MeanGrad[d] = GradIN[d] - GradOUT[d];
-                    }
-
-                    double normIN = Math.Max(GradIN.L2Norm(), m_limit);
-                    double normOUT = Math.Max(GradOUT.L2Norm(), m_limit);
-                    gamma = 0.1 / Math.Min(normIN, normOUT);
-
-                    for (int d = 0; d < m_D; d++)
-                        Acc += 0.5 * (GradIN[d] / normIN + GradOUT[d] / normOUT) * normal[d];
-
-                    Acc -= gamma * MeanGrad.L2Norm();
-
-                    break;
-                case FluxType.Godunov:
-                    break;
-                default:
-                    throw new NotSupportedException();
-            }
-
-            return Acc;
-        }
-
-        public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
-        {
-            double Acc = 0.0;
-
-            double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
-
-            double[] grad = new double[m_D];
-            for (int d = 0; d < inp.D; d++)
-            {
-                grad[d] = _Grad_uA[0, d];
-            }
-            double norm = Math.Max(grad.L2Norm(), m_limit);
-
-            bool IsDirichlet = false;
-
-            if (IsDirichlet)
-            {
-                // inhom. Dirichlet b.c.
-                // +++++++++++++++++++++
-
-                double g_D = 0.0; //this.g_Diri(ref inp);
-
-                for (int d = 0; d < inp.D; d++)
-                {
-                    double nd = inp.Normal[d];
-                    Acc += (_Grad_uA[0, d] / norm) * (_vA) * nd;        // consistency
-                    Acc += (_Grad_vA[d] / norm) * (_uA[0] - g_D) * nd;  // symmetry
-                }
-                Acc *= this.m_alpha;
-
-                Acc -= (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
-
-            }
-            else
-            {
-
-                double g_N = grad.InnerProd(inp.Normal) / norm;
-
-                Acc += g_N * _vA * this.m_alpha;
-            }
-            return Acc;
-        }
-
-        /// <summary>
-        /// Length scales used in <see cref="GetPenalty"/>
-        /// </summary>
-        protected MultidimensionalArray LengthScales;
-
-        /// <summary>
-        /// update of penalty length scales.
-        /// </summary>
-        public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
-            
-            double _D = cs.GrdDat.SpatialDimension;
-            double _p = DomainDGdeg.Max();
-            
-            double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
-            double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
-            
-            m_penalty_deg = Math.Max(penalty_deg_tri, penalty_deg_sqr);
-            
-            this.LengthScales = cs.CellLengthScales;
-        }
-
-        /// <summary>
-        /// penalty scaling through polynomial degree
-        /// </summary>
-        double m_penalty_deg;
-
-
-        /// <summary>
-        /// computation of penalty parameter according to:
-        /// An explicit expression for the penalty parameter of the
-        /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
-        /// look at formula (7) in cited paper
-        /// </summary>
-        protected virtual double GetPenalty(int jCellIn, int jCellOut) {
-            double cj_in = 1.0/LengthScales[jCellIn];
-            double mu = m_penalty * m_penalty_deg* cj_in;
-            if(jCellOut >= 0) {
-                double cj_out = 1.0/LengthScales[jCellOut];
-                mu = Math.Max(mu, m_penalty* m_penalty_deg * cj_out);
-            }
-
-            if(mu.IsNaNorInf())
-                throw new ArithmeticException("Inf/NaN in penalty computation.");
-
-            return mu;
-        }
-
-        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
-        {
-            var EdgeDiff = new EdgeFormDifferentiator(this, m_D);
-            var VolDiff = new VolumeFormDifferentiator(this, m_D);
-            return new IEquationComponent[] { EdgeDiff, VolDiff };
-        }
-    }
+                  // How to calculate upwind direction
+                  double P = 0.0;
+
+                  if (P > 0)
+                  {
+                      for (int d = 0; d < m_D; d++)
+                          MeanGrad[d] = grad_uIN[0, d];
+                  }
+                  else
+                  {
+                      for (int d = 0; d < m_D; d++)
+                          MeanGrad[d] = grad_uOUT[0, d];
+                  }
+
+                  norm = Math.Max(MeanGrad.L2Norm(), m_limit);
+
+                  for (int d = 0; d < m_D; d++)
+                      Acc += MeanGrad[d] / norm * normal[d];
+
+                  break;
+              case FluxType.LaxFriedrich:
+
+                  double[] GradIN = new double[m_D];
+                  double[] GradOUT = new double[m_D];
+                  double gamma = 0.0;
+
+                  for (int d = 0; d < m_D; d++)
+                  {
+                      GradIN[d] = grad_uIN[0, d];
+                      GradOUT[d] = grad_uOUT[0, d];
+                      MeanGrad[d] = GradIN[d] - GradOUT[d];
+                  }
+
+                  double normIN = Math.Max(GradIN.L2Norm(), m_limit);
+                  double normOUT = Math.Max(GradOUT.L2Norm(), m_limit);
+                  gamma = 0.1 / Math.Min(normIN, normOUT);
+
+                  for (int d = 0; d < m_D; d++)
+                      Acc += 0.5 * (GradIN[d] / normIN + GradOUT[d] / normOUT) * normal[d];
+
+                  Acc -= gamma * MeanGrad.L2Norm();
+
+                  break;
+              case FluxType.Godunov:
+                  break;
+              default:
+                  throw new NotSupportedException();
+          }
+
+          return Acc;
+      }
+
+      public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA)
+      {
+          double Acc = 0.0;
+
+          double pnlty = 2 * this.GetPenalty(inp.jCellIn, -1);//, inp.GridDat.Cells.cj);
+
+          double[] grad = new double[m_D];
+          for (int d = 0; d < inp.D; d++)
+          {
+              grad[d] = _Grad_uA[0, d];
+          }
+          double norm = Math.Max(grad.L2Norm(), m_limit);
+
+          bool IsDirichlet = false;
+
+          if (IsDirichlet)
+          {
+              // inhom. Dirichlet b.c.
+              // +++++++++++++++++++++
+
+              double g_D = 0.0; //this.g_Diri(ref inp);
+
+              for (int d = 0; d < inp.D; d++)
+              {
+                  double nd = inp.Normal[d];
+                  Acc += (_Grad_uA[0, d] / norm) * (_vA) * nd;        // consistency
+                  Acc += (_Grad_vA[d] / norm) * (_uA[0] - g_D) * nd;  // symmetry
+              }
+              Acc *= this.m_alpha;
+
+              Acc -= (_uA[0] - g_D) * (_vA - 0) * pnlty; // penalty
+
+          }
+          else
+          {
+
+              double g_N = grad.InnerProd(inp.Normal) / norm;
+
+              Acc += g_N * _vA * this.m_alpha;
+          }
+          return Acc;
+      }
+
+      /// <summary>
+      /// Length scales used in <see cref="GetPenalty"/>
+      /// </summary>
+      protected MultidimensionalArray LengthScales;
+
+      /// <summary>
+      /// update of penalty length scales.
+      /// </summary>
+      public virtual void CoefficientUpdate(CoefficientSet cs, int[] DomainDGdeg, int TestDGdeg) {
+
+          double _D = cs.GrdDat.SpatialDimension;
+          double _p = DomainDGdeg.Max();
+
+          double penalty_deg_tri = (_p + 1) * (_p + _D) / _D; // formula for triangles/tetras
+          double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
+
+          m_penalty_deg = Math.Max(penalty_deg_tri, penalty_deg_sqr);
+
+          this.LengthScales = cs.CellLengthScales;
+      }
+
+      /// <summary>
+      /// penalty scaling through polynomial degree
+      /// </summary>
+      double m_penalty_deg;
+
+
+      /// <summary>
+      /// computation of penalty parameter according to:
+      /// An explicit expression for the penalty parameter of the
+      /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
+      /// look at formula (7) in cited paper
+      /// </summary>
+      protected virtual double GetPenalty(int jCellIn, int jCellOut) {
+          double cj_in = 1.0/LengthScales[jCellIn];
+          double mu = m_penalty * m_penalty_deg* cj_in;
+          if(jCellOut >= 0) {
+              double cj_out = 1.0/LengthScales[jCellOut];
+              mu = Math.Max(mu, m_penalty* m_penalty_deg * cj_out);
+          }
+
+          if(mu.IsNaNorInf())
+              throw new ArithmeticException("Inf/NaN in penalty computation.");
+
+          return mu;
+      }
+
+      public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
+      {
+          var EdgeDiff = new EdgeFormDifferentiator(this, m_D);
+          var VolDiff = new VolumeFormDifferentiator(this, m_D);
+          return new IEquationComponent[] { EdgeDiff, VolDiff };
+      }
+  }
+  */
 }
