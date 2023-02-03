@@ -134,7 +134,7 @@
     <ProjectReference Include="..\ZLS\ZLS.csproj" />
   </ItemGroup>
   <PropertyGroup>
-    <PreBuildEvent>git describe --long &gt; "$(ProjectDir)\version.txt"
-git rev-parse HEAD &gt;&gt; "$(ProjectDir)\version.txt"</PreBuildEvent>
+    <PreBuildEvent>git describe --long &gt; "$(SolutionDir)\version.txt"
+		git rev-parse HEAD &gt;&gt; "$(SolutionDir)\version.txt"</PreBuildEvent>
   </PropertyGroup>
 </Project>

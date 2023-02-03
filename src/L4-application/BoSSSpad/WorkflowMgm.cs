@@ -249,16 +249,21 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Defines the name of the current project; also creates a default database
         /// </summary>
-        public void Init(string ProjectName) {
+        public void Init(string ProjectName, BatchProcessorClient ExecutionQueue = null) {
             if ((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
                 InvalidateCaches();
             m_CurrentProject = ProjectName;
             Console.WriteLine("Project name is set to '{0}'.", ProjectName);
 
+            if (ExecutionQueue == null) {
+                ExecutionQueue = BoSSSshell.GetDefaultQueue();
+                Console.WriteLine("Default Execution queue is chosen for the database.");
+            }
+
             //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
             //    MiniBatchProcessor.Server.StartIfNotRunning();
             try {
-                DefaultDatabase = BoSSSshell.GetDefaultQueue().CreateOrOpenCompatibleDatabase(ProjectName);
+                DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
             } catch (Exception e) {
                 Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
             }

@@ -800,7 +800,7 @@ namespace PublicTestRunner {
                 // phase 1: discover tests
                 // ===================================
 
-                InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
+                InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
                 // deployment of native libraries
                 string NativeOverride;
@@ -936,7 +936,7 @@ namespace PublicTestRunner {
                             }
 
 
-                            Console.WriteLine($"Successfully submitted {j.j.Name}.");
+                            Console.WriteLine($"Successfully submitted {j.j.Name}. \n");
                             AllOpenJobs.Add(j);
                         } catch(Exception e) {
                             Console.Error.WriteLine($"{e.GetType().Name} during job submission: {e.Message}.");
