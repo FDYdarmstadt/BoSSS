@@ -1,3 +1,4 @@
+using ilPSP;
 using System;
 using System.IO;
 using System.Reflection;
@@ -16,7 +17,7 @@ namespace BoSSS.Application.ExternalBinding {
     static public class CahnHilliardTest {
 
 
-        public static SinglePhaseField RunDropletTest(string GridPath, string PlotTargetDir = "./plots", FixedOperators chOp = null) {
+        public static SinglePhaseField RunDropletTest(string GridPath, string PlotTargetDir = "./plots/", FixedOperators chOp = null) {
             Init();
             GridImportTest.ConvertFOAMGrid();
             Console.WriteLine("Running Cahn-Hilliard Droplet Test");
@@ -56,7 +57,7 @@ namespace BoSSS.Application.ExternalBinding {
             System.IO.Directory.CreateDirectory(targetPath);
             foreach (var file in files)
             {
-                file.MoveTo(targetPath + file.Name, true);
+                file.MoveTo(targetPath + "/" + file.Name, true);
             }
             return field;
         }
@@ -127,17 +128,17 @@ namespace BoSSS.Application.ExternalBinding {
             Cleanup();
 
         }
-
+        [NUnitFileToCopyHack("../src/L4-application/ExternalBinding/meshes/big/")]
         [Test]
         public static void ConvergenceTest() {
 
             Console.WriteLine("Running Cahn-Hilliard Test");
             var chOp = new FixedOperators();
-            string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             // OpenFOAMGrid grd = GridImportTestSmall.GenerateFOAMGrid();
-            string smallGrd = currentDirectory + "/meshes/big/small/polyMesh/";
-            string mediumGrd = currentDirectory + "/meshes/big/medium/polyMesh/";
-            string largeGrd = currentDirectory + "/meshes/big/large/polyMesh/";
+            string currentDirectory = "";
+            string smallGrd = currentDirectory + "./meshes/big/small/polyMesh/";
+            string mediumGrd = currentDirectory + "./meshes/big/medium/polyMesh/";
+            string largeGrd = currentDirectory + "./meshes/big/large/polyMesh/";
             // string smallGrd = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dummyConvAnalysis/small/constant/polyMesh/";
             // string mediumGrd = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dummyConvAnalysis/medium/constant/polyMesh/";
             // string largeGrd = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dummyConvAnalysis/large/constant/polyMesh/";
@@ -166,9 +167,10 @@ namespace BoSSS.Application.ExternalBinding {
 
         public static void Main() {
 
-            GridImportTest.ConvertFOAMGrid();
-            // string mediumGrd = "./meshes/big/medium/polyMesh/";
-            // RunDropletTest(mediumGrd);
+            // GridImportTest.ConvertFOAMGrid();
+            string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string grd = currentDirectory + "/../../../meshes/big/small/polyMesh/";
+            RunDropletTest(grd);
 
             // DropletTest();
             // ConvergenceTest();

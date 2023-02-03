@@ -1,4 +1,5 @@
-﻿using BoSSS.Foundation.Grid;
+﻿using ilPSP;
+using BoSSS.Foundation.Grid;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
@@ -33,7 +34,7 @@ namespace BoSSS.Application.ExternalBinding {
                                           me =>
                                           {
                                               if (me.Value.StartsWith("/*") || me.Value.StartsWith("//"))
-                                                return me.Value.StartsWith("//") ? Environment.NewLine : "";
+                                                return me.Value.StartsWith("//") ? System.Environment.NewLine : "";
                                             // Keep the literal strings
                                             return me.Value;
                                         },
@@ -185,11 +186,12 @@ namespace BoSSS.Application.ExternalBinding {
         /// <summary>
         /// test for <see cref="OpenFOAMGrid"/>
         /// </summary>
+        [NUnitFileToCopyHack("../src/L4-application/ExternalBinding/meshes/big/")]
         [Test]
         public static void ConvertFOAMGrid() {
 
-            string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            string polyMeshDir = currentDirectory + "/meshes/tiny/small/polyMesh/";
+            // string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string polyMeshDir = "./meshes/tiny/small/polyMesh/";
             var owner = getOwner(polyMeshDir);
             var neighbour = getNeighbour(polyMeshDir);
             int nCells = Max(owner.Max(), neighbour.Max()) + 1;

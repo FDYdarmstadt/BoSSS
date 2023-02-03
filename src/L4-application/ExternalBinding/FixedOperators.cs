@@ -280,7 +280,7 @@ namespace BoSSS.Application.ExternalBinding {
                 var map = new UnsetteledCoordinateMapping(b, bMu);
 
                 int nParams = 7;
-                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_mu", "Res_mu");
+                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
                 // var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "mu", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "mu_Res");
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "mu_Res");
@@ -442,8 +442,8 @@ namespace BoSSS.Application.ExternalBinding {
                 var CHCconv = new CahnHilliardCConv(new[] { u, v, w }, mask);
                 var CHMudiff = new CahnHilliardMuDiff(ptch, penalty_const, cahn, mask);
                 var CHMusource = new CahnHilliardMuSource(mask);
-                op.EquationComponents["Res_mu"].Add(CHCdiff);
-                // op.EquationComponents["Res_mu"].Add(CHCconv);
+                op.EquationComponents["Res_c"].Add(CHCdiff);
+                op.EquationComponents["Res_c"].Add(CHCconv);
                 op.EquationComponents["Res_mu"].Add(CHMusource);
                 op.EquationComponents["Res_mu"].Add(CHMudiff);
                 // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
@@ -535,8 +535,11 @@ namespace BoSSS.Application.ExternalBinding {
                                                          );
 
                 // int timesteps = 8;
-                double endTime = 1e3;
-                double dt = 2e-5;
+                // double endTime = 1.5e3;
+                double endTime = 5.5e1;
+                // double endTime = 2e-1;
+                // double dt = 2e-5;
+                double dt = 4e-1;
                 double time = 0.0;
                 // double dt = 1e3;
                 // for (int t = 0; t < timesteps; t++)
@@ -552,7 +555,7 @@ namespace BoSSS.Application.ExternalBinding {
 
                     time += dt;
                     t++;
-                    dt *= 10;
+                    // dt *= 3;
                     // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, mu, RealLevSet, u, v, w, cNoSG, muNoSG);
 
                 }
