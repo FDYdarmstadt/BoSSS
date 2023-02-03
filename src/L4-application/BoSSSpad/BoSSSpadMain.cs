@@ -107,6 +107,9 @@ namespace BoSSS.Application.BoSSSpad {
         //[STAThread]
         public static int Main(string[] args) {
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            //string path = @"\\fdygitrunner\ValidationTests\LinslvPerfPar-temp\sessions\eb58bc08-a44f-4beb-99fc-4267567b1353"; 
+            //new SessionMemtrace(new DirectoryInfo(path));
+
             /*
             void w(ValueTuple<string,string> tt) {
                 Console.BackgroundColor = ConsoleColor.Blue;

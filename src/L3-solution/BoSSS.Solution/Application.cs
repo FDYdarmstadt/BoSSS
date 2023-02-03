@@ -1653,7 +1653,53 @@ namespace BoSSS.Solution {
         /// </param>
         /// <param name="timestepno">time-step number</param>
         protected virtual TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
-            return new TimestepInfo(t, this.CurrentSessionInfo, timestepno, this.IOFields);
+
+            // store the MPI rank
+            var _fields = m_IOFields.ToArray();
+
+            {
+                string ID_MPIrank = "MPIrank";
+                {
+                    int no = 2;
+                    while (IOFields.Any(f => f.Identification == ID_MPIrank)) {
+                        ID_MPIrank = "MPIrank_" + no;
+                        no++;
+                    }
+                }
+
+                SinglePhaseField MPIrnk;
+                {
+                    MPIrnk = new SinglePhaseField(new Basis(this.GridData, 0), ID_MPIrank);
+                    int rnk = MPIRank;
+                    MPIrnk.AccConstant(this.MPIRank);
+                }
+
+               
+                MPIrnk.AddToArray(ref _fields);
+            }
+
+            if(this.IOFields.Any(f => f is XDGField) && LsTrk != null) {
+
+                string ID_CutCells = "CutCells";
+                {
+                    int no = 2;
+                    while (IOFields.Any(f => f.Identification == ID_CutCells)) {
+                        ID_CutCells = "CutCells_" + no;
+                        no++;
+                    }
+                }
+
+                SinglePhaseField CutCells;
+                {
+                    CutCells = new SinglePhaseField(new Basis(this.GridData, 0), ID_CutCells);
+                    CutCells.AccConstant(1.0, LsTrk.Regions.GetCutCellMask());
+                }
+
+                CutCells.AddToArray(ref _fields);
+            }
+
+            //
+            return new TimestepInfo(t, this.CurrentSessionInfo, timestepno, _fields);
         }
 
         /// <summary>
