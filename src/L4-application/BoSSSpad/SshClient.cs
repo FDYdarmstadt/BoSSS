@@ -20,6 +20,8 @@ namespace BoSSS.Application.BoSSSpad {
     /// </summary>
     abstract class SshClient : IDisposable {
 
+
+
         /// <summary>
         /// ctor
         /// </summary>
@@ -209,10 +211,18 @@ namespace BoSSS.Application.BoSSSpad {
     /// Thus, it should be much faster than the <see cref="SlowSshClient"/>.
     /// </summary>
     class SingleSessionSshClinet : SshClient {
+
+        static int instance_conter = 0;
+
         public SingleSessionSshClinet(string ServerName, string Username, PrivateKeyFile pkf) : base(ServerName, Username, pkf) {
+            instance_conter++;
+            Console.WriteLine($"{instance_conter} instnce of ssh instaciated.");
+            if (instance_conter > 5)
+                throw new ApplicationException("Ctreating tons of s is bad.");
         }
 
         public SingleSessionSshClinet(string ServerName, string Username, string pwd) : base(ServerName, Username, pwd) {
+            instance_conter++;
         }
 
 
