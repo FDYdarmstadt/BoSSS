@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 using BoSSS.Foundation;
@@ -131,10 +133,11 @@ namespace BoSSS.Application.ExternalBinding {
 
             Console.WriteLine("Running Cahn-Hilliard Test");
             var chOp = new FixedOperators();
+            string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             // OpenFOAMGrid grd = GridImportTestSmall.GenerateFOAMGrid();
-            string smallGrd = "$BOSSS_INSTALL/public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/";
-            string mediumGrd = "$BOSSS_INSTALL/public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/";
-            string largeGrd = "$BOSSS_INSTALL/public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/";
+            string smallGrd = currentDirectory + "/meshes/big/small/polyMesh/";
+            string mediumGrd = currentDirectory + "/meshes/big/medium/polyMesh/";
+            string largeGrd = currentDirectory + "/meshes/big/large/polyMesh/";
             // string smallGrd = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dummyConvAnalysis/small/constant/polyMesh/";
             // string mediumGrd = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dummyConvAnalysis/medium/constant/polyMesh/";
             // string largeGrd = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dummyConvAnalysis/large/constant/polyMesh/";

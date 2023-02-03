@@ -221,10 +221,22 @@ namespace BoSSS.Application.CahnHilliard {
         static void Main(string[] args) {
             InitMPI(args);
             DeleteOldPlotFiles();
-            BoSSS.Application.CahnHilliard.Tests.TestProgram.TestEllipticDropletConvergence();
-            Assert.True(false);
 
-            _Main(args, false, () => new CahnHilliardMain());
+            // var ctrl = Examples.EllipticDroplet(xRes: res, yRes: res, pDG: pDeg);
+            // BoSSS.Application.CahnHilliard.Tests.TestProgram.TestEllipticDropletConvergence();
+            // Assert.True(false);
+            using (var solver = new CahnHilliardMain())
+            {
+                // var C = Examples.EllipticDroplet(20,20,2);
+                var C = Examples.EllipticDropletPseudo3D(20,20,2);
+                C.ImmediatePlotPeriod = 1;
+                C.SuperSampling = 2;
+                C.NoOfTimesteps = 10;
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+
+            // _Main(args, false, () => new CahnHilliardMain());
         }
 
         /// <summary>

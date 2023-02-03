@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -187,7 +188,8 @@ namespace BoSSS.Application.ExternalBinding {
         [Test]
         public static void ConvertFOAMGrid() {
 
-            string polyMeshDir = "$BOSSS_INSTALL/public/src/L4-application/ExternalBinding/meshes/tiny/small/polyMesh/";
+            string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string polyMeshDir = currentDirectory + "/meshes/tiny/small/polyMesh/";
             var owner = getOwner(polyMeshDir);
             var neighbour = getNeighbour(polyMeshDir);
             int nCells = Max(owner.Max(), neighbour.Max()) + 1;
