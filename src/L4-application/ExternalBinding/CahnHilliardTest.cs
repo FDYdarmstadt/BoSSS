@@ -35,14 +35,14 @@ namespace BoSSS.Application.ExternalBinding {
             OpenFoamDGField U = new OpenFoamDGField(grd, 2, 3);
 
             int noOfTotalCells = grd.GridData.Grid.NumberOfCells;
-            ScalarFunction func()
-            {
-                double radius = 7;
-                // return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x - 1.0e-3, 2) + Math.Pow(z - 0.0e-3, 2)) + Math.Pow(radius, 1)) * 50000))).Vectorize();
-                return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
-            }
+            // ScalarFunction func()
+            // {
+            //     double radius = 7;
+            //     // return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x - 1.0e-3, 2) + Math.Pow(z - 0.0e-3, 2)) + Math.Pow(radius, 1)) * 50000))).Vectorize();
+            //     return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
+            // }
 
-            chOp.CahnHilliard(mtx, U, cPtch, uPtch, func());
+            chOp.CahnHilliard(mtx, U, cPtch, uPtch);
 
             var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
             field.Acc(1.0, mtx.Fields[0].Fields[0] as SinglePhaseField);
@@ -91,7 +91,7 @@ namespace BoSSS.Application.ExternalBinding {
                     // return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x - 1.0e-3, 2) + Math.Pow(z - 0.0e-3, 2)) + Math.Pow(radius, 1)) * 50000))).Vectorize();
                     return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
                 }
-                double normRelChange = chOp.NormRelChange(func());
+                double normRelChange = chOp.NormRelChange();
                 double jumpNorm = chOp.JumpNorm();
                 normRelChanges.Add(normRelChange);
                 jumpNorms.Add(jumpNorm);
@@ -132,9 +132,9 @@ namespace BoSSS.Application.ExternalBinding {
             Console.WriteLine("Running Cahn-Hilliard Test");
             var chOp = new FixedOperators();
             // OpenFOAMGrid grd = GridImportTestSmall.GenerateFOAMGrid();
-            string smallGrd = "./meshes/big/small/polyMesh/";
-            string mediumGrd = "./meshes/big/medium/polyMesh/";
-            string largeGrd = "./meshes/big/large/polyMesh/";
+            string smallGrd = "$BOSSS_INSTALL/public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/";
+            string mediumGrd = "$BOSSS_INSTALL/public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/";
+            string largeGrd = "$BOSSS_INSTALL/public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/";
             // string smallGrd = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dummyConvAnalysis/small/constant/polyMesh/";
             // string mediumGrd = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dummyConvAnalysis/medium/constant/polyMesh/";
             // string largeGrd = "/home/klingenberg/Documents-work/programming/foam-dg/foam-dg/run/dummyConvAnalysis/large/constant/polyMesh/";

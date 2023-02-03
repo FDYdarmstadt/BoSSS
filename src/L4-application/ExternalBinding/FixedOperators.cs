@@ -77,6 +77,14 @@ namespace BoSSS.Application.ExternalBinding {
         OpenFoamPatchField _ptch;
         double rho0 = 1;
         double rho1 = 2;
+        ScalarFunction InitFunc()
+        {
+            // double rMin = 2.0e-3 / sqrt(noOfTotalCells) * 3.0 / sqrt(2);
+            // double radius = 0.5e-3;
+            double radius = 7;
+            // double radius = rMin * 1.3;
+            return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
+        }
 
         /// <summary>
         /// Returns the auxiliary field appearing during the solution of the Cahn-Hilliard system
@@ -119,13 +127,13 @@ namespace BoSSS.Application.ExternalBinding {
         /// <summary>
         /// Return the norm of the field c
         /// </summary>
-        public double Norm(OpenFoamMatrix mtx = null, ScalarFunction InitFunc = null) {
+        public double Norm(OpenFoamMatrix mtx = null) {
             if (mtx != null) {
                 OpenFoamDGField C = mtx.Fields[0];
                 c = C.Fields[0] as SinglePhaseField;
                 if (InitFunc != null){
                     c.Clear();
-                    c.ProjectField(InitFunc);
+                    c.ProjectField(InitFunc());
                 }
             }
             return c.L2Norm();
@@ -133,11 +141,11 @@ namespace BoSSS.Application.ExternalBinding {
         /// <summary>
         /// Return the relative change of the norm of the field c
         /// </summary>
-        public double NormRelChange(ScalarFunction InitFunc) {
+        public double NormRelChange() {
             double postNorm = c.L2Norm();
             SinglePhaseField c0 = new SinglePhaseField(c.Basis);
             c0.Clear();
-            c0.ProjectField(InitFunc);
+            c0.ProjectField(InitFunc());
             double preNorm = c0.L2Norm();
             return (postNorm - preNorm)/postNorm;
         }
@@ -202,7 +210,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// Solves the Cahn-Hilliard equation
         /// </summary>
         [CodeGenExport]
-        public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction InitFunc = null) {
+        public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
             try {
                 // {
 
@@ -327,7 +335,7 @@ namespace BoSSS.Application.ExternalBinding {
                     u.Clear();
                     v.Clear();
                     w.Clear();
-                    c.ProjectField(InitFunc);
+                    c.ProjectField(InitFunc());
                 }
                 mu = new SinglePhaseField(b);
                 // for (int j = 0; j < J; j++)

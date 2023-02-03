@@ -187,7 +187,7 @@ namespace BoSSS.Application.ExternalBinding {
         [Test]
         public static void ConvertFOAMGrid() {
 
-            string polyMeshDir = "./meshes/tiny/small/polyMesh/";
+            string polyMeshDir = "$BOSSS_INSTALL/public/src/L4-application/ExternalBinding/meshes/tiny/small/polyMesh/";
             var owner = getOwner(polyMeshDir);
             var neighbour = getNeighbour(polyMeshDir);
             int nCells = Max(owner.Max(), neighbour.Max()) + 1;
