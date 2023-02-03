@@ -27,7 +27,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.IDTUtils {
             IEnumerable<DGField> fields, double gamma, double alpha,
             double mu, double residual, double enrichedresidual,
             List<double> AlphaHistory, List<double> GammaHistory, List<double> MuHistory,
-            List<double> ResHistory, List<double> EnResHistory, List<double> TimeStepNumbers)
+            List<double> ResHistory, List<double> EnResHistory, List<double> TimeStepNumbers, List<double> levelSetParams)
             : base(physTime, session, TimestepNo, fields) //
         {
             Gamma = gamma;
@@ -41,6 +41,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.IDTUtils {
             this.ResHistory = ResHistory;
             this.EnResHistory = EnResHistory;
             this.TimeStepNumbers = TimeStepNumbers;
+            LevelSetParams = levelSetParams;
         }
 
         [DataMember]
@@ -65,6 +66,8 @@ namespace BoSSS.Solution.CompressibleFlowCommon.IDTUtils {
         public List<double> EnResHistory;
         [DataMember]
         public List<double> TimeStepNumbers;
+        [DataMember]
+        public List<double> LevelSetParams;
     }
 }
 
