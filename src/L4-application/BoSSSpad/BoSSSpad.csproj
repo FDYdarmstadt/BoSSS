@@ -103,7 +103,6 @@
     <ProjectReference Include="..\..\Utils\btail\btail.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj" />
-    <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj" />
     <ProjectReference Include="..\GridGen\GridGen.csproj" />
     <ProjectReference Include="..\NSE_SIMPLE\SIMPLE.csproj" />
     <ProjectReference Include="..\RheologySolver2\Rheology2.csproj" />
@@ -126,7 +125,6 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.Tecplot\BoSSS.Solution.Tecplot.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution\BoSSS.Solution.csproj" />
     <ProjectReference Include="..\CNS\CNS.csproj" />
-    <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj" />
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
     <ProjectReference Include="..\PlotGenerator\BoSSS.PlotGenerator.csproj" />
     <ProjectReference Include="..\XNSEC2\XNSEC.csproj" />
