@@ -78,6 +78,8 @@ namespace BoSSS.Solution {
         /// <param name="Period">
         /// See <see cref="Control.AppControl.DynamicLoadBalancing_Period"/>.
         /// </param>
+        /// <param name="redistributeAtStartup"></param>
+        /// <param name="TimestepNoRestart"></param>
         /// <returns></returns>
         public int[] GetNewPartitioning(IApplication app, int performanceClassCount, int[] cellToPerformanceClassMap, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period, bool redistributeAtStartup, TimestepNumber TimestepNoRestart) {
             // Create new model if number of cell classes has changed

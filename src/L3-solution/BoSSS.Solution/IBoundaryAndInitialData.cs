@@ -47,6 +47,7 @@ namespace BoSSS.Solution.Control {
         /// <param name="output">result of function evaluation;
         ///  - 1st index: point index, corresponds with 1st index of <paramref name="input"/>
         /// </param>
+        /// <param name="time"></param>
         void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output);
     }
 }
