@@ -28,7 +28,7 @@ namespace BoSSS.Solution {
 
     /// <summary>
     /// Base-class for adaptive mesh refinement level indication.
-    /// Objects of this type can be added to the list <see cref="Control.AppControl.activeAMRlevelIndicators"/>,
+    /// Objects of this type can be added to the list `activeAMRlevelIndicators`,
     /// and the respective post-processing (implemented in the derived class) will be executed.
     /// </summary>
     [Serializable]
