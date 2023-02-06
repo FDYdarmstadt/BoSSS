@@ -534,7 +534,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             AggregationGridData[] _MultigridSequence = null,
             ISolverFactory LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
             IList<DGField> _Parameters = null,
-            QueryHandler queryHandler = null) //
+            QueryHandler queryHandler = null,
+            Func<ISlaveTimeIntegrator> lsu = null
+        ) //
         {
             this.Scheme = __Scheme;
             this.DgOperator = op;
@@ -546,11 +548,15 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
             var spc = CreateDummyTracker(Fields.First().GridDat);
-                       
+
+            if (lsu == null){
+                lsu = () => new UpdateLevelsetWithNothing(this);
+            }
+
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
                 new[] { spc },
-                () => new UpdateLevelsetWithNothing(this),
+                lsu,
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
                 _MultigridSequence,
