@@ -129,23 +129,23 @@ namespace BoSSS.Application.ExternalBinding {
 
         }
         [NUnitFileToCopyHack(
-        "../src/L4-application/ExternalBinding/meshes/big/small/polyMesh/boundarySmall",
-        "../src/L4-application/ExternalBinding/meshes/big/small/polyMesh/facesSmall",
-        "../src/L4-application/ExternalBinding/meshes/big/small/polyMesh/neighbourSmall",
-        "../src/L4-application/ExternalBinding/meshes/big/small/polyMesh/ownerSmall",
-        "../src/L4-application/ExternalBinding/meshes/big/small/polyMesh/pointsSmall",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/boundarySmall",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/facesSmall",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/neighbourSmall",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/ownerSmall",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/pointsSmall",
 
-        "../src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/boundaryMedium",
-        "../src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/facesMedium",
-        "../src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/neighbourMedium",
-        "../src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/ownerMedium",
-        "../src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/pointsMedium",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/boundaryMedium",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/facesMedium",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/neighbourMedium",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/ownerMedium",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/pointsMedium",
 
-        "../src/L4-application/ExternalBinding/meshes/big/large/polyMesh/boundaryLarge",
-        "../src/L4-application/ExternalBinding/meshes/big/large/polyMesh/facesLarge",
-        "../src/L4-application/ExternalBinding/meshes/big/large/polyMesh/neighbourLarge",
-        "../src/L4-application/ExternalBinding/meshes/big/large/polyMesh/ownerLarge",
-        "../src/L4-application/ExternalBinding/meshes/big/large/polyMesh/pointsLarge"
+        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/boundaryLarge",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/facesLarge",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/neighbourLarge",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/ownerLarge",
+        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/pointsLarge"
             )]
         [Test]
         public static void ConvergenceTest() {
