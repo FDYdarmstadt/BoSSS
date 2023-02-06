@@ -174,8 +174,36 @@ namespace BoSSS.Application.ExternalBinding {
         public static void Main() {
 
             // GridImportTest.ConvertFOAMGrid();
+
+            string examplesDirectory = "../../../examples/OpenFOAM/meshes/big/";
+            Directory.CreateDirectory("./meshes/");
+            Directory.CreateDirectory("./meshes/big/");
+            Directory.CreateDirectory("./meshes/big/small/");
+            Directory.CreateDirectory("./meshes/big/small/polyMesh/");
+            Directory.CreateDirectory("./meshes/big/medium/");
+            Directory.CreateDirectory("./meshes/big/medium/polyMesh/");
+            Directory.CreateDirectory("./meshes/big/large/");
+            Directory.CreateDirectory("./meshes/big/large/polyMesh/");
+            File.Copy(examplesDirectory + "small/polyMesh/boundarySmall", "./meshes/big/small/polyMesh/boundary");
+            File.Copy(examplesDirectory + "small/polyMesh/facesSmall", "./meshes/big/small/polyMesh/faces");
+            File.Copy(examplesDirectory + "small/polyMesh/neighbourSmall", "./meshes/big/small/polyMesh/neighbour");
+            File.Copy(examplesDirectory + "small/polyMesh/ownerSmall", "./meshes/big/small/polyMesh/owner");
+            File.Copy(examplesDirectory + "small/polyMesh/pointsSmall", "./meshes/big/small/polyMesh/points");
+
+            File.Copy(examplesDirectory + "medium/polyMesh/boundaryMedium", "./meshes/big/medium/polyMesh/boundary");
+            File.Copy(examplesDirectory + "medium/polyMesh/facesMedium", "./meshes/big/medium/polyMesh/faces");
+            File.Copy(examplesDirectory + "medium/polyMesh/neighbourMedium", "./meshes/big/medium/polyMesh/neighbour");
+            File.Copy(examplesDirectory + "medium/polyMesh/ownerMedium", "./meshes/big/medium/polyMesh/owner");
+            File.Copy(examplesDirectory + "medium/polyMesh/pointsMedium", "./meshes/big/medium/polyMesh/points");
+
+
+            File.Copy(examplesDirectory + "large/polyMesh/boundaryLarge", "./meshes/big/large/polyMesh/boundary");
+            File.Copy(examplesDirectory + "large/polyMesh/facesLarge", "./meshes/big/large/polyMesh/faces");
+            File.Copy(examplesDirectory + "large/polyMesh/neighbourLarge", "./meshes/big/large/polyMesh/neighbour");
+            File.Copy(examplesDirectory + "large/polyMesh/ownerLarge", "./meshes/big/large/polyMesh/owner");
+            File.Copy(examplesDirectory + "large/polyMesh/pointsLarge", "./meshes/big/large/polyMesh/points");
             string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            string grd = currentDirectory + "/../../../meshes/big/small/polyMesh/";
+            string grd = currentDirectory + "/../../../meshes/big/large/polyMesh/";
             RunDropletTest(grd);
 
             // DropletTest();
@@ -262,32 +290,36 @@ namespace BoSSS.Application.ExternalBinding {
             MyInit.BoSSSInitialize();
 
             // recover directory structure
-            Directory.CreateDirectory("./meshes/");
-            Directory.CreateDirectory("./meshes/big/");
-            Directory.CreateDirectory("./meshes/big/small/");
-            Directory.CreateDirectory("./meshes/big/small/polyMesh/");
-            Directory.CreateDirectory("./meshes/big/medium/");
-            Directory.CreateDirectory("./meshes/big/medium/polyMesh/");
-            Directory.CreateDirectory("./meshes/big/large/");
-            Directory.CreateDirectory("./meshes/big/large/polyMesh/");
-            File.Copy("boundarySmall", "./meshes/big/small/polyMesh/boundary");
-            File.Copy("facesSmall", "./meshes/big/small/polyMesh/faces");
-            File.Copy("neighbourSmall", "./meshes/big/small/polyMesh/neighbour");
-            File.Copy("ownerSmall", "./meshes/big/small/polyMesh/owner");
-            File.Copy("pointsSmall", "./meshes/big/small/polyMesh/points");
+            try {
+                Directory.CreateDirectory("./meshes/");
+                Directory.CreateDirectory("./meshes/big/");
+                Directory.CreateDirectory("./meshes/big/small/");
+                Directory.CreateDirectory("./meshes/big/small/polyMesh/");
+                Directory.CreateDirectory("./meshes/big/medium/");
+                Directory.CreateDirectory("./meshes/big/medium/polyMesh/");
+                Directory.CreateDirectory("./meshes/big/large/");
+                Directory.CreateDirectory("./meshes/big/large/polyMesh/");
+                File.Copy("boundarySmall", "./meshes/big/small/polyMesh/boundary");
+                File.Copy("facesSmall", "./meshes/big/small/polyMesh/faces");
+                File.Copy("neighbourSmall", "./meshes/big/small/polyMesh/neighbour");
+                File.Copy("ownerSmall", "./meshes/big/small/polyMesh/owner");
+                File.Copy("pointsSmall", "./meshes/big/small/polyMesh/points");
 
-            File.Copy("boundaryMedium", "./meshes/big/medium/polyMesh/boundary");
-            File.Copy("facesMedium", "./meshes/big/medium/polyMesh/faces");
-            File.Copy("neighbourMedium", "./meshes/big/medium/polyMesh/neighbour");
-            File.Copy("ownerMedium", "./meshes/big/medium/polyMesh/owner");
-            File.Copy("pointsMedium", "./meshes/big/medium/polyMesh/points");
-            File.Copy("boundaryMedium", "./meshes/big/medium/polyMesh/");
+                File.Copy("boundaryMedium", "./meshes/big/medium/polyMesh/boundary");
+                File.Copy("facesMedium", "./meshes/big/medium/polyMesh/faces");
+                File.Copy("neighbourMedium", "./meshes/big/medium/polyMesh/neighbour");
+                File.Copy("ownerMedium", "./meshes/big/medium/polyMesh/owner");
+                File.Copy("pointsMedium", "./meshes/big/medium/polyMesh/points");
+                File.Copy("boundaryMedium", "./meshes/big/medium/polyMesh/");
 
-            File.Copy("boundaryLarge", "./meshes/big/large/polyMesh/boundary");
-            File.Copy("facesLarge", "./meshes/big/large/polyMesh/faces");
-            File.Copy("neighbourLarge", "./meshes/big/large/polyMesh/neighbour");
-            File.Copy("ownerLarge", "./meshes/big/large/polyMesh/owner");
-            File.Copy("pointsLarge", "./meshes/big/large/polyMesh/points");
+                File.Copy("boundaryLarge", "./meshes/big/large/polyMesh/boundary");
+                File.Copy("facesLarge", "./meshes/big/large/polyMesh/faces");
+                File.Copy("neighbourLarge", "./meshes/big/large/polyMesh/neighbour");
+                File.Copy("ownerLarge", "./meshes/big/large/polyMesh/owner");
+                File.Copy("pointsLarge", "./meshes/big/large/polyMesh/points");
+            } catch (Exception e)
+                {
+                }
         }
 
         /// <summary>
