@@ -187,23 +187,23 @@ namespace BoSSS.Application.ExternalBinding {
         /// test for <see cref="OpenFOAMGrid"/>
         /// </summary>
         [NUnitFileToCopyHack(
-        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/boundarySmall",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/facesSmall",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/neighbourSmall",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/ownerSmall",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/pointsSmall",
+        "OpenFOAM/meshes/big/small/polyMesh/boundarySmall",
+        "OpenFOAM/meshes/big/small/polyMesh/facesSmall",
+        "OpenFOAM/meshes/big/small/polyMesh/neighbourSmall",
+        "OpenFOAM/meshes/big/small/polyMesh/ownerSmall",
+        "OpenFOAM/meshes/big/small/polyMesh/pointsSmall",
 
-        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/boundaryMedium",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/facesMedium",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/neighbourMedium",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/ownerMedium",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/pointsMedium",
+        "OpenFOAM/meshes/big/medium/polyMesh/boundaryMedium",
+        "OpenFOAM/meshes/big/medium/polyMesh/facesMedium",
+        "OpenFOAM/meshes/big/medium/polyMesh/neighbourMedium",
+        "OpenFOAM/meshes/big/medium/polyMesh/ownerMedium",
+        "OpenFOAM/meshes/big/medium/polyMesh/pointsMedium",
 
-        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/boundaryLarge",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/facesLarge",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/neighbourLarge",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/ownerLarge",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/pointsLarge"
+        "OpenFOAM/meshes/big/large/polyMesh/boundaryLarge",
+        "OpenFOAM/meshes/big/large/polyMesh/facesLarge",
+        "OpenFOAM/meshes/big/large/polyMesh/neighbourLarge",
+        "OpenFOAM/meshes/big/large/polyMesh/ownerLarge",
+        "OpenFOAM/meshes/big/large/polyMesh/pointsLarge"
             )]
         [Test]
         public static void ConvertFOAMGrid() {

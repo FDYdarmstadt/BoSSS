@@ -129,23 +129,11 @@ namespace BoSSS.Application.ExternalBinding {
 
         }
         [NUnitFileToCopyHack(
-        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/boundarySmall",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/facesSmall",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/neighbourSmall",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/ownerSmall",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/small/polyMesh/pointsSmall",
+        "OpenFOAM/meshes/big/small/polyMesh/*",
 
-        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/boundaryMedium",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/facesMedium",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/neighbourMedium",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/ownerMedium",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/medium/polyMesh/pointsMedium",
+        "OpenFOAM/meshes/big/medium/polyMesh/*",
 
-        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/boundaryLarge",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/facesLarge",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/neighbourLarge",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/ownerLarge",
-        "../../public/src/L4-application/ExternalBinding/meshes/big/large/polyMesh/pointsLarge"
+        "OpenFOAM/meshes/big/large/polyMesh/*"
             )]
         [Test]
         public static void ConvergenceTest() {
@@ -282,23 +270,24 @@ namespace BoSSS.Application.ExternalBinding {
             Directory.CreateDirectory("./meshes/big/medium/polyMesh/");
             Directory.CreateDirectory("./meshes/big/large/");
             Directory.CreateDirectory("./meshes/big/large/polyMesh/");
-            File.Copy("boundarySmall", "./meshes/big/small/polyMesh/");
-            File.Copy("facesSmall", "./meshes/big/small/polyMesh/");
-            File.Copy("neighbourSmall", "./meshes/big/small/polyMesh/");
-            File.Copy("ownerSmall", "./meshes/big/small/polyMesh/");
-            File.Copy("pointsSmall", "./meshes/big/small/polyMesh/");
+            File.Copy("boundarySmall", "./meshes/big/small/polyMesh/boundary");
+            File.Copy("facesSmall", "./meshes/big/small/polyMesh/faces");
+            File.Copy("neighbourSmall", "./meshes/big/small/polyMesh/neighbour");
+            File.Copy("ownerSmall", "./meshes/big/small/polyMesh/owner");
+            File.Copy("pointsSmall", "./meshes/big/small/polyMesh/points");
 
+            File.Copy("boundaryMedium", "./meshes/big/medium/polyMesh/boundary");
+            File.Copy("facesMedium", "./meshes/big/medium/polyMesh/faces");
+            File.Copy("neighbourMedium", "./meshes/big/medium/polyMesh/neighbour");
+            File.Copy("ownerMedium", "./meshes/big/medium/polyMesh/owner");
+            File.Copy("pointsMedium", "./meshes/big/medium/polyMesh/points");
             File.Copy("boundaryMedium", "./meshes/big/medium/polyMesh/");
-            File.Copy("facesMedium", "./meshes/big/medium/polyMesh/");
-            File.Copy("neighbourMedium", "./meshes/big/medium/polyMesh/");
-            File.Copy("ownerMedium", "./meshes/big/medium/polyMesh/");
-            File.Copy("pointsMedium", "./meshes/big/medium/polyMesh/");
 
-            File.Copy("boundaryLarge", "./meshes/big/large/polyMesh/");
-            File.Copy("facesLarge", "./meshes/big/large/polyMesh/");
-            File.Copy("neighbourLarge", "./meshes/big/large/polyMesh/");
-            File.Copy("ownerLarge", "./meshes/big/large/polyMesh/");
-            File.Copy("pointsLarge", "./meshes/big/large/polyMesh/");
+            File.Copy("boundaryLarge", "./meshes/big/large/polyMesh/boundary");
+            File.Copy("facesLarge", "./meshes/big/large/polyMesh/faces");
+            File.Copy("neighbourLarge", "./meshes/big/large/polyMesh/neighbour");
+            File.Copy("ownerLarge", "./meshes/big/large/polyMesh/owner");
+            File.Copy("pointsLarge", "./meshes/big/large/polyMesh/points");
         }
 
         /// <summary>
