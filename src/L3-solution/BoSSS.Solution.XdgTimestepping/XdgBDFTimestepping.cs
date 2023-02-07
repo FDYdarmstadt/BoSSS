@@ -1342,8 +1342,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new NotImplementedException("Interpolation of mass_matrix_stack is not implemented");
 
             int timestepHistory = m_Stack_u.Length;
-            CoordinateVector[] stuetzstelle = m_Stack_u.CloneAs();
-            CoordinateVector[] newStackU = m_Stack_u.CloneAs();
+            CoordinateVector[] stuetzstelle = new CoordinateVector[m_Stack_u.Length];
+            CoordinateVector[] newStackU = new CoordinateVector[m_Stack_u.Length];
+            for (int i = 0; i < m_Stack_u.Length; i++)
+            {
+                stuetzstelle[i] = new CoordinateVector(m_Stack_u[i].Mapping);
+                newStackU[i] = new CoordinateVector(m_Stack_u[i].Mapping);
+                stuetzstelle[i].CopyEntries(m_Stack_u[i]);
+                newStackU[i].CopyEntries(m_Stack_u[i]);
+            }
+
             for (int i = 1; i < timestepHistory; i++) {
                 double currentNewTimestep = -i * newTimestep;
                 double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);
