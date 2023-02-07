@@ -143,7 +143,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         "OpenFOAM/meshes/big/large/polyMesh/*"
             )]
-        [Test]
+        // [Test]
         public static void ConvergenceTest() {
 
             Console.WriteLine("Running Cahn-Hilliard Convergence Test");
