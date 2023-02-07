@@ -61,7 +61,8 @@ namespace BoSSS.Application.ExternalBinding {
             }
             return field;
         }
-        // [Test]
+
+        [Test]
         public static void DropletTest() {
 
             Init();
@@ -135,7 +136,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         "OpenFOAM/meshes/big/large/polyMesh/*"
             )]
-        [Test]
+        // [Test]
         public static void ConvergenceTest() {
 
             Console.WriteLine("Running Cahn-Hilliard Test");
