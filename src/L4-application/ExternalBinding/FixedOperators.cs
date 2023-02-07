@@ -535,11 +535,11 @@ namespace BoSSS.Application.ExternalBinding {
                                                          );
 
                 // int timesteps = 8;
-                // double endTime = 1.5e3;
-                double endTime = 5.5e1;
+                double endTime = 1.5e3;
+                // double endTime = 5.5e1;
                 // double endTime = 2e-1;
                 // double dt = 2e-5;
-                double dt = 4e-1;
+                double dt = 1e0;
                 double time = 0.0;
                 // double dt = 1e3;
                 // for (int t = 0; t < timesteps; t++)
@@ -555,7 +555,7 @@ namespace BoSSS.Application.ExternalBinding {
 
                     time += dt;
                     t++;
-                    // dt *= 3;
+                    dt *= 3;
                     // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, mu, RealLevSet, u, v, w, cNoSG, muNoSG);
 
                 }
