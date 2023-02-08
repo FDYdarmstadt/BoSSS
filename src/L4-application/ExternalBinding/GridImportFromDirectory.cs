@@ -209,7 +209,7 @@ namespace BoSSS.Application.ExternalBinding {
         public static void ConvertFOAMGrid() {
 
             // string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            string polyMeshDir = "./meshes/tiny/small/polyMesh/";
+            string polyMeshDir = "./meshes/big/small/polyMesh/";
             var owner = getOwner(polyMeshDir);
             var neighbour = getNeighbour(polyMeshDir);
             int nCells = Max(owner.Max(), neighbour.Max()) + 1;

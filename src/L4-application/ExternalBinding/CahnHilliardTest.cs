@@ -95,13 +95,7 @@ namespace BoSSS.Application.ExternalBinding {
             // i++;
             // foreach (var grd in new List<string>{mediumGrd}){
 
-                RunDropletTest(grd, new List<string>{"./small/", "./medium/", "./large/"}[i]);
-                ScalarFunction func()
-                {
-                    double radius = 7;
-                    // return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x - 1.0e-3, 2) + Math.Pow(z - 0.0e-3, 2)) + Math.Pow(radius, 1)) * 50000))).Vectorize();
-                    return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
-                }
+                RunDropletTest(grd, new List<string>{"./small/", "./medium/", "./large/"}[i], chOp);
                 double normRelChange = chOp.NormRelChange();
                 double jumpNorm = chOp.JumpNorm();
                 normRelChanges.Add(normRelChange);
