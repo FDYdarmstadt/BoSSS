@@ -263,7 +263,6 @@ namespace BoSSS.Application.ExternalBinding {
             File.Copy("neighbourMedium", "./meshes/big/medium/polyMesh/neighbour");
             File.Copy("ownerMedium", "./meshes/big/medium/polyMesh/owner");
             File.Copy("pointsMedium", "./meshes/big/medium/polyMesh/points");
-            File.Copy("boundaryMedium", "./meshes/big/medium/polyMesh/");
 
             File.Copy("boundaryLarge", "./meshes/big/large/polyMesh/boundary");
             File.Copy("facesLarge", "./meshes/big/large/polyMesh/faces");
