@@ -536,8 +536,8 @@ namespace BoSSS.Application.ExternalBinding {
                                                          );
 
                 // int timesteps = 8;
-                double endTime = 1.5e3;
-                // double endTime = 5.5e1;
+                // double endTime = 1.5e3;
+                double endTime = 2.5e0;
                 // double endTime = 2e-1;
                 // double dt = 2e-5;
                 double dt = 1e0;
