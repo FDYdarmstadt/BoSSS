@@ -1078,19 +1078,19 @@ namespace BoSSS.Application.IBM_Solver {
             }
 
             // Using defauls CellCostEstimateFactories          
-            if (this.Control.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0) {
+            if (this.Control.DynamicLoadBalancing_CellCostEstimators.Count == 0) {
                 Console.WriteLine("Using standard CellCostEstimatorFactories");
-                Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
+                Control.DynamicLoadBalancing_CellCostEstimators.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                     Console.WriteLine("i was called");
                     int[] map = new int[] { 1, 1, 10 };
                     return new StaticCellCostEstimator(map); 
                 });
-                Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
+                Control.DynamicLoadBalancing_CellCostEstimators.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                     Console.WriteLine("i was called");
                     int[] map = new int[] { 1, 10, 1 };
                     return new StaticCellCostEstimator(map);
                 });
-                Control.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
+                Control.DynamicLoadBalancing_CellCostEstimators.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                     Console.WriteLine("i was called");
                     int[] map = new int[] { 10, 1, 1 };
                     return new StaticCellCostEstimator(map);

@@ -621,7 +621,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
         private static void CheckRunsProduceSameResults(CNSControl refControl, double differenceThreshold = 1e-13, bool hilbert = true) {
             Debug.Assert(refControl.DynamicLoadBalancing_Period <= 0);
-            Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count == 0);
+            Debug.Assert(refControl.DynamicLoadBalancing_CellCostEstimators.Count == 0);
 
             CNSControl loadBalControl = refControl.CloneAs();
             loadBalControl.DynamicLoadBalancing_On = true;
@@ -633,7 +633,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //    loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(loadBalControl.NumberOfSubGrids));
             //} else {
             loadBalControl.DynamicLoadBalancing_CellClassifier = new RandomCellClassifier(2);
-            loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
+            loadBalControl.DynamicLoadBalancing_CellCostEstimators.Add((p, i) => new StaticCellCostEstimator(new[] { 1, 10 }));
             //}
 
             //// TEST ONLY SUCCEEDS IF THESE LINES ARE IN
@@ -644,7 +644,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             Debug.Assert(loadBalControl.DynamicLoadBalancing_On == true);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_CellClassifier != null);
-            Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.Count > 0);
+            Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimators.Count > 0);
 
             ShockTubeLoadBalancingTests hilbertSolver = null;
             List<IProgram<CNSControl>> loadBalSolvers = new List<IProgram<CNSControl>>();

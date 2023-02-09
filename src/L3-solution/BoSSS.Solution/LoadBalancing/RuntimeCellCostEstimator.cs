@@ -89,8 +89,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="performanceClassCount"></param>
-        /// <param name="cellToPerformanceClassMap"></param>
         public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
             CurrentPerformanceClassCount = performanceClassCount;
             currentCellToPerformanceClassMap = cellToPerformanceClassMap;

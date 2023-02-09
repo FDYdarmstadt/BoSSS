@@ -2834,7 +2834,7 @@ namespace BoSSS.Solution {
             }
 
             if (m_Balancer == null) {
-                var estimatorFactories = Control.DynamicLoadBalancing_CellCostEstimatorFactories;
+                var estimatorFactories = Control.DynamicLoadBalancing_CellCostEstimators;
                 if (estimatorFactories.IsNullOrEmpty()) {
                     estimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>() {
                         //CellCostEstimatorLibrary.AllCellsAreEqual

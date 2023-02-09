@@ -450,7 +450,7 @@ namespace CNS {
 
                 // Add one balance constraint for each subgrid
                 c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
-                c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
+                c.DynamicLoadBalancing_CellCostEstimators.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;
             } else if (!LTSON && AV && AVratio != 0) {
@@ -466,10 +466,10 @@ namespace CNS {
                 c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
                 if (AVratio > 1) {
                     //direct cost mapping (one map with two values: 1 and AVratio)
-                    c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator(AVratio));
+                    c.DynamicLoadBalancing_CellCostEstimators.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator(AVratio));
                 } else {
                     //cluster constraint (2 maps: neutral and AV)
-                    c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+                    c.DynamicLoadBalancing_CellCostEstimators.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
                 }
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;
@@ -657,7 +657,7 @@ namespace CNS {
 
                 // Add one balance constraint for each subgrid
                 c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
-                c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
+                c.DynamicLoadBalancing_CellCostEstimators.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;
 
@@ -674,10 +674,10 @@ namespace CNS {
                 c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
                 if (AVratio > 1) {
                     //direct cost mapping (one map with two values: 1 and AVratio)
-                    c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator(AVratio));
+                    c.DynamicLoadBalancing_CellCostEstimators.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator(AVratio));
                 } else {
                     //cluster constraint (2 maps: neutral and AV)
-                    c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
+                    c.DynamicLoadBalancing_CellCostEstimators.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());
                 }
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;

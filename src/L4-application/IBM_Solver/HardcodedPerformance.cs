@@ -296,7 +296,7 @@ namespace BoSSS.Application.IBM_Solver {
 
 
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add(delegate (IApplication app, int noOfPerformanceClasses) {
+            C.DynamicLoadBalancing_CellCostEstimators.Add(delegate (IApplication app, int noOfPerformanceClasses) {
                 Console.WriteLine("i was called");
                 int[] map = new int[] { 1, 5, 100 };
                 return new StaticCellCostEstimator(map);

@@ -235,7 +235,7 @@ namespace BoSSS.Application.BoSSSpad {
             // see is legacy-features are used, which don't support serialization.
             if (ctrl.GridFunc != null)
                 throw new ArgumentException("'GridFunc' is not supported - cannot be serialized.");
-            if(ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count != 0)
+            if(ctrl.DynamicLoadBalancing_CellCostEstimators.Count != 0)
                 throw new ArgumentException("'DynamicLoadBalancing_CellCostEstimatorFactories' is not supported - cannot be serialized.");
 
             // try serialization/deserialization

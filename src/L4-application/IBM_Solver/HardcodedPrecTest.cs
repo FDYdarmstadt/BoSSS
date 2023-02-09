@@ -53,7 +53,7 @@ namespace BoSSS.Application.IBM_Solver {
             C.DynamicLoadBalancing_RedistributeAtStartup = false;
 
             //c.DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
-            C.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 1}));
+            C.DynamicLoadBalancing_CellCostEstimators.Add((p, i) => new StaticCellCostEstimator(new[] { 1}));
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.Add((p, i) => new StaticCellCostEstimator(new[] { 10, 1 }));
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator());
             //c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(ArtificialViscosityCellCostEstimator.GetMultiBalanceConstraintsBasedEstimators());

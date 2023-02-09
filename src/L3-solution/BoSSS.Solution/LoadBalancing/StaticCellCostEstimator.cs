@@ -23,6 +23,7 @@ namespace BoSSS.Solution {
     /// Cell cost estimate with a fixed mapping between a performance class and
     /// and cost value
     /// </summary>
+    [Serializable]
     public class StaticCellCostEstimator : ICellCostEstimator {
 
         /// <summary>
