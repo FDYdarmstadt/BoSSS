@@ -7,12 +7,16 @@
     <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <NoWarn>1701;1702;1591</NoWarn>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\BoSSS.Solution.XML</DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <NoWarn>1701;1702;1591</NoWarn>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">

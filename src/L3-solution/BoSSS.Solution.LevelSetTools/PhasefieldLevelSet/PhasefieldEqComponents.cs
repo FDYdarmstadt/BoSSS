@@ -324,15 +324,13 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             return Acc;
         }
     }
-
+    
     /// <summary>
     /// nonlinear source term in the 'phi'-equation
     /// </summary>
-    public class mu_Source : IVolumeForm, ISupportsJacobianComponent
-    {
+    public class mu_Source : IVolumeForm, ISupportsJacobianComponent {
 
-        public mu_Source(string LevelSetName = "phi")
-        {
+        public mu_Source(string LevelSetName = "phi") {
             m_LevelSetName = LevelSetName; // depending on the context, solvers might prefer a different variable name
         }
 
@@ -340,12 +338,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
-        public IList<string> ArgumentOrdering => new[] { "mu", m_LevelSetName};
+        public IList<string> ArgumentOrdering => new[] { "mu", m_LevelSetName };
 
         public IList<string> ParameterOrdering => null; // new[] { "phi0" };
 
-        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
-        {
+        public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
 
             double mu = U[0];
             double phi = U[1];
@@ -361,16 +358,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
             return Acc * V;
         }
 
-        public IEquationComponent[] GetJacobianComponents(int SpatialDimension)
-        {
-            return new IEquationComponent[] { new jacobi_mu_Source(m_LevelSetName) };
+        public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            var r = new IEquationComponent[] { new jacobi_mu_Source(m_LevelSetName) };
+            return r;
         }
 
-        private class jacobi_mu_Source : IVolumeForm
-        {
+        private class jacobi_mu_Source : IVolumeForm {
 
-            public jacobi_mu_Source(string LevelSetName)
-            {
+            public jacobi_mu_Source(string LevelSetName) {
                 m_LevelSetName = LevelSetName; // depending on the context, solvers might prefer a different variable name
             }
 
@@ -378,12 +373,11 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
             public TermActivationFlags VolTerms => TermActivationFlags.UxV | TermActivationFlags.V;
 
-            public IList<string> ArgumentOrdering => new[] { "mu", m_LevelSetName};
+            public IList<string> ArgumentOrdering => new[] { "mu", m_LevelSetName };
 
-            public IList<string> ParameterOrdering => new[] { "phi0" };
+            public IList<string> ParameterOrdering => new[] { m_LevelSetName + "_lin" };
 
-            public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV)
-            {
+            public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
                 double mu = U[0];
                 double phi = U[1];
                 double phi0 = cpv.Parameters[0];
@@ -398,6 +392,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         }
     }
 
+    
+    
+    
     /// <summary>
     /// source term of phi in Model A
     /// </summary>

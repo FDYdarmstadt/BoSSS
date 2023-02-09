@@ -813,7 +813,7 @@ namespace BoSSS.Application.ExternalBinding {
             }
         }
 
-        class CahnHilliardCDiff : c_Diffusion {
+        class CahnHilliardCDiff : __c_Diffusion {
 
             OpenFoamPatchField _ptch;
 
@@ -849,7 +849,7 @@ namespace BoSSS.Application.ExternalBinding {
                 return 0;
             }
         }
-        class CahnHilliardCConv : c_Flux {
+        class CahnHilliardCConv : __c_Flux {
             public CahnHilliardCConv(DGField[] Velocity, CellMask Subgrid = null)
                 : base(3, null){} // TODO check if velocity is really communicated through parameter fields
 

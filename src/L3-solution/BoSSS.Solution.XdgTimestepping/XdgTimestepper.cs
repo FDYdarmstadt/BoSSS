@@ -904,7 +904,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             
 
             JacobiParameterVars = null;
-            
+
+            if(TimesteppingBase.m_ResLogger != null)
+                TimesteppingBase.m_ResLogger.NextTimestep(false);
+
             return success;
         }
 
