@@ -523,7 +523,7 @@ namespace BoSSS.Application.ExternalBinding {
                                                          new SinglePhaseField[]{c, mu},
                                                          new SinglePhaseField[]{Res_c, Res_mu},
                                                          // TimeSteppingScheme.ExplicitEuler,
-                                                         TimeSteppingScheme.ImplicitEuler,
+                                                         TimeSteppingScheme.CrankNicolson,
                                                                   null,
                                                                   null,
                                                          LinearSolver: ls,
@@ -556,8 +556,8 @@ namespace BoSSS.Application.ExternalBinding {
 
                     time += dt;
                     t++;
-                    if (time > 2e0)
-                        dt *= 10;
+                    // if (time > 2e0)
+                    //     dt *= 10;
                     // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, mu, RealLevSet, u, v, w, cNoSG, muNoSG);
 
                 }

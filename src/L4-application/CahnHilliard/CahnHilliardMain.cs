@@ -1103,15 +1103,18 @@ namespace BoSSS.Application.CahnHilliard {
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "CahnHilliard-" + timestepNo + caseStr, phystime, superSampling);
         }
 
+        // the purpose of these fluxes is only consistency in the naming of variables: here, we prefer c, but in the Level-Set context of L3, phi is more suitable
         public class c_Flux : phi_Flux {
             public c_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, __boundaryCondMap, "c") {}
         }
 
+        // the purpose of these fluxes is only consistency in the naming of variables: here, we prefer c, but in the Level-Set context of L3, phi is more suitable
         public class c_Source : phi_Source {
 
             public c_Source(double _diff = 0.0) : base(_diff, "c") {}
         }
 
+        // the purpose of these fluxes is only consistency in the naming of variables: here, we prefer c, but in the Level-Set context of L3, phi is more suitable
         public class c_Diffusion : phi_Diffusion {
 
             public c_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)

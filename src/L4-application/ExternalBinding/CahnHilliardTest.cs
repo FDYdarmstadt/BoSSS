@@ -137,7 +137,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         "OpenFOAM/meshes/big/large/polyMesh/*"
             )]
-        // [Test]
+        [Test]
         public static void ConvergenceTest() {
 
             Console.WriteLine("Running Cahn-Hilliard Convergence Test");
@@ -158,6 +158,7 @@ namespace BoSSS.Application.ExternalBinding {
                 var field = RunDropletTest(grd, new List<string>{"./small/", "./medium/", "./large/"}[i], chOp);
                 solutionOnDifferentResolutions.Add(new DGField[]{field});
                 solutionOnDifferentResolutions2.Add(field);
+                i++;
             }
             DGFieldComparison.ComputeErrors(
                 solutionOnDifferentResolutions, out var hS, out var DOFs, out var errorS, NormType.L2_embedded);
@@ -167,7 +168,7 @@ namespace BoSSS.Application.ExternalBinding {
             Console.WriteLine("DOFs[1]: " + DOFs["c"][1]);
             Console.WriteLine("errorsS[0]: " + errorS["c"][0]);
             Console.WriteLine("errorsS[1]: " + errorS["c"][1]);
-            Assert.IsTrue(slope >= 2.0);
+            Assert.IsTrue(slope >= 2.4); // TODO should this be larger than 3?
 
             Cleanup();
 
@@ -209,10 +210,10 @@ namespace BoSSS.Application.ExternalBinding {
             string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             string grd = currentDirectory + "/../../../meshes/big/large/polyMesh/";
 
-            RunDropletTest(grd);
+            // RunDropletTest(grd);
 
             // DropletTest();
-            // ConvergenceTest();
+            ConvergenceTest();
 
         }
 

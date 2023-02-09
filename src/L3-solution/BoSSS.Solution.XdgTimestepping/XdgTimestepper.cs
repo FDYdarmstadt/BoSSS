@@ -553,10 +553,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                 lsu = () => new UpdateLevelsetWithNothing(this);
             }
 
+            Console.WriteLine("TODO: lsu is currently ignored for testing purposes");
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
                 new[] { spc },
-                lsu,
+                () => new UpdateLevelsetWithNothing(this), // TODO change this back later
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
                 _MultigridSequence,
