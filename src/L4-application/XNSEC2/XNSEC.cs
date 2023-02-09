@@ -34,8 +34,8 @@ namespace BoSSS.Application.XNSEC {
         private static void Main(string[] args) {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
-            InitMPI();
-            BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //InitMPI();
+            //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_EVAPORATION_TEST();
 
             //DeleteOldPlotFiles();
@@ -51,7 +51,7 @@ namespace BoSSS.Application.XNSEC {
             //    var p = new XNSEC_MixtureFraction();
             //    return p;
             //});
-            NUnit.Framework.Assert.AreEqual(true, false, "remove me");
+            //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //-n 8 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_DropletCombustion()"
             //System.Environment.Exit(111);
