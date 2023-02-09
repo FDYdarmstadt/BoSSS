@@ -106,6 +106,9 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         //[STAThread]
         public static int Main(string[] args) {
+
+            int errCount = 0;
+            
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             //string path = @"\\fdygitrunner\ValidationTests\LinslvPerfPar-temp\sessions\eb58bc08-a44f-4beb-99fc-4267567b1353"; 
             //new SessionMemtrace(new DirectoryInfo(path));
@@ -615,7 +618,6 @@ namespace BoSSS.Application.BoSSSpad {
         public static void LinkEnforcer() {
             // If you remove these lines, this may break some worksheets and tutorials.
             Console.WriteLine(typeof(CNS.Program).FullName);
-            Console.WriteLine(typeof(IBM_Solver.IBM_SolverMain).FullName);
             Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
             Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);

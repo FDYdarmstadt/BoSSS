@@ -2614,6 +2614,14 @@ namespace BoSSS.Foundation.IO {
 
 
         /// <summary>
+        /// 
+        /// </summary>
+        public static SessionMemtrace GetMemtrace(this ISessionInfo sess) {
+            return new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+        }
+
+
+        /// <summary>
         /// Reports the largest memory-allocating routines in descending order
         /// </summary>
         static public (int TimelineIndex, double Megs, string Name)[] ReportLargestAllocators(this ISessionInfo sess) {

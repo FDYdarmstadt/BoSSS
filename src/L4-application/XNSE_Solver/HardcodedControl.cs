@@ -6336,7 +6336,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.dtFixed = dt;
-            C.NoOfTimesteps = 100;
+            C.NoOfTimesteps = 50;
 
             return C;
         }

@@ -995,7 +995,7 @@ namespace BoSSS.Application.BoSSSpad {
                 string overrideName = BatchProcessorConfig.GetDefaultBatchnameForProject(wmg.CurrentProject);
                 if(overrideName != null) {
                     foreach(var q in executionQueues) {
-                        if(q.Name.Equals(overrideName, StringComparison.InvariantCultureIgnoreCase)) {
+                        if(q.Name?.Equals(overrideName, StringComparison.InvariantCultureIgnoreCase) ?? false) {
                             return q;
                         }
                     }

@@ -66,9 +66,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup-->
   <ItemGroup>
-    <!--Reference Include="log4net">
-      <HintPath>..\..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference-->
+
     <Reference Include="Newtonsoft.Json">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
