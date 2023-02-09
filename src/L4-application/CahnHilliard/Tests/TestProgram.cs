@@ -21,6 +21,7 @@ using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution;
+using BoSSS.Solution.Queries;
 using BoSSS.Solution.Statistic;
 using MPI.Wrappers;
 using NUnit.Framework;
@@ -41,15 +42,16 @@ namespace BoSSS.Application.CahnHilliard.Tests {
                 p.RunSolverMode();
 
 
-                // 01feb23: reference values for total concentration, in dependence of degree:
+                // 01feb23: reference values for total concentration and total nuber of iterations, in dependence of degree:
                 double TotalConcentration_Ref;
+                int TotIter_ref;
                 switch (pDeg) {
                     case 2:
-                        TotalConcentration_Ref =-715.6359672572; break;
+                        TotalConcentration_Ref =-715.6359672572; TotIter_ref = 62; break;
                     case 3:
-                        TotalConcentration_Ref =-715.63651730895; break;
+                        TotalConcentration_Ref =-715.63651730895; TotIter_ref = 62; break;
                     case 4:
-                        TotalConcentration_Ref =-715.63648317368; break;
+                        TotalConcentration_Ref =-715.63648317368; TotIter_ref = 62; break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -68,6 +70,12 @@ namespace BoSSS.Application.CahnHilliard.Tests {
                 Assert.GreaterOrEqual(c_max, 0.9, "Maximum concentration out-of-range");
                 Assert.LessOrEqual(c_min, -0.9, "Minimum concentration out-of-range");
                 Assert.GreaterOrEqual(c_min, -1.9, "Minimum concentration out-of-range");
+
+                Assert.IsTrue(p.ResLogger.TimeStep == 11, "Number of timesteps have been modified");
+                Assert.GreaterOrEqual(p.ResLogger.LineCounter, 5, "Number of total iterations dropped beyond plausibility");
+                Assert.LessOrEqual(p.ResLogger.LineCounter, TotIter_ref, "Number of total iterations (over all timesteps) got out of hand.");
+
+                //Console.WriteLine("No Of Iter = " + p.QueryHandler.QueryResults[QueryHandler.AccNonLinIter]);
             }
         }
 

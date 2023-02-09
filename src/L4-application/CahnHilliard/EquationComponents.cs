@@ -20,6 +20,10 @@ namespace BoSSS.Application.CahnHilliard {
             : base(D, penalty_const, __diff, __lambda, __boundaryCondMap) { }
     }
 
+    public class __c_Flux : phi_Flux {
+        public __c_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, __boundaryCondMap, "c") { }
+    }
+
     /*
     /// <summary>
     /// Interior Penalty Flux, with Dirichlet boundary conditions for variable 'c'

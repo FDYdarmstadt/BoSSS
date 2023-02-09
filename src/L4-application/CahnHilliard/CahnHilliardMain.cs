@@ -219,12 +219,12 @@ namespace BoSSS.Application.CahnHilliard {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            InitMPI(args);
-            DeleteOldPlotFiles();
+            //InitMPI(args);
+            //DeleteOldPlotFiles();
 
             // var ctrl = Examples.EllipticDroplet(xRes: res, yRes: res, pDG: pDeg);
-            BoSSS.Application.CahnHilliard.Tests.TestProgram.TestEllipticDroplet();
-            Assert.True(false);
+            //BoSSS.Application.CahnHilliard.Tests.TestProgram.TestEllipticDroplet();
+            //Assert.True(false);
             //using (var solver = new CahnHilliardMain())
             //{
             //    // var C = Examples.EllipticDroplet(20,20,2);
@@ -236,7 +236,7 @@ namespace BoSSS.Application.CahnHilliard {
             //    solver.RunSolverMode();
             //}
 
-            // _Main(args, false, () => new CahnHilliardMain());
+            _Main(args, false, () => new CahnHilliardMain());
         }
 
         /// <summary>
@@ -321,14 +321,6 @@ namespace BoSSS.Application.CahnHilliard {
                 break;
             }
 
-            //if(this.Control.CurvatureCorrection) {
-            //    domainVar = domainVar.Cat(VariableNames.Curvature);
-            //    codomainVar = codomainVar.Cat("Res_" + VariableNames.Curvature);
-            //}
-
-            //if(this.Control.UseDirectCurvature) {
-            //    paramVar = paramVar.Cat("D" + VariableNames.Curvature);
-            //}
 
             #endregion
 
@@ -346,8 +338,8 @@ namespace BoSSS.Application.CahnHilliard {
             // convection term
             if (this.Control.includeConvection == true) {
                 CHOp.EquationComponents["Res_c"].Add(
-                    new c_Flux(D, () => this.Velocity.ToArray(), m_bcMap) 
-                    //new __c_Flux(D, m_bcMap) // TODO check if velocity is communicated correctly
+                    //new c_Flux(D, () => this.Velocity.ToArray(), m_bcMap) // old/L4
+                    new __c_Flux(D, m_bcMap) // new/L3, TODO: check if velocity is communicated correctly
                 );
             }
 
@@ -693,6 +685,7 @@ namespace BoSSS.Application.CahnHilliard {
                     break;
                 }
 
+               
                 WriteLogLine(TimestepNo, phystime + dt);
 
                 // return
