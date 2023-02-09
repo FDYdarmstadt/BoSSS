@@ -54,11 +54,13 @@ namespace BoSSS.Application.CahnHilliard.Tests {
                         throw new ArgumentOutOfRangeException();
                 }
 
+                int i = 0;
                 foreach (var tt in p.LogHistory) {
-                    //Console.WriteLine($"c = {tt.bq.concentration}");
+                    Console.WriteLine($"c[{i}] = {tt.bq.concentration} @ t = {tt.time}");
 
                     double concErr = Math.Abs(tt.bq.concentration - TotalConcentration_Ref);
                     Assert.LessOrEqual(concErr, 1.0e-9, "Conservation of concentration is violated");
+                    i++;
                 }
 
                 p.c.GetExtremalValues(out double c_min, out double c_max);

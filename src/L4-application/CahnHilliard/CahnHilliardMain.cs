@@ -224,17 +224,17 @@ namespace BoSSS.Application.CahnHilliard {
 
             // var ctrl = Examples.EllipticDroplet(xRes: res, yRes: res, pDG: pDeg);
             BoSSS.Application.CahnHilliard.Tests.TestProgram.TestEllipticDroplet();
-             Assert.True(false);
-            using (var solver = new CahnHilliardMain())
-            {
-                // var C = Examples.EllipticDroplet(20,20,2);
-                var C = Examples.EllipticDropletPseudo3D(20,20,2);
-                C.ImmediatePlotPeriod = 1;
-                C.SuperSampling = 2;
-                C.NoOfTimesteps = 10;
-                solver.Init(C);
-                solver.RunSolverMode();
-            }
+            Assert.True(false);
+            //using (var solver = new CahnHilliardMain())
+            //{
+            //    // var C = Examples.EllipticDroplet(20,20,2);
+            //    var C = Examples.EllipticDropletPseudo3D(20,20,2);
+            //    C.ImmediatePlotPeriod = 1;
+            //    C.SuperSampling = 2;
+            //    C.NoOfTimesteps = 10;
+            //    solver.Init(C);
+            //    solver.RunSolverMode();
+            //}
 
             // _Main(args, false, () => new CahnHilliardMain());
         }
