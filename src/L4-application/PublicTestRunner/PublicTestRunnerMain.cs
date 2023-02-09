@@ -1602,9 +1602,9 @@ namespace PublicTestRunner {
 
         static int Main(string[] args) {
             Console.WriteLine($"received {args.Length} arguments.");
-            for(int i = 0; i < args.Length; i++) {
-                Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
-            }
+            //for(int i = 0; i < args.Length; i++) {
+            //    Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
+            //}
 
 
             try {
