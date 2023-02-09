@@ -223,8 +223,8 @@ namespace BoSSS.Application.CahnHilliard {
             DeleteOldPlotFiles();
 
             // var ctrl = Examples.EllipticDroplet(xRes: res, yRes: res, pDG: pDeg);
-            // BoSSS.Application.CahnHilliard.Tests.TestProgram.TestEllipticDropletConvergence();
-            // Assert.True(false);
+            BoSSS.Application.CahnHilliard.Tests.TestProgram.TestEllipticDroplet();
+             Assert.True(false);
             using (var solver = new CahnHilliardMain())
             {
                 // var C = Examples.EllipticDroplet(20,20,2);

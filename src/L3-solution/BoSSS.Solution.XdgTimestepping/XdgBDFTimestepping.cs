@@ -511,13 +511,21 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var CC = new SinglePhaseField(new Basis(this.m_LsTrk.GridDat, 0), "CutCells");
                     CC.AccConstant(1.0, base.m_LsTrk.Regions.GetCutCellMask());
 
-                    var CC0 = new SinglePhaseField(new Basis(this.m_LsTrk.GridDat, 0), "CutCells-Ls0");
-                    CC0.AccConstant(1.0, base.m_LsTrk.Regions.GetCutCellMask4LevSet(0));
+                    var FieldsToPlot = new List<DGField>();
+                    FieldsToPlot.Add(CC);
 
-                    var CC1 = new SinglePhaseField(new Basis(this.m_LsTrk.GridDat, 0), "CutCells-Ls1");
-                    CC1.AccConstant(1.0, base.m_LsTrk.Regions.GetCutCellMask4LevSet(1));
+                    for (int iLs = 0; iLs < this.m_LsTrk.NoOfLevelSets; iLs++) {
 
-                    Tecplot.Tecplot.PlotFields(new DGField[] { (DGField)(this.m_LsTrk.LevelSets[0]), (DGField)(this.m_LsTrk.LevelSets[1]), CC, CC0, CC1 }, "Error", 0.0, 2);
+                        var CC_iLs = new SinglePhaseField(new Basis(this.m_LsTrk.GridDat, iLs), $"CutCells-Ls{iLs}");
+                        CC_iLs.AccConstant(1.0, base.m_LsTrk.Regions.GetCutCellMask4LevSet(iLs));
+                        FieldsToPlot.Add(CC_iLs);
+
+                        if (m_LsTrk.LevelSets[iLs] is DGField dgLs) {
+                            FieldsToPlot.Add(dgLs);
+                        }
+
+                    }
+                    Tecplot.Tecplot.PlotFields(FieldsToPlot.ToArray(), "Error", 0.0, 2);
                     
                     throw new ArithmeticException("All cells are cut cells - check your settings!");
                 }
