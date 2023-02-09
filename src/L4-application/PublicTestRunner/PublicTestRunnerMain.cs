@@ -117,7 +117,6 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        typeof(BoSSS.Application.ExternalBinding.CahnHilliardTest),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
                         typeof(MPITest.Program)
                     };
@@ -142,6 +141,7 @@ namespace PublicTestRunner {
                         typeof(LTSTests.Program),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.XNSEC.XNSEC),
+                        typeof(BoSSS.Application.ExternalBinding.CahnHilliardTest),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),

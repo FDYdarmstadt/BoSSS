@@ -213,10 +213,7 @@ namespace BoSSS.Application.CahnHilliard {
             RR.AddBoundaryValue(BoundaryType.Wall.ToString(), "c", new Formula("X => -1"));
 
             //RR.AddInitialValue("c", new Formula("X => (X[0]*X[0] + X[1]*X[1]) < 0.25 ? 1.0 : -1.0", false));
-            // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)/(1e-5 * Math.Sqrt(2))))"));
-            // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)/(1e-5*Math.Sqrt(2))))"));
-            // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5)*Math.Sqrt(2)))"));
-            RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-8)*Math.Sqrt(2)))"));
+            RR.AddInitialValue("c", new Formula("X => -Math.Tanh((Math.Sqrt(X[0]*X[0]*0.75 + X[1]*X[1])-5)*Math.Sqrt(2))"));
             RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => 0.0 ", false));
             RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => 0.0 ", false));
 
