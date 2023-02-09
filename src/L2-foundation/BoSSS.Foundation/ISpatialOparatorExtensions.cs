@@ -24,7 +24,14 @@ namespace BoSSS.Foundation {
                 throw new NotSupportedException("not allowed before commit.");
             var _DomainFields = __DomainFields.ToArray();
             if (_DomainFields.Length != op.DomainVar.Count)
-                throw new ArgumentException("Mismatch in number of domain variables.");
+                {
+                    foreach (var f in _DomainFields)
+                        Console.WriteLine(f);
+                    Console.WriteLine();
+                    foreach (var f in op.DomainVar)
+                        Console.WriteLine(f);
+                    throw new ArgumentException("Mismatch in number of domain variables.");
+                }
 
             int NoOfParams = op.ParameterVar.Count;
             DGField[] ret = new DGField[NoOfParams];

@@ -114,25 +114,7 @@ namespace BoSSS.Application.BoSSSpad {
         //[STAThread]
         public static int Main(string[] args) {
 
-            /*
-            var a = new SessionsComparisonMemtrace(new[] {
-                new DirectoryInfo(@"C:\tmp\sandbox\memprofile\sessions\0491de64-8fca-4414-9405-73c40c22e656"),
-                new DirectoryInfo(@"C:\tmp\sandbox\memprofile\sessions\7b5fad2a-83ef-4731-a994-aeb7556f92b8"),
-                new DirectoryInfo(@"C:\tmp\sandbox\memprofile\sessions\f4dff619-d47e-4129-a7aa-06ba6178d202"),
-                new DirectoryInfo(@"C:\tmp\sandbox\memprofile\sessions\fbd6f89c-730d-4e75-a00e-0649d1546ff9")
-                });
-
-            var r = a.GetTotalMemory();
-
-            var b = a.GetTimeLine();
-
-            Console.WriteLine(r[0].TotalMem.Sum() + "  " + b.Last());
-
-
-            /*
-            var a = typeof(BoSSSpadMain).Assembly;
-            var dep = new HashSet<Assembly>();
-            Job.GetAllAssemblies(a, dep, Path.GetDirectoryName(a.Location));
+          
 
             /*
             string path = @"c:\Users\flori\AppData\Local\BoSSS-LocalJobs\Demo_BoundaryAndInitialData-ipPoisson2021Juni10_083737\control.obj";
@@ -627,7 +609,6 @@ namespace BoSSS.Application.BoSSSpad {
         public static void LinkEnforcer() {
             // If you remove these lines, this may break some worksheets and tutorials.
             Console.WriteLine(typeof(CNS.Program).FullName);
-            Console.WriteLine(typeof(IBM_Solver.IBM_SolverMain).FullName);
             Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
             Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);

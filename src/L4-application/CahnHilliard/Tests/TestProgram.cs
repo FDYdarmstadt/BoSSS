@@ -15,9 +15,13 @@ limitations under the License.
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using BoSSS.Foundation;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Solution;
+using BoSSS.Solution.Statistic;
 using MPI.Wrappers;
 using NUnit.Framework;
 
@@ -25,12 +29,79 @@ namespace BoSSS.Application.CahnHilliard.Tests {
 
     [TestFixture]
     static class TestProgram {
-       
+
         [Test]
-        public static void TestCartesian() {
+        public static void TestEllipticDroplet([Values(2, 3, 4)] int pDeg = 2) {
 
             using(var p = new CahnHilliardMain()) {
-                var ctrl = Examples.TestCartesian();
+                var ctrl = Examples.EllipticDroplet(xRes: 20, yRes: 20, pDG: pDeg);
+                ctrl.ImmediatePlotPeriod = 1;
+                ctrl.SuperSampling = 3;
+                p.Init(ctrl);
+                p.RunSolverMode();
+
+
+                // 01feb23: the fotal concentration:
+                double TotalConcentration_Ref;
+                switch (pDeg) {
+                    case 2:
+                        TotalConcentration_Ref =-715.6359672572; break;
+                    case 3:
+                        TotalConcentration_Ref =-715.63651730895; break;
+                    case 4:
+                        TotalConcentration_Ref =-715.63648317368; break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                foreach (var tt in p.LogHistory) {
+                    //Console.WriteLine($"c = {tt.bq.concentration}");
+
+                    double concErr = Math.Abs(tt.bq.concentration - TotalConcentration_Ref);
+                    Assert.LessOrEqual(concErr, 1.0e-9, "Conservation of concentration is violated");
+                }
+
+                p.c.GetExtremalValues(out double c_min, out double c_max);
+                Assert.LessOrEqual(c_max, 1.9, "Maximum concentration out-of-range");
+                Assert.GreaterOrEqual(c_max, 0.9, "Maximum concentration out-of-range");
+                Assert.LessOrEqual(c_min, -0.9, "Minimum concentration out-of-range");
+                Assert.GreaterOrEqual(c_min, -1.9, "Minimum concentration out-of-range");
+            }
+        }
+
+
+        [Test]
+        public static void TestEllipticDropletConvergence([Values(2)] int pDeg = 2) {
+
+            int[] Res = new int[] { 10, 20, 40, 80, 160 };
+
+            var Controls = new List<CahnHilliardControl>();
+            foreach (int res in Res) {
+                var ctrl = Examples.EllipticDroplet(xRes: res, yRes: res, pDG: pDeg);
+                Controls.Add(ctrl);
+            }
+
+
+            // 01feb23:
+            // Convergence slope for Error of 'c':     2.821947945144496       Intercept:      -1.1137827966318687     (Expecting: 2/-1 to 1 in norm L2_embedded)
+            //  Convergence slope for Error of 'mu':   2.8593703784657984      Intercept:      -1.0080261719610017(Expecting: 2/-1 to 1 in norm L2_embedded)
+
+
+            if (pDeg == 2) {
+                ConvergenceTest.SolverConvergenceTest_Experimental(
+                     Controls,
+                     "CahnHilliard",
+                     ("c", NormType.L2_embedded, 2.5, -1.1137827966318687, 0.2),
+                     ("mu", NormType.L2_embedded, 2.5, -1.0080261719610017, 0.2)
+                     );
+            } else {
+                throw new NotImplementedException("unknown polynomila degree");
+            }
+            /*
+            using (var p = new CahnHilliardMain()) {
+                var ctrl = Examples.EllipticDroplet(xRes: 80, yRes: 80, pDG: 2);
+                ctrl.ImmediatePlotPeriod = 1;
+                ctrl.SuperSampling = 3;
                 p.Init(ctrl);
                 p.RunSolverMode();
 
@@ -52,9 +123,9 @@ namespace BoSSS.Application.CahnHilliard.Tests {
                 Console.WriteLine("L2 Error of solution: " + err + " (threshold is " + thres + ")");
                 Assert.LessOrEqual(err, thres);
             }
-         
+            */
         }
+        
 
-       
     }
 }

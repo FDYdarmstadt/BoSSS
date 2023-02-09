@@ -186,7 +186,7 @@ namespace BoSSS.Application.BoSSSpad {
                 try {
                     EditLoop();
                 } catch (ThreadAbortException) {
-                    //Thread.;
+                    //Thread.ResetAbort();
                     Console.WriteLine();
                     SetPrompt(prompt);
                     SetText("");

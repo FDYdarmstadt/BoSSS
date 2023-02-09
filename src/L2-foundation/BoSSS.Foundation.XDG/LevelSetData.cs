@@ -1421,7 +1421,11 @@ namespace BoSSS.Foundation.XDG {
                 if(FieldWidth > m_owner.m_NearRegionWidth)
                     throw new ArgumentException("Near-" + FieldWidth + " cannot be acquired, because this tracker is set to detect at most Near-" + m_owner.m_NearRegionWidth + ".", "FieldWidth");
                 if(levSetIdx < 0 || levSetIdx >= this.m_owner.NoOfLevelSets)
-                    throw new IndexOutOfRangeException();
+                    {
+                        Console.WriteLine("Test1");
+                        Console.WriteLine(levSetIdx);
+                        Console.WriteLine(this.m_owner.NoOfLevelSets);
+                        throw new IndexOutOfRangeException();}
 
 
                 if(m_NearMask4LevelSet == null || m_NearMask4LevelSet.GetLength(1) != (m_owner.m_NearRegionWidth + 1)) {

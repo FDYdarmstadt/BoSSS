@@ -1141,14 +1141,14 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// see <see cref="PlotFields(string, string, double, IEnumerable{DGField})"/>.
+        /// see <see cref="PlotFields(string, double, IEnumerable{Tuple{string, ScalarFunctionEx}})"/>.
         /// </summary>
         virtual public void PlotFields(string fileNameBase, double time, IEnumerable<DGField> fieldsToPlot) {
             this.PlotFields(fileNameBase, time, fieldsToPlot.Select(x => new Tuple<string, ScalarFunctionEx>(x.Identification, x.Evaluate)));
         }
 
         /// <summary>
-        /// see <see cref="PlotFields(string, string, double, IEnumerable{DGField})"/>.
+        /// see <see cref="PlotFields(string, double, IEnumerable{Tuple{string, ScalarFunctionEx}})"/>.
         /// </summary>
         virtual public void PlotFields(string fileNameBase, double time, params DGField[] fieldsToPlot) {
             this.PlotFields(fileNameBase, time, (IEnumerable<DGField>)fieldsToPlot);

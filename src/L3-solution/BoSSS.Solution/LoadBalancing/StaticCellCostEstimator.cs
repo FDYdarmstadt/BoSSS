@@ -59,8 +59,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// <see cref="ICellCostEstimator"/>
         /// </summary>
-        /// <p<param name="performanceClassCount"></param>
-        /// <param name="cellToPerformanceClassMap"></param>
         public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
             if (performanceClassCount != CurrentPerformanceClassCount) {
                 throw new Exception("Changing number of performance classes not supported");

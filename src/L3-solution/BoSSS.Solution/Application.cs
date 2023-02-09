@@ -691,6 +691,18 @@ namespace BoSSS.Solution {
             }
         }
 
+        public static void DeleteOldTextFiles() {
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.txt").Concat(dir.GetFiles("*.csv"))) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
+                }
+                Console.WriteLine(";");
+            }
+        }
+
         /// <summary>
         /// Loads a control object, resp. a series of control objects (in the case of a parameter study)
         /// form a C#-script.
@@ -1653,7 +1665,53 @@ namespace BoSSS.Solution {
         /// </param>
         /// <param name="timestepno">time-step number</param>
         protected virtual TimestepInfo GetCurrentTimestepInfo(TimestepNumber timestepno, double t) {
-            return new TimestepInfo(t, this.CurrentSessionInfo, timestepno, this.IOFields);
+
+            // store the MPI rank
+            var _fields = m_IOFields.ToArray();
+
+            {
+                string ID_MPIrank = "MPIrank";
+                {
+                    int no = 2;
+                    while (IOFields.Any(f => f.Identification == ID_MPIrank)) {
+                        ID_MPIrank = "MPIrank_" + no;
+                        no++;
+                    }
+                }
+
+                SinglePhaseField MPIrnk;
+                {
+                    MPIrnk = new SinglePhaseField(new Basis(this.GridData, 0), ID_MPIrank);
+                    int rnk = MPIRank;
+                    MPIrnk.AccConstant(this.MPIRank);
+                }
+
+               
+                MPIrnk.AddToArray(ref _fields);
+            }
+
+            if(this.IOFields.Any(f => f is XDGField) && LsTrk != null) {
+
+                string ID_CutCells = "CutCells";
+                {
+                    int no = 2;
+                    while (IOFields.Any(f => f.Identification == ID_CutCells)) {
+                        ID_CutCells = "CutCells_" + no;
+                        no++;
+                    }
+                }
+
+                SinglePhaseField CutCells;
+                {
+                    CutCells = new SinglePhaseField(new Basis(this.GridData, 0), ID_CutCells);
+                    CutCells.AccConstant(1.0, LsTrk.Regions.GetCutCellMask());
+                }
+
+                CutCells.AddToArray(ref _fields);
+            }
+
+            //
+            return new TimestepInfo(t, this.CurrentSessionInfo, timestepno, _fields);
         }
 
         /// <summary>
@@ -2176,7 +2234,6 @@ namespace BoSSS.Solution {
                     if (LsTrk != null)
                         LsTrk.PushStacks();
                 }
-
                 // ========================================================================
                 // initial value IO:
                 // (note: in some apps, the initial values might be tweaked in the 
@@ -2257,7 +2314,7 @@ namespace BoSSS.Solution {
                         if (this.BurstSave < 1) {
                             throw new NotSupportedException("misconfiguration of burst save variable.");
                         }
-
+                        
 
                         for (int sb = 0; sb < this.BurstSave; sb++) {
                             if ((i + sb) % SavePeriod == 0 || (!RunLoop(i + 1) && sb == 0)) {
@@ -2266,7 +2323,7 @@ namespace BoSSS.Solution {
                                 break;
                             }
                         }
-
+                        
                         if (this.RollingSave) {
                             if (tsi == null) {
                                 tsi = SaveToDatabase(i, physTime);
@@ -2365,7 +2422,6 @@ namespace BoSSS.Solution {
 
             //this.QueryHandler.ValueQuery("UsedNoOfMultigridLevels", this.MultigridSequence.Length, true); 
             //PlotCurrentState(physTime, new TimestepNumber(new int[] { TimeStepNo, 12 }), 2);
-
             return true;
         }
 
@@ -2628,8 +2684,6 @@ namespace BoSSS.Solution {
                         PostRestart(physTime, TimeStepNo);
 
                     ReCreateEquationAndSolvers(IsInit, remshDat, physTime);
-                    
-
                 }
                 return true;
             }
@@ -2950,7 +3004,6 @@ namespace BoSSS.Solution {
                     TryWrite("    Field: ", () => $"{f.Identification}, degree {f.Basis.Degree}, XDG: {f.Basis is XDGBasis}");
                 }
             }
-
             Console.WriteLine();
         }
 
@@ -3461,7 +3514,7 @@ namespace BoSSS.Solution {
             wrt.WriteLine("=========================================================");
 
             MethodCallRecordExtension.GetMostExpensiveCallsDetails(wrt, R);
-            
+
             wrt.WriteLine();
             wrt.WriteLine("Most memory consuming calls and blocks (sort by exclusive allocation size):");
             wrt.WriteLine("(sum over all calling parents)");
@@ -3475,7 +3528,7 @@ namespace BoSSS.Solution {
             wrt.WriteLine("==========================================================================");
 
             MethodCallRecordExtension.GetMostMemoryConsumingCallsDetails(wrt, R);
-            
+
 
             /*
             wrt.WriteLine();
@@ -3669,6 +3722,7 @@ namespace BoSSS.Solution {
             }
             */
         }
+
 
         /// <summary>
         /// This method should be overridden to support automatic numerical stability analysis of the PDE's operator

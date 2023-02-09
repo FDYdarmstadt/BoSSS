@@ -848,7 +848,10 @@ namespace BoSSS.Foundation.XDG {
                         if(iLevel == 0) {
                             // convert un-cut volume into volume fraction
                             for(int j = 0; j < J; j++) {
-                                VolumeFrac[j] = CellVolume[j] / VolumeFrac[j]; 
+                                if (Math.Abs(VolumeFrac[j]) < 1e-25){
+                                    Console.WriteLine("Attempting to divide by zero for VolumeFrac at j = " + j);
+                                }
+                                VolumeFrac[j] = CellVolume[j] / VolumeFrac[j];
                             }
                         }
 
@@ -872,7 +875,7 @@ namespace BoSSS.Foundation.XDG {
                         
                         // Loop includes external cells
                         for(int j = 0; j < JE; j++) {
-                            LengthScales[j] = CellVolume[j] / CellSurface[j];
+                                LengthScales[j] = CellVolume[j] / CellSurface[j];
                         }
 
 

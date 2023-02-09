@@ -45,7 +45,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="gridData"></param>
         public TimeStepConstraint(IGridData gridData, double dtMin, double dtMax, double dtFraction, double Endtime) {
             this.gridData = gridData;
             this.dtMin = dtMin;

@@ -1,5 +1,4 @@
 ﻿using BoSSS.Application.BoSSSpad;
-using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -118,6 +117,7 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
+                        typeof(BoSSS.Application.ExternalBinding.CahnHilliardTest),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
                         typeof(MPITest.Program)
                     };
@@ -140,12 +140,13 @@ namespace PublicTestRunner {
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
                         typeof(LTSTests.Program),
-                        typeof(BoSSS.Application.TutorialTests.AllUpTest), 
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.XNSEC.XNSEC),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),
-                        typeof(HangingNodesTests.HangingNodesTestMain)
+                        typeof(HangingNodesTests.HangingNodesTestMain),
+                        typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain)
                     };
             }
         }
@@ -170,6 +171,7 @@ namespace PublicTestRunner {
                 return new (Type type, int NoOfProcs)[] {
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest), 8),
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 3),
                         (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4),
                         (typeof(MPITest.Program), 4),
                         //(typeof(HangingNodesTests.HangingNodesTestMain), 2), // fk, 29mar22: parallel runs executed directly in `release.yml` to allow serial-parallel comparison
@@ -799,7 +801,7 @@ namespace PublicTestRunner {
                 // phase 1: discover tests
                 // ===================================
 
-                InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
+                InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
                 // deployment of native libraries
                 string NativeOverride;
@@ -935,7 +937,7 @@ namespace PublicTestRunner {
                             }
 
 
-                            Console.WriteLine($"Successfully submitted {j.j.Name}.");
+                            Console.WriteLine($"Successfully submitted {j.j.Name}. \n");
                             AllOpenJobs.Add(j);
                         } catch(Exception e) {
                             Console.Error.WriteLine($"{e.GetType().Name} during job submission: {e.Message}.");
@@ -1599,6 +1601,12 @@ namespace PublicTestRunner {
 
 
         static int Main(string[] args) {
+            Console.WriteLine($"received {args.Length} arguments.");
+            for(int i = 0; i < args.Length; i++) {
+                Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
+            }
+
+
             try {
                 return _Main(args, new PublicTests());
             } catch(Exception e) {
