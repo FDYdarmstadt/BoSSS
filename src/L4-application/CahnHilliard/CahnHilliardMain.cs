@@ -344,9 +344,10 @@ namespace BoSSS.Application.CahnHilliard {
             #region equation components
 
             // convection term
-            if(this.Control.includeConvection == true) {
+            if (this.Control.includeConvection == true) {
                 CHOp.EquationComponents["Res_c"].Add(
-                new c_Flux(D, m_bcMap) // TODO check if velocity is communicated correctly
+                    new c_Flux(D, () => this.Velocity.ToArray(), m_bcMap) 
+                    //new __c_Flux(D, m_bcMap) // TODO check if velocity is communicated correctly
                 );
             }
 
@@ -355,7 +356,7 @@ namespace BoSSS.Application.CahnHilliard {
 
                 if(this.Control.includeDiffusion == true) {
                     CHOp.EquationComponents["Res_c"].Add(
-                    new c_Source(Control.diff)
+                        new __c_Source(Control.diff)
                     );
                 }
 
@@ -390,18 +391,21 @@ namespace BoSSS.Application.CahnHilliard {
 
                 if(this.Control.includeDiffusion == true) {
                     CHOp.EquationComponents["Res_c"].Add(
-                    new c_Diffusion(D, penalty_factor, Control.diff, Control.lambda, m_bcMap)
+                    new __c_Diffusion(D, penalty_factor, Control.diff, Control.lambda, m_bcMap) // new (L3)
+                    //new c_Diffusion(D, penalty_factor, Control.diff, Control.lambda, m_bcMap) // old (L4)
                     );
                 }
 
                 if(this.Control.includeDiffusion == true) {
                     CHOp.EquationComponents["Res_mu"].Add(
-                        new mu_Diffusion(D, penalty_factor, Control.cahn, m_bcMap, "c")
+                         new mu_Diffusion(D, penalty_factor, Control.cahn, m_bcMap, "c") // new (L3)
+                         //new phi_Diffusion(D, penalty_factor, Control.cahn, m_bcMap) // old (L4)
                         );
                 }
 
                 CHOp.EquationComponents["Res_mu"].Add(
-                    new mu_Source("c")
+                    new mu_Source("c") // new (L3)
+                    //new phi_Source(this.Control.includeDiffusion, Control.cahn) // old (L4)
                     );
 
                 //if(Control.CurvatureCorrection == true) {
@@ -1102,20 +1106,11 @@ namespace BoSSS.Application.CahnHilliard {
                 this.c_Resi, this.mu_Resi, this.cDist);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "CahnHilliard-" + timestepNo + caseStr, phystime, superSampling);
         }
-
-        public class c_Flux : phi_Flux {
-            public c_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, __boundaryCondMap, "c") {}
+        /*
+        public class __c_Flux : BoSSS.Solution.LevelSetTools.PhasefieldLevelSet.phi_Flux {
+            public __c_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, __boundaryCondMap, "c") {}
         }
-
-        public class c_Source : phi_Source {
-
-            public c_Source(double _diff = 0.0) : base(_diff, "c") {}
-        }
-
-        public class c_Diffusion : phi_Diffusion {
-
-            public c_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
-                : base(D, penalty_const, __diff, __lambda, __boundaryCondMap) {}
-        }
+        */
+        
     }
 }

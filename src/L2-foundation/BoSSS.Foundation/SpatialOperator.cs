@@ -496,9 +496,9 @@ namespace BoSSS.Foundation {
         /// if a component has an illegal configuration (e.g. it's arguments
         /// (<see cref="BoSSS.Foundation.IEquationComponent.ArgumentOrdering"/>) are not contained
         /// in the domain variable list (<see cref="DomainVar"/>)), an 
-        /// exception is thrown;
+        /// exception is thrown, if <paramref name="allowVarAddition"/> is set true, see also <see cref="ISpatialOperator.Commit(bool)"/>
         /// </remarks>
-        internal protected void Verify() {
+        internal protected void Verify(bool allowVarAddition) {
             if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
                 throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
 
@@ -506,11 +506,14 @@ namespace BoSSS.Foundation {
                 foreach(IEquationComponent c in comps) {
                     foreach(string varname in c.ArgumentOrdering) {
                         if(Array.IndexOf<string>(m_DomainVar, varname) < 0) {
-                            //throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on variable \""
-                            //    + varname
-                            //    + "\", but this name is not a member of the domain variable list.");
-
-                            m_DomainVar = m_DomainVar.Cat(varname);
+                            if (allowVarAddition)
+                                m_DomainVar = m_DomainVar.Cat(varname);
+                            else {
+                                throw new ApplicationException("configuration error in spatial differential operator; equation component " + c.ToString() + " depends on variable \""
+                                    + varname
+                                    + "\", but this name is not a member of the domain variable list: "
+                                    + m_DomainVar.ToConcatString("[", ", ", "]"));
+                            }
 
                         }
                     }
@@ -518,11 +521,15 @@ namespace BoSSS.Foundation {
                     if(c.ParameterOrdering != null) {
                         foreach(string varname in c.ParameterOrdering) {
                             if(Array.IndexOf<string>(m_ParameterVar, varname) < 0) {
-                                //throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on (parameter) variable \""
-                                //    + varname
-                                //    + "\", but this name is not a member of the parameter variable list.");
-
-                                m_ParameterVar = m_ParameterVar.Cat(varname);
+                                if (allowVarAddition)
+                                    m_ParameterVar = m_ParameterVar.Cat(varname);
+                                else {
+                                    throw new ApplicationException("configuration error in spatial differential operator; equation component " + c.ToString() + " depends on (parameter) variable \""
+                                        + varname
+                                        + "\", but this name is not a member of the parameter variable list: "
+                                        + m_ParameterVar.ToConcatString("[", ", ", "]")
+                                        ); ;
+                                }
                             }
                         }
                     }
@@ -583,7 +590,7 @@ namespace BoSSS.Foundation {
                 throw new ArgumentException("the provided variable name \""
                     + CodomVar
                     + "\" is not a member of the Codomain variable list of this spatial differential operator");
-            Verify();
+            Verify(false);
 
             var comps = m_EquationComponents[CodomVar];
             List<string> ret = new List<string>();
@@ -648,8 +655,8 @@ namespace BoSSS.Foundation {
         /// Can be called only once in the lifetime of this object.
         /// After calling this method, no adding/removing of equation components is possible.
         /// </summary>
-        public virtual void Commit() {
-            Verify();
+        public virtual void Commit(bool allowVarAddition = true) {
+            Verify(allowVarAddition);
 
             if(TemporalOperator != null) {
                 TemporalOperator.Commit();
@@ -2967,7 +2974,7 @@ namespace BoSSS.Foundation {
             JacobianOp.OperatorCoefficientsProvider = this.OperatorCoefficientsProvider;
             JacobianOp.m_HomotopyUpdate.AddRange(this.m_HomotopyUpdate);
             JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
-            JacobianOp.Commit();
+            JacobianOp.Commit(false);
             return JacobianOp;
         }
 

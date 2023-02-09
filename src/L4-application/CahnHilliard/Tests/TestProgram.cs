@@ -41,7 +41,7 @@ namespace BoSSS.Application.CahnHilliard.Tests {
                 p.RunSolverMode();
 
 
-                // 01feb23: the fotal concentration:
+                // 01feb23: reference values for total concentration, in dependence of degree:
                 double TotalConcentration_Ref;
                 switch (pDeg) {
                     case 2:
