@@ -654,9 +654,6 @@ namespace MPI.Wrappers {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="b"></param>
-        /// <param name="comm"></param>
-        /// <returns></returns>
         static public bool MPIEquals(this bool b, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int sz);
             if(sz <= 1)
@@ -673,8 +670,6 @@ namespace MPI.Wrappers {
         /// <summary>
         /// equal to <see cref="MPIEquals(double,MPI_Comm)"/> acting on WORLD-communicator
         /// </summary>
-        /// <param name="i"></param>
-        /// <returns></returns>
         static public bool MPIEquals(this double i) {
             return MPIEquals(i, csMPI.Raw._COMM.WORLD);
         }
