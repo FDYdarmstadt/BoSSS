@@ -130,7 +130,6 @@ namespace BoSSS.Application.ExternalBinding {
             Cleanup();
 
         }
-#if DEBUG
         [NUnitFileToCopyHack(
         "OpenFOAM/meshes/big/small/polyMesh/*",
 
@@ -138,7 +137,10 @@ namespace BoSSS.Application.ExternalBinding {
 
         "OpenFOAM/meshes/big/large/polyMesh/*"
             )]
+#if DEBUG
+#else
         [Test]
+#endif
         public static void ConvergenceTest() {
 
             Console.WriteLine("Running Cahn-Hilliard Convergence Test");
@@ -173,7 +175,6 @@ namespace BoSSS.Application.ExternalBinding {
 
             Cleanup();
         }
-#endif
 
         public static void Main() {
 
