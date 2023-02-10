@@ -1117,7 +1117,5 @@ namespace BoSSS.Application.CahnHilliard {
             public c_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
                 : base(D, penalty_const, __diff, __lambda, __boundaryCondMap) {}
         }
-        */
-        
     }
 }

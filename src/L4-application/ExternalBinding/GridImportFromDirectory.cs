@@ -205,7 +205,7 @@ namespace BoSSS.Application.ExternalBinding {
         "OpenFOAM/meshes/big/large/polyMesh/ownerLarge",
         "OpenFOAM/meshes/big/large/polyMesh/pointsLarge"
             )]
-        //[Test]
+        [Test]
         public static void ConvertFOAMGrid() {
 
             // string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
