@@ -137,7 +137,9 @@ namespace BoSSS.Application.ExternalBinding {
 
         "OpenFOAM/meshes/big/large/polyMesh/*"
             )]
+            #if DEBUG
         [Test]
+        #endif
         public static void ConvergenceTest() {
 
             Console.WriteLine("Running Cahn-Hilliard Convergence Test");
@@ -209,6 +211,7 @@ namespace BoSSS.Application.ExternalBinding {
             } catch (Exception e) { Console.WriteLine("Continuing despite " + e); }
             string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             string grd = currentDirectory + "/../../../meshes/big/large/polyMesh/";
+            // string grd = currentDirectory + "/../../../meshes/big/medium/polyMesh/";
 
             // RunDropletTest(grd);
 
