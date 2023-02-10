@@ -69,7 +69,7 @@ namespace ilPSP {
             } else {
                 FrameBlockSize = -2356675;
             }
-            int FrameBlockSize_g = FrameBlockSize.MPIMax();
+            int FrameBlockSize_g = FrameBlockSize.MPIMax(othrPart.MPI_Comm);
 
             ConstructorCommon(FrameBlockSize_g, _Subblk_i0, _SubblkLen, _BlockType, othrPart.MPI_Comm); 
 
@@ -609,6 +609,14 @@ namespace ilPSP {
             }
         }
 
+        public override String ToString() {
+            string st = "";
+            var ListOfProperties = this.GetType().GetProperties();
+            foreach (var Prop in ListOfProperties)
+                st += $"{Prop.Name}: {Prop.GetValue(this)} ({Prop.PropertyType}) \n";
+
+            return st;
+        }
         public bool AllBlockSizesEqual {
             get {
                 Debug.Assert(m_FrameBlockSize != 0);

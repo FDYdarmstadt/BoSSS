@@ -167,10 +167,10 @@ namespace BoSSS.Solution.AdvancedSolvers
         public BlockMask(SubBlockSelector sbs, BlockMsrMatrix ExtRows = null) {
             m_map = sbs.Mapping;
             m_ExtRows = ExtRows;
-            m_includeExternalCells = (ExtRows != null) && m_map.MpiSize > 1;
+            m_ExchangeExternalRows = (ExtRows != null) && m_map.MpiSize > 1;
             BMLoc = new BlockMaskLoc(sbs);
             
-            if (m_includeExternalCells) {
+            if (m_ExchangeExternalRows) {
                 BMExt = new BlockMaskExt(sbs, BMLoc.LocalDOF);
                 SetThisShitUp(new BlockMaskBase[] { BMLoc, BMExt });
             } else {
@@ -251,7 +251,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <summary>
         /// inter-process communication of matrix rows
         /// </summary>
-        bool m_includeExternalCells;
+        bool m_ExchangeExternalRows;
 
         /// <summary>
         /// structured Ni0 of <see cref="BMLoc"/> and <see cref="BMExt"/>
@@ -273,7 +273,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         public int NoOfMaskedCells {
             get {
-                if (m_includeExternalCells) {
+                if (m_ExchangeExternalRows) {
                     return BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length;
                 } else {
                     return BMLoc.m_StructuredNi0.Length;
@@ -286,7 +286,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         public int NoOfMaskedRows {
             get {
-                if (m_includeExternalCells) {
+                if (m_ExchangeExternalRows) {
                     return BMLoc.LocalDOF + BMExt.LocalDOF;
                 } else {
                     return BMLoc.LocalDOF;
@@ -310,13 +310,22 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// </summary>
         /// <returns>sub-matrix on <paramref name="comm"/></returns>
         public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source, MPI_Comm comm) {
+            return GetSubBlockMatrix(source, this, comm);
+        }
+
+        /// <summary>
+        /// If you just want to get the <see cref="BlockMsrMatrix"/>, which corresponds to this <see cref="BlockMask"/>.
+        /// This is the method to choose! In addition, MPI communicator can be defined via <paramref name="comm"/>.
+        /// </summary>
+        /// <returns>sub-matrix on <paramref name="comm"/></returns>
+        public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source, BlockMask colMask, MPI_Comm comm) {
             if (source == null)
                 throw new ArgumentNullException();
             if (source.NoOfRows < BMLoc.LocalDOF)
                 throw new ArgumentException();
 
             BlockMsrMatrix target;
-            if (m_includeExternalCells) {
+            if (m_ExchangeExternalRows) {
 
                BlockPartitioning targetBlocking = new BlockPartitioning(BMLoc.LocalDOF + BMExt.LocalDOF, SubMatrixOffsets, SubMatrixLen, comm);
 
@@ -348,10 +357,17 @@ namespace BoSSS.Solution.AdvancedSolvers
                 //add external rows ...
                 ExtRowsTmp.AccSubMatrixTo(1.0, target, GlobalIdxExtRows, extBlockRows, BMLoc.m_GlobalMask, default(long[]), BMExt.m_GlobalMask, extBlockCols);
             } else {
-                BlockPartitioning localBlocking = new BlockPartitioning(BMLoc.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF, i0isLocal: true);
-                target = new BlockMsrMatrix(localBlocking);
-                BMLoc.m_GlobalMask.SaveToTextFile("mask-" + BMLoc.m_GlobalMask.Count + ".txt");
-                source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(long[]), BMLoc.m_GlobalMask, default(long[]));
+                BlockPartitioning rowPart = new BlockPartitioning(BMLoc.LocalDOF, SubMatrixOffsets, SubMatrixLen, comm, i0isLocal: true);
+                BlockPartitioning colPart;
+                if (colMask == this)
+                    colPart = rowPart;
+                else
+                    colPart = new BlockPartitioning(colMask.BMLoc.LocalDOF, colMask.SubMatrixOffsets, colMask.SubMatrixLen, comm, i0isLocal: true);
+
+                target = new BlockMsrMatrix(rowPart, colPart);
+
+                //BMLoc.m_GlobalMask.SaveToTextFile("mask-" + BMLoc.m_GlobalMask.Count + ".txt");
+                source.AccSubMatrixTo(1.0, target, BMLoc.m_GlobalMask, default(long[]), colMask.BMLoc.m_GlobalMask, default(long[]));
             }
             Debug.Assert(target != null);
             return target;
@@ -374,7 +390,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             List<MultidimensionalArray> Sblocks = new List<MultidimensionalArray>();
             Sblocks.AddRange(AuxGetSubBlocks(source, BMLoc, ignoreCellCoupling, ignoreVarCoupling, ignoreSpecCoupling));
 
-            if (m_includeExternalCells && BMExt!=null) {
+            if (m_ExchangeExternalRows && BMExt!=null) {
                 //var ExtMatrix = this.GetExternalSubBlockMatrixOnly(target);
                 //int RowOffset = m_map.iE;
                 if (!ignoreCellCoupling)
@@ -467,7 +483,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         public BlockMsrMatrix GetSubBlockMatrix(BlockMsrMatrix source, bool ignoreCellCoupling, bool ignoreVarCoupling, bool ignoreSpecCoupling) {
 
             BlockMsrMatrix submatrix = null;
-            if (m_includeExternalCells) {
+            if (m_ExchangeExternalRows) {
                 BlockPartitioning extBlocking = new BlockPartitioning(BMLoc.LocalDOF + BMExt.LocalDOF, SubMatrixOffsets, SubMatrixLen, csMPI.Raw._COMM.SELF);
                 submatrix = new BlockMsrMatrix(extBlocking);
                 var ExtRowsTmp = m_ExtRows;
@@ -558,7 +574,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             where V : IList<double>
             where W : IList<double> {
 
-            if (m_includeExternalCells) {
+            if (m_ExchangeExternalRows) {
                 if (fullVector.Count != GetLocalAndExternalDOF(m_map))
                 //    throw new ArgumentException("Length of targetVector not equal Length of original");
                 if (subVector.Count != BMLoc.LocalDOF + BMExt.LocalDOF)
@@ -618,7 +634,7 @@ namespace BoSSS.Solution.AdvancedSolvers
             where W : IList<double> {
 
 
-            if (m_includeExternalCells) {
+            if (m_ExchangeExternalRows) {
                 if (fullVector.Count != GetLocalAndExternalDOF(m_map))
                     throw new ArgumentException("Length of targetVector not equal Length of original");
                 if (iBlock >= BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length)
@@ -670,7 +686,7 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             double[] tmp;
 
-            if(m_includeExternalCells) {
+            if(m_ExchangeExternalRows) {
                 if(fullVector.Count != GetLocalAndExternalDOF(m_map))
                     throw new ArgumentException("Length of targetVector not equal Length of original");
                 if(iBlock >= BMLoc.m_StructuredNi0.Length + BMExt.m_StructuredNi0.Length)
@@ -711,7 +727,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         /// <param name="fullVector">input, unmasked vector</param>
         public double[] GetSubVec<T>(T fullVector) where T : IList<double> {
             double[] subVector;
-            if(m_includeExternalCells) {
+            if(m_ExchangeExternalRows) {
                 if(fullVector.Count != GetLocalAndExternalDOF(m_map))
                     throw new ArgumentException("Length of targetVector not equal Length of original");
                 subVector = new double[BMLoc.LocalDOF + BMExt.LocalDOF];
@@ -858,7 +874,7 @@ namespace BoSSS.Solution.AdvancedSolvers
         public long[] GlobalIndices {
             get {
                 List<long> tmp = new List<long>();
-                if (m_includeExternalCells) {
+                if (m_ExchangeExternalRows) {
                     if (BMLoc != null)
                         tmp.AddRange(BMLoc.m_GlobalMask);
                     if (BMExt != null)
@@ -875,6 +891,40 @@ namespace BoSSS.Solution.AdvancedSolvers
 
             }
         }
+
+        /// <summary>
+        /// local (i.e. valid only on current MPI processor) indices of vector entries, resp. matrix rows and columns to select.
+        /// </summary>
+        public int[] LocalIndices {
+            get {
+                List<int> tmp = new List<int>();
+                if(m_ExchangeExternalRows) {
+                    if (BMLoc != null)
+                        tmp.AddRange(BMLoc.m_LocalMask);
+                    if (BMExt != null)
+                        tmp.AddRange(BMExt.m_LocalMask);
+                    if (BMLoc == null && BMExt == null)
+                        throw new Exception("empty mask. what a waste of time!");
+                } else {
+                    if (BMLoc != null)
+                        tmp.AddRange(BMLoc.m_LocalMask);
+                    else
+                        throw new Exception("empty mask. what a waste of time!");
+                }
+
+                return tmp.ToArray();
+            }
+        }
+
+        /// <summary>
+        /// number of indices on the current processor
+        /// </summary>
+        public int LocalLength {
+            get {
+                return BMLoc.m_LocalMask.Count;
+            }
+        }
+
 
         // ==========
         // Stuff dedicated to testing ...

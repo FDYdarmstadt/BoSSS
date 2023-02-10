@@ -84,17 +84,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// </summary>
             private EdgeMask[] m_Edges4RefElement;
             
-            ///// <summary>
-            ///// For each (edge) reference element, this method provides a
-            ///// mask containing all cells which are mapped from the specific
-            ///// reference element.
-            ///// </summary>
-            ///// <param name="iKrefIndex">
-            ///// reference element index: <see cref="EdgeRefElements"/>;
-            ///// </param>
-            //public EdgeMask GetEdges4RefElement(int iKrefIndex) {
-            //    return this.GetEdges4RefElement(this.EdgeRefElements[iKrefIndex]);
-            //}
+ 
 
             /// <summary>
             /// For each (edge) reference element, this method provides a
@@ -804,11 +794,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                         {
                             var KrefEdge = this.EdgeRefElements[Edge.EdgeKrefIndex];
                             
-                            NodeSet V1 = new NodeSet(Kref1, KrefEdge.NoOfVertices, D);
+                            NodeSet V1 = new NodeSet(Kref1, KrefEdge.NoOfVertices, D, false);
                             Trafo1.Transform(KrefEdge.Vertices, V1);
                             V1.LockForever();
                             
-                            NodeSet V2 = new NodeSet(Kref2, KrefEdge.NoOfVertices, D);
+                            NodeSet V2 = new NodeSet(Kref2, KrefEdge.NoOfVertices, D, false);
                             Trafo2.Transform(KrefEdge.Vertices, V2);
                             V2.LockForever();
 
@@ -912,7 +902,7 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                         // unify the lists:
                         //if(myRank == 1)
-                        //    Debugger.Launch();
+                        //     dbg_launch();
                         int[][] IdxRemapS = null;
                         if(myRank == 0) {
                             IdxRemapS = new int[MpiSize][];
@@ -1816,11 +1806,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     // - 2nd index: enumeration
                     // - Item1: process rank R
                     // - Item2: index of edge on rank R
-                    Tuple<int, int>[][] EdgeIndicesOnOtherProcessors = new Tuple<int, int>[E][];
+                    (int MPIrank, int Index)[][] EdgeIndicesOnOtherProcessors = new (int, int)[E][];
                     using(var bt1 = new BlockTrace("LocalIndicesForeign", tr)) {
 
                         for (int e = 0; e < E; e++) {
-                            EdgeIndicesOnOtherProcessors[e] = new Tuple<int, int>[] { new Tuple<int, int>(myRank, e) };
+                            EdgeIndicesOnOtherProcessors[e] = new (int, int)[] { (myRank, e) };
                         }
 
 
@@ -2035,7 +2025,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if (matchCount != 1)
                                     throw new ApplicationException("error in algorithm");
 
-                                (new Tuple<int, int>(originRank, iEdge_foreign)).AddToArray(ref EdgeIndicesOnOtherProcessors[iEdge_local]);
+                                (originRank, iEdge_foreign).AddToArray(ref EdgeIndicesOnOtherProcessors[iEdge_local]);
                             }
                         }
                     }
@@ -2052,7 +2042,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int[][] EdgeSendLists;
                     int[][] EdgeInsertLists;
                     Tuple<int, int>[] LocalId;
-                    NegogiateOwnership(csMPI.Raw._COMM.WORLD, EdgeIndicesOnOtherProcessors,
+                    NegotiateOwnership(csMPI.Raw._COMM.WORLD, EdgeIndicesOnOtherProcessors,
                         out EdgePermuation, out NoOfPureLocal, out NoOfShOwned, out NoOfShForeign, out NoOfPeriodicElim, out NoOfExternal,
                         out EdgeSendLists, out EdgeInsertLists,
                         out LocalId);
@@ -2421,7 +2411,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 //    EdgeCenters[iKref][this.FaceIndices[e, 0]],
                                 //    Jac,
                                 //    0, Cell1.Type, Cell1.TransformationParams);
-                                m_owner.EvaluateJacobian(KrefEdge.Center.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[e, 0]), jCell1, 1, Jac);
+                                m_owner.EvaluateJacobian(KrefEdge.Center.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[e, 0], false), jCell1, 1, Jac);
                                 JacTj.Acc(1.0, JacSh);
 
 
@@ -2431,7 +2421,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 Gramian.GEMM(1.0, JacFullTranp, JacFull, 0.0);
                                 this.SqrtGramian[e] = Math.Sqrt(Gramian.Determinant());
                                 if(double.IsInfinity(this.SqrtGramian[e]) || double.IsNaN(this.SqrtGramian[e]) || this.SqrtGramian[e] == 0)
-                                    throw new ArithmeticException(string.Format("Illegal Gramian determint for some edge at cell {0}; value is {1}.", jCell1, this.SqrtGramian[e]));
+                                    throw new ArithmeticException(string.Format("Illegal Gramian determinant for some edge at cell {0}; value is {1}.", jCell1, this.SqrtGramian[e]));
 
                             } else {
                                 this.SqrtGramian[e] = double.NaN;
@@ -2447,7 +2437,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 double scaling = this.SqrtGramian[iEdge];
 
                 RefElement KrefEdge = this.GetRefElement(iEdge);
-                NodeSet KRefVert = KrefEdge.Vertices.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[iEdge, _inOut]);
+                NodeSet KRefVert = KrefEdge.Vertices.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[iEdge, _inOut], false);
 
                 int D = this.m_owner.SpatialDimension;
                 double len = 0.0;
@@ -2571,7 +2561,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         jCell = CellIndices[e, 0];
                         
                         RefElement Kref_edge = this.EdgeRefElements[GetRefElementIndex(e)];
-                        NodeSet verticesLoc = Kref_edge.Vertices.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[e, 0]);
+                        NodeSet verticesLoc = Kref_edge.Vertices.GetVolumeNodeSet(this.m_owner, this.Edge2CellTrafoIndex[e, 0], false);
 
                         int N = verticesLoc.NoOfNodes;
                         if(verticesGlob.GetLength(1) != N) {

@@ -94,7 +94,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
 
                 foreach(int k in parts) {
-                    MM.DGEMM(1.0, InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1), InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1), 1.0, true);
+                    MM.GEMM(1.0, InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1), InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1), 1.0, true);
                 }
 
                 MM.Cholesky();
@@ -102,7 +102,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 ortho.InvertTo(orthoInv);
 
                 foreach(int k in parts) {
-                    InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1).DGEMM(1.0, InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1).CloneAs(), orthoInv, 0.0);
+                    InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1).GEMM(1.0, InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1).CloneAs(), orthoInv, 0.0);
                 }
 
                 #endregion
@@ -115,7 +115,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 foreach(int k in parts) {
                     // apply rotation to raw injector and accumulate in direct injector array
                     _InjectorCoarse[k] = MultidimensionalArray.Create(Np, Np);
-                    _InjectorCoarse[k].DGEMM(1.0, RotationCoarseLogicalCell[i][Array.IndexOf(parts, k)], InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1), 0.0);
+                    _InjectorCoarse[k].GEMM(1.0, RotationCoarseLogicalCell[i][Array.IndexOf(parts, k)], InjectorCoarseLogicalCell[i].ExtractSubArrayShallow(Array.IndexOf(parts, k), -1, -1), 0.0);
                 }
 
             }
@@ -175,7 +175,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
 
             foreach(int k in _parts) {
-                MM.DGEMM(1.0, Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1), Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1), 1.0, true);
+                MM.GEMM(1.0, Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1), Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1), 1.0, true);
             }
 
             MM.Cholesky();
@@ -183,7 +183,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             ortho.InvertTo(orthoInv);
 
             foreach(int k in _parts) {
-                Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1).DGEMM(1.0, Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1).CloneAs(), orthoInv, 0.0);
+                Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1).GEMM(1.0, Injector.ExtractSubArrayShallow(Array.IndexOf(_parts, k), -1, -1).CloneAs(), orthoInv, 0.0);
             }
 
             #endregion
@@ -266,7 +266,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
 
-                    RotationMatrices[jCell].DGEMM(1.0, RotationMatrices[iCell], RotationMatrices[jCell].CloneAs(), 0.0);
+                    RotationMatrices[jCell].GEMM(1.0, RotationMatrices[iCell], RotationMatrices[jCell].CloneAs(), 0.0);
                 }
 
             }
@@ -420,7 +420,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints);
+                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints, false);
                 edge_coords.LockForever();
 
                 // evaluate the polynomials on the edge for both cells
@@ -564,7 +564,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // solution using quadratic program and sparse matrices
             MultidimensionalArray Q = MultidimensionalArray.Create(hQ.NoOfCols, hQ.NoOfCols);
             double Qscale = 1.0; // 1 / Math.Pow(aggE2.InfNorm(), 2.0);
-            Q.DGEMM(Qscale, hQ, hQ, 0.0, true);
+            Q.GEMM(Qscale, hQ, hQ, 0.0, true);
 
             Partitioning qRowPart = new Partitioning(Q.NoOfRows + E.NoOfRows, MPI.Wrappers.csMPI.Raw._COMM.SELF);
             Partitioning qColPart = new Partitioning(Q.NoOfCols + E.NoOfRows, MPI.Wrappers.csMPI.Raw._COMM.SELF);
@@ -966,7 +966,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // solution using quadratic program and sparse matrices
             MultidimensionalArray Q = MultidimensionalArray.Create(hQ.NoOfCols, hQ.NoOfCols);
             double Qscale = 1.0; // 1 / Math.Pow(aggE2.InfNorm(), 2.0);
-            Q.DGEMM(Qscale, hQ, hQ, 0.0, true);
+            Q.GEMM(Qscale, hQ, hQ, 0.0, true);
 
             Partitioning qRowPart = new Partitioning(Q.NoOfRows + E.NoOfRows, MPI.Wrappers.csMPI.Raw._COMM.SELF);
             Partitioning qColPart = new Partitioning(Q.NoOfCols + E.NoOfRows, MPI.Wrappers.csMPI.Raw._COMM.SELF);
@@ -1377,7 +1377,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // solution using quadratic program and sparse matrices
             MultidimensionalArray Q = MultidimensionalArray.Create(hQ.NoOfCols, hQ.NoOfCols);
             double Qscale = 1.0; // 1 / Math.Pow(aggE2.InfNorm(), 2.0);
-            Q.DGEMM(Qscale, hQ, hQ, 0.0, true);
+            Q.GEMM(Qscale, hQ, hQ, 0.0, true);
 
             Partitioning qRowPart = new Partitioning(Q.NoOfRows + E.NoOfRows, MPI.Wrappers.csMPI.Raw._COMM.SELF);
             Partitioning qColPart = new Partitioning(Q.NoOfCols + E.NoOfRows, MPI.Wrappers.csMPI.Raw._COMM.SELF);
@@ -1416,7 +1416,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //systemrhs[1] = 1;
 
             MultidimensionalArray system = MultidimensionalArray.Create(usableRowsE.Count + varCount, usableRowsE.Count + varCount);
-            system.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { varCount - 1, varCount - 1 }).DGEMM(1.0, hQ, hQ, 0.0, true);
+            system.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { varCount - 1, varCount - 1 }).GEMM(1.0, hQ, hQ, 0.0, true);
             system.ExtractSubArrayShallow(new int[] { varCount, 0 }, new int[] { varCount + usableRowsE.Count - 1, varCount - 1 }).Acc(1.0, E);
             system.ExtractSubArrayShallow(new int[] { 0, varCount }, new int[] { varCount - 1, varCount + usableRowsE.Count - 1 }).Acc(1.0, E.TransposeTo());
 
@@ -1660,7 +1660,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints);
+                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints, false);
                 edge_coords.LockForever();
 
                 // evaluate the polynomials on the edge for both cells
@@ -1782,7 +1782,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             // s.t.         aggE1*x - aggRhs1 = 0
 
             MultidimensionalArray Q = MultidimensionalArray.Create(basisIndex + 1, basisIndex + 1);
-            Q.DGEMM(1.0, aggE2, aggE2, 0.0, true);
+            Q.GEMM(1.0, aggE2, aggE2, 0.0, true);
             //Q[basisIndex, basisIndex] += fscale;
 
             // accumulate system matrix
@@ -1909,7 +1909,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints);
+                NodeSet edge_coords = new NodeSet(refEl, edgeEvalPoints, false);
                 edge_coords.LockForever();
 
                 // evaluate the polynomials on the edge for both cells
@@ -2053,7 +2053,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             #endregion
             MultidimensionalArray S = MultidimensionalArray.Create(basisIndex + 1, basisIndex + 1);
-            S.DGEMM(1.0, aggE2, aggE2, 0.0, true);
+            S.GEMM(1.0, aggE2, aggE2, 0.0, true);
 
             MultidimensionalArray temp = MultidimensionalArray.Create(basisIndex + 1);
             temp.Multiply(1.0, S, vector_InjectorNDegree, 0.0, "i", "ij", "j");
@@ -2203,7 +2203,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         foreach (int gCell in parts)
                         {
-                            MMcontrol.DGEMM(1.0, _injectorCoarse[gCell], _injectorCoarse[gCell], 1.0, true);
+                            MMcontrol.GEMM(1.0, _injectorCoarse[gCell], _injectorCoarse[gCell], 1.0, true);
                         }
 
 
@@ -2305,7 +2305,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 delegate (int j0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
                                     NodeSet nodes = QR.Nodes;
                                     int D = nodes.SpatialDimension;
-                                    NodeSet GlobalNodes = new NodeSet(Context.iGeomCells.GetRefElement(parts[j]), Length * nodes.NoOfNodes, D);
+                                    NodeSet GlobalNodes = new NodeSet(Context.iGeomCells.GetRefElement(parts[j]), Length * nodes.NoOfNodes, D, false);
                                     Context.TransformLocal2Global(nodes, j0, Length, GlobalNodes.ResizeShallow(Length, nodes.NoOfNodes, D));
 
                                     for(int d = 0; d < D; d++) {
@@ -2340,7 +2340,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     MultidimensionalArray U = MultidimensionalArray.Create(Np, Np);
                     MultidimensionalArray orthoInv = MultidimensionalArray.Create(Np, Np);
                     for(int k = 0; k < Jlparts; k++) {
-                        MM.DGEMM(1.0, a.ExtractSubArrayShallow(k, -1, -1), a.ExtractSubArrayShallow(k, -1, -1), 1.0, true);
+                        MM.GEMM(1.0, a.ExtractSubArrayShallow(k, -1, -1), a.ExtractSubArrayShallow(k, -1, -1), 1.0, true);
                     }
 
                     MM.Cholesky();
@@ -2357,7 +2357,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         for(int j = 0; j < Jparts; j++) {
                             int kCell = parts[j];
-                            _injectorCoarse[kCell].DGEMM(1.0, _injectorCoarse[kCell].CloneAs(), _Injectors[ilevel][i].ExtractSubArrayShallow(k, -1, -1), 0.0);
+                            _injectorCoarse[kCell].GEMM(1.0, _injectorCoarse[kCell].CloneAs(), _Injectors[ilevel][i].ExtractSubArrayShallow(k, -1, -1), 0.0);
                         }
 
                     }

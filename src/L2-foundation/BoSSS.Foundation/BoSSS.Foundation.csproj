@@ -48,9 +48,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="log4net">
+    <!--Reference Include="log4net">
       <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference>
+    </Reference-->
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -80,9 +80,6 @@
     <Content Include="LineQuadRules_bin.txt" />
     <Content Include="TetraQuadRules_bin.txt" />
     <Content Include="TriangleQuadRules_bin.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Runtime.Caching" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="DoubleEdgeRuleFromCellBoundaryFactory.cs" />

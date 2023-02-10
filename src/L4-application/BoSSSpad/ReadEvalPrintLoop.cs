@@ -123,7 +123,6 @@ namespace BoSSS.Application.BoSSSpad {
             eval.ReferenceAssembly(typeof(BoSSS.Application.SipPoisson.SipPoissonMain).Assembly);
             eval.ReferenceAssembly(typeof(Rheology.Rheology).Assembly);
             //eval.ReferenceAssembly(typeof(XRheology_Solver.XRheology_SolverMain).Assembly);
-            eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             eval.ReferenceAssembly(typeof(XNSERO_Solver.XNSERO).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Foundation.SpecFEM.SpecFemField).Assembly);
             eval.ReferenceAssembly(typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main).Assembly);
@@ -131,6 +130,8 @@ namespace BoSSS.Application.BoSSSpad {
             //eval.ReferenceAssembly(typeof(BoSSS.Application.LowMachCombustionNSE.LowMachCombustionNSEMain).Assembly);
             eval.ReferenceAssembly(typeof(NSE_SIMPLE.NSE_SIMPLEMain).Assembly);
             eval.ReferenceAssembly(typeof(XNSEC.XNSEC).Assembly);
+            eval.ReferenceAssembly(typeof(GridGen.GridGenMain).Assembly);
+            //eval.ReferenceAssembly(typeof(KOmega.KOmegaSolver).Assembly); // no 'experimental' Project must be explicitly linked to BoSSSpad; try to do this in the worksheet!
 
             //eval.ReferenceAssembly(typeof(FSI_Solver.FSI_SolverMain).Assembly);
             //eval.ReferenceAssembly(typeof(FuelCell.FuelCellMain).Assembly);

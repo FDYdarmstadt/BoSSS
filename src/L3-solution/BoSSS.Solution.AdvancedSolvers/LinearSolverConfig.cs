@@ -59,11 +59,11 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
-        /// GMRES with p-multigrid on the same mesh level; direct solver is used for 
+        /// GMRES with p-multigrid on the same mesh level; direct solver is used for lowest polynomial level
         /// </summary>
         exp_gmres_levelpmg = 47,
 
-        /*
+        
         /// <summary>
         /// a k-cycle (i.e. a tree of <see cref="AdvancedSolvers.OrthonormalizationMultigrid"/> solvers), with ILU-preconditioner (<see cref="AdvancedSolvers.CellILU"/>) at each level
         /// </summary>
@@ -73,7 +73,7 @@ namespace BoSSS.Solution.Control {
         /// p-Multigrid (i.e. multigrid over DG polynomial degree), <see cref="AdvancedSolvers.PmgConfig"/>
         /// </summary>
         pMultigrid = 61,
-        */
+        
     }
     
 
@@ -102,16 +102,13 @@ namespace BoSSS.Solution.Control {
                 case LinearSolverCode.exp_gmres_levelpmg:
                 return new AdvancedSolvers.PTGconfig();
 
-                /*
+                
                 case LinearSolverCode.exp_Kcycle_ILU:
                 return new AdvancedSolvers.OrthoMGILUconfig();
                 
-                //case LinearSolverCode.cg:
-                //return new AdvancedSolvers.MonkeySolver.Config() { WhichSolver = AdvancedSolvers.MonkeySolver._whichSolver.CG };
-
                 case LinearSolverCode.pMultigrid:
                 return new AdvancedSolvers.PmgConfig();
-                */
+                
                 default:
                 throw new NotImplementedException("todo: " + config);
             }

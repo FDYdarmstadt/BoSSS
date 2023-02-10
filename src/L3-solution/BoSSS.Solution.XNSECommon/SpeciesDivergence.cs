@@ -227,26 +227,34 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         public double InnerEdgeForm(ref CommonParams cp,
     double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB,
     double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-
+            
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
             double uBxN = GenericBlas.InnerProd(U_Pos, cp.Normal);
 
-            // transform from species B to A: we call this the "A-fictitious" value
-            double uAxN_fict = uBxN;
-            // transform from species A to B: we call this the "B-fictitious" value
-            double uBxN_fict = uAxN;
+            //// transform from species B to A: we call this the "A-fictitious" value
+            //double uAxN_fict = uBxN;
+            //// transform from species A to B: we call this the "B-fictitious" value
+            //double uBxN_fict = uAxN;
 
-            // compute the fluxes: note that for the continuity equation, we use not a real flux,
-            // but some kind of penalization, therefore the fluxes have opposite signs!
+            //// compute the fluxes: note that for the continuity equation, we use not a real flux,
+            //// but some kind of penalization, therefore the fluxes have opposite signs!
 
-            double FlxNeg = -Flux(uAxN, uAxN_fict, 1.0, 1.0); // flux on A-side
-            double FlxPos = -Flux(uBxN_fict , uBxN , 1.0, 1.0);  // flux on B-side
+            //double FlxNeg = -Flux(uAxN, uAxN_fict, 1.0, 1.0); // flux on A-side
+            //double FlxPos = -Flux(uBxN_fict , uBxN , 1.0, 1.0);  // flux on B-side
 
-            FlxNeg *= scaleA;
-            FlxPos *= scaleB;
+            //FlxNeg *= scaleA;
+            //FlxPos *= scaleB;
 
 
-            return FlxNeg * vA - FlxPos * vB;
+
+
+
+            double res = +0.5 * (uAxN + uBxN) * (this.rhoA * vA - this.rhoB * vB); // This is correct WITHOUT mass evaporation flux
+            //double res = 0.5 * (this.rhoA * uAxN + this.rhoB * uBxN) * (vA - vB); // This is correct WITH mass evaporation flux
+
+            //0.5 * (densityIn * Uin[Component] + densityOut * Uout[Component]) * inp.Normal[Component]
+            return res;
+            //return FlxNeg * vA - FlxPos * vB;
         }
 
         /// <summary>

@@ -1001,25 +1001,41 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        [NonSerialized]
+        int m_MyRank = -1;
+
         /// <summary>
         /// MPI process rank (within world communicator)
         /// </summary>
+        /// <remarks>
+        /// fk, 02sep22: since this is called quite often (within loops), it is worth caching; this is about 25 times faster.
+        /// </remarks>
         public int MyRank {
             get {
-                int rank;
-                MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out rank);
-                return rank;
+                if (m_MyRank < 0) {
+                    // fk, 02sep22: since this is called quite often (within loops), it is worth caching; this is about 25 times faster.
+                    MPI.Wrappers.csMPI.Raw.Comm_Rank(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out m_MyRank);
+                }
+                return m_MyRank;
             }
         }
+
+        [NonSerialized]
+        int m_Size = -1;
 
         /// <summary>
         /// MPI world communicator size 
         /// </summary>
+        /// <remarks>
+        /// fk, 02sep22: since this is called quite often (within loops), it is worth caching; this is about 25 times faster.
+        /// </remarks>
         public int Size {
             get {
-                int size;
-                MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out size);
-                return size;
+                if (m_Size < 0) {
+                    // fk, 02sep22: since this is called quite often (within loops), it is worth caching; this is about 25 times faster.
+                    MPI.Wrappers.csMPI.Raw.Comm_Size(MPI.Wrappers.csMPI.Raw._COMM.WORLD, out m_Size);
+                }
+                return m_Size;
             }
         }
 
@@ -1095,6 +1111,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         public GridData GridData {
             get {
                 InitGridData();
+                if (!object.ReferenceEquals(m_GridData.Grid, this))
+                    throw new ApplicationException("internal error in Grid-GridData pairing.");
                 return m_GridData;
             }
         }

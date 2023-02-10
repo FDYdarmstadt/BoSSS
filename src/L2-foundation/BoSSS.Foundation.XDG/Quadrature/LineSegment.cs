@@ -432,7 +432,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             MultidimensionalArray startGlobal = MultidimensionalArray.Create(1, 1, SpatialDimension);
             context.TransformLocal2Global(
                 //MultidimensionalArray.CreateWrapper(Start, 1, SpatialDimension),
-                new NodeSet(this.m_Kref, this.Start),
+                new NodeSet(this.m_Kref, this.Start, false),
                 cell,
                 1,
                 startGlobal,
@@ -441,7 +441,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             MultidimensionalArray endGlobal = MultidimensionalArray.Create(1, 1, SpatialDimension);
             context.TransformLocal2Global(
                 //MultidimensionalArray.CreateWrapper(End, 1, SpatialDimension),
-                new NodeSet(this.m_Kref, this.End),
+                new NodeSet(this.m_Kref, this.End, false),
                 cell,
                 1,
                 endGlobal,

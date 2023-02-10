@@ -31,7 +31,7 @@ using System.Threading.Tasks;
 namespace BoSSS.Solution {
 
     /// <summary>
-    /// During mesh/grid adaptation (refinement or coarsening) <see cref="Application{T}.MpiRedistributeAndMeshAdapt(int, double)"/>, this is used to
+    /// During mesh/grid adaptation (refinement or coarsening) <see cref="Application{T}.MpiRedistributeAndMeshAdapt"/>, this is used to
     /// - backup/serialize objects on the original grid
     /// - restore/serialize objects on the refined grid
     /// </summary>

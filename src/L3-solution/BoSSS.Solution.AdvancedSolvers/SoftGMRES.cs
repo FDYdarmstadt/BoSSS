@@ -105,6 +105,27 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public ISolverSmootherTemplate Precond;
 
+
+        /*
+        ISparseMatrix m_Matrix;
+
+        ISparseMatrix Matrix {
+            get {
+                if(m_Matrix == null) {
+                    m_Matrix = m_mgop.OperatorMatrix; // activate for BlockMatrixSpMV
+
+                    //var hypreMtx = new ilPSP.LinSolvers.HYPRE.IJMatrix(m_mgop.OperatorMatrix); // HYPRE
+                    //m_Matrix = hypreMtx;
+
+                    //var monkeyMtx = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(m_mgop.OperatorMatrix.ToMsrMatrix()); // Monkey
+                    //m_Matrix = monkeyMtx;
+
+                }
+                return m_Matrix; 
+            }
+        }
+        */
+
         BlockMsrMatrix Matrix => m_mgop.OperatorMatrix;
 
         public string m_SessionPath;
@@ -172,7 +193,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                double bnrm2 = B.MPI_L2Norm();
+                double bnrm2 = B.MPI_L2Norm(Matrix.MPI_Comm);
                 if(bnrm2 == 0.0) {
                     bnrm2 = 1.0;
                 }
@@ -196,10 +217,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 // Inserted for real residual
-                double error2 = z.MPI_L2Norm();
+                double error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
                 double iter0_error2 = error2;
 
-                double error = (r.L2NormPow2().MPISum().Sqrt()) / bnrm2;
+                double error = (r.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt()) / bnrm2;
                 var term0 = TerminationCriterion(0, error2, error2);
                 if(!term0.bNotTerminate) {
 
@@ -235,7 +256,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
 
-                    error2 = z.MPI_L2Norm();
+                    error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
 
                     if(this.Precond != null) {
                         r.Clear();
@@ -245,7 +266,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     // V(:,1) = r / norm( r );
-                    double norm_r = r.MPI_L2Norm();
+                    double norm_r = r.MPI_L2Norm(Matrix.MPI_Comm);
                     V[0].SetV(r, alpha: (1.0 / norm_r));
 
                     //s = norm( r )*e1;
@@ -269,16 +290,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                         for(int k = 1; k <= i; k++) {
-                            H[k - 1, i - 1] = GenericBlas.InnerProd(w, V[k - 1]).MPISum();
+                            H[k - 1, i - 1] = GenericBlas.InnerProd(w, V[k - 1]).MPISum(Matrix.MPI_Comm);
                             //w = w - H(k,i)*V(:,k);
                             w.AccV(-H[k - 1, i - 1], V[k - 1]);
                         }
 
-                        double norm_w = w.L2NormPow2().MPISum().Sqrt();
+                        double norm_w = w.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
                         H[i + 1 - 1, i - 1] = norm_w; // the +1-1 actually makes me sure I haven't forgotten to subtract -1 when porting the code
                                                       //V(:,i+1) = w / H(i+1,i);
                         V[i + 1 - 1].SetV(w, alpha: (1.0 / norm_w));
-
                         #endregion
 
                         #region Givens rotation
@@ -357,7 +377,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // compute residual: r = M \ ( b-A*x )     
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
-                    error2 = z.MPI_L2Norm();
+                    error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
                     IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
 
@@ -368,7 +388,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         r.SetV(z);
                     }
 
-                    norm_r = r.MPI_L2Norm();
+                    norm_r = r.MPI_L2Norm(Matrix.MPI_Comm);
                     s[i + 1 - 1] = norm_r;
                     error = s[i + 1 - 1] / bnrm2;        // % check convergence
                                                          //  if (error2 <= m_Tolerance) Check for error not error2

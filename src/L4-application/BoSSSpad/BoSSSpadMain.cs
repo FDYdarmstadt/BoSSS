@@ -44,22 +44,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Modes of operation of BoSSSpad
         /// </summary>
         private enum Modes {
-
-            ///// <summary>
-            ///// Classic worksheet mode (with a GUI)
-            ///// </summary>
-            //Worksheet,
-
-            ///// <summary>
-            ///// Interactive console mode (without a GUI)
-            ///// </summary>
-            //Console,
-
-            ///// <summary>
-            ///// Simplified interactive console mode (for embedding into other terminals, experimental)
-            ///// </summary>
-            //SimpleConsole,
-
             /// <summary>
             /// Batch execution of .bws files
             /// </summary>
@@ -80,6 +64,7 @@ namespace BoSSS.Application.BoSSSpad {
             /// to Jupyter notebooks (`ipnb`)
             /// </summary>
             OldFileUpgrade,
+
 
             /// <summary>
             /// Executing a notebook in batch mode
@@ -120,7 +105,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             }
         }
-   */
+        */
 
 
         /// <summary>
@@ -128,6 +113,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         //[STAThread]
         public static int Main(string[] args) {
+
+          
 
             /*
             string path = @"c:\Users\flori\AppData\Local\BoSSS-LocalJobs\Demo_BoundaryAndInitialData-ipPoisson2021Juni10_083737\control.obj";
@@ -525,7 +512,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             //var data = NotebookFileFormatHandler.Serialize(fileToCreate, docNew, System.Environment.NewLine);
             using(var stw = new StreamWriter(fileToCreate)) {
-                Notebook.Write(docNew, System.Environment.NewLine, stw);
+                Notebook.Write(docNew, stw);
                 //System.IO.File.WriteAllBytes(fileToCreate, data);
                 stw.Flush();
             }
@@ -560,7 +547,7 @@ namespace BoSSS.Application.BoSSSpad {
             //var data = NotebookFileFormatHandler.Serialize(DestFile, docNew, System.Environment.NewLine);
             //System.IO.File.WriteAllBytes(DestFile, data);
             using(var stw = new StreamWriter(DestFile)) {
-                Notebook.Write(docNew, System.Environment.NewLine, stw);
+                Notebook.Write(docNew, stw);
                 //System.IO.File.WriteAllBytes(fileToCreate, data);
                 stw.Flush();
             }
@@ -622,7 +609,6 @@ namespace BoSSS.Application.BoSSSpad {
         public static void LinkEnforcer() {
             // If you remove these lines, this may break some worksheets and tutorials.
             Console.WriteLine(typeof(CNS.Program).FullName);
-            Console.WriteLine(typeof(IBM_Solver.IBM_SolverMain).FullName);
             Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
             Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);

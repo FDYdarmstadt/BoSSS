@@ -79,7 +79,7 @@ namespace CutCellQuadrature {
                                     pointRule.Nodes.GetRowPt(1));
 
                                 reconstructedRule = QuadRule.CreateEmpty(
-                                    RefElement, baseRule.NoOfNodes, RefElement.SpatialDimension);
+                                    RefElement, baseRule.NoOfNodes, RefElement.SpatialDimension, true);
                                 for (int i = 0; i < baseRule.NoOfNodes; i++) {
                                     reconstructedRule.Weights[i] =
                                         baseRule.Weights[i] * linearReconstruction.Length / Line.Instance.Volume;
@@ -126,7 +126,7 @@ namespace CutCellQuadrature {
                                     orderedRoots[3]);
 
                                 reconstructedRule = QuadRule.CreateEmpty(
-                                    RefElement, 2 * baseRule.NoOfNodes, RefElement.SpatialDimension);
+                                    RefElement, 2 * baseRule.NoOfNodes, RefElement.SpatialDimension, true);
                                 for (int i = 0; i < baseRule.NoOfNodes; i++) {
                                     reconstructedRule.Weights[i] =
                                         baseRule.Weights[i] * linearReconstruction1.Length / Line.Instance.Volume;

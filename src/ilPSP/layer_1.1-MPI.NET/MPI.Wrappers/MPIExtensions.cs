@@ -448,7 +448,7 @@ namespace MPI.Wrappers {
 
 
         /// <summary>
-        /// equal to <see cref="MPIOr(int,MPI_Comm)"/>, acting on the WORLD-communicator
+        /// equal to <see cref="MPIOr(bool,MPI_Comm)"/>, acting on the WORLD-communicator
         /// </summary>
         static public bool MPIOr(this bool i) {
             return MPIOr(i, csMPI.Raw._COMM.WORLD);
@@ -526,8 +526,51 @@ namespace MPI.Wrappers {
             }
         }
 
+        /// <summary>
+        /// equal to <see cref="MPIAnd(System.Collections.Generic.IEnumerable{bool},MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public bool[] MPIAnd(this System.Collections.Generic.IEnumerable<bool> i) {
+            return MPIAnd(i, csMPI.Raw._COMM.WORLD);
+        }
 
+        /// <summary>
+        /// returns the logical and of <paramref name="bb"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public bool[] MPIAnd(this System.Collections.Generic.IEnumerable<bool> bb, MPI_Comm comm) {
+            int[] loc = bb.Select(b => b ? 1 : 0).ToArray();
+            int[] glb = new int[loc.Length];
+            unsafe {
+                fixed (int* ploc = loc, pglb = glb) {
+                    csMPI.Raw.Allreduce(((IntPtr)ploc), ((IntPtr)pglb), loc.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.PROD, comm);
+                }
+            }
+            return glb.Select(g => g != 0).ToArray();
+        }
 
+        /// <summary>
+        /// equal to <see cref="MPIOr(System.Collections.Generic.IEnumerable{bool},MPI_Comm)"/>, acting on the
+        /// WORLD-communicator
+        /// </summary>
+        static public bool[] MPIOr(this System.Collections.Generic.IEnumerable<bool> i) {
+            return MPIOr(i, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// returns the logical or of <paramref name="bb"/> on all MPI-processes in the
+        /// <paramref name="comm"/>--communicator.
+        /// </summary>
+        static public bool[] MPIOr(this System.Collections.Generic.IEnumerable<bool> bb, MPI_Comm comm) {
+            int[] loc = bb.Select(b => b ? 1 : 0).ToArray();
+            int[] glb = new int[loc.Length];
+            unsafe {
+                fixed (int* ploc = loc, pglb = glb) {
+                    csMPI.Raw.Allreduce(((IntPtr)ploc), ((IntPtr)pglb), loc.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, comm);
+                }
+            }
+            return glb.Select(g => g != 0).ToArray();
+        }
 
 
         /// <summary>
@@ -611,9 +654,6 @@ namespace MPI.Wrappers {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="b"></param>
-        /// <param name="comm"></param>
-        /// <returns></returns>
         static public bool MPIEquals(this bool b, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int sz);
             if(sz <= 1)
@@ -622,16 +662,14 @@ namespace MPI.Wrappers {
             int loc = (b ? 1 : 0);
             int glob = 0;
             unsafe {
-                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);
+                csMPI.Raw.Allreduce(((IntPtr)(&loc)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, comm);
             }
-            return glob == 0 ? true : false;
+            return glob == loc*sz ? true : false;
         }
 
         /// <summary>
         /// equal to <see cref="MPIEquals(double,MPI_Comm)"/> acting on WORLD-communicator
         /// </summary>
-        /// <param name="i"></param>
-        /// <returns></returns>
         static public bool MPIEquals(this double i) {
             return MPIEquals(i, csMPI.Raw._COMM.WORLD);
         }
@@ -649,9 +687,9 @@ namespace MPI.Wrappers {
 
             ulong u_glob = ulong.MaxValue;
             unsafe {
-                csMPI.Raw.Allreduce(((IntPtr)(&i)), ((IntPtr)(&u_glob)), 1, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BXOR, comm);
+                csMPI.Raw.Allreduce(((IntPtr)(&i)), ((IntPtr)(&u_glob)), 1, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.SUM, comm);
             }
-            return u_glob == 0 ? true : false;
+            return u_glob == i*sz ? true : false;
         }
 
         /// <summary>
@@ -676,9 +714,9 @@ namespace MPI.Wrappers {
 
             int glob = int.MaxValue;
             unsafe {
-                csMPI.Raw.Allreduce(((IntPtr)(&i)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);
+                csMPI.Raw.Allreduce(((IntPtr)(&i)), ((IntPtr)(&glob)), 1, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, comm);
             }
-            return glob == 0 ? true : false;
+            return glob == i*sz ? true : false;
         }
 
         /// <summary>
@@ -708,11 +746,11 @@ namespace MPI.Wrappers {
             double[] R = new double[bAry.Length];
             unsafe {
                 fixed (void* loc = bAry, glob = R) {
-                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), bAry.Length, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.BXOR, comm);
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), bAry.Length, csMPI.Raw._DATATYPE.UNSIGNED_LONG_LONG, csMPI.Raw._OP.SUM, comm);
                 }
             }
             for (int k = 0; k < bAry.Length; k++) {
-                check[k] = R[k] == 0 ? true : false;
+                check[k] = R[k] == bAry[k]*sz ? true : false;
             }
             return check;
         }
@@ -745,11 +783,11 @@ namespace MPI.Wrappers {
             int[] R = new int[iAry.Length];
             unsafe {
                 fixed(int* loc = iAry, glob = R) {
-                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), iAry.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.BXOR, comm);
+                    csMPI.Raw.Allreduce(((IntPtr)(loc)), ((IntPtr)(glob)), iAry.Length, csMPI.Raw._DATATYPE.INT, csMPI.Raw._OP.SUM, comm);
                 }
             }
             for(int k = 0; k < iAry.Length; k++) {
-                check[k] = R[k] == 0 ? true : false;
+                check[k] = R[k] == iAry[k]*sz ? true : false;
             }
             return check;
         }

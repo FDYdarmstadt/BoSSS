@@ -168,11 +168,73 @@ void InitMeshTest() {
     int nPoints = 32;
     
     int nInternalFaces = 12;
+    int** names = (int**) malloc(sizeof(int*)*3);
+    int name1[] {1,2,3,4};
+    int name2[] {1,2,3,4,5};
+    int name3[] {1,2,3,4,6};
+    names[0] = name1;
+    names[1] = name2;
+    names[2] = name3;
+
+        int patchIDs[] {0,
+                                                       1,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2
+        };
+
+        int nameLengths[3] {4, 5, 5};
 
 
-    BoSSS::Foundation::Grid::OpenFOAMGrid 
-        grd(nPoints, nCells, nFaces, nInternalFaces,
-            faces, vertices_per_face, neighbour, owner, (double*) points);
+    BoSSS::Foundation::Grid::OpenFOAMGrid
+        grd(nPoints, nCells, nFaces, nInternalFaces, 3, nameLengths, -1,
+            faces, vertices_per_face, neighbour, owner, (double*) points,
+            names, patchIDs
+            );
 
     int RR;
     RR = grd.TestMethod(7);

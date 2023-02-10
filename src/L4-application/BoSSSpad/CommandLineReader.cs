@@ -171,7 +171,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// pressed
         /// </returns>
         public string ReadCommand(string prompt, string initialCommand) {
-	    if (Console.WindowWidth == 0) {
+            if (Console.WindowWidth == 0) {
                 throw new Exception("Window width detection failed. Consider using --simpleconsole instead");
             }
             done = false;
@@ -186,7 +186,7 @@ namespace BoSSS.Application.BoSSSpad {
                 try {
                     EditLoop();
                 } catch (ThreadAbortException) {
-                    Thread.ResetAbort();
+                    //Thread.ResetAbort();
                     Console.WriteLine();
                     SetPrompt(prompt);
                     SetText("");

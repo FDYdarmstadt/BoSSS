@@ -563,6 +563,7 @@ namespace BoSSS.Foundation {
         /// <param name="j">a local cell index</param>
         /// <returns>%</returns>
         virtual public double GetMeanValue(int j) {
+            // TODO incorporate scaling factor
             if (j < 0 || j >= Basis.GridDat.iLogicalCells.Count)
                 throw new ArgumentException($"cell index out of range: got {j}, expecting between 0 and {Basis.GridDat.iLogicalCells.Count}, MPI rank {Basis.GridDat.MpiRank}.", "j");
 
@@ -962,7 +963,7 @@ namespace BoSSS.Foundation {
 
                 MultidimensionalArray locVtx = outp.ExtractSubArrayShallow(0, -1, -1);
                 RefElement Kref = this.GridDat.iGeomCells.GetRefElement(j);
-                NodeSet cont = new NodeSet(Kref, locVtx);
+                NodeSet cont = new NodeSet(Kref, locVtx, false);
 
                 MultidimensionalArray res = MultidimensionalArray.Create(1, 1);
                 this.Evaluate(j, 1, cont, res);

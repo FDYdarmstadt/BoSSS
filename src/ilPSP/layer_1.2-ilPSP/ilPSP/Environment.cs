@@ -65,7 +65,7 @@ namespace ilPSP {
             }
 
 
-            var nativeDir = __nativeDir == null ? default(DirectoryInfo) : new DirectoryInfo(__nativeDir);
+            var nativeDir = __nativeDir.IsEmptyOrWhite() ? default : new DirectoryInfo(__nativeDir);
 
             StdOut = new DuplicatingTextWriter(new StreamWriter(Console.OpenStandardOutput()), 25, false);
             Console.SetOut(StdOut);

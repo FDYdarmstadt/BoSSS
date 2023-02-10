@@ -211,10 +211,12 @@ namespace AdvancedSolverTests {
                     Op.EquationComponents["c1"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
                     Op.EquationComponents["c1"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u2"));      // Bulk form
                     Op.EquationComponents["c1"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
+                    
                     Op.EquationComponents["c2"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u1"));      // Bulk form
                     Op.EquationComponents["c2"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
                     Op.EquationComponents["c2"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u2"));      // Bulk form
                     Op.EquationComponents["c2"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
+                    
                     Op.EquationComponents["c1"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
                     Op.EquationComponents["c1"].Add(new SourceTest("u2", 11)); // Flux in Bulk Phase;
                     Op.EquationComponents["c2"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
@@ -401,14 +403,14 @@ namespace AdvancedSolverTests {
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);
 
-            foreach(var S in this.LsTrk.SpeciesNames) {
-                Console.WriteLine("  Species {0}: no of agglomerated cells: {1}",
-                    S, Agg.GetAgglomerator(this.LsTrk.GetSpeciesId(S)).AggInfo.SourceCells.NoOfItemsLocally);
-            }
+            Agg.PrintInfo(Console.Out);
+
+            var MamaAgg = this.massFact.GetMassMatrix(map, false);
+            Agg.ManipulateMatrixAndRHS(MamaAgg, default(double[]), map, map);
 
             MGOp = new MultigridOperator(XAggB, map,
                     OperatorMatrix,
-                    this.massFact.GetMassMatrix(map, false),
+                    MamaAgg,
                     OpConfig, this.Op);
             Debug.Assert(MGOp.OperatorMatrix != null);
             Debug.Assert(MGOp.Mapping != null);

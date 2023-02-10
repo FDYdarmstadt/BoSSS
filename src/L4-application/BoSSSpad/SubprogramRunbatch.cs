@@ -148,7 +148,7 @@ namespace BoSSS.Application.BoSSSpad {
             string project = opt.ProjectName ?? "NixProject";
 
 
-            BoSSSshell.WorkflowMgm.Init(project);
+            BoSSSshell.WorkflowMgm.Init(project, queue);
 
             if(opt.np < 1) {
                 throw new ArgumentException("Number of MPI processors must be a positive number (greater or equal than 1).");
