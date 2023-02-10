@@ -257,7 +257,7 @@ namespace BoSSS.Foundation {
                 if(sgrd != null && (qInsEdge != null || qInsVol != null))
                     throw new ArgumentException("Specification of Subgrid and quadrature schemes is exclusive: not allowed to specify both at the same time.", "sgrd");
 #if DEBUG
-                op.Verify(); 
+                op.Verify(false); 
 #endif
                 
 
