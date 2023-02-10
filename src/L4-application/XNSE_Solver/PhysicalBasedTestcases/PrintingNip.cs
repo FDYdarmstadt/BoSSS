@@ -254,7 +254,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.PrintingNip {
 
                         for (int i = 0; i < Length; i++) {
                             int iTrafo = ((GridData)grd).Edges.Edge2CellTrafoIndex[i0 + i, 0];
-                            NodeSet volNodeSet = QR.Nodes.GetVolumeNodeSet(grd, iTrafo);
+                            NodeSet volNodeSet = QR.Nodes.GetVolumeNodeSet(grd, iTrafo, false);
                             int jCell = ((GridData)grd).Edges.CellIndices[i0 + i, 0];
                             grd.TransformLocal2Global(volNodeSet, jCell, 1, GlobalNodes, i);
                             int K = QR.NoOfNodes;
