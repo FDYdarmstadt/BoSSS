@@ -154,10 +154,11 @@ namespace BoSSS.Solution.NSECommon.Operator.Viscosity {
 
             Ret -= Grad_uA_xN * (vA);                           // consistency term
             Ret -= Grad_vA_xN * (uA[component] - uAFict);     // symmetry term
+
             Ret += _penalty * (uA[component] - uAFict) * (vA); // penalty term
 
             Debug.Assert(!(double.IsInfinity(Ret) || double.IsNaN(Ret)));
-   
+
             return Ret * muA;
         }
 
