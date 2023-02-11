@@ -1074,6 +1074,9 @@ namespace BoSSS.Application.BoSSSpad {
                     m_Deployments.Add(new Deployment(sinf, this));
                 }
             }
+
+            m_Deployments.Sort(new FuncComparer<Deployment>((A, B) => A.CreationDate.CompareTo(B.CreationDate)));
+
         }
 
 
@@ -1427,7 +1430,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="bpc"></param>
         public void Activate(BatchProcessorClient bpc) {
             using (var tr = new FuncTrace()) {
-
+                
                 // ============================================
                 // ensure that this method is only called once.
                 // ============================================
@@ -1475,8 +1478,10 @@ namespace BoSSS.Application.BoSSSpad {
                     var rr = bpc.Submit(this, DeploymentDirectory);
                     File.WriteAllText(Path.Combine(DeploymentDirectory, "IdentifierToken.txt"), rr.id);
 
-                    Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
-                    if(dep == null)
+                    //Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
+                    Deployment dep = AllDeployments.LastOrDefault(d => (d?.BatchProcessorIdentifierToken == rr.id) && PathMatch(AllDeployments[1]?.DeploymentDirectory?.FullName, DeploymentDirectory));
+                    
+                    if (dep == null)
                         m_Deployments.Add(new Deployment(new DirectoryInfo(DeploymentDirectory), this, rr.optJobObj));
                     else
                         dep.optInfo = rr.optJobObj;
@@ -1486,8 +1491,28 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        static bool PathMatch(string this_Path, string otherPath) {
+            if (this_Path == otherPath)
+                return true;
+            if (this_Path == null && otherPath != null)
+                return false;
+            if (this_Path != null && otherPath == null)
+                return false;
 
-        
+            if (!Directory.Exists(otherPath))
+                return false;
+
+            string TokenName = Guid.NewGuid().ToString() + ".token";
+
+            string file1 = System.IO.Path.Combine(this_Path, TokenName);
+            File.WriteAllText(file1, "this is a test file which can be safely deleted.");
+
+            string file2 = System.IO.Path.Combine(otherPath, TokenName);
+
+            return File.Exists(file2);
+        }
+
+
         /// <summary>
         /// Status evaluation, with optional additional information.
         /// </summary>
