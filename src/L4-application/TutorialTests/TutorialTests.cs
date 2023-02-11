@@ -46,7 +46,7 @@ namespace BoSSS.Application.TutorialTests {
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
-            AllUpTest.Run__MetaJobManager();
+            AllUpTest.Run__CsharpAndBoSSSpad();
             return 0;
             
             // start the minibatchprocessor which is used internally

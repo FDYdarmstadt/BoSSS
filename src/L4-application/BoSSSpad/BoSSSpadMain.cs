@@ -345,6 +345,8 @@ namespace BoSSS.Application.BoSSSpad {
         static bool UseAnacondaPython() {
             if(System.Environment.MachineName.Contains("hpccluster", StringComparison.InvariantCultureIgnoreCase))
                 return false;
+            if (System.Environment.MachineName.Contains("SHUBNIGGURATH", StringComparison.InvariantCultureIgnoreCase))
+                return false;
 
             return System.OperatingSystem.IsWindows();
         }
@@ -410,7 +412,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                     papermill_exit = RunAnacondaShell($"papermill {fileToOpen} {fileToOpen_out}");
                     nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html ");
-
+                    //nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html --execute");
+                    //papermill_exit = nbconvert_exit;
                 } else {
 
 
@@ -443,6 +446,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                     papermill_exit = RunExt($"papermill", $"{fileToOpen} {fileToOpen_out}");
                     nbconvert_exit = RunExt("jupyter", "nbconvert \"" + fileToOpen_out + "\" --to html ");
+                    //nbconvert_exit = RunExt("jupyter.exe", "nbconvert \"" + fileToOpen_out + "\" --to html --execute");
+                    //papermill_exit = nbconvert_exit;
 
                 }
                 Console.WriteLine("--------------------------------");
