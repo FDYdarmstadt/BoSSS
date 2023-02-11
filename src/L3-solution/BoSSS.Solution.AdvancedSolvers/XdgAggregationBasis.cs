@@ -420,7 +420,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Number of species present (i.e. with non-zero measure) per composite cell; 
+        /// Number of species present (i.e. with non-zero measure, i.e. any species with a zero volume is excluded) per composite cell; 
         ///  - index: composite cell index;
         /// </summary>
         int[] NoOfSpecies;
@@ -479,6 +479,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// Number of species in composite/aggregate cell <paramref name="jAgg"/>.
+        /// Only species with non-zero measure are counted, i.e. any species with a zero volume is excluded.
         /// </summary>
         override public int GetNoOfSpecies(int jAgg) {
             return NoOfSpecies[jAgg];
