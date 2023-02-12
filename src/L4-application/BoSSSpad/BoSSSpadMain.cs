@@ -361,15 +361,15 @@ namespace BoSSS.Application.BoSSSpad {
             //psi.RedirectStandardOutput = true;
             //psi.RedirectStandardError = true;
 
-            bool MutexReleased = false;
+            //bool MutexReleased = false;
             try {
-                Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
-                JupyterMutex.WaitOne();
-                Console.WriteLine("Mutex obtained!");
+                //Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
+                //JupyterMutex.WaitOne();
+                //Console.WriteLine("Mutex obtained!");
 
 
-                Random rnd = new Random();
-                Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
+                //Random rnd = new Random();
+                //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
 
                 int papermill_exit, nbconvert_exit;
                 if (UseAnacondaPython()) {
@@ -464,8 +464,8 @@ namespace BoSSS.Application.BoSSSpad {
             
             
             } finally {
-                if (!MutexReleased)
-                    JupyterMutex.ReleaseMutex();
+                //if (!MutexReleased)
+                //    JupyterMutex.ReleaseMutex();
             }
         }
 
