@@ -377,12 +377,12 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                     int RunAnacondaShell(string command) {
-                        if(MutexReleased) {
-                            Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
-                            JupyterMutex.WaitOne();
-                            Console.WriteLine("Mutex obtained!");
-                            MutexReleased = false;
-                        }
+                        //if(MutexReleased) {
+                        //    Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
+                        //    JupyterMutex.WaitOne();
+                        //    Console.WriteLine("Mutex obtained!");
+                        //    MutexReleased = false;
+                        //}
 
                         ProcessStartInfo psi = new ProcessStartInfo();
                         psi.WorkingDirectory = Directory.GetCurrentDirectory();
@@ -393,7 +393,7 @@ namespace BoSSS.Application.BoSSSpad {
                         // when two notebooks are started simultaneously, we might run into the following:
                         //  ---> System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.
                         Process p = Process.Start(psi);
-                        Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
+                        //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
 
                         //p.StandardInput.WriteLine("dir");
                         p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
@@ -401,10 +401,10 @@ namespace BoSSS.Application.BoSSSpad {
                         p.StandardInput.WriteLine("exit");
 
                         // wait here a bit more...
-                        Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
-                        if(!MutexReleased)
-                            JupyterMutex.ReleaseMutex();
-                        MutexReleased = true;
+                        //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
+                        //if(!MutexReleased)
+                        //    JupyterMutex.ReleaseMutex();
+                        //MutexReleased = true;
                         p.WaitForExit();
 
                         return p.ExitCode;
@@ -418,12 +418,12 @@ namespace BoSSS.Application.BoSSSpad {
 
 
                     int RunExt(string executable, string arguments) {
-                        if (MutexReleased) {
-                            Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
-                            JupyterMutex.WaitOne();
-                            Console.WriteLine("Mutex obtained!");
-                            MutexReleased = false;
-                        }
+                        //if (MutexReleased) {
+                        //    Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
+                        //    JupyterMutex.WaitOne();
+                        //    Console.WriteLine("Mutex obtained!");
+                        //    MutexReleased = false;
+                        //}
 
                         ProcessStartInfo psi = new ProcessStartInfo();
                         psi.WorkingDirectory = Directory.GetCurrentDirectory();
@@ -435,10 +435,10 @@ namespace BoSSS.Application.BoSSSpad {
                         Process p = Process.Start(psi);
 
                         // wait here a bit more...
-                        Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
-                        if(!MutexReleased)
-                            JupyterMutex.ReleaseMutex();
-                        MutexReleased = true;
+                        //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
+                        //if(!MutexReleased)
+                        //    JupyterMutex.ReleaseMutex();
+                        //MutexReleased = true;
 
                         p.WaitForExit();
                         return p.ExitCode;
