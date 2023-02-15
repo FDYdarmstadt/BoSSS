@@ -214,8 +214,8 @@ namespace BoSSS.Application.XNSE_Solver {
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
             Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
-                var TiltVector = new Vector(tiltVector);
-                var TiltDegree = tiltDegree;
+                Vector TiltVector = new Vector(tiltVector);
+
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
 
                 Vector rotAxis;
@@ -266,10 +266,22 @@ namespace BoSSS.Application.XNSE_Solver {
             var pos = m_pos;
             var anglevelocity = m_anglevelocity;
             var SpaceDim = m_SpaceDim;
-            Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
+            var tiltVector = m_tiltVector;
+            var tiltDegree = m_tiltDegree;
 
-                if (pos.Length != X.Length)
+            Func<double[], double, double[]> VelocityAtIB = delegate (double[] x, double time) {
+                if (pos.Length != x.Length)
                     throw new ArgumentException("check dimension of center of mass");
+
+                Vector TiltVector = new Vector(tiltVector);
+
+                AffineTrafo affineTrafoTilt;
+                if (tiltDegree == 0.0) {
+                    affineTrafoTilt = AffineTrafo.Identity(TiltVector.Dim);
+                } else {
+                    affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, -tiltDegree); //to define the rotation around the original axis of the rigid body, reverse the tilt
+                }
+                double[] X = affineTrafoTilt.Transform(x);
 
                 Vector angVelo = new Vector(new double[] { 0, 0, 0 });
                 switch (m_RotationAxis) {
