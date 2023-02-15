@@ -181,7 +181,7 @@ namespace BoSSS.Application.BoSSSpad {
                     // (in Jupyter, sometimes assemblies from some cache are used, therefore we cannot use the assembly location as a criterion)
 
                     if (Path.GetDirectoryName(a.Location) == corLibPath) {
-                        tr.Info("ignoring: " + a.Location);
+                        tr.Info("ignoring (in corelib-path): " + a.Location);
                         continue;
                     }
 
@@ -1074,6 +1074,9 @@ namespace BoSSS.Application.BoSSSpad {
                     m_Deployments.Add(new Deployment(sinf, this));
                 }
             }
+
+            m_Deployments.Sort(new FuncComparer<Deployment>((A, B) => A.CreationDate.CompareTo(B.CreationDate)));
+
         }
 
 
@@ -1427,7 +1430,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="bpc"></param>
         public void Activate(BatchProcessorClient bpc) {
             using (var tr = new FuncTrace()) {
-
+                
                 // ============================================
                 // ensure that this method is only called once.
                 // ============================================
@@ -1475,8 +1478,10 @@ namespace BoSSS.Application.BoSSSpad {
                     var rr = bpc.Submit(this, DeploymentDirectory);
                     File.WriteAllText(Path.Combine(DeploymentDirectory, "IdentifierToken.txt"), rr.id);
 
-                    Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
-                    if(dep == null)
+                    //Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
+                    Deployment dep = AllDeployments.LastOrDefault(d => (d?.BatchProcessorIdentifierToken == rr.id) && PathMatch(d?.DeploymentDirectory?.FullName, DeploymentDirectory));
+                    
+                    if (dep == null)
                         m_Deployments.Add(new Deployment(new DirectoryInfo(DeploymentDirectory), this, rr.optJobObj));
                     else
                         dep.optInfo = rr.optJobObj;
@@ -1486,8 +1491,28 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        static bool PathMatch(string this_Path, string otherPath) {
+            if (this_Path == otherPath)
+                return true;
+            if (this_Path == null && otherPath != null)
+                return false;
+            if (this_Path != null && otherPath == null)
+                return false;
 
-        
+            if (!Directory.Exists(otherPath))
+                return false;
+
+            string TokenName = Guid.NewGuid().ToString() + ".token";
+
+            string file1 = System.IO.Path.Combine(this_Path, TokenName);
+            File.WriteAllText(file1, "this is a test file which can be safely deleted.");
+
+            string file2 = System.IO.Path.Combine(otherPath, TokenName);
+
+            return File.Exists(file2);
+        }
+
+
         /// <summary>
         /// Status evaluation, with optional additional information.
         /// </summary>
@@ -1837,17 +1862,38 @@ namespace BoSSS.Application.BoSSSpad {
                 List<string> files = new List<string>();
 
                 var allAssis = RelevantDependentAssemblies;
-                
+
+                string entry_dir = Path.GetDirectoryName(EntryAssembly.Location);
 
                 foreach (var a in allAssis) {
 
-                    
-                    files.Add(a.Location);
+                    string a_location = a.Location;
+                    if (a_location != entry_dir) {
+                        //
+                        // FK, 24jan23:
+                        // Try to take the file from the same directory as the entry assembly:
+                        //  * problem: when using Jupyter, sometimes different assemblies are loaded.
+                        //    - e.g. ~\.dotnet\tools\.store\microsoft.dotnet-interactive\1.0.360602\microsoft.dotnet-interactive\1.0.360602\tools\net7.0\any\System.CodeDom.dll
+                        //      instead of the `System.CodeDom.dll` present in the current directory.
+                        //    - this causes (sometimes) problems when the deployed application should be started.
+                        //  * solution: test, whether the assembly with the same name can be found "locally"; if yes, pefer this one.
+                        //  * future: if all packages are done via nuget, this will maybe be not an issue anymore
+                        //
+                        string alt_location = Path.Combine(entry_dir, Path.GetFileName(a_location));
+                        if (File.Exists(alt_location)) {
+                            tr.Info($"Take {alt_location} instead of {a_location}");
+                            a_location = alt_location;
+                        }
+                    }
+
+                    files.Add(a_location);
 
                     var additionalFiles = new string[] {
-                        Path.Combine(Path.GetDirectoryName(a.Location), System.IO.Path.GetFileNameWithoutExtension(a.Location) + ".deps.json"),
-                        Path.Combine(Path.GetDirectoryName(a.Location), System.IO.Path.GetFileNameWithoutExtension(a.Location) + ".runtimeconfig.json"),
-                        a.Location + ".config" // probably obsolete?
+                        Path.Combine(Path.GetDirectoryName(a_location),
+                                     System.IO.Path.GetFileNameWithoutExtension(a_location) + ".deps.json"),
+                        Path.Combine(Path.GetDirectoryName(a_location),
+                                     System.IO.Path.GetFileNameWithoutExtension(a_location) + ".runtimeconfig.json"),
+                        a_location + ".config" // probably obsolete?; only for the old .NET Framework
                     };
 
 
@@ -1860,7 +1906,7 @@ namespace BoSSS.Application.BoSSSpad {
                             tr.Info(" missing.");
                         }
                     }
-                } 
+                }
 
                 return files.ToArray();
             }

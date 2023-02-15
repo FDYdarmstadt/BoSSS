@@ -101,6 +101,14 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("ue2Basics/ue2Basics.ipynb");
         }
 
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
+        [Test]
+        static public void Run__CsharpAndBoSSSpad() {
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
+            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
+        }
+
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb")]
@@ -156,16 +164,8 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
         }
 #endif
- 
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
-        [Test]
-        static public void Run__CsharpAndBoSSSpad() {
-            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
-            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
-        }
-#endif
+
+
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
