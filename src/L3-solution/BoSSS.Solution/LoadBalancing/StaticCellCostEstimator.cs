@@ -24,26 +24,20 @@ namespace BoSSS.Solution {
     /// and cost value
     /// </summary>
     [Serializable]
-    public class StaticCellCostEstimator : ICellCostEstimator {
+    public class StaticCellCostEstimator : CellTypeBasedEstimator {
 
+        
         /// <summary>
-        /// <see cref="ICellCostEstimator"/>
+        /// <see cref="ICellCostEstimator.EstimatedLocalCost"/>
         /// </summary>
-        public int CurrentPerformanceClassCount {
-            get;
-            private set;
-        }
+        override public double EstimatedLocalCost => m_EstimatedLocalCost;
 
-        /// <summary>
-        /// <see cref="ICellCostEstimator"/>
-        /// </summary>
-        public double EstimatedLocalCost {
-            get;
-            private set;
-        }
+        double m_EstimatedLocalCost;
 
+       
         private int[] performanceClassToCostMap;
 
+        [NonSerialized]
         private int[] cellToCostMap;
 
         /// <summary>
@@ -54,16 +48,13 @@ namespace BoSSS.Solution {
         /// </param>
         public StaticCellCostEstimator(int[] performanceClassToCostMap) {
             this.performanceClassToCostMap = performanceClassToCostMap;
-            this.CurrentPerformanceClassCount = performanceClassToCostMap.Length;
         }
 
         /// <summary>
-        /// <see cref="ICellCostEstimator"/>
+        /// <see cref="ICellCostEstimator.UpdateEstimates"/>
         /// </summary>
-        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
-            if (performanceClassCount != CurrentPerformanceClassCount) {
-                throw new Exception("Changing number of performance classes not supported");
-            }
+        override public void UpdateEstimates(IApplication app) {
+            var CellTypes = base.GetCellType();
 
             cellToCostMap = new int[cellToPerformanceClassMap.Length];
             for (int j = 0; j < cellToPerformanceClassMap.Length; j++) {
@@ -71,15 +62,18 @@ namespace BoSSS.Solution {
                 cellToCostMap[j] = performanceClassToCostMap[performanceClass];
             }
 
-            EstimatedLocalCost = cellToCostMap.Sum();
+            m_EstimatedLocalCost = cellToCostMap.Sum();
         }
 
         /// <summary>
-        /// <see cref="ICellCostEstimator"/>
+        /// <see cref="ICellCostEstimator.GetEstimatedCellCosts"/>
         /// </summary>
-        /// <returns></returns>
-        public int[] GetEstimatedCellCosts() {
-            return cellToCostMap;
+        override public int[][] GetEstimatedCellCosts() {
+            return new int[][] { cellToCostMap };
+        }
+
+        override public void Init(IApplication app) {
+            base.Init(app);
         }
     }
 }

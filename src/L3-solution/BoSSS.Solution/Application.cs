@@ -2836,25 +2836,27 @@ namespace BoSSS.Solution {
             }
 
             // Should only be called when needed
-            GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap, TimeStepNo, physTime);
-            if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
-                throw new ApplicationException();
-            }
+            //GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap, TimeStepNo, physTime);
+            //if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
+            //    throw new ApplicationException();
+            //}
 
             if (m_Balancer == null) {
-                var estimatorFactories = Control.DynamicLoadBalancing_CellCostEstimators;
-                if (estimatorFactories.IsNullOrEmpty()) {
-                    estimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>() {
-                        //CellCostEstimatorLibrary.AllCellsAreEqual
-                    };
-                }
-                m_Balancer = new LoadBalancer(estimatorFactories);
+                var estimators = Control.DynamicLoadBalancing_CellCostEstimators;
+                //if (estimators.IsNullOrEmpty()) {
+                //    estimators = new List<Func<IApplication, int, ICellCostEstimator>>() {
+                //        //CellCostEstimatorLibrary.AllCellsAreEqual
+                //    };
+                //}
+                foreach (var e in estimators)
+                    e.Init(this);
+                m_Balancer = new LoadBalancer(estimators);
             }
 
             return m_Balancer.GetNewPartitioning(
                 this,
-                performanceClassCount,
-                cellToPerformanceClassMap,
+                //performanceClassCount,
+                //cellToPerformanceClassMap,
                 TimeStepNo,
                 Control.GridPartType,
                 Control.GridPartOptions,
@@ -2864,7 +2866,7 @@ namespace BoSSS.Solution {
                 TimestepNoRestart: TimeStepNoRestart);
         }
 
-
+        /*
         /// <summary>
         /// Provides cell-performance classes for the default implementation of <see cref="ComputeNewCellDistribution(int, double)"/>,
         /// which is using the algorithms from <see cref="LoadBalancer"/>.
@@ -2878,6 +2880,7 @@ namespace BoSSS.Solution {
         virtual protected void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
             throw new NotImplementedException("Must be implemented by user (if he wants to use load balancing).");
         }
+        */
 
         /// <summary>
         /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,

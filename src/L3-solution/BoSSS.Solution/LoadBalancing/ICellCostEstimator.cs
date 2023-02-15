@@ -27,7 +27,9 @@ namespace BoSSS.Solution {
     /// Provides a measure to estimate the runtime cost of a given cell in
     /// the computational grid
     /// </summary>
-    public interface ICellCostEstimator {
+    public interface ICellCostEstimator : ICloneable {
+
+        void Init(IApplication app);
 
         /// <summary>
         /// Updates <see cref="EstimatedLocalCost"/> and
@@ -42,15 +44,9 @@ namespace BoSSS.Solution {
         /// - index: local cell index
         /// - content: performance class (between 0 and <see cref="CurrentPerformanceClassCount"/>)
         /// </param>
-        void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap);
+        void UpdateEstimates(IApplication app);
 
-        /// <summary>
-        /// The total number of performance classes
-        /// </summary>
-        int CurrentPerformanceClassCount {
-            get;
-        }
-
+      
         /// <summary>
         /// The estimated total cost of all cells on this process
         /// </summary>
@@ -59,12 +55,19 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// The estimated cost of each individual cell on this process
+        /// The estimated cost of each individual cell on this process;
+        /// 
+        /// 
         /// </summary>
-        /// <returns></returns>
-        int[] GetEstimatedCellCosts();
+        /// <returns>
+        /// cell weights for multi-constraint partitioning, where multiple weights are assigned to each cells.
+        /// - 1st index: constraint index (only 0 for a single constraint)
+        /// - 2nd index: correlates with local cell index.
+        /// </returns>
+        int[][] GetEstimatedCellCosts();
     }
 
+    /*
     /// <summary>
     /// Extension methods for <see cref="ICellCostEstimator"/>
     /// </summary>
@@ -92,4 +95,5 @@ namespace BoSSS.Solution {
             return imbalance;
         }
     }
+    */
 }

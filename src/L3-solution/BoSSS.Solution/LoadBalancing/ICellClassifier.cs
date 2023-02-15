@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-namespace CNS.LoadBalancing {
+namespace BoSSS.Solution {
 
     /// <summary>
     /// Classifies cells by assigning them a performance class (a number
@@ -31,6 +31,6 @@ namespace CNS.LoadBalancing {
         /// The total number of performance classes (across all processes) and,
         /// for each cell, its assigned performance class
         /// </returns>
-        (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IProgram<CNSControl> program);
+        int[] ClassifyCells(IApplication program);
     }
 }
