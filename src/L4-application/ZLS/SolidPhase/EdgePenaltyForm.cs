@@ -100,11 +100,11 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
-            get { return TermActivationFlags.UxV; }
+            get { return TermActivationFlags.None; }
         }
 
         public TermActivationFlags InnerEdgeTerms {
-            get { return TermActivationFlags.UxGradV; }
+            get { return TermActivationFlags.GradUxGradV; }
         }
 
         public IList<string> ArgumentOrdering => variables;
@@ -114,11 +114,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public string ValidSpecies => speciesName;
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-            double flux = 0;
-           
-            //flux *= scale * Penalty(inp.jCellIn, inp.jCellOut);
-            return scale * flux * Penalty(inp.jCellIn, -1);
-
+            return 0;
         }
 
         MultidimensionalArray cj;
@@ -157,7 +153,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double flux = 0;
             for(int i = 0; i< D; ++i) {
-                flux += 0.5 * (_Grad_vIN[i] + _Grad_vOUT[ i]) * inp.Normal[i] * (_uIN[0] - _uOUT[0]);
+                flux += (_Grad_uIN[0,i] - _Grad_uOUT[0,i]) * inp.Normal[i] * (_Grad_vIN[i] - _Grad_vOUT[i]) * inp.Normal[i];
             }
             //flux *= scale * Penalty(inp.jCellIn, inp.jCellOut);
             return scale * flux * Penalty(inp.jCellIn, inp.jCellOut);

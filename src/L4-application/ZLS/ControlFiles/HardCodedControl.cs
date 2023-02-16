@@ -866,9 +866,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
-            C.AgglomerationThreshold = 0.1;
+            C.AgglomerationThreshold = 0.001;
             C.NoOfMultigridLevels = 1;
-
             int D = 2;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
@@ -1034,7 +1033,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.NonLinearSolver.MaxSolverIterations = 80;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.LinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MinSolverIterations = 1;
+            C.LinearSolver.MinSolverIterations = 0;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.LinearSolver.ConvergenceCriterion = 1e-8;
@@ -1059,7 +1058,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.TimeSteppingScheme = TimeSteppingScheme.BDF2;
             C.Timestepper_BDFinit = TimeStepperInit.SingleInit;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
