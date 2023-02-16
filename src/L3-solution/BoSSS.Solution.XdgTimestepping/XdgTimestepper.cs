@@ -534,7 +534,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             AggregationGridData[] _MultigridSequence = null,
             ISolverFactory LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
             IList<DGField> _Parameters = null,
-            QueryHandler queryHandler = null) //
+            QueryHandler queryHandler = null,
+            Func<ISlaveTimeIntegrator> lsu = null
+        ) //
         {
             this.Scheme = __Scheme;
             this.DgOperator = op;
@@ -546,11 +548,16 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
             var spc = CreateDummyTracker(Fields.First().GridDat);
-                       
+
+            if (lsu == null){
+                lsu = () => new UpdateLevelsetWithNothing(this);
+            }
+
+            Console.WriteLine("TODO: lsu is currently ignored for testing purposes");
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
                 new[] { spc },
-                () => new UpdateLevelsetWithNothing(this),
+                () => new UpdateLevelsetWithNothing(this), // TODO change this back later
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
                 _MultigridSequence,
@@ -897,7 +904,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             
 
             JacobiParameterVars = null;
-            
+
+            if(TimesteppingBase.m_ResLogger != null)
+                TimesteppingBase.m_ResLogger.NextTimestep(false);
+
             return success;
         }
 

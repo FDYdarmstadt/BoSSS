@@ -24,7 +24,7 @@ using System.Runtime.Serialization;
 using BoSSS.Solution.NSECommon;
 
 namespace BoSSS.Application.CahnHilliard {
-    
+
 
     /// <summary>
     /// Control object for the ipPoisson solver.
@@ -39,11 +39,11 @@ namespace BoSSS.Application.CahnHilliard {
         public CahnHilliardControl() : base() {
             base.TimesteppingMode = _TimesteppingMode.Transient;
             base.NoOfTimesteps = 1;
-            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
         }
 
         /// <summary>
-        /// Type of <see cref="SipPoissonMain"/>.
+        /// Type of <see cref="CahnHilliardMain"/>.
         /// </summary>
         public override Type GetSolverType() {
             return typeof(CahnHilliardMain);
@@ -53,14 +53,13 @@ namespace BoSSS.Application.CahnHilliard {
         /// Re-sets all <see cref="AppControl.FieldOptions"/>
         /// </summary>
         public override void SetDGdegree(int p) {
-            if(p < 1)
+            if (p < 1)
                 throw new ArgumentOutOfRangeException("Cahn Hilliard solver, due to use of symmetric interior penalty requires a DG degree of at least 1.");
             base.FieldOptions.Clear();
             base.AddFieldOption("c", p);
             base.AddFieldOption(VariableNames.Curvature, 0);
             base.AddFieldOption("Velocity*", p);
             base.AddFieldOption("cex", p + 2); // exact solution: degree times 2
-     
         }
 
         /// <summary>
@@ -80,8 +79,7 @@ namespace BoSSS.Application.CahnHilliard {
         /// <summary>
         /// Model Type of Phasefield equation, see Halperin (1977)
         /// </summary>
-        public enum ModelType
-        {
+        public enum ModelType {
             /// <summary>
             /// Order Parameter is nonconserved
             /// </summary>
@@ -104,18 +102,18 @@ namespace BoSSS.Application.CahnHilliard {
         [DataMember]
         public ModelType ModTyp = ModelType.modelB;
 
-        /// <summary>
-        /// According to Biben (2003), Correction to account for arclength diffusion
-        /// </summary>
-        [DataMember]
-        public bool CurvatureCorrection = true;
+
+        ///// <summary>
+        ///// According to Biben (2003), Correction to account for arclength diffusion
+        ///// </summary>
+        //[DataMember]
+        //public bool CurvatureCorrection = false;
 
 
         /// <summary>
         /// Type of algebraic correction that is performed
         /// </summary>
-        public enum Correction
-        {
+        public enum Correction {
             /// <summary>
             /// Mass of a phase is conserved
             /// </summary>
@@ -131,15 +129,19 @@ namespace BoSSS.Application.CahnHilliard {
             /// </summary>
             None
         }
+        
 
+        /// <summary>
+        /// 
+        /// </summary>
         [DataMember]
         public Correction CorrectionType = Correction.None;
 
-        /// <summary>
-        /// Curvature as additional Equation Component or by direct evaluation and Parameter Update
-        /// </summary>
-        [DataMember]
-        public bool UseDirectCurvature = false;
+        ///// <summary>
+        ///// Curvature as additional Equation Component or by direct evaluation and Parameter Update
+        ///// </summary>
+        //[DataMember]
+        //public bool UseDirectCurvature = false;
 
         /// <summary>
         /// True, if an exact solution -- in order to determine the error -- is provides.
@@ -164,6 +166,13 @@ namespace BoSSS.Application.CahnHilliard {
         /// </summary>
         [DataMember]
         public bool UseFDJacobian = true;
+
+        /// <summary>
+        /// tru to write a log file
+        /// </summary>
+        [DataMember]
+        public bool StoreBenchmarkQinFile = false;
+
 
         ///// <summary>
         ///// Some parameter of Cahn Hilliard equation
@@ -195,21 +204,21 @@ namespace BoSSS.Application.CahnHilliard {
         //[BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
         public double diff = 1;
 
-        /// <summary>
-        /// Some parameter of Cahn Hilliard equation
-        /// Peclet´s Number
-        /// </summary>
-        [DataMember]
-        [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
-        public double peclet = 1;
+        ///// <summary>
+        ///// Some parameter of Cahn Hilliard equation
+        ///// Peclet´s Number
+        ///// </summary>
+        //[DataMember]
+        //[BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
+        //public double peclet = 1;
 
-        /// <summary>
-        /// Some parameter of Cahn Hilliard equation
-        /// Capillary Number
-        /// </summary>
-        [DataMember]
-        [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
-        public double capillary = 1;
+        ///// <summary>
+        ///// Some parameter of Cahn Hilliard equation
+        ///// Capillary Number
+        ///// </summary>
+        //[DataMember]
+        //[BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
+        //public double capillary = 1;
 
         /// <summary>
         /// Some parameter of Cahn Hilliard equation
@@ -219,13 +228,13 @@ namespace BoSSS.Application.CahnHilliard {
         [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
         public double cahn = 1;
 
-        /// <summary>
-        /// Some parameter of Cahn Hilliard equation
-        /// Reynold´s Number
-        /// </summary>
-        [DataMember]
-        [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
-        public double reynold = 1;
+        ///// <summary>
+        ///// Some parameter of Cahn Hilliard equation
+        ///// Reynold´s Number
+        ///// </summary>
+        //[DataMember]
+        //[BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
+        //public double reynold = 1;
 
     }
 }

@@ -600,6 +600,8 @@ namespace ilPSP {
         /// <returns>(x|y)</returns>
         public override string ToString() {
             switch(this.Dim) {
+                case 0:
+                return "null";
                 case 1:
                 return ("(" + x + ")");
                 case 2:

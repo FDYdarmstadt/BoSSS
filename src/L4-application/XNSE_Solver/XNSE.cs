@@ -77,7 +77,7 @@ namespace BoSSS.Application.XNSE_Solver {
             
             //InitMPI();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.RotatingCubeTest(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, Newton.GlobalizationOption.None, IncompressibleBcType.Pressure_Outlet);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
             //NUnit.Framework.Assert.IsTrue(false, "remove me");
 
 
