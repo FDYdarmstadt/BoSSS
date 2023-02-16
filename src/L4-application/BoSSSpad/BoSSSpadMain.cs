@@ -351,6 +351,9 @@ namespace BoSSS.Application.BoSSSpad {
             return System.OperatingSystem.IsWindows();
         }
 
+        const bool UseMutexOnPapermill = true;
+        const bool UseMutexOnNbconvert = true;
+
         private static int RunPapermill(string fileToOpen) {
             string fileToOpen_out = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + "_out.ipynb");
 
@@ -361,28 +364,37 @@ namespace BoSSS.Application.BoSSSpad {
             //psi.RedirectStandardOutput = true;
             //psi.RedirectStandardError = true;
 
-            //bool MutexReleased = false;
+            bool MutexReleased = true;
+            Random rnd = new Random();
+            //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
             try {
-                //Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
-                //JupyterMutex.WaitOne();
-                //Console.WriteLine("Mutex obtained!");
 
 
-                //Random rnd = new Random();
-                //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
+
+                void GetMutex() {
+                    if (MutexReleased) {
+                        Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
+                        JupyterMutex.WaitOne();
+                        Console.WriteLine("Mutex obtained!");
+                        MutexReleased = false;
+                    }
+                }
+
+                void ReleaseMutex() {
+                    Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
+                    if(!MutexReleased)
+                        JupyterMutex.ReleaseMutex();
+                    MutexReleased = true;
+                }
 
                 int papermill_exit, nbconvert_exit;
                 if (UseAnacondaPython()) {
                     
 
 
-                    int RunAnacondaShell(string command) {
-                        //if(MutexReleased) {
-                        //    Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
-                        //    JupyterMutex.WaitOne();
-                        //    Console.WriteLine("Mutex obtained!");
-                        //    MutexReleased = false;
-                        //}
+                    int RunAnacondaShell(string command, bool useMutex) {
+                        if (useMutex)
+                            GetMutex();
 
                         ProcessStartInfo psi = new ProcessStartInfo();
                         psi.WorkingDirectory = Directory.GetCurrentDirectory();
@@ -401,29 +413,24 @@ namespace BoSSS.Application.BoSSSpad {
                         p.StandardInput.WriteLine("exit");
 
                         // wait here a bit more...
-                        //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
-                        //if(!MutexReleased)
-                        //    JupyterMutex.ReleaseMutex();
-                        //MutexReleased = true;
+                        if (useMutex)
+                            ReleaseMutex();
+
                         p.WaitForExit();
 
                         return p.ExitCode;
                     }
 
-                    papermill_exit = RunAnacondaShell($"papermill {fileToOpen} {fileToOpen_out}");
-                    nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html ");
+                    papermill_exit = RunAnacondaShell($"papermill {fileToOpen} {fileToOpen_out}", UseMutexOnPapermill);
+                    nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html ", UseMutexOnNbconvert);
                     //nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html --execute");
                     //papermill_exit = nbconvert_exit;
                 } else {
 
 
-                    int RunExt(string executable, string arguments) {
-                        //if (MutexReleased) {
-                        //    Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
-                        //    JupyterMutex.WaitOne();
-                        //    Console.WriteLine("Mutex obtained!");
-                        //    MutexReleased = false;
-                        //}
+                    int RunExt(string executable, string arguments, bool useMutex) {
+                        if(useMutex)
+                            GetMutex();
 
                         ProcessStartInfo psi = new ProcessStartInfo();
                         psi.WorkingDirectory = Directory.GetCurrentDirectory();
@@ -435,17 +442,16 @@ namespace BoSSS.Application.BoSSSpad {
                         Process p = Process.Start(psi);
 
                         // wait here a bit more...
-                        //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
-                        //if(!MutexReleased)
-                        //    JupyterMutex.ReleaseMutex();
-                        //MutexReleased = true;
-
+                        if(useMutex)
+                            ReleaseMutex();
+                        
                         p.WaitForExit();
+
                         return p.ExitCode;
                     }
 
-                    papermill_exit = RunExt($"papermill", $"{fileToOpen} {fileToOpen_out}");
-                    nbconvert_exit = RunExt("jupyter", "nbconvert \"" + fileToOpen_out + "\" --to html ");
+                    papermill_exit = RunExt($"papermill", $"{fileToOpen} {fileToOpen_out}", UseMutexOnPapermill);
+                    nbconvert_exit = RunExt("jupyter", "nbconvert \"" + fileToOpen_out + "\" --to html ", UseMutexOnNbconvert);
                     //nbconvert_exit = RunExt("jupyter.exe", "nbconvert \"" + fileToOpen_out + "\" --to html --execute");
                     //papermill_exit = nbconvert_exit;
 
@@ -464,8 +470,8 @@ namespace BoSSS.Application.BoSSSpad {
             
             
             } finally {
-                //if (!MutexReleased)
-                //    JupyterMutex.ReleaseMutex();
+                if (!MutexReleased)
+                    JupyterMutex.ReleaseMutex();
             }
         }
 
