@@ -1874,7 +1874,7 @@ namespace BoSSS.Application.BoSSSpad {
                         //    - e.g. ~\.dotnet\tools\.store\microsoft.dotnet-interactive\1.0.360602\microsoft.dotnet-interactive\1.0.360602\tools\net7.0\any\System.CodeDom.dll
                         //      instead of the `System.CodeDom.dll` present in the current directory.
                         //    - this causes (sometimes) problems when the deployed application should be started.
-                        //  * solution: test, whether the assembly with the same name can be found "locally"; if yes, pefer this one.
+                        //  * solution: test, whether the assembly with the same name can be found "locally"; if yes, prefer this one.
                         //  * future: if all packages are done via nuget, this will maybe be not an issue anymore
                         //
                         string alt_location = Path.Combine(entry_dir, Path.GetFileName(a_location));

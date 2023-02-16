@@ -57,9 +57,16 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__BoundaryAndInitialData() {
             // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
-            NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
-            NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
-            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
+             Mutex JupyterMutex = new Mutex(false, "BoundaryAndInitialData");
+            try {
+                JupyterMutex.WaitOne();
+
+                NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
+                NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
+                RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -67,9 +74,15 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__MetaJobManager() {
             //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__MetaJobManager
-            NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
-            NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
-            RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+            Mutex JupyterMutex = new Mutex(false, "MetaJobManager_Tutorial");
+            try {
+                JupyterMutex.WaitOne();
+                NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
+                NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
+                RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -172,9 +185,15 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
         [Test]
         static public void Run__convStudy() {
-            NotebookRunner.DeleteDatabase("ConvStudyTutorial");
-            NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
-            RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
+            Mutex JupyterMutex = new Mutex(false, "ConvStudyTutorial");
+            try {
+                JupyterMutex.WaitOne();
+                NotebookRunner.DeleteDatabase("ConvStudyTutorial");
+                NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
+                RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 #endif
 
@@ -184,9 +203,16 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__memprofile() {
             //BoSSS.Application.TutorialTests.AllUpTest.Run__memprofile#
-            NotebookRunner.DeleteDatabase("memprofile");
-            NotebookRunner.DeleteDeployments("memprofile*");
-            RunWorksheet("memprofile/memprofile.ipynb");
+            Mutex JupyterMutex = new Mutex(false, "memprofileMutex");
+            try {
+                JupyterMutex.WaitOne();
+
+                NotebookRunner.DeleteDatabase("memprofile");
+                NotebookRunner.DeleteDeployments("memprofile*");
+                RunWorksheet("memprofile/memprofile.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 #endif
 
