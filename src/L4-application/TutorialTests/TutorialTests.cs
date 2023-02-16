@@ -32,7 +32,7 @@ namespace BoSSS.Application.TutorialTests {
     static class TutorialTestsMain {
 
         static int Main(string[] args) {
-
+            /*
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
             Task<int>[] legion = new Task<int>[100];
@@ -59,8 +59,8 @@ namespace BoSSS.Application.TutorialTests {
             
             csMPI.Raw.mpiFinalize();
             return legion.Sum(task => Math.Abs(task.Result));
-
-            /*
+            */
+            
 
             AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", ".." ,"..", ".." , "doc", "handbook");
             
@@ -97,7 +97,7 @@ namespace BoSSS.Application.TutorialTests {
             csMPI.Raw.mpiFinalize();
             return r;
 
-            */
+            
         }
 
 

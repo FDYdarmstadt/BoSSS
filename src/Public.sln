@@ -129,8 +129,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BoSSS.Solution.XNSECommon",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BoSSS.Solution.LevelSetTools", "L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj", "{9EE2FCAD-E8A4-4F14-B932-D1A4904D715D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ElectronWorksheet", "BoSSSpadGUI\src\cs\ElectronWorksheet.csproj", "{FF12C08F-10A2-4882-8D9D-F559E85E4518}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BoSSS.Solution.CompressibleFlowCommon", "L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj", "{C0C92515-FC32-49B7-B128-29CC7BFA7B6C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BoSSS.Solution.XheatCommon", "L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj", "{556AF24D-182B-4B77-A727-7E18B6488F78}"

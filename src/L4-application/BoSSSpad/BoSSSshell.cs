@@ -89,7 +89,7 @@ namespace BoSSS.Application.BoSSSpad {
                     "{0} occurred with message '{1}' while loading the databases.",
                      e.GetType(),
                      e.Message);
-                InteractiveShell.LastError = e;
+                //InteractiveShell.LastError = e;
             }
             InitTraceFile();
             ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" }; // try to log everyting, so we might find something useful
@@ -361,14 +361,14 @@ namespace BoSSS.Application.BoSSSpad {
             Process.Start(dbeXmlPath);
         }
 
-        /// <summary>
-        /// Saves the current interactive session as a worksheet that can be
-        /// loaded by the worksheet edition of the BoSSSPad
-        /// </summary>
-        /// <param name="path"></param>
-        public static void SaveSessionAsWorksheet(string path) {
-            ReadEvalPrintLoop.SaveSessionAsWorksheet(path);
-        }
+        ///// <summary>
+        ///// Saves the current interactive session as a worksheet that can be
+        ///// loaded by the worksheet edition of the BoSSSPad
+        ///// </summary>
+        ///// <param name="path"></param>
+        //public static void SaveSessionAsWorksheet(string path) {
+        //    ReadEvalPrintLoop.SaveSessionAsWorksheet(path);
+        //}
 
         /// <summary>
         /// Clears the console window.
@@ -582,25 +582,24 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
 
-            return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
+            return OpenOrCreateDatabase_Impl(dbDir, true);
         }
 
         /// <summary>
         /// Opens an existing database at a specific path
         /// </summary>
         static public IDatabaseInfo OpenDatabase(string dbDir) {
-            return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, false);
+            return OpenOrCreateDatabase_Impl(dbDir, false);
         }
 
-        /*
-        static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
-            foreach (var existing_dbi in InteractiveShell.databases) {
+        internal static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
+            foreach (var existing_dbi in BoSSSshell.databases) {
                 if (existing_dbi.PathMatch(dbDir)) {
                     return existing_dbi;
                 }
             }
-        
-            
+
+
             if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
                     throw new ArgumentException("Directory '" + dbDir + "' exists, but is not a valid BoSSS database.");
@@ -626,7 +625,6 @@ namespace BoSSS.Application.BoSSSpad {
 
             return dbi;
         }
-        */
 
         static internal Document CurrentDoc = null;
 

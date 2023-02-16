@@ -207,7 +207,7 @@ namespace BoSSS.Application.BoSSSpad {
                     case Modes.JupyterBatch: {
                         string fileToOpen;
                         if (args.Length != 2) { 
-                            Console.Error.WriteLine($"Expecting exactly two aruments, but got {args.Length} (which are {args.ToConcatString("", ",", "")}");
+                            Console.Error.WriteLine($"Expecting exactly two arguments, but got {args.Length} (which are {args.ToConcatString("", ",", "")}");
                             PrintUsage();
                             return int.MinValue;
                         }
@@ -401,6 +401,7 @@ namespace BoSSS.Application.BoSSSpad {
                         psi.RedirectStandardInput = true;
                         psi.FileName = @"C:\Windows\System32\cmd.exe";
 
+                        
                         // wait here a bit to avoid a port conflict...
                         // when two notebooks are started simultaneously, we might run into the following:
                         //  ---> System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
 using ilPSP;
 using BoSSS.Platform;
 using BoSSS.Foundation.IO;
@@ -289,32 +290,32 @@ namespace BoSSS.Application.BoSSSpad {
                 EvalPrint(line, out var dummy2);
             }
         }
+*/
+        ///// <summary>
+        ///// Removes all comments from a C#-statement.
+        ///// </summary>
+        //public static string RemoveAllComments(string input) {
+        //    // http://stackoverflow.com/questions/3524317/regex-to-strip-line-comments-from-c-sharp/3524689
 
-        /// <summary>
-        /// Removes all comments from a C#-statement.
-        /// </summary>
-        public static string RemoveAllComments(string input) {
-            // http://stackoverflow.com/questions/3524317/regex-to-strip-line-comments-from-c-sharp/3524689
-
-            var blockComments = @"/\*(.*?)\*/";
-            var lineComments = @"//(.*?)\r?\n";
-            var strings = @"""((\\[^\n]|[^""\n])*)""";
-            var verbatimStrings = @"@(""[^""]*"")+";
+        //    var blockComments = @"/\*(.*?)\*/";
+        //    var lineComments = @"//(.*?)\r?\n";
+        //    var strings = @"""((\\[^\n]|[^""\n])*)""";
+        //    var verbatimStrings = @"@(""[^""]*"")+";
 
 
-            string noComments = Regex.Replace(input,
-                                            blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings,
-                                            me => {
-                                                if (me.Value.StartsWith("/*") || me.Value.StartsWith("//"))
-                                                    return me.Value.StartsWith("//") ? System.Environment.NewLine : "";
-                                                // Keep the literal strings
-                                                return me.Value;
-                                            },
-                                            RegexOptions.Singleline);
-            return noComments;
-        }
+        //    string noComments = Regex.Replace(input,
+        //                                    blockComments + "|" + lineComments + "|" + strings + "|" + verbatimStrings,
+        //                                    me => {
+        //                                        if (me.Value.StartsWith("/*") || me.Value.StartsWith("//"))
+        //                                            return me.Value.StartsWith("//") ? System.Environment.NewLine : "";
+        //                                        // Keep the literal strings
+        //                                        return me.Value;
+        //                                    },
+        //                                    RegexOptions.Singleline);
+        //    return noComments;
+        //}
 
-        
+  /*      
         /// <summary>
         /// the 'EP' of <see cref="REPL"/>
         /// </summary>
@@ -589,3 +590,4 @@ namespace BoSSS.Application.BoSSSpad {
         }
     }
 }
+*/

@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -32,6 +33,7 @@ using BoSSS.Solution.GridImport;
 
 namespace BoSSS.Application.BoSSSpad {
 
+    
     /// <summary>
     /// Extends/replaces the standard commands provided by
     /// <see cref="InteractiveBase"/> by some BoSSSPad-specific stuff.
@@ -370,27 +372,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         static internal Document CurrentDoc = null;
 
-        /*
-        /// <summary>
-        /// Extracts the source code of some function, which can be used as an initial value or boundary condition.
-        /// </summary>
-        /// <param name="f">
-        /// Must be the reference to a static method of a static class.
-        /// </param>
-        static public BoSSS.Solution.Control.Formula GetFormulaObject(Func<double[], double> f) {
-            return GetFormulaObject(f, false);
-        }
-
-        /// <summary>
-        /// Extracts the source code of some function, which can be used as an initial value or boundary condition.
-        /// </summary>
-        /// <param name="f">
-        /// Must be the reference to a static method of a static class.
-        /// </param>
-        static public BoSSS.Solution.Control.Formula GetFormulaObject(Func<double[], double, double> f) {
-            return GetFormulaObject(f, true);
-        }
-        */
+      
 
         private static Solution.Control.Formula GetFormulaObject(System.Delegate f, bool timedep) {
             if (CurrentDoc == null) {
@@ -740,3 +722,4 @@ namespace BoSSS.Application.BoSSSpad {
     }
 }
 
+*/

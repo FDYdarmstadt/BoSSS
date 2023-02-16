@@ -263,8 +263,8 @@ namespace BoSSS.Application.TutorialTests {
             // start the minibatchprocessor which is used internally
             OneTimeSetUp();
 
-            BoSSSpad.Job.UndocumentedSuperHack = true;
-            BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
+            //BoSSSpad.Job.UndocumentedSuperHack = true;
+            //BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
             
             try {
                 // run test:
