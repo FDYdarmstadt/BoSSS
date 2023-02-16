@@ -267,7 +267,7 @@ namespace BoSSS.Application.BoSSSpad {
         private static Mutex JupyterMutex = new Mutex(false, "JupyterMutex");
 
         private static int RunJupyter(string fileToOpen) {
-            return RunPapermill(fileToOpen);
+            return RunPapermillAndNbconvert(fileToOpen);
             
             
             //int RetVal = RunJupyter(fileToOpen, false); // first try, don't allow errors
@@ -354,7 +354,7 @@ namespace BoSSS.Application.BoSSSpad {
         const bool UseMutexOnPapermill = true;
         const bool UseMutexOnNbconvert = true;
 
-        private static int RunPapermill(string fileToOpen) {
+        private static int RunPapermillAndNbconvert(string fileToOpen) {
             string fileToOpen_out = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + "_out.ipynb");
 
             string htmlResult = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + ".html");

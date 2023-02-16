@@ -275,7 +275,7 @@ namespace BoSSS.Application.TutorialTests {
                     mode = "--JupyterBatch";
 
                 
-                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
+                ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
 
                 Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", WorksheetName, ErrCount);
                 if(!allowErrors)
@@ -285,6 +285,13 @@ namespace BoSSS.Application.TutorialTests {
                 // shutting down the local mini batch processor:
                 OneTimeTearDown();
             }
+        }
+
+        /// <summary>
+        /// return value from BoSSSpad 
+        /// </summary>
+        public int ErrCount {
+            get; private set;
         }
 
 
