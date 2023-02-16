@@ -25,12 +25,12 @@
     <DocumentationFile></DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <PlatformTarget>AnyCPU</PlatformTarget>
-    <NoWarn>1701;1702;649</NoWarn>
+    <NoWarn>1701;1702</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <DocumentationFile>bin\Release\BoSSSpad.XML</DocumentationFile>
     <UseVSHostingProcess>false</UseVSHostingProcess>
-    <NoWarn>1701;1702; CA1065;649</NoWarn>
+    <NoWarn>1701;1702; CA1065</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="autonomuousPlotter.cs" />

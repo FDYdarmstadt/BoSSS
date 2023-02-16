@@ -49,7 +49,7 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             public string InterpreterTextOutput;
 
-#pragma warning disable CS0694
+#pragma warning disable 649
             /// <summary>
             /// The actual result of the evaluation.
             /// </summary>
@@ -61,7 +61,7 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             [NonSerialized]
             public Assembly AssemblyProduced;
-#pragma warning restore CS0694
+#pragma warning restore 649
 
             ///// <summary>
             ///// Evaluates this command and updated <see cref="InterpreterTextOutput"/>.

@@ -23,7 +23,6 @@ using ilPSP;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
 using ilPSP.Utils;
-using Mono.CSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -1175,10 +1174,7 @@ namespace BoSSS.Foundation.IO {
 
         /// <summary>
         /// Tries to loads the control file of the given
-        /// <paramref name="session"/> in the new REPL format. Note: Use
-        /// <see cref="InteractiveBase.LoadAssembly"/> to load the
-        /// corresponding solver assembly to be able to use solver-specific
-        /// sub-classes of <see cref="AppControl"/>.
+        /// <paramref name="session"/> in the new REPL format. 
         /// </summary>
         /// <param name="session">
         /// The session whose configuration file should be loaded
