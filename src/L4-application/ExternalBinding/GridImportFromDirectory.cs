@@ -205,11 +205,11 @@ namespace BoSSS.Application.ExternalBinding {
         "OpenFOAM/meshes/big/large/polyMesh/ownerLarge",
         "OpenFOAM/meshes/big/large/polyMesh/pointsLarge"
             )]
-        //[Test]
+        [Test]
         public static void ConvertFOAMGrid() {
 
             // string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
-            string polyMeshDir = "./meshes/tiny/small/polyMesh/";
+            string polyMeshDir = "./meshes/big/small/polyMesh/";
             var owner = getOwner(polyMeshDir);
             var neighbour = getNeighbour(polyMeshDir);
             int nCells = Max(owner.Max(), neighbour.Max()) + 1;
@@ -263,7 +263,6 @@ namespace BoSSS.Application.ExternalBinding {
             File.Copy("neighbourMedium", "./meshes/big/medium/polyMesh/neighbour");
             File.Copy("ownerMedium", "./meshes/big/medium/polyMesh/owner");
             File.Copy("pointsMedium", "./meshes/big/medium/polyMesh/points");
-            File.Copy("boundaryMedium", "./meshes/big/medium/polyMesh/");
 
             File.Copy("boundaryLarge", "./meshes/big/large/polyMesh/boundary");
             File.Copy("facesLarge", "./meshes/big/large/polyMesh/faces");
