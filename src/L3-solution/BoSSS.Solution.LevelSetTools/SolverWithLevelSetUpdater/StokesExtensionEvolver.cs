@@ -294,7 +294,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     }
                 }).Execute();
 
-            double h = phaseInterface.DGLevelSet.GridDat.iGeomCells.h_min.Min();
+            Cont_DIFF = Cont_DIFF.MPISum();
+            Cont_LEN = Cont_LEN.MPISum();
+            Cont_CTRL = Cont_CTRL.MPISum();
+            double h = phaseInterface.DGLevelSet.GridDat.iGeomCells.h_min.Min().MPIMin();
             Cont_DIFF *= 1.0 / (Cont_LEN * h);
             Cont_CTRL *= 1.0 / (Cont_LEN * h);
 
