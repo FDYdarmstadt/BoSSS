@@ -101,6 +101,12 @@ namespace BoSSS.Application.XNSEC {
                 //opFactory.AddParameter(new HeatCapacity(EoS_A, EoS_B));
             }
 
+            var v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
+            if (config.physParams.IncludeConvection && config.isTransport) {                
+                opFactory.AddParameter(v0Mean);
+            }
+            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
+
             if (config.isEvaporation) {
                 var MassFluxExt = new MassFluxExtension_Evaporation_MixtureFraction(config, Control.HeatRelease, Control.zSt);
                 lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, MassFluxExt);
