@@ -867,14 +867,14 @@ namespace BoSSS.Solution.XheatCommon {
             // ==========================
             double[] VelocityMeanIn = new double[m_D];
             for (int d = 0; d < m_D; d++) {
-                VelocityMeanIn[d] = U_Neg[1 + d];
+                VelocityMeanIn[d] = cp.Parameters_IN[d];
             }
 
             double LambdaIn = LambdaConvection.GetLambda(VelocityMeanIn, cp.Normal, false);
 
             double[] VelocityMeanOut = new double[m_D];
             for (int d = 0; d < m_D; d++) {
-                VelocityMeanOut[d] = U_Pos[1 + d];
+                VelocityMeanOut[d] = cp.Parameters_OUT[d];
             }
 
 
@@ -995,6 +995,11 @@ namespace BoSSS.Solution.XheatCommon {
             }
         }
 
+        public override IList<string> ParameterOrdering {
+            get {
+                return base.ParameterOrdering.Cat(VariableNames.Velocity0MeanVector(m_D));
+            }
+        }
 
 
         public override TermActivationFlags LevelSetTerms {

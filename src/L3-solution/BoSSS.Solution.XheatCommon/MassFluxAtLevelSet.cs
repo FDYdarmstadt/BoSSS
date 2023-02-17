@@ -194,7 +194,7 @@ namespace BoSSS.Solution.XheatCommon {
 
         public virtual IList<string> ParameterOrdering {
             get {
-                return VariableNames.Velocity0MeanVector(m_D);
+                return new string[0]; //VariableNames.Velocity0MeanVector(m_D);
             }
         }
 
@@ -1176,6 +1176,12 @@ namespace BoSSS.Solution.XheatCommon {
         public override IList<string> ArgumentOrdering {
             get {
                 return base.ArgumentOrdering.Cat(VariableNames.VelocityVector(m_D));
+            }
+        }
+
+        public override IList<string> ParameterOrdering {
+            get {
+                return base.ParameterOrdering.Cat(VariableNames.Velocity0MeanVector(m_D));
             }
         }
 
