@@ -18,6 +18,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -122,6 +123,24 @@ namespace BoSSS.Application.BoSSSpad {
             AddEnumFormatter<Job>();
 
             //AddTableFormatter();
+
+            try {
+                using (var pipeServer = new NamedPipeServerStream(BoSSSpadMain.BoSSSpadInitDone_Pipe, PipeDirection.InOut)) {
+                    using (var cts = new CancellationTokenSource()) {
+                        var t = pipeServer.WaitForConnectionAsync(cts.Token);
+
+                        bool timeot = t.Wait(1000);
+                        if (timeot == false) {
+                            //Console.WriteLine("timeout");
+                            cts.Cancel();
+                        } else {
+                            pipeServer.WriteByte(1);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Console.Error.WriteLine($"{e} during startup synchronization: {e.Message}");
+            }
         }
 
         /// <summary>

@@ -32,6 +32,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using ilPSP;
+using System.IO.Pipes;
+using System.Threading.Tasks;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -263,8 +265,20 @@ namespace BoSSS.Application.BoSSSpad {
             return errCount;
         }
 
+        /// <summary>
+        /// When worksheets are executed in batch mode, this 
+        /// should prevent race-condition for a port during startup up dotnet-interactive.
+        /// Jupyter worksheets can be batch-processed in parallel (using `jupyter nbconver` or `papermill`), but
+        /// during startup we might run into an exception 
+        /// `System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.`
+        /// 
+        /// Therefore, this mutex is used, in combination with a named pipe named <see cref="BoSSSpadInitDone_Pipe"/> to prevent BoSSSpad from 
+        /// starting another Jupyter instance before the port is acquired.
+        /// </summary>
+        static Mutex JupyterMutex = new Mutex(false, "JupyterMutex");
 
-        private static Mutex JupyterMutex = new Mutex(false, "JupyterMutex");
+        internal const string BoSSSpadInitDone_Pipe = "BoSSSpadInitDone";
+
 
         private static int RunJupyter(string fileToOpen) {
             return RunPapermillAndNbconvert(fileToOpen);
@@ -342,6 +356,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
         */
 
+
         static bool UseAnacondaPython() {
             if(System.Environment.MachineName.Contains("hpccluster", StringComparison.InvariantCultureIgnoreCase))
                 return false;
@@ -401,10 +416,11 @@ namespace BoSSS.Application.BoSSSpad {
                         psi.RedirectStandardInput = true;
                         psi.FileName = @"C:\Windows\System32\cmd.exe";
 
-                        
+
                         // wait here a bit to avoid a port conflict...
                         // when two notebooks are started simultaneously, we might run into the following:
                         //  ---> System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.
+                       
                         Process p = Process.Start(psi);
                         //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
 
@@ -414,6 +430,31 @@ namespace BoSSS.Application.BoSSSpad {
                         p.StandardInput.WriteLine("exit");
 
                         // wait here a bit more...
+                        try {
+                            //static internal EventWaitHandle BoSSSpadInitDone = new EventWaitHandle(false, EventResetMode.ManualReset, "MyUniqueEventName");
+
+                            // Miss-used pipe for inter-process synchronisation.
+                            // An `EventWaitHandle` would be much nicer, but that works only on Windows-machines.
+                            using (NamedPipeClientStream BoSSSpadInitDone = new NamedPipeClientStream(".", BoSSSpadInitDone_Pipe, PipeDirection.InOut)) {
+                                BoSSSpadInitDone.Connect(60*1000);
+                                using (var cts = new CancellationTokenSource()) {
+                                    Task t = new Task(delegate () {
+                                        while (BoSSSpadInitDone.ReadByte() != 1) {
+                                            Console.WriteLine("Server: waining for signal");
+                                        }
+                                    }, cts.Token);
+
+                                    try {
+                                        if (t.Wait(60*1000) == false) {
+                                            cts.Cancel();
+                                        }
+                                    } catch (Exception) { }
+                                }
+                            }
+                        } catch (Exception) {
+
+                        }
+
                         if (useMutex)
                             ReleaseMutex();
 
