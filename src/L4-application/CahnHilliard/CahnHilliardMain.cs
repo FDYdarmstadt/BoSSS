@@ -874,13 +874,14 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         public struct BenchmarkQuantities {
-            public BenchmarkQuantities() {
-                area = 0;
-                surface = 0;
-                circ = 0;
-                concentration = 0;
-                energy = 0;
-            }
+            // Auskommentiert von Schahin Akbari 03.02.2023 :)
+            //public BenchmarkQuantities() {
+            //    area = 0;
+            //    surface = 0;
+            //    circ = 0;
+            //    concentration = 0;
+            //    energy = 0;
+            //}
             public BenchmarkQuantities(double __area, double __surface, double __circ, double __concentration, double __energy)  {
                 area = __area;
                 surface = __surface;
