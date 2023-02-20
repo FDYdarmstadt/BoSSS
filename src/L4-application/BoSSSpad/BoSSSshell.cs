@@ -5,9 +5,11 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
+using ilPSP.Connectors.Matlab;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using log4net;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Layout;
@@ -1065,5 +1067,63 @@ namespace BoSSS.Application.BoSSSpad {
 
             BatchProcessorConfig.SaveConfiguration(conf);
         }
+
+        /// <summary>
+        /// Prints a name of lots of BoSSS assemblies to the console.
+        /// The presence of this method enforces the compiler to link all solver assemblies, 
+        /// e.g. <see cref="NSE_SIMPLE.NSE_SIMPLEMain"/>, to BoSSSpad.
+        ///
+        /// Without this method, the compiler would prune unused dependencies; in consequence, worksheets which use e.g. <see cref="NSE_SIMPLE.NSE_SIMPLEMain"/>
+        /// will not work unless the reference the solver assembly directly.
+        /// </summary>
+        public static void EnforceSolverLinkage() {
+
+            var AllSolvers = new Type[] {
+                typeof(ilPSP.Environment),
+                typeof(ilPSP.LinSolvers.SimpleSolversInterface),
+                typeof(BatchmodeConnector), // Do it this cause connector is not referenced anywhere else, i.e. the assembly will often be missing otherwise
+                typeof(NUnit.Framework.Assert),
+                typeof(BoSSS.PlotGenerator.PlotApplication),
+                typeof(BoSSS.Platform.Utils.Geom.BoundingBox),
+                typeof(BoSSS.Foundation.Basis),
+                typeof(BoSSS.Foundation.XDG.XDGField),
+                typeof(BoSSS.Foundation.Grid.Classic.Grid1D),
+                typeof(BoSSS.Solution.Application),
+                typeof(BoSSS.Solution.Gnuplot.Gnuplot),
+                typeof(BoSSS.Solution.GridImport.Cgns),
+                typeof(BoSSS.Solution.Statistic.CellLocalization),
+                typeof(BoSSS.Solution.Tecplot.Tecplot),
+                typeof(BoSSS.Solution.ASCIIExport.CurveExportDriver),
+                typeof(BoSSS.Solution.AdvancedSolvers.MultigridOperator),
+                typeof(BoSSS.Solution.XNSECommon.CurvatureAlgorithms),
+                typeof(BoSSS.Solution.EnergyCommon.Dissipation),
+                typeof(BoSSS.Solution.XheatCommon.AuxiliaryHeatFlux_Identity),
+                typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling),
+                typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection),
+                typeof(BoSSS.Solution.CompressibleFlowCommon.ShockFinding.InflectionPointFinder),
+                typeof(BoSSSpad.BoSSSpadMain),
+                typeof(MiniBatchProcessor.Client),
+                typeof(System.Numerics.Complex),
+                typeof(MathNet.Numerics.Complex32),
+                typeof(CNS.Program),
+                typeof(XNSE_Solver.XNSE),
+                typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
+                typeof(Rheology.Rheology),
+                typeof(XNSERO_Solver.XNSERO),
+                typeof(BoSSS.Foundation.SpecFEM.SpecFemField),
+                typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+                typeof(NSE_SIMPLE.NSE_SIMPLEMain),
+                typeof(XNSEC.XNSEC),
+                typeof(GridGen.GridGenMain)
+            };
+
+
+            var AllAssemblies = AllSolvers.Select(x => x.Assembly).ToArray();
+
+            foreach(var a in AllAssemblies) {
+                Console.WriteLine(a);
+            }
+        }
+
     }
 }
