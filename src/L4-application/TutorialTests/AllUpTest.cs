@@ -114,6 +114,14 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("ue2Basics/ue2Basics.ipynb");
         }
 
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
+        [Test]
+        static public void Run__CsharpAndBoSSSpad() {
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
+            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
+        }
+
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("SpatialOperatorNexpTimeInt/SpatialOperatorNexpTimeInt.ipynb")]
@@ -169,16 +177,8 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
         }
 #endif
- 
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
-        [Test]
-        static public void Run__CsharpAndBoSSSpad() {
-            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
-            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
-        }
-#endif
+
+
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
@@ -289,8 +289,8 @@ namespace BoSSS.Application.TutorialTests {
             // start the minibatchprocessor which is used internally
             OneTimeSetUp();
 
-            BoSSSpad.Job.UndocumentedSuperHack = true;
-            BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
+            //BoSSSpad.Job.UndocumentedSuperHack = true;
+            //BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
             
             try {
                 // run test:
@@ -301,7 +301,7 @@ namespace BoSSS.Application.TutorialTests {
                     mode = "--JupyterBatch";
 
                 
-                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
+                ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
 
                 Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", WorksheetName, ErrCount);
                 if(!allowErrors)
@@ -311,6 +311,13 @@ namespace BoSSS.Application.TutorialTests {
                 // shutting down the local mini batch processor:
                 OneTimeTearDown();
             }
+        }
+
+        /// <summary>
+        /// return value from BoSSSpad 
+        /// </summary>
+        public int ErrCount {
+            get; private set;
         }
 
 
