@@ -878,8 +878,15 @@ namespace BoSSS.Foundation.XDG {
             }
 
             DGField FailedViz = new SinglePhaseField(b, "FailedCells");
+            BitArray FailCellsMarker = new BitArray(Jup);
             foreach (int j in failCells) {
                 FailedViz.SetMeanValue(j, 1);
+                FailCellsMarker.Set(j, true);
+            }
+
+            if (failCells.Count > 0) {
+                CellMask FailCells = new CellMask(grdDat, FailCellsMarker);
+                FailCells.SaveToTextFile($"failCells{grdDat.MpiRank}.csv");
             }
 
             DGField[] LevelSets = Tracker.LevelSets.Select(s => (DGField)s).ToArray();
@@ -889,7 +896,7 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-            string message = ($"Agglomeration failed - no candidate for agglomeration found for {failCells.Count} cells.");
+            string message = ($"Agglomeration failed - no candidate for agglomeration found for {failCells.Count.MPISum()} cells.");
             if (ExceptionOnFailedAgglomeration)
                 throw new Exception(message);
             else
