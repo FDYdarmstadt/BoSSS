@@ -690,7 +690,9 @@ namespace BoSSS.Solution {
                 Console.WriteLine(";");
             }
         }
-
+        /// <summary>
+        /// On process rank 0, deletes all txt and csv files in the current directory
+        /// </summary>
         public static void DeleteOldTextFiles() {
             if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
