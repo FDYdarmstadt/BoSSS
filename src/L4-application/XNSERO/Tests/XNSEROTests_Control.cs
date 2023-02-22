@@ -35,7 +35,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 1);
+            C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -50,7 +50,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             List<Particle> particles = new List<Particle> {
                 new Particle_Sphere(motion1, 0.5, new double[] { 0.0, 0.0 }),
             };
-            C.SetParticles(particles,dt);
+            C.InitialiseParticles(particles);
 
             C.PhysicalParameters.IncludeConvection = false;
 
@@ -80,7 +80,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 8, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 1);
+            C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -98,7 +98,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 new Particle_Ellipsoid(motion2, 1, 1, new double[] { 2.0, 0.0 }, startAngl: 0)
             };
             double dt = 1e-2;
-            C.SetParticles(particles,dt);
+            C.InitialiseParticles(particles);
 
             C.PhysicalParameters.IncludeConvection = false;
 
@@ -130,7 +130,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: true);
-            C.SetAddaptiveMeshRefinement(amrLevel: 1);
+            C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
 
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY#A", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY#A", X => -0.02);
@@ -139,7 +139,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             double particleDensity = 1;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, true);
-            C.SetParticles(new List<Particle> { new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) },dt);
+            C.InitialiseParticles(new List<Particle> { new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) });
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.25;
             C.PhysicalParameters.IncludeConvection = true;
@@ -218,7 +218,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
             };
             double dt = 1e-2;
-            C.SetParticles(particles,dt);
+            C.InitialiseParticles(particles);
             C.PhysicalParameters.IncludeConvection = false;
 
             // misc. solver options

@@ -43,7 +43,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// ctor
         /// </summary>
-        public XNSERO_Control(int degree, string projectName, string projectDescription = null, List<string> tags = null) : this() {
+        public XNSERO_Control(int degree, string projectName, string projectDescription = null, List<string> tags = null, bool IsRestart = false, string PathToOldSessionDir = "", int TimestepNoForRestart = 0) : this() {
             ProjectName = projectName;
             SessionName = projectName;
             ProjectDescription = projectDescription;
@@ -53,7 +53,36 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
             }
             SetDGdegree(degree);
+
+            this.IsRestart = IsRestart;
+            this.PathToOldSessionDir = PathToOldSessionDir;
+            this.TimestepNoForRestart = TimestepNoForRestart;
         }
+
+        /// <summary>
+        /// type of appropriate solver
+        /// </summary>
+        public override Type GetSolverType() {
+            return typeof(XNSERO);
+        }
+
+        /// <summary>
+        /// Add database and the frequency of saves.
+        /// </summary>
+        /// <param name="dataBasePath"></param>
+        /// <param name="savePeriod"></param>
+        public void SetSaveOptions(string dataBasePath = null, int savePeriod = 1) {
+            if (dataBasePath != null) {
+                savetodb = true;
+                DbPath = dataBasePath;
+                saveperiod = savePeriod;
+            } else
+                savetodb = false;
+        }
+
+        private readonly bool IsRestart;
+        private readonly string PathToOldSessionDir;
+        private readonly int TimestepNoForRestart;
 
         /// <summary>
         /// 
@@ -80,21 +109,17 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-        [DataMember]
-        public bool ContainsSecondFluidSpecies = false;
-
-
         /// <summary>
-        /// Set true during restart.
+        /// Flag if a second fluid species is used.
         /// </summary>
         [DataMember]
-        public bool IsRestart = false;
+        public bool ContainsSecondFluidSpecies = false;
 
         /// <summary>
         /// List of the boundary values at the domain boundary.
         /// </summary>
         [DataMember]
-        readonly List<string> m_BoundaryValues = new List<string>();
+        private readonly List<string> BoundaryValueList = new();
 
         /// <summary>
         /// The position of all boundaries, independent of boundary condition.
@@ -121,47 +146,15 @@ namespace BoSSS.Application.XNSERO_Solver {
         public double MaxGridLength;
 
         /// <summary>
-        /// Min grid length
-        /// </summary>
-        [DataMember]
-        public double MinGridLength;
-
-        /// <summary>
-        /// Dimension of the domain.
-        /// </summary>
-        [DataMember]
-        public int SpatialDimension;
-
-        /// <summary>
-        /// R-Tree to store information about particle location towards each other.
-        /// </summary>
-        [DataMember]
-        public RTree CollisionTree;
-
-        /// <summary>
-        /// Add database and the frequency of saves.
-        /// </summary>
-        /// <param name="dataBasePath"></param>
-        /// <param name="savePeriod"></param>
-        public void SetSaveOptions(string dataBasePath = null, int savePeriod = 1) {
-            if(dataBasePath != null) {
-                savetodb = true;
-                DbPath = dataBasePath;
-                saveperiod = savePeriod;
-            } else
-                savetodb = false;
-        }
-
-        /// <summary>
         /// Setup AMR Level at the level set.
         /// </summary>
-        /// <param name="amrLevel"></param>
-        public void SetAddaptiveMeshRefinement(int amrLevel) {
-            if(amrLevel == 0)
-                return;
-            AdaptiveMeshRefinement = true;
-            RefinementLevel = amrLevel;
-            AMR_startUpSweeps = amrLevel;
+        /// <param name="MaxRefinementLevel"></param>
+        public void SetAddaptiveMeshRefinement(int MaxRefinementLevel) {
+            if (MaxRefinementLevel != 0) {
+                AdaptiveMeshRefinement = true;
+                RefinementLevel = MaxRefinementLevel;
+                AMR_startUpSweeps = MaxRefinementLevel;
+            }
         }
 
         /// <summary>
@@ -169,11 +162,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="boundaryValues"></param>
         public void SetBoundaries(List<string> boundaryValues) {
-            if(boundaryValues.Count() > 4)
+            if(boundaryValues.Count > 4)
                 throw new NotImplementedException("max 4 boundary values");
-            for(int i = 0; i < boundaryValues.Count(); i++) {
+            for(int i = 0; i < boundaryValues.Count; i++) {
                 AddBoundaryValue(boundaryValues[i]);
-                m_BoundaryValues.Add(boundaryValues[i]);
+                BoundaryValueList.Add(boundaryValues[i]);
             }
         }
 
@@ -185,50 +178,45 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="cellsPerUnitLength"></param>
         /// <param name="periodicX"></param>
         /// <param name="periodicY"></param>
-        public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false, bool periodicParticles = false) {
-            SpatialDimension = 2;
+        public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             MaxGridLength = 1 / cellsPerUnitLength;
+
             BoundaryPositionPerDimension = new double[2][];
+            BoundaryPositionPerDimension[0] = new double[] { -lengthX / 2, lengthX / 2 };
+            BoundaryPositionPerDimension[1] = new double[] { -lengthY / 2, lengthY / 2 };
+
             WallPositionPerDimension = new double[2][];
             WallPositionPerDimension[0] = new double[2];
             WallPositionPerDimension[1] = new double[2];
+
             BoundaryIsPeriodic = new bool[2];
-            BoundaryPositionPerDimension[0] = new double[] { -lengthX / 2, lengthX / 2 };
-            BoundaryPositionPerDimension[1] = new double[] { -lengthY / 2, lengthY / 2 };
             BoundaryIsPeriodic[0] = periodicX;
             BoundaryIsPeriodic[1] = periodicY;
-            if (periodicParticles) {
-                BoundaryIsPeriodic[0] = periodicX;
-                BoundaryIsPeriodic[1] = periodicY;
-            }
+
             if(IsRestart)
                 return;
-            if(m_BoundaryValues.IsNullOrEmpty() && !BoundaryIsPeriodic[0] && !BoundaryIsPeriodic[1])
-                SetBoundaries(new List<string> { "Wall" });
-            GridFunc = delegate {
-                int q = new int(); // #Cells in x-dircetion + 1
-                int r = new int(); // #Cells in y-dircetion + 1
 
-                q = (int)(cellsPerUnitLength * lengthX);
-                r = (int)(cellsPerUnitLength * lengthY);
+            GridFunc = delegate {
+                int q = (int)(cellsPerUnitLength * lengthX); 
+                int r = (int)(cellsPerUnitLength * lengthY); 
 
                 double[] Xnodes = GenericBlas.Linspace(-lengthX / 2, lengthX / 2, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-lengthY / 2, lengthY / 2, r + 1);
 
-                Grid2D grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodicX, periodicY: periodicY);
+                Grid2D grid = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodicX, periodicY: periodicY);
 
-                for(int i = 0; i < m_BoundaryValues.Count(); i++) {
+                for(int i = 0; i < BoundaryValueList.Count; i++) {
                     byte iB = (byte)(i + 1);
-                    grd.EdgeTagNames.Add(iB, m_BoundaryValues[i]);
+                    grid.EdgeTagNames.Add(iB, BoundaryValueList[i]);
                 }
 
-                if(m_BoundaryValues.Count() == 0 && periodicX == false && periodicY == false)
+                if(BoundaryValueList.Count == 0 && periodicX == false && periodicY == false)
                     throw new Exception("Please specify boundaries before creating the grid");
 
-                if(m_BoundaryValues.Count() == 1) {
-                    grd.DefineEdgeTags(delegate (double[] X) {
+                if(BoundaryValueList.Count == 1) {
+                    grid.DefineEdgeTags(delegate (double[] X) {
                         byte et = 1;
-                        if(m_BoundaryValues[0].Contains("wall") || m_BoundaryValues[0].Contains("Wall")) {
+                        if(BoundaryValueList[0].Contains("wall") || BoundaryValueList[0].Contains("Wall")) {
                             WallPositionPerDimension[0][0] = -lengthX / 2;
                             WallPositionPerDimension[0][1] = lengthX / 2;
                             WallPositionPerDimension[1][0] = -lengthY / 2;
@@ -237,23 +225,23 @@ namespace BoSSS.Application.XNSERO_Solver {
                         return et;
                     });
                 } else {
-                    grd.DefineEdgeTags(delegate (double[] X) {
+                    grid.DefineEdgeTags(delegate (double[] X) {
                         byte et = 0;
                         if(Math.Abs(X[0] - (-lengthX / 2)) <= 1.0e-8) {
-                            for(int i = 0; i < m_BoundaryValues.Count(); i++) {
-                                if(m_BoundaryValues[i].Contains("left") || m_BoundaryValues[i].Contains("Left")) {
+                            for(int i = 0; i < BoundaryValueList.Count; i++) {
+                                if(BoundaryValueList[i].Contains("left") || BoundaryValueList[i].Contains("Left")) {
                                     et = (byte)(i + 1);
-                                    if(m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                    if(BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
                                         WallPositionPerDimension[0][0] = -lengthX / 2;
                                     }
                                 }
                             }
                         }
                         if(Math.Abs(X[0] + (-lengthX / 2)) <= 1.0e-8) {
-                            for(int i = 0; i < m_BoundaryValues.Count(); i++) {
-                                if(m_BoundaryValues[i].Contains("right") || m_BoundaryValues[i].Contains("Right")) {
+                            for(int i = 0; i < BoundaryValueList.Count; i++) {
+                                if(BoundaryValueList[i].Contains("right") || BoundaryValueList[i].Contains("Right")) {
                                     et = (byte)(i + 1);
-                                    if(m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                    if(BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
                                         WallPositionPerDimension[0][1] = lengthX / 2;
                                     }
                                 }
@@ -261,20 +249,20 @@ namespace BoSSS.Application.XNSERO_Solver {
                         }
 
                         if(Math.Abs(X[1] - (-lengthY / 2)) <= 1.0e-8) {
-                            for(int i = 0; i < m_BoundaryValues.Count(); i++) {
-                                if(m_BoundaryValues[i].Contains("lower") || m_BoundaryValues[i].Contains("Lower")) {
+                            for(int i = 0; i < BoundaryValueList.Count; i++) {
+                                if(BoundaryValueList[i].Contains("lower") || BoundaryValueList[i].Contains("Lower")) {
                                     et = (byte)(i + 1);
-                                    if(m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                    if(BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
                                         WallPositionPerDimension[1][0] = -lengthY / 2;
                                     }
                                 }
                             }
                         }
                         if(Math.Abs(X[1] + (-lengthY / 2)) <= 1.0e-8) {
-                            for(int i = 0; i < m_BoundaryValues.Count(); i++) {
-                                if(m_BoundaryValues[i].Contains("upper") || m_BoundaryValues[i].Contains("Upper")) {
+                            for(int i = 0; i < BoundaryValueList.Count; i++) {
+                                if(BoundaryValueList[i].Contains("upper") || BoundaryValueList[i].Contains("Upper")) {
                                     et = (byte)(i + 1);
-                                    if(m_BoundaryValues[i].Contains("wall") || m_BoundaryValues[i].Contains("Wall")) {
+                                    if(BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
                                         WallPositionPerDimension[1][1] = lengthY / 2;
                                     }
                                 }
@@ -284,8 +272,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                         return et;
                     });
                 }
-                Console.WriteLine("Cells:" + grd.NumberOfCells);
-                return grd;
+                Console.WriteLine("Cells:" + grid.NumberOfCells);
+                return grid;
             };
         }
 
@@ -303,7 +291,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// coefficient of restitution
+        /// Coefficient of restitution for collision model.
         /// </summary>
         [DataMember]
         public double CoefficientOfRestitution = 1.0;
@@ -312,7 +300,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Gravity acting on the particles, zero by default.
         /// </summary>
         [DataMember]
-        private Vector Gravity = new Vector(0, 0);
+        private Vector Gravity = new(0, 0);
 
         /// <summary>
         /// Set gravity for particles and fluid species.
@@ -332,9 +320,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <returns></returns>
         public Vector GetGravity() => Gravity;
 
-        public void SetParticles(List<Particle> ParticleList, double dt, bool IsRestart = false, string PathToOldSessionDir = "", int timestep=0) {
+        /// <summary>
+        /// Initialize particle list
+        /// </summary>
+        /// <param name="ParticleList"></param>
+        public void InitialiseParticles(List<Particle> ParticleList) {
             if (IsRestart) {
-                ParticleList= LoadParticlesOnRestart(PathToOldSessionDir, ParticleList, timestep);
+                ParticleList= LoadParticlesOnRestart(PathToOldSessionDir, ParticleList, TimestepNoForRestart);
             }
 
             Particles = ParticleList.ToArray();
@@ -353,9 +345,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), levelSet);
             Option_LevelSetEvolution2 = Solution.LevelSetTools.LevelSetEvolution.RigidObject;
 
-            //CollisionTree = new(SpatialDimension, 0.05);
-            //CollisionTree.InitializeTree(Particles, dt);
-
             Console.WriteLine("Simulation with " + Particles.Length + " particles");
         }
 
@@ -364,25 +353,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         [DataMember]
         public Particle[] Particles { get; private set; }
-
-        /// <summary>
-        /// Fix all particles
-        /// </summary>
-        [DataMember]
-        public bool fixPosition = false;
-
-        /// <summary>
-        /// For Collisions
-        /// </summary>
-        [DataMember]
-        public double minDistanceThreshold = 0;
-
-        /// <summary>
-        /// type of appropriate solver
-        /// </summary>
-        public override Type GetSolverType() {
-            return typeof(XNSERO);
-        }
 
         /// <summary>
         /// switch to turn the Phoretic Field on/off
@@ -396,7 +366,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         [DataMember]
         public bool UseAveragedEquations = false;
 
-        public List<Particle> LoadParticlesOnRestart(string pathToOldSessionDir, List<Particle> ParticleList, int timestep=0) {
+        private static List<Particle> LoadParticlesOnRestart(string pathToOldSessionDir, List<Particle> ParticleList, int timestep=0) {
             string pathToPhysicalData = Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
 
             int historyLength = 3;
@@ -438,8 +408,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                     translationalVelocity[1] = Convert.ToDouble(currentLineFields[7]);
                     double angularVelocity = Convert.ToDouble(currentLineFields[8]);
                     double torque = Convert.ToDouble(currentLineFields[11]);
-                    //duplicateDistance[0] = Convert.ToDouble(currentLineFields[12]);
-                    //duplicateDistance[1] = Convert.ToDouble(currentLineFields[13]);
                     currentParticle.Motion.InitializeParticlePositionAndAngle(new double[] { physicalData[3], physicalData[4] }, physicalData[5] * 360 / (2 * Math.PI), historyLength, t);
                     currentParticle.Motion.InitializeParticleVelocity(new double[] { physicalData[6], physicalData[7] }, physicalData[8], historyLength, t);
                     double currentParticleMass = currentParticle.Motion.Density * currentParticle.Motion.Volume;

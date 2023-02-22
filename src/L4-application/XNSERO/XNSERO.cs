@@ -101,11 +101,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         private Vector Gravity => Control.GetGravity();
 
         /// <summary>
-        /// No position update, from control file.
-        /// </summary>
-        private bool AllParticlesFixed => Control.fixPosition;
-
-        /// <summary>
         /// Coefficient of restitution for collisions.
         /// </summary>
         private double CoefficientOfRestitution => Control.CoefficientOfRestitution;
@@ -347,8 +342,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 CalculateCollision(Particles, dt);
 
-                if (!AllParticlesFixed)
-                    CalculateParticlePositionAndAngle(Particles, dt);
+                CalculateParticlePositionAndAngle(Particles, dt);
 
                 LogPhysicalData(phystime, TimestepNo);
                 Console.WriteLine($"done with time step {TimestepNo}");

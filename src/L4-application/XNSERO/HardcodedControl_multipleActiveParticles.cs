@@ -93,7 +93,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AddBoundaryValue("Wall_upper", "VelocityX#A", (X, t) => 1);
             C.AddBoundaryValue("Wall_lower", "VelocityX#A", (X, t) => 0);
             C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
-            C.SetParticles(particles, 1e-2, C.IsRestart, PathToOldSessionDir, timestep);
+            C.InitialiseParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.UseSchurBlockPrec = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
@@ -162,7 +162,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             //    if (particles[i].Motion.GetPosition().Abs() < 1.5)
             //        particles.RemoveAt(i);
             //}
-            C.SetParticles(particles,1e-2, C.IsRestart, PathToOldSessionDir, timestep);
+            C.InitialiseParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
             C.WallPositionPerDimension[0][0] = -domainLength / 2;
             C.WallPositionPerDimension[0][1] = domainLength / 2;
             C.WallPositionPerDimension[1][0] = -domainLength / 2;
@@ -230,7 +230,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, -1.1 }, 0, activeStress));
             particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, -1.1 }, 0, activeStress));
             particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, -1.1 }, 0, activeStress));
-            C.SetParticles(particles, 1e-2, C.IsRestart, PathToOldSessionDir, timestep);
+            C.InitialiseParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
             C.WallPositionPerDimension[0][0] = -domainLength / 2;
             C.WallPositionPerDimension[0][1] = domainLength / 2;
             C.WallPositionPerDimension[1][0] = -domainLength / 2;
@@ -298,7 +298,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -1, -1 }, 45, 1),
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { 1, 1 }, -90, 1)
             };
-            C.SetParticles(particles, dt, C.IsRestart, PathToOldSessionDir, timestep);
+            C.InitialiseParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
             List<Func<Vector,double, bool>> Contains = new List<Func<Vector, double, bool>>();
             for(int p = 0; p < particles.Count; p++) {
@@ -373,7 +373,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { 0, 0 }, 0, 0, new double[] {0,0 }),
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { 1, 0 }, -180, 0)
             };
-            C.SetParticles(particles, dt, C.IsRestart, PathToOldSessionDir, timestep);
+            C.InitialiseParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
             List<Func<Vector, double, bool>> Contains = new List<Func<Vector, double, bool>>();
             for (int p = 0; p < particles.Count; p++) {
@@ -445,7 +445,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 j += 1;
             }
             double dt = 1e-1;
-            C.SetParticles(particles, dt);
+            C.InitialiseParticles(particles);
             C.SetTimesteps(dt, noOfTimesteps: 50);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.5;
