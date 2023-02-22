@@ -208,6 +208,8 @@ namespace BoSSS.Application.ExternalBinding {
 
         /// <summary>
         /// Solves the Cahn-Hilliard equation
+        /// This method only contains arguments that can be made available to OpenFOAM given the limitations of the mono-C-interface.
+        /// For usage exclusively within BoSSS, the method <see cref="CahnHilliardInternal"/> is generally more convenient.
         /// </summary>
         [CodeGenExport]
         public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
@@ -226,6 +228,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         /// <summary>
         /// Solves the Cahn-Hilliard equation
+        /// This method also contains arguments that cannot be made available to OpenFOAM due to limitations of the mono-C-interface.
         /// </summary>
         public void CahnHilliardInternal(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction func = null, CahnHilliardParameters chParams = new CahnHilliardParameters()) {
             try {
