@@ -93,6 +93,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                     OriginInVirtualPeriodicDomain.Add(new Vector(0, 2 * PeriodicBoundaryPosition[1][d]));
                 }
                 break;
+                default:
+                throw new NotImplementedException("Periodic boundaries for particles only in 2D");
             }
 
             if(xPeriodic && yPeriodic) {

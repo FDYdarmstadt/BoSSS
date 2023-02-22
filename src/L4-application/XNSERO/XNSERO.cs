@@ -64,7 +64,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Spatial dimension
         /// </summary>
-        private int SpatialDimension => GridData.SpatialDimension;
+        private int GetSpatialDimension() {
+            int spatialDimension = GridData.SpatialDimension;
+            if (spatialDimension != 2)
+                throw new NotImplementedException("XNSERO currently only for 2D simulations");
+            return spatialDimension;
+        }
 
         /// <summary>
         /// Fluid viscosity
@@ -106,7 +111,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         private double CoefficientOfRestitution => Control.CoefficientOfRestitution;
         
         /// <summary>
-        /// Checks whether added damping tensors have been created. Only used if added damping is activated.
+        /// Checks whether added damping tensors have been created. Only used if added damping is activated. to be removed
         /// </summary>
         private bool initAddedDamping = true;
 
@@ -252,7 +257,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         protected override ILevelSetParameter GetLevelSetVelocity(int iLevSet) {
             using (new FuncTrace()) {
                 if (IsFluidInterface(iLevSet)) {
-                    ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, SpatialDimension, VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
+                    ILevelSetParameter levelSetVelocity = new LevelSetVelocity(VariableNames.LevelSetCG, GetSpatialDimension(), VelocityDegree(), Control.InterVelocAverage, Control.PhysicalParameters);
                     return levelSetVelocity;
 
                 } else if (IsParticleInterface(iLevSet)) {
@@ -339,9 +344,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
 
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-
                 CalculateCollision(Particles, dt);
-
                 CalculateParticlePositionAndAngle(Particles, dt);
 
                 LogPhysicalData(phystime, TimestepNo);
@@ -355,19 +358,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Safes old values for the velocity of the particles and updates added damping tensors (if used).
         /// </summary>
         private void InitializeParticlesNewTimestep(double dt) {
-            using (new FuncTrace()) {
-                foreach (Particle p in Particles) {
-                    p.Motion.SaveVelocityOfPreviousTimestep();
-                    p.LsTrk = LsTrk;
-                    if (p.Motion.UseAddedDamping) {
-                        if (initAddedDamping) {
-                            double fluidViscosity = (FluidViscosity[0] + FluidViscosity[1]) / 2;
-                            p.Motion.CalculateDampingTensor(p, LsTrk, fluidViscosity, 1, dt);
-                            p.Motion.ExchangeAddedDampingTensors();
-                            initAddedDamping = false;
-                        }
-                        p.Motion.UpdateDampingTensors();
+            foreach (Particle p in Particles) {
+                p.Motion.SaveVelocityOfPreviousTimestep();
+                p.LsTrk = LsTrk;
+                if (p.Motion.UseAddedDamping) {//to be removed
+                    if (initAddedDamping) {
+                        double fluidViscosity = (FluidViscosity[0] + FluidViscosity[1]) / 2;
+                        p.Motion.CalculateDampingTensor(p, LsTrk, fluidViscosity, 1, dt);
+                        p.Motion.ExchangeAddedDampingTensors();
+                        initAddedDamping = false;
                     }
+                    p.Motion.UpdateDampingTensors();
                 }
             }
         }
