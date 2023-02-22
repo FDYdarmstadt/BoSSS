@@ -24,18 +24,20 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         public XNSERO_Control() {
             base.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            SetDefaultValues();
 
-            // Set default values to LevelSet (one can still overwrite those)
-            AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
-            Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.Prescribed;
-            AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
-            TimeSteppingScheme = TimeSteppingScheme.BDF2;
-            NonlinearCouplingSolidFluid = true;
-            UseImmersedBoundary = true;
-            CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            void SetDefaultValues() {
+                AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
+                Option_LevelSetEvolution = Solution.LevelSetTools.LevelSetEvolution.Prescribed;
+                AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+                TimeSteppingScheme = TimeSteppingScheme.BDF2;
+                NonlinearCouplingSolidFluid = true;
+                UseImmersedBoundary = true;
+                CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
 
-            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            base.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
+                base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+                base.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
+            }
         }
 
         /// <summary>
@@ -51,6 +53,17 @@ namespace BoSSS.Application.XNSERO_Solver {
                 }
             }
             SetDGdegree(degree);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public override void SetDGdegree(int p) {
+            SetFieldOptions(p, Math.Max(4, 2 * p));
+            FieldOptions.Add(VariableNames.Phoretic, new FieldOpts() {
+                Degree = p,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
         }
 
         /// <summary>
@@ -70,17 +83,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         [DataMember]
         public bool ContainsSecondFluidSpecies = false;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        public override void SetDGdegree(int p) {
-            SetFieldOptions(p, Math.Max(4, 2 * p));
-
-            FieldOptions.Add(VariableNames.Phoretic, new FieldOpts() {
-                Degree = p,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-        }
 
         /// <summary>
         /// Set true during restart.

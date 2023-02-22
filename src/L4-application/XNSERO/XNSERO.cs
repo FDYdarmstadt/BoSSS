@@ -57,7 +57,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// An array of all particles (rigid objects). Particles are only added at the initialization of the simulation. 
+        /// An array of all particles (rigid objects). Particles can only be added at the initialization of the simulation. 
         /// </summary>
         public Particle[] Particles => Control.Particles;
 
@@ -126,19 +126,19 @@ namespace BoSSS.Application.XNSERO_Solver {
         private TextWriter LogParticleData;
 
         /// <summary>
-        /// Prevents the creation of multiple log files
-        /// </summary>
-        private bool CreatedLogger = false;
-
-        /// <summary>
         /// Particles are sorted into an R-tree to improve calculation of collisions
         /// </summary>
         private readonly RTree CollisionTree = new(2, 0.1);
 
         /// <summary>
+        /// Prevents the creation of multiple log files
+        /// </summary>
+        private bool CreatedLoggerFlag = false;
+
+        /// <summary>
         /// Prevents multiple initializations of <see cref="CollisionTree"/>
         /// </summary>
-        private bool treeInitialized = false;
+        private bool TreeInitialisedFlag = false;
 
         /// <summary>
         /// Provides information about the particle (rigid object) level set function to the level-set-updater.
@@ -232,7 +232,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 opFactory.AddEquation(new ImmersedBoundaryContinuity("A", "C", 1, config, D));
                 opFactory.AddEquation(new ImmersedBoundaryContinuity("B", "C", 1, config, D));
 
-                string[] fluidSpecies = CreateSpeciesArray(ContainsSecondFluidSpecies);
+                string[] fluidSpecies = CreateFluidSpeciesArray(ContainsSecondFluidSpecies);
 
                 RigidObjectLevelSetVelocity levelSetVelocity = new(VariableNames.LevelSetCGidx(1), Particles, FluidViscosity, fluidSpecies, Gravity, Control.dtFixed, MaxGridLength);
                 opFactory.AddParameter(levelSetVelocity);
@@ -262,7 +262,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 } else if (IsParticleInterface(iLevSet)) {
                     SetPeriodicityToParticles();
-                    string[] fluidSpecies = CreateSpeciesArray(ContainsSecondFluidSpecies);
+                    string[] fluidSpecies = CreateFluidSpeciesArray(ContainsSecondFluidSpecies);
                     ILevelSetParameter levelSetVelocity = new RigidObjectLevelSetVelocity(VariableNames.LevelSetCGidx(1), Particles, FluidViscosity, fluidSpecies, Gravity, Control.dtFixed, MaxGridLength);
                     return levelSetVelocity;
 
@@ -273,10 +273,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Creates an string array with either one species A or two species A and B.
+        /// Creates an string array with either one fluid species A or two species A and B. Note: Particles are always species C!
         /// </summary>
         /// <returns></returns>
-        private static string[] CreateSpeciesArray(bool ContainsSecondFluidSpecies) {
+        private static string[] CreateFluidSpeciesArray(bool ContainsSecondFluidSpecies) {
             string[] fluidSpecies;
             if (ContainsSecondFluidSpecies)
                 fluidSpecies = new string[] { "A", "B" };
@@ -325,33 +325,35 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="dt"></param>
         /// <returns></returns>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
-            dt = GetTimestep();
-            Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
+            using (new FuncTrace()) {
+                dt = GetTimestep();
+                Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt}");
 
-            if (!CreatedLogger) {
-                CreatedLogger = true;
-                CreatePhysicalDataLogger();
+                if (!CreatedLoggerFlag) {
+                    CreatePhysicalDataLogger();
+                    CreatedLoggerFlag = true;
+                }
+
+                InitializeParticlesNewTimestep(dt);
+                if (TimestepNo - 1 % 10 == 0 || !TreeInitialisedFlag) {
+                    CollisionTree.InitializeTree(Particles, dt);
+                    TreeInitialisedFlag = true;
+                } else {
+                    CollisionTree.UpdateTree(Particles, dt);
+                }
+                Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
+
+                Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
+
+                CalculateCollision(Particles, dt);
+
+                if (!AllParticlesFixed)
+                    CalculateParticlePositionAndAngle(Particles, dt);
+
+                LogPhysicalData(phystime, TimestepNo);
+                Console.WriteLine($"done with time step {TimestepNo}");
+                return dt;
             }
-
-            InitializeParticlesNewTimestep(dt);
-            if (TimestepNo - 1 % 10 == 0 || !treeInitialized) {
-                CollisionTree.InitializeTree(Particles, dt);
-                treeInitialized = true;
-            } else {
-                CollisionTree.UpdateTree(Particles, dt);
-            }
-            Auxillary.ParticleStateMPICheck(Particles, GridData, MPISize, TimestepNo);
-
-            Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
-
-            CalculateCollision(Particles, dt);
-
-            if (!AllParticlesFixed)
-                CalculateParticlePositionAndAngle(Particles, dt);
-
-            LogPhysicalData(phystime, TimestepNo);
-            Console.WriteLine($"done with time step {TimestepNo}");
-            return dt;
         }
 
 
@@ -359,17 +361,19 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Safes old values for the velocity of the particles and updates added damping tensors (if used).
         /// </summary>
         private void InitializeParticlesNewTimestep(double dt) {
-            foreach (Particle p in Particles) {
-                p.Motion.SaveVelocityOfPreviousTimestep();
-                p.LsTrk = LsTrk;
-                if (p.Motion.UseAddedDamping) {
-                    if (initAddedDamping) {
-                        double fluidViscosity = (FluidViscosity[0] + FluidViscosity[1]) / 2;
-                        p.Motion.CalculateDampingTensor(p, LsTrk, fluidViscosity, 1, dt);
-                        p.Motion.ExchangeAddedDampingTensors();
-                        initAddedDamping = false;
+            using (new FuncTrace()) {
+                foreach (Particle p in Particles) {
+                    p.Motion.SaveVelocityOfPreviousTimestep();
+                    p.LsTrk = LsTrk;
+                    if (p.Motion.UseAddedDamping) {
+                        if (initAddedDamping) {
+                            double fluidViscosity = (FluidViscosity[0] + FluidViscosity[1]) / 2;
+                            p.Motion.CalculateDampingTensor(p, LsTrk, fluidViscosity, 1, dt);
+                            p.Motion.ExchangeAddedDampingTensors();
+                            initAddedDamping = false;
+                        }
+                        p.Motion.UpdateDampingTensors();
                     }
-                    p.Motion.UpdateDampingTensors();
                 }
             }
         }
@@ -404,8 +408,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="Particles"></param>
         /// <param name="dt"></param>
         private static void CalculateParticlePositionAndAngle(Particle[] Particles, double dt) {
-            foreach (Particle p in Particles) {
-                p.Motion.UpdateParticlePositionAndAngle(dt);
+            using (new FuncTrace()) {
+                foreach (Particle p in Particles) {
+                    p.Motion.UpdateParticlePositionAndAngle(dt);
+                }
             }
         }
 

@@ -1121,7 +1121,8 @@ namespace BoSSS.Application.FSI_Solver {
                 ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
                 ReferenceLoopHandling = ReferenceLoopHandling.Serialize
             };
-            bool DebugSerialization = false;
+            //bool DebugSerialization = false;
+            /*
             JsonReader GetJsonReader(Stream s) {
                 if (DebugSerialization) {
                     return new JsonTextReader(new StreamReader(s));
@@ -1138,6 +1139,7 @@ namespace BoSSS.Application.FSI_Solver {
                     //return new BsonWriter(s);
                 }
             }
+            
             byte[] buffer = null;
             using (var ms1 = new MemoryStream()) {
                 using (var writer = GetJsonWriter(ms1)) {
@@ -1159,6 +1161,7 @@ namespace BoSSS.Application.FSI_Solver {
             for (int l = 0; l < L; l++) { // loop over particles
                 //Debug.Assert(GenericBlas.L2Dist((double[])b.Particles[l].Motion.GetPosition(0), (double[])o.Particles[l].Motion.GetPosition(0)) < 1e-13);
             }
+            */
         }
 
         /// <summary>

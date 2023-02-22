@@ -46,7 +46,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="Particles"></param>
         /// <param name="Timestep"></param>
         public void InitializeTree(Particle[] Particles, double Timestep) {
-            Console.WriteLine("InitTree");
             using (new FuncTrace()) {
                 TreeNode firstNode = new TreeNode(true, -1, 0, new Vector(SpatialDimension));
             Nodes.Add(firstNode);
@@ -111,7 +110,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <returns>A list of all particle IDs with an overlapping MBR</returns>
         public List<int> SearchForOverlap(Particle Particle, int ParticleID, double Timestep) {
             using (new FuncTrace()) {
-                //es kann passieren, dass manche Überlappungen mehrmals gefunden werden, z.B. weil zwei höherer Knoten mit zwei Partikeln überlappt und dann beide Pfade untersucht werden.
+                //es kann passieren, dass manche Überlappungen mehrmals gefunden werden, z.B. weil zwei höhere Knoten mit zwei Partikeln überlappen und dann beide Pfade untersucht werden.
                 List<Vector> virtualDomainOrigin = Particle.Motion.OriginInVirtualPeriodicDomain;
                 MinimalBoundingRectangle particleMBR = CalculateParticleMBR(Particle, Timestep, new Vector(SpatialDimension));
                 List<int> overlappingParticles = new List<int>();

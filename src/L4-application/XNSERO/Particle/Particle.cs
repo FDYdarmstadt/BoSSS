@@ -199,7 +199,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             double h = LsTrk.GridDat.Cells.h_maxGlobal;
             for (int i = 0; i < CellArray.Length; i++) {
                 if (CellArray[i]) {
-                    ContainArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h);
+                    ContainArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]),h);
                 }
             }
             CellMask CutCells = new(LsTrk.GridDat, ContainArray, MaskType.Logical);

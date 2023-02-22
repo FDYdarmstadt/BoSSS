@@ -138,10 +138,10 @@ namespace BoSSS.Application.FSI_Solver {
         public static FSI_Control ThreeParticleCollision(int k = 2, int amrLevel = 0) {
             FSI_Control C = new FSI_Control(k, "activeRod_noBackroundFlow", "active Particles");
             //C.SetSaveOptions(dataBasePath: @"/home/ij83requ/default_bosss_db", savePeriod: 1);
-            C.SetSaveOptions(@"D:\BoSSS_databases\wetParticleCollision", 1);
+            C.SetSaveOptions(@"D:\BoSSS_databases\Channel", 1);
             // Domain
             // =============================
-            C.SetGrid(lengthX: 1, lengthY: 1, cellsPerUnitLength: 40, periodicX: true, periodicY: true);
+            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 10, periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(amrLevel);
 
             // Coupling Properties
@@ -155,7 +155,7 @@ namespace BoSSS.Application.FSI_Solver {
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1e-3;
+            C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.IncludeConvection = false;
             double particleDensity = 1;
             C.pureDryCollisions = true;
@@ -163,15 +163,15 @@ namespace BoSSS.Application.FSI_Solver {
             // Particle Properties
             // =============================   
             InitializeMotion motion1 = new InitializeMotion(C.gravity, particleDensity, C.pureDryCollisions, false, false);
-            double particleRadius = 0.1;
+            double particleRadius = 0.5;
             C.Particles = new List<Particle>();
             //for (int i = 0; i < 9; i++) {
             //    for (int j = 0; j < 9; j++) {
             //        C.Particles.Add(new Particle_Sphere(motion1, particleRadius, new double[] { -2 + i * 0.5+0.1*Math.Pow(-1,j), 2 - j * 0.5 }, 0, 0, new double[] { 0.1 * Math.Pow(-1, i), -0.1 * Math.Pow(-1, j) }));
             //    }
             //}
-            C.Particles.Add(new Particle_Sphere(motion1, particleRadius, new double[] { 0, 0 }, 0, 0));
-            C.Particles.Add(new Particle_Sphere(motion1, particleRadius, new double[] { -0.36, 0 }, 0, 0, new double[] { 1, 0 }));
+            C.Particles.Add(new Particle_Sphere(motion1, particleRadius, new double[] { 0, 1 }, 0, 0));
+            C.Particles.Add(new Particle_Sphere(motion1, particleRadius, new double[] { 0, -1 }, 0, 0, new double[] { 1, 0 }));
             //C.Particles.Add(new Particle_Sphere(motion1, particleRadius, new double[] { 0.36, 0 }, 180, 1));
 
             // misc. solver options
