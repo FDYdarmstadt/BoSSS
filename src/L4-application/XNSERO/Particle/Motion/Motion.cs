@@ -377,8 +377,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         public void SavePositionAndAngleOfPreviousTimestep() {
             using (new FuncTrace()) {
-                Aux.SaveVectorOfLastTimestep(Position);
-                Aux.SaveValueOfLastTimestep(Angle);
+                SaveVectorOfLastTimestep(Position);
+                SaveValueOfLastTimestep(Angle);
             }
         }
 
@@ -387,10 +387,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         public void SaveVelocityOfPreviousTimestep() {
             using (new FuncTrace()) {
-                Aux.SaveVectorOfLastTimestep(TranslationalVelocity);
-                Aux.SaveValueOfLastTimestep(RotationalVelocity);
-                Aux.SaveVectorOfLastTimestep(TranslationalAcceleration);
-                Aux.SaveValueOfLastTimestep(RotationalAcceleration);
+                SaveVectorOfLastTimestep(TranslationalVelocity);
+                SaveValueOfLastTimestep(RotationalVelocity);
+                SaveVectorOfLastTimestep(TranslationalAcceleration);
+                SaveValueOfLastTimestep(RotationalAcceleration);
             }
         }
 
@@ -398,11 +398,21 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Saves force and torque of the previous time-step.
         /// </summary>
         public void SaveHydrodynamicsOfPreviousTimestep() {
-            using (new FuncTrace()) {
-                Aux.SaveVectorOfLastTimestep(HydrodynamicForces);
-                for (int i = 0; i < NumberOfHistoryEntries; i++)
-                    Aux.SaveValueOfLastTimestep(HydrodynamicTorque);
-            }
+            SaveVectorOfLastTimestep(HydrodynamicForces);
+            for (int i = 0; i < NumberOfHistoryEntries; i++)
+                SaveValueOfLastTimestep(HydrodynamicTorque);
+        }
+
+        private static void SaveValueOfLastTimestep(List<double> variable) {
+            variable.Insert(0, new double());
+            variable[0] = 0;
+            variable.RemoveAt(variable.Count - 1);
+        }
+
+        private static void SaveVectorOfLastTimestep(List<Vector> variable) {
+            int dim = variable[0].Dim;
+            variable.Insert(0, new Vector(dim));
+            variable.RemoveAt(variable.Count - 1);
         }
 
         /// <summary>
