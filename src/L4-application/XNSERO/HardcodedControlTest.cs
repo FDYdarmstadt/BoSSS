@@ -40,9 +40,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.dtFixed = 1e-3;
             C.NoOfTimesteps = 50000;
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
+            C.SetGrid2D(lengthX: 4, lengthY: 4, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(0);
-            C.IsRestart = false;
 
             // Fluid Properties
             // =============================

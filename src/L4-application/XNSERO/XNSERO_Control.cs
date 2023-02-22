@@ -178,7 +178,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="cellsPerUnitLength"></param>
         /// <param name="periodicX"></param>
         /// <param name="periodicY"></param>
-        public void SetGrid(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
+        public void SetGrid2D(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
             MaxGridLength = 1 / cellsPerUnitLength;
 
             BoundaryPositionPerDimension = new double[2][];

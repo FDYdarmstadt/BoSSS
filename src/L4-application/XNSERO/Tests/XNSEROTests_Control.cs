@@ -34,7 +34,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 "Pressure_Outlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid2D(lengthX: 4, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
 
             // Coupling Properties
@@ -79,7 +79,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 "Pressure_Outlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 8, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetGrid2D(lengthX: 8, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
 
             // Coupling Properties
@@ -129,7 +129,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 "Velocity_Inlet_right",
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: true);
+            C.SetGrid2D(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: true);
             C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
 
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY#A", X => 0.02);
@@ -194,7 +194,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             "Pressure_Dirichlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetGrid2D(lengthX: 3, lengthY: 3, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
             // Initial Values
             // ==============
 

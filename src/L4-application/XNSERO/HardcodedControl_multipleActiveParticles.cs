@@ -57,8 +57,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 "Wall_upper","Wall_lower"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(5*domainLength, domainLength, cellsPerUnitLength, true, false);
-            C.minDistanceThreshold = 2 / cellsPerUnitLength;
+            C.SetGrid2D(5*domainLength, domainLength, cellsPerUnitLength, true, false);
             C.CoefficientOfRestitution = 0.5;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
             InitializeMotion noMotion = new InitializeMotion(particleDensity * 1000, false, false, false, 0);
@@ -93,7 +92,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AddBoundaryValue("Wall_upper", "VelocityX#A", (X, t) => 1);
             C.AddBoundaryValue("Wall_lower", "VelocityX#A", (X, t) => 0);
             C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
-            C.InitialiseParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
+            C.InitialiseParticles(particles);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.UseSchurBlockPrec = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
@@ -113,7 +112,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("1"));
             int timestep = 5553;
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
-            C.IsRestart = false;
             string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\386a16bc-b0f4-4031-a300-f00f310e98c3";
             // Fluid Properties
             // =============================
@@ -133,8 +131,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             double domainLength = nextParticleDistance * noOfParticles;
             List<string> boundaryValues = new() {  "Wall" };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(domainLength, domainLength, cellsPerUnitLength, false, false);
-            C.minDistanceThreshold = 1 / cellsPerUnitLength;
+            C.SetGrid2D(domainLength, domainLength, cellsPerUnitLength, false, false);
             C.CoefficientOfRestitution = 1;
             InitializeMotion motion = new(particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2 ;
@@ -162,7 +159,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             //    if (particles[i].Motion.GetPosition().Abs() < 1.5)
             //        particles.RemoveAt(i);
             //}
-            C.InitialiseParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
+            C.InitialiseParticles(particles);
             C.WallPositionPerDimension[0][0] = -domainLength / 2;
             C.WallPositionPerDimension[0][1] = domainLength / 2;
             C.WallPositionPerDimension[1][0] = -domainLength / 2;
@@ -189,7 +186,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("1"));
             int timestep = 9518;
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
-            C.IsRestart = false;
             string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\827b306e-a50e-4eb3-b8bc-c06e0ac8a053";
             // Fluid Properties
             // =============================
@@ -214,8 +210,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 //"Pressure_Dirichlet_left"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(domainLength, domainLength/5, cellsPerUnitLength, true, false);
-            C.minDistanceThreshold = 1 / cellsPerUnitLength;
+            C.SetGrid2D(domainLength, domainLength/5, cellsPerUnitLength, true, false);
             C.CoefficientOfRestitution = 1;
             InitializeMotion motion = new(particleDensity, false, false, false, 0);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
@@ -230,7 +225,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, -1.1 }, 0, activeStress));
             particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, -1.1 }, 0, activeStress));
             particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, -1.1 }, 0, activeStress));
-            C.InitialiseParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
+            C.InitialiseParticles(particles);
             C.WallPositionPerDimension[0][0] = -domainLength / 2;
             C.WallPositionPerDimension[0][1] = domainLength / 2;
             C.WallPositionPerDimension[1][0] = -domainLength / 2;
@@ -265,10 +260,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             string ID = "c9f879d9-07da-4f1f-860b-4b2f9fb447c5";
             int timestep = 940;
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
-            C.IsRestart = false;
             string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\c9f879d9-07da-4f1f-860b-4b2f9fb447c5";
             
-            C.SetGrid(lengthX: 10, lengthY: 10, cellsPerUnitLength: 10 , periodicX: true, periodicY: true);
+            C.SetGrid2D(lengthX: 10, lengthY: 10, cellsPerUnitLength: 10 , periodicX: true, periodicY: true);
             C.SetAddaptiveMeshRefinement(5);
             double dt = 1e-1;
             //List<string> boundaryValues = new List<string> {
@@ -290,7 +284,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             double particleDensity = 1000;
             // Particle Properties
             // =============================   
-            C.fixPosition = false;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false);
             List<Particle> particles = new List<Particle>();
             angleXAxis = angleXAxis * Math.PI / 180;
@@ -298,7 +291,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -1, -1 }, 45, 1),
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { 1, 1 }, -90, 1)
             };
-            C.InitialiseParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
+            C.InitialiseParticles(particles);
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
             List<Func<Vector,double, bool>> Contains = new List<Func<Vector, double, bool>>();
             for(int p = 0; p < particles.Count; p++) {
@@ -338,10 +331,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             string ID = "c9f879d9-07da-4f1f-860b-4b2f9fb447c5";
             int timestep = 940;
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
-            C.IsRestart = false;
             string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\c9f879d9-07da-4f1f-860b-4b2f9fb447c5";
 
-            C.SetGrid(lengthX: 10, lengthY:10, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetGrid2D(lengthX: 10, lengthY:10, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(5);
             double dt = 1e-1;
             //List<string> boundaryValues = new List<string> {
@@ -364,7 +356,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             double particleDensity = 1000;
             // Particle Properties
             // =============================   
-            C.fixPosition = false;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false);
             List<Particle> particles = new List<Particle>();
             angleXAxis = angleXAxis * Math.PI / 180;
@@ -373,7 +364,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { 0, 0 }, 0, 0, new double[] {0,0 }),
                 new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { 1, 0 }, -180, 0)
             };
-            C.InitialiseParticles(particles, C.IsRestart, PathToOldSessionDir, timestep);
+            C.InitialiseParticles(particles);
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
             List<Func<Vector, double, bool>> Contains = new List<Func<Vector, double, bool>>();
             for (int p = 0; p < particles.Count; p++) {
@@ -426,8 +417,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 100;
             double nextParticleDistance = particleLength * 4;
-            C.SetGrid(6, 12, cellsPerUnitLength, false, false);
-            C.minDistanceThreshold = 2 / cellsPerUnitLength;
+            C.SetGrid2D(6, 12, cellsPerUnitLength, false, false);
             C.CoefficientOfRestitution = 1;
             InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
             double leftCornerX = -6 / 2 + nextParticleDistance / 2;
