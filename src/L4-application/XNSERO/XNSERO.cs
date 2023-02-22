@@ -112,11 +112,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         private double CoefficientOfRestitution => Control.CoefficientOfRestitution;
         
         /// <summary>
-        /// Checks whether added damping tensors have been created. Only used if added damping is activated. to be removed
-        /// </summary>
-        private bool initAddedDamping = true;
-
-        /// <summary>
         /// Saves the physical data of all particles
         /// </summary>
         private TextWriter LogParticleData;
@@ -357,15 +352,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             foreach (Particle p in Particles) {
                 p.Motion.SaveVelocityOfPreviousTimestep();
                 p.LsTrk = LsTrk;
-                if (p.Motion.UseAddedDamping) {//to be removed
-                    if (initAddedDamping) {
-                        double fluidViscosity = (FluidViscosity[0] + FluidViscosity[1]) / 2;
-                        p.Motion.CalculateDampingTensor(p, LsTrk, fluidViscosity, 1, dt);
-                        p.Motion.ExchangeAddedDampingTensors();
-                        initAddedDamping = false;
-                    }
-                    p.Motion.UpdateDampingTensors();
-                }
             }
         }
 
@@ -477,8 +463,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                         throw new ApplicationException("mismatch in number of MPI particles");
 
                     // now, compare those particles:
-                    int matrixDim = Particles[0].Motion.AddedDampingTensor.GetLength(0);
-                    int NoOfVars = (7 + D * 8 + matrixDim * matrixDim); // variables per particle; size can be increased if more values should be compared
+                    int NoOfVars = (7 + D * 8); // variables per particle; size can be increased if more values should be compared
                     double[] CheckSend = new double[NoOfParticles * NoOfVars];
 
                     for (int p = 0; p < NoOfParticles; p++) {
@@ -504,14 +489,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                             CheckSend[p * NoOfVars + Offset + 5 * D + d] = P.Motion.GetTranslationalAcceleration(1)[d];
                             CheckSend[p * NoOfVars + Offset + 6 * D + d] = P.Motion.GetHydrodynamicForces(0)[d];
                             CheckSend[p * NoOfVars + Offset + 7 * D + d] = P.Motion.GetHydrodynamicForces(1)[d];
-                        }
-
-                        // matrix values
-                        Offset += D * 8;
-                        for (int d1 = 0; d1 < matrixDim; d1++) {
-                            for (int d2 = 0; d2 < matrixDim; d2++) {
-                                CheckSend[p * NoOfVars + Offset + d1 + d1 * d2] = P.Motion.AddedDampingTensor[d1, d2];
-                            }
                         }
                     }
 

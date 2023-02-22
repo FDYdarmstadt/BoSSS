@@ -66,7 +66,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             Aux = new Auxillary();
 
             if(motionInit != null) {
-                motionInit.CheckInput();
                 Motion = motionInit.ParticleMotion;
                 Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
                 Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);

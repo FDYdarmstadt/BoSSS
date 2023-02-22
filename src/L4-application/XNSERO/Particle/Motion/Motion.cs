@@ -582,32 +582,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Calculate the tensors to implement the added damping model (Banks et.al. 2017)
-        /// </summary>
-        /// <param name="particle"></param>
-        /// <param name="levelSetTracker"></param>
-        /// <param name="fluidViscosity"></param>
-        /// <param name="fluidDensity"></param>
-        /// <param name="dt"></param>
-        internal virtual void CalculateDampingTensor(Particle particle, LevelSetTracker levelSetTracker, double fluidViscosity, double fluidDensity, double dt) {
-            throw new Exception("Added damping tensors should only be used if added damping is active.");
-        }
-
-        /// <summary>
-        /// Updates the tensors to implement the added damping model (Banks et.al. 2017)
-        /// </summary>
-        internal virtual void UpdateDampingTensors() {
-            throw new Exception("Added damping tensors should only be used if added damping is active.");
-        }
-
-        /// <summary>
-        /// Exchange of the added damping tensors between the MPI-processes.
-        /// </summary>
-        internal virtual void ExchangeAddedDampingTensors() {
-            throw new Exception("Added damping tensors should only be used if added damping is active.");
-        }
-
-        /// <summary>
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
