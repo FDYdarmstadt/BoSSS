@@ -59,8 +59,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetBoundaries(boundaryValues);
             C.SetGrid2D(5*domainLength, domainLength, cellsPerUnitLength, true, false);
             C.CoefficientOfRestitution = 0.5;
-            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
-            InitializeMotion noMotion = new InitializeMotion(particleDensity * 1000, false, false, false, 0);
+            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false);
+            InitializeMotion noMotion = new InitializeMotion(particleDensity * 1000, false, false, false);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             Random angle = new Random();
             int j = 0;
@@ -133,7 +133,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetBoundaries(boundaryValues);
             C.SetGrid2D(domainLength, domainLength, cellsPerUnitLength, false, false);
             C.CoefficientOfRestitution = 1;
-            InitializeMotion motion = new(particleDensity, false, false, false, 0);
+            InitializeMotion motion = new(particleDensity, false, false, false);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2 ;
             int j = 0;
             List<Particle> particles = new List<Particle>();
@@ -212,7 +212,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetBoundaries(boundaryValues);
             C.SetGrid2D(domainLength, domainLength/5, cellsPerUnitLength, true, false);
             C.CoefficientOfRestitution = 1;
-            InitializeMotion motion = new(particleDensity, false, false, false, 0);
+            InitializeMotion motion = new(particleDensity, false, false, false);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             int j = 0;
             List<Particle> particles = new List<Particle>();
@@ -419,7 +419,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             double nextParticleDistance = particleLength * 4;
             C.SetGrid2D(6, 12, cellsPerUnitLength, false, false);
             C.CoefficientOfRestitution = 1;
-            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false, 0);
+            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false);
             double leftCornerX = -6 / 2 + nextParticleDistance / 2;
             double leftCornerY = -12 / 2 + nextParticleDistance / 2;
             Random angle = new Random();
