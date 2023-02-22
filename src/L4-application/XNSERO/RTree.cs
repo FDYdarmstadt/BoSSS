@@ -36,8 +36,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         public RTree(int SpatialDimension, double Tolerance) {
             this.SpatialDimension = SpatialDimension;
             this.Tolerance = Tolerance;
-            if (SpatialDimension > 3)
-                throw new Exception("Max spatial dimension is: 3");
+            if (this.SpatialDimension != 2)
+                throw new NotImplementedException("R-Tree only implemented for 2D");
         }
 
         /// <summary>
@@ -47,16 +47,16 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="Timestep"></param>
         public void InitializeTree(Particle[] Particles, double Timestep) {
             using (new FuncTrace()) {
-                TreeNode firstNode = new TreeNode(true, -1, 0, new Vector(SpatialDimension));
+                TreeNode firstNode = new(true, -1, 0, new Vector(SpatialDimension));
             Nodes.Add(firstNode);
             for(int p = 0; p < Particles.Length; p++) {
                 List<Vector> virtualDomainOrigin = Particles[p].Motion.OriginInVirtualPeriodicDomain;
-                TreeNode particleNode = new TreeNode(false, 0, FindSmallestEmptyID(), new Vector(SpatialDimension));
+                TreeNode particleNode = new(false, 0, FindSmallestEmptyID(), new Vector(SpatialDimension));
                 InsertNodeToList(particleNode);
                 particleNode.ParticleID = p;
                 particleNode.MBR = CalculateParticleMBR(Particles[p], Timestep, new Vector(SpatialDimension));
                 InsertParticle(particleNode, Nodes[0]);
-                    for (int i = 0; i < virtualDomainOrigin.Count(); i++) {
+                    for (int i = 0; i < virtualDomainOrigin.Count; i++) {
                         Vector virtualPosition = virtualDomainOrigin[i] + Particles[p].Motion.GetPosition();
                         if (Particles[p].Motion.IsInsideOfPeriodicDomain(virtualPosition, 1.5 * (Particles[p].GetLengthScales().Max()))) 
                         {
@@ -370,23 +370,19 @@ namespace BoSSS.Application.XNSERO_Solver {
                 vertices[i] = new Vector(SpatialDimension);
             int noOfSubParticles = Particle.NoOfSubParticles;
             int noOfTimesteps = 2;
-            MinimalBoundingRectangle mbr = new MinimalBoundingRectangle(new Vector(SpatialDimension), new Vector(SpatialDimension));
+            MinimalBoundingRectangle mbr = new(new Vector(SpatialDimension), new Vector(SpatialDimension));
             for (int j = 0; j < noOfTimesteps; j++) {
                 for (int i = 0; i < noOfSubParticles; i++) {
                     if (i > 0)
                         throw new Exception("No support for sub-particles");
-                    Vector Position = new Vector(SpatialDimension);
-                    if (j == 0)
-                        Position = new Vector(Particle.Motion.GetPosition(0));
-                    else
-                        Position = new Vector(PredictParticePositionNextTimestep(Particle, Timestep));
+                    Vector Position = j == 0 ? new Vector(Particle.Motion.GetPosition(0)) : new Vector(PredictParticePositionNextTimestep(Particle, Timestep));
                     Position += Origin;
                     Vector Angle = j == 0 ? new Vector(Particle.Motion.GetAngle(0)) : PredictParticleAngleNextTimestep(Particle,Timestep);
-                    Vector LeftUp = new Vector(SpatialDimension);
-                    Vector RightLow = new Vector(SpatialDimension);
+                    Vector LeftUp = new(SpatialDimension);
+                    Vector RightLow = new(SpatialDimension);
                     for (int d = 0; d < SpatialDimension; d++) {
                         double sign = d == 0 ? -1 : 1;
-                        Vector supportVector = new Vector(SpatialDimension);
+                        Vector supportVector = new(SpatialDimension);
                         supportVector[d] = sign;
                         LeftUp[d] = Particle.GetSupportPoint(supportVector, Position, Angle, i)[d] + sign * Tolerance;
                         supportVector[d] = -sign;
@@ -401,11 +397,11 @@ namespace BoSSS.Application.XNSERO_Solver {
             return mbr;
         }
 
-        private Vector PredictParticePositionNextTimestep(Particle Particle, double Timestep) {
+        private static Vector PredictParticePositionNextTimestep(Particle Particle, double Timestep) {
             return Particle.Motion.GetPosition(0) + (Particle.Motion.GetTranslationalVelocity(0) + 4 * Particle.Motion.GetTranslationalVelocity(1) + Particle.Motion.GetTranslationalVelocity(2)) * Timestep / 3;
         }
 
-        private Vector PredictParticleAngleNextTimestep(Particle Particle, double Timestep) {
+        private static Vector PredictParticleAngleNextTimestep(Particle Particle, double Timestep) {
             return new Vector(Particle.Motion.GetAngle(0) + (Particle.Motion.GetRotationalVelocity(0) + 4 * Particle.Motion.GetRotationalVelocity(1) + Particle.Motion.GetRotationalVelocity(2)) * Timestep / 3);
         }
     }

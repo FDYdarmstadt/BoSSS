@@ -28,26 +28,26 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         //LevelSetTracker m_LsTrk;
 
-        public ViscosityAtIB(int _d, int _D, Particle[] AllParticles, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UsePhoretic) {
-
+        public ViscosityAtIB(int _d, int _D, Particle[] Particles, double penalty_base, double _muA, int iLevSet, string FluidSpc, string SolidSpecies, bool UsePhoretic) {
             m_penalty_base = penalty_base;
             this.FluidViscosity = _muA;
-            Component = _d;
+            this.Component = _d;
             this.m_D = _D;
             this.m_iLevSet = iLevSet;
             this.m_SolidSpecies = SolidSpecies;
             this.m_FluidSpc = FluidSpc;
             this.m_UsePhoretic = UsePhoretic;
-            this.AllParticles = AllParticles;
-            this.activeStress = AllParticles[0].ActiveStress;
+            this.Particles = Particles;
+            this.ActiveStress = Particles[0].ActiveStress;
         }
-        readonly int m_iLevSet;
-        readonly string m_FluidSpc;
-        readonly string m_SolidSpecies;
-        readonly int Component;
-        readonly int m_D;
-        readonly bool m_UsePhoretic;
-        double activeStress;
+        private readonly int m_iLevSet;
+        private readonly string m_FluidSpc;
+        private readonly string m_SolidSpecies;
+        private readonly int Component;
+        private readonly int m_D;
+        private readonly bool m_UsePhoretic;
+        private readonly double ActiveStress;
+        private readonly Particle[] Particles;
 
         /// <summary>
         /// Viskosity in species A
@@ -116,8 +116,6 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         static public bool write = true;
 
-        Particle[] AllParticles;
-
         // caching/acceleration 
         Vector IdentifyParticleCache_X;
         int IdentifyParticleCache_jCell;
@@ -134,7 +132,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// - some primitive caching is used to accelerate the method
         /// </remarks>
         Particle IdentifyParticle(Vector X, int jCell) {
-            if(AllParticles == null || AllParticles.Length < 0)
+            if(Particles == null || Particles.Length < 0)
                 return null;
 
             double h = NegLengthScaleS[jCell] * 2;
@@ -149,9 +147,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             // first, sort the particles according to distance;
             // it is most likely that the particle with closest distance is a "hit"
             // however, I have doubts that this actually accelerates this method
-            var PartDist = new (Particle P, double dist)[AllParticles.Length];
-            for(int i = 0; i < AllParticles.Length; i++) {
-                Particle P = AllParticles[i];
+            var PartDist = new (Particle P, double dist)[Particles.Length];
+            for(int i = 0; i < Particles.Length; i++) {
+                Particle P = Particles[i];
                 var Pos = P.Motion.GetPosition();
                 double dist = (X - Pos).L2Norm();
                 PartDist[i] = (P, dist);
@@ -159,7 +157,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             Array.Sort(PartDist, (T1, T2) => Math.Sign(T1.dist - T2.dist));
 
             // test if the particle contains the point 
-            for(int i = 0; i < AllParticles.Length; i++) {
+            for(int i = 0; i < Particles.Length; i++) {
                 if(PartDist[i].P.Contains(X, h)) {
                     IdentifyParticleCache_jCell = jCell;
                     IdentifyParticleCache_X = X;
@@ -183,13 +181,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             return alpha - P.Motion.GetAngle(0);
         }
 
-
-
         /// <summary>
         /// default-implementation
         /// </summary>
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-
             Vector normalVector = inp.Normal;
             double _penalty = Penalty(inp.jCellIn);
             int dim = normalVector.Dim;
@@ -209,15 +204,14 @@ namespace BoSSS.Application.XNSERO_Solver {
             Debug.Assert(Grad_uA.GetLength(1) == dim);
             Debug.Assert(Grad_uB.GetLength(1) == dim);
             if(inp.X.IsNullOrEmpty())
-                throw new Exception("X is null or empty");
+                throw new ArgumentNullException("X is null or empty");
             if(inp.X.Abs() < 0)
                 throw new ArithmeticException("invalid length of position vector");
 
-            Vector uAFict = new Vector(inp.Parameters_IN[0], inp.Parameters_IN[1]);
-            //Vector activeStressVector = new Vector(inp.Parameters_IN[2], inp.Parameters_IN[3]);
+            Vector uAFict = new(inp.Parameters_IN[0], inp.Parameters_IN[1]);
             Vector orientationVector = new(inp.Parameters_IN[2], inp.Parameters_IN[3]);
-            Vector orientationNormal = new Vector(-orientationVector[1], orientationVector[0]);
-            Vector activeStressVector = new Vector(orientationNormal * normalVector > 0 ? -activeStress * normalVector[1] : activeStress * normalVector[1], orientationNormal * normalVector > 0 ? (activeStress * normalVector[0]) : -activeStress * normalVector[0]);
+            Vector orientationNormal = new(-orientationVector[1], orientationVector[0]);
+            Vector activeStressVector = new(orientationNormal * normalVector > 0 ? -ActiveStress * normalVector[1] : ActiveStress * normalVector[1], orientationNormal * normalVector > 0 ? (ActiveStress * normalVector[0]) : -ActiveStress * normalVector[0]);
             
             BoundaryConditionType bcType = (orientationVector * normalVector <= 0) ? BoundaryConditionType.passive : BoundaryConditionType.active;
 
@@ -262,16 +256,18 @@ namespace BoSSS.Application.XNSERO_Solver {
             // 3D for IBM_Solver
             // =====================
             if(dim == 3) {
+                if (activeStressVector.Abs() != 0)
+                    throw new Exception("active stress only defined in 2D");
                 returnValue -= Grad_uA_xN * (vA);                                                    // consistency term
                 returnValue -= Grad_vA_xN * (uA[Component] - 0);                                     // symmetry term
-                returnValue += _penalty * (uA[Component] - 0) * (vA);                           // penalty term
+                returnValue += _penalty * (uA[Component] - 0) * (vA);                                // penalty term
                 Debug.Assert(!(double.IsInfinity(returnValue) || double.IsNaN(returnValue)));
                 return returnValue * FluidViscosity;
             }
 
             // 2D
             // =====================
-            switch(bcType) {
+            switch (bcType) {
                 case BoundaryConditionType.passive: {
 
                     // Grad_aU[0,0] = du_dx; Grad_aU[0,1] = du_dy;
@@ -315,6 +311,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                     }
                     break;
                 }
+                default:
+                throw new Exception("Unknown boundary condition at particle surface");
             }
             Debug.Assert(!(double.IsInfinity(returnValue) || double.IsNaN(returnValue)));
             return returnValue;
@@ -323,7 +321,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             throw new NotSupportedException();
         }
-
 
         public int LevelSetIndex {
             get { return m_iLevSet; }

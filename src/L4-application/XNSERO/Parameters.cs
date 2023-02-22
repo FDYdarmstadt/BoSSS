@@ -47,7 +47,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         private readonly string[] m_ParameterNames;
         private readonly double[] FluidViscosity;
         private readonly Vector Gravity;
-        private int HistoryPosition = 0;
         private int CurrentDimension = 0;
         double OldTime = -1;
 
@@ -67,22 +66,15 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         private double VelocityFunction(double[] X, double t) {
             double VelocityFunction = 0;
-            if (X.Length > 2)
-                throw new NotImplementedException("Rigid object solver only for 2D");
             for (int p = 0; p < Particles.Length; p++) {
                 Particle particle = Particles[p];
                 if (particle.Contains(X, 2 * GridToleranceParam)) {
                     Vector radialVector = particle.CalculateRadialVector(X);
-                    switch (CurrentDimension) {
-                        case 0:
-                        VelocityFunction = particle.Motion.GetTranslationalVelocity(HistoryPosition)[0] - particle.Motion.GetRotationalVelocity(HistoryPosition) * radialVector[1];
-                        break;
-                        case 1:
-                        VelocityFunction = particle.Motion.GetTranslationalVelocity(HistoryPosition)[1] + particle.Motion.GetRotationalVelocity(HistoryPosition) * radialVector[0];
-                        break;
-                        default:
-                        break;
-                    }
+                    VelocityFunction = CurrentDimension switch {
+                        0 => particle.Motion.GetTranslationalVelocity(0)[0] - particle.Motion.GetRotationalVelocity(0) * radialVector[1],
+                        1 => particle.Motion.GetTranslationalVelocity(0)[1] + particle.Motion.GetRotationalVelocity(0) * radialVector[0],
+                        _ => throw new NotImplementedException("Rigid object solver only for 2D"),
+                    };
                 }
             }
             return VelocityFunction;
@@ -90,7 +82,6 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         private void InternalParameterUpdate(double t, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
             using (new FuncTrace()) {
-                HistoryPosition = 0;
                 XDGField Pressure = (XDGField)DomainVarFields[VariableNames.Pressure];
                 XDGField[] Velocity = SpatialDimension.ForLoop(d => (XDGField)DomainVarFields[VariableNames.Velocity_d(d)]);
                 LevelSetTracker LsTrk = Particles[0].LsTrk;//???? Besserer Weg?
@@ -180,20 +171,13 @@ namespace BoSSS.Application.XNSERO_Solver {
 
         double OrientationFunction(double[] X, double t) {
             double OrientationFunction = 0;
-            if (X.Length > 2)
-                throw new NotImplementedException("Rigid object solver only for 2D");
             for (int p = 0; p < Particles.Length; p++) {
                 if (Particles[p].Contains(X, 2 * Tolerance) && Particles[p].ActiveStress != 0) {
-                    switch (CurrentDimension) {
-                        case 0:
-                        OrientationFunction = Math.Cos(Particles[p].Motion.GetAngle(1));
-                        break;
-                        case 1:
-                        OrientationFunction = Math.Sin(Particles[p].Motion.GetAngle(1));
-                        break;
-                        default:
-                        break;
-                    }
+                    OrientationFunction = CurrentDimension switch {
+                        0 => Math.Cos(Particles[p].Motion.GetAngle(1)),
+                        1 => Math.Sin(Particles[p].Motion.GetAngle(1)),
+                        _ => throw new NotImplementedException("Rigid object solver only for 2D"),
+                    };
                 }
             }
             return OrientationFunction;
