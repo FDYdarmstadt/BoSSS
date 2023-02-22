@@ -251,8 +251,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         public virtual Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
             int spatialDim = Position.Dim;
             Vector currentSupportPoint = new Vector(spatialDim);
-            if (Angle.Dim > 1)
-                throw new NotImplementedException("Only 2D support");
+            if (spatialDim != 2)
+                throw new NotImplementedException("Calculation of support point only implemented in 2D");
             double angle = Angle[0]; // hardcoded 2D
             Vector particleDirection = new Vector(Math.Cos(angle), Math.Sin(angle));
             double crossProductDirectionSupportVector = particleDirection[0] * supportVector[1] - particleDirection[1] * supportVector[0];

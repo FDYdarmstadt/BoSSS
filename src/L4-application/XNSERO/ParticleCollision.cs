@@ -393,13 +393,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Computes the distance between two objects (particles or walls). Algorithm based on
         /// E.G.Gilbert, D.W.Johnson, S.S.Keerthi.
         /// </summary>
-        /// <param name="Particle0">
+        /// <param name="Particle">
         /// The first particle.
         /// </param>
         /// <param name="SubParticleID0">
         /// In case of concave particles the particle is devided into multiple convex subparticles. Each of them has its one ID and needs to be tested as if it was a complete particle.
         /// </param>
-        ///  <param name="Particle1">
+        ///  <param name="SecondObject">
         /// The second particle, if Particle1 == null it is assumed to be a wall.
         /// </param>
         /// <param name="SubParticleID1">
@@ -414,91 +414,89 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="Overlapping">
         /// Is true if the two particles are overlapping.
         /// </param>
-        private void GJK_DistanceAlgorithm(Particle Particle0, int SubParticleID0, Particle Particle1, int SubParticleID1, out Vector DistanceVec, out Vector[] closestPoints, out bool Overlapping) {
-            int NoOfPeriodicBdny0 = Particle0.Motion.OriginInVirtualPeriodicDomain.Count();
-            int NoOfPeriodicBdny1 = Particle1 == null ? 0 : Particle1.Motion.OriginInVirtualPeriodicDomain.Count();
-            int spatialDim = Particle0.Motion.GetPosition(0).Dim;
+        private void GJK_DistanceAlgorithm(Particle Particle, int SubParticleID0, Particle SecondObject, int SubParticleID1, out Vector DistanceVec, out Vector[] closestPoints, out bool Overlapping) {
+            int NoOfVirtualDomainsP0 = Particle.Motion.OriginInVirtualPeriodicDomain.Count;
+            int NoOfVirtualDomainsP1 = IsParticle(SecondObject) ? SecondObject.Motion.OriginInVirtualPeriodicDomain.Count : 0;
+            Debug.Assert(NoOfVirtualDomainsP0 == NoOfVirtualDomainsP1);
+            int spatialDim = Particle.Motion.GetPosition(0).Dim;
             Overlapping = false;
-            DistanceVec = new Vector(spatialDim);
+            DistanceVec = spatialDim switch {
+                2 => new(int.MaxValue, int.MaxValue),
+                3 => new(int.MaxValue, int.MaxValue, int.MaxValue),
+                _ => throw new NotImplementedException("GJK-Algorithm only for 2D or 3D"),
+            };
             closestPoints = new Vector[2];
-            Vector supportVector = new Vector(spatialDim);
-            Vector[] temp_closestPoints = new Vector[2];
-            for (int i = 0; i < DistanceVec.Count(); i++) {
-                DistanceVec[i] = int.MaxValue;
-            }
-            Debug.Assert(NoOfPeriodicBdny0 == NoOfPeriodicBdny1);
-            for (int d1 = 0; d1 < NoOfPeriodicBdny0 + 1; d1++) {
-                for (int d2 = 0; d2 < NoOfPeriodicBdny1 + 1; d2++) {
+            //Vector supportVector = Vector.StdBasis(0, spatialDim);
+            Vector[] tempClosestPoints = new Vector[2];
+            for (int d1 = 0; d1 < NoOfVirtualDomainsP0 + 1; d1++) {// Brute force: calculate distance in all virtual domains, could be made faster...
+                for (int d2 = 0; d2 < NoOfVirtualDomainsP1 + 1; d2++) {
                     // Step 1
                     // Initialize the algorithm with the particle position
                     // =======================================================
                     Vector[] positionVectors = new Vector[2];
-                    positionVectors[0] = d1 == NoOfPeriodicBdny0
-                        ? new Vector(Particle0.Motion.GetPosition(0))
-                        : new Vector(Particle0.Motion.GetPosition(0) + Particle0.Motion.OriginInVirtualPeriodicDomain[d1]);
-                    if (Particle1 == null)
-                        positionVectors[1] = Particle0.ClosestPointOnOtherObjectToThis;
-                    else positionVectors[1] = d2 == NoOfPeriodicBdny0
-                        ? Particle1.Motion.GetPosition(0)
-                        : Particle1.Motion.GetPosition(0) + Particle1.Motion.OriginInVirtualPeriodicDomain[d2];
+                    positionVectors[0] = d1 == NoOfVirtualDomainsP0
+                        ? new Vector(Particle.Motion.GetPosition(0))
+                        : new Vector(Particle.Motion.GetPosition(0) + Particle.Motion.OriginInVirtualPeriodicDomain[d1]);
+                    if (IsParticle(SecondObject))
+                        positionVectors[1] = d2 == NoOfVirtualDomainsP0
+                                                ? SecondObject.Motion.GetPosition(0)
+                                                : SecondObject.Motion.GetPosition(0) + SecondObject.Motion.OriginInVirtualPeriodicDomain[d2];
+                    else positionVectors[1] = Particle.ClosestPointOnOtherObjectToThis;
 
                     Vector[] orientationAngle = new Vector[2];
-                    orientationAngle[0] = new Vector(Particle0.Motion.GetAngle(0));
-                    if (Particle1 != null)
-                        orientationAngle[1] = new Vector(Particle1.Motion.GetAngle(0));
+                    orientationAngle[0] = new Vector(Particle.Motion.GetAngle(0));
+                    if (IsParticle(SecondObject))
+                        orientationAngle[1] = new Vector(SecondObject.Motion.GetAngle(0));
 
-                    supportVector = positionVectors[0] - positionVectors[1];
-                    if (d1 == d2 && d1 != NoOfPeriodicBdny0)
+                    Vector supportVector = positionVectors[0] - positionVectors[1];
+                    if (d1 == d2 && d1 != NoOfVirtualDomainsP0)
                         continue;
-                    if (Particle1 == null) {
-                        if (supportVector.Abs() > 1.5 * Particle0.GetLengthScales().Max() && d1 != NoOfPeriodicBdny0)
+                    if (SecondObject == null) {
+                        if (supportVector.Abs() > 1.5 * Particle.GetLengthScales().Max() && d1 != NoOfVirtualDomainsP0)
                             continue;
-                    } else if (supportVector.Abs() > 1.5 * (Particle0.GetLengthScales().Max() + Particle1.GetLengthScales().Max()) && (d1 != NoOfPeriodicBdny0 || d2 != NoOfPeriodicBdny1))
+                    } else if (supportVector.Abs() > 1.5 * (Particle.GetLengthScales().Max() + SecondObject.GetLengthScales().Max()) && (d1 != NoOfVirtualDomainsP0 || d2 != NoOfVirtualDomainsP1))
                         continue;
 
                     if (supportVector.Abs() == 0)
-                        supportVector = new Vector(1, 0);
+                        throw new ArgumentOutOfRangeException("Support vector cannot have zero length");
                     supportVector.CheckForNanOrInfV();
 
                     // Define the simplex, which contains all points to be tested for their distance (max. 3 points in 2D)
-                    List<Vector> Simplex = new List<Vector> { new Vector(supportVector) };
+                    List<Vector> Simplex = new() { new Vector(supportVector) };
 
-                    temp_closestPoints[0] = new Vector(spatialDim);
-                    temp_closestPoints[1] = new Vector(spatialDim);
+                    tempClosestPoints[0] = new Vector(spatialDim);
+                    tempClosestPoints[1] = new Vector(spatialDim);
                     int maxNoOfIterations = 1000;
 
                     // Step 2
                     // Start the iteration
                     // =======================================================
                     for (int i = 0; i <= maxNoOfIterations; i++) {
-                        Vector negativeSupportVector = new Vector(-supportVector[0], -supportVector[1]);
-                        negativeSupportVector -= supportVector;
+                        Vector negativeSupportVector = new Vector(spatialDim) - supportVector;//-= not possible with vectors?
 
                         // Calculate the support point of the two particles, 
                         // which are the closest points if the algorithm is finished.
                         // -------------------------------------------------------
-                        temp_closestPoints[0] = Particle0.GetSupportPoint(negativeSupportVector, positionVectors[0], orientationAngle[0], SubParticleID0, GridLengthScale);
-                        // Particle-Particle collision
-                        if (Particle1 != null) {
-                            temp_closestPoints[1] = Particle1.GetSupportPoint(supportVector, positionVectors[1],orientationAngle[1], SubParticleID1, GridLengthScale);
-                        }
-                        // Particle-wall collision
-                        else {
+                        tempClosestPoints[0] = Particle.GetSupportPoint(negativeSupportVector, positionVectors[0], orientationAngle[0], SubParticleID0, GridLengthScale);
+                        
+                        if (IsParticle(SecondObject)) // Particle-Particle collision
+                            tempClosestPoints[1] = SecondObject.GetSupportPoint(supportVector, positionVectors[1], orientationAngle[1], SubParticleID1, GridLengthScale);
+                        else {// Particle-wall collision
                             if (positionVectors[0][0] == positionVectors[1][0])
-                                temp_closestPoints[1] = new Vector(temp_closestPoints[0][0], positionVectors[1][1]);
+                                tempClosestPoints[1] = new Vector(tempClosestPoints[0][0], positionVectors[1][1]);
                             else
-                                temp_closestPoints[1] = new Vector(positionVectors[1][0], temp_closestPoints[0][1]);
+                                tempClosestPoints[1] = new Vector(positionVectors[1][0], tempClosestPoints[0][1]);
                         }
 
                         // The current support point can be found by forming 
                         // the difference of the support points on the two particles
                         // -------------------------------------------------------
-                        Vector supportPoint = temp_closestPoints[0] - temp_closestPoints[1];
+                        Vector supportPoint = tempClosestPoints[0] - tempClosestPoints[1];
                         supportPoint.CheckForNanOrInfV();
-                        if (d1 < NoOfPeriodicBdny0)
-                            temp_closestPoints[0] = new Vector(temp_closestPoints[0] - Particle0.Motion.OriginInVirtualPeriodicDomain[d1]);
-                        if (d2 < NoOfPeriodicBdny1)
-                            temp_closestPoints[1] = new Vector(temp_closestPoints[1] - Particle1.Motion.OriginInVirtualPeriodicDomain[d2]);
+                        if (d1 < NoOfVirtualDomainsP0)
+                            tempClosestPoints[0] = new Vector(tempClosestPoints[0] - Particle.Motion.OriginInVirtualPeriodicDomain[d1]);
+                        if (d2 < NoOfVirtualDomainsP1)
+                            tempClosestPoints[1] = new Vector(tempClosestPoints[1] - SecondObject.Motion.OriginInVirtualPeriodicDomain[d2]);
 
                         // If the condition is true
                         // we have found the closest points!
@@ -510,12 +508,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                         // -------------------------------------------------------
                         Simplex.Insert(0, new Vector(supportPoint));
 
-                        // Calculation the new vector v with the distance
+                        // Calculation the new support vector with the distance
                         // algorithm
                         // -------------------------------------------------------
                         supportVector = DistanceAlgorithm(Simplex, out Overlapping);
-
-                        
 
                         // End algorithm if the two objects are overlapping.
                         // -------------------------------------------------------
@@ -527,29 +523,35 @@ namespace BoSSS.Application.XNSERO_Solver {
                         if (i > maxNoOfIterations)
                             throw new Exception("No convergence in GJK-algorithm, reached iteration #" + i);
                     }
-                    if (supportVector.Abs() < DistanceVec.Abs()) {
+                    if (supportVector.Abs() < DistanceVec.Abs()) {//w/o periodic bndy: this condition is always true; w periodic bndy: necessary!
                         DistanceVec = new Vector(supportVector);
-                        closestPoints[0] = new Vector(temp_closestPoints[0]);
-                        closestPoints[1] = new Vector(temp_closestPoints[1]);
+                        closestPoints[0] = new Vector(tempClosestPoints[0]);
+                        closestPoints[1] = new Vector(tempClosestPoints[1]);
                     }
                 }
             }
-            // Step 3
-            // Return min distance and distance vector.
-            // =======================================================
-            
         }
 
-        private Vector DistanceAlgorithm(List<Vector> simplex, out bool overlapping) {
-            Vector supportVector = new Vector(simplex[0].Dim);
+        /// <summary>
+        /// Returns true if <paramref name="Object"/> is a particle. Returns <see langword="false"/> if <paramref name="Object"/> is a wall.
+        /// </summary>
+        /// <param name="Object"></param>
+        /// <returns></returns>
+        private static bool IsParticle(Particle Object) {
+            return Object != null;
+        }
+
+        private static Vector DistanceAlgorithm(List<Vector> simplex, out bool overlapping) {
+            int spatialDimension = simplex[0].Dim;
+            Vector supportVector = new(spatialDimension);
             overlapping = false;
 
             // Step 1
             // Test for multiple Simplex-points 
             // and remove the duplicates
             // =======================================================
-            for (int s1 = 0; s1 < simplex.Count(); s1++) {
-                for (int s2 = s1 + 1; s2 < simplex.Count(); s2++) {
+            for (int s1 = 0; s1 < simplex.Count; s1++) {
+                for (int s2 = s1 + 1; s2 < simplex.Count; s2++) {
                     if ((simplex[s1] - simplex[s2]).Abs() < 1e-8) {
                         simplex.RemoveAt(s2);
                     }
@@ -557,13 +559,13 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
 
             // Step 2
-            // Calculate dot product between all position vectors and 
+            // Calculate dot product between all simplex vectors and 
             // save to an 2D-array.
             // =======================================================
-            double[][] dotProductSimplex = new double[simplex.Count()][];
-            for (int s1 = 0; s1 < simplex.Count(); s1++) {
-                dotProductSimplex[s1] = new double[simplex.Count()];
-                for (int s2 = s1; s2 < simplex.Count(); s2++) {
+            double[][] dotProductSimplex = new double[simplex.Count][];
+            for (int s1 = 0; s1 < simplex.Count; s1++) {
+                dotProductSimplex[s1] = new double[simplex.Count];
+                for (int s2 = s1; s2 < simplex.Count; s2++) {
                     dotProductSimplex[s1][s2] = simplex[s1] * simplex[s2];
                 }
             }
@@ -581,25 +583,29 @@ namespace BoSSS.Application.XNSERO_Solver {
             // The simplex contains two elements, lets test which is
             // closest to the origin
             // -------------------------------------------------------
-            else if (simplex.Count() == 2) {
+            else if (simplex.Count == 2) {
                 // One of the simplex point is closest to the origin, 
                 // choose this and delete the other one.
                 // -------------------------------------------------------
-                bool continueAlgorithm = true;
-                for (int s = 0; s < simplex.Count(); s++) {
+                bool continueAlgorithmFlag = true;
+                for (int s = 0; s < simplex.Count; s++) {
                     if (dotProductSimplex[s][s] - dotProductSimplex[0][1] <= 0) {
                         supportVector = new Vector(simplex[s]);
                         simplex.RemoveAt(Math.Abs(s - 1));
-                        continueAlgorithm = false;
+                        continueAlgorithmFlag = false;
                         break;
                     }
                 }
                 // A point at the line between the two simplex points is
                 // closest to the origin, thus we need to keep both points.
                 // -------------------------------------------------------
-                if (continueAlgorithm) {
+                if (continueAlgorithmFlag) {
                     Vector simplexDistanceVector = simplex[1] - simplex[0];
-                    double lambda = Math.Abs(simplex[1].CrossProduct2D(simplexDistanceVector)) / simplexDistanceVector.AbsSquare();
+                    double lambda = spatialDimension switch {
+                        2 => Math.Abs(simplex[1].CrossProduct2D(simplexDistanceVector)) / simplexDistanceVector.AbsSquare(),
+                        3 => (simplex[1].CrossProduct(simplexDistanceVector)).Abs() / simplexDistanceVector.AbsSquare(),
+                        _ => throw new ArgumentOutOfRangeException("Irregular spatial dimension"),
+                    };
                     if (lambda == 0) // if the origin lies on the line between the two simplex points, the two objects are overlapping in one point
                         overlapping = true;
                     supportVector[0] = -lambda * simplexDistanceVector[1];
@@ -610,12 +616,12 @@ namespace BoSSS.Application.XNSERO_Solver {
             // The simplex contains three elements, lets test which is
             // closest to the origin
             // -------------------------------------------------------
-            else if (simplex.Count() == 3) {
-                bool continueAlgorithm = true;
+            else if (simplex.Count == 3) {
+                bool continueAlgorithmFlag = true;
                 // Test whether one of the simplex points is closest to 
                 // the origin
                 // -------------------------------------------------------
-                for (int s1 = 0; s1 < simplex.Count(); s1++) {
+                for (int s1 = 0; s1 < simplex.Count; s1++) {
                     int s2 = s1 == 2 ? 2 : 1;
                     int s3 = s1 == 0 ? 0 : 1;
                     if (dotProductSimplex[s1][s1] - dotProductSimplex[0][s2] <= 0 && dotProductSimplex[s1][s1] - dotProductSimplex[s3][2] <= 0) {
@@ -623,53 +629,57 @@ namespace BoSSS.Application.XNSERO_Solver {
                         // Delete the complete simplex and add back the point closest to the origin
                         simplex.Clear();
                         simplex.Add(new Vector(supportVector));
-                        continueAlgorithm = false;
+                        continueAlgorithmFlag = false;
                         break;
                     }
                 }
                 // None of the simplex points was the closest point, 
                 // thus, it has to be any point at the edges
                 // -------------------------------------------------------
-                if (continueAlgorithm) {
+                if (continueAlgorithmFlag) {
                     for (int s1 = simplex.Count() - 1; s1 >= 0; s1--) {
                         int s2 = s1 == 0 ? 1 : 2;
                         int s3 = s1 == 2 ? 1 : 0;
-                        // Calculate a crossproduct of the form (BC x BA) x BA * BX
-                        double crossProduct = new double();
+                        // Calculate a triple crossproduct and dotproduct ("quadrupelproduct") of the form (BC x BA) x BA * BX = (BA(BA*BC)-BC(BA*BA))*BX
+                        double quadrupelProduct = new();
                         switch (s1) {
                             case 0:
                                 double temp1 = dotProductSimplex[1][2] - dotProductSimplex[0][2] - dotProductSimplex[1][1] + dotProductSimplex[0][1];
                                 double temp2 = dotProductSimplex[0][1] - dotProductSimplex[0][0] - dotProductSimplex[1][2] + dotProductSimplex[0][2];
                                 double temp3 = dotProductSimplex[1][1] - 2 * dotProductSimplex[0][1] + dotProductSimplex[0][0];
-                                crossProduct = dotProductSimplex[0][1] * temp1 + dotProductSimplex[1][1] * temp2 + dotProductSimplex[1][2] * temp3;
+                                quadrupelProduct = dotProductSimplex[0][1] * temp1 + dotProductSimplex[1][1] * temp2 + dotProductSimplex[1][2] * temp3;
                                 break;
                             case 1:
                                 temp1 = -dotProductSimplex[2][2] + dotProductSimplex[0][2] + dotProductSimplex[1][2] - dotProductSimplex[0][1];
                                 temp2 = dotProductSimplex[2][2] - 2 * dotProductSimplex[0][2] + dotProductSimplex[0][0];
                                 temp3 = dotProductSimplex[0][2] - dotProductSimplex[0][0] - dotProductSimplex[1][2] + dotProductSimplex[0][1];
-                                crossProduct = dotProductSimplex[0][2] * temp1 + dotProductSimplex[1][2] * temp2 + dotProductSimplex[2][2] * temp3;
+                                quadrupelProduct = dotProductSimplex[0][2] * temp1 + dotProductSimplex[1][2] * temp2 + dotProductSimplex[2][2] * temp3;
                                 break;
                             case 2:
                                 temp1 = dotProductSimplex[2][2] - 2 * dotProductSimplex[1][2] + dotProductSimplex[1][1];
                                 temp2 = -dotProductSimplex[2][2] + dotProductSimplex[1][2] + dotProductSimplex[0][2] - dotProductSimplex[0][1];
                                 temp3 = dotProductSimplex[1][2] - dotProductSimplex[1][1] - dotProductSimplex[0][2] + dotProductSimplex[0][1];
-                                crossProduct = dotProductSimplex[0][2] * temp1 + dotProductSimplex[1][2] * temp2 + dotProductSimplex[2][2] * temp3;
+                                quadrupelProduct = dotProductSimplex[0][2] * temp1 + dotProductSimplex[1][2] * temp2 + dotProductSimplex[2][2] * temp3;
                                 break;
                         }
                         // A point on one of the edges is closest to the origin.
-                        if (dotProductSimplex[s3][s3] - dotProductSimplex[s3][s2] >= 0 && dotProductSimplex[s2][s2] - dotProductSimplex[s3][s2] >= 0 && crossProduct >= 0 && continueAlgorithm) {
+                        if (dotProductSimplex[s3][s3] - dotProductSimplex[s3][s2] >= 0 && dotProductSimplex[s2][s2] - dotProductSimplex[s3][s2] >= 0 && quadrupelProduct >= 0 && continueAlgorithmFlag) {
                             Vector simplexDistanceVector = simplex[s2] - simplex[s3];
-                            double Lambda = Math.Abs(simplex[s2].CrossProduct2D(simplexDistanceVector)) / simplexDistanceVector.AbsSquare();
-                            supportVector[0] = -Lambda * simplexDistanceVector[1];
-                            supportVector[1] = Lambda * simplexDistanceVector[0];
+                            double lambda = spatialDimension switch {
+                                2 => Math.Abs(simplex[s2].CrossProduct2D(simplexDistanceVector)) / simplexDistanceVector.AbsSquare(),
+                                3 => (simplex[s2].CrossProduct(simplexDistanceVector)).Abs() / simplexDistanceVector.AbsSquare(),
+                                _ => throw new ArgumentOutOfRangeException("Irregular spatial dimension"),
+                            };
+                            supportVector[0] = -lambda * simplexDistanceVector[1];
+                            supportVector[1] = lambda * simplexDistanceVector[0];
                             // save the two remaining simplex points and clear the simplex.
-                            Vector tempSimplex1 = new Vector(simplex[s2]);
-                            Vector tempSimplex2 = new Vector(simplex[s3]);
+                            Vector tempSimplex1 = new(simplex[s2]);
+                            Vector tempSimplex2 = new(simplex[s3]);
                             simplex.Clear();
                             // Re-add the remaining points
                             simplex.Add(tempSimplex1);
                             simplex.Add(tempSimplex2);
-                            continueAlgorithm = false;
+                            continueAlgorithmFlag = false;
                             break;
                         }
                     }
@@ -678,8 +688,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                 // thus, the simplex must contain the origin and 
                 // the two particles do overlap.
                 // -------------------------------------------------------
-                if (continueAlgorithm)
+                if (continueAlgorithmFlag)
                     overlapping = true;
+            } else { //In case of 3D 3rd order simplices might arise, necessary to add them here!
+                throw new NotImplementedException("Distance algorithm is only implemented for max 2nd order simplex (a triangle)");
             }
             return supportVector;
         }
