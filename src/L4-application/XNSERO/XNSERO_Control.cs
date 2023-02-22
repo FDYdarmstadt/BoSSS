@@ -37,6 +37,8 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
                 base.NonLinearSolver.ConvergenceCriterion = 1.0e-8;
+
+                Gravity = new(0, 0);
             }
         }
 
@@ -125,25 +127,25 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The position of all boundaries, independent of boundary condition.
         /// </summary>
         [DataMember]
-        public double[][] BoundaryPositionPerDimension;
+        public double[][] BoundaryPositionPerDimension{ get; private set; }
 
         /// <summary>
         /// The position of all boundaries, only for walls.
         /// </summary>
         [DataMember]
-        public double[][] WallPositionPerDimension;
+        public double[][] WallPositionPerDimension { get; private set; }
 
         /// <summary>
         /// True for periodic walls
         /// </summary>
         [DataMember]
-        public bool[] BoundaryIsPeriodic;
+        public bool[] BoundaryIsPeriodic { get; private set; }
 
         /// <summary>
         /// Max grid length
         /// </summary>
         [DataMember]
-        public double MaxGridLength;
+        public double MaxGridLength { get; private set; }
 
         /// <summary>
         /// Setup AMR Level at the level set.
@@ -155,6 +157,48 @@ namespace BoSSS.Application.XNSERO_Solver {
                 RefinementLevel = MaxRefinementLevel;
                 AMR_startUpSweeps = MaxRefinementLevel;
             }
+        }
+
+        /// <summary>
+        /// All particles
+        /// </summary>
+        [DataMember]
+        public Particle[] Particles { get; private set; }
+
+        /// <summary>
+        /// switch to turn the Phoretic Field on/off
+        /// </summary>
+        [DataMember]
+        public bool UsePhoreticField = false;
+
+        /// <summary>
+        /// switch to turn the averaged equations on/off
+        /// </summary>
+        [DataMember]
+        public bool UseAveragedEquations = false;
+
+        /// <summary>
+        /// Coefficient of restitution for collision model.
+        /// </summary>
+        [DataMember]
+        public double CoefficientOfRestitution = 1.0;
+
+        /// <summary>
+        /// Gravity acting on the particles, zero by default.
+        /// </summary>
+        [DataMember]
+        public Vector Gravity { get; private set; }
+
+        /// <summary>
+        /// Set gravity for particles and fluid species.
+        /// </summary>
+        /// <param name="Gravity"></param>
+        public void SetGravity(Vector Gravity) {
+            this.Gravity = new Vector(Gravity);
+            InitialValues_Evaluators.Add("GravityX#A", X => Gravity[0]);
+            InitialValues_Evaluators.Add("GravityX#B", X => Gravity[0]);
+            InitialValues_Evaluators.Add("GravityY#A", X => Gravity[1]);
+            InitialValues_Evaluators.Add("GravityY#B", X => Gravity[1]);
         }
 
         /// <summary>
@@ -291,36 +335,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Coefficient of restitution for collision model.
-        /// </summary>
-        [DataMember]
-        public double CoefficientOfRestitution = 1.0;
-
-        /// <summary>
-        /// Gravity acting on the particles, zero by default.
-        /// </summary>
-        [DataMember]
-        private Vector Gravity = new(0, 0);
-
-        /// <summary>
-        /// Set gravity for particles and fluid species.
-        /// </summary>
-        /// <param name="Gravity"></param>
-        public void SetGravity(Vector Gravity) {
-            this.Gravity = new Vector(Gravity);
-            InitialValues_Evaluators.Add("GravityX#A", X => Gravity[0]);
-            InitialValues_Evaluators.Add("GravityX#B", X => Gravity[0]);
-            InitialValues_Evaluators.Add("GravityY#A", X => Gravity[1]);
-            InitialValues_Evaluators.Add("GravityY#B", X => Gravity[1]);
-        }
-
-        /// <summary>
-        /// Returns gravity vector.
-        /// </summary>
-        /// <returns></returns>
-        public Vector GetGravity() => Gravity;
-
-        /// <summary>
         /// Initialize particle list
         /// </summary>
         /// <param name="ParticleList"></param>
@@ -347,24 +361,6 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             Console.WriteLine("Simulation with " + Particles.Length + " particles");
         }
-
-        /// <summary>
-        /// All particles
-        /// </summary>
-        [DataMember]
-        public Particle[] Particles { get; private set; }
-
-        /// <summary>
-        /// switch to turn the Phoretic Field on/off
-        /// </summary>
-        [DataMember]
-        public bool UsePhoreticField = false;
-
-        /// <summary>
-        /// switch to turn the averaged equations on/off
-        /// </summary>
-        [DataMember]
-        public bool UseAveragedEquations = false;
 
         private static List<Particle> LoadParticlesOnRestart(string pathToOldSessionDir, List<Particle> ParticleList, int timestep=0) {
             string pathToPhysicalData = Path.Combine(pathToOldSessionDir, "PhysicalData.txt");

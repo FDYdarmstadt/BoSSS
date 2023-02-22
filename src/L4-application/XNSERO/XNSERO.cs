@@ -98,7 +98,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Gravity vector, from control file.
         /// </summary>
-        private Vector Gravity => Control.GetGravity();
+        private Vector Gravity => Control.Gravity;
 
         /// <summary>
         /// Coefficient of restitution for collisions.
