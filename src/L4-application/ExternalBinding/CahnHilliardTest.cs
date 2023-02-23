@@ -88,19 +88,19 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
         [NUnitFileToCopyHack(
-        "OpenFOAM/meshes/big/small/polyMesh/*",
+        "OpenFOAM/meshes/1D/small/polyMesh/*",
 
-        "OpenFOAM/meshes/big/medium/polyMesh/*",
+        "OpenFOAM/meshes/1D/medium/polyMesh/*",
 
-        "OpenFOAM/meshes/big/large/polyMesh/*"
+        "OpenFOAM/meshes/1D/large/polyMesh/*"
             )]
         [Test]
         public static void Test1D() {
             Init();
 
-            string smallGrd = "./meshes/big/small/polyMesh/";
-            string mediumGrd = "./meshes/big/medium/polyMesh/";
-            string largeGrd = "./meshes/big/large/polyMesh/";
+            string smallGrd = "./meshes/1D/small/polyMesh/";
+            string mediumGrd = "./meshes/1D/medium/polyMesh/";
+            string largeGrd = "./meshes/1D/large/polyMesh/";
             var chOp = new FixedOperators();
 
             // OpenFOAMGrid grd = GridImportFromDirectory.GenerateFOAMGrid(smallGrd);
@@ -173,11 +173,11 @@ namespace BoSSS.Application.ExternalBinding {
 
 
         [NUnitFileToCopyHack(
-        "OpenFOAM/meshes/1D/small/polyMesh/*",
+        "OpenFOAM/meshes/big/small/polyMesh/*",
 
-        "OpenFOAM/meshes/1D/medium/polyMesh/*",
+        "OpenFOAM/meshes/big/medium/polyMesh/*",
 
-        "OpenFOAM/meshes/1D/large/polyMesh/*"
+        "OpenFOAM/meshes/big/large/polyMesh/*"
             )]
         [Test]
         public static void DropletTest() {
@@ -188,9 +188,9 @@ namespace BoSSS.Application.ExternalBinding {
 
             Console.WriteLine("Running Cahn-Hilliard 1D Test");
             // OpenFOAMGrid grd = GridImportTestSmall.GenerateFOAMGrid();
-            string smallGrd = "./meshes/1D/small/polyMesh/";
-            string mediumGrd = "./meshes/1D/medium/polyMesh/";
-            string largeGrd = "./meshes/1D/large/polyMesh/";
+            string smallGrd = "./meshes/big/small/polyMesh/";
+            string mediumGrd = "./meshes/big/medium/polyMesh/";
+            string largeGrd = "./meshes/big/large/polyMesh/";
             var chOp = new FixedOperators();
             var normRelChanges = new List<double>();
             var jumpNorms = new List<double>();
