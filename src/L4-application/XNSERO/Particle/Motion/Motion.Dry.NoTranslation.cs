@@ -43,7 +43,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        protected override Vector CalculateParticlePosition(double dt) {
+        public override Vector CalculateParticlePosition(double dt) {
             Vector l_Position = GetPosition(1);
             Aux.TestArithmeticException(l_Position, "particle position");
             return l_Position;
@@ -53,7 +53,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override Vector CalculateTranslationalVelocity(double dt) {
+        public override Vector CalculateTranslationalVelocity(double dt) {
             Vector l_TranslationalVelocity = new Vector(SpatialDim);
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
@@ -63,7 +63,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculates the new translational acceleration.
         /// </summary>
         /// <param name="dt"></param>
-        protected override Vector CalculateTranslationalAcceleration(double dt) {
+        public override Vector CalculateTranslationalAcceleration(double dt) {
             return new Vector(SpatialDim);
         }
 

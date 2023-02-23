@@ -28,14 +28,11 @@ using System.Runtime.Serialization;
 
 namespace BoSSS.Application.XNSERO_Solver {
     [Serializable]
-    public class Motion : ICloneable {
+    public class Motion : IMotion {
 
         /// <summary>
         /// The standard description of motion including hydrodynamics.
         /// </summary>
-        /// <param name="gravity">
-        /// The gravity (volume forces) acting on the particle.
-        /// </param>
         /// <param name="density">
         /// The density of the particle.
         /// </param>
@@ -66,6 +63,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         [DataMember]
         public List<Vector> OriginInVirtualPeriodicDomain = new List<Vector>();
+
+        /// <summary>
+        /// The origin of the virtual domain at the periodic boundary.
+        /// </summary>
+        public List<Vector> GetOriginInVirtualPeriodicDomain() {
+            return OriginInVirtualPeriodicDomain;
+        }
 
         /// <summary>
         /// This method provides information about periodic boundaries for the particle. 
@@ -226,7 +230,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Density
         /// </summary>
         [DataMember]
-        public readonly double Density;
+        public double Density;
+
+        public double GetDensity() {
+            return Density;
+        }
 
         /// <summary>
         /// Particle volume
@@ -247,12 +255,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         public double MaxLength;
 
         /// <summary>
-        /// If used, the added damping tensor is saved here.
-        /// </summary>
-        [DataMember]
-        internal double[,] AddedDampingTensor = new double[6, 6];
-
-        /// <summary>
         /// Mass of the current particle.
         /// </summary>
         [DataMember]
@@ -271,18 +273,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         internal bool IncludeTranslation = true;
 
         /// <summary>
-        /// Use added damping?, for reference: Banks et.al. 2017
-        /// </summary>
-        [DataMember]
-        internal virtual bool UseAddedDamping { get; } = false;
-
-        /// <summary>
         /// Returns the position of the particle.
         /// </summary>
         /// <param name="historyPosition">
         /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
-        internal Vector GetPosition(int historyPosition = 0) {
+        public Vector GetPosition(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
                 throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return Position[historyPosition];
@@ -294,7 +290,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// /// <param name="historyPosition">
         /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
-        internal double GetAngle(int historyPosition = 0) {
+        public double GetAngle(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
                 throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return Angle[historyPosition];
@@ -306,7 +302,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// /// <param name="historyPosition">
         /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
-        internal Vector GetTranslationalVelocity(int historyPosition = 0) {
+        public Vector GetTranslationalVelocity(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
                 throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return TranslationalVelocity[historyPosition];
@@ -318,7 +314,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// /// <param name="historyPosition">
         /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
-        internal double GetRotationalVelocity(int historyPosition = 0) {
+        public double GetRotationalVelocity(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
                 throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return RotationalVelocity[historyPosition];
@@ -330,7 +326,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// /// <param name="historyPosition">
         /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
-        internal Vector GetTranslationalAcceleration(int historyPosition = 0) {
+        public Vector GetTranslationalAcceleration(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
                 throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return TranslationalAcceleration[historyPosition];
@@ -342,7 +338,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// /// <param name="historyPosition">
         /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
-        internal double GetRotationalAcceleration(int historyPosition = 0) {
+        public double GetRotationalAcceleration(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
                 throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return RotationalAcceleration[historyPosition];
@@ -354,7 +350,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// /// <param name="historyPosition">
         /// The history of the particle is saved for 4 time-steps. historyPosition=0 returns the newest value.
         /// </param>
-        internal Vector GetHydrodynamicForces(int historyPosition = 0) {
+        public Vector GetHydrodynamicForces(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
                 throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return HydrodynamicForces[historyPosition];
@@ -366,7 +362,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// /// <param name="historyPosition">
         /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
         /// </param>
-        internal double GetHydrodynamicTorque(int historyPosition = 0) {
+        public double GetHydrodynamicTorque(int historyPosition = 0) {
             if (historyPosition >= NumberOfHistoryEntries)
                 throw new Exception("Error in Particle.Motion: Only " + NumberOfHistoryEntries + " time-steps are saved. The requested value is " + historyPosition + " steps in the past!");
             return HydrodynamicTorque[historyPosition];
@@ -424,7 +420,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="initialAngle">
         /// The initial angle.
         /// </param>
-        internal void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle, int historyLength = 0, int currentHistoryPos = 0) {
+        public void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle, int historyLength = 0, int currentHistoryPos = 0) {
             using (new FuncTrace()) {
                 if (historyLength == 0)
                     historyLength = NumberOfHistoryEntries;
@@ -447,7 +443,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="initalRotation">
         /// The initial rotational velocity.
         /// </param>
-        internal void InitializeParticleVelocity(double[] initalTranslation, double initalRotation, int historyLength = 0, int currentHistoryPos = 0) {
+        public void InitializeParticleVelocity(double[] initalTranslation, double initalRotation, int historyLength = 0, int currentHistoryPos = 0) {
             using (new FuncTrace()) {
                 if (historyLength == 0)
                     historyLength = NumberOfHistoryEntries;
@@ -469,7 +465,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="initalRotation">
         /// The initial rotational velocity.
         /// </param>
-        internal void InitializeParticleAcceleration(double[] initalTranslationAcceleration, double initalRotationAcceleration, int historyLength = 0, int currentHistoryPos = 0) {
+        public void InitializeParticleAcceleration(double[] initalTranslationAcceleration, double initalRotationAcceleration, int historyLength = 0, int currentHistoryPos = 0) {
             using (new FuncTrace()) {
                 if (historyLength == 0)
                     historyLength = NumberOfHistoryEntries;
@@ -543,7 +539,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calls the calculation of the position and angle during the calculation of the collisions.
         /// </summary>
         /// <param name="dt"></param>
-        internal void CollisionParticlePositionAndAngle(double collisionDynamicTimestep) {
+        public void CollisionParticlePositionAndAngle(double collisionDynamicTimestep) {
             using (new FuncTrace()) {
                 Position[0] = CalculateParticlePositionDuringCollision(collisionDynamicTimestep);
                 Angle[0] = CalculateParticleAngleDuringCollision(collisionDynamicTimestep);
@@ -554,7 +550,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calls the calculation of the velocity.
         /// </summary>
         /// <param name="dt"></param>
-        internal void UpdateParticleVelocity(double dt) {
+        public void UpdateParticleVelocity(double dt) {
             using (new FuncTrace()) {
                 TranslationalAcceleration[0] = CalculateTranslationalAcceleration(dt - CollisionTimestep);
                 RotationalAcceleration[0] = CalculateRotationalAcceleration(dt - CollisionTimestep);
@@ -568,7 +564,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="particleID">This particle ID</param>
         /// <param name="AllParticleHydrodynamics">Hydrodynamics of all particles.</param>
-        internal void UpdateForcesAndTorque(int particleID, double[] AllParticleHydrodynamics) {
+        public void UpdateForcesAndTorque(int particleID, double[] AllParticleHydrodynamics) {
             using (new FuncTrace()) {
                 Vector forces = new Vector(SpatialDim);
                 for (int d = 0; d < SpatialDim; d++) {
@@ -585,7 +581,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        protected virtual Vector CalculateParticlePosition(double dt) {
+        public virtual Vector CalculateParticlePosition(double dt) {
             using (new FuncTrace()) {
                 Vector position = Position[1] + (5 * TranslationalVelocity[0] + 8 * TranslationalVelocity[1] - TranslationalVelocity[2]) * dt / 12;
                 Aux.TestArithmeticException(position, "particle position");
@@ -597,7 +593,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>
-        protected virtual double CalculateParticleAngle(double dt) {
+        public virtual double CalculateParticleAngle(double dt) {
             using (new FuncTrace()) {
                 double angle = Angle[1] + (5 * RotationalVelocity[0] + 8 * RotationalVelocity[1] - RotationalVelocity[2]) * dt / 12;
                 Aux.TestArithmeticException(angle, "particle angle");
@@ -609,7 +605,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        protected virtual Vector CalculateParticlePositionDuringCollision(double dt) {
+        public virtual Vector CalculateParticlePositionDuringCollision(double dt) {
             using (new FuncTrace()) {
                 Vector position = Position[0] + (5 * TranslationalVelocity[0] + 8 * TranslationalVelocity[1] - TranslationalVelocity[2]) * dt / 12;
                 Aux.TestArithmeticException(position, "particle position");
@@ -621,7 +617,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>
-        protected virtual double CalculateParticleAngleDuringCollision(double dt) {
+        public virtual double CalculateParticleAngleDuringCollision(double dt) {
             using (new FuncTrace()) {
                 double angle = Angle[0] + (5 * RotationalVelocity[0] + 8 * RotationalVelocity[1] - RotationalVelocity[2]) * dt / 12;
                 Aux.TestArithmeticException(angle, "particle angle");
@@ -633,7 +629,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new translational velocity of the particle.
         /// </summary>
         /// <param name="dt">Time-step</param>
-        protected virtual Vector CalculateTranslationalVelocity(double dt) {
+        public virtual Vector CalculateTranslationalVelocity(double dt) {
             using (new FuncTrace()) {
                 Vector translationalVelocity = TranslationalVelocity[1] + (5 * TranslationalAcceleration[0] + 8 * TranslationalAcceleration[1] - TranslationalAcceleration[2]) * dt / 12;
                 Aux.TestArithmeticException(translationalVelocity, "particle translational velocity");
@@ -645,7 +641,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new angular velocity of the particle.
         /// </summary>
         /// <param name="dt">Time-step</param>
-        protected virtual double CalculateAngularVelocity(double dt) {
+        public virtual double CalculateAngularVelocity(double dt) {
             using (new FuncTrace()) {
                 double rotationalVelocity = RotationalVelocity[1] + (5 * RotationalAcceleration[0] + 8 * RotationalAcceleration[1] - RotationalAcceleration[2]) * dt / 12;
                 Aux.TestArithmeticException(rotationalVelocity, "particle rotational velocity");
@@ -657,7 +653,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new tranlational acceleration.
         /// </summary>
         /// <param name="dt"></param>
-        protected virtual Vector CalculateTranslationalAcceleration(double dt) {
+        public virtual Vector CalculateTranslationalAcceleration(double dt) {
             using (new FuncTrace()) {
                 Vector l_Acceleration = HydrodynamicForces[0] / (Density * Volume);
                 Aux.TestArithmeticException(l_Acceleration, "particle translational acceleration");
@@ -669,7 +665,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new rotational acceleration.
         /// </summary>
         /// <param name="dt"></param>
-        protected virtual double CalculateRotationalAcceleration(double dt) {
+        public virtual double CalculateRotationalAcceleration(double dt) {
             using (new FuncTrace()) {
                 double l_Acceleration = HydrodynamicTorque[0] / MomentOfInertia;
                 Aux.TestArithmeticException(l_Acceleration, "particle rotational acceleration");

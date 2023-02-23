@@ -46,7 +46,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 0;
             double particleDensity1 = 1;
-            InitializeMotion motion1 = new InitializeMotion(particleDensity1);
+            Motion motion1 = new(particleDensity1);
             List<Particle> particles = new List<Particle> {
                 new Particle_Sphere(motion1, 0.5, new double[] { 0.0, 0.0 }),
             };
@@ -89,10 +89,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 0;
-            double particleDensity1 = 2;
-            InitializeMotion motion1 = new InitializeMotion(particleDensity1);
+            double particleDensity1 = 2; 
+            Motion motion1 = new(particleDensity1);
             double particleDensity2 = 1;
-            InitializeMotion motion2 = new InitializeMotion(particleDensity2);
+            Motion motion2 = new(particleDensity2);
             List<Particle> particles = new List<Particle> {
                 new Particle_Sphere(motion1, 1, new double[] { -2.0, 0.0 }),
                 new Particle_Ellipsoid(motion2, 1, 1, new double[] { 2.0, 0.0 }, startAngl: 0)
@@ -138,7 +138,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             double dt = 0.1;
 
             double particleDensity = 1;
-            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, true);
+            MotionWetNoTranslation motion = new(particleDensity);
             C.InitialiseParticles(new List<Particle> { new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) });
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.25;
@@ -209,9 +209,9 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             // Particle Properties
             double particleDensity1 = 100.0;
-            InitializeMotion motion1 = new InitializeMotion(particleDensity1, false, true);
+            MotionWetNoRotation motion1 = new(particleDensity1);
             double particleDensity2 = 1.0;
-            InitializeMotion motion2 = new InitializeMotion(particleDensity2, false, true, true);
+            MotionFixed motion2 = new(particleDensity2);
             List<Particle> particles = new List<Particle> {
                 new Particle_Sphere(motion1, 0.18, new double[] { 0.0, 0.6 }),
                 new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),

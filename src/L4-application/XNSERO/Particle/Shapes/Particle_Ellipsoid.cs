@@ -58,7 +58,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Ellipsoid(InitializeMotion motionInit, double halfAxisA = 4, double halfAxisB = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public Particle_Ellipsoid(IMotion motion, double halfAxisA = 4, double halfAxisB = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             m_Length = halfAxisA;
             m_Thickness = halfAxisB;
             Aux.TestArithmeticException(halfAxisA, "Particle length");
@@ -177,7 +177,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         public override object Clone() {
-            return new Particle_Ellipsoid(MotionInitializer, m_Length, m_Thickness, Motion.GetPosition(), Motion.GetAngle() * 360 / (2 * Math.PI), ActiveStress, Motion.GetTranslationalVelocity(), Motion.GetRotationalVelocity()) {
+            return new Particle_Ellipsoid(Motion, m_Length, m_Thickness, Motion.GetPosition(), Motion.GetAngle() * 360 / (2 * Math.PI), ActiveStress, Motion.GetTranslationalVelocity(), Motion.GetRotationalVelocity()) {
                 
             };
         }

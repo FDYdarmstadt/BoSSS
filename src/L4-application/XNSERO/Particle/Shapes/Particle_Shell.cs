@@ -57,7 +57,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Shell(InitializeMotion motionInit, double length = 4, double height = 1, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public Particle_Shell(IMotion motion, double length = 4, double height = 1, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             m_Length = length;
             m_Thickness = thickness;
             m_Height = height;

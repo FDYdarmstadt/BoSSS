@@ -40,18 +40,18 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override Vector CalculateParticlePosition(double dt) {
+        public override Vector CalculateParticlePosition(double dt) {
             Vector position = GetPosition(1);
             Aux.TestArithmeticException(position, "particle translational velocity");
             return position;
         }
-        
+
         /// <summary>
         /// Calculate the new angular velocity of the particle using explicit Euler scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateParticleAngle(double dt) {
+        public override double CalculateParticleAngle(double dt) {
             double angle = GetAngle(1);
             Aux.TestArithmeticException(angle, "particle rotational velocity");
             return angle;

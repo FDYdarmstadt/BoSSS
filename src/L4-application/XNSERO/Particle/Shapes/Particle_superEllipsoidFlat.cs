@@ -13,7 +13,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         double m_Thickness;
 
         public Particle_superEllipsoidFlat(
-            InitializeMotion motionInit, 
+            IMotion motion, 
             double length, 
             double thickness, 
             int superEllipsoidExponent, 
@@ -22,7 +22,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             double activeStress = 0, 
             double[] startTransVelocity = null, 
             double startRotVelocity = 0)
-            : base(motionInit, length, thickness, superEllipsoidExponent, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            : base(motion, length, thickness, superEllipsoidExponent, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             m_Length = length;
             m_Thickness = thickness;
             m_Exponent = superEllipsoidExponent;

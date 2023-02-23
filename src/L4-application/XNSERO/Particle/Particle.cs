@@ -42,7 +42,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Constructor for an arbitrary particle to be implemented in the Particle_Shape classes.
         /// </summary>
-        /// <param name="motionInit">
+        /// <param name="Motion">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
         /// <param name="startPos">
@@ -60,18 +60,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle(InitializeMotion motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
+        public Particle(IMotion motion, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             SpatialDim = startPos.Length;
             ActiveStress = activeStress;
             Aux = new Auxillary();
-
-            if(motionInit != null) {
-                Motion = motionInit.ParticleMotion;
-                Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
-                Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
-                particleDensity = Motion.Density;
-                MotionInitializer = motionInit;
-            }
+            this.Motion = motion ?? throw new ArgumentNullException("Missing definition of particle motion");
+            this.Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
+            this.Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
+            Density = this.Motion.GetDensity();
         }
 
         [DataMember]
@@ -93,7 +89,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The density of the particle.
         /// </summary>
         [DataMember]
-        private readonly double particleDensity;
+        private readonly double Density;
 
         /// <summary>
         /// The spatial dimension.
@@ -105,19 +101,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Instantiate object for particle motion.
         /// </summary>
         [DataMember]
-        public Motion Motion { get; private set; }
-
-        /// <summary>
-        /// Instantiate object for motion initialization.
-        /// </summary>
-        [DataMember]
-        public InitializeMotion MotionInitializer;
+        public IMotion Motion { get; private set; }
 
         /// <summary>
         /// Mass of the current particle.
         /// </summary>
         [DataMember]
-        protected double Mass_P => Area * particleDensity;
+        protected double Mass_P => Area * Density;
 
         /// <summary>
         /// Check whether any particles is collided with another particle
@@ -170,10 +160,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>   
         public double LevelSetFunction(double[] X, double GridLength) {
             double levelSet = ParticleLevelSetFunction(X, Motion.GetPosition());
-            for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
-                Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
+            for (int i = 0; i < Motion.GetOriginInVirtualPeriodicDomain().Count; i++) {
+                Vector virtualPosition = Motion.GetOriginInVirtualPeriodicDomain()[i] + Motion.GetPosition();
                 if (Motion.IsInsideOfPeriodicDomain(virtualPosition, (GridLength * 2 + GetLengthScales().Max())))
-                    levelSet = Math.Max(levelSet, ParticleLevelSetFunction(X, Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition()));
+                    levelSet = Math.Max(levelSet, ParticleLevelSetFunction(X, Motion.GetOriginInVirtualPeriodicDomain()[i] + Motion.GetPosition()));
             }
             return levelSet;
         }

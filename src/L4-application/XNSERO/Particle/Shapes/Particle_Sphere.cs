@@ -53,7 +53,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Sphere(InitializeMotion motionInit, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public Particle_Sphere(IMotion motion, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
 
             m_Radius = radius;
             Aux.TestArithmeticException(radius, "Particle radius");
@@ -137,7 +137,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         public override object Clone() {
-            Particle clonedParticle = new Particle_Sphere(MotionInitializer,
+            Particle clonedParticle = new Particle_Sphere(Motion,
                                                              m_Radius,
                                                              Motion.GetPosition(),
                                                              Motion.GetAngle() * 360 / (2 * Math.PI),

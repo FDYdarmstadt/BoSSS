@@ -58,7 +58,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // =============================   
             double particleDensity = 150;
             List<Particle> particles = new List<Particle>();
-            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false);
+            Motion motion = new(particleDensity);
             particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4, new double[] { 1.0, 0.0 }, 0, 0, new double[] { 0, 0 }, 0));
             particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4, new double[] { -1.0, 0.0 }, 0, 0, new double[] { 0, 0 }, 0));
             C.InitialiseParticles(particles);

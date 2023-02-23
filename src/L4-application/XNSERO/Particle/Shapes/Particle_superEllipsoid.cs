@@ -60,7 +60,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_superEllipsoid(InitializeMotion motionInit, double length, double thickness, int superEllipsoidExponent, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public Particle_superEllipsoid(IMotion motion, double length, double thickness, int superEllipsoidExponent, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             m_Length = length;
             m_Thickness = thickness;
             m_Exponent = superEllipsoidExponent;

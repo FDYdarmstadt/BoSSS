@@ -14,68 +14,259 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid;
 using ilPSP;
 using System;
+using System.Collections.Generic;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.XNSERO_Solver {
-    [Serializable]
-    public class InitializeMotion {
+    public interface IMotion : ICloneable {
 
         /// <summary>
-        /// The initialization of the particle motion. Depending on the given parameters the correct model is chosen.
+        /// This method provides information about periodic boundaries for the particle. 
         /// </summary>
-        /// <param name="particleDensity">
-        /// The density of the particle.
-        /// </param>
-        /// <param name="isDry">
-        /// Set true if no hydrodynamics should be included.
-        /// </param>
-        /// <param name="noRotation"></param>
-        /// <param name="noTranslation"></param>
-        public InitializeMotion(double particleDensity = 1, bool isDry = false, bool noRotation = false, bool noTranslation = false, bool calculateOnlyVelocity = false) {
-            this.particleDensity = particleDensity;
-            this.isDry = isDry;
-            this.noRotation = noRotation;
-            this.noTranslation = noTranslation;
-            this.calculateOnlyVelocity = calculateOnlyVelocity;
-
-            if (particleDensity == 0)
-                throw new Exception("Zero particle density is not allowed.");
-        }
-
-        [DataMember]
-        private readonly double particleDensity;
-        [DataMember]
-        private readonly bool isDry;
-        [DataMember]
-        private readonly bool noRotation;
-        [DataMember]
-        private readonly bool noTranslation;
-        [DataMember]
-        private readonly bool calculateOnlyVelocity;
+        /// <param name="periodicBoundaryPosition">Relative periodic boundary position towards the origin.</param>
+        /// <param name="dimension"></param>
+        /// <remarks>At each periodic boundary a virtual domain is created with its own origin, which coordinates are given with respect to the main origin.
+        /// Considering all edges and vertices of a rectangular domain this leads to eight additional virtual domains.
+        /// </remarks>
+        public void SetPeriodicBoundary(double[] periodicBoundaryPosition, int dimension);
 
         /// <summary>
-        /// Initialize the correct derived motion.cs.
+        /// The origin of the virtual domain at the periodic boundary.
         /// </summary>
-        public Motion ParticleMotion {
-            get {
-                if (noRotation && noTranslation) {
-                    if (calculateOnlyVelocity)
-                        return new MotionFixedWithVelocity(particleDensity);
-                    else
-                        return new MotionFixed();
-                }
-                else if (isDry) {
-                    return noRotation ? new MotionDryNoRotation(particleDensity)
-                        : noTranslation ? new MotionDryNoTranslation(particleDensity)
-                        : new MotionDry(particleDensity);
-                }
-                else
-                    return noRotation ? new MotionWetNoRotation(particleDensity)
-                        : noTranslation ? new MotionWetNoTranslation(particleDensity)
-                        : new Motion(particleDensity);
-            }
-        }
+        public List<Vector> GetOriginInVirtualPeriodicDomain();
+
+        /// <summary>
+        /// Checks whether a point is inside of the domain or outside in the virtual domain at a periodic boundary.
+        /// </summary>
+        /// <param name="Point"></param>
+        /// <param name="Tolerance"></param>
+        /// <returns></returns>
+        public bool IsInsideOfPeriodicDomain(Vector Point, double Tolerance);
+
+        /// <summary>
+        /// Returns the position of the particle.
+        /// </summary>
+        /// <param name="historyPosition">
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
+        /// </param>
+        public Vector GetPosition(int historyPosition = 0);
+
+        /// <summary>
+        /// Returns the angle of the particle.
+        /// </summary>
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
+        /// </param>
+        public double GetAngle(int historyPosition = 0);
+
+        /// <summary>
+        /// Returns the translational velocity of the particle.
+        /// </summary>
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
+        /// </param>
+        public Vector GetTranslationalVelocity(int historyPosition = 0);
+
+        /// <summary>
+        /// Returns the rotational velocity of the particle.
+        /// </summary>
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
+        /// </param>
+        public double GetRotationalVelocity(int historyPosition = 0);
+
+        /// <summary>
+        /// Returns the translational acceleration of the particle.
+        /// </summary>
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
+        /// </param>
+        public Vector GetTranslationalAcceleration(int historyPosition = 0);
+
+        /// <summary>
+        /// Returns the rotational acceleration of the particle.
+        /// </summary>
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
+        /// </param>
+        public double GetRotationalAcceleration(int historyPosition = 0);
+
+        /// <summary>
+        /// Returns the force acting on the particle in the current time step.
+        /// </summary>
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for 4 time-steps. historyPosition=0 returns the newest value.
+        /// </param>
+        public Vector GetHydrodynamicForces(int historyPosition = 0);
+
+        /// <summary>
+        /// Returns the torque acting on the particle in the current time step.
+        /// </summary>
+        /// /// <param name="historyPosition">
+        /// The history of the particle is saved for four time-steps. historyPosition=0 returns the newest value.
+        /// </param>
+        public double GetHydrodynamicTorque(int historyPosition = 0);
+
+        /// <summary>
+        /// Saves position and angle of the last time-step.
+        /// </summary>
+        public void SavePositionAndAngleOfPreviousTimestep();
+
+        /// <summary>
+        /// Saves translational and rotational velocities of the last time-step.
+        /// </summary>
+        public void SaveVelocityOfPreviousTimestep();
+
+        /// <summary>
+        /// Used during init of the particle. Sets the position and the angle.
+        /// </summary>
+        /// <param name="initialPosition">
+        /// The initial position.
+        /// </param>
+        /// <param name="initialAngle">
+        /// The initial angle.
+        /// </param>
+        public void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle, int historyLength = 0, int currentHistoryPos = 0);
+
+        /// <summary>
+        /// Used during init of the particle. Sets the translational and rotational velocity.
+        /// </summary>
+        /// <param name="initalTranslation">
+        /// The initial translational velocity.
+        /// </param>
+        /// <param name="initalRotation">
+        /// The initial rotational velocity.
+        /// </param>
+        public void InitializeParticleVelocity(double[] initalTranslation, double initalRotation, int historyLength = 0, int currentHistoryPos = 0);
+
+        /// <summary>
+        /// Used during init of the particle. Sets the translational and rotational acceleration.
+        /// </summary>
+        /// <param name="initalTranslationAcceleration"></param>
+        /// <param name="initalRotationAcceleration"></param>
+        /// <param name="historyLength"></param>
+        /// <param name="currentHistoryPos"></param>
+        public void InitializeParticleAcceleration(double[] initalTranslationAcceleration, double initalRotationAcceleration, int historyLength = 0, int currentHistoryPos = 0);
+
+        /// <summary>
+        /// Init of the particle area.
+        /// </summary>
+        /// <param name="Volume"></param>
+        public void SetVolume(double Volume);
+
+        /// <summary>
+        /// Init of the particle area.
+        /// </summary>
+        /// <param name="Volume"></param>
+        public double GetDensity();
+
+        /// <summary>
+        /// Init of the lengthscale.
+        /// </summary>
+        /// <param name="moment"></param>
+        public void SetMaxLength(double lengthscale);
+
+        /// <summary>
+        /// Init of the moment of inertia.
+        /// </summary>
+        /// <param name="moment"></param>
+        public void SetMomentOfInertia(double moment);
+
+        /// <summary>
+        /// Sets the collision time-step.
+        /// </summary>
+        /// <param name="collisionTimestep">
+        /// The physical time consumend by the collision procedure.
+        /// </param>
+        public void SetCollisionTimestep(double collisionTimestep);
+
+        /// <summary>
+        /// Calls the calculation of the position and angle.
+        /// </summary>
+        /// <param name="dt"></param>
+        public void UpdateParticlePositionAndAngle(double dt);
+
+        /// <summary>
+        /// Calls the calculation of the position and angle during the calculation of the collisions.
+        /// </summary>
+        /// <param name="dt"></param>
+        public void CollisionParticlePositionAndAngle(double collisionDynamicTimestep);
+
+        /// <summary>
+        /// Calls the calculation of the velocity.
+        /// </summary>
+        /// <param name="dt"></param>
+        public void UpdateParticleVelocity(double dt);
+
+        /// <summary>
+        /// Sets the newly calculated hydrodynamic to this particle
+        /// </summary>
+        /// <param name="particleID">This particle ID</param>
+        /// <param name="AllParticleHydrodynamics">Hydrodynamics of all particles.</param>
+        public void UpdateForcesAndTorque(int particleID, double[] AllParticleHydrodynamics);
+
+        /// <summary>
+        /// Calculate the new particle position
+        /// </summary>
+        /// <param name="dt"></param>
+        public Vector CalculateParticlePosition(double dt);
+
+        /// <summary>
+        /// Calculate the new particle angle
+        /// </summary>
+        /// <param name="dt"></param>
+        public double CalculateParticleAngle(double dt);
+
+        /// <summary>
+        /// Calculate the new particle position
+        /// </summary>
+        /// <param name="dt"></param>
+        public Vector CalculateParticlePositionDuringCollision(double dt);
+
+        /// <summary>
+        /// Calculate the new particle angle
+        /// </summary>
+        /// <param name="dt"></param>
+        public double CalculateParticleAngleDuringCollision(double dt);
+
+        /// <summary>
+        /// Calculate the new translational velocity of the particle.
+        /// </summary>
+        /// <param name="dt">Time-step</param>
+        public Vector CalculateTranslationalVelocity(double dt);
+
+        /// <summary>
+        /// Calculate the new angular velocity of the particle.
+        /// </summary>
+        /// <param name="dt">Time-step</param>
+        public double CalculateAngularVelocity(double dt);
+
+        /// <summary>
+        /// Calculate the new tranlational acceleration.
+        /// </summary>
+        /// <param name="dt"></param>
+        public Vector CalculateTranslationalAcceleration(double dt);
+
+        /// <summary>
+        /// Calculate the new rotational acceleration.
+        /// </summary>
+        /// <param name="dt"></param>
+        public double CalculateRotationalAcceleration(double dt);
+
+        /// <summary>
+        /// Calls the integration of the hydrodynamic stress at this particles level-set
+        /// </summary>
+        /// <param name="hydrodynamicsIntegration"></param>
+        public Vector CalculateHydrodynamics(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, CellMask cutCells, string[] FluidSpecies, double dt = 0);
+
+        /// <summary>
+        /// Calculates the gravitational forces.
+        /// </summary>
+        /// <param name="fluidDensity"></param>
+        /// <param name="tempForces"></param>
+        public Vector GetGravityForces(Vector Gravity);
     }
 }
