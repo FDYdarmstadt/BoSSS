@@ -18,15 +18,16 @@ using System;
 using System.Runtime.Serialization;
 using ilPSP;
 using System.Linq;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Rectangle : Particle {
+    public class ParticleEllipse : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Rectangle() : base() {
+        private ParticleEllipse() : base() {
 
         }
 
@@ -36,10 +37,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="motionInit">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
-        /// <param name="length">
+        /// <param name="halfAxisA">
         /// The length of the horizontal halfaxis.
         /// </param>
-        /// <param name="thickness">
+        /// <param name="halfAxisB">
         /// The length of the vertical halfaxis.
         /// </param>
         /// <param name="startPos">
@@ -57,11 +58,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Rectangle(IMotion motion, double length = 4, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
-            m_Length = length;
-            m_Thickness = thickness;
-            Aux.TestArithmeticException(length, "Particle length");
-            Aux.TestArithmeticException(thickness, "Particle thickness");
+        public ParticleEllipse(IMotion motion, double halfAxisA, double halfAxisB, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            m_Length = halfAxisA;
+            m_Thickness = halfAxisB;
+            Aux.TestArithmeticException(halfAxisA, "Particle length");
+            Aux.TestArithmeticException(halfAxisB, "Particle thickness");
 
             Motion.SetMaxLength(GetLengthScales().Max());
             Motion.SetVolume(Area);
@@ -76,17 +77,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Circumference of an elliptic particle. Approximated with Ramanujan.
         /// </summary>
-        public override double Circumference => 2 * m_Length + 2 * m_Thickness;
+        public override double Circumference => Math.PI * ((m_Length + m_Thickness) + (3 * (m_Length - m_Thickness).Pow2()) / (10 * (m_Length + m_Thickness) + Math.Sqrt(m_Length.Pow2() + 14 * m_Length * m_Thickness + m_Thickness.Pow2())));
 
         /// <summary>
         /// Moment of inertia of an elliptic particle.
         /// </summary>
-        override public double MomentOfInertia => (Mass_P * (m_Length.Pow2() + m_Thickness.Pow2())) / 12;
+        override public double MomentOfInertia => (1 / 4.0) * (Mass_P * (m_Length * m_Length + m_Thickness * m_Thickness));
 
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Area => m_Length * m_Thickness;
+        public override double Area => m_Length * m_Thickness * Math.PI;
 
         /// <summary>
         /// Level set function of the particle.
@@ -95,14 +96,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The current point.
         /// </param>
         protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
+            Vector position = Postion;
             double angle = Motion.GetAngle(0);
-            double[] position = Postion;
-            double[] tempX = X.CloneAs();
-            tempX[0] = X[0] * Math.Cos(angle) + X[1] * Math.Sin(angle);
-            tempX[1] = X[0] * Math.Sin(angle) + X[1] * Math.Cos(angle);
-            double r = -Math.Max(Math.Abs(tempX[0] - position[0]) - m_Length, Math.Abs(tempX[1] - position[1]) - m_Thickness);
-            if (double.IsNaN(r) || double.IsInfinity(r))
-                throw new ArithmeticException();
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
+            double r = -(((X[0] - position[0]) * orientation[0] + (X[1] - position[1]) * orientation[1]) / m_Length).Pow2()
+                        - (((X[0] - position[0]) * orientation[1] - (X[1] - position[1]) * orientation[0]) / m_Thickness).Pow2()
+                        + 1.0;
             return r;
         }
 
@@ -116,13 +115,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// tolerance length.
         /// </param>
         protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
-            Vector orientation = new Vector(Math.Cos(Motion.GetAngle(0)), -Math.Sin(Motion.GetAngle(0)));
-            Vector normalOrientation = new Vector(Math.Sin(Motion.GetAngle(0)), Math.Cos(Motion.GetAngle(0)));
+            double angle = Motion.GetAngle(0);
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
             Vector position = Motion.GetPosition(0);
             double a = m_Length + tolerance;
             double b = m_Thickness + tolerance;
-            Vector tempX = new Vector( point * orientation, point * normalOrientation );
-            return (Math.Abs(tempX[0] - position[0]) < a && Math.Abs(tempX[1] - position[1]) < b);
+            double Ellipse = ((point[0] - position[0]) * orientation[0] + (point[1] - position[1]) * orientation[1]).Pow2() / a.Pow2() + ((point[0] - position[0]) * orientation[1] - (point[1] - position[1]) * orientation[0]).Pow2() / b.Pow2();
+            return Ellipse < 1;
         }
 
         /// <summary>
@@ -132,25 +131,42 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// A vector. 
         /// </param>
         override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
-            Aux.TestArithmeticException(supportVector, "vector in calc of support point");
+            Aux = new Auxillary();
+            Aux.TestArithmeticException(supportVector, "vector in calculation of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
-            Vector supportPoint = new Vector(supportVector);
+            Vector SupportPoint = new Vector(SpatialDim);
             if (Angle.Dim > 1)
                 throw new NotImplementedException("Only 2D support");
             double angle = Angle[0]; // hardcoded 2D
+            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
             Vector position = new Vector(Position);
-            Vector rotVector = new Vector(supportVector);
-            rotVector[0] = supportVector[0] * Math.Cos(angle) - supportVector[1] * Math.Sin(angle);
-            rotVector[1] = supportVector[0] * Math.Sin(angle) + supportVector[1] * Math.Cos(angle);
-            Vector length = new Vector(position);
-            length[0] = m_Length * Math.Cos(angle) - m_Thickness * Math.Sin(angle);
-            length[1] = m_Length * Math.Sin(angle) + m_Thickness * Math.Cos(angle);
-            for(int d = 0; d < position.Dim; d++) {
-                supportPoint[d] = Math.Sign(rotVector[d]) * length[d] + position[d];
+
+            double[,] rotMatrix = new double[2, 2];
+            rotMatrix[0, 0] = (m_Length + tolerance) * orientation[0];
+            rotMatrix[0, 1] = (-m_Thickness - tolerance) * orientation[1];
+            rotMatrix[1, 0] = (m_Length + tolerance) * orientation[1];
+            rotMatrix[1, 1] = (m_Thickness + tolerance) * orientation[0];
+            double[,] transposeRotMatrix = rotMatrix.CloneAs();
+            transposeRotMatrix[0, 1] = rotMatrix[1, 0];
+            transposeRotMatrix[1, 0] = rotMatrix[0, 1];
+
+            double[] rotVector = new double[2];
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 2; j++) {
+                    rotVector[i] += transposeRotMatrix[i, j] * supportVector[j];
+                }
             }
-            return supportPoint;
+            rotVector = rotVector.Normalize();
+
+            for (int i = 0; i < 2; i++) {
+                for (int j = 0; j < 2; j++) {
+                    SupportPoint[i] += rotMatrix[i, j] * rotVector[j];
+                }
+                SupportPoint[i] += position[i];
+            }
+            return SupportPoint;
         }
 
         /// <summary>
@@ -158,6 +174,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         override public double[] GetLengthScales() {
             return new double[] { m_Length, m_Thickness };
+        }
+
+        public override object Clone() {
+            return new ParticleEllipse(Motion, m_Length, m_Thickness, Motion.GetPosition(), Motion.GetAngle() * 360 / (2 * Math.PI), ActiveStress, Motion.GetTranslationalVelocity(), Motion.GetRotationalVelocity()) {
+                
+            };
         }
     }
 }

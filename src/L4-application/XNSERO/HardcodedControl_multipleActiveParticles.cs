@@ -70,7 +70,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 while (-domainLength * 5 / 2 + nextParticleDistance / 2 + i * nextParticleDistance < domainLength*5/2){//-domainLength /3) {
                     double angle2 = (double)angle.Next(0, 6) * 180 + angle.Next(0, 361) * Math.Pow(-1, i * j);
                     angle2 = 0;// angle2.MPIBroadcast(0);
-                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength * 5 / 2 + nextParticleDistance / 2 + i * nextParticleDistance, -2.5 + 1.6 * j * nextParticleDistance * aspectRatio }, angle2, activeStress, new double[] { 1, 0 }));
+                    particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength * 5 / 2 + nextParticleDistance / 2 + i * nextParticleDistance, -2.5 + 1.6 * j * nextParticleDistance * aspectRatio }, angle2, activeStress, new double[] { 1, 0 }));
 
                     i += 1;
                 }
@@ -141,7 +141,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 int i = 0;
                 while (leftCorner + i * nextParticleDistance < domainLength / 2) {
                     double angle2 = 180 * (-i + j);
-                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance * aspectRatio * 3 }, angle2, activeStress));
+                    particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance * aspectRatio * 3 }, angle2, activeStress));
 
                     i += 1;
                 }
@@ -216,15 +216,15 @@ namespace BoSSS.Application.XNSERO_Solver {
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
             int j = 0;
             List<Particle> particles = new List<Particle>();
-            particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, 0 }, 0, activeStress));
-            particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, 0 }, 0, activeStress));
-            particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, 0 }, 0, activeStress));
-            particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, 1.1 }, 0, activeStress));
-            particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, 1.1 }, 0, activeStress));
-            particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, 1.1 }, 0, activeStress));
-            particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, -1.1 }, 0, activeStress));
-            particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, -1.1 }, 0, activeStress));
-            particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, -1.1 }, 0, activeStress));
+            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, 0 }, 0, activeStress));
+            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, 0 }, 0, activeStress));
+            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, 0 }, 0, activeStress));
+            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, 1.1 }, 0, activeStress));
+            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, 1.1 }, 0, activeStress));
+            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, 1.1 }, 0, activeStress));
+            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, -1.1 }, 0, activeStress));
+            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, -1.1 }, 0, activeStress));
+            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, -1.1 }, 0, activeStress));
             C.InitialiseParticles(particles);
             C.WallPositionPerDimension[0][0] = -domainLength / 2;
             C.WallPositionPerDimension[0][1] = domainLength / 2;
@@ -288,8 +288,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             List<Particle> particles = new List<Particle>();
             angleXAxis = angleXAxis * Math.PI / 180;
             particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -1, -1 }, 45, 1),
-                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { 1, 1 }, -90, 1)
+                new ParticleEllipse(motion, halfAxis, aspectRatio * halfAxis, new double[] { -1, -1 }, 45, 1),
+                new ParticleEllipse(motion, halfAxis, aspectRatio * halfAxis, new double[] { 1, 1 }, -90, 1)
             };
             C.InitialiseParticles(particles);
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
@@ -360,9 +360,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             List<Particle> particles = new List<Particle>();
             angleXAxis = angleXAxis * Math.PI / 180;
             particles = new List<Particle> {
-                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { -1.5, 0 }, 0, 0, new double[] {1,0}),
-                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { 0, 0 }, 0, 0, new double[] {0,0 }),
-                new Particle_Ellipsoid(motion, halfAxis, aspectRatio * halfAxis, new double[] { 1, 0 }, -180, 0)
+                new ParticleEllipse(motion, halfAxis, aspectRatio * halfAxis, new double[] { -1.5, 0 }, 0, 0, new double[] {1,0}),
+                new ParticleEllipse(motion, halfAxis, aspectRatio * halfAxis, new double[] { 0, 0 }, 0, 0, new double[] {0,0 }),
+                new ParticleEllipse(motion, halfAxis, aspectRatio * halfAxis, new double[] { 1, 0 }, -180, 0)
             };
             C.InitialiseParticles(particles);
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
@@ -428,7 +428,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             while (leftCornerY + j * nextParticleDistance < 12 / 2 && j < noOfRows) {
                 int i = 0;                
                 while (leftCornerX + i * nextParticleDistance < 6 / 2 ) {
-                    particles.Add(new Particle_Ellipsoid(motion, particleLength, particleLength * aspectRatio, new double[] { leftCornerX + i * nextParticleDistance, leftCornerY + j * nextParticleDistance }));
+                    particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { leftCornerX + i * nextParticleDistance, leftCornerY + j * nextParticleDistance }));
 
                     i += 1;
                 }

@@ -21,22 +21,22 @@ using ilPSP;
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Bean : Particle {
+    public class ParticleDisk : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Bean() : base() {
+        private ParticleDisk() : base() {
 
         }
 
         /// <summary>
-        /// Constructor for a bean.
+        /// Constructor for a sphere.
         /// </summary>
         /// <param name="motionInit">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
         /// <param name="radius">
-        /// The main lengthscale of the bean. 
+        /// The radius.
         /// </param>
         /// <param name="startPos">
         /// The initial position.
@@ -53,32 +53,36 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Bean(IMotion motion, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public ParticleDisk(IMotion motion, double radius, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
+
             m_Radius = radius;
             Aux.TestArithmeticException(radius, "Particle radius");
 
             Motion.SetMaxLength(radius);
             Motion.SetVolume(Area);
             Motion.SetMomentOfInertia(MomentOfInertia);
+
         }
 
         [DataMember]
         private readonly double m_Radius;
 
         /// <summary>
-        /// Circumference. Approximated with sphere.
+        /// Area occupied by the particle.
+        /// </summary>
+        public override double Area => Math.PI * m_Radius.Pow2();
+
+        /// <summary>
+        /// Circumference. 
         /// </summary>
         public override double Circumference => 2 * Math.PI * m_Radius;
 
         /// <summary>
-        /// Area occupied by the particle.
+        /// Moment of inertia. 
         /// </summary>
-        public override double Area => Math.PI * m_Radius * m_Radius;
-
-        /// <summary>
-        /// Moment of inertia. Approximated with sphere.
-        /// </summary>
-        override public double MomentOfInertia => (1 / 2.0) * (Mass_P * m_Radius * m_Radius);
+        override public double MomentOfInertia => (1 / 2.0) * (Mass_P * m_Radius.Pow2());
 
         /// <summary>
         /// Level set function of the particle.
@@ -87,11 +91,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The current point.
         /// </param>
         protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
-            double alpha = -Motion.GetAngle(0);
-            double[] position = Postion;
-            double a = 3.0 * m_Radius.Pow2();
-            double b = 1.0 * m_Radius.Pow2();
-            return -((((X[0] - position[0]) * Math.Cos(alpha) - (X[1] - position[1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - position[0]) * Math.Sin(alpha) + (X[1] - position[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - position[0]) * Math.Cos(alpha) - (X[1] - position[1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - position[0]) * Math.Sin(alpha) + (X[1] - position[1]) * Math.Cos(alpha)).Pow2());
+            double x0 = Postion[0];
+            double y0 = Postion[1];
+            return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + m_Radius.Pow2();
         }
 
         /// <summary>
@@ -104,16 +106,29 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// tolerance length.
         /// </param>
         protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
-            double alpha = Motion.GetAngle(0);
-            Vector position = Motion.GetPosition(0);
-            // only for rectangular cells
-            double radiusTolerance = 1.0 + tolerance;
-            double a = 4.0 * radiusTolerance.Pow2();
-            double b = 1.0 * radiusTolerance.Pow2();
-            if (-((((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(3) - b * ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow2()) > 0) {
-                return true;
-            }
-            return false;
+            double radiusTolerance = m_Radius + tolerance;
+            double distance = point.L2Distance(Motion.GetPosition(0));
+            return distance < radiusTolerance;
+        }
+
+        /// <summary>
+        /// Returns the support point of the particle in the direction specified by a vector.
+        /// </summary>
+        /// <param name="vector">
+        /// A vector. 
+        /// </param>
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
+            double length = Math.Sqrt(supportVector[0].Pow2() + supportVector[1].Pow2());
+            double CosT = supportVector[0] / length;
+            double SinT = supportVector[1] / length;
+            Vector SupportPoint = new Vector(SpatialDim);
+            if (SpatialDim != 2)
+                throw new NotImplementedException("Only two dimensions are supported at the moment");
+            SupportPoint[0] = CosT * (m_Radius + tolerance) + Position[0];
+            SupportPoint[1] = SinT * (m_Radius + tolerance) + Position[1];
+            if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
+                throw new ArithmeticException("Error trying to calculate point0 Value:  " + SupportPoint[0] + " point1 " + SupportPoint[1]);
+            return SupportPoint;
         }
 
         /// <summary>
@@ -121,6 +136,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         override public double[] GetLengthScales() {
             return new double[] { m_Radius, m_Radius };
+        }
+
+        public override object Clone() {
+            Particle clonedParticle = new ParticleDisk(Motion,
+                                                             m_Radius,
+                                                             Motion.GetPosition(),
+                                                             Motion.GetAngle() * 360 / (2 * Math.PI),
+                                                             ActiveStress,
+                                                             Motion.GetTranslationalVelocity(),
+                                                             Motion.GetRotationalVelocity());
+            return clonedParticle;
         }
     }
 }

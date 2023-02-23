@@ -17,26 +17,27 @@ limitations under the License.
 using System;
 using System.Runtime.Serialization;
 using ilPSP;
+using ilPSP.Utils;
 
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Sphere : Particle {
+    public class ParticlePentagone : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Sphere() : base() {
+        private ParticlePentagone() : base() {
 
         }
 
         /// <summary>
-        /// Constructor for a sphere.
+        /// Constructor for a pentagone.
         /// </summary>
         /// <param name="motionInit">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
         /// <param name="radius">
-        /// The radius.
+        /// The main lengthscale
         /// </param>
         /// <param name="startPos">
         /// The initial position.
@@ -53,7 +54,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Sphere(IMotion motion, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public ParticlePentagone(IMotion motion, double radius, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
 
             m_Radius = radius;
             Aux.TestArithmeticException(radius, "Particle radius");
@@ -70,17 +73,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Area => Math.PI * m_Radius.Pow2();
+        public override double Area => (5 * m_Radius.Pow2()) / 4;
 
         /// <summary>
         /// Circumference. 
         /// </summary>
-        public override double Circumference => 2 * Math.PI * m_Radius;
+        public override double Circumference => m_Radius * 4.41421356;
 
         /// <summary>
         /// Moment of inertia. 
         /// </summary>
-        override public double MomentOfInertia => (1 / 2.0) * (Mass_P * m_Radius.Pow2());
+        override public double MomentOfInertia => Math.Pow(m_Radius, 4) * 0.2887963;
 
         /// <summary>
         /// Level set function of the particle.
@@ -88,10 +91,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="X">
         /// The current point.
         /// </param>
-        protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
-            double x0 = Postion[0];
-            double y0 = Postion[1];
-            return -(X[0] - x0).Pow2() + -(X[1] - y0).Pow2() + m_Radius.Pow2();
+        protected override double ParticleLevelSetFunction(double[] X, Vector Postion) { // attention: no dependency on angle...
+            double r;
+            r = Math.Max(X[0] - Postion[0] - m_Radius, Postion[0] - m_Radius - X[0]);
+            r = Math.Max(r, Postion[1] - 0.5 * m_Radius - X[1]);
+            r = Math.Max(r, Postion[0] - m_Radius - X[1] - 1.5 * X[0]) + Math.Max(r, X[1] - Postion[1] - 0.5 * m_Radius);
+            r = -r;
+            return r;
         }
 
         /// <summary>
@@ -104,48 +110,40 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// tolerance length.
         /// </param>
         protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
+            // only for rectangular cells
             double radiusTolerance = m_Radius + tolerance;
-            double distance = point.L2Distance(Motion.GetPosition(0));
+            var distance = point.L2Distance(Motion.GetPosition(0));
             return distance < radiusTolerance;
         }
 
         /// <summary>
-        /// Returns the support point of the particle in the direction specified by a vector.
+        /// Returns an array with points on the surface of the particle.
         /// </summary>
-        /// <param name="vector">
-        /// A vector. 
+        /// <param name="hMin">
+        /// Minimal cell length. Used to specify the number of surface points.
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
-            double length = Math.Sqrt(supportVector[0].Pow2() + supportVector[1].Pow2());
-            double CosT = supportVector[0] / length;
-            double SinT = supportVector[1] / length;
-            Vector SupportPoint = new Vector(SpatialDim);
+        public override MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) {
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
-            SupportPoint[0] = CosT * (m_Radius + tolerance) + Position[0];
-            SupportPoint[1] = SinT * (m_Radius + tolerance) + Position[1];
-            if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
-                throw new ArithmeticException("Error trying to calculate point0 Value:  " + SupportPoint[0] + " point1 " + SupportPoint[1]);
-            return SupportPoint;
+
+            int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference / hMin) + 1;
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSurfacePoints, SpatialDim);
+            double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
+            if (Math.Abs(10 * Circumference / hMin + 1) >= int.MaxValue)
+                throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
+
+            for (int j = 0; j < NoOfSurfacePoints; j++) {
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * m_Radius + Motion.GetPosition(0)[0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * m_Radius + Motion.GetPosition(0)[1];
+            }
+            return SurfacePoints;
         }
 
         /// <summary>
-        /// Returns the legnthscales of a particle.
+        /// Returns the length-scales of a particle.
         /// </summary>
         override public double[] GetLengthScales() {
             return new double[] { m_Radius, m_Radius };
         }
-
-        public override object Clone() {
-            Particle clonedParticle = new Particle_Sphere(Motion,
-                                                             m_Radius,
-                                                             Motion.GetPosition(),
-                                                             Motion.GetAngle() * 360 / (2 * Math.PI),
-                                                             ActiveStress,
-                                                             Motion.GetTranslationalVelocity(),
-                                                             Motion.GetRotationalVelocity());
-            return clonedParticle;
-        }
     }
 }
-

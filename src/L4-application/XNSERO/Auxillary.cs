@@ -23,7 +23,6 @@ namespace BoSSS.Application.XNSERO_Solver {
     /// </summary>
     [Serializable]
     public class Auxillary {
-
         internal void TestArithmeticException(double[] variable, string variableName) {
             ThrowIsNaNException(variable, variableName);
             ThrowIsInfinityException(variable, variableName);

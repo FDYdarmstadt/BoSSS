@@ -48,7 +48,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             double particleDensity1 = 1;
             Motion motion1 = new(particleDensity1);
             List<Particle> particles = new List<Particle> {
-                new Particle_Sphere(motion1, 0.5, new double[] { 0.0, 0.0 }),
+                new ParticleDisk(motion1, 0.5, new double[] { 0.0, 0.0 }),
             };
             C.InitialiseParticles(particles);
 
@@ -94,8 +94,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             double particleDensity2 = 1;
             Motion motion2 = new(particleDensity2);
             List<Particle> particles = new List<Particle> {
-                new Particle_Sphere(motion1, 1, new double[] { -2.0, 0.0 }),
-                new Particle_Ellipsoid(motion2, 1, 1, new double[] { 2.0, 0.0 }, startAngl: 0)
+                new ParticleDisk(motion1, 1, new double[] { -2.0, 0.0 }),
+                new ParticleEllipse(motion2, 1, 1, new double[] { 2.0, 0.0 }, startAngl: 0)
             };
             double dt = 1e-2;
             C.InitialiseParticles(particles);
@@ -139,7 +139,7 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             double particleDensity = 1;
             MotionWetNoTranslation motion = new(particleDensity);
-            C.InitialiseParticles(new List<Particle> { new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) });
+            C.InitialiseParticles(new List<Particle> { new ParticleDisk(motion, 0.4, new double[] { 0.0, 0.0 }) });
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.25;
             C.PhysicalParameters.IncludeConvection = true;
@@ -213,9 +213,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             double particleDensity2 = 1.0;
             MotionFixed motion2 = new(particleDensity2);
             List<Particle> particles = new List<Particle> {
-                new Particle_Sphere(motion1, 0.18, new double[] { 0.0, 0.6 }),
-                new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
-                new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
+                new ParticleDisk(motion1, 0.18, new double[] { 0.0, 0.6 }),
+                new ParticleSuperEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
+                new ParticleSuperEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
             };
             double dt = 1e-2;
             C.InitialiseParticles(particles);

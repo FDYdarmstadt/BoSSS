@@ -42,7 +42,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Constructor for an arbitrary particle to be implemented in the Particle_Shape classes.
         /// </summary>
-        /// <param name="Motion">
+        /// <param name="motion">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
         /// <param name="startPos">
@@ -125,12 +125,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public double Eccentricity { get; private set; }
-        
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
         public Vector ClosestPointOnOtherObjectToThis = new Vector(2);
 
         /// <summary>
@@ -204,8 +198,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         public bool Contains(Vector Point, double Tolerance = 0) {
             bool contains = ParticleContains(Point, Motion.GetPosition(), Tolerance);
             if (!contains) {
-                for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
-                    Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
+                for (int i = 0; i < Motion.GetOriginInVirtualPeriodicDomain().Count; i++) {
+                    Vector virtualPosition = Motion.GetOriginInVirtualPeriodicDomain()[i] + Motion.GetPosition();
                     if (Motion.IsInsideOfPeriodicDomain(virtualPosition, Tolerance + GetLengthScales().Max()))
                         contains = ParticleContains(Point, virtualPosition, Tolerance);
                 }
@@ -240,11 +234,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="Position"></param>
         public virtual Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
             int spatialDim = Position.Dim;
-            Vector currentSupportPoint = new Vector(spatialDim);
+            Vector currentSupportPoint = new(spatialDim);
             if (spatialDim != 2)
                 throw new NotImplementedException("Calculation of support point only implemented in 2D");
             double angle = Angle[0]; // hardcoded 2D
-            Vector particleDirection = new Vector(Math.Cos(angle), Math.Sin(angle));
+            Vector particleDirection = new(Math.Cos(angle), Math.Sin(angle));
             double crossProductDirectionSupportVector = particleDirection[0] * supportVector[1] - particleDirection[1] * supportVector[0];
             double searchStartAngle = (1 - Math.Sign(crossProductDirectionSupportVector)) * Math.PI / 2 + Math.Acos((supportVector * particleDirection) / supportVector.L2Norm());
             double L = searchStartAngle - Math.PI;
@@ -253,8 +247,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 searchStartAngle = (L + R) / 2;
                 double dAngle = 1e-8;
                 MultidimensionalArray SurfacePoints = GetSurfacePoints(dAngle, searchStartAngle, SubParticleID);
-                Vector RightNeighbour = new Vector(spatialDim);
-                Vector LeftNeighbour = new Vector(spatialDim);
+                Vector RightNeighbour = new(spatialDim);
+                Vector LeftNeighbour = new(spatialDim);
                 for (int d = 0; d < spatialDim; d++) {
                     currentSupportPoint[d] = SurfacePoints[1, d];
                     LeftNeighbour[d] = SurfacePoints[0, d];
@@ -277,17 +271,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="Point">
         /// </param>
-        /// <param name="RadialVector">
-        /// </param>
-        /// <param name="RadialLength">
-        /// </param>
         internal Vector CalculateRadialVector(Vector Point) {
             Aux = new Auxillary();
             Vector RadialVector = new(Point[0] - Motion.GetPosition(0)[0], Point[1] - Motion.GetPosition(0)[1]);
             if(RadialVector.L2Norm() > GetLengthScales().Max()) {//Point is in a different virtual domain (Periodic bndy only):
-                for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
-                    Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
-                    Vector tempRadialVector = new Vector(Point[0] - virtualPosition[0], Point[1] - virtualPosition[1]);
+                for (int i = 0; i < Motion.GetOriginInVirtualPeriodicDomain().Count; i++) {
+                    Vector virtualPosition = Motion.GetOriginInVirtualPeriodicDomain()[i] + Motion.GetPosition();
+                    Vector tempRadialVector = new(Point[0] - virtualPosition[0], Point[1] - virtualPosition[1]);
                     if (tempRadialVector.L2Norm() < RadialVector.L2Norm())
                         RadialVector = new Vector(tempRadialVector);
                 }
@@ -303,14 +293,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         internal double CalculateEccentricity(Vector normalVector, Vector ClosestPoint) {
             Vector radialVector = CalculateRadialVector(ClosestPoint);
-            Vector normalRadialVector = new Vector(-radialVector[1], radialVector[0]);
+            Vector normalRadialVector = new(-radialVector[1], radialVector[0]);
             return normalRadialVector * normalVector;
         }
 
         internal double CalculateSecondOrderEccentricity(Vector NormalVector, Vector ClosestPoint) {
             Vector radialVector = CalculateRadialVector(ClosestPoint);
             double firstCrossProduct2D = radialVector[0] * NormalVector[1] - radialVector[1] * NormalVector[0];
-            Vector secondCrossProduct2D = new Vector(-firstCrossProduct2D * radialVector[1], firstCrossProduct2D * radialVector[0]);
+            Vector secondCrossProduct2D = new(-firstCrossProduct2D * radialVector[1], firstCrossProduct2D * radialVector[0]);
             return secondCrossProduct2D * NormalVector;
         }
 
