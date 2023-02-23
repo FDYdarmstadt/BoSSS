@@ -68,7 +68,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             Aux.TestArithmeticException(thickness, "Particle thickness");
 
             Motion.SetMaxLength(GetLengthScales().Max());
-            Motion.SetVolume(Area);
+            Motion.SetVolume(Volume);
             Motion.SetMomentOfInertia(MomentOfInertia);
         }
 
@@ -92,12 +92,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Moment of inertia of an elliptic particle.
         /// </summary>
-        override public double MomentOfInertia => (Mass_P * (m_Length.Pow2() + m_Height.Pow2()) - Mass_P * (5 * m_Thickness.Pow2() - 2 * (m_Length + m_Height) * m_Thickness) / ((m_Height - m_Thickness) * (m_Length - 2 * m_Thickness))) / 12;
+        override public double MomentOfInertia => (Mass * (m_Length.Pow2() + m_Height.Pow2()) - Mass * (5 * m_Thickness.Pow2() - 2 * (m_Length + m_Height) * m_Thickness) / ((m_Height - m_Thickness) * (m_Length - 2 * m_Thickness))) / 12;
 
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Area => m_Length * m_Height - (m_Height - m_Thickness) * (m_Length - 2 * m_Thickness);
+        public override double Volume => m_Length * m_Height - (m_Height - m_Thickness) * (m_Length - 2 * m_Thickness);
 
         /// <summary>
         /// Level set function of the particle.

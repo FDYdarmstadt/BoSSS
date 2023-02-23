@@ -31,8 +31,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionDryNoTranslation(double density) : base(density) {
-            IncludeTranslation = false;
+        public MotionDryNoTranslation(double density) : base(density) { }
+
+        public override bool IncludeTranslation() {
+            return false;
         }
 
         /// <summary>

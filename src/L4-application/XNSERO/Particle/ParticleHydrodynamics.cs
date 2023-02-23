@@ -31,12 +31,11 @@ namespace BoSSS.Application.XNSERO_Solver {
     internal class ParticleHydrodynamics {
         internal ParticleHydrodynamics(int SpatialDimension) {
             this.SpatialDimension = SpatialDimension;
-            if (SpatialDimension == 2)
-                TorqueVectorDimension = 1;
-            else if (SpatialDimension == 3)
-                throw new NotImplementedException("FSI_Solver is currently only capable of 2D.");
-            else
-                throw new ArithmeticException("Error in spatial dimensions, only dim == 2 and dim == 3 are allowed!");
+            TorqueVectorDimension = SpatialDimension switch {
+                2 => 1,
+                3 => throw new NotImplementedException("XNSERO is currently only capable of 2D."),
+                _ => throw new ArithmeticException("Error in spatial dimensions, only dim == 2 and dim == 3 are allowed!"),
+            };
         }
         [DataMember]
         private readonly int SpatialDimension;
@@ -87,9 +86,9 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 // Relaxation
                 if (hydrodynamics.Sum() > 1e-10){
-                    double omega = Particles[0].Motion.omega;
+                    double omega = Particles[0].Motion.GetRelaxationParameter();
                     hydrodynamics = HydrodynamicsRelaxation(hydrodynamics, ref omega);
-                    Particles[0].Motion.omega = omega; 
+                    Particles[0].Motion.SetRelaxationParameter(omega); 
                 }
 
                 // Write to single particles.

@@ -32,9 +32,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionFixed(double density = 0) : base(density) {
-            IncludeRotation = false;
-            IncludeTranslation = false;
+        public MotionFixed(double density = 0) : base(density) { }
+
+        public override bool IncludeRotation() {
+            return false;
+        }
+        public override bool IncludeTranslation() {
+            return false;
         }
 
         /// <summary>

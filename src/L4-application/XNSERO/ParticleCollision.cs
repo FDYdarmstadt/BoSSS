@@ -299,10 +299,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             Vector normalVector = DistanceVector[FirstParticleID][SecondParticleID];
             double distance = normalVector.Abs();
             normalVector /= distance;
-            if (Particles[FirstParticleID].Motion.IncludeTranslation || Particles[FirstParticleID].Motion.IncludeRotation) 
+            if (Particles[FirstParticleID].Motion.IncludeTranslation() || Particles[FirstParticleID].Motion.IncludeRotation()) 
                 detectCollisionVn_P0 = CalculateNormalSurfaceVelocity(FirstParticleID, normalVector, ClosestPoints[FirstParticleID][SecondParticleID]);
             if (IsParticle(SecondParticleID)) {
-                if (Particles[FirstParticleID].Motion.IncludeTranslation || Particles[FirstParticleID].Motion.IncludeRotation)
+                if (Particles[FirstParticleID].Motion.IncludeTranslation() || Particles[FirstParticleID].Motion.IncludeRotation())
                     detectCollisionVn_P1 = CalculateNormalSurfaceVelocity(SecondParticleID, normalVector, ClosestPoints[SecondParticleID][FirstParticleID]);
             } else {
                 detectCollisionVn_P0 = 10 * detectCollisionVn_P0;
@@ -415,8 +415,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Is true if the two particles are overlapping.
         /// </param>
         private void GJK_DistanceAlgorithm(Particle Particle, int SubParticleID0, Particle SecondObject, int SubParticleID1, out Vector DistanceVec, out Vector[] closestPoints, out bool Overlapping) {
-            int NoOfVirtualDomainsP0 = Particle.Motion.OriginInVirtualPeriodicDomain.Count;
-            int NoOfVirtualDomainsP1 = IsParticle(SecondObject) ? SecondObject.Motion.OriginInVirtualPeriodicDomain.Count : 0;
+            int NoOfVirtualDomainsP0 = Particle.Motion.GetOriginInVirtualPeriodicDomain().Count;
+            int NoOfVirtualDomainsP1 = IsParticle(SecondObject) ? SecondObject.Motion.GetOriginInVirtualPeriodicDomain().Count : 0;
             Debug.Assert(NoOfVirtualDomainsP0 == NoOfVirtualDomainsP1);
             int spatialDim = Particle.Motion.GetPosition(0).Dim;
             Overlapping = false;
@@ -436,11 +436,11 @@ namespace BoSSS.Application.XNSERO_Solver {
                     Vector[] positionVectors = new Vector[2];
                     positionVectors[0] = d1 == NoOfVirtualDomainsP0
                         ? new Vector(Particle.Motion.GetPosition(0))
-                        : new Vector(Particle.Motion.GetPosition(0) + Particle.Motion.OriginInVirtualPeriodicDomain[d1]);
+                        : new Vector(Particle.Motion.GetPosition(0) + Particle.Motion.GetOriginInVirtualPeriodicDomain()[d1]);
                     if (IsParticle(SecondObject))
                         positionVectors[1] = d2 == NoOfVirtualDomainsP0
                                                 ? SecondObject.Motion.GetPosition(0)
-                                                : SecondObject.Motion.GetPosition(0) + SecondObject.Motion.OriginInVirtualPeriodicDomain[d2];
+                                                : SecondObject.Motion.GetPosition(0) + SecondObject.Motion.GetOriginInVirtualPeriodicDomain()[d2];
                     else positionVectors[1] = Particle.ClosestPointOnOtherObjectToThis;
 
                     Vector[] orientationAngle = new Vector[2];
@@ -494,9 +494,9 @@ namespace BoSSS.Application.XNSERO_Solver {
                         Vector supportPoint = tempClosestPoints[0] - tempClosestPoints[1];
                         supportPoint.CheckForNanOrInfV();
                         if (d1 < NoOfVirtualDomainsP0)
-                            tempClosestPoints[0] = new Vector(tempClosestPoints[0] - Particle.Motion.OriginInVirtualPeriodicDomain[d1]);
+                            tempClosestPoints[0] = new Vector(tempClosestPoints[0] - Particle.Motion.GetOriginInVirtualPeriodicDomain()[d1]);
                         if (d2 < NoOfVirtualDomainsP1)
-                            tempClosestPoints[1] = new Vector(tempClosestPoints[1] - SecondObject.Motion.OriginInVirtualPeriodicDomain[d2]);
+                            tempClosestPoints[1] = new Vector(tempClosestPoints[1] - SecondObject.Motion.GetOriginInVirtualPeriodicDomain()[d2]);
 
                         // If the condition is true
                         // we have found the closest points!
@@ -711,10 +711,10 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             if (distance <= threshold || Overlapping[particleID][secondObjectID]) {
                 double[] normalSurfaceVelocity = new double[2];
-                if (Particles[0].Motion.IncludeTranslation || Particles[0].Motion.IncludeRotation)
+                if (Particles[0].Motion.IncludeTranslation() || Particles[0].Motion.IncludeRotation())
                     normalSurfaceVelocity[0] = CalculateNormalSurfaceVelocity(particleID, normalVector, ClosestPoints[particleID][secondObjectID]);
                 if (IsParticle(secondObjectID)) {
-                    if (Particles[1].Motion.IncludeTranslation || Particles[1].Motion.IncludeRotation)
+                    if (Particles[1].Motion.IncludeTranslation() || Particles[1].Motion.IncludeRotation())
                         normalSurfaceVelocity[1] = CalculateNormalSurfaceVelocity(secondObjectID, normalVector, ClosestPoints[secondObjectID][particleID]);
                 }
                 if (normalSurfaceVelocity[1] - normalSurfaceVelocity[0] <= 0)
@@ -728,24 +728,24 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 Vector velocityP0 = CalculateNormalAndTangentialVelocity(particleID, normalVector);
                 Vector radialVectorP0 = Particles[particleID].CalculateRadialVector(ClosestPoints[particleID][secondObjectID]);
-                Vector tempVel0 = Particles[particleID].Motion.IncludeTranslation
-                    ? (velocityP0[0] + collisionCoefficient[0] / Particles[particleID].Motion.Mass) * normalVector + (velocityP0[1] + collisionCoefficient[1] / Particles[particleID].Motion.Mass) * tangentialVector
+                Vector tempVel0 = Particles[particleID].Motion.IncludeTranslation()
+                    ? (velocityP0[0] + collisionCoefficient[0] / Particles[particleID].Mass) * normalVector + (velocityP0[1] + collisionCoefficient[1] / Particles[particleID].Mass) * tangentialVector
                     : new Vector(0, 0);
                 TemporaryVelocity[particleID][0] = tempVel0[0];
                 TemporaryVelocity[particleID][1] = tempVel0[1];
-                TemporaryVelocity[particleID][2] = Particles[particleID].Motion.IncludeRotation ? TemporaryVelocity[particleID][2] + (radialVectorP0[0] * normalVector[1] - radialVectorP0[1] * normalVector[0]) * collisionCoefficient[0] / Particles[particleID].MomentOfInertia + (radialVectorP0[0] * tangentialVector[1] - radialVectorP0[1] * tangentialVector[0]) * collisionCoefficient[1] / Particles[particleID].MomentOfInertia : 0;
+                TemporaryVelocity[particleID][2] = Particles[particleID].Motion.IncludeRotation() ? TemporaryVelocity[particleID][2] + (radialVectorP0[0] * normalVector[1] - radialVectorP0[1] * normalVector[0]) * collisionCoefficient[0] / Particles[particleID].MomentOfInertia + (radialVectorP0[0] * tangentialVector[1] - radialVectorP0[1] * tangentialVector[0]) * collisionCoefficient[1] / Particles[particleID].MomentOfInertia : 0;
                 Particles[particleID].IsCollided = true;
                 Overlapping[particleID][secondObjectID] = false;
 
                 if (IsParticle(secondObjectID)) {
                     Vector velocityP1 = CalculateNormalAndTangentialVelocity(secondObjectID, normalVector);
-                    Vector tempVel1 = Particles[secondObjectID].Motion.IncludeTranslation
-                        ? (velocityP1[0] - collisionCoefficient[0] / Particles[secondObjectID].Motion.Mass) * normalVector + (velocityP1[1] - collisionCoefficient[1] / Particles[secondObjectID].Motion.Mass) * tangentialVector
+                    Vector tempVel1 = Particles[secondObjectID].Motion.IncludeTranslation()
+                        ? (velocityP1[0] - collisionCoefficient[0] / Particles[secondObjectID].Mass) * normalVector + (velocityP1[1] - collisionCoefficient[1] / Particles[secondObjectID].Mass) * tangentialVector
                         : new Vector(0, 0);
                     Vector radialVectorP1 = Particles[secondObjectID].CalculateRadialVector(ClosestPoints[secondObjectID][particleID]);
                     TemporaryVelocity[secondObjectID][0] = tempVel1[0];
                     TemporaryVelocity[secondObjectID][1] = tempVel1[1];
-                    TemporaryVelocity[secondObjectID][2] = Particles[secondObjectID].Motion.IncludeRotation ? TemporaryVelocity[secondObjectID][2] - (radialVectorP1[0] * normalVector[1] - radialVectorP1[1] * normalVector[0]) * collisionCoefficient[0] / Particles[secondObjectID].MomentOfInertia - (radialVectorP1[0] * tangentialVector[1] - radialVectorP1[1] * tangentialVector[0]) * collisionCoefficient[1] / Particles[secondObjectID].MomentOfInertia : 0;
+                    TemporaryVelocity[secondObjectID][2] = Particles[secondObjectID].Motion.IncludeRotation() ? TemporaryVelocity[secondObjectID][2] - (radialVectorP1[0] * normalVector[1] - radialVectorP1[1] * normalVector[0]) * collisionCoefficient[0] / Particles[secondObjectID].MomentOfInertia - (radialVectorP1[0] * tangentialVector[1] - radialVectorP1[1] * tangentialVector[0]) * collisionCoefficient[1] / Particles[secondObjectID].MomentOfInertia : 0;
                     Overlapping[secondObjectID][particleID] = false;
                     Particles[secondObjectID].IsCollided = true;
                     Console.WriteLine("Particle " + particleID + " and particle " + secondObjectID + " collided");
@@ -772,17 +772,17 @@ namespace BoSSS.Application.XNSERO_Solver {
             double[] normalEccentricity = new double[] { 0, 0 };
             double[] tangentialEccentricity = new double[] { 0, 0 };
 
-            massReciprocal[0] = Particles[particleID].Motion.IncludeTranslation ? 1 / Particles[particleID].Motion.Mass : 0;
-            normalMomentOfInertiaReciprocal[0] = Particles[particleID].Motion.IncludeRotation ? Particles[particleID].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[particleID][secondObjectID]) / Particles[particleID].MomentOfInertia : 0;
-            tangentialMomentOfInertiaReciprocal[0] = Particles[particleID].Motion.IncludeRotation ? Particles[particleID].CalculateSecondOrderEccentricity(tangentialVector, ClosestPoints[particleID][secondObjectID]) / Particles[particleID].MomentOfInertia : 0;
+            massReciprocal[0] = Particles[particleID].Motion.IncludeTranslation() ? 1 / Particles[particleID].Mass : 0;
+            normalMomentOfInertiaReciprocal[0] = Particles[particleID].Motion.IncludeRotation() ? Particles[particleID].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[particleID][secondObjectID]) / Particles[particleID].MomentOfInertia : 0;
+            tangentialMomentOfInertiaReciprocal[0] = Particles[particleID].Motion.IncludeRotation() ? Particles[particleID].CalculateSecondOrderEccentricity(tangentialVector, ClosestPoints[particleID][secondObjectID]) / Particles[particleID].MomentOfInertia : 0;
             normalEccentricity[0] = Particles[particleID].CalculateEccentricity(normalVector, ClosestPoints[particleID][secondObjectID]);
             tangentialEccentricity[0] = Particles[particleID].CalculateEccentricity(tangentialVector, ClosestPoints[particleID][secondObjectID]);
 
             if (IsParticle(secondObjectID)) {
                 translationalVelocity[1] = CalculateNormalAndTangentialVelocity(secondObjectID, normalVector);
-                massReciprocal[1] = Particles[secondObjectID].Motion.IncludeTranslation ? 1 / Particles[secondObjectID].Motion.Mass : 0;
-                normalMomentOfInertiaReciprocal[1] = Particles[secondObjectID].Motion.IncludeRotation ? Particles[secondObjectID].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[secondObjectID][particleID]) / Particles[secondObjectID].MomentOfInertia : 0;
-                tangentialMomentOfInertiaReciprocal[1] = Particles[secondObjectID].Motion.IncludeRotation ? Particles[secondObjectID].CalculateSecondOrderEccentricity(tangentialVector, ClosestPoints[secondObjectID][particleID]) / Particles[secondObjectID].MomentOfInertia : 0;
+                massReciprocal[1] = Particles[secondObjectID].Motion.IncludeTranslation() ? 1 / Particles[secondObjectID].Mass : 0;
+                normalMomentOfInertiaReciprocal[1] = Particles[secondObjectID].Motion.IncludeRotation() ? Particles[secondObjectID].CalculateSecondOrderEccentricity(normalVector, ClosestPoints[secondObjectID][particleID]) / Particles[secondObjectID].MomentOfInertia : 0;
+                tangentialMomentOfInertiaReciprocal[1] = Particles[secondObjectID].Motion.IncludeRotation() ? Particles[secondObjectID].CalculateSecondOrderEccentricity(tangentialVector, ClosestPoints[secondObjectID][particleID]) / Particles[secondObjectID].MomentOfInertia : 0;
                 normalEccentricity[1] = Particles[secondObjectID].CalculateEccentricity(normalVector, ClosestPoints[secondObjectID][particleID]);
                 tangentialEccentricity[1] = Particles[secondObjectID].CalculateEccentricity(tangentialVector, ClosestPoints[secondObjectID][particleID]);
             }

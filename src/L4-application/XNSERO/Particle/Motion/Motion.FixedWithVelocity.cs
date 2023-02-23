@@ -31,10 +31,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionFixedWithVelocity(double density = 0) : base(density) {
-            IncludeRotation = true;
-            IncludeTranslation = true;
-        }
+        public MotionFixedWithVelocity(double density = 0) : base(density) {  }
 
         /// <summary>
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.

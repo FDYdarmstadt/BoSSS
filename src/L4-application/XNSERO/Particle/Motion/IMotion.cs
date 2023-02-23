@@ -32,6 +32,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </remarks>
         public void SetPeriodicBoundary(double[] periodicBoundaryPosition, int dimension);
 
+        public bool IncludeTranslation();
+
+        public bool IncludeRotation();
+
         /// <summary>
         /// The origin of the virtual domain at the periodic boundary.
         /// </summary>
@@ -160,7 +164,25 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Init of the particle area.
         /// </summary>
         /// <param name="Volume"></param>
+        public double GetVolume();
+
+        /// <summary>
+        /// Init of the particle area.
+        /// </summary>
+        /// <param name="Volume"></param>
         public double GetDensity();
+
+        /// <summary>
+        /// Init of the particle area.
+        /// </summary>
+        /// <param name="Volume"></param>
+        public double GetRelaxationParameter();
+
+        /// <summary>
+        /// Init of the particle area.
+        /// </summary>
+        /// <param name="Volume"></param>
+        public void SetRelaxationParameter(double parameter);
 
         /// <summary>
         /// Init of the lengthscale.

@@ -34,8 +34,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// /// <param name="underrelaxationParam">
         /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
         /// </param>
-        public MotionWetNoTranslation(double density) : base(density) {
-            IncludeTranslation = false;
+        public MotionWetNoTranslation(double density) : base(density) {  }
+
+        public override bool IncludeTranslation() {
+            return false;
         }
 
         /// <summary>

@@ -72,7 +72,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             Aux.TestArithmeticException(superEllipsoidExponent, "super ellipsoid exponent");
 
             Motion.SetMaxLength(GetLengthScales().Max());
-            Motion.SetVolume(Area);
+            Motion.SetVolume(Volume);
             Motion.SetMomentOfInertia(MomentOfInertia);
         }
 
@@ -91,12 +91,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Area occupied by the particle. 
         /// </summary>
-        public override double Area => 4 * m_Length * m_Thickness;// * (SpecialFunctions.Gamma(1 + 1 / m_Exponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / m_Exponent);
+        public override double Volume => 4 * m_Length * m_Thickness;// * (SpecialFunctions.Gamma(1 + 1 / m_Exponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / m_Exponent);
 
         /// <summary>
         /// Moment of inertia. 
         /// </summary>
-        override public double MomentOfInertia => (1 / 4.0) * Mass_P * (m_Length * m_Length + m_Thickness * m_Thickness);
+        override public double MomentOfInertia => (1 / 4.0) * Mass * (m_Length * m_Length + m_Thickness * m_Thickness);
 
         /// <summary>
         /// Level set function of the particle.

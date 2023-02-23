@@ -57,10 +57,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double p0_area = p.Particles[0].Area;
+                double p0_area = p.Particles[0].Volume;
                 double p0_area_soll = Math.PI;
-                double p0_Mass = p.Particles[0].Motion.Mass;
-                double p1_area = p.Particles[1].Area;
+                double p0_Mass = p.Particles[0].Mass;
+                double p1_area = p.Particles[1].Volume;
 
 
                 double diff_Area1 = Math.Abs(p0_area - p0_area_soll);

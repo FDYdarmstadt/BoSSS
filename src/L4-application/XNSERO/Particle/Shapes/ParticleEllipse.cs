@@ -59,13 +59,16 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The inital rotational velocity.
         /// </param>
         public ParticleEllipse(IMotion motion, double halfAxisA, double halfAxisB, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
+            
             m_Length = halfAxisA;
             m_Thickness = halfAxisB;
             Aux.TestArithmeticException(halfAxisA, "Particle length");
             Aux.TestArithmeticException(halfAxisB, "Particle thickness");
 
             Motion.SetMaxLength(GetLengthScales().Max());
-            Motion.SetVolume(Area);
+            Motion.SetVolume(Volume);
             Motion.SetMomentOfInertia(MomentOfInertia);
         }
 
@@ -82,12 +85,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Moment of inertia of an elliptic particle.
         /// </summary>
-        override public double MomentOfInertia => (1 / 4.0) * (Mass_P * (m_Length * m_Length + m_Thickness * m_Thickness));
+        override public double MomentOfInertia => (1 / 4.0) * (Mass * (m_Length * m_Length + m_Thickness * m_Thickness));
 
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Area => m_Length * m_Thickness * Math.PI;
+        public override double Volume => m_Length * m_Thickness * Math.PI;
 
         /// <summary>
         /// Level set function of the particle.

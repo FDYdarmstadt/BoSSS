@@ -50,7 +50,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 TreeNode firstNode = new(true, -1, 0, new Vector(SpatialDimension));
             Nodes.Add(firstNode);
             for(int p = 0; p < Particles.Length; p++) {
-                List<Vector> virtualDomainOrigin = Particles[p].Motion.OriginInVirtualPeriodicDomain;
+                List<Vector> virtualDomainOrigin = Particles[p].Motion.GetOriginInVirtualPeriodicDomain();
                 TreeNode particleNode = new(false, 0, FindSmallestEmptyID(), new Vector(SpatialDimension));
                 InsertNodeToList(particleNode);
                 particleNode.ParticleID = p;
@@ -111,7 +111,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public List<int> SearchForOverlap(Particle Particle, int ParticleID, double Timestep) {
             using (new FuncTrace()) {
                 //es kann passieren, dass manche Überlappungen mehrmals gefunden werden, z.B. weil zwei höhere Knoten mit zwei Partikeln überlappen und dann beide Pfade untersucht werden.
-                List<Vector> virtualDomainOrigin = Particle.Motion.OriginInVirtualPeriodicDomain;
+                List<Vector> virtualDomainOrigin = Particle.Motion.GetOriginInVirtualPeriodicDomain();
                 MinimalBoundingRectangle particleMBR = CalculateParticleMBR(Particle, Timestep, new Vector(SpatialDimension));
                 List<int> overlappingParticles = new List<int>();
                 for (int i = 0; i < Nodes[0].Children.Count; i++) {

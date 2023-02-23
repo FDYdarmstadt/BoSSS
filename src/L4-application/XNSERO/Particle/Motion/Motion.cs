@@ -153,6 +153,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         internal double omega = 100;
 
+        public double GetRelaxationParameter() {
+            return omega;
+        }
+
+        public void SetRelaxationParameter(double parameter) {
+            omega = parameter;
+        }
+
         /// <summary>
         /// Provides additional methods for testing.
         /// </summary>
@@ -243,6 +251,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         public double Volume;
 
         /// <summary>
+        /// Particle volume
+        /// </summary>
+        public double GetVolume() {
+            return Volume;
+                }
+
+        /// <summary>
         /// Moment of inertia (scalar in 2D)
         /// </summary>
         [DataMember]
@@ -263,14 +278,16 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Include rotation?
         /// </summary>
-        [DataMember]
-        internal bool IncludeRotation = true;
+        public bool IncludeRotation() {
+            return true;
+        }
 
         /// <summary>
         /// Include translation?
         /// </summary>
-        [DataMember]
-        internal bool IncludeTranslation = true;
+        public bool IncludeTranslation() {
+            return true;
+        }
 
         /// <summary>
         /// Returns the position of the particle.

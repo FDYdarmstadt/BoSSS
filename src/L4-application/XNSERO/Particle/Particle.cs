@@ -71,6 +71,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         [DataMember]
+        public bool IncludeRotation = true;
+        [DataMember]
+        public bool IncludeTranslation = true;
+
+        [DataMember]
         public double phoreticActivity = 0;
 
         /// <summary>
@@ -107,7 +112,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Mass of the current particle.
         /// </summary>
         [DataMember]
-        protected double Mass_P => Area * Density;
+        public double Mass => Volume * Density;
 
         /// <summary>
         /// Check whether any particles is collided with another particle
@@ -137,7 +142,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Area of the current particle. Implementation within the specific particle shapes.
         /// </summary>
         [DataMember]
-        public virtual double Area => throw new NotImplementedException();
+        public virtual double Volume => throw new NotImplementedException();
         
         /// <summary>
         /// Circumference of the current particle.

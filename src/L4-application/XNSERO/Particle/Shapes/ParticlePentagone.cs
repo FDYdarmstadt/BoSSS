@@ -62,7 +62,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             Aux.TestArithmeticException(radius, "Particle radius");
 
             Motion.SetMaxLength(radius);
-            Motion.SetVolume(Area);
+            Motion.SetVolume(Volume);
             Motion.SetMomentOfInertia(MomentOfInertia);
 
         }
@@ -73,7 +73,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Area => (5 * m_Radius.Pow2()) / 4;
+        public override double Volume => (5 * m_Radius.Pow2()) / 4;
 
         /// <summary>
         /// Circumference. 

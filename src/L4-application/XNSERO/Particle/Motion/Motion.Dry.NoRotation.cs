@@ -30,8 +30,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionDryNoRotation(double density) : base(density) {
-            IncludeRotation = false;
+        public MotionDryNoRotation(double density) : base(density) { }
+
+        public override bool IncludeRotation() {
+            return false;
         }
 
         /// <summary>
