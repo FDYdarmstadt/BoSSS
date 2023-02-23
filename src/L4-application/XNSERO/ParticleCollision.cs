@@ -194,7 +194,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                     particles[p].Motion.InitializeParticleVelocity(new double[] { TemporaryVelocity[p][0], TemporaryVelocity[p][1] }, TemporaryVelocity[p][2]);
                     particles[p].Motion.InitializeParticleAcceleration(new double[] { 0, 0 }, 0);
                 }
-                particles[p].Motion.SetCollisionTimestep(AccumulatedCollisionTimestep - subTimeStepWithoutCollision);
+                particles[p].Motion.CollisionTimestep = AccumulatedCollisionTimestep - subTimeStepWithoutCollision;
                 CollisionCluster.Clear();
                 ParticleCollidedWith.Clear();
             }
@@ -415,8 +415,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Is true if the two particles are overlapping.
         /// </param>
         private void GJK_DistanceAlgorithm(Particle Particle, int SubParticleID0, Particle SecondObject, int SubParticleID1, out Vector DistanceVec, out Vector[] closestPoints, out bool Overlapping) {
-            int NoOfVirtualDomainsP0 = Particle.Motion.GetOriginInVirtualPeriodicDomain().Count;
-            int NoOfVirtualDomainsP1 = IsParticle(SecondObject) ? SecondObject.Motion.GetOriginInVirtualPeriodicDomain().Count : 0;
+            int NoOfVirtualDomainsP0 = Particle.Motion.OriginInVirtualPeriodicDomain.Count;
+            int NoOfVirtualDomainsP1 = IsParticle(SecondObject) ? SecondObject.Motion.OriginInVirtualPeriodicDomain.Count : 0;
             Debug.Assert(NoOfVirtualDomainsP0 == NoOfVirtualDomainsP1);
             int spatialDim = Particle.Motion.GetPosition(0).Dim;
             Overlapping = false;
@@ -436,11 +436,11 @@ namespace BoSSS.Application.XNSERO_Solver {
                     Vector[] positionVectors = new Vector[2];
                     positionVectors[0] = d1 == NoOfVirtualDomainsP0
                         ? new Vector(Particle.Motion.GetPosition(0))
-                        : new Vector(Particle.Motion.GetPosition(0) + Particle.Motion.GetOriginInVirtualPeriodicDomain()[d1]);
+                        : new Vector(Particle.Motion.GetPosition(0) + Particle.Motion.OriginInVirtualPeriodicDomain[d1]);
                     if (IsParticle(SecondObject))
                         positionVectors[1] = d2 == NoOfVirtualDomainsP0
                                                 ? SecondObject.Motion.GetPosition(0)
-                                                : SecondObject.Motion.GetPosition(0) + SecondObject.Motion.GetOriginInVirtualPeriodicDomain()[d2];
+                                                : SecondObject.Motion.GetPosition(0) + SecondObject.Motion.OriginInVirtualPeriodicDomain[d2];
                     else positionVectors[1] = Particle.ClosestPointOnOtherObjectToThis;
 
                     Vector[] orientationAngle = new Vector[2];
@@ -494,9 +494,9 @@ namespace BoSSS.Application.XNSERO_Solver {
                         Vector supportPoint = tempClosestPoints[0] - tempClosestPoints[1];
                         supportPoint.CheckForNanOrInfV();
                         if (d1 < NoOfVirtualDomainsP0)
-                            tempClosestPoints[0] = new Vector(tempClosestPoints[0] - Particle.Motion.GetOriginInVirtualPeriodicDomain()[d1]);
+                            tempClosestPoints[0] = new Vector(tempClosestPoints[0] - Particle.Motion.OriginInVirtualPeriodicDomain[d1]);
                         if (d2 < NoOfVirtualDomainsP1)
-                            tempClosestPoints[1] = new Vector(tempClosestPoints[1] - SecondObject.Motion.GetOriginInVirtualPeriodicDomain()[d2]);
+                            tempClosestPoints[1] = new Vector(tempClosestPoints[1] - SecondObject.Motion.OriginInVirtualPeriodicDomain[d2]);
 
                         // If the condition is true
                         // we have found the closest points!

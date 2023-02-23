@@ -337,7 +337,9 @@ namespace BoSSS.Application.XNSERO_Solver {
                 Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
                 CalculateCollision(Particles, dt);
                 CalculateParticlePositionAndAngle(Particles, dt);
-
+                for (int p = 0; p < Particles.Length; p++) {
+                    Console.WriteLine("Position of particle " + p + ": " + Particles[p].Motion.GetPosition(0));
+                }
                 LogPhysicalData(phystime, TimestepNo);
                 Console.WriteLine($"done with time step {TimestepNo}");
                 return dt;
@@ -476,7 +478,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                         CheckSend[p * NoOfVars + 3] = P.Motion.GetRotationalVelocity(1);
                         CheckSend[p * NoOfVars + 4] = P.Motion.GetRotationalAcceleration(0);
                         CheckSend[p * NoOfVars + 5] = P.Motion.GetRotationalAcceleration(1);
-                        CheckSend[p * NoOfVars + 6] = P.Motion.Mass;
+                        CheckSend[p * NoOfVars + 6] = P.Mass;
 
                         // vector values
                         int Offset = 7;

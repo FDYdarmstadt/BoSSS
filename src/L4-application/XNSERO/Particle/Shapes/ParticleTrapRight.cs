@@ -60,9 +60,10 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             m_Length = width;
             Aux.TestArithmeticException(width, "Particle width");
-            Motion.SetMaxLength(width);
-            Motion.SetVolume(Volume);
-            Motion.SetMomentOfInertia(MomentOfInertia);
+
+            Motion.CharacteristicLength = width;
+            Motion.Volume = this.Volume;
+            Motion.MomentOfInertia = this.MomentOfInertia;
 
         }
 

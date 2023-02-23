@@ -406,7 +406,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                     double torque = Convert.ToDouble(currentLineFields[11]);
                     currentParticle.Motion.InitializeParticlePositionAndAngle(new double[] { physicalData[3], physicalData[4] }, physicalData[5] * 360 / (2 * Math.PI), historyLength, t);
                     currentParticle.Motion.InitializeParticleVelocity(new double[] { physicalData[6], physicalData[7] }, physicalData[8], historyLength, t);
-                    double currentParticleMass = currentParticle.Motion.GetDensity() * currentParticle.Volume;
+                    double currentParticleMass = currentParticle.Motion.Density * currentParticle.Volume;
                     double[] transAcc = new double[] { physicalData[9] / currentParticleMass, physicalData[10] / currentParticleMass };
                     double rotAcc = physicalData[11] / currentParticle.MomentOfInertia;
                     currentParticle.Motion.InitializeParticleAcceleration(transAcc, rotAcc, historyLength, t);

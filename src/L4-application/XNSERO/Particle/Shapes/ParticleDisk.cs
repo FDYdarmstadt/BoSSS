@@ -60,9 +60,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             m_Radius = radius;
             Aux.TestArithmeticException(radius, "Particle radius");
 
-            Motion.SetMaxLength(radius);
-            Motion.SetVolume(Volume);
-            Motion.SetMomentOfInertia(MomentOfInertia);
+            Motion.CharacteristicLength = radius;
+            Motion.Volume = this.Volume;
+            Motion.MomentOfInertia = this.MomentOfInertia;
 
         }
 

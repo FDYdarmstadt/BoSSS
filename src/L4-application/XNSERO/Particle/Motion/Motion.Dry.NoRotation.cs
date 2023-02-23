@@ -66,9 +66,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         public override object Clone() {
-            Motion clonedMotion = new MotionDryNoRotation(Density);
-            clonedMotion.SetVolume(Volume);
-            clonedMotion.SetMomentOfInertia(MomentOfInertia);
+            MotionDryNoRotation clonedMotion = new MotionDryNoRotation(Density);
+            clonedMotion.Volume = this.Volume;
+            clonedMotion.MomentOfInertia = this.MomentOfInertia;
             return clonedMotion;
         }
     }

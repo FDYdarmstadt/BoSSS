@@ -67,7 +67,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             this.Motion = motion ?? throw new ArgumentNullException("Missing definition of particle motion");
             this.Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
             this.Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
-            Density = this.Motion.GetDensity();
+            Density = this.Motion.Density;
         }
 
         [DataMember]
@@ -159,10 +159,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>   
         public double LevelSetFunction(double[] X, double GridLength) {
             double levelSet = ParticleLevelSetFunction(X, Motion.GetPosition());
-            for (int i = 0; i < Motion.GetOriginInVirtualPeriodicDomain().Count; i++) {
-                Vector virtualPosition = Motion.GetOriginInVirtualPeriodicDomain()[i] + Motion.GetPosition();
+            for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
+                Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
                 if (Motion.IsInsideOfPeriodicDomain(virtualPosition, (GridLength * 2 + GetLengthScales().Max())))
-                    levelSet = Math.Max(levelSet, ParticleLevelSetFunction(X, Motion.GetOriginInVirtualPeriodicDomain()[i] + Motion.GetPosition()));
+                    levelSet = Math.Max(levelSet, ParticleLevelSetFunction(X, Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition()));
             }
             return levelSet;
         }
@@ -203,8 +203,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         public bool Contains(Vector Point, double Tolerance = 0) {
             bool contains = ParticleContains(Point, Motion.GetPosition(), Tolerance);
             if (!contains) {
-                for (int i = 0; i < Motion.GetOriginInVirtualPeriodicDomain().Count; i++) {
-                    Vector virtualPosition = Motion.GetOriginInVirtualPeriodicDomain()[i] + Motion.GetPosition();
+                for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
+                    Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
                     if (Motion.IsInsideOfPeriodicDomain(virtualPosition, Tolerance + GetLengthScales().Max()))
                         contains = ParticleContains(Point, virtualPosition, Tolerance);
                 }
@@ -280,8 +280,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             Aux = new Auxillary();
             Vector RadialVector = new(Point[0] - Motion.GetPosition(0)[0], Point[1] - Motion.GetPosition(0)[1]);
             if(RadialVector.L2Norm() > GetLengthScales().Max()) {//Point is in a different virtual domain (Periodic bndy only):
-                for (int i = 0; i < Motion.GetOriginInVirtualPeriodicDomain().Count; i++) {
-                    Vector virtualPosition = Motion.GetOriginInVirtualPeriodicDomain()[i] + Motion.GetPosition();
+                for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
+                    Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
                     Vector tempRadialVector = new(Point[0] - virtualPosition[0], Point[1] - virtualPosition[1]);
                     if (tempRadialVector.L2Norm() < RadialVector.L2Norm())
                         RadialVector = new Vector(tempRadialVector);

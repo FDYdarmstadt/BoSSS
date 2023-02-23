@@ -102,7 +102,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
-        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.4, int cellsPerUnitLength = 10, double noOfParticles = 16) {
+        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.4, int cellsPerUnitLength = 10, double noOfParticles = 4) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -133,7 +133,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetBoundaries(boundaryValues);
             C.SetGrid2D(domainLength, domainLength, cellsPerUnitLength, false, false);
             C.CoefficientOfRestitution = 1;
-            Motion motion = new(particleDensity);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2 ;
             int j = 0;
             List<Particle> particles = new List<Particle>();
@@ -141,6 +140,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 int i = 0;
                 while (leftCorner + i * nextParticleDistance < domainLength / 2) {
                     double angle2 = 180 * (-i + j);
+                    Motion motion = new(particleDensity);
                     particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance * aspectRatio * 3 }, angle2, activeStress));
 
                     i += 1;
@@ -164,7 +164,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.WallPositionPerDimension[0][1] = domainLength / 2;
             C.WallPositionPerDimension[1][0] = -domainLength / 2;
             C.WallPositionPerDimension[1][1] = domainLength / 2;
-            C.SetTimesteps(dt: 1e-2, noOfTimesteps: 5);
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
             C.UseSchurBlockPrec = false;

@@ -39,7 +39,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// The origin of the virtual domain at the periodic boundary.
         /// </summary>
-        public List<Vector> GetOriginInVirtualPeriodicDomain();
+        public List<Vector> OriginInVirtualPeriodicDomain { get; }
 
         /// <summary>
         /// Checks whether a point is inside of the domain or outside in the virtual domain at a periodic boundary.
@@ -158,51 +158,37 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Init of the particle area.
         /// </summary>
         /// <param name="Volume"></param>
-        public void SetVolume(double Volume);
+        public double Volume { get; set; }
 
         /// <summary>
-        /// Init of the particle area.
+        /// Particle density
         /// </summary>
-        /// <param name="Volume"></param>
-        public double GetVolume();
+        public double Density { get; }
 
         /// <summary>
-        /// Init of the particle area.
+        /// Parameter used for Aitken-Relaxation.
         /// </summary>
-        /// <param name="Volume"></param>
-        public double GetDensity();
+        public double RelaxationParameter { get;  set; }
+
 
         /// <summary>
-        /// Init of the particle area.
+        /// The maximum length of the particle.
         /// </summary>
-        /// <param name="Volume"></param>
-        public double GetRelaxationParameter();
-
-        /// <summary>
-        /// Init of the particle area.
-        /// </summary>
-        /// <param name="Volume"></param>
-        public void SetRelaxationParameter(double parameter);
-
-        /// <summary>
-        /// Init of the lengthscale.
-        /// </summary>
-        /// <param name="moment"></param>
-        public void SetMaxLength(double lengthscale);
+        public double CharacteristicLength {
+            get;
+            set;
+        }
 
         /// <summary>
         /// Init of the moment of inertia.
         /// </summary>
-        /// <param name="moment"></param>
-        public void SetMomentOfInertia(double moment);
+        public double MomentOfInertia { get; set; }
 
         /// <summary>
-        /// Sets the collision time-step.
+        /// During the collision algorithm the particle is moved with the current velocity using "safe" time-steps without the collision.
+        /// Hence, for a position update after the collision on need to subtract the already used time from the overall time-step
         /// </summary>
-        /// <param name="collisionTimestep">
-        /// The physical time consumend by the collision procedure.
-        /// </param>
-        public void SetCollisionTimestep(double collisionTimestep);
+        public double CollisionTimestep { get; set; }
 
         /// <summary>
         /// Calls the calculation of the position and angle.

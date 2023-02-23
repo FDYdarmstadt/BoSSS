@@ -67,9 +67,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             Aux.TestArithmeticException(halfAxisA, "Particle length");
             Aux.TestArithmeticException(halfAxisB, "Particle thickness");
 
-            Motion.SetMaxLength(GetLengthScales().Max());
-            Motion.SetVolume(Volume);
-            Motion.SetMomentOfInertia(MomentOfInertia);
+            Motion.CharacteristicLength = GetLengthScales().Max();
+            Motion.Volume = this.Volume;
+            Motion.MomentOfInertia = this.MomentOfInertia;
         }
 
         [DataMember]

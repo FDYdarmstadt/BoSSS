@@ -86,9 +86,9 @@ namespace BoSSS.Application.XNSERO_Solver {
 
                 // Relaxation
                 if (hydrodynamics.Sum() > 1e-10){
-                    double omega = Particles[0].Motion.GetRelaxationParameter();
+                    double omega = Particles[0].Motion.RelaxationParameter;
                     hydrodynamics = HydrodynamicsRelaxation(hydrodynamics, ref omega);
-                    Particles[0].Motion.SetRelaxationParameter(omega); 
+                    Particles[0].Motion.RelaxationParameter = omega; 
                 }
 
                 // Write to single particles.
