@@ -222,7 +222,7 @@ namespace BoSSS.Application.ExternalBinding {
             // double sigma = 0.063;
             // double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
                                                               // double diff = M * lam;
-            CahnHilliardParameters chParams = new CahnHilliardParameters();
+            CahnHilliardParameters chParams = new CahnHilliardParameters(_stationary: true);
             CahnHilliardInternal(mtx, U, ptch, ptchU, null, chParams);
         }
 
@@ -546,16 +546,9 @@ namespace BoSSS.Application.ExternalBinding {
                                                          // _AgglomerationThreshold: 0.0
                                                          );
 
-                // int timesteps = 8;
-                double endTime = 1.5e5;
-                // double endTime = 2.5e2;
-                // double endTime = 1e-3;
-                // double dt = 2e-4;
-                double dt = 1e5;
-                // double dt = 1e0;
+                double endTime = chParams.endT;
+                double dt = chParams.dt;
                 double time = 0.0;
-                // double dt = 1e3;
-                // for (int t = 0; t < timesteps; t++)
                 int t = 0;
                 while (time < endTime)
                 {
