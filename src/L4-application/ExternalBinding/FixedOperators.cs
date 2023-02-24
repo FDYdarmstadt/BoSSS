@@ -212,7 +212,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// For usage exclusively within BoSSS, the method <see cref="CahnHilliardInternal"/> is generally more convenient.
         /// </summary>
         [CodeGenExport]
-        public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
+        public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, double deltaT) {
 
             // TODO sync from OpenFOAM
             // double epsilon = 1e-5; // capillary width
@@ -222,7 +222,7 @@ namespace BoSSS.Application.ExternalBinding {
             // double sigma = 0.063;
             // double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
                                                               // double diff = M * lam;
-            CahnHilliardParameters chParams = new CahnHilliardParameters(_stationary: true);
+            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT);
             CahnHilliardInternal(mtx, U, ptch, ptchU, null, chParams);
         }
 
@@ -312,31 +312,11 @@ namespace BoSSS.Application.ExternalBinding {
                 double cahn = chParams.Cahn;
 
                 var RealLevSet = new LevelSet(b, "Levset");
-                //var RealTracker = new LevelSetTracker((GridData)(b.GridDat), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "a", "b" }, RealLevSet);
-                //RealTracker.UpdateTracker(0.0);
-                // RealLevSet.Acc(1.0, C);
-                // RealLevSet
 
                 int J = b.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-                // for (int j = 0; j < J; j++)
-                // {
-                //     int N = b.GetLength(j);
-                //     for (int n = 0; n < N; n++)
-                //         RealLevSet.Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
-                // }
-
-                // TODO
 
                 c = C.Fields[0] as SinglePhaseField;
-                // ScalarFunction func() {
-                //     double rMin = 2.0e-3 / sqrt(noOfTotalCells) * 3.0 / sqrt(2);
-                //     double radius = 0.5e-3;
-                //     // double radius = rMin * 1.3;
-                //     return ((_3D)((x, y, z) => tanh((-sqrt(pow(x - 1.0e-3, 2) + pow(z - 0.0e-3, 2)) + pow(radius, 1)) * 50000))).Vectorize();
-                //     // return ((_3D)((x, y, z) => tanh(((x - 0.0011) + 0.01 * z)*3750))).Vectorize();
-                //     // return ((_3D)((x, y, z) => Math.Tanh(((x - 0.0011) + 0.01 * z) * 5500))).Vectorize();
-                //     // return ((_3D)((x, y, z) => tanh(((x - 2.5) + 0.1 * (y - 2.5))/1))).Vectorize();
-                // }
+
                 if (c.L2Norm() < 1e-20){
                     if (func == null){
                         Console.WriteLine("No initialization function given - using droplet");

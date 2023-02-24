@@ -42,7 +42,7 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
         /// <summary>
-        /// Getter for DG coordinates
+        /// Setter for DG coordinates
         /// </summary>
         /// <param name="f">field index</param>
         /// <param name="j">cell index</param>
@@ -51,7 +51,6 @@ namespace BoSSS.Application.ExternalBinding {
         [CodeGenExport]
         public void SetDGcoordinate(int f, int j, int n, double val) {
             this[Mapping.LocalUniqueCoordinateIndex(f, j, n)] = val;
-            // Console.Write(this[Mapping.LocalUniqueCoordinateIndex(f, j, n)] + " ");
         }
 
         /// <summary>
@@ -87,8 +86,8 @@ namespace BoSSS.Application.ExternalBinding {
         /// <returns>value of respective dg coordinate</returns>
         [CodeGenExport]
         public void SetMean(int f, int j, double val) {
-            SinglePhaseField sff = this.Fields[f] as SinglePhaseField;
-            sff.SetMeanValue(j, val);
+            SinglePhaseField spf = this.Fields[f] as SinglePhaseField;
+            spf.SetMeanValue(j, val);
         }
 
 
