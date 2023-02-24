@@ -7,12 +7,16 @@
     <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <NoWarn>1701;1702;1591</NoWarn>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\BoSSS.Solution.XML</DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
+    <NoWarn>1701;1702;1591</NoWarn>
+    <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
@@ -22,9 +26,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="MathNet.Numerics">
+    <!--Reference Include="MathNet.Numerics">
       <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
-    </Reference>
+    </Reference-->
     <Reference Include="Microsoft.CodeAnalysis">
       <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Common.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.dll</HintPath>
     </Reference>
@@ -58,9 +62,9 @@
     <Reference Include="System.Configuration.ConfigurationManager">
       <HintPath>..\..\..\libs\system.configuration.configurationmanager.4.5.0\lib\netstandard2.0\System.Configuration.ConfigurationManager.dll</HintPath>
     </Reference> 
-    <Reference Include="log4net">
+    <!--Reference Include="log4net">
       <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference>
+    </Reference-->
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
@@ -88,6 +92,9 @@
     <Compile Remove="ImplicitTimeStepperSubgrid.cs" />
     <Compile Remove="OperatorSplitting.cs" />
     <Compile Remove="RungeKuttaSubgrid.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
   </ItemGroup>
   <!--PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <PreBuildEvent>powershell $assemblyInfoPath = \"$(projectDir)Properties\AssemblyInfo.cs\"; $versionText = (git rev-parse HEAD); $assemblyInfoText = (Get-Content -Path $assemblyInfoPath -ReadCount 0); $assemblyInfoText = $assemblyInfoText -replace \"^\[assembly: AssemblyInformationalVersion\(".*"\)\]$\", \"[assembly: AssemblyInformationalVersion(`\"$versionText`\")]\"; Set-Content -Path $assemblyInfoPath -Value $assemblyInfoText</PreBuildEvent>

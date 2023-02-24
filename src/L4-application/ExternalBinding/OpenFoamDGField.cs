@@ -18,6 +18,7 @@ namespace BoSSS.Application.ExternalBinding {
     public class OpenFoamDGField : CoordinateVector, IForeignLanguageProxy {
 
         int m_degree;
+        int m_noOfCoefficients;
         int m_noOfComponents;
 
         static DGField[] CtorHelper(OpenFOAMGrid g, int degree, int NoOfComponents) {
@@ -36,6 +37,7 @@ namespace BoSSS.Application.ExternalBinding {
             : base(CtorHelper(g, degree, NoOfComponents)) //
         {
             m_degree = degree;
+            m_noOfCoefficients = (m_degree + 3)*(m_degree + 2)*(m_degree + 1)/6;
             m_noOfComponents = NoOfComponents;
         }
 
@@ -49,6 +51,7 @@ namespace BoSSS.Application.ExternalBinding {
         [CodeGenExport]
         public void SetDGcoordinate(int f, int j, int n, double val) {
             this[Mapping.LocalUniqueCoordinateIndex(f, j, n)] = val;
+            // Console.Write(this[Mapping.LocalUniqueCoordinateIndex(f, j, n)] + " ");
         }
 
         /// <summary>
@@ -60,7 +63,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// <returns>value of respective dg coordinate</returns>
         [CodeGenExport]
         public double GetDGcoordinate(int f, int j, int n) {
-            if (n > this.m_degree) {
+            if (n >= this.m_noOfCoefficients) {
                 return 0;
             }
             try{
@@ -77,6 +80,19 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
         /// <summary>
+        /// Set the mean value of a cell
+        /// </summary>
+        /// <param name="f">field index</param>
+        /// <param name="j">cell index</param>
+        /// <returns>value of respective dg coordinate</returns>
+        [CodeGenExport]
+        public void SetMean(int f, int j, double val) {
+            SinglePhaseField sff = this.Fields[f] as SinglePhaseField;
+            sff.SetMeanValue(j, val);
+        }
+
+
+        /// <summary>
         /// Obtain the mean value of a cell (useful for projection down to DG0 for use in FVM schemes)
         /// </summary>
         /// <param name="f">field index</param>
@@ -84,7 +100,8 @@ namespace BoSSS.Application.ExternalBinding {
         /// <returns>value of respective dg coordinate</returns>
         [CodeGenExport]
         public double GetMean(int f, int j) {
-            return Mapping.Fields[f].GetMeanValue(j);
+            SinglePhaseField sff = this.Fields[f] as SinglePhaseField;
+            return sff.GetMeanValue(j);
         }
 
         IntPtr m_ForeignPtr;

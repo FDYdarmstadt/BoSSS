@@ -23,7 +23,6 @@ using ilPSP;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
 using ilPSP.Utils;
-using Mono.CSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -497,14 +496,14 @@ namespace BoSSS.Foundation.IO {
             return mcr;
         }
 
-        private static void PrintImbalance(Dictionary<string, Tuple<double, double, int>> dictImbalances, int printcnt) {
-            var mostimbalance = dictImbalances.OrderByDescending(im => im.Value.Item1);
+        private static void PrintImbalance(Dictionary<string, (double RelInbalance, double Imbalance, int CallCount)> dictImbalances, int printcnt) {
+            var mostimbalance = dictImbalances.OrderByDescending(im => im.Value.RelInbalance);
             int i = 1;
             var wrt = Console.Out;
             foreach (var kv in mostimbalance) {
                 wrt.Write("#" + i + ": ");
                 wrt.WriteLine(string.Format(
-                "'{0}': {1} calls, {2:F3}% / {3:0.##E-00} sec. runtime exclusivesec",
+                "'{0}': {1} calls, {2:F3}% / {3:0.##E-00} sec. runtime exclusive",
                     kv.Key,
                     kv.Value.Item3,
                     kv.Value.Item1,
@@ -1175,10 +1174,7 @@ namespace BoSSS.Foundation.IO {
 
         /// <summary>
         /// Tries to loads the control file of the given
-        /// <paramref name="session"/> in the new REPL format. Note: Use
-        /// <see cref="InteractiveBase.LoadAssembly"/> to load the
-        /// corresponding solver assembly to be able to use solver-specific
-        /// sub-classes of <see cref="AppControl"/>.
+        /// <paramref name="session"/> in the new REPL format. 
         /// </summary>
         /// <param name="session">
         /// The session whose configuration file should be loaded
@@ -2607,6 +2603,14 @@ namespace BoSSS.Foundation.IO {
 
             return ret;
         }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public static SessionMemtrace GetMemtrace(this ISessionInfo sess) {
+            return new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+        }
+
 
         /// <summary>
         /// Reports the largest memory-allocating routines in descending order

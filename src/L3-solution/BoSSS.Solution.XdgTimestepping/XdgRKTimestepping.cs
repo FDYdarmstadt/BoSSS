@@ -600,6 +600,13 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var nonlinSolver = GetNonlinSolver();
                     success = nonlinSolver.SolverDriver(m_CurrentState, default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
 
+                    if (base.QueryHandler != null) {
+                        base.QueryHandler.ValueQuery(QueryHandler.Conv, success ? 1.0 : 0.0, true);
+                        base.QueryHandler.ValueQuery(QueryHandler.NonLinIter, nonlinSolver.NoOfNonlinearIter, true);
+                        base.QueryHandler.ValueQuery(QueryHandler.NoOfCells, this.m_LsTrk.GridDat.CellPartitioning.TotalLength, true);
+                        base.QueryHandler.ValueQuery(QueryHandler.DOFs, nonlinSolver.EssentialDOFs, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
+                    }
+
                 } else {
                     // Linear Solver (Stokes)
                     // ----------------------

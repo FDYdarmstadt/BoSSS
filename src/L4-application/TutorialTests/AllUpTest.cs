@@ -57,9 +57,16 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__BoundaryAndInitialData() {
             // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
-            NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
-            NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
-            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
+             Mutex JupyterMutex = new Mutex(false, "BoundaryAndInitialData");
+            try {
+                JupyterMutex.WaitOne();
+
+                NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
+                NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
+                RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -67,9 +74,15 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__MetaJobManager() {
             //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__MetaJobManager
-            NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
-            NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
-            RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+            Mutex JupyterMutex = new Mutex(false, "MetaJobManager_Tutorial");
+            try {
+                JupyterMutex.WaitOne();
+                NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
+                NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
+                RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -99,6 +112,14 @@ namespace BoSSS.Application.TutorialTests {
         static public void Run__ue2Basics() {
             //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__ue2Basics
             RunWorksheet("ue2Basics/ue2Basics.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
+        [Test]
+        static public void Run__CsharpAndBoSSSpad() {
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
+            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
         }
 
 #if !DEBUG
@@ -156,25 +177,23 @@ namespace BoSSS.Application.TutorialTests {
             RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
         }
 #endif
- 
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
-        [Test]
-        static public void Run__CsharpAndBoSSSpad() {
-            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
-            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
-        }
-#endif
+
+
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
         [Test]
         static public void Run__convStudy() {
-            NotebookRunner.DeleteDatabase("ConvStudyTutorial");
-            NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
-            RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
+            Mutex JupyterMutex = new Mutex(false, "ConvStudyTutorial");
+            try {
+                JupyterMutex.WaitOne();
+                NotebookRunner.DeleteDatabase("ConvStudyTutorial");
+                NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
+                RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 #endif
 
@@ -184,9 +203,16 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__memprofile() {
             //BoSSS.Application.TutorialTests.AllUpTest.Run__memprofile#
-            NotebookRunner.DeleteDatabase("memprofile");
-            NotebookRunner.DeleteDeployments("memprofile*");
-            RunWorksheet("memprofile/memprofile.ipynb");
+            Mutex JupyterMutex = new Mutex(false, "memprofileMutex");
+            try {
+                JupyterMutex.WaitOne();
+
+                NotebookRunner.DeleteDatabase("memprofile");
+                NotebookRunner.DeleteDeployments("memprofile*");
+                RunWorksheet("memprofile/memprofile.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 #endif
 
@@ -263,8 +289,8 @@ namespace BoSSS.Application.TutorialTests {
             // start the minibatchprocessor which is used internally
             OneTimeSetUp();
 
-            BoSSSpad.Job.UndocumentedSuperHack = true;
-            BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
+            //BoSSSpad.Job.UndocumentedSuperHack = true;
+            //BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
             
             try {
                 // run test:
@@ -275,7 +301,7 @@ namespace BoSSS.Application.TutorialTests {
                     mode = "--JupyterBatch";
 
                 
-                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
+                ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
 
                 Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", WorksheetName, ErrCount);
                 if(!allowErrors)
@@ -285,6 +311,13 @@ namespace BoSSS.Application.TutorialTests {
                 // shutting down the local mini batch processor:
                 OneTimeTearDown();
             }
+        }
+
+        /// <summary>
+        /// return value from BoSSSpad 
+        /// </summary>
+        public int ErrCount {
+            get; private set;
         }
 
 
@@ -377,7 +410,7 @@ namespace BoSSS.Application.TutorialTests {
         /// Deletes a database <paramref name="Directory"/>
         /// 
         /// Note: the database must be located beneath the <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
-        /// of the <see "BoSSSshell.GetDefaultQueue"/>.
+        /// of the <see cref="BoSSSshell.GetDefaultQueue"/>.
         /// </summary>
         public static void DeleteDatabase(string Directory) {
 

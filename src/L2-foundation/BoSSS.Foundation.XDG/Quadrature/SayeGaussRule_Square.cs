@@ -276,14 +276,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override SayeQuadRule SetLowOrderQuadratureNodes(SayeSquare arg)
         {
-            throw new NotImplementedException();
+            return SetGaussQuadratureNodes(arg, 1);
         }
 
-        protected override SayeQuadRule SetGaussQuadratureNodes(SayeSquare arg)
-        {
+        protected override SayeQuadRule SetGaussQuadratureNodes(SayeSquare arg) {
+            Console.WriteLine($"Low order Quadrature required in cell: {cell}, " +
+                $"center: {lsData.GridDat.Cells.CellCenter[cell, 0]}, {lsData.GridDat.Cells.CellCenter[cell, 1]}");
+            return SetGaussQuadratureNodes(arg, order);
+        }
+
+        SayeQuadRule SetGaussQuadratureNodes(SayeSquare arg, int gaussOrder) {
             //Aquire needed data
             //------------------------------------------------------------------------------------------------------------
-            QuadRule gaussRule_2D = Square.Instance.GetQuadratureRule(order);
+            QuadRule gaussRule_2D = Square.Instance.GetQuadratureRule(gaussOrder);
             MultidimensionalArray nodes_GaussRule_2D = ((MultidimensionalArray)gaussRule_2D.Nodes).CloneAs();
             MultidimensionalArray weights_GaussRule_2D = gaussRule_2D.Weights.CloneAs();
 
@@ -294,15 +299,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //AffineTransformation of nodes, scale weights
             //------------------------------------------------------------------------------------------------------------
             //Scale Nodes
-            for(int i = 0; i < 2; ++i){
+            for (int i = 0; i < 2; ++i) {
                 nodes_GaussRule_2D.ColScale(i, diameters[i]);
             }
             //Scale Weights
             weights_GaussRule_2D.Scale(jacobian);
             //Move Nodes
             int[] index = new int[] { 0, -1 };
-            for (int i = 0; i < gaussRule_2D.NoOfNodes; ++i)
-            {
+            for (int i = 0; i < gaussRule_2D.NoOfNodes; ++i) {
                 index[0] = i;
                 nodes_GaussRule_2D.AccSubArray(1, centerArr, index);
             }

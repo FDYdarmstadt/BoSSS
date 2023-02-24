@@ -119,13 +119,10 @@ namespace BoSSS.Application.XNSEC {
         //[Test]
         public static void ImmersedBoundaryTest_MixtureFraction_DropletCombustion() {
 
-            string dbPath = @"C:\Databases\DropletCombustion";
-
-         
-
-            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, "default_bosss_db_comb23");
 
             bool alreadyExists = Directory.Exists(path);
@@ -944,9 +941,10 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public static void COMBUSTION_TEST() {
-            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, "default_bosss_db_comb23");
 
             bool alreadyExists = Directory.Exists(path);
@@ -988,9 +986,10 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="ncells"></param>
         [Test]
         public static void XDG_PSEUDO1D_COMBUSTION_TEST([Values(3)] int dg = 3, [Values(4)] int ncells = 4) {
-            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, "default_bosss_db_comb23");
 
             bool alreadyExists = Directory.Exists(path);
@@ -1056,9 +1055,10 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="ncells"></param>
         //[Test]
         public static void XDG_DROPLET_COMBUSTION_TEST(int dg = 2, int ncells = 6) {
-            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, "default_bosss_db_comb23");
 
             bool alreadyExists = Directory.Exists(path);
@@ -1127,9 +1127,10 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="ncells"></param>
         [Test]
         public static void XDG_PSEUDO1D_EVAPORATION_TEST([Values(3)] int dg = 3, [Values(4)] int ncells = 4) {
-            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, "default_bosss_db_comb23");
 
             bool alreadyExists = Directory.Exists(path);
@@ -1194,9 +1195,10 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="ncells"></param>
         [Test]
         public static void XDG_DROPLET_EVAPORATION_TEST([Values(2)] int dg = 2, [Values(6)] int ncells = 6) {
-            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, "default_bosss_db_comb23");
 
             bool alreadyExists = Directory.Exists(path);
@@ -1262,9 +1264,10 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         //[Test]
         public static void CounterDiffFlameHomotopy_TEST() {
-            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, @"default_bosss_db_comb23");
 
             bool alreadyExists = Directory.Exists(path);
@@ -1322,10 +1325,10 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public static void COMBUSTION_CoFlowFlame_TEST() {
-            string basepath = null;
-            basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, "default_bosss_db_CoFlowcombustion");
 
             bool alreadyExists = Directory.Exists(path);
