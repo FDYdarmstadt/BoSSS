@@ -158,7 +158,7 @@ namespace BoSSS.Application.TutorialTests {
 #if !DEBUG
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.ipynb")]
+        [NUnitFileToCopyHack("tutorial11-Stokes/StokesEq.ipynb")]
         [Test]
         static public void Run__StokesEq() {
             RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
@@ -399,7 +399,7 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary>
-        /// Deletes all deployments matchin the search patter <paramref name="DirectoryWildCard"/>
+        /// Deletes all deployments matching the search patter <paramref name="DirectoryWildCard"/>
         /// </summary>
         public static void DeleteDeployments(string DirectoryWildCard) {
 
