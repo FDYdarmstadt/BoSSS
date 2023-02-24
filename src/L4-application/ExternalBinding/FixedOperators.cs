@@ -131,7 +131,7 @@ namespace BoSSS.Application.ExternalBinding {
             if (mtx != null) {
                 OpenFoamDGField C = mtx.Fields[0];
                 c = C.Fields[0] as SinglePhaseField;
-                if (InitFunc != null){
+                if (InitFunc() != null){
                     c.Clear();
                     c.ProjectField(InitFunc());
                 }
@@ -208,9 +208,29 @@ namespace BoSSS.Application.ExternalBinding {
 
         /// <summary>
         /// Solves the Cahn-Hilliard equation
+        /// This method only contains arguments that can be made available to OpenFOAM given the limitations of the mono-C-interface.
+        /// For usage exclusively within BoSSS, the method <see cref="CahnHilliardInternal"/> is generally more convenient.
         /// </summary>
         [CodeGenExport]
         public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU) {
+
+            // TODO sync from OpenFOAM
+            // double epsilon = 1e-5; // capillary width
+            //                        // double cahn = 0.005;
+            //                        // double M = 1; // mobility parameter
+            // double M = Math.Sqrt(epsilon); // mobility parameter
+            // double sigma = 0.063;
+            // double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
+                                                              // double diff = M * lam;
+            CahnHilliardParameters chParams = new CahnHilliardParameters(_stationary: true);
+            CahnHilliardInternal(mtx, U, ptch, ptchU, null, chParams);
+        }
+
+        /// <summary>
+        /// Solves the Cahn-Hilliard equation
+        /// This method also contains arguments that cannot be made available to OpenFOAM due to limitations of the mono-C-interface.
+        /// </summary>
+        public void CahnHilliardInternal(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction func = null, CahnHilliardParameters chParams = new CahnHilliardParameters()) {
             try {
                 // {
 
@@ -218,17 +238,14 @@ namespace BoSSS.Application.ExternalBinding {
                 // Console.WriteLine("Debugger is attached; press enter to continue");
                 // Console.ReadLine();
 
+
                 _mtx = mtx;
                 _ptch = ptch;
+
 
                 double tanh(double x)
                 {
                     return Math.Tanh(x);
-                    // if (x > 1)
-                    //     return 1;
-                    // if (x < -1)
-                    //     return -1;
-                    // return 0;
                 }
                 double pow(double x, int e)
                 { // inefficient but who cares
@@ -280,28 +297,19 @@ namespace BoSSS.Application.ExternalBinding {
                 var map = new UnsetteledCoordinateMapping(b, bMu);
 
                 int nParams = 7;
-                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
+                // var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
+                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.NonLinearWithoutParameters(3), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
                 // var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "mu", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "mu_Res");
                 // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "mu_Res");
 
-                // TODO sync from OpenFOAM
-                double lambda = 0.0;
-                double penalty_const = 2.6;
-                // double penalty_const = 1.0;
-                // double M = 5e-11*0.02; // mobility parameter
-                // double epsilon = 0.5; // capillary width
-                double epsilon = 1e-5; // capillary width
-                // double cahn = 0.05;
-                // double M = 1; // mobility parameter
-                double M = sqrt(epsilon); // mobility parameter
-                double sigma = 0.063;
-                double lam = 3 / (2 * sqrt(2)) * sigma * epsilon; // Holger's lambda
 
                 // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
-                double diff = 0.1;
-                double cahn = 1.0;
+                double lambda = 0.0;
+                double penalty_const = 2.6;
+                double diff = chParams.Diffusion;
+                double cahn = chParams.Cahn;
 
                 var RealLevSet = new LevelSet(b, "Levset");
                 //var RealTracker = new LevelSetTracker((GridData)(b.GridDat), XQuadFactoryHelper.MomentFittingVariants.Saye, 2, new string[] { "a", "b" }, RealLevSet);
@@ -329,13 +337,17 @@ namespace BoSSS.Application.ExternalBinding {
                 //     // return ((_3D)((x, y, z) => Math.Tanh(((x - 0.0011) + 0.01 * z) * 5500))).Vectorize();
                 //     // return ((_3D)((x, y, z) => tanh(((x - 2.5) + 0.1 * (y - 2.5))/1))).Vectorize();
                 // }
-                if (c.L2Norm() < 1e-20 && InitFunc != null){
-                    Console.WriteLine("Zero order parameter field encountered - initializing with droplet");
+                if (c.L2Norm() < 1e-20){
+                    if (func == null){
+                        Console.WriteLine("No initialization function given - using droplet");
+                        func = InitFunc();
+                    }
+                    Console.WriteLine("Zero order parameter field encountered - initializing with given function");
                     c.Clear();
                     u.Clear();
                     v.Clear();
                     w.Clear();
-                    c.ProjectField(InitFunc());
+                    c.ProjectField(func);
                 }
                 mu = new SinglePhaseField(b);
                 // for (int j = 0; j < J; j++)
@@ -484,7 +496,7 @@ namespace BoSSS.Application.ExternalBinding {
 
                 lsu.InitializeParameters(domfields, paramfields);
 
-                var tp = new Tecplot(grd.Grid.GridData, 3);
+                // var tp = new Tecplot(grd.Grid.GridData, 3);
                 Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w);
 
                 // TODO saye instead of hmf
@@ -521,7 +533,7 @@ namespace BoSSS.Application.ExternalBinding {
                 XdgTimestepping TimeStepper = new XdgTimestepping(op,
                                                          new SinglePhaseField[]{c, mu},
                                                          new SinglePhaseField[]{Res_c, Res_mu},
-                                                         // TimeSteppingScheme.ExplicitEuler,
+                                                         // TimeSteppingScheme.CrankNicolson,
                                                          TimeSteppingScheme.ImplicitEuler,
                                                                   null,
                                                                   null,
@@ -534,15 +546,9 @@ namespace BoSSS.Application.ExternalBinding {
                                                          // _AgglomerationThreshold: 0.0
                                                          );
 
-                // int timesteps = 8;
-                // double endTime = 1.5e3;
-                double endTime = 5.5e1;
-                // double endTime = 2e-1;
-                // double dt = 2e-5;
-                double dt = 4e-1;
+                double endTime = chParams.endT;
+                double dt = chParams.dt;
                 double time = 0.0;
-                // double dt = 1e3;
-                // for (int t = 0; t < timesteps; t++)
                 int t = 0;
                 while (time < endTime)
                 {
@@ -555,7 +561,8 @@ namespace BoSSS.Application.ExternalBinding {
 
                     time += dt;
                     t++;
-                    // dt *= 3;
+                    // if (time > 2e0)
+                    //     dt *= 10;
                     // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, mu, RealLevSet, u, v, w, cNoSG, muNoSG);
 
                 }

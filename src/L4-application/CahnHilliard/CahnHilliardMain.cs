@@ -874,14 +874,14 @@ namespace BoSSS.Application.CahnHilliard {
         }
 
         public struct BenchmarkQuantities {
-            public BenchmarkQuantities() {
-                area = 0;
-                surface = 0;
-                circ = 0;
-                concentration = 0;
-                energy = 0;
-            }
-            public BenchmarkQuantities(double __area, double __surface, double __circ, double __concentration, double __energy)  {
+            // public BenchmarkQuantities() {
+            //     area = 0;
+            //     surface = 0;
+            //     circ = 0;
+            //     concentration = 0;
+            //     energy = 0;
+            // }
+            public BenchmarkQuantities(double __area=0, double __surface=0, double __circ=0, double __concentration=0, double __energy=0)  {
                 area = __area;
                 surface = __surface;
                 circ = __circ;
@@ -1099,11 +1099,23 @@ namespace BoSSS.Application.CahnHilliard {
                 this.c_Resi, this.mu_Resi, this.cDist);
             BoSSS.Solution.Tecplot.Tecplot.PlotFields(Fields, "CahnHilliard-" + timestepNo + caseStr, phystime, superSampling);
         }
-        /*
-        public class __c_Flux : BoSSS.Solution.LevelSetTools.PhasefieldLevelSet.phi_Flux {
-            public __c_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, __boundaryCondMap, "c") {}
+
+        // the purpose of these fluxes is only consistency in the naming of variables: here, we prefer c, but in the Level-Set context of L3, phi is more suitable
+        public class c_Flux : phi_Flux {
+            public c_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, __boundaryCondMap, "c") {}
         }
-        */
-        
+
+        // the purpose of these fluxes is only consistency in the naming of variables: here, we prefer c, but in the Level-Set context of L3, phi is more suitable
+        public class c_Source : phi_Source {
+
+            public c_Source(double _diff = 0.0) : base(_diff, "c") {}
+        }
+
+        // the purpose of these fluxes is only consistency in the naming of variables: here, we prefer c, but in the Level-Set context of L3, phi is more suitable
+        public class c_Diffusion : phi_Diffusion {
+
+            public c_Diffusion(int D, double penalty_const, double __diff, double __lambda, BoundaryCondMap<BoundaryType> __boundaryCondMap)
+                : base(D, penalty_const, __diff, __lambda, __boundaryCondMap) {}
+        }
     }
 }

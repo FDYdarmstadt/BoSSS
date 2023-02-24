@@ -117,7 +117,6 @@ namespace PublicTestRunner {
                         //typeof(BoSSS.Application.AdaptiveMeshRefinementTest.AllUpTest),
                         typeof(BoSSS.Application.ExternalBinding.CodeGen.Test),
                         typeof(BoSSS.Application.ExternalBinding.Initializer),
-                        typeof(BoSSS.Application.ExternalBinding.CahnHilliardTest),
                         //typeof(BoSSS.Application.XNSE_Solver.XNSE), // to expensive for debug
                         typeof(MPITest.Program)
                     };
@@ -142,6 +141,7 @@ namespace PublicTestRunner {
                         typeof(LTSTests.Program),
                         typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.XNSEC.XNSEC),
+                        typeof(BoSSS.Application.ExternalBinding.CahnHilliardTest),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),
@@ -751,11 +751,11 @@ namespace PublicTestRunner {
                 throw new NotSupportedException("runjobmanager subprogram must be executed serially");
             }
 
-            InteractiveShell.ReloadExecutionQueues();
+            BoSSSshell.ReloadExecutionQueues();
 
-            if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
+            if(ExecutionQueueNo >= BoSSSshell.ExecutionQueues.Count)
                 throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account (see configuration file ~/.BoSSS/etc/BatchProcessorConfig.json).");
-            BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
+            BatchProcessorClient bpc = BoSSSshell.ExecutionQueues[ExecutionQueueNo];
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
 
             FileStream ServerMutex;
@@ -801,7 +801,7 @@ namespace PublicTestRunner {
                 // phase 1: discover tests
                 // ===================================
 
-                InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
+                BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
                 // deployment of native libraries
                 string NativeOverride;
@@ -1257,7 +1257,7 @@ namespace PublicTestRunner {
                     }
                     int counter = 2;
                     final_jName = jName;
-                    while (InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(final_jName)) {
+                    while (BoSSSshell.WorkflowMgm.AllJobs.ContainsKey(final_jName)) {
                         string suffix = "_" + counter;
                         counter++;
                         if (jName.Length + suffix.Length > 127) {

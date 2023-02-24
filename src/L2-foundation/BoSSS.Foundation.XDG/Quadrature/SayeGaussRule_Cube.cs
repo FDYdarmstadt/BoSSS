@@ -345,16 +345,20 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             Console.WriteLine($"Low order Quadrature required in cell: {cell}, " +
                 $"center: {lsData.GridDat.Cells.CellCenter[cell, 0]}, {lsData.GridDat.Cells.CellCenter[cell, 1]}, {lsData.GridDat.Cells.CellCenter[cell, 2]}");
-            throw new NotImplementedException();
+            return SetGaussQuadratureNodes(arg, 1);
         }
 
         protected override SayeQuadRule SetGaussQuadratureNodes(LinearSayeSpace<Cube> arg)
         {
+            return SetGaussQuadratureNodes(arg, order);
+        }
+
+        SayeQuadRule SetGaussQuadratureNodes(LinearSayeSpace<Cube> arg, int gaussOrder) {
             //Aquire needed data
             //------------------------------------------------------------------------------------------------------------
             MultidimensionalArray nodes_GaussRule_3D;
             MultidimensionalArray weights_GaussRule_3D;
-            MultidimensionalArray centerArr = arg.GetCellCenter().ExtractSubArrayShallow( 0, -1 );
+            MultidimensionalArray centerArr = arg.GetCellCenter().ExtractSubArrayShallow(0, -1);
 
             double[] diameters = arg.Diameters;
             double jacobianDet;
@@ -362,68 +366,57 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //Gaussrule 2d or Gaussrule 3d?
             //2d Gaussrule embedded in 3d space on [-1,1]^3
             //------------------------------------------------------------------------------------------------------------
-            if (arg.Dimension == 2)
-            {
-                QuadRule gaussRule_2D = Square.Instance.GetQuadratureRule(order);
+            if (arg.Dimension == 2) {
+                QuadRule gaussRule_2D = Square.Instance.GetQuadratureRule(gaussOrder);
                 MultidimensionalArray nodes_GaussRule_2D = gaussRule_2D.Nodes;
-                
+
                 nodes_GaussRule_3D = MultidimensionalArray.Create(gaussRule_2D.NoOfNodes, 3);
                 weights_GaussRule_3D = gaussRule_2D.Weights.CloneAs();
 
                 //Embed 2D nodes in 3d space
-                for(int i = 0; i < gaussRule_2D.NoOfNodes; ++i)
-                {
-                    int nodePositionCounter = 0; 
-                    for(int j = 0; j < 3; ++j)
-                    {
-                        if(arg.DimActive(j))
-                        {
+                for (int i = 0; i < gaussRule_2D.NoOfNodes; ++i) {
+                    int nodePositionCounter = 0;
+                    for (int j = 0; j < 3; ++j) {
+                        if (arg.DimActive(j)) {
                             nodes_GaussRule_3D[i, j] = nodes_GaussRule_2D[i, nodePositionCounter];
-                            ++nodePositionCounter;  
-                        }
-                        else
-                        {
+                            ++nodePositionCounter;
+                        } else {
                             nodes_GaussRule_3D[i, j] = 0;
                         }
                     }
                 }
                 //Set rest
                 jacobianDet = 1;
-                for (int j = 0; j < 3; ++j)
-                {
-                    if (arg.DimActive(j))
-                    {
+                for (int j = 0; j < 3; ++j) {
+                    if (arg.DimActive(j)) {
                         jacobianDet *= diameters[j];
                     }
                 }
             }
             //3d Gauss quadrature rule on [-1,1]^3
             //------------------------------------------------------------------------------------------------------------
-            else
-            {
+            else {
                 Debug.Assert(arg.Dimension == 3);
                 //Extract Rule
-                QuadRule gaussRule_3D = Cube.Instance.GetQuadratureRule(order);
+                QuadRule gaussRule_3D = Cube.Instance.GetQuadratureRule(gaussOrder);
                 nodes_GaussRule_3D = ((MultidimensionalArray)gaussRule_3D.Nodes).CloneAs();
                 weights_GaussRule_3D = gaussRule_3D.Weights.CloneAs();
                 //Set rest
-                
+
                 jacobianDet = diameters[0] * diameters[1] * diameters[2];
             }
-            
+
             //AffineTransformation of nodes, scale weights
             //------------------------------------------------------------------------------------------------------------
             //Scale Nodes
-            for (int i = 0; i < 3; ++i)
-            {
+            for (int i = 0; i < 3; ++i) {
                 if (arg.DimActive(i)) {
                     nodes_GaussRule_3D.ColScale(i, diameters[i]);
                 }
             }
             //Move Nodes
             int[] index = new int[] { 0, -1 };
-            for (int i = 0; i < nodes_GaussRule_3D.Lengths[0]; ++i)
-            {
+            for (int i = 0; i < nodes_GaussRule_3D.Lengths[0]; ++i) {
                 index[0] = i;
                 nodes_GaussRule_3D.AccSubArray(1, centerArr, index);
             }
