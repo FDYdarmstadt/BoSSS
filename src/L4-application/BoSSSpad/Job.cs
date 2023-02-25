@@ -991,7 +991,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+        class KnownTypesBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {
 
             Job m_owner;
 

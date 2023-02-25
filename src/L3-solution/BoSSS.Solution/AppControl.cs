@@ -1158,7 +1158,7 @@ namespace BoSSS.Solution.Control {
         /// Used for control objects in work-flow management, 
         /// re-loads  an object from memory.
         /// </summary>
-        public static AppControl Deserialize(string Str, SerializationBinder binder) {
+        public static AppControl Deserialize(string Str, Newtonsoft.Json.Serialization.ISerializationBinder binder) {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
@@ -1173,9 +1173,9 @@ namespace BoSSS.Solution.Control {
                 Type ControlObjectType = Type.GetType(typeName);
 
                 if(binder != null)
-                    formatter.Binder = binder;
+                    formatter.SerializationBinder = binder;
                 else
-                    formatter.Binder = new KnownTypesBinder(ControlObjectType);
+                    formatter.SerializationBinder = new KnownTypesBinder(ControlObjectType);
 
 
                 using(JsonReader reader = new JsonTextReader(tr)) {
@@ -1201,7 +1201,7 @@ namespace BoSSS.Solution.Control {
             */
         }
 
-        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+        class KnownTypesBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {
 
             internal KnownTypesBinder(Type entry) {
 
