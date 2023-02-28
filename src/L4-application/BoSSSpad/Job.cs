@@ -167,7 +167,8 @@ namespace BoSSS.Application.BoSSSpad {
                 var files = new List<Assembly>();
 
                 var allAssis = AllDependentAssemblies;
-                Assembly mscorlib = allAssis.Single(a => a.FullName.StartsWith("mscorlib"));
+                //Debugger.Launch();
+                Assembly mscorlib = allAssis.Single(a => a.Location.EndsWith("System.Runtime.dll"));
                 string corLibPath = Path.GetDirectoryName(mscorlib.Location);
 
 
@@ -1738,6 +1739,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
             */
+
+           
             void TestWR() {
                 using(new FuncTrace()) {
                     Exception OP(int iTry) {
