@@ -42,23 +42,18 @@
     <Compile Remove="WorksheetEntry.cs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Html.Abstractions" Version="2.2.0" />
+    <!--PackageReference Include="Microsoft.DotNet.Interactive.Documents"  Version="1.0.0-beta.21606.1" /-->
+    <!--PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21606.1" /-->
+    <PackageReference Include="Microsoft.DotNet.Interactive.Documents"  Version="1.0.0-beta.21459.1" />
+    <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21459.1" />
+  </ItemGroup>
+  <!--ItemGroup>
     <Reference Include="CommandLine">
       <HintPath>..\..\..\libs\libcmdline-1.8-stable-bin\libcmdline\bin\Release\CommandLine.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNetCore.Html.Abstractions">
       <HintPath>..\..\..\libs\microsoft.aspnetcore.html.abstractions\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Html.Abstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Common.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis.CSharp">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis.CSharp.Scripting">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.Scripting.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis.Scripting">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Scripting.Common.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.Scripting.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.DotNet.Interactive">
       <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
@@ -72,14 +67,7 @@
     <Reference Include="Microsoft.DotNet.Interactive.Formatting">
       <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Configuration.ConfigurationManager">
-      <HintPath>..\..\..\libs\system.configuration.configurationmanager.4.5.0\lib\netstandard2.0\System.Configuration.ConfigurationManager.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+  </ItemGroup-->
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj" />

@@ -277,7 +277,8 @@ namespace ilPSP.Utils {
             TypeNameHandling = TypeNameHandling.All,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-            TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+            //TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+            TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
         };
         
         bool m_UseJson = false;
@@ -314,7 +315,7 @@ namespace ilPSP.Utils {
                     //containerArray.SetValue(o, 0);
                     var containerObj = new JsonContainer() { PayLoad = o };
 
-                    using (var w = new BsonWriter(ms)) {
+                    using (var w = new BsonDataWriter(ms)) {
                         jsonFormatter.Serialize(w, containerObj);
                     }
                 } else {
@@ -341,7 +342,7 @@ namespace ilPSP.Utils {
                 if (m_UseJson) {
                     //Type ArrayType = Array.CreateInstance(t, 0).GetType();
 
-                    using (var w = new BsonReader(ms)) {
+                    using (var w = new BsonDataReader(ms)) {
                         var containerObj = (JsonContainer) jsonFormatter.Deserialize(w, typeof(JsonContainer));
                         return containerObj.PayLoad;
                     }
