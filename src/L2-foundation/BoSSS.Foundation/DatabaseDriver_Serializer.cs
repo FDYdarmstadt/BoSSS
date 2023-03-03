@@ -63,7 +63,7 @@ namespace BoSSS.Foundation.IO
             }
             else
             {
-                return new BsonReader(s);
+                return new BsonDataReader(s);
             }
         }
 
@@ -75,42 +75,37 @@ namespace BoSSS.Foundation.IO
             }
             else
             {
-                return new BsonWriter(s);
+                return new BsonDataWriter(s);
             }
         }
     }
 
-    class SerializerVersion0 : Serializer, ISerializer
-    {
+    class SerializerVersion0 : Serializer, ISerializer {
         public override string Name => "Version 0";
 
         protected override JsonSerializer JsonFormatter { get { return jsonFormatter; } }
 
-        JsonSerializer jsonFormatter = new JsonSerializer()
-        {
+        JsonSerializer jsonFormatter = new JsonSerializer() {
             NullValueHandling = NullValueHandling.Ignore,
             TypeNameHandling = TypeNameHandling.Auto,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-            Binder = new MySerializationBinder()
+            //Binder = new MySerializationBinder()
+            SerializationBinder = new MySerializationBinder()
         };
 
         /// <summary>
         /// Serialization binder to ensure compatibility with older file versions, where certain classes
         /// were organized in a different namespace.
         /// </summary>
-        class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder
-        {
+        class MySerializationBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {
 
-            public override Type BindToType(string assemblyName, string typeName)
-            {
-                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]"))
-                {
+            public override Type BindToType(string assemblyName, string typeName) {
+                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.Cell[]")) {
                     typeName = "BoSSS.Foundation.Grid.Classic.Cell[]";
                 }
 
-                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]"))
-                {
+                if (assemblyName.Equals("BoSSS.Foundation") && typeName.Equals("BoSSS.Foundation.Grid.BCElement[]")) {
                     typeName = "BoSSS.Foundation.Grid.Classic.BCElement[]";
                 }
                 Type T = base.BindToType(assemblyName, typeName);
@@ -118,22 +113,17 @@ namespace BoSSS.Foundation.IO
             }
         }
 
-        public override object Deserialize(Stream stream, Type objectType)
-        {
-            if(typeof(IGrid).Equals( objectType))
-            {
+        public override object Deserialize(Stream stream, Type objectType) {
+            if (typeof(IGrid).Equals(objectType)) {
                 objectType = typeof(Grid.Classic.GridCommons);
             }
             return JsonDeserialize(stream, objectType);
         }
 
-        object JsonDeserialize(Stream stream, Type objectType)
-        {
-            using (var reader = GetJsonReader(stream))
-            {
+        object JsonDeserialize(Stream stream, Type objectType) {
+            using (var reader = GetJsonReader(stream)) {
                 object obj = jsonFormatter.Deserialize(reader, objectType);
-                if (obj == null)
-                {
+                if (obj == null) {
                     throw new Exception("Deserializing failed.");
                 }
                 return obj;

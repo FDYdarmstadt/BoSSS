@@ -66,7 +66,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         static public IEnumerable<Tuple<int, double[,], double[]>> DecodeFromBase64(string s) {
             byte[] BinData = Convert.FromBase64String(s);
             MemoryStream ms = new MemoryStream(BinData);
-            BsonReader reader = new BsonReader(ms);
+            BsonDataReader reader = new BsonDataReader(ms);
             JsonSerializer serializer = new JsonSerializer();
 
             Container o = serializer.Deserialize<Container>(reader);
@@ -146,7 +146,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
         private static void PackQuadrulesBinary(string qrName, IEnumerable<Tuple<int, double[,], double[]>> qrList) {
             MemoryStream ms = new MemoryStream();
 
-            BsonWriter writer = new BsonWriter(ms);
+            BsonDataWriter writer = new BsonDataWriter(ms);
             JsonSerializer serializer = new JsonSerializer();
 
 
