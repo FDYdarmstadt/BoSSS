@@ -34,6 +34,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using BoSSS.Foundation.Grid;
+using ilPSP.Utils;
 
 namespace CNS {
 
@@ -49,12 +50,26 @@ namespace CNS {
         /// <param name="args"></param>
         static void Main(string[] args) {
 
-            Application.InitMPI(args);
+            //Application.InitMPI(args);
+            //DeleteOldPlotFiles();
+            
             //CNS.Tests.IBMTests.IBMALTSTest.IBMALTSTest1_4_pos1();
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
-            CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
-            Debug.Assert(false, "remove me");
-            return;
+            //CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
+
+            //int numOfCellsX = 8;
+            //int numOfCellsY = 16;
+            //var cIBMBowShock = ControlExamples_Supersonic.IBMBowShock(
+            //    dbPath: @"C:\Users\jakob\Documents\Uni\Promotion\Programmieren\BoSSS\experimental\internal\src\private-seb\Notebooks\XESF\BowShock\BowShock_P0_db", savePeriod: 1000, dgDegree: 0, CFLFraction: 0.1, explicitScheme: 1, explicitOrder: 1,
+            //    endTime: 32, numOfCellsX: numOfCellsX, numOfCellsY: numOfCellsY);
+
+
+            //var pCNS = new CNS.Program<CNS.IBM.IBMControl>();
+            //pCNS.Init(cIBMBowShock);
+            //pCNS.RunSolverMode();
+
+            //Debug.Assert(false, "remove me");
+            //return;
 
             Application<CNSControl>._Main(
                 args,
@@ -265,13 +280,17 @@ namespace CNS {
 
                 #region Evaluate operator for testing
                 //// Evaluate the operator
-                //CoordinateMapping mapping = new CoordinateMapping(WorkingSet.ConservativeVariables);
-                //double[] OpAffine = new double[mapping.LocalLength];
-                //SpatialOperator spatialOperator = FullOperator.ToSpatialOperator(WorkingSet);
-                //IEvaluatorNonLin_ ev = spatialOperator.GetEvaluatorEx(WorkingSet.ConservativeVariables, null, mapping);
-                //IEvaluatorNonLin_ ev = spatialOperator.GetEvaluatorEx(WorkingSet.ConservativeVariables, WorkingSet.ParameterFields, mapping);
-                //ev.Evaluate(1.0, 0.0, OpAffine, null);
-                //OpAffine.SaveToTextFile(String.Format("ResidualVector_{0}.txt", TimestepNo));
+                //if (TimestepNo % printInterval == 0)
+                //{
+                //    CoordinateMapping mapping = new CoordinateMapping(WorkingSet.ConservativeVariables);
+                //    double[] OpAffine = new double[mapping.LocalLength];
+                //    SpatialOperator spatialOperator = FullOperator.ToSpatialOperator(WorkingSet);
+                //    //var ev = spatialOperator.GetEvaluatorEx(WorkingSet.ConservativeVariables, null, mapping);
+                //    var ev = spatialOperator.GetEvaluatorEx(WorkingSet.ConservativeVariables, WorkingSet.ParameterFields, mapping);
+                //    ev.Evaluate(1.0, 0.0, OpAffine, null);
+                //    //OpAffine.SaveToTextFile(String.Format("ResidualVector_{0}.txt", TimestepNo));
+                //    Console.WriteLine($"|R0|={OpAffine.MPI_L2Norm()}");
+                //}
 
                 //// Sample points
                 //int noOfPoints = 1000;
