@@ -35,6 +35,7 @@ namespace BoSSS.Application.XNSEC {
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
             //InitMPI();
+            //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
             //BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_EVAPORATION_TEST();
 
             //DeleteOldPlotFiles();
@@ -60,10 +61,9 @@ namespace BoSSS.Application.XNSEC {
                 // peek at control file and select correct solver depending on controlfile type
                 // parse arguments
                 args = ArgsFromEnvironmentVars(args);
-                CommandLineOptions opt = new CommandLineOptions();
-                var parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-                bool argsParseSuccess;
-                argsParseSuccess = parser.ParseArguments(args, opt);
+                var CmdlineParseRes = Parser.Default.ParseArguments<CommandLineOptions>(args);
+                bool argsParseSuccess = !CmdlineParseRes.Errors.Any();
+                CommandLineOptions opt = CmdlineParseRes.Value;
 
                 if (!argsParseSuccess) {
                     System.Environment.Exit(-1);

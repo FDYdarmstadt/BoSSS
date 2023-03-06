@@ -472,98 +472,102 @@ namespace BoSSS.Solution {
             Tracer.MemoryInstrumentationLevel = MemoryInstrumentationLevel.None;
 
             int MPIrank = int.MinValue;
-//#if DEBUG
-//            {
-
-                
-//#else
-//            try {
-//#endif
-                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-
-                bool _MustFinalizeMPI = InitMPI(args);
-                ReadBatchModeConnectorConfig();
-
-                MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
-
-                // lets see if we have environment variables which override command line arguments
-                // (environment variables are usually more robust w.r.t. e.g. escape characters)
-                args = ArgsFromEnvironmentVars(args);
+            //#if DEBUG
+            //            {
 
 
-                // parse arguments
-                CommandLineOptions opt = new CommandLineOptions();
-                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-                bool argsParseSuccess;
-                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                    argsParseSuccess = parser.ParseArguments(args, opt);
-                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-                } else {
-                    argsParseSuccess = false;
-                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-                }
+            //#else
+            //            try {
+            //#endif
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
-                if (!argsParseSuccess) {
-                    MPI.Wrappers.csMPI.Raw.mpiFinalize();
-                    _MustFinalizeMPI = false;
-                    m_Logger.Error("Unable to parse arguments - exiting.");
-                    System.Environment.Exit(-1);
-                }
+            bool _MustFinalizeMPI = InitMPI(args);
+            ReadBatchModeConnectorConfig();
 
-                if (opt.ControlfilePath != null) {
-                    opt.ControlfilePath = opt.ControlfilePath.Trim();
-                }
-                m_Logger.Info("Braodcasting command line options..");
-                opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+            MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
+
+            // lets see if we have environment variables which override command line arguments
+            // (environment variables are usually more robust w.r.t. e.g. escape characters)
+            args = ArgsFromEnvironmentVars(args);
+
+
+            // parse arguments
+            CommandLineOptions opt = new CommandLineOptions();
+            //ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+            
+            bool argsParseSuccess;
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var CmdlineParseRes = Parser.Default.ParseArguments<CommandLineOptions>(args);
+                opt = CmdlineParseRes.Value;
+                argsParseSuccess = CmdlineParseRes.Errors.IsNullOrEmpty();
+                //argsParseSuccess = parser.ParseArguments(args, opt);
+                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+            } else {
+                argsParseSuccess = false;
+                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+            }
+
+            if (!argsParseSuccess) {
+                MPI.Wrappers.csMPI.Raw.mpiFinalize();
+                _MustFinalizeMPI = false;
+                m_Logger.Error("Unable to parse arguments - exiting.");
+                System.Environment.Exit(-1);
+            }
+
+            if (opt.ControlfilePath != null) {
+                opt.ControlfilePath = opt.ControlfilePath.Trim();
+            }
+            m_Logger.Info("Braodcasting command line options..");
+            opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+            m_Logger.Info("done.");
+
+            // Delete old plots if requested
+            if (opt.delPlt) {
+                m_Logger.Info("Deletion of old plot files...");
+                DeleteOldPlotFiles();
                 m_Logger.Info("done.");
-
-                // Delete old plots if requested
-                if (opt.delPlt) {
-                    m_Logger.Info("Deletion of old plot files...");
-                    DeleteOldPlotFiles();
-                    m_Logger.Info("done.");
-                }
+            }
 
 
-                // load control file
-                T ctrlV2 = null;
-                T[] ctrlV2_ParameterStudy = null;
-                if (!noControlFile) {
-                    m_Logger.Info("Loading control object...");
-                    LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
-                    m_Logger.Info("done.");
-                } else {
-                    ctrlV2 = new T();
-                    m_Logger.Info("No control Object.");
-                }
+            // load control file
+            T ctrlV2 = null;
+            T[] ctrlV2_ParameterStudy = null;
+            if (!noControlFile) {
+                m_Logger.Info("Loading control object...");
+                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                m_Logger.Info("done.");
+            } else {
+                ctrlV2 = new T();
+                m_Logger.Info("No control Object.");
+            }
 
-                AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
+            AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
 
-                if (_MustFinalizeMPI)
-                    FinalizeMPI();
+            if (_MustFinalizeMPI)
+                FinalizeMPI();
 
-//#if DEBUG
-//            }
-//#else
-//            } catch (Exception e) {
-//                // handle exception logging, for automated processing in WorkflowMgm etc.
-//                // make sure the exception is appended to the stderr in session directory!
+            //#if DEBUG
+            //            }
+            //#else
+            //            } catch (Exception e) {
+            //                // handle exception logging, for automated processing in WorkflowMgm etc.
+            //                // make sure the exception is appended to the stderr in session directory!
 
-//                Console.Error.WriteLine(e.StackTrace);
-//                Console.Error.WriteLine();
-//                Console.Error.WriteLine();
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
-//                Console.Error.WriteLine(e.Message);
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine();
-//                Console.Error.Flush();
-//                //System.Environment.Exit(-1);
-//            }
-//#endif
+            //                Console.Error.WriteLine(e.StackTrace);
+            //                Console.Error.WriteLine();
+            //                Console.Error.WriteLine();
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
+            //                Console.Error.WriteLine(e.Message);
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine();
+            //                Console.Error.Flush();
+            //                //System.Environment.Exit(-1);
+            //            }
+            //#endif
         }
 
         /// <summary>
@@ -690,7 +694,9 @@ namespace BoSSS.Solution {
                 Console.WriteLine(";");
             }
         }
-
+        /// <summary>
+        /// On process rank 0, deletes all txt and csv files in the current directory
+        /// </summary>
         public static void DeleteOldTextFiles() {
             if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());

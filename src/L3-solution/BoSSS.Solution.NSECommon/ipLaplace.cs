@@ -180,7 +180,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Volume integrand of the SIP
         /// </summary>
-        public double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+        public virtual double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
                 acc -= GradU[0, d] * GradV[d] * this.Nu(cpv.Xglobal, cpv.Parameters, cpv.jCell);

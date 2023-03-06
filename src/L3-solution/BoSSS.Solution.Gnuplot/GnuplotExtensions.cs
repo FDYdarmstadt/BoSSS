@@ -259,6 +259,8 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="gp"></param>
         /// <param name="_2DData"></param>
         /// <param name="mode">'a' = average, '+' = max, '-' = min</param>
+        /// <param name="round"></param>
+        /// <param name="format"></param>
         public static void PlotLogSlope(this Gnuplot gp, Plot2Ddata _2DData, char mode = 'a', PlotFormat format = null, double round = 0.5) {
 
             var slopes = _2DData.Regression();
@@ -338,13 +340,19 @@ namespace BoSSS.Solution.Gnuplot {
 
         /// <summary>
         /// Multiple plot windows:
-        /// Converts <see cref="Plot2Ddata"/> into an alive Gnuplot object.
-        /// <param name="layout"> the entries corresponds to the elements in the given List<Plot2Ddata </param>
+        /// Converts multiple <see cref="Plot2Ddata"/> into an alive Gnuplot object.
         /// </summary>
-        public static Gnuplot ToGnuplot(this List<Plot2Ddata> _2DData, int[,] layout = null) {
+        /// <param name="_2DData">a list of plots</param>
+        /// <param name="layout">
+        /// describes the 2d-multiplot arrangement
+        /// - 1st index: multiplot row index
+        /// - 2nd index: multiplot column index
+        /// - content: index into <paramref name="_2DData"/>
+        /// </param>
+        public static Gnuplot ToGnuplot(this IEnumerable<Plot2Ddata> _2DData, int[,] layout = null) {
 
             if(layout == null) {
-                layout = new int[_2DData.Count, 1];
+                layout = new int[_2DData.Count(), 1];
                 for(int iRow = 0; iRow < layout.GetLength(0); iRow++) {
                     layout[iRow, 0] = iRow;
                 }
@@ -358,7 +366,7 @@ namespace BoSSS.Solution.Gnuplot {
             for(int iRow = 0; iRow < layout.GetLength(0); iRow++) {
                 for(int iCol = 0; iCol < layout.GetLength(1); iCol++) {
                     int elem = layout[iRow, iCol];
-                    if(elem >= 0 && elem < _2DData.Count) {
+                    if(elem >= 0 && elem < _2DData.Count()) {
                         gp.SetSubPlot(iRow, iCol);
                         _2DData.ElementAt(elem).ToGnuplot(gp);
                     }

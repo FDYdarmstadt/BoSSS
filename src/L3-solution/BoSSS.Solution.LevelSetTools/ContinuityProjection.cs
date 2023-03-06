@@ -114,7 +114,6 @@ namespace BoSSS.Solution.LevelSetTools {
                 case ContinuityProjectionOption.None: {
                         Console.WriteLine("WARNING: No additional enforcement of the level-set continuity!");
                         LevelSet SmoothedLevelSet = new LevelSet(DGLevelSet.Basis, VariableNames.LevelSetCG);
-                        DGLevelSet = SmoothedLevelSet;
                         return SmoothedLevelSet;
                     }
                 default:

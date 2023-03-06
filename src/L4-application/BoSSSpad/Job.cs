@@ -50,7 +50,7 @@ namespace BoSSS.Application.BoSSSpad {
                 do {
                     newName = "EmptyJobName_" + i;
                     i++;
-                } while(InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(newName));
+                } while(BoSSSshell.WorkflowMgm.AllJobs.ContainsKey(newName));
                 
                 Console.WriteLine($"Empty job name - picking new name '{newName}'");
                 name = newName;
@@ -59,11 +59,11 @@ namespace BoSSS.Application.BoSSSpad {
             this.Name = name;
             this.SessionReqForSuccess = true;
             
-            if (InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(name)) {
+            if (BoSSSshell.WorkflowMgm.AllJobs.ContainsKey(name)) {
                 throw new ArgumentException("Job with name '" + name + "' is already defined in the workflow management.");
             }
-            InteractiveShell.WorkflowMgm.AllJobs.Add(name, this);
-            if (string.IsNullOrWhiteSpace(InteractiveShell.WorkflowMgm.CurrentProject)) {
+            BoSSSshell.WorkflowMgm.AllJobs.Add(name, this);
+            if (string.IsNullOrWhiteSpace(BoSSSshell.WorkflowMgm.CurrentProject)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
         }
@@ -167,7 +167,8 @@ namespace BoSSS.Application.BoSSSpad {
                 var files = new List<Assembly>();
 
                 var allAssis = AllDependentAssemblies;
-                Assembly mscorlib = allAssis.Single(a => a.FullName.StartsWith("mscorlib"));
+                //Debugger.Launch();
+                Assembly mscorlib = allAssis.Single(a => a.Location.EndsWith("System.Runtime.dll"));
                 string corLibPath = Path.GetDirectoryName(mscorlib.Location);
 
 
@@ -183,7 +184,7 @@ namespace BoSSS.Application.BoSSSpad {
                     // (in Jupyter, sometimes assemblies from some cache are used, therefore we cannot use the assembly location as a criterion)
 
                     if (Path.GetDirectoryName(a.Location) == corLibPath) {
-                        tr.Info("ignoring: " + a.Location);
+                        tr.Info("ignoring (in corelib-path): " + a.Location);
                         continue;
                     }
 
@@ -288,7 +289,7 @@ namespace BoSSS.Application.BoSSSpad {
         public void SetControlStatement(string Args) {
             TestActivation();
 
-            string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
+            string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
             if (string.IsNullOrWhiteSpace(PrjName)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
@@ -321,7 +322,7 @@ namespace BoSSS.Application.BoSSSpad {
         public void MySetCommandLineArguments(params string[] Args) {
             TestActivation();
 
-            string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
+            string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
             if (string.IsNullOrWhiteSpace(PrjName)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
@@ -417,7 +418,7 @@ namespace BoSSS.Application.BoSSSpad {
                     if(GridIn_ctrl_db == null) {
                         Console.WriteLine($"Grid {m_ctrl.GridGuid} is not present in database - copy to target system...");
 
-                        var grid2copy = InteractiveShell.AllGrids.FirstOrDefault(dbGrid => dbGrid.ID.Equals(m_ctrl.GridGuid));
+                        var grid2copy = BoSSSshell.AllGrids.FirstOrDefault(dbGrid => dbGrid.ID.Equals(m_ctrl.GridGuid));
                         if(grid2copy == null) {
                             // maybe replace exception with a warning, if job should be tried anyway
                             throw new IOException($"Unable to find grid '{m_ctrl.GridGuid}' in any database - job will most likely crash.");
@@ -440,7 +441,7 @@ namespace BoSSS.Application.BoSSSpad {
                     if(Rstsess_ctrl_db == null) {
                         Console.WriteLine($"Session {m_ctrl.GridGuid} to restart from is not present in database - copy to target system...");
 
-                        var sess_2copy = InteractiveShell.AllSessions.FirstOrDefault(sinf => sinf.ID.Equals(Rstsess_guid));
+                        var sess_2copy = BoSSSshell.AllSessions.FirstOrDefault(sinf => sinf.ID.Equals(Rstsess_guid));
                         if(sess_2copy == null) {
                             // maybe replace exception with a warning, if job should be tried anyway
                             throw new IOException($"Unable to find session '{sess_2copy}' in any database - job will most likely crash.");
@@ -499,7 +500,7 @@ namespace BoSSS.Application.BoSSSpad {
             // Verification does not work before we execute `FiddleControlFile`
             //ctrl.VerifyEx();
             m_ctrl = ctrl;
-            m_ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
+            m_ctrl.ProjectName = BoSSSshell.WorkflowMgm.CurrentProject;
 
             // note: serialization is done later, immediately before deployment,
             // since we may need to fix database issues (path on batch system, evtl. transfer of grid)
@@ -515,7 +516,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             // Project & Session Name
             // ======================
-            string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
+            string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
             if (string.IsNullOrWhiteSpace(PrjName)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
@@ -858,7 +859,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         string JobDirectoryBaseName() {
             string Exe = Path.GetFileNameWithoutExtension(EntryAssembly.Location);
-            string Proj = InteractiveShell.WorkflowMgm.CurrentProject;
+            string Proj = BoSSSshell.WorkflowMgm.CurrentProject;
             string Sess = Name;
 
             return Proj
@@ -953,7 +954,7 @@ namespace BoSSS.Application.BoSSSpad {
                                 string ControlObj = Path.Combine(dir.FullName, "control.obj");
                                 if(File.Exists(ControlObj)) {
                                     var ctrl = BoSSS.Solution.Control.AppControl.Deserialize(File.ReadAllText(ControlObj), mybind);
-                                    if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
+                                    if(BoSSSshell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
                                         filtDirs.Add(new DirectoryInfo(dir.FullName));
                                         continue;
                                     }
@@ -968,7 +969,7 @@ namespace BoSSS.Application.BoSSSpad {
                                     }
 
                                     var ctrl = BoSSS.Solution.Control.AppControl.FromFile(ControlScript, jobControl.GetType(), control_index);
-                                    if(InteractiveShell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
+                                    if(BoSSSshell.WorkflowMgm.JobAppControlCorrelation(this, ctrl)) {
                                         filtDirs.Add(dir);
                                         continue;
                                     }
@@ -993,7 +994,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+        class KnownTypesBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {
 
             Job m_owner;
 
@@ -1042,9 +1043,9 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
 
-            ISessionInfo[] AllNewSessions = InteractiveShell.WorkflowMgm.Sessions
+            ISessionInfo[] AllNewSessions = BoSSSshell.WorkflowMgm.Sessions
                 .Where(sinf => !KnownSessionGuids.Contains(sinf.ID)) // for performance reasons, filter sessions that we already know
-                .Where(sinf => InteractiveShell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
+                .Where(sinf => BoSSSshell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
 
             // add all new deployment directories
             // ==================================
@@ -1076,6 +1077,9 @@ namespace BoSSS.Application.BoSSSpad {
                     m_Deployments.Add(new Deployment(sinf, this));
                 }
             }
+
+            m_Deployments.Sort(new FuncComparer<Deployment>((A, B) => A.CreationDate.CompareTo(B.CreationDate)));
+
         }
 
 
@@ -1401,11 +1405,12 @@ namespace BoSSS.Application.BoSSSpad {
         }
         */
 
-
+        /*
         /// <summary>
         /// triggers <see cref="DeleteOldDeploymentsAndSessions"/>
         /// </summary>
         public static bool UndocumentedSuperHack = false;
+        */
 
         /// <summary>
         /// Activates the Job in the default queue (<see cref="BoSSSshell.GetDefaultQueue"/>)
@@ -1429,17 +1434,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="bpc"></param>
         public void Activate(BatchProcessorClient bpc) {
             using (var tr = new FuncTrace()) {
-
+                
                 // ============================================
                 // ensure that this method is only called once.
                 // ============================================
                 if (this.AssignedBatchProc != null)
                     throw new NotSupportedException("Job can only be activated once.");
                 AssignedBatchProc = bpc;
-                // dbg_launch();
-                if(UndocumentedSuperHack)
-                    this.DeleteOldDeploymentsAndSessions();
-
+                
 
                 // ================
                 // status
@@ -1477,8 +1479,10 @@ namespace BoSSS.Application.BoSSSpad {
                     var rr = bpc.Submit(this, DeploymentDirectory);
                     File.WriteAllText(Path.Combine(DeploymentDirectory, "IdentifierToken.txt"), rr.id);
 
-                    Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
-                    if(dep == null)
+                    //Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
+                    Deployment dep = AllDeployments.LastOrDefault(d => (d?.BatchProcessorIdentifierToken == rr.id) && PathMatch(d?.DeploymentDirectory?.FullName, DeploymentDirectory));
+                    
+                    if (dep == null)
                         m_Deployments.Add(new Deployment(new DirectoryInfo(DeploymentDirectory), this, rr.optJobObj));
                     else
                         dep.optInfo = rr.optJobObj;
@@ -1488,8 +1492,28 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        static bool PathMatch(string this_Path, string otherPath) {
+            if (this_Path == otherPath)
+                return true;
+            if (this_Path == null && otherPath != null)
+                return false;
+            if (this_Path != null && otherPath == null)
+                return false;
 
-        
+            if (!Directory.Exists(otherPath))
+                return false;
+
+            string TokenName = Guid.NewGuid().ToString() + ".token";
+
+            string file1 = System.IO.Path.Combine(this_Path, TokenName);
+            File.WriteAllText(file1, "this is a test file which can be safely deleted.");
+
+            string file2 = System.IO.Path.Combine(otherPath, TokenName);
+
+            return File.Exists(file2);
+        }
+
+
         /// <summary>
         /// Status evaluation, with optional additional information.
         /// </summary>
@@ -1526,7 +1550,7 @@ namespace BoSSS.Application.BoSSSpad {
                     ISessionInfo[] SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
                     if(SuccessSessions.Length <= 0) {
                         // look twice
-                        InteractiveShell.WorkflowMgm.ResetSessionsCache();
+                        BoSSSshell.WorkflowMgm.ResetSessionsCache();
                         DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
                         Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
                         SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
@@ -1717,6 +1741,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
             */
+
+           
             void TestWR() {
                 using(new FuncTrace()) {
                     Exception OP(int iTry) {
@@ -1853,16 +1879,28 @@ namespace BoSSS.Application.BoSSSpad {
                         //    - e.g. ~\.dotnet\tools\.store\microsoft.dotnet-interactive\1.0.360602\microsoft.dotnet-interactive\1.0.360602\tools\net7.0\any\System.CodeDom.dll
                         //      instead of the `System.CodeDom.dll` present in the current directory.
                         //    - this causes (sometimes) problems when the deployed application should be started.
+<<<<<<< HEAD
                         //  * solution: test, whether the assembly with the same name can be found "locally"; if yes, pefer this one.
                         //  * future: if all packages are done via nuget, this will maybe be not an issue anymore
                         //
                         string alt_location = Path.Combine(entry_dir, Path.GetFileName(a_location));
                         if(File.Exists(alt_location)) {
+=======
+                        //  * solution: test, whether the assembly with the same name can be found "locally"; if yes, prefer this one.
+                        //  * future: if all packages are done via nuget, this will maybe be not an issue anymore
+                        //
+                        string alt_location = Path.Combine(entry_dir, Path.GetFileName(a_location));
+                        if (File.Exists(alt_location)) {
+>>>>>>> experimentalGitlab/master
                             tr.Info($"Take {alt_location} instead of {a_location}");
                             a_location = alt_location;
                         }
                     }
+<<<<<<< HEAD
                     
+=======
+
+>>>>>>> experimentalGitlab/master
                     files.Add(a_location);
 
                     var additionalFiles = new string[] {
@@ -1883,7 +1921,7 @@ namespace BoSSS.Application.BoSSSpad {
                             tr.Info(" missing.");
                         }
                     }
-                } 
+                }
 
                 return files.ToArray();
             }

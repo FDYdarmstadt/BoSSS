@@ -58,9 +58,17 @@ namespace BoSSS.Application.ExternalBinding {
                     this.Values.Add(new List<double>());
                     for (int d = 0; d < dim; d++)
                     {
-                        this.Values[i].Add(edgeValues[dim * i + d]);
+                        try { this.Values[i].Add(edgeValues[dim * i + d]);
+                        } catch (Exception e) {
+                            Console.WriteLine("Index i : " + i);
+                            Console.WriteLine("Index d : " + d);
+                            Console.WriteLine("dim : " + dim);
+                            Console.WriteLine("Index dim * i + d : " + (int)(dim * i + d));
+                            Console.WriteLine("Length of edgeValues: " + edgeValues.Length);
+                            throw e;
+                        }
                     }
-            }
+                }
                 this.EdgeTypes = edgeTypes;
         }
 

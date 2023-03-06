@@ -52,7 +52,8 @@ namespace MPI.Wrappers {
                     TypeNameHandling = TypeNameHandling.All,
                     ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
                     ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-                    TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+                    //TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+                    TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
                 };
             }
         }
@@ -62,7 +63,7 @@ namespace MPI.Wrappers {
             byte[] buffer;
             using(var ms = new MemoryStream()) {
                 //_Formatter.Serialize(ms, o);
-                using(var w = new BsonWriter(ms)) {
+                using(var w = new BsonDataWriter(ms)) {
                     jsonFormatter.Serialize(w, new JsonContainer<T>() { PayLoad = o });
                     Size = (int)ms.Position;
                 }
@@ -77,7 +78,7 @@ namespace MPI.Wrappers {
 
         static T DeserializeObject<T>(byte[] buffer) {
             using(var ms = new MemoryStream(buffer)) {
-                using(var w = new BsonReader(ms)) {
+                using(var w = new BsonDataReader(ms)) {
                     var containerObj = (JsonContainer<T>)jsonFormatter.Deserialize(w, typeof(JsonContainer<T>));
                     return containerObj.PayLoad;
                 }
@@ -654,9 +655,6 @@ namespace MPI.Wrappers {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="b"></param>
-        /// <param name="comm"></param>
-        /// <returns></returns>
         static public bool MPIEquals(this bool b, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int sz);
             if(sz <= 1)
@@ -673,8 +671,6 @@ namespace MPI.Wrappers {
         /// <summary>
         /// equal to <see cref="MPIEquals(double,MPI_Comm)"/> acting on WORLD-communicator
         /// </summary>
-        /// <param name="i"></param>
-        /// <returns></returns>
         static public bool MPIEquals(this double i) {
             return MPIEquals(i, csMPI.Raw._COMM.WORLD);
         }

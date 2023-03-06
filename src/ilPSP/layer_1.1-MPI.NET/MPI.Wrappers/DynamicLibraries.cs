@@ -36,11 +36,9 @@ namespace MPI.Wrappers.Utils {
         /// <summary>
         /// Unix command to open a shared object (lib*.so), aka. DLL, called <paramref name="filename"/>;
         /// </summary>
-        //[DllImport("libdl.so.2", EntryPoint="dlopen", CharSet = CharSet.Ansi)]
         [DllImport("dl", CharSet = CharSet.Ansi)]
         static extern IntPtr dlopen(string filename, int flag);
 
-        //[DllImport("fakedl", EntryPoint="my_dlerror")]
         [DllImport("dl")]
         unsafe static extern byte* dlerror();
 
@@ -210,17 +208,17 @@ namespace MPI.Wrappers.Utils {
         /// handle, which was acquired by <see cref="LoadDynLib"/>
         /// </param>
         /// <returns>
-        /// a function/symbol pointer;<br/>
-        /// using the function <see cref="System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer"/>
+        /// - a function/symbol pointer;
+        /// - using the function <see cref="System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer"/>
         /// it can be converted to a .NET delegate.
         /// </returns>
         /// <remarks>
-        /// On Windows, this function redirects to the 'GetProcAddress'-function in kernel32.dll;<br/>
-        /// On Unix, this function redirects to the 'dlsym'-function in libdl.so;
+        /// - On Windows, this function redirects to the 'GetProcAddress'-function in kernel32.dll;
+        /// - On Unix, this function redirects to the 'dlsym'-function in libdl.so;
         /// </remarks>
         /// <param name="errstr">
-        /// on success, null;
-        /// if call failed (return value is null), an error information provided by the operating system
+        /// - on success, null;
+        /// - if call failed (return value is null), an error information provided by the operating system
         /// </param>
         public static IntPtr LoadSymbol(DynLibHandle libHandle, string SymbName, out string errstr) {
             PlatformID plattid = System.Environment.OSVersion.Platform;

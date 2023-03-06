@@ -32,16 +32,6 @@
     <PackageReference Include="System.Security.Permissions" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <!--Reference Include="log4net">
-      <HintPath>..\..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference-->
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
-    </Reference>
-
     <Reference Include="System.Configuration.ConfigurationManager">
       <HintPath>..\..\..\..\libs\system.configuration.configurationmanager.4.5.0\lib\netstandard2.0\System.Configuration.ConfigurationManager.dll</HintPath>
     </Reference>

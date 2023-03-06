@@ -6,3 +6,5 @@ runtimes/
 *.deps.json
 *.runtimeconfig.json
 *.dll.config
+build.txt
+build.out

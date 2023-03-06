@@ -1,5 +1,7 @@
 ﻿/* =======================================================================
-Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
+Copyright 2017 
+Technische Universitaet Darmstadt, 
+Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -224,10 +226,11 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// <see cref="XNSE_Solver.Tests.StaticDropletTest"/>
         /// </summary>
+        [Test]
         public static void ScalingStaticDropletTest(
-            int deg,
-            ViscosityMode vmode,
-            XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
+            [Values(1, 2, 3)] int deg,
+            [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType
             ) {
 
             double AgglomerationTreshold = 0.1;
@@ -656,6 +659,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         }
 #endif
 
+        /*
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>
         /// </summary>
@@ -672,7 +676,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             TaylorCouetteConvergenceTest(FlowSolverDegree, modus, stm, SchurCompl, nonlinsolver);
         }
-
+        */
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.Tests.TaylorCouette"/>

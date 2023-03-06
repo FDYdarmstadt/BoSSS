@@ -37,37 +37,37 @@ namespace BoSSS.Solution.Timestepping {
         public enum RungeKuttaSchemes {
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.ExplicitEuler"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.ExplicitEuler"/>
             /// </summary>
             ExplicitEuler,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.RungeKutta1901"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.RungeKutta1901"/>
             /// </summary>
             RungeKutta1901,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.Heun"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.Heun"/>
             /// </summary>
             Heun,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.Middlepoint"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.Middlepoint"/>
             /// </summary>
             Middlepoint,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.TVD3"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.TVD3"/>
             /// </summary>
             TVD3,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.ThreeOverEight"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.ThreeOverEight"/>
             /// </summary>
             ThreeOverEight,
 
             /// <summary>
-            /// <see cref="RungeKutta.RungeKuttaScheme.SSP54"/>
+            /// <see cref="RungeKutta.RungeKuttaSchemes.SSP54"/>
             /// </summary>
             SSP54
         }
