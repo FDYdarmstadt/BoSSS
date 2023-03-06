@@ -148,7 +148,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = true;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_CellCostEstimators = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = 0;
 
             //this test takes too much time with 3 procs and exceed the 4 hr limit.
@@ -700,7 +700,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = useLoadBal;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_CellCostEstimators = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = 0;
 
             // Timestepping

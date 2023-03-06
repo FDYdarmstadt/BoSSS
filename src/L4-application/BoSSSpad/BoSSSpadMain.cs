@@ -15,7 +15,6 @@ limitations under the License.
 */
 
 using BoSSS.Platform;
-using ilPSP;
 using Microsoft.DotNet.Interactive.Documents;
 using Microsoft.DotNet.Interactive.Documents.Jupyter;
 using System;
@@ -25,12 +24,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
-<<<<<<< HEAD
-=======
 using ilPSP;
 using System.IO.Pipes;
 using System.Threading.Tasks;
->>>>>>> experimentalGitlab/master
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -112,6 +108,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         //[STAThread]
         public static int Main(string[] args) {
+            int errCount = 0;
+            
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             //string path = @"\\fdygitrunner\ValidationTests\LinslvPerfPar-temp\sessions\eb58bc08-a44f-4beb-99fc-4267567b1353"; 

@@ -29,7 +29,7 @@ namespace BoSSS.Solution {
     /// In an MPI-parallel run, this class can be used to obtain a model of how
     /// load is distributed to MPI processes.
     /// </summary>
-    public class RuntimeCellCostEstimator : ICellCostEstimator {
+    public class RuntimeCellCostEstimator : CellTypeBasedEstimator {
 
         /// <summary>
         /// <see cref="MaxNoOfTimesteps"/>
@@ -69,10 +69,9 @@ namespace BoSSS.Solution {
         /// <see cref="ActualInstrumentationTimeStamps"/> and
         /// <see cref="LastInstrumentationTimeStamps"/>.
         /// </summary>
-        public double EstimatedLocalCost {
-            get;
-            private set;
-        }
+        override public double EstimatedLocalCost => m_EstimatedLocalCost;
+
+        double m_EstimatedLocalCost;
 
         public int CurrentPerformanceClassCount {
             get;
@@ -89,9 +88,7 @@ namespace BoSSS.Solution {
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="performanceClassCount"></param>
-        /// <param name="cellToPerformanceClassMap"></param>
-        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
+        override public void UpdateEstimates(IApplication app) {
             CurrentPerformanceClassCount = performanceClassCount;
             currentCellToPerformanceClassMap = cellToPerformanceClassMap;
             int J = cellToPerformanceClassMap.Length;
@@ -117,7 +114,7 @@ namespace BoSSS.Solution {
         /// Solves a linear regression cost model
         /// </summary>
         /// <returns></returns>
-        public int[] GetEstimatedCellCosts() {
+        override public int[][] GetEstimatedCellCosts() {
             MPICollectiveWatchDog.Watch();
 
             int noOfEstimates = localCellCounts.Count;
@@ -240,7 +237,7 @@ namespace BoSSS.Solution {
                 for (int j = 0; j < cellCosts.Length; j++) {
                     cellCosts[j] = intCost[currentCellToPerformanceClassMap[j]];
                 }
-                return cellCosts;
+                return new int[][] { cellCosts };
             } else {
                 return null;
             }
@@ -278,9 +275,9 @@ namespace BoSSS.Solution {
                 ActualInstrumentationTimeStamps[i] = GetTime(InstrumentationPaths[i]);
             }
 
-            EstimatedLocalCost = ActualInstrumentationTimeStamps.Sum();
+            m_EstimatedLocalCost = ActualInstrumentationTimeStamps.Sum();
             if (LastInstrumentationTimeStamps != null) {
-                EstimatedLocalCost -= LastInstrumentationTimeStamps.Sum();
+                m_EstimatedLocalCost -= LastInstrumentationTimeStamps.Sum();
             }
         }
 
@@ -302,6 +299,10 @@ namespace BoSSS.Solution {
                 localCellCounts.RemoveAt(0);
                 localRunTimeEstimates.RemoveAt(0);
             }
+        }
+
+        override public void Init(IApplication app) {
+            throw new NotImplementedException();
         }
 
         private int CallCount = 0;

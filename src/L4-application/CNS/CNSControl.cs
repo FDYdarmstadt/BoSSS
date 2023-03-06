@@ -28,6 +28,7 @@ using CNS.Source;
 using ilPSP;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CNS {
 
@@ -219,11 +220,13 @@ namespace CNS {
         /// </summary>
         public SpongeLayerConfig SpongeLayerConfig = null;
 
+        /*
         /// <summary>
         /// A classifier that decides which performance class a cell
         /// (currently) belongs to
         /// </summary>
         public ICellClassifier DynamicLoadBalancing_CellClassifier = new IndifferentCellClassifier();
+        */
 
         /// <summary>
         /// The maximum number of sub-steps in the smallest cluster in a LTS clustering
@@ -274,8 +277,8 @@ namespace CNS {
             clone.CustomEnergySources = new List<Func<ISpeciesMap, INonlinearSource>>();
             clone.CustomEnergySources.AddRange(this.CustomEnergySources);
 
-            clone.DynamicLoadBalancing_CellCostEstimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>();
-            clone.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(this.DynamicLoadBalancing_CellCostEstimatorFactories);
+            clone.DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
+            clone.DynamicLoadBalancing_CellCostEstimators.AddRange(this.DynamicLoadBalancing_CellCostEstimators.Select(e => e.CloneAs()));
             
             return clone;
         }

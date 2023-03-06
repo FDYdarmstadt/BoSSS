@@ -139,8 +139,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
             base.Init(control);
             var ctrl = (control as XNSE_Control);
-            if (ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count() <= 0)
-                ctrl.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+
+            if(ctrl.DynamicLoadBalancing_CellCostEstimators.Count() <=0 )
+                ctrl.DynamicLoadBalancing_CellCostEstimators = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+
             if (ctrl.Rigidbody.IsInitialized())
                 ctrl.Rigidbody.ArrangeAll(ctrl);
         }
@@ -322,7 +324,11 @@ namespace BoSSS.Application.XNSE_Solver {
         /// cell performance class equals number of species present in that cell
         /// </summary>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
+<<<<<<< HEAD
           
+=======
+            base.GetCellPerformanceClasses
+>>>>>>> exchangeGitlab/kummer
             (NoOfClasses, CellPerfomanceClasses) = CellClassifier.ClassifyCells(this, this.Control.DynamicLoadbalancing_ClassifierType);
         }
 

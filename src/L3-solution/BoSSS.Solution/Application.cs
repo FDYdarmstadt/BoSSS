@@ -2835,6 +2835,7 @@ namespace BoSSS.Solution {
         /// In the case of one MPI process, this method should always return <c>null</c>.
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
+<<<<<<< HEAD
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
                 if (Control == null
@@ -2876,9 +2877,48 @@ namespace BoSSS.Solution {
                     redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
                     TimestepNoRestart: TimeStepNoRestart);
             }
+=======
+            if (Control == null
+                || !Control.DynamicLoadBalancing_On
+                || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0 && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
+                || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
+                || MPISize <= 1) {
+                return null;
+            }
+
+            // Should only be called when needed
+            //GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap, TimeStepNo, physTime);
+            //if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
+            //    throw new ApplicationException();
+            //}
+
+            if (m_Balancer == null) {
+                var estimators = Control.DynamicLoadBalancing_CellCostEstimators;
+                //if (estimators.IsNullOrEmpty()) {
+                //    estimators = new List<Func<IApplication, int, ICellCostEstimator>>() {
+                //        //CellCostEstimatorLibrary.AllCellsAreEqual
+                //    };
+                //}
+                foreach (var e in estimators)
+                    e.Init(this);
+                m_Balancer = new LoadBalancer(estimators);
+            }
+
+            return m_Balancer.GetNewPartitioning(
+                this,
+                //performanceClassCount,
+                //cellToPerformanceClassMap,
+                TimeStepNo,
+                Control.GridPartType,
+                Control.GridPartOptions,
+                Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
+                Control != null ? Control.DynamicLoadBalancing_Period : 5,
+                redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
+                TimestepNoRestart: TimeStepNoRestart);
+>>>>>>> exchangeGitlab/kummer
         }
 
-
+        /*
         /// <summary>
         /// Provides cell-performance classes for the default implementation of <see cref="ComputeNewCellDistribution(int, double)"/>,
         /// which is using the algorithms from <see cref="LoadBalancer"/>.
@@ -2893,6 +2933,7 @@ namespace BoSSS.Solution {
         virtual protected void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
             throw new NotImplementedException("Must be implemented by user (if he wants to use load balancing).");
         }
+        */
 
         /// <summary>
         /// The name of a specific simulation should be logged in the <see cref="ISessionInfo.KeysAndQueries"/> under this key,

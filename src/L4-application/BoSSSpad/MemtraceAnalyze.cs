@@ -752,7 +752,6 @@ namespace BoSSS.Application.BoSSSpad {
   
         }
 
-
         /// <summary>
         /// Non-recursive version
         /// </summary>
@@ -770,7 +769,6 @@ namespace BoSSS.Application.BoSSSpad {
                 } else if (matrix[i,j] == matrix[i - 1,j]) {
                     // Indicates propagation without change: no new char was added to lcs.
                     i -= 1;
-
                 } else {
                     // Value on the left and above are different than current cell.
                     // This means 1 was added to lcs length.
@@ -781,11 +779,10 @@ namespace BoSSS.Application.BoSSSpad {
                     else
                         s1[i - 1].AddPeerRun(s2[j - 1]); // 
 
-            i -= 1;
+                    i -= 1;
                     j -= 1;
 
                     lcs.Add(s1[i]);
-
                 }
             }
 

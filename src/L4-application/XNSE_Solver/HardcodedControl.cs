@@ -1273,7 +1273,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_CellCostEstimators = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = -0.1;
 
 
@@ -1618,7 +1618,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_CellCostEstimators = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = -0.1;
 
             // Timestepping
@@ -6325,7 +6325,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = useLoadBal;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_CellCostEstimators = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = 0;
 
             // Timestepping
