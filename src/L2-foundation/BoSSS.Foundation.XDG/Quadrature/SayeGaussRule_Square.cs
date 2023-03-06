@@ -280,8 +280,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
 
         protected override SayeQuadRule SetGaussQuadratureNodes(SayeSquare arg) {
-            Console.WriteLine($"Low order Quadrature required in cell: {cell}, " +
-                $"center: {lsData.GridDat.Cells.CellCenter[cell, 0]}, {lsData.GridDat.Cells.CellCenter[cell, 1]}");
+            //Console.WriteLine($"Low order Quadrature required in cell: {cell}, " +
+            //    $"center: {lsData.GridDat.Cells.CellCenter[cell, 0]}, {lsData.GridDat.Cells.CellCenter[cell, 1]}");
             return SetGaussQuadratureNodes(arg, order);
         }
 
