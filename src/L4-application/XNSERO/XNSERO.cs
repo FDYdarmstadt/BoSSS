@@ -412,15 +412,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name = phystime>
         /// </param>
         private void LogPhysicalData(double phystime, int timestepNo) {
-            using (new FuncTrace()) {
-                if ((MPIRank == 0) && (LogParticleData != null)) {
-                    for (int p = 0; p < Particles.Length; p++) {
-                        LogParticleData.WriteLine($"{timestepNo},{p},{phystime},{Particles[p].Motion.GetPosition(0).x},{Particles[p].Motion.GetPosition(0).y},{Particles[p].Motion.GetAngle(0)},{Particles[p].Motion.GetTranslationalVelocity(0).x},{Particles[p].Motion.GetTranslationalVelocity(0).y},{Particles[p].Motion.GetRotationalVelocity(0)},{Particles[p].Motion.GetHydrodynamicForces(0).x},{Particles[p].Motion.GetHydrodynamicForces(0).y},{Particles[p].Motion.GetHydrodynamicTorque(0)}");
-                        LogParticleData.Flush();
-                    }
+            if ((MPIRank == 0) && (LogParticleData != null)) {
+                for (int p = 0; p < Particles.Length; p++) {
+                    LogParticleData.WriteLine($"{timestepNo},{p},{phystime},{Particles[p].Motion.GetPosition(0).x},{Particles[p].Motion.GetPosition(0).y},{Particles[p].Motion.GetAngle(0)},{Particles[p].Motion.GetTranslationalVelocity(0).x},{Particles[p].Motion.GetTranslationalVelocity(0).y},{Particles[p].Motion.GetRotationalVelocity(0)},{Particles[p].Motion.GetHydrodynamicForces(0).x},{Particles[p].Motion.GetHydrodynamicForces(0).y},{Particles[p].Motion.GetHydrodynamicTorque(0)}");
+                    LogParticleData.Flush();
                 }
-                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             }
+            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
         }
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {

@@ -28,12 +28,20 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="periodicBoundaryPosition">Relative periodic boundary position towards the origin.</param>
         /// <param name="dimension"></param>
         /// <remarks>At each periodic boundary a virtual domain is created with its own origin, which coordinates are given with respect to the main origin.
-        /// Considering all edges and vertices of a rectangular domain this leads to eight additional virtual domains.
+        /// Considering all edges and vertices of a rectangular domain in two dimensions this leads to eight additional virtual domains.
         /// </remarks>
         public void SetPeriodicBoundary(double[] periodicBoundaryPosition, int dimension);
 
+        /// <summary>
+        /// Flag for translational motion
+        /// </summary>
+        /// <returns></returns>
         public bool IncludeTranslation();
 
+        /// <summary>
+        /// Flag for rotational motion
+        /// </summary>
+        /// <returns></returns>
         public bool IncludeRotation();
 
         /// <summary>
@@ -124,7 +132,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public void SaveVelocityOfPreviousTimestep();
 
         /// <summary>
-        /// Used during init of the particle. Sets the position and the angle.
+        /// Used during initialization of the particle. Sets the position and the angle.
         /// </summary>
         /// <param name="initialPosition">
         /// The initial position.
@@ -135,7 +143,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public void InitializeParticlePositionAndAngle(double[] initialPosition, double initialAngle, int historyLength = 0, int currentHistoryPos = 0);
 
         /// <summary>
-        /// Used during init of the particle. Sets the translational and rotational velocity.
+        /// Used during initialization of the particle. Sets the translational and rotational velocity.
         /// </summary>
         /// <param name="initalTranslation">
         /// The initial translational velocity.
@@ -146,7 +154,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public void InitializeParticleVelocity(double[] initalTranslation, double initalRotation, int historyLength = 0, int currentHistoryPos = 0);
 
         /// <summary>
-        /// Used during init of the particle. Sets the translational and rotational acceleration.
+        /// Used during initialization of the particle. Sets the translational and rotational acceleration.
         /// </summary>
         /// <param name="initalTranslationAcceleration"></param>
         /// <param name="initalRotationAcceleration"></param>
@@ -155,7 +163,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public void InitializeParticleAcceleration(double[] initalTranslationAcceleration, double initalRotationAcceleration, int historyLength = 0, int currentHistoryPos = 0);
 
         /// <summary>
-        /// Init of the particle area.
+        /// Volume (3D) or area (2D) of a particle
         /// </summary>
         /// <param name="Volume"></param>
         public double Volume { get; set; }
@@ -166,23 +174,19 @@ namespace BoSSS.Application.XNSERO_Solver {
         public double Density { get; }
 
         /// <summary>
-        /// Parameter used for Aitken-Relaxation.
+        /// The characteristic length of the particle.
         /// </summary>
-        public double RelaxationParameter { get;  set; }
-
+        public double CharacteristicLength { get; set; }
 
         /// <summary>
-        /// The maximum length of the particle.
-        /// </summary>
-        public double CharacteristicLength {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Init of the moment of inertia.
+        /// Particle moment of inertia.
         /// </summary>
         public double MomentOfInertia { get; set; }
+
+        /// <summary>
+        /// Parameter used for Aitken-Relaxation.
+        /// </summary>
+        public double RelaxationParameter { get; set; }
 
         /// <summary>
         /// During the collision algorithm the particle is moved with the current velocity using "safe" time-steps without the collision.
@@ -252,7 +256,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public double CalculateAngularVelocity(double dt);
 
         /// <summary>
-        /// Calculate the new tranlational acceleration.
+        /// Calculate the new translational acceleration.
         /// </summary>
         /// <param name="dt"></param>
         public Vector CalculateTranslationalAcceleration(double dt);
@@ -274,6 +278,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="fluidDensity"></param>
         /// <param name="tempForces"></param>
-        public Vector GetGravityForces(Vector Gravity);
+        public Vector GravityForce(Vector Gravity);
     }
 }

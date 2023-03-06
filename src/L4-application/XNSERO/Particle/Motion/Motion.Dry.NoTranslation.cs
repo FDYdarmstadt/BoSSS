@@ -90,7 +90,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="fluidDensity"></param>
         /// <param name="tempForces"></param>
-        public override Vector GetGravityForces(Vector Gravity) {
+        public override Vector GravityForce(Vector Gravity) {
             return new Vector(0, 0);
         }
     }

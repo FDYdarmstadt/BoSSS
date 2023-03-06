@@ -78,7 +78,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 for (int p = 0; p < Particles.Length; p++) {
                     Particle currentParticle = Particles[p];
                     int offset = p * (SpatialDimension + TorqueVectorDimension);
-                    Vector gravity = currentParticle.Motion.GetGravityForces(Gravity);
+                    Vector gravity = currentParticle.Motion.GravityForce(Gravity);
                     for(int d = 0; d < SpatialDimension; d++) {
                         hydrodynamics[offset + d] += gravity[d];
                     }

@@ -643,7 +643,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="fluidDensity"></param>
         /// <param name="tempForces"></param>
-        public virtual Vector GetGravityForces(Vector Gravity) {
+        public virtual Vector GravityForce(Vector Gravity) {
             return density * volume * Gravity;
         }
 

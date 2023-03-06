@@ -31,16 +31,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </param>
         public Motion(double density) : base(density) { }
 
-        /// <summary>
-        /// Include rotation?
-        /// </summary>
         public override bool IncludeRotation() {
             return true;
         }
 
-        /// <summary>
-        /// Include translation?
-        /// </summary>
         public override bool IncludeTranslation() {
             return true;
         }
