@@ -287,14 +287,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         [DataMember]
         public double Mass => volume * density;
 
-        /// <summary>
-        /// Include rotation?
-        /// </summary>
         public abstract bool IncludeRotation();
 
-        /// <summary>
-        /// Include translation?
-        /// </summary>
         public abstract bool IncludeTranslation();
 
         /// <summary>

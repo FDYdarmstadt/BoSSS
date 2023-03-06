@@ -15,20 +15,24 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid;
-using BoSSS.Foundation.XDG;
 using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.XNSERO_Solver {
     [Serializable]
+    /// <summary>
+    /// Contains methods to call the calculation of the hydrodynamic forces and torques. Also provides relaxations methods for hydrodynamics.
+    /// </summary>
     internal class ParticleHydrodynamics {
+        /// <summary>
+        /// Enables calculation of the hydrodynamic forces and torques.
+        /// </summary>
+        /// <param name="SpatialDimension"></param>
         internal ParticleHydrodynamics(int SpatialDimension) {
             this.SpatialDimension = SpatialDimension;
             TorqueVectorDimension = SpatialDimension switch {
@@ -37,6 +41,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 _ => throw new ArithmeticException("Error in spatial dimensions, only dim == 2 and dim == 3 are allowed!"),
             };
         }
+
         [DataMember]
         private readonly int SpatialDimension;
         [DataMember]
@@ -45,9 +50,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         private readonly List<double[]> m_ForcesAndTorquePreviousIteration = new List<double[]>();
         [DataMember]
         private readonly List<double[]> m_ForcesAndTorqueWithoutRelaxation = new List<double[]>();
-
-        public bool AlreadyUpdatedLevelSetParameter = false;
-        public bool FromLevelSetParameterUpdate = false;
 
         /// <summary>
         /// Calculation of hydrodynamic forces F and torque T for all particles. 
@@ -60,10 +62,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="dt"></param>
         internal void CalculateHydrodynamics(Particle[] Particles, CellMask AllCutCells, ParticleHydrodynamicsIntegration HydrodynamicIntegrator, string[] FluidSpecies, Vector Gravity, double dt) {
             using (new FuncTrace()) {
-                double[] hydrodynamics = new double[(SpatialDimension + TorqueVectorDimension) * Particles.Count()];
+                double[] hydrodynamics = new double[(SpatialDimension + TorqueVectorDimension) * Particles.Length];
                
                 // Calculate hydrodynamics.
-                //CellMask allCutCells = Particles[0].LsTrk.Regions.GetCutCellMask4LevSet(1);
                 for (int p = 0; p < Particles.Length; p++) {
                     CellMask CutCells = Particles[p].ParticleCutCells(Particles[0].LsTrk, AllCutCells);
                     int offset = p * (SpatialDimension + TorqueVectorDimension);
@@ -99,6 +100,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
+        /// <summary>
+        /// Saves hydrodynamic forces and torques of the last time-step.
+        /// </summary>
+        /// <param name="AllParticles"></param>
         internal void SaveHydrodynamicOfPreviousTimestep(Particle[] AllParticles) {
             double[] hydrodynamics = new double[(SpatialDimension + 1) * AllParticles.Length];
             m_ForcesAndTorquePreviousIteration.Clear();
@@ -117,7 +122,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// ...
+        /// Saves hydrodynamic forces and torques of the last iteration of the solver in the current time-step.
         /// </summary>
         /// <param name="AllParticles"></param>
         internal void SaveHydrodynamicOfPreviousIteration(Particle[] AllParticles) {

@@ -50,7 +50,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 TreeNode firstNode = new(true, -1, 0, new Vector(SpatialDimension));
             Nodes.Add(firstNode);
             for(int p = 0; p < Particles.Length; p++) {
-                List<Vector> virtualDomainOrigin = Particles[p].Motion.GetOriginInVirtualPeriodicDomain();
+                List<Vector> virtualDomainOrigin = Particles[p].Motion.OriginInVirtualPeriodicDomain;
                 TreeNode particleNode = new(false, 0, FindSmallestEmptyID(), new Vector(SpatialDimension));
                 InsertNodeToList(particleNode);
                 particleNode.ParticleID = p;
@@ -73,17 +73,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Insert node to the Node-list at the correct position.
-        /// </summary>
-        /// <param name="CurrentNode"></param>
-        private void InsertNodeToList(TreeNode CurrentNode) {
-            if (CurrentNode.NodeID < Nodes.Count)
-                Nodes.Insert(CurrentNode.NodeID, CurrentNode);
-            else
-                Nodes.Add(CurrentNode);
-        }
-
-        /// <summary>
         /// Updates the MBRs of the tree. Note: this does not change the node structure, i.e. each child-node keeps its parent.
         /// To ensure good performance the tree should be reinitialized every 10-50 time-steps. 
         /// </summary>
@@ -102,6 +91,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
+        /// Insert node to the Node-list at the correct position.
+        /// </summary>
+        /// <param name="CurrentNode"></param>
+        private void InsertNodeToList(TreeNode CurrentNode) {
+            if (CurrentNode.NodeID < Nodes.Count)
+                Nodes.Insert(CurrentNode.NodeID, CurrentNode);
+            else
+                Nodes.Add(CurrentNode);
+        }
+
+        /// <summary>
         /// Search for overlapping MBRs of particles. If two particle MBRs overlap we should check for collisions.
         /// </summary>
         /// <param name="Particle">The current particle</param>
@@ -111,7 +111,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public List<int> SearchForOverlap(Particle Particle, int ParticleID, double Timestep) {
             using (new FuncTrace()) {
                 //es kann passieren, dass manche Überlappungen mehrmals gefunden werden, z.B. weil zwei höhere Knoten mit zwei Partikeln überlappen und dann beide Pfade untersucht werden.
-                List<Vector> virtualDomainOrigin = Particle.Motion.GetOriginInVirtualPeriodicDomain();
+                List<Vector> virtualDomainOrigin = Particle.Motion.OriginInVirtualPeriodicDomain;
                 MinimalBoundingRectangle particleMBR = CalculateParticleMBR(Particle, Timestep, new Vector(SpatialDimension));
                 List<int> overlappingParticles = new List<int>();
                 for (int i = 0; i < Nodes[0].Children.Count; i++) {
