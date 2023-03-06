@@ -66,13 +66,13 @@ namespace BoSSS.Application.XNSE_Solver.LoadBalancing {
             int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] cellToPerformanceClassMap = new int[J];
 
-            (int,int[]) tyield = CutCellClassification(program);
+            (int, int[]) tyield = CutCellClassification(program);
             int[] cutcellcostcluster = tyield.Item2;
             int noOfClasses = tyield.Item1 + 1;
 
             for (int iCell = 0; iCell < J; iCell++) {
-                bool AtLeastOneSpecies = LsTrk.Regions.GetNoOfSpecies(iCell)>=1;
-                cellToPerformanceClassMap[iCell] = AtLeastOneSpecies? 1 : 0;
+                bool AtLeastOneSpecies = LsTrk.Regions.GetNoOfSpecies(iCell) >= 1;
+                cellToPerformanceClassMap[iCell] = AtLeastOneSpecies ? 1 : 0;
                 cellToPerformanceClassMap[iCell] += cutcellcostcluster[iCell];
             }
 

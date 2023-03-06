@@ -19,6 +19,8 @@ using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution.Control;
 using ilPSP;
+using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -78,52 +80,77 @@ namespace BoSSS.Solution {
         /// <param name="Period">
         /// See <see cref="Control.AppControl.DynamicLoadBalancing_Period"/>.
         /// </param>
+        /// <param name="redistributeAtStartup"></param>
+        /// <param name="TimestepNoRestart"></param>
         /// <returns></returns>
         public int[] GetNewPartitioning(IApplication app, int performanceClassCount, int[] cellToPerformanceClassMap, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period, bool redistributeAtStartup, TimestepNumber TimestepNoRestart) {
             // Create new model if number of cell classes has changed
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
+                tr.Info($"Computing Partition of using {gridPartType}...");
+                counter++;
 
-            Console.WriteLine("performing Loadbalancing ...");
+                int[] NoOfCellsInClass = new int[performanceClassCount + 1];
+                foreach (int class_j in cellToPerformanceClassMap)
+                    NoOfCellsInClass[class_j]++;
+                var NoOfCellsInClass_Global = NoOfCellsInClass.MPISum();
+                for (int i = 0; i <= performanceClassCount; i++)
+                    tr.Info("Number of cells in class " + i + ": " + NoOfCellsInClass_Global[i]);
 
-            for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
-                if (CurrentCellCostEstimators[i] == null
-                    || CurrentCellCostEstimators[i].CurrentPerformanceClassCount != performanceClassCount) {
-                    CurrentCellCostEstimators[i] = cellCostEstimatorFactories[i](app, performanceClassCount);
+                cellToPerformanceClassMap.SaveToTextFile($"PerfMap{counter}.txt");
+
+
+                //if(app.MPIRank == 0)
+                //    Debugger.Launch();
+                for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
+                    if (CurrentCellCostEstimators[i] == null
+                        || CurrentCellCostEstimators[i].CurrentPerformanceClassCount != performanceClassCount) {
+                        CurrentCellCostEstimators[i] = cellCostEstimatorFactories[i](app, performanceClassCount);
+                    }
+
+                    CurrentCellCostEstimators[i].UpdateEstimates(performanceClassCount, cellToPerformanceClassMap);
                 }
 
-                CurrentCellCostEstimators[i].UpdateEstimates(performanceClassCount, cellToPerformanceClassMap);
-            }
+                if (app.Grid.Size == 1) {
+                    // only one processor => no load balancing necessary
+                    return null;
+                }
 
-            if (app.Grid.Size == 1) {
-                // only one processor => no load balancing necessary
-                return null;
-            }
+                bool performPertationing;
 
-            bool performPertationing;
+                if (TimestepNo == 0 || (TimestepNoRestart != null && TimestepNo == TimestepNoRestart.MajorNumber)) {
+                    tr.Info("redistributeAtStartup = " + redistributeAtStartup);
+                    tr.Info("TimestepNo = " + TimestepNo);
+                    tr.Info("TimestepNoRestart != null = " + (TimestepNoRestart != null));
+                    tr.Info("TimestepNoRestart.MajorNumber = " + TimestepNoRestart.MajorNumber);
 
-            if (TimestepNo == 0 || (TimestepNoRestart != null && TimestepNo == TimestepNoRestart.MajorNumber)) {
-                performPertationing = redistributeAtStartup;
-            } else {
-                performPertationing = (Period > 0 && TimestepNo % Period == 0);
-            }
+                    performPertationing = redistributeAtStartup;
+                } else {
+                    tr.Info("Period = " + Period);
+                    tr.Info("TimestepNo % Period = " + (TimestepNo % Period));
 
-            if (!performPertationing) {
-                return null;
-            }
+                    performPertationing = (Period > 0 && TimestepNo % Period == 0);
+                }
 
-            // No new partitioning if imbalance below threshold
-            double[] imbalanceEstimates =
-                    CurrentCellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();
-            bool imbalanceTooLarge = false;
-            for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
-                imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
-            }
+                if (!performPertationing) {
+                    tr.Info("No new partition will be computed.");
+                    return null;
+                }
+
+                // No new partitioning if imbalance below threshold
+                double[] imbalanceEstimates =
+                        CurrentCellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();
+                bool imbalanceTooLarge = false;
+                for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
+                    imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
+                }
 
 
 
-            if (!imbalanceTooLarge) {
-                Console.WriteLine("Imbalance not sufficiently high for load balancing!");
-                return null;
-            }
+                if (!imbalanceTooLarge) {
+                    tr.Info("Imbalance not sufficiently high for load balancing!");
+                    return null;
+                }
 
 #if DEBUG
             Console.WriteLine(
@@ -132,61 +159,90 @@ namespace BoSSS.Solution {
                 imbalanceThreshold);
 #endif
 
-            IList<int[]> cellCosts = CurrentCellCostEstimators.Select(estimator => estimator.GetEstimatedCellCosts()).ToList();
-            if (cellCosts == null || cellCosts.All(c => c == null)) {
-                return null;
-            }
-
-
-            int[] result;
-            switch (gridPartType) {
-                case GridPartType.METIS:
-                    int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
-                    noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
-                    result = ((GridCommons)(app.Grid)).ComputePartitionMETIS(cellCosts);
-                    isFirstRepartitioning = false;
-                    break;
-
-                case GridPartType.ParMETIS:
-                    // Do full ParMETIS run on first repartitioning since
-                    // initial partitioning may be _really_ bad
-                    if (isFirstRepartitioning) {
-                        result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(cellCosts);
-                        isFirstRepartitioning = false;
-                    } else {
-                        // Refinement currently deactivate because it behaves
-                        // strangely when large numbers of cells should be
-                        // repartitioned
-                        //result = Grid.ComputePartitionParMETIS(cellCosts, refineCurrentPartitioning: true);
-                        result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(cellCosts);
-                    }
-                    break;
-
-                case GridPartType.clusterHilbert:
-                    return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 0);
-
-                case GridPartType.Hilbert:
-                    return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 1);
-
-                case GridPartType.none:
-                    result = IndexBasedPartition(cellCosts.Single());
-                    break;
-
-                case GridPartType.Predefined:
+                IList<int[]> cellCosts = CurrentCellCostEstimators.Select(estimator => estimator.GetEstimatedCellCosts()).ToList();
+                if (cellCosts == null || cellCosts.All(c => c == null)) {
+                    Console.WriteLine("Cell cost estimators NULL; not computing new partition.");
                     return null;
+                }
 
-                default:
-                    throw new NotImplementedException();
+                for(int i = 0; i < cellCosts.Count;i++) {
+                    cellCosts[i].SaveToTextFile($"cellcost{counter}-{i}.txt");
+                }
+
+
+                int[] result;
+                switch (gridPartType) {
+                    case GridPartType.METIS:
+                        int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
+                        noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
+                        result = ((GridCommons)(app.Grid)).ComputePartitionMETIS(cellCosts);
+                        isFirstRepartitioning = false;
+                        break;
+
+                    case GridPartType.ParMETIS:
+                        // Do full ParMETIS run on first repartitioning since
+                        // initial partitioning may be _really_ bad
+                        if (isFirstRepartitioning) {
+                            result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(cellCosts);
+                            isFirstRepartitioning = false;
+                        } else {
+                            // Refinement currently deactivate because it behaves
+                            // strangely when large numbers of cells should be
+                            // repartitioned
+                            //result = Grid.ComputePartitionParMETIS(cellCosts, refineCurrentPartitioning: true);
+                            result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(cellCosts);
+                        }
+                        break;
+
+                    case GridPartType.clusterHilbert:
+                        result = ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 0);
+                        break;
+
+                    case GridPartType.Hilbert:
+                        result = ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 1);
+                        break;
+
+                    case GridPartType.none:
+                        result = IndexBasedPartition(cellCosts.Single());
+                        break;
+
+                    case GridPartType.Predefined:
+                        return null;
+
+                    default:
+                        throw new NotImplementedException();
+                }
+
+
+                if (result.Length != app.Grid.CellPartitioning.LocalLength) {
+                    throw new ApplicationException($"Load balancing '{gridPartType}' computed invalid partitioning on rank {app.Grid.MyRank}; length mismatch ({result.Length} vs {app.Grid.CellPartitioning.LocalLength}).");
+                }
+
+                {
+                    int myRank = app.Grid.MyRank;
+                    long ToOther = 0;
+                    for (int j = 0; j < result.Length; j++) {
+                        if (result[j] != myRank)
+                            ToOther++;
+                    }
+
+                    long ToOtherGlobal = ToOther.MPISum();
+                    tr.Info("Number of cells which go to other processors: " + ToOther);
+                }
+
+                int[] CurrentPart = new int[result.Length];
+                CurrentPart.SetAll(app.MPIRank);
+                CurrentPart.SaveToTextFile($"OldPart{counter}.txt");
+
+                result.SaveToTextFile($"NewPart{counter}.txt");
+
+
+                return result;
             }
-
-            if (result.Length == 0) {
-                throw new Exception(String.Format(
-                    "LoadBalancer computed invalid partitioning; no cells left on rank {0}",
-                    app.Grid.MyRank));
-            }
-
-            return result;
         }
+
+        int counter = 0;
+
 
         static int[] IndexBasedPartition(int[] Cost) {
             int J = Cost.Length;

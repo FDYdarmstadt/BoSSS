@@ -2136,7 +2136,7 @@ namespace BoSSS.Solution {
             SetUpEnvironment(); // remark: tracer is not avail before setup
 
             using (var tr = new FuncTrace()) {
-
+                tr.InfoToConsole = true;
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -2183,6 +2183,8 @@ namespace BoSSS.Solution {
 
 
                 // load balancing solo
+                tr.Info("DynamicLoadBalancing_RedistributeAtStartup = " + this.Control.DynamicLoadBalancing_RedistributeAtStartup);
+                tr.Info("AdaptiveMeshRefinement = " + this.Control.AdaptiveMeshRefinement);
                 if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
                     PlotAndSave(physTime, i0, rollingSavesTsi);
                     MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
@@ -2456,7 +2458,7 @@ namespace BoSSS.Solution {
             using (new FuncTrace()) {
                 int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
                 if (NewPartition == null)
-                    return false; // immidiate quit, because there is nothing to do
+                    return false; // immediate quit, because there is nothing to do
 
                 int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
@@ -2827,41 +2829,47 @@ namespace BoSSS.Solution {
         /// In the case of one MPI process, this method should always return <c>null</c>.
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
-            if (Control == null
-                || !Control.DynamicLoadBalancing_On
-                || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0 && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
-                || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
-                || MPISize <= 1) {
-                return null;
-            }
-
-            // Should only be called when needed
-            GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap, TimeStepNo, physTime);
-            if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
-                throw new ApplicationException();
-            }
-
-            if (m_Balancer == null) {
-                var estimatorFactories = Control.DynamicLoadBalancing_CellCostEstimatorFactories;
-                if (estimatorFactories.IsNullOrEmpty()) {
-                    estimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>() {
-                        //CellCostEstimatorLibrary.AllCellsAreEqual
-                    };
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
+                if (Control == null
+                    || !Control.DynamicLoadBalancing_On
+                    || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0 && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
+                    || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
+                    || MPISize <= 1) {
+                    return null;
                 }
-                m_Balancer = new LoadBalancer(estimatorFactories);
-            }
 
-            return m_Balancer.GetNewPartitioning(
-                this,
-                performanceClassCount,
-                cellToPerformanceClassMap,
-                TimeStepNo,
-                Control.GridPartType,
-                Control.GridPartOptions,
-                Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
-                Control != null ? Control.DynamicLoadBalancing_Period : 5,
-                redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
-                TimestepNoRestart: TimeStepNoRestart);
+                // Should only be called when needed
+                GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap, TimeStepNo, physTime);
+                tr.Info($"performanceClassCount={performanceClassCount}");
+                tr.Info("classes present = " + cellToPerformanceClassMap.ToSet().ToConcatString("{ ", ", ", " }"));
+
+                if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
+                    throw new ApplicationException($"mismatch in length of 'cellToPerformanceClassMap'; must be the same as number of locally updated cells ({ this.Grid.CellPartitioning.LocalLength})");
+                }
+
+                if (m_Balancer == null) {
+                    var estimatorFactories = Control.DynamicLoadBalancing_CellCostEstimatorFactories;
+                    if (estimatorFactories.IsNullOrEmpty()) {
+                        estimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>() {
+                            //CellCostEstimatorLibrary.AllCellsAreEqual
+                        };
+                    }
+                    m_Balancer = new LoadBalancer(estimatorFactories);
+                }
+
+                return m_Balancer.GetNewPartitioning(
+                    this,
+                    performanceClassCount,
+                    cellToPerformanceClassMap,
+                    TimeStepNo,
+                    Control.GridPartType,
+                    Control.GridPartOptions,
+                    Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
+                    Control != null ? Control.DynamicLoadBalancing_Period : 5,
+                    redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
+                    TimestepNoRestart: TimeStepNoRestart);
+            }
         }
 
 
@@ -2872,6 +2880,7 @@ namespace BoSSS.Solution {
         /// <param name="NoOfClasses"></param>
         /// <param name="CellPerfomanceClasses">
         /// Performance classes for the Cut-Cell-Balancer.
+        /// - index: correlates to locally updated cells
         /// </param>
         /// <param name="TimeStepNo"></param>
         /// <param name="physTime"></param>

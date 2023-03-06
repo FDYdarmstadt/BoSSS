@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
             // One balance constraint per cluster
             cellToCostMap = new int[cellToPerformanceClassMap.Length];
             cellToCostMap.SetAll(1);
-            for (int j = 0; j < cellToPerformanceClassMap.Length; j++) {
+            for (int j = 0; j < cellToPerformanceClassMap.Length; j++) { // loop over cells...
                 if (cellToPerformanceClassMap[j] == selectedCellType) {
                     if (selectedCellType == 2)
                         cellToCostMap[j] = (int)Math.Pow((double)selectedCellType, 10) - selectedCellType;
