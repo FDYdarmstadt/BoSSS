@@ -343,8 +343,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override SayeQuadRule SetLowOrderQuadratureNodes(LinearSayeSpace<Cube> arg)
         {
-            Console.WriteLine($"Low order Quadrature required in cell: {cell}, " +
-                $"center: {lsData.GridDat.Cells.CellCenter[cell, 0]}, {lsData.GridDat.Cells.CellCenter[cell, 1]}, {lsData.GridDat.Cells.CellCenter[cell, 2]}");
+            //Console.WriteLine($"Low order Quadrature required in cell: {cell}, " +
+            //    $"center: {lsData.GridDat.Cells.CellCenter[cell, 0]}, {lsData.GridDat.Cells.CellCenter[cell, 1]}, {lsData.GridDat.Cells.CellCenter[cell, 2]}");
             return SetGaussQuadratureNodes(arg, 1);
         }
 
