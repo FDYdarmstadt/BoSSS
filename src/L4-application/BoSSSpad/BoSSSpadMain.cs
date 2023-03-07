@@ -140,8 +140,6 @@ namespace BoSSS.Application.BoSSSpad {
             return 0;
             */
 
-            
-            int errCount = 0;
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             
             // interpretation of command line options

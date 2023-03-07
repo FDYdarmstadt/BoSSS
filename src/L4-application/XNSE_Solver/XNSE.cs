@@ -140,8 +140,6 @@ namespace BoSSS.Application.XNSE_Solver {
             base.Init(control);
             var ctrl = (control as XNSE_Control);
 
-            if(ctrl.DynamicLoadBalancing_CellCostEstimators.Count() <=0 )
-                ctrl.DynamicLoadBalancing_CellCostEstimators = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
 
             if (ctrl.Rigidbody.IsInitialized())
                 ctrl.Rigidbody.ArrangeAll(ctrl);

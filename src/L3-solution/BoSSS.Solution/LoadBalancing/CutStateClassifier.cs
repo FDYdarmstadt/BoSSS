@@ -95,33 +95,32 @@ namespace BoSSS.Solution.LoadBalancing {
         /// <summary>
         /// Constants/Flags enumerating different cell types
         /// </summary>
-        [Flags]
         public enum CellTypeFlags {
 
             /// <summary>
             /// Default
             /// </summary>
-            Ordinary = 0,
+            Ordinary = 0x1,
 
             /// <summary>
             /// At least one Level-Set is zero
             /// </summary>
-            Cut = 0x1,
+            Cut = 0x2,
 
             /// <summary>
             /// More than one Level-Set is zero
             /// </summary>
-            DoubleCut = 0x2,
+            DoubleCut = 0x4,
 
             /// <summary>
             /// Cell is not cut, but next to some level-set
             /// </summary>
-            Near = 0x4,
+            Near = 0x01,
 
             /// <summary>
             /// cell contains only the void species <see cref="VoidSpecies"/>, if specified
             /// </summary>
-            Void = 0x8,
+            Void = 0x0,
 
         }
 

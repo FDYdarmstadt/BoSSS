@@ -66,6 +66,10 @@ namespace BoSSS.Application.XNSE_Solver {
             base.TimesteppingMode = AppControl._TimesteppingMode.Steady;
 
 
+
+            base.DynamicLoadBalancing_CellCostEstimators.Clear();
+            base.DynamicLoadBalancing_CellCostEstimators.Add(new Loadbalancing.XNSECellCostEstimator());
+
         }
 
         /// <summary>

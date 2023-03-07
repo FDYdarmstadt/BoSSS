@@ -676,7 +676,6 @@ namespace HilbertTest {
             if (Repart) {
                 // Add one balance constraint for each subgrid
                 c.DynamicLoadBalancing_On = true;
-                c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
                 c.DynamicLoadBalancing_CellCostEstimators.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
