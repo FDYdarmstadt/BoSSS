@@ -19,6 +19,7 @@ using BoSSS.Solution;
 
 namespace BoSSS.Application.XNSE_Solver.LoadBalancing {
 
+    /*
     public enum ClassifierType {
         VoidCutNormal = 1,
         CutCells = 2,
@@ -100,4 +101,5 @@ namespace BoSSS.Application.XNSE_Solver.LoadBalancing {
             return (noOfClasses, cellToPerformanceClassMap);
         }
     }
+    */
 }

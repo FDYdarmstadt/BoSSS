@@ -17,7 +17,7 @@ limitations under the License.
 using System;
 using System.Linq;
 
-namespace BoSSS.Solution {
+namespace BoSSS.Solution.LoadBalancing {
 
     /// <summary>
     /// Cell cost estimate with a fixed mapping between a performance class and
@@ -27,13 +27,7 @@ namespace BoSSS.Solution {
     public class StaticCellCostEstimator : CellTypeBasedEstimator {
 
         
-        /// <summary>
-        /// <see cref="ICellCostEstimator.EstimatedLocalCost"/>
-        /// </summary>
-        override public double EstimatedLocalCost => m_EstimatedLocalCost;
-
-        double m_EstimatedLocalCost;
-
+      
        
         private int[] performanceClassToCostMap;
 
@@ -54,15 +48,17 @@ namespace BoSSS.Solution {
         /// <see cref="ICellCostEstimator.UpdateEstimates"/>
         /// </summary>
         override public void UpdateEstimates(IApplication app) {
-            var CellTypes = base.GetCellType();
+            int J = m_app.GridData.CellPartitioning.LocalLength;
 
-            cellToCostMap = new int[cellToPerformanceClassMap.Length];
-            for (int j = 0; j < cellToPerformanceClassMap.Length; j++) {
+            var cellToPerformanceClassMap = base.CellClassifier.ClassifyCells(app);
+
+            cellToCostMap = new int[J];
+            for (int j = 0; j < J; j++) {
                 int performanceClass = cellToPerformanceClassMap[j];
                 cellToCostMap[j] = performanceClassToCostMap[performanceClass];
             }
 
-            m_EstimatedLocalCost = cellToCostMap.Sum();
+            
         }
 
         /// <summary>
@@ -71,9 +67,11 @@ namespace BoSSS.Solution {
         override public int[][] GetEstimatedCellCosts() {
             return new int[][] { cellToCostMap };
         }
+               
 
-        override public void Init(IApplication app) {
-            base.Init(app);
+        public override object Clone() {
+            throw new NotImplementedException();
         }
+
     }
 }

@@ -308,6 +308,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return lsUpdater;
         }
 
+        /*
         /// <summary>
         /// Cell-performance classes:
         /// cell performance class equals number of species present in that cell
@@ -322,6 +323,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 //Console.WriteLine("No of Species in cell {0} : {1}", j, CellPerfomanceClasses[j]);
             }
         }
+        */
 
         /// <summary>
         /// Corresponding to <see cref="LevelSetEvolution"/> initialization of LevelSetDG

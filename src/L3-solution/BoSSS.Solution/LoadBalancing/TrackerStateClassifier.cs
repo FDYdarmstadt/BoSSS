@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace BoSSS.Solution {
+namespace BoSSS.Solution.LoadBalancing {
 
 
     /// <summary>

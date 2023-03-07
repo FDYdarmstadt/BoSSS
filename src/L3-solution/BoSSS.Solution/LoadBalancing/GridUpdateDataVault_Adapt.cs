@@ -28,7 +28,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Solution {
+namespace BoSSS.Solution.LoadBalancing {
 
     /// <summary>
     /// During mesh/grid adaptation (refinement or coarsening) <see cref="Application{T}.MpiRedistributeAndMeshAdapt"/>, this is used to

@@ -15,13 +15,14 @@ limitations under the License.
 */
 
 using ilPSP;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace BoSSS.Solution {
+namespace BoSSS.Solution.LoadBalancing {
 
     /// <summary>
     /// Provides a measure to estimate the runtime cost of a given cell in
@@ -46,14 +47,14 @@ namespace BoSSS.Solution {
         /// </param>
         void UpdateEstimates(IApplication app);
 
-      
+      /*
         /// <summary>
         /// The estimated total cost of all cells on this process
         /// </summary>
         double EstimatedLocalCost {
             get;
         }
-
+      */
         /// <summary>
         /// The estimated cost of each individual cell on this process;
         /// 
@@ -67,11 +68,20 @@ namespace BoSSS.Solution {
         int[][] GetEstimatedCellCosts();
     }
 
-    /*
+    
     /// <summary>
     /// Extension methods for <see cref="ICellCostEstimator"/>
     /// </summary>
     public static class ICellCostEstimatorExtensions {
+
+        public static double[] EstimatedLocalCost(this ICellCostEstimator estimator) {
+            int[][] cellCost = estimator.GetEstimatedCellCosts();
+            double[] ret = new double[cellCost.Length];
+            for(int i = 0; i< ret.Length; i++) {
+                ret[i] = cellCost[i].Sum();
+            }
+            return ret; 
+        }
 
         /// <summary>
         /// Estimates the cost imbalance between all processes using the given
@@ -82,18 +92,34 @@ namespace BoSSS.Solution {
         /// A number between 0 and 1 which represents an estimate of the load
         /// imbalance in percent
         /// </returns>
-        public static double ImbalanceEstimate(this ICellCostEstimator estimator) {
+        public static double[] ImbalanceEstimate(this ICellCostEstimator estimator) {
             MPICollectiveWatchDog.Watch();
 
-            double localCost = estimator.EstimatedLocalCost;
-            double[] allCosts = localCost.MPIAllGather();
+            double[] localCost = estimator.EstimatedLocalCost();
+            int N = localCost.Length;
 
-            double minCost = allCosts.Min();
-            double maxCost = allCosts.Max();
-            double imbalance = (maxCost - minCost) / Math.Max(double.Epsilon, maxCost);
+            double[] globalMin, globalMax;
+            {
+                double[] globalMinMax = localCost.CloneAs();
+                localCost.ScaleV(-1.0);
+                globalMinMax = globalMinMax.Cat(localCost);
+                globalMinMax = globalMinMax.MPIMin();
+
+                globalMin = globalMinMax.GetSubVector(0, N);
+                globalMax = globalMinMax.GetSubVector(N, N);
+                globalMax.ScaleV(1.0);
+            }
+
+
+            double[] imbalance = new double[N];
+            for(int i = 0; i < N; i++) {
+                double maxCost = globalMax[i];
+                double minCost = globalMin[i];
+                imbalance[i] = (maxCost - minCost) / Math.Max(double.Epsilon, maxCost);
+            }
 
             return imbalance;
         }
     }
-    */
+    
 }

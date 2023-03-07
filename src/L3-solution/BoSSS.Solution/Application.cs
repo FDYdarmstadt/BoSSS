@@ -24,6 +24,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LoadBalancing;
 using BoSSS.Solution.Queries;
 using CommandLine;
 using CommandLine.Text;
@@ -2835,40 +2836,33 @@ namespace BoSSS.Solution {
         /// In the case of one MPI process, this method should always return <c>null</c>.
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
-<<<<<<< HEAD
+//<<<<<<< HEAD
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
                 if (Control == null
                     || !Control.DynamicLoadBalancing_On
-                    || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0 && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
+                    || (     TimeStepNo % Control.DynamicLoadBalancing_Period != 0 
+                        && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
                     || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
                     || MPISize <= 1) {
                     return null;
                 }
 
-                // Should only be called when needed
-                GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap, TimeStepNo, physTime);
-                tr.Info($"performanceClassCount={performanceClassCount}");
-                tr.Info("classes present = " + cellToPerformanceClassMap.ToSet().ToConcatString("{ ", ", ", " }"));
+                //// Should only be called when needed
+                //GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap, TimeStepNo, physTime);
+                //tr.Info($"performanceClassCount={performanceClassCount}");
+                //tr.Info("classes present = " + cellToPerformanceClassMap.ToSet().ToConcatString("{ ", ", ", " }"));
 
-                if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
-                    throw new ApplicationException($"mismatch in length of 'cellToPerformanceClassMap'; must be the same as number of locally updated cells ({ this.Grid.CellPartitioning.LocalLength})");
-                }
+                //if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
+                //    throw new ApplicationException($"mismatch in length of 'cellToPerformanceClassMap'; must be the same as number of locally updated cells ({ this.Grid.CellPartitioning.LocalLength})");
+                //}
 
                 if (m_Balancer == null) {
-                    var estimatorFactories = Control.DynamicLoadBalancing_CellCostEstimatorFactories;
-                    if (estimatorFactories.IsNullOrEmpty()) {
-                        estimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>() {
-                            //CellCostEstimatorLibrary.AllCellsAreEqual
-                        };
-                    }
-                    m_Balancer = new LoadBalancer(estimatorFactories);
+                    m_Balancer = new LoadBalancer(Control.DynamicLoadBalancing_CellCostEstimators);
                 }
 
                 return m_Balancer.GetNewPartitioning(
                     this,
-                    performanceClassCount,
-                    cellToPerformanceClassMap,
                     TimeStepNo,
                     Control.GridPartType,
                     Control.GridPartOptions,
@@ -2877,6 +2871,7 @@ namespace BoSSS.Solution {
                     redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
                     TimestepNoRestart: TimeStepNoRestart);
             }
+            /*
 =======
             if (Control == null
                 || !Control.DynamicLoadBalancing_On
@@ -2916,6 +2911,7 @@ namespace BoSSS.Solution {
                 redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
                 TimestepNoRestart: TimeStepNoRestart);
 >>>>>>> exchangeGitlab/kummer
+            */
         }
 
         /*

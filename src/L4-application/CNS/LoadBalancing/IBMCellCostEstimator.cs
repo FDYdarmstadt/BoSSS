@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LoadBalancing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;

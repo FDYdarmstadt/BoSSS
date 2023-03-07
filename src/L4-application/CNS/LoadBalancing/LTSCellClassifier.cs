@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.LoadBalancing;
 using BoSSS.Solution.Timestepping;
 using System;
 

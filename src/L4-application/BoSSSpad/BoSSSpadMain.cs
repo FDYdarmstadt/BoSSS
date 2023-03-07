@@ -670,7 +670,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void LinkEnforcer() {
             // If you remove these lines, this may break some worksheets and tutorials.
-            Console.WriteLine(typeof(CNS.Program).FullName);
+            Console.WriteLine(typeof(CNS.CNSProgram).FullName);
             Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
             Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);

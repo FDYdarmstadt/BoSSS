@@ -18,7 +18,7 @@ using BoSSS.Solution.Control;
 using ilPSP.Utils;
 using System;
 
-namespace BoSSS.Solution {
+namespace BoSSS.Solution.LoadBalancing {
 
     public static class CellCostEstimatorLibrary {
 

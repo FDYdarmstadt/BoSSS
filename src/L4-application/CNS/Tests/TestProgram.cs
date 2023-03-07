@@ -73,7 +73,7 @@ namespace CNS.Tests {
             assertions.ForEach(a => a());
         }
 
-        protected static int GetTimeStepNumber(Program solver) {
+        protected static int GetTimeStepNumber(CNSProgram solver) {
             solver.QueryResultTable.FormatTable(out string[] KeyColumnNames, out string[] ValueColumnNames, out object[,] KeyTable, out object[,] ValueTable);
             int iCol = Array.IndexOf(KeyColumnNames, "Timestep");
             int iTimeStep = (int)(KeyTable.GetColumn(iCol).Last());

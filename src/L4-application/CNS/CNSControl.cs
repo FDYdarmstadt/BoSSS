@@ -19,6 +19,7 @@ using BoSSS.Solution;
 using BoSSS.Solution.CompressibleFlowCommon;
 using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LoadBalancing;
 using CNS.Convection;
 using CNS.Diffusion;
 using CNS.EquationSystem;
@@ -280,6 +281,7 @@ namespace CNS {
             clone.DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
             clone.DynamicLoadBalancing_CellCostEstimators.AddRange(this.DynamicLoadBalancing_CellCostEstimators.Select(e => e.CloneAs()));
             
+            
             return clone;
         }
 
@@ -287,7 +289,7 @@ namespace CNS {
         /// To launch CNS.
         /// </summary>
         public override Type GetSolverType() {
-            return typeof(CNS.Program);
+            return typeof(CNS.CNSProgram);
         }
     }
 }

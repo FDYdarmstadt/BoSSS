@@ -1105,7 +1105,7 @@ namespace BoSSS.Application.BoSSSpad {
                 typeof(MiniBatchProcessor.Client),
                 typeof(System.Numerics.Complex),
                 typeof(MathNet.Numerics.Complex32),
-                typeof(CNS.Program),
+                typeof(CNS.CNSProgram),
                 typeof(XNSE_Solver.XNSE),
                 typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
                 typeof(Rheology.Rheology),

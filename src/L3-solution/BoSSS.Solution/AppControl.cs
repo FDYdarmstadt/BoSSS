@@ -32,6 +32,7 @@ using System.Collections;
 using BoSSS.Solution.Utils;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
+using BoSSS.Solution.LoadBalancing;
 
 namespace BoSSS.Solution.Control {
 

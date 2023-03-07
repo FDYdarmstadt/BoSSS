@@ -27,7 +27,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
-namespace BoSSS.Solution {
+namespace BoSSS.Solution.LoadBalancing {
 
     /// <summary>
     /// In an MPI-parallel run, this class can be used to create an MPI
@@ -87,37 +87,37 @@ namespace BoSSS.Solution {
                 tr.Info($"Computing Partition of using {gridPartType}...");
                 counter++;
 
-                int[] NoOfCellsInClass = new int[performanceClassCount + 1];
-                foreach (int class_j in cellToPerformanceClassMap)
-                    NoOfCellsInClass[class_j]++;
-                var NoOfCellsInClass_Global = NoOfCellsInClass.MPISum();
-                for (int i = 0; i <= performanceClassCount; i++)
-                    tr.Info("Number of cells in class " + i + ": " + NoOfCellsInClass_Global[i]);
+                //                int[] NoOfCellsInClass = new int[performanceClassCount + 1];
+                //                foreach (int class_j in cellToPerformanceClassMap)
+                //                    NoOfCellsInClass[class_j]++;
+                //                var NoOfCellsInClass_Global = NoOfCellsInClass.MPISum();
+                //                for (int i = 0; i <= performanceClassCount; i++)
+                //                    tr.Info("Number of cells in class " + i + ": " + NoOfCellsInClass_Global[i]);
 
-<<<<<<< HEAD
-                cellToPerformanceClassMap.SaveToTextFile($"PerfMap{counter}.txt");
+                //<<<<<<< HEAD
+                //                cellToPerformanceClassMap.SaveToTextFile($"PerfMap{counter}.txt");
 
 
-                //if(app.MPIRank == 0)
-                //    Debugger.Launch();
-                for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
-                    if (CurrentCellCostEstimators[i] == null
-                        || CurrentCellCostEstimators[i].CurrentPerformanceClassCount != performanceClassCount) {
-                        CurrentCellCostEstimators[i] = cellCostEstimatorFactories[i](app, performanceClassCount);
-                    }
+                //                //if(app.MPIRank == 0)
+                //                //    Debugger.Launch();
+                //                for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
+                //                    if (CurrentCellCostEstimators[i] == null
+                //                        || CurrentCellCostEstimators[i].CurrentPerformanceClassCount != performanceClassCount) {
+                //                        CurrentCellCostEstimators[i] = cellCostEstimatorFactories[i](app, performanceClassCount);
+                //                    }
 
-                    CurrentCellCostEstimators[i].UpdateEstimates(performanceClassCount, cellToPerformanceClassMap);
-                }
+                //                    CurrentCellCostEstimators[i].UpdateEstimates(performanceClassCount, cellToPerformanceClassMap);
+                //                }
 
-                if (app.Grid.Size == 1) {
-                    // only one processor => no load balancing necessary
-                    return null;
-                }
-=======
-            for (int i = 0; i < CellCostEstimators.Length; i++) {
-                CellCostEstimators[i].UpdateEstimates(app);
-            }
->>>>>>> exchangeGitlab/kummer
+                //                if (app.Grid.Size == 1) {
+                //                    // only one processor => no load balancing necessary
+                //                    return null;
+                //                }
+                //=======
+                //            for (int i = 0; i < CellCostEstimators.Length; i++) {
+                //                CellCostEstimators[i].UpdateEstimates(app);
+                //            }
+                //>>>>>>> exchangeGitlab/kummer
 
                 bool performPertationing;
 
@@ -135,28 +135,29 @@ namespace BoSSS.Solution {
                     performPertationing = (Period > 0 && TimestepNo % Period == 0);
                 }
 
-<<<<<<< HEAD
+                //<<<<<<< HEAD
                 if (!performPertationing) {
                     tr.Info("No new partition will be computed.");
                     return null;
                 }
 
+                //                // No new partitioning if imbalance below threshold
+                //                double[] imbalanceEstimates =
+                //                        CurrentCellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();
+                //                bool imbalanceTooLarge = false;
+                //                for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
+                //                    imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
+                //                }
+                //=======
                 // No new partitioning if imbalance below threshold
-                double[] imbalanceEstimates =
-                        CurrentCellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();
+                var imbalanceEstimates = new List<double>();
+                foreach(var estimator in CellCostEstimators)
+                    imbalanceEstimates.AddRange(estimator.ImbalanceEstimate());
                 bool imbalanceTooLarge = false;
-                for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
+                for (int i = 0; i < imbalanceEstimates.Count; i++) {
                     imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
                 }
-=======
-            // No new partitioning if imbalance below threshold
-            double[] imbalanceEstimates =
-                    CellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();
-            bool imbalanceTooLarge = false;
-            for (int i = 0; i < CellCostEstimators.Length; i++) {
-                imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
-            }
->>>>>>> exchangeGitlab/kummer
+                //>>>>>>> exchangeGitlab/kummer
 
 
 
@@ -166,75 +167,31 @@ namespace BoSSS.Solution {
                 }
 
 #if DEBUG
-            Console.WriteLine(
-                "At least one runtime imbalance estimate ({0}) was above configured threshold ({1:P1}); attempting repartitioning",
-                String.Join(", ", imbalanceEstimates.Select(e => String.Format("{0:P1}", e))),
-                imbalanceThreshold);
+                Console.WriteLine(
+                    "At least one runtime imbalance estimate ({0}) was above configured threshold ({1:P1}); attempting repartitioning",
+                    String.Join(", ", imbalanceEstimates.Select(e => String.Format("{0:P1}", e))),
+                    imbalanceThreshold);
 #endif
 
-<<<<<<< HEAD
-                IList<int[]> cellCosts = CurrentCellCostEstimators.Select(estimator => estimator.GetEstimatedCellCosts()).ToList();
-                if (cellCosts == null || cellCosts.All(c => c == null)) {
-                    Console.WriteLine("Cell cost estimators NULL; not computing new partition.");
-=======
-            IList<int[]> allCellCosts = new List<int[]>();
-            foreach (var estimator in CellCostEstimators) {
-                int J = app.Grid.CellPartitioning.LocalLength;
+                //<<<<<<< HEAD
+                //                IList<int[]> cellCosts = CurrentCellCostEstimators.Select(estimator => estimator.GetEstimatedCellCosts()).ToList();
+                //                if (cellCosts == null || cellCosts.All(c => c == null)) {
+                //                    Console.WriteLine("Cell cost estimators NULL; not computing new partition.");
+                //=======
+                IList<int[]> allCellCosts = new List<int[]>();
+                foreach (var estimator in CellCostEstimators) {
+                    int J = app.Grid.CellPartitioning.LocalLength;
 
-                var costs = estimator.GetEstimatedCellCosts();
-                foreach(int[] cc in costs) {
-                    if(cc.Length == J) {
-                        throw new ApplicationException($"Illegal cell cost list returned by cell cost estimator {estimator}; expecting a length of {J}, but got {cc?.Length}");
+                    var costs = estimator.GetEstimatedCellCosts();
+                    foreach (int[] cc in costs) {
+                        if (cc.Length == J) {
+                            throw new ApplicationException($"Illegal cell cost list returned by cell cost estimator {estimator}; expecting a length of {J}, but got {cc?.Length}");
+                        }
                     }
+                    allCellCosts.AddRange(costs);
                 }
-                allCellCosts.AddRange(costs);
-            }
-            if (allCellCosts == null || allCellCosts.All(c => c == null)) {
-                return null;
-            }
-
-
-            int[] result;
-            switch (gridPartType) {
-                case GridPartType.METIS:
-                    int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
-                    noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
-                    result = ((GridCommons)(app.Grid)).ComputePartitionMETIS(allCellCosts);
-                    isFirstRepartitioning = false;
-                    break;
-
-                case GridPartType.ParMETIS:
-                    // Do full ParMETIS run on first repartitioning since
-                    // initial partitioning may be _really_ bad
-                    if (isFirstRepartitioning) {
-                        result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(allCellCosts);
-                        isFirstRepartitioning = false;
-                    } else {
-                        // Refinement currently deactivate because it behaves
-                        // strangely when large numbers of cells should be
-                        // repartitioned
-                        //result = Grid.ComputePartitionParMETIS(cellCosts, refineCurrentPartitioning: true);
-                        result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(allCellCosts);
-                    }
-                    break;
-
-                case GridPartType.clusterHilbert:
-                    return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: allCellCosts, Functype: 0);
-
-                case GridPartType.Hilbert:
-                    return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: allCellCosts, Functype: 1);
-
-                case GridPartType.none:
-                    result = IndexBasedPartition(allCellCosts.Single());
-                    break;
-
-                case GridPartType.Predefined:
->>>>>>> exchangeGitlab/kummer
+                if (allCellCosts == null || allCellCosts.All(c => c == null)) {
                     return null;
-                }
-
-                for(int i = 0; i < cellCosts.Count;i++) {
-                    cellCosts[i].SaveToTextFile($"cellcost{counter}-{i}.txt");
                 }
 
 
@@ -243,7 +200,7 @@ namespace BoSSS.Solution {
                     case GridPartType.METIS:
                         int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
                         noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
-                        result = ((GridCommons)(app.Grid)).ComputePartitionMETIS(cellCosts);
+                        result = ((GridCommons)(app.Grid)).ComputePartitionMETIS(allCellCosts);
                         isFirstRepartitioning = false;
                         break;
 
@@ -251,27 +208,25 @@ namespace BoSSS.Solution {
                         // Do full ParMETIS run on first repartitioning since
                         // initial partitioning may be _really_ bad
                         if (isFirstRepartitioning) {
-                            result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(cellCosts);
+                            result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(allCellCosts);
                             isFirstRepartitioning = false;
                         } else {
                             // Refinement currently deactivate because it behaves
                             // strangely when large numbers of cells should be
                             // repartitioned
                             //result = Grid.ComputePartitionParMETIS(cellCosts, refineCurrentPartitioning: true);
-                            result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(cellCosts);
+                            result = ((GridCommons)(app.Grid)).ComputePartitionParMETIS(allCellCosts);
                         }
                         break;
 
                     case GridPartType.clusterHilbert:
-                        result = ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 0);
-                        break;
+                        return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: allCellCosts, Functype: 0);
 
                     case GridPartType.Hilbert:
-                        result = ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: cellCosts, Functype: 1);
-                        break;
+                        return ((GridCommons)(app.Grid)).ComputePartitionHilbert(localcellCosts: allCellCosts, Functype: 1);
 
                     case GridPartType.none:
-                        result = IndexBasedPartition(cellCosts.Single());
+                        result = IndexBasedPartition(allCellCosts.Single());
                         break;
 
                     case GridPartType.Predefined:

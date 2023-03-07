@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.LoadBalancing;
 using CNS.EquationSystem;
 using System;
 

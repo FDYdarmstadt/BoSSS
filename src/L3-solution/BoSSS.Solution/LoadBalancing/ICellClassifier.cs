@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-namespace BoSSS.Solution {
+namespace BoSSS.Solution.LoadBalancing {
 
     /// <summary>
-    /// Classifies cells by assigning them a performance class (a number
-    /// greater than or equal to zero)
+    /// Classifies cells by assigning them a performance class (a number greater than or equal to zero)
     /// </summary>
     public interface ICellClassifier {
 
