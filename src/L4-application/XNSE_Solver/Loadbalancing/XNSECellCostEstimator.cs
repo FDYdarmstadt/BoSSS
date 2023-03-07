@@ -1,4 +1,5 @@
 ﻿using BoSSS.Solution;
+using BoSSS.Solution.LoadBalancing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;

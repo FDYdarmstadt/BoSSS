@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution;
 using BoSSS.Solution.LoadBalancing;
 using CNS.IBM;
 using System;
@@ -30,7 +31,9 @@ namespace CNS.LoadBalancing {
         /// </summary>
         /// <param name="program"></param>
         /// <returns></returns>
-        public (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IProgram<CNSControl> program) {
+        public int[] ClassifyCells(IApplication app) {
+            var program = app as IProgram<CNSControl>;
+
             ImmersedSpeciesMap speciesMap = program.SpeciesMap as ImmersedSpeciesMap;
             IBMControl ibmControl = program.Control as IBMControl;
             if (speciesMap == null || ibmControl == null) {
@@ -52,7 +55,8 @@ namespace CNS.LoadBalancing {
             }
 
             int noOfClasses = 3;
-            return (noOfClasses, cellToPerformanceClassMap);
+            return cellToPerformanceClassMap;
         }
+
     }
 }

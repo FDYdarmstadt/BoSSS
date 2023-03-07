@@ -29,7 +29,7 @@ namespace CNS.Tests {
     /// Abstract base class for tests.
     /// </summary>
     [TestFixture]
-    public abstract class TestProgram<T> : Program<T>
+    public abstract class TestProgram<T> : CNSProgram<T>
         where T : CNSControl, new() {
 
         /// <summary>

@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Solution;
+using BoSSS.Solution.LoadBalancing;
 using System;
 
 namespace CNS.LoadBalancing {
@@ -30,7 +31,7 @@ namespace CNS.LoadBalancing {
             this.noOfClasses = noOfClasses;
         }
 
-        public (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IProgram<CNSControl> program) {
+        public int[] ClassifyCells(IApplication program) {
             // Use seed to make runs deterministic, without having the same
             // random numbers for all cores
             Random rand = new Random(program.ResLogger.TimeStep + program.MPIRank);
@@ -40,7 +41,8 @@ namespace CNS.LoadBalancing {
                 cellToPerformanceClassMap[i] = rand.Next(0, noOfClasses);
             }
 
-            return (noOfClasses, cellToPerformanceClassMap);
+            return cellToPerformanceClassMap;
         }
+
     }
 }

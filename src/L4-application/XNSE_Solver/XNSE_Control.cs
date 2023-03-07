@@ -726,11 +726,11 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool NonlinearCouplingSolidFluid = false;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        [DataMember]
-        public ClassifierType DynamicLoadbalancing_ClassifierType = ClassifierType.VoidCutNormal;
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //[DataMember]
+        //public ClassifierType DynamicLoadbalancing_ClassifierType = ClassifierType.VoidCutNormal;
 
 
         /// <summary>

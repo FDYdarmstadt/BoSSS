@@ -449,7 +449,6 @@ namespace CNS {
                 c.FluxCorrection = false;
 
                 // Add one balance constraint for each subgrid
-                c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
                 c.DynamicLoadBalancing_CellCostEstimators.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;
@@ -463,7 +462,6 @@ namespace CNS {
                 c.FluxCorrection = false;
 
                 // Add one balance constraint for each subgrid
-                c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
                 if (AVratio > 1) {
                     //direct cost mapping (one map with two values: 1 and AVratio)
                     c.DynamicLoadBalancing_CellCostEstimators.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator(AVratio));
@@ -656,7 +654,6 @@ namespace CNS {
                 c.FluxCorrection = false;
 
                 // Add one balance constraint for each subgrid
-                c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
                 c.DynamicLoadBalancing_CellCostEstimators.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = RecInt;
@@ -671,7 +668,6 @@ namespace CNS {
                 c.FluxCorrection = false;
 
                 //AV constraintmap is added
-                c.DynamicLoadBalancing_CellClassifier = new ArtificialViscosityCellClassifier();
                 if (AVratio > 1) {
                     //direct cost mapping (one map with two values: 1 and AVratio)
                     c.DynamicLoadBalancing_CellCostEstimators.AddRange(ArtificialViscosityCellCostEstimator.GetStaticCostBasedEstimator(AVratio));

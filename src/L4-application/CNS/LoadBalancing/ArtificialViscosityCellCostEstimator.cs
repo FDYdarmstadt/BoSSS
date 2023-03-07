@@ -35,20 +35,41 @@ namespace CNS.LoadBalancing {
 
         private int performanceClass;
 
-        /// <summary>
-        /// <see cref="ICellCostEstimator"/>
-        /// </summary>
-        public int CurrentPerformanceClassCount {
-            get;
-            private set;
-        }
+        ///// <summary>
+        ///// <see cref="ICellCostEstimator"/>
+        ///// </summary>
+        //public int CurrentPerformanceClassCount {
+        //    get;
+        //    private set;
+        //}
 
         /// <summary>
         /// <see cref="ICellCostEstimator"/>
         /// </summary>
-        public double EstimatedLocalCost {
-            get;
-            private set;
+        double EstimatedLocalCost;
+
+        public void Init(IApplication app) {
+            
+        }
+
+        public void UpdateEstimates(IApplication app) {
+            var cls = new ArtificialViscosityCellClassifier();
+            
+            int[] cellToPerformanceClassMap = cls.ClassifyCells(app);
+            UpdateEstimates(cellToPerformanceClassMap);
+        }
+
+        /// <summary>
+        /// <see cref="ICellCostEstimator.GetEstimatedCellCosts"/>
+        /// </summary>
+        /// <returns></returns>
+        public int[][] GetEstimatedCellCosts() {
+            return new[] { cellToCostMap };
+        }
+
+
+        public object Clone() {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -60,8 +81,8 @@ namespace CNS.LoadBalancing {
             this.performanceClass = performanceClass;
         }
 
-        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
-            CurrentPerformanceClassCount = performanceClassCount;
+        void UpdateEstimates(int[] cellToPerformanceClassMap) {
+           
 
             // One balance constraint per cluster
             cellToCostMap = new int[cellToPerformanceClassMap.Length];
@@ -83,9 +104,6 @@ namespace CNS.LoadBalancing {
             return new ICellCostEstimator[] {
                 new StaticCellCostEstimator(new int[] { 1, 10 })
             };
-            //return delegate (IApplication<AppControl> p, int i) {
-            //    return new StaticCellCostEstimator(new int[] { 1, 10 });
-            //};
         }
 
         /// <summary>
@@ -96,10 +114,7 @@ namespace CNS.LoadBalancing {
             return new ICellCostEstimator[] { 
                 new StaticCellCostEstimator(new int[] { 1, X }) 
             };
-            //return delegate (IApplication<AppControl> p, int i) {
-            //    return new StaticCellCostEstimator(new int[] { 1, 10 });
-            //};
-            }
+        }
 
         /// <summary>
         /// Create two <see cref="ArtificialViscosityCellCostEstimator"/> for non-AV and AV cells
@@ -117,12 +132,7 @@ namespace CNS.LoadBalancing {
             return ret; 
         }
 
-        /// <summary>
-        /// <see cref="ICellCostEstimator"/>
-        /// </summary>
-        /// <returns></returns>
-        public int[] GetEstimatedCellCosts() {
-            return cellToCostMap;
-        }
+  
+       
     }
 }

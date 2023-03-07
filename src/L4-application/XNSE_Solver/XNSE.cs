@@ -319,18 +319,15 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /*
         /// <summary>
         /// Cell-performance classes:
         /// cell performance class equals number of species present in that cell
         /// </summary>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
-<<<<<<< HEAD
-          
-=======
-            base.GetCellPerformanceClasses
->>>>>>> exchangeGitlab/kummer
             (NoOfClasses, CellPerfomanceClasses) = CellClassifier.ClassifyCells(this, this.Control.DynamicLoadbalancing_ClassifierType);
         }
+        */
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
             using (var tr = new FuncTrace()) {

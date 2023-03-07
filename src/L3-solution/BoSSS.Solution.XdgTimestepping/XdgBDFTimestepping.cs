@@ -653,7 +653,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             using (new FuncTrace()) {
                 if (m_PrivateBalancingInfo != null)
                     throw new NotSupportedException("Method has already been called without matching call to `DataRestoreAfterBalancing`");
@@ -731,7 +731,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
         /// status after the grid has been re-distributed.
         /// </summary>
-        public void DataRestoreAfterBalancing(GridUpdateDataVaultBase L,
+        public void DataRestoreAfterBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> Parameters,
             IEnumerable<DGField> IterationResiduals,
