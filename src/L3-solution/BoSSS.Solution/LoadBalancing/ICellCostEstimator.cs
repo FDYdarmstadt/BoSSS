@@ -90,6 +90,8 @@ namespace BoSSS.Solution.LoadBalancing {
 
             double[] globalMin, globalMax;
             {
+                // compute MPI min and max in one pass, by using max = -min( -x_i)
+                // this saves a lot of expensive MPI communication
                 double[] globalMinMax = localCost.CloneAs();
                 localCost.ScaleV(-1.0);
                 globalMinMax = globalMinMax.Cat(localCost);
@@ -97,7 +99,7 @@ namespace BoSSS.Solution.LoadBalancing {
 
                 globalMin = globalMinMax.GetSubVector(0, N);
                 globalMax = globalMinMax.GetSubVector(N, N);
-                globalMax.ScaleV(1.0);
+                globalMax.ScaleV(-1.0);
             }
 
 

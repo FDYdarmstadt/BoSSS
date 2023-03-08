@@ -1180,7 +1180,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         public void RedistributeGrid(int[] part) {
             int Size = this.Size;
             int MyRank = this.MyRank;
-            
+
             CheckPartitioning(part);
 
 

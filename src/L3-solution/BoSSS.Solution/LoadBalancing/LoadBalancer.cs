@@ -137,7 +137,7 @@ namespace BoSSS.Solution.LoadBalancing {
 
                     var costs = estimator.GetEstimatedCellCosts();
                     foreach (int[] cc in costs) {
-                        if (cc.Length == J) {
+                        if (cc.Length != J) {
                             throw new ApplicationException($"Illegal cell cost list returned by cell cost estimator {estimator}; expecting a length of {J}, but got {cc?.Length}");
                         }
                     }
