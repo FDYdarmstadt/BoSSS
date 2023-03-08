@@ -1179,10 +1179,9 @@ namespace BoSSS.Foundation.Grid.Classic {
         public void RedistributeGrid(int[] part) {
             int Size = this.Size;
             int MyRank = this.MyRank;
-            
+
             CheckPartitioning(part);
-
-
+            
             // partition is no longer valid anymore!
             InvalidateGridData();
             m_CellPartitioning = null;

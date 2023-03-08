@@ -1293,9 +1293,7 @@ namespace BoSSS.Solution {
 
                 // kernel setup
                 //====================
-                //RedistributeGrid();
-
-                {
+               {
                     Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
                     if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
@@ -1310,8 +1308,7 @@ namespace BoSSS.Solution {
                         this.MultigridSequence = new AggregationGridData[0];
                     }
                 }
-
-
+                
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 if (this.CurrentSessionInfo != null) {
@@ -2254,7 +2251,6 @@ namespace BoSSS.Solution {
                 var ts0 = SaveToDatabase(i0, physTime); // save the initial value
                 if (this.RollingSave)
                     rollingSavesTsi.Add(Tuple.Create(0, ts0));
-
 
                 // =========================================
                 // Adaptive-Mesh-Refinement on startup

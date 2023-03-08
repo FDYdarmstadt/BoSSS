@@ -37,6 +37,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace HilbertTest {
 
@@ -262,6 +263,9 @@ namespace HilbertTest {
                 solver.Init(control);
                 solver.RunSolverMode();
                 bool result = false;
+
+                long[] Gid_local = solver.GridData.CurrentGlobalIdPermutation.Values.CloneAs();
+                long[] GidGl = Gid_local.MPIAllGatherv((new int[] { Gid_local.Length }).MPIAllGatherv());
 
                 List<DGField> listOfDGFields = (List<DGField>)solver.IOFields;
                 DGField field = listOfDGFields[12];
