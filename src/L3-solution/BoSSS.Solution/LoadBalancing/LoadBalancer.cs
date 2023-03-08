@@ -60,8 +60,10 @@ namespace BoSSS.Solution.LoadBalancing {
         /// <summary>
         /// Constructor.
         /// </summary>
-        public LoadBalancer(IEnumerable<ICellCostEstimator> cellCostEstimators) {
+        public LoadBalancer(IEnumerable<ICellCostEstimator> cellCostEstimators, IApplication app) {
             this.CellCostEstimators = cellCostEstimators.ToArray();
+            foreach (var e in cellCostEstimators)
+                e.Init(app);
         }
 
         /// <summary>

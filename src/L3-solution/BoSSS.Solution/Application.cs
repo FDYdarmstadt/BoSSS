@@ -2142,7 +2142,7 @@ namespace BoSSS.Solution {
             SetUpEnvironment(); // remark: tracer is not avail before setup
 
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -2848,7 +2848,9 @@ namespace BoSSS.Solution {
 
                 
                 if (m_Balancer == null) {
-                    m_Balancer = new LoadBalancer(Control.DynamicLoadBalancing_CellCostEstimators);
+                    m_Balancer = new LoadBalancer(Control.DynamicLoadBalancing_CellCostEstimators, this);
+
+                    
                 }
 
                 return m_Balancer.GetNewPartitioning(

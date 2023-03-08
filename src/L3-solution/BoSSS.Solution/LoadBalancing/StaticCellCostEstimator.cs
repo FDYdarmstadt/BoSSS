@@ -77,8 +77,8 @@ namespace BoSSS.Solution.LoadBalancing {
 
         public override object Clone() {
             return new StaticCellCostEstimator() {
-                cellToCostMap = this.cellToCostMap.CloneAs(),
-                CellClassifier = this.CellClassifier.CloneAs()
+                CellClassifier = this.CellClassifier.CloneAs(),
+                performanceClassToCostMap = this.performanceClassToCostMap.CloneAs()
             };
         }
 

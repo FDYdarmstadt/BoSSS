@@ -358,7 +358,7 @@ namespace BoSSS.Application.LoadBalancingTest {
             Console.WriteLine("Number of cut cells: " + NoCutCells);
 
             if (balancer == null) {
-                balancer = new LoadBalancer(cellCostEstimatorFactory());
+                balancer = new LoadBalancer(cellCostEstimatorFactory(), this);
             }
 
             NewPart = balancer.GetNewPartitioning(
