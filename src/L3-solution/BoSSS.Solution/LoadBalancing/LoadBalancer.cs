@@ -87,38 +87,6 @@ namespace BoSSS.Solution.LoadBalancing {
                 tr.Info($"Computing Partition of using {gridPartType}...");
                 counter++;
 
-                //                int[] NoOfCellsInClass = new int[performanceClassCount + 1];
-                //                foreach (int class_j in cellToPerformanceClassMap)
-                //                    NoOfCellsInClass[class_j]++;
-                //                var NoOfCellsInClass_Global = NoOfCellsInClass.MPISum();
-                //                for (int i = 0; i <= performanceClassCount; i++)
-                //                    tr.Info("Number of cells in class " + i + ": " + NoOfCellsInClass_Global[i]);
-
-                //<<<<<<< HEAD
-                //                cellToPerformanceClassMap.SaveToTextFile($"PerfMap{counter}.txt");
-
-
-                //                //if(app.MPIRank == 0)
-                //                //    Debugger.Launch();
-                //                for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
-                //                    if (CurrentCellCostEstimators[i] == null
-                //                        || CurrentCellCostEstimators[i].CurrentPerformanceClassCount != performanceClassCount) {
-                //                        CurrentCellCostEstimators[i] = cellCostEstimatorFactories[i](app, performanceClassCount);
-                //                    }
-
-                //                    CurrentCellCostEstimators[i].UpdateEstimates(performanceClassCount, cellToPerformanceClassMap);
-                //                }
-
-                //                if (app.Grid.Size == 1) {
-                //                    // only one processor => no load balancing necessary
-                //                    return null;
-                //                }
-                //=======
-                //            for (int i = 0; i < CellCostEstimators.Length; i++) {
-                //                CellCostEstimators[i].UpdateEstimates(app);
-                //            }
-                //>>>>>>> exchangeGitlab/kummer
-
                 bool performPertationing;
 
                 if (TimestepNo == 0 || (TimestepNoRestart != null && TimestepNo == TimestepNoRestart.MajorNumber)) {
@@ -135,32 +103,21 @@ namespace BoSSS.Solution.LoadBalancing {
                     performPertationing = (Period > 0 && TimestepNo % Period == 0);
                 }
 
-                //<<<<<<< HEAD
                 if (!performPertationing) {
                     tr.Info("No new partition will be computed.");
                     return null;
                 }
 
-                //                // No new partitioning if imbalance below threshold
-                //                double[] imbalanceEstimates =
-                //                        CurrentCellCostEstimators.Select(estimator => estimator.ImbalanceEstimate()).ToArray();
-                //                bool imbalanceTooLarge = false;
-                //                for (int i = 0; i < cellCostEstimatorFactories.Count; i++) {
-                //                    imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
-                //                }
-                //=======
-                // No new partitioning if imbalance below threshold
                 var imbalanceEstimates = new List<double>();
-                foreach(var estimator in CellCostEstimators)
+                foreach (var estimator in CellCostEstimators) {
+                    estimator.UpdateEstimates(app);
                     imbalanceEstimates.AddRange(estimator.ImbalanceEstimate());
+                }
                 bool imbalanceTooLarge = false;
                 for (int i = 0; i < imbalanceEstimates.Count; i++) {
                     imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
                 }
-                //>>>>>>> exchangeGitlab/kummer
-
-
-
+               
                 if (!imbalanceTooLarge) {
                     tr.Info("Imbalance not sufficiently high for load balancing!");
                     return null;
@@ -173,11 +130,7 @@ namespace BoSSS.Solution.LoadBalancing {
                     imbalanceThreshold);
 #endif
 
-                //<<<<<<< HEAD
-                //                IList<int[]> cellCosts = CurrentCellCostEstimators.Select(estimator => estimator.GetEstimatedCellCosts()).ToList();
-                //                if (cellCosts == null || cellCosts.All(c => c == null)) {
-                //                    Console.WriteLine("Cell cost estimators NULL; not computing new partition.");
-                //=======
+
                 IList<int[]> allCellCosts = new List<int[]>();
                 foreach (var estimator in CellCostEstimators) {
                     int J = app.Grid.CellPartitioning.LocalLength;
