@@ -61,6 +61,9 @@ namespace CNS.LoadBalancing {
             return cellToPerformanceClassMap;
         }
 
+        public object Clone() {
+            return new ArtificialViscosityCellClassifier();
+        }
  
     }
 }

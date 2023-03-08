@@ -44,5 +44,9 @@ namespace CNS.LoadBalancing {
             return cellToPerformanceClassMap;
         }
 
+        public object Clone() {
+            return new RandomCellClassifier(this.noOfClasses);
+        }
+
     }
 }

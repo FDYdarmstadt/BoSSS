@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using System;
 using System.Linq;
 
@@ -26,9 +27,14 @@ namespace BoSSS.Solution.LoadBalancing {
     [Serializable]
     public class StaticCellCostEstimator : CellTypeBasedEstimator {
 
-        
-      
-       
+        /// <summary>
+        /// Serialization constructor
+        /// </summary>
+        private StaticCellCostEstimator() {
+            
+        }
+
+
         private int[] performanceClassToCostMap;
 
         [NonSerialized]
@@ -70,7 +76,10 @@ namespace BoSSS.Solution.LoadBalancing {
                
 
         public override object Clone() {
-            throw new NotImplementedException();
+            return new StaticCellCostEstimator() {
+                cellToCostMap = this.cellToCostMap.CloneAs(),
+                CellClassifier = this.CellClassifier.CloneAs()
+            };
         }
 
     }

@@ -29,7 +29,7 @@ namespace BoSSS.Solution.LoadBalancing {
             m_app = app;
         }
 
-
+        [NonSerialized]
         protected IApplication m_app;
 
         public abstract void UpdateEstimates(IApplication app);

@@ -18,5 +18,7 @@ namespace BoSSS.Solution.LoadBalancing {
         public string VoidSpecies = "C";
 
         public abstract int[] ClassifyCells(IApplication program);
+
+        abstract public object Clone();
     }
 }

@@ -124,6 +124,12 @@ namespace BoSSS.Solution.LoadBalancing {
 
         }
 
+        public override object Clone() {
+            return new CutStateClassifier() {
+                VoidSpecies = this.VoidSpecies
+            };
+        }
+
     }
 
 }

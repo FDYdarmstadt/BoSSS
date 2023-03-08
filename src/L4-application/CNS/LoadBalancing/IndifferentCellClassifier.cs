@@ -29,5 +29,10 @@ namespace CNS.LoadBalancing {
         public int[] ClassifyCells(IApplication program) {
             return new int[program.GridData.iLogicalCells.NoOfLocalUpdatedCells];
         }
+
+        public object Clone() {
+            return new IndifferentCellClassifier();
+        }
+
     }
 }

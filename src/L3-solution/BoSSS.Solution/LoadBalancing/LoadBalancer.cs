@@ -115,6 +115,8 @@ namespace BoSSS.Solution.LoadBalancing {
                 }
                 bool imbalanceTooLarge = false;
                 for (int i = 0; i < imbalanceEstimates.Count; i++) {
+                    if (imbalanceEstimates[i].IsNaNorInf())
+                        throw new ArithmeticException("NaN/Inf in imbalance estimate: " + imbalanceEstimates[i]);
                     imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
                 }
                

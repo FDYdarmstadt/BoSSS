@@ -52,5 +52,11 @@ namespace CNS.LoadBalancing {
             int noOfClasses = 2;
             return cellToPerformanceClassMap;
         }
+
+
+        public object Clone() {
+            return new IBMCellClassifierTwo();
+        }
+
     }
 }

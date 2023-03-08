@@ -111,8 +111,13 @@ namespace BoSSS.Solution.LoadBalancing {
             return ret;
         }
 
-      
 
+        public override object Clone() {
+            return new NoOfSpeciesClassifier() {
+                VoidSpecies = this.VoidSpecies,
+                ConsiderAlsoNearCells = this.ConsiderAlsoNearCells
+            };
+        }
 
     }
 

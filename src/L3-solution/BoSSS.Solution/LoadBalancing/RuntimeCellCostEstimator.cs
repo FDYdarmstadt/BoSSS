@@ -270,8 +270,20 @@ namespace BoSSS.Solution.LoadBalancing {
         [NonSerialized]
         private int[] currentCellToPerformanceClassMap;
 
+        /// <summary>
+        /// Serialization constructor
+        /// </summary>
+        private RuntimeCellCostEstimator() {
+
+        }
+
+
         public override object Clone() {
-            throw new NotImplementedException();
+            return new RuntimeCellCostEstimator() {
+                CellClassifier = this.CellClassifier.CloneAs(),
+                m_MaxNoOfTimesteps = this.m_MaxNoOfTimesteps,
+                InstrumentationPaths = this.InstrumentationPaths.Select(sa => sa.Select(s => s.CloneAs()).ToArray()).ToArray()
+            };
         }
     }
 }
