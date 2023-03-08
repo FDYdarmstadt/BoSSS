@@ -84,13 +84,15 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Computes the minimal distance between a particle and the wall.
         /// </summary>
-        public void CalculateParticleWallDistance() {
+        public void CalculateParticleWallDistance(Vector WallPoint) {
             using (new FuncTrace()) {
                 if (Particles.Length != 1)
                     throw new ArgumentOutOfRangeException("Number of particles in the distance calculation towards a wall needs to be equal to one!");
                 Particle particle = Particles[0];
                 if (particle == null)
                     throw new ArgumentNullException("Empty particle definition");
+
+                particle.ClosestPointOnOtherObjectToThis = new Vector(WallPoint);
                 for (int i = 0; i < particle.NoOfSubParticles; i++) {
                     GJK_DistanceAlgorithm(particle, i, null, 1);
                     if (Overlapping)

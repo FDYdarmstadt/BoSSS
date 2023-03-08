@@ -222,7 +222,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             "Pressure_Dirichlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid2D(lengthX: 3, lengthY: 3, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetGrid2D(lengthX: 3, lengthY: 3, cellsPerUnitLength: 20, periodicX: false, periodicY: false);
             // Initial Values
             // ==============
 
@@ -237,13 +237,11 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             // Particle Properties
             double particleDensity1 = 100.0;
-            MotionWetNoRotation motion1 = new(particleDensity1);
             double particleDensity2 = 1.0;
-            MotionFixed motion2 = new(particleDensity2);
             List<Particle> particles = new List<Particle> {
-                new ParticleDisk(motion1, 0.18, new double[] { 0.0, 0.6 }),
-                new ParticleSuperEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
-                new ParticleSuperEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
+                new ParticleDisk(new Motion(particleDensity1), 0.18, new double[] { 0.0, 0.6 }),
+                new ParticleSuperEllipsoidFlat(new MotionFixed(particleDensity2), 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
+                new ParticleSuperEllipsoidFlat(new MotionFixed(particleDensity2), 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
             };
             double dt = 1e-2;
             C.InitialiseParticles(particles);
@@ -263,7 +261,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 25;
+            C.NoOfTimesteps = 100;
 
             // haben fertig...
             // ===============

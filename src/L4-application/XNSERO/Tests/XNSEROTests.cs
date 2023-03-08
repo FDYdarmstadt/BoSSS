@@ -233,12 +233,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         public static void TestDistance() {
             using (XNSERO p = new XNSERO()) {
                 Particle[] testParticles = new Particle[] { new ParticleDisk(new Motion(1), 1, new double[] { -2, 0 }), new ParticleDisk(new Motion(1), 1, new double[] { 2, 0 }) };
-                ParticleCollision testCollision = new(0, 1, 1, null, null, 0, false);
-                testCollision.CalculateMinimumDistance(testParticles, out Vector distanceVector, out Vector[] closestPoints, out bool overlap);
-                Assert.LessOrEqual(distanceVector.Abs() - 2, 1e-12, "Error in calculation of the minimal distance between two points.");
-                Assert.LessOrEqual(closestPoints[0].Abs() - 1, 1e-12, "Error in calculation of the closest point toward the opposing particle");
-                Assert.LessOrEqual(closestPoints[1].Abs() - 1, 1e-12, "Error in calculation of the closest point toward the opposing particle");
-                Assert.IsFalse(overlap);
+                MinimumDistance distance = new(testParticles, 0); 
+                distance.CalculateTwoParticleDistance();
+                Assert.LessOrEqual(distance.DistanceVector.Abs() - 2, 1e-12, "Error in calculation of the minimal distance between two points.");
+                Assert.LessOrEqual(distance.ClosestPoints[0].Abs() - 1, 1e-12, "Error in calculation of the closest point toward the opposing particle");
+                Assert.LessOrEqual(distance.ClosestPoints[1].Abs() - 1, 1e-12, "Error in calculation of the closest point toward the opposing particle");
+                Assert.IsFalse(distance.Overlapping);
             }
         }
 
@@ -249,9 +249,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         public static void TestOverlappingParticles() {
             using (XNSERO p = new XNSERO()) {
                 Particle[] testParticles = new Particle[] { new ParticleDisk(new Motion(1), 1, new double[] { -1, 0 }), new ParticleEllipse(new Motion(1), 3, 1, new double[] { 2, 0 }) };
-                ParticleCollision testCollision = new(0, 1, 1, null, null, 0, false);
-                testCollision.CalculateMinimumDistance(testParticles, out Vector distanceVector, out Vector[] closestPoints, out bool overlap);
-                Assert.IsTrue(overlap);
+                MinimumDistance distance = new(testParticles, 0);
+                distance.CalculateTwoParticleDistance();
+                Assert.IsTrue(distance.Overlapping);
             }
         }
 
@@ -263,11 +263,11 @@ namespace BoSSS.Application.XNSERO_Solver {
             using (XNSERO p = new XNSERO()) {
                 Particle testParticle = new ParticleDisk(new Motion(1), 1, new double[] { 0, 0 });
                 testParticle.ClosestPointOnOtherObjectToThis = new Vector(2, 0); //setup wall position
-                ParticleCollision testCollision = new(0, 1, 1, null, null, 0, false);
-                testCollision.CalculateMinimumDistance(testParticle, out Vector distanceVector, out Vector closestPoints, out bool overlap);
-                Assert.LessOrEqual(distanceVector.Abs() - 1, 1e-12, "Error in calculation of the minimal distance between two points.");
-                Assert.LessOrEqual(closestPoints.Abs() - 1, 1e-12, "Error in calculation of the closest point toward the opposing particle");
-                Assert.IsFalse(overlap);
+                MinimumDistance distance = new(new Particle[] { testParticle }, 0);
+                distance.CalculateTwoParticleDistance();
+                Assert.LessOrEqual(distance.DistanceVector.Abs() - 2, 1e-12, "Error in calculation of the minimal distance between two points.");
+                Assert.LessOrEqual(distance.ClosestPoints[0].Abs() - 1, 1e-12, "Error in calculation of the closest point toward the opposing particle");
+                Assert.IsFalse(distance.Overlapping);
             }
         }
 

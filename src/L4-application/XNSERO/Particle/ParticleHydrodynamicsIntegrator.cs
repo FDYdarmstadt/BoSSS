@@ -71,7 +71,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             double[] IntegrationForces = tempForces.CloneAs();
             double[] forcesAndTorque = new double[SpatialDim + 1];
             if (!CutCells.IsSubMaskOf(CellMask.GetFullMask(LevelSetTracker.GridDat))){
-                throw new Exception("something is wrong");
+                throw new Exception("Cut cell mask not a sub mask of full mask.");
             }
             {
                 XQuadSchemeHelper SchemeHelper = LevelSetTracker.GetXDGSpaceMetrics(new[] { LevelSetTracker.GetSpeciesId(FluidSpecies) }, RequiredOrder, 1).XQuadSchemeHelper;
@@ -163,10 +163,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             double[] SummandsVelGradient = new double[3]; 
             Vector normal = new Vector(NormalVector[j, k, 0], NormalVector[j, k, 1]);
             normal = normal / normal.Abs();
-            //SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * NormalVector[j, k, 0];
-            //SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 1];
-            //SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 1];
-            //double SummandsPressure = pARes[j, k] * NormalVector[j, k, 0];
             SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 0, 0] * normal[0];
             SummandsVelGradient[1] = -Grad_UARes[j, k, 0, 1] * normal[1];
             SummandsVelGradient[2] = -Grad_UARes[j, k, 1, 0] * normal[1];
@@ -199,10 +195,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             double[] SummandsVelGradient = new double[3];
             Vector normal = new Vector(NormalVector[j, k, 0], NormalVector[j, k, 1]);
             normal = normal / normal.Abs();
-            //SummandsVelGradient[0] = -2 * Grad_UARes[j, k, 1, 1] * NormalVector[j, k, 1];
-            //SummandsVelGradient[1] = -Grad_UARes[j, k, 1, 0] * NormalVector[j, k, 0];
-            //SummandsVelGradient[2] = -Grad_UARes[j, k, 0, 1] * NormalVector[j, k, 0];
-            //double SummandsPressure = pARes[j, k] * NormalVector[j, k, 1];
             SummandsVelGradient[0] = -2 * GradU[j, k, 1, 1] * normal[1];
             SummandsVelGradient[1] = -GradU[j, k, 1, 0] * normal[0];
             SummandsVelGradient[2] = -GradU[j, k, 0, 1] * normal[0];
