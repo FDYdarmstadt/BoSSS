@@ -58,6 +58,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The inital rotational velocity.
         /// </param>
         public ParticleHippopede(IMotion motion, double length, double thickness, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, activeStress, startAngl, startTransVelocity, startRotVelocity) {
+            throw new NotImplementedException("Legacy code, untested, update necessary");
             if (startPos.Length != 2)
                 throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
 

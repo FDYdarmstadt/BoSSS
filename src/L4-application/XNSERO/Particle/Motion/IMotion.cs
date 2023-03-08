@@ -279,5 +279,16 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="fluidDensity"></param>
         /// <param name="tempForces"></param>
         public Vector GravityForce(Vector Gravity);
+
+        /// <summary>
+        /// Used for testing
+        /// </summary>
+        /// <param name="initalTranslation">
+        /// The initial translational velocity.
+        /// </param>
+        /// <param name="initalRotation">
+        /// The initial rotational velocity.
+        /// </param>
+        public void PrescribeHydrodynamicForcesAndTorque(Vector Forces, double Torque, int HistoryPosition);
     }
 }

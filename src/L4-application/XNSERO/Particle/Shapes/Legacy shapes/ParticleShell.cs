@@ -58,6 +58,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The inital rotational velocity.
         /// </param>
         public ParticleShell(IMotion motion, double length, double height, double thickness, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            throw new NotImplementedException("Legacy code, untested, update necessary");
             if (startPos.Length != 2)
                 throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
 
@@ -80,7 +81,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         private readonly double m_Height;
 
         /// <summary>
-        /// The shell is devided into two convex sub particles. Necesarry for the GJK-algorithm in the collision model.
+        /// The shell is devided into two convex sub particles. Necessary for the GJK-algorithm in the collision model.
         /// </summary>
         public override int NoOfSubParticles => 3;
 

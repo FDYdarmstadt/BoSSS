@@ -30,7 +30,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Constructor for a bean.
+        /// Constructor for a bean. Warning: Legacy code.
         /// </summary>
         /// <param name="motionInit">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
@@ -54,9 +54,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The inital rotational velocity.
         /// </param>
         public ParticleBean(IMotion motion, double radius, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            throw new NotImplementedException("Legacy code, untested, update necessary");
             if (startPos.Length != 2)
                 throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
-
+            
             m_Radius = radius;
             Aux.TestArithmeticException(radius, "Particle radius");
 

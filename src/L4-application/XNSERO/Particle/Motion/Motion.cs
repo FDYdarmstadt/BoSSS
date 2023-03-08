@@ -112,7 +112,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Calculate the new tranlational acceleration.
+        /// Calculate the new translational acceleration.
         /// </summary>
         /// <param name="dt"></param>
         public override Vector CalculateTranslationalAcceleration(double dt) {

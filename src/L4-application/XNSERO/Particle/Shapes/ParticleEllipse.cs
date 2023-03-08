@@ -37,10 +37,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="motionInit">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
-        /// <param name="halfAxisA">
+        /// <param name="length">
         /// The length of the horizontal halfaxis.
         /// </param>
-        /// <param name="halfAxisB">
+        /// <param name="thickness">
         /// The length of the vertical halfaxis.
         /// </param>
         /// <param name="startPos">
@@ -58,14 +58,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public ParticleEllipse(IMotion motion, double halfAxisA, double halfAxisB, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public ParticleEllipse(IMotion motion, double length, double thickness, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
             if (startPos.Length != 2)
                 throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
             
-            m_Length = halfAxisA;
-            m_Thickness = halfAxisB;
-            Aux.TestArithmeticException(halfAxisA, "Particle length");
-            Aux.TestArithmeticException(halfAxisB, "Particle thickness");
+            m_Length = length;
+            m_Thickness = thickness;
+            Aux.TestArithmeticException(length, "Particle length");
+            Aux.TestArithmeticException(thickness, "Particle thickness");
 
             Motion.CharacteristicLength = GetLengthScales().Max();
             Motion.Volume = this.Volume;
@@ -101,7 +101,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
             Vector position = Postion;
             double angle = Motion.GetAngle(0);
-            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
+            Vector orientation = new(Math.Cos(angle), Math.Sin(angle));
             double r = -(((X[0] - position[0]) * orientation[0] + (X[1] - position[1]) * orientation[1]) / m_Length).Pow2()
                         - (((X[0] - position[0]) * orientation[1] - (X[1] - position[1]) * orientation[0]) / m_Thickness).Pow2()
                         + 1.0;
@@ -119,7 +119,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </param>
         protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
             double angle = Motion.GetAngle(0);
-            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
+            Vector orientation = new(Math.Cos(angle), Math.Sin(angle));
             Vector position = Motion.GetPosition(0);
             double a = m_Length + tolerance;
             double b = m_Thickness + tolerance;
@@ -139,12 +139,12 @@ namespace BoSSS.Application.XNSERO_Solver {
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
-            Vector SupportPoint = new Vector(SpatialDim);
+            Vector SupportPoint = new(SpatialDim);
             if (Angle.Dim > 1)
                 throw new NotImplementedException("Only 2D support");
             double angle = Angle[0]; // hardcoded 2D
-            Vector orientation = new Vector(Math.Cos(angle), Math.Sin(angle));
-            Vector position = new Vector(Position);
+            Vector orientation = new(Math.Cos(angle), Math.Sin(angle));
+            Vector position = new(Position);
 
             double[,] rotMatrix = new double[2, 2];
             rotMatrix[0, 0] = (m_Length + tolerance) * orientation[0];

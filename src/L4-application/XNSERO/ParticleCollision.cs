@@ -115,7 +115,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                             if (!nearFieldWallPoints[w].IsNullOrEmpty()) {
                                 Particles[p0].ClosestPointOnOtherObjectToThis = new Vector(Particles[p0].Motion.GetPosition(0));
                                 Particles[p0].ClosestPointOnOtherObjectToThis = new Vector(nearFieldWallPoints[w]);
-                                CalculateLocalMinimumDistance(Particles[p0], out Vector temp_DistanceVector, out Vector temp_ClosestPoint_p0, out bool temp_Overlapping);
+                                CalculateMinimumDistance(Particles[p0], out Vector temp_DistanceVector, out Vector temp_ClosestPoint_p0, out bool temp_Overlapping);
                                 int wallID = ParticleOffset + w;
                                 globalMinimalDistance = CalculateGlobalMinimumDistance(globalMinimalDistance, p0, wallID, temp_DistanceVector, new Vector[] { temp_ClosestPoint_p0 }, temp_Overlapping);
                                 subTimeStepWithoutCollision = CalculateSubTimeStepWithoutCollision(subTimeStepWithoutCollision, p0, wallID);
@@ -130,7 +130,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                             int secondParticleID = potentialCollisionPartners[p0][p1];
                             if (!AlreadyAnalysed[p0][secondParticleID] && secondParticleID > p0) {
                                 AlreadyAnalysed[p0][secondParticleID] = true;
-                                CalculateLocalMinimumDistance(new Particle[] { Particles[p0], Particles[secondParticleID] }, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out bool temp_Overlapping);
+                                CalculateMinimumDistance(new Particle[] { Particles[p0], Particles[secondParticleID] }, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out bool temp_Overlapping);
                                 globalMinimalDistance = CalculateGlobalMinimumDistance(globalMinimalDistance, p0, secondParticleID, temp_DistanceVector, temp_ClosestPoints, temp_Overlapping);
                                 subTimeStepWithoutCollision = CalculateSubTimeStepWithoutCollision(subTimeStepWithoutCollision, p0, secondParticleID);
                             }
@@ -203,7 +203,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         private double CalculateSubTimeStepWithoutCollision(double subTimeStepWithoutCollision, int firstObjectID, int secondObjectID) {
             double temp_SaveTimeStep = DynamicTimestep(firstObjectID, secondObjectID);
             AccumulatedLocalSaveTimestep[firstObjectID][secondObjectID] += temp_SaveTimeStep;
-            if(IsParticle(secondObjectID))
+            if (IsParticle(secondObjectID))
                 AccumulatedLocalSaveTimestep[secondObjectID][firstObjectID] += temp_SaveTimeStep;
             if (temp_SaveTimeStep < subTimeStepWithoutCollision && temp_SaveTimeStep > 0) {
                 subTimeStepWithoutCollision = temp_SaveTimeStep;
@@ -299,7 +299,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             Vector normalVector = DistanceVector[FirstParticleID][SecondParticleID];
             double distance = normalVector.Abs();
             normalVector /= distance;
-            if (Particles[FirstParticleID].Motion.IncludeTranslation() || Particles[FirstParticleID].Motion.IncludeRotation()) 
+            if (Particles[FirstParticleID].Motion.IncludeTranslation() || Particles[FirstParticleID].Motion.IncludeRotation())
                 detectCollisionVn_P0 = CalculateNormalSurfaceVelocity(FirstParticleID, normalVector, ClosestPoints[FirstParticleID][SecondParticleID]);
             if (IsParticle(SecondParticleID)) {
                 if (Particles[FirstParticleID].Motion.IncludeTranslation() || Particles[FirstParticleID].Motion.IncludeRotation())
@@ -318,7 +318,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             return pointVelocity * normalVector;
         }
 
-        private void MoveParticlesWithSubTimestep(Particle[] particles, double dynamicTimestep) {
+        private static void MoveParticlesWithSubTimestep(Particle[] particles, double dynamicTimestep) {
             for (int p = 0; p < particles.Length; p++) {
                 Particle currentParticle = particles[p];
                 if (dynamicTimestep != 0) {
@@ -327,22 +327,32 @@ namespace BoSSS.Application.XNSERO_Solver {
             }
         }
 
-        private void CalculateLocalMinimumDistance(Particle[] Particles, out Vector DistanceVector, out Vector[] ClosestPoints, out bool Overlapping) {
+        /// <summary>
+        /// Calculates the minimum distance between two particles
+        /// </summary>
+        /// <param name="Particles">An array containing two particles</param>
+        /// <param name="DistanceVector">The distance vector</param>
+        /// <param name="ClosestPoints">The closest point on one particle towards the other one</param>
+        /// <param name="Overlapping">Flag determining overlapping particles</param>
+        public void CalculateMinimumDistance(Particle[] Particles, out Vector DistanceVector, out Vector[] ClosestPoints, out bool Overlapping) {
             using (new FuncTrace()) {
-            int spatialDim = Particles[0].Motion.GetPosition(0).Dim;
-            double distance = double.MaxValue;
-            DistanceVector = new Vector(spatialDim);
-            ClosestPoints = new Vector[2];
-            ClosestPoints[0] = new Vector(spatialDim);
-            ClosestPoints[1] = new Vector(spatialDim);
-            Overlapping = false;
-            int NoOfSubParticles1 = Particles[1] == null ? 1 : Particles[1].NoOfSubParticles;
-;
+                if (Particles.Length != 2)
+                    throw new ArgumentOutOfRangeException("Number of particles in the distance calculation needs to be equal to two!");
+                if (Particles[0] == null || Particles[1] == null)
+                    throw new ArgumentNullException("Empty particle definition");
+
+                int spatialDim = Particles[0].Motion.GetPosition(0).Dim;
+                double distance = double.MaxValue;
+                DistanceVector = new Vector(spatialDim);
+                ClosestPoints = new Vector[2];
+                ClosestPoints[0] = new Vector(spatialDim);
+                ClosestPoints[1] = new Vector(spatialDim);
+                Overlapping = false;
                 for (int i = 0; i < Particles[0].NoOfSubParticles; i++) {
-                    for (int j = 0; j < NoOfSubParticles1; j++) {
+                    for (int j = 0; j < Particles[1].NoOfSubParticles; j++) {
                         GJK_DistanceAlgorithm(Particles[0], i, Particles[1], j, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out Overlapping);
                         if (Overlapping)
-                            break;
+                            return;
                         if (temp_DistanceVector.Abs() < distance) {
                             distance = temp_DistanceVector.Abs();
                             DistanceVector = new Vector(temp_DistanceVector);
@@ -356,7 +366,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Computes the minimal distance between a particle and the wall.
         /// </summary>
-        /// <param name="particle">
+        /// <param name="Particle">
         /// The first particle.
         /// </param>
         /// <param name="DistanceVector">
@@ -368,18 +378,21 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="Overlapping">
         /// Is true if the two particles are overlapping.
         /// </param>
-        internal void CalculateLocalMinimumDistance(Particle particle, out Vector DistanceVector, out Vector ClosestPoint, out bool Overlapping) {
+        public void CalculateMinimumDistance(Particle Particle, out Vector DistanceVector, out Vector ClosestPoint, out bool Overlapping) {
             using (new FuncTrace()) {
-            int spatialDim = particle.Motion.GetPosition(0).Dim;
-            double distance = double.MaxValue;
-            DistanceVector = new Vector(spatialDim);
-            ClosestPoint = new Vector(spatialDim);
-            Overlapping = false;
+                if (Particle == null)
+                    throw new ArgumentNullException("Empty particle definition");
 
-                for (int i = 0; i < particle.NoOfSubParticles; i++) {
-                    GJK_DistanceAlgorithm(particle, i, null, 1, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out Overlapping);
+                int spatialDim = Particle.Motion.GetPosition(0).Dim;
+                double distance = double.MaxValue;
+                DistanceVector = new Vector(spatialDim);
+                ClosestPoint = new Vector(spatialDim);
+                Overlapping = false;
+
+                for (int i = 0; i < Particle.NoOfSubParticles; i++) {
+                    GJK_DistanceAlgorithm(Particle, i, null, 1, out Vector temp_DistanceVector, out Vector[] temp_ClosestPoints, out Overlapping);
                     if (Overlapping)
-                        break;
+                        return;
                     if (temp_DistanceVector.Abs() < distance) {
                         distance = temp_DistanceVector.Abs();
                         DistanceVector = new Vector(temp_DistanceVector);
@@ -478,7 +491,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                         // which are the closest points if the algorithm is finished.
                         // -------------------------------------------------------
                         tempClosestPoints[0] = Particle.GetSupportPoint(negativeSupportVector, positionVectors[0], orientationAngle[0], SubParticleID0, GridLengthScale);
-                        
+
                         if (IsParticle(SecondObject)) // Particle-Particle collision
                             tempClosestPoints[1] = SecondObject.GetSupportPoint(supportVector, positionVectors[1], orientationAngle[1], SubParticleID1, GridLengthScale);
                         else {// Particle-wall collision
@@ -575,7 +588,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             // The simplex contains only one element, which must be
             // the closest point of this simplex to the origin
             // -------------------------------------------------------
-            if (simplex.Count == 1) 
+            if (simplex.Count == 1)
                 supportVector = new Vector(simplex[0]);
 
             // The simplex contains two elements, lets test which is
@@ -642,23 +655,23 @@ namespace BoSSS.Application.XNSERO_Solver {
                         double quadrupelProduct = new();
                         switch (s1) {
                             case 0:
-                                double temp1 = dotProductSimplex[1][2] - dotProductSimplex[0][2] - dotProductSimplex[1][1] + dotProductSimplex[0][1];
-                                double temp2 = dotProductSimplex[0][1] - dotProductSimplex[0][0] - dotProductSimplex[1][2] + dotProductSimplex[0][2];
-                                double temp3 = dotProductSimplex[1][1] - 2 * dotProductSimplex[0][1] + dotProductSimplex[0][0];
-                                quadrupelProduct = dotProductSimplex[0][1] * temp1 + dotProductSimplex[1][1] * temp2 + dotProductSimplex[1][2] * temp3;
-                                break;
+                            double temp1 = dotProductSimplex[1][2] - dotProductSimplex[0][2] - dotProductSimplex[1][1] + dotProductSimplex[0][1];
+                            double temp2 = dotProductSimplex[0][1] - dotProductSimplex[0][0] - dotProductSimplex[1][2] + dotProductSimplex[0][2];
+                            double temp3 = dotProductSimplex[1][1] - 2 * dotProductSimplex[0][1] + dotProductSimplex[0][0];
+                            quadrupelProduct = dotProductSimplex[0][1] * temp1 + dotProductSimplex[1][1] * temp2 + dotProductSimplex[1][2] * temp3;
+                            break;
                             case 1:
-                                temp1 = -dotProductSimplex[2][2] + dotProductSimplex[0][2] + dotProductSimplex[1][2] - dotProductSimplex[0][1];
-                                temp2 = dotProductSimplex[2][2] - 2 * dotProductSimplex[0][2] + dotProductSimplex[0][0];
-                                temp3 = dotProductSimplex[0][2] - dotProductSimplex[0][0] - dotProductSimplex[1][2] + dotProductSimplex[0][1];
-                                quadrupelProduct = dotProductSimplex[0][2] * temp1 + dotProductSimplex[1][2] * temp2 + dotProductSimplex[2][2] * temp3;
-                                break;
+                            temp1 = -dotProductSimplex[2][2] + dotProductSimplex[0][2] + dotProductSimplex[1][2] - dotProductSimplex[0][1];
+                            temp2 = dotProductSimplex[2][2] - 2 * dotProductSimplex[0][2] + dotProductSimplex[0][0];
+                            temp3 = dotProductSimplex[0][2] - dotProductSimplex[0][0] - dotProductSimplex[1][2] + dotProductSimplex[0][1];
+                            quadrupelProduct = dotProductSimplex[0][2] * temp1 + dotProductSimplex[1][2] * temp2 + dotProductSimplex[2][2] * temp3;
+                            break;
                             case 2:
-                                temp1 = dotProductSimplex[2][2] - 2 * dotProductSimplex[1][2] + dotProductSimplex[1][1];
-                                temp2 = -dotProductSimplex[2][2] + dotProductSimplex[1][2] + dotProductSimplex[0][2] - dotProductSimplex[0][1];
-                                temp3 = dotProductSimplex[1][2] - dotProductSimplex[1][1] - dotProductSimplex[0][2] + dotProductSimplex[0][1];
-                                quadrupelProduct = dotProductSimplex[0][2] * temp1 + dotProductSimplex[1][2] * temp2 + dotProductSimplex[2][2] * temp3;
-                                break;
+                            temp1 = dotProductSimplex[2][2] - 2 * dotProductSimplex[1][2] + dotProductSimplex[1][1];
+                            temp2 = -dotProductSimplex[2][2] + dotProductSimplex[1][2] + dotProductSimplex[0][2] - dotProductSimplex[0][1];
+                            temp3 = dotProductSimplex[1][2] - dotProductSimplex[1][1] - dotProductSimplex[0][2] + dotProductSimplex[0][1];
+                            quadrupelProduct = dotProductSimplex[0][2] * temp1 + dotProductSimplex[1][2] * temp2 + dotProductSimplex[2][2] * temp3;
+                            break;
                         }
                         // A point on one of the edges is closest to the origin.
                         if (dotProductSimplex[s3][s3] - dotProductSimplex[s3][s2] >= 0 && dotProductSimplex[s2][s2] - dotProductSimplex[s3][s2] >= 0 && quadrupelProduct >= 0 && continueAlgorithmFlag) {

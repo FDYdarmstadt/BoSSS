@@ -55,6 +55,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The inital rotational velocity.
         /// </param>
         public ParticleTrapRight(IMotion motion, double width, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            throw new NotImplementedException("Legacy code, untested, update necessary");
             if (startPos.Length != 2)
                 throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
 

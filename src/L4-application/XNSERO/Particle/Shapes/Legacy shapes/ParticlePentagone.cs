@@ -22,22 +22,22 @@ using ilPSP.Utils;
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class ParticleTrapLeft : Particle {
+    public class ParticlePentagone : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private ParticleTrapLeft() : base() {
+        private ParticlePentagone() : base() {
 
         }
 
         /// <summary>
-        /// Constructor for the trap used in the masters thesis if E. Deriabina (2019)
+        /// Constructor for a pentagone.
         /// </summary>
         /// <param name="motionInit">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
-        /// <param name="width">
-        /// The main lengthscale.
+        /// <param name="radius">
+        /// The main lengthscale
         /// </param>
         /// <param name="startPos">
         /// The initial position.
@@ -54,41 +54,37 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public ParticleTrapLeft(IMotion motion, double width, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public ParticlePentagone(IMotion motion, double radius, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            throw new NotImplementedException("Legacy code, untested, update necessary");
             if (startPos.Length != 2)
                 throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
 
-            m_Length = width;
-            Aux.TestArithmeticException(width, "Particle width");
+            m_Radius = radius;
+            Aux.TestArithmeticException(radius, "Particle radius");
 
-            Motion.CharacteristicLength = width;
+            Motion.CharacteristicLength = radius;
             Motion.Volume = this.Volume;
             Motion.MomentOfInertia = this.MomentOfInertia;
 
         }
 
         [DataMember]
-        private readonly double m_Length;
+        private readonly double m_Radius;
 
         /// <summary>
-        /// The trap is devided into two convex sub particles. Necesarry for the GJK-algorithm in the collision model.
+        /// Area occupied by the particle.
         /// </summary>
-        public override int NoOfSubParticles => 2;
-
-        /// <summary>
-        /// Area occupied by the particle. 
-        /// </summary>
-        public override double Volume => (7 * m_Length * m_Length) / 8;
+        public override double Volume => (5 * m_Radius.Pow2()) / 4;
 
         /// <summary>
         /// Circumference. 
         /// </summary>
-        public override double Circumference => m_Length * 5;
+        public override double Circumference => m_Radius * 4.41421356;
 
         /// <summary>
         /// Moment of inertia. 
         /// </summary>
-        override public double MomentOfInertia => Math.Pow(m_Length, 4) * 0.13785958;
+        override public double MomentOfInertia => Math.Pow(m_Radius, 4) * 0.2887963;
 
         /// <summary>
         /// Level set function of the particle.
@@ -96,13 +92,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="X">
         /// The current point.
         /// </param>
-        protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
+        protected override double ParticleLevelSetFunction(double[] X, Vector Postion) { // attention: no dependency on angle...
             double r;
-            // Falle_Links:
-            r = Math.Abs(Postion[1] - X[1]);
-            r = Math.Max(r, Math.Abs(-X[1] + 0.5 * X[0] + Postion[1] - Postion[0] - m_Length) - Math.Abs(X[1] - Postion[1]));
-            r = Math.Max(r, Math.Abs(Postion[0] - X[0] - 0.5 * m_Length));
-            r -= 4.5 * m_Length;
+            r = Math.Max(X[0] - Postion[0] - m_Radius, Postion[0] - m_Radius - X[0]);
+            r = Math.Max(r, Postion[1] - 0.5 * m_Radius - X[1]);
+            r = Math.Max(r, Postion[0] - m_Radius - X[1] - 1.5 * X[0]) + Math.Max(r, X[1] - Postion[1] - 0.5 * m_Radius);
             r = -r;
             return r;
         }
@@ -118,8 +112,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </param>
         protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
             // only for rectangular cells
-            double radiusTolerance = 5 * m_Length + tolerance;
-            var distance = point.L2Distance(Position);
+            double radiusTolerance = m_Radius + tolerance;
+            var distance = point.L2Distance(Motion.GetPosition(0));
             return distance < radiusTolerance;
         }
 
@@ -129,38 +123,28 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="hMin">
         /// Minimal cell length. Used to specify the number of surface points.
         /// </param>
-        override public MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) {
+        public override MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) {
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
 
             int NoOfSurfacePoints = Convert.ToInt32(20 * Circumference / hMin) + 1;
-            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSubParticles, NoOfSurfacePoints, SpatialDim);
-            double[] InfinitisemalAngle = GenericBlas.Linspace(-Math.PI / 4, 5 * Math.PI / 4, NoOfSurfacePoints + 1);
-            double[] InfinitisemalLength = GenericBlas.Linspace(0, m_Length / 4, NoOfSurfacePoints + 1);
+            MultidimensionalArray SurfacePoints = MultidimensionalArray.Create(NoOfSurfacePoints, SpatialDim);
+            double[] InfinitisemalAngle = GenericBlas.Linspace(0, 2 * Math.PI, NoOfSurfacePoints + 1);
             if (Math.Abs(10 * Circumference / hMin + 1) >= int.MaxValue)
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 
-            for (int k = 0; k < NoOfSurfacePoints; k++) {
-                SurfacePoints[0, k, 0] = Motion.GetPosition(0)[0] - m_Length / 2 + InfinitisemalLength[k];
-                SurfacePoints[0, k, 1] = Motion.GetPosition(0)[1] - m_Length / 2 - 1.5 * SurfacePoints[0, k, 0] + m_Length / 2;
-            }
-
             for (int j = 0; j < NoOfSurfacePoints; j++) {
-                SurfacePoints[0, j, 0] = Math.Sign(Math.Cos(InfinitisemalAngle[j])) * m_Length * 7 + Motion.GetPosition(0)[0] + 7 * m_Length / 4;
-                SurfacePoints[0, j, 1] = Math.Sign(Math.Sin(InfinitisemalAngle[j])) * m_Length * 7 + Motion.GetPosition(0)[1] + 7 * m_Length / 2;
-            }
-            for (int j = 0; j < NoOfSurfacePoints; j++) {
-                SurfacePoints[1, j, 0] = -Math.Sign(Math.Cos(InfinitisemalAngle[j])) * m_Length * 2.5 + Motion.GetPosition(0)[0];
-                SurfacePoints[1, j, 1] = -Math.Sign(Math.Sin(InfinitisemalAngle[j])) * m_Length * 2.5 + Motion.GetPosition(0)[1];
+                SurfacePoints[j, 0] = Math.Cos(InfinitisemalAngle[j]) * m_Radius + Motion.GetPosition(0)[0];
+                SurfacePoints[j, 1] = Math.Sin(InfinitisemalAngle[j]) * m_Radius + Motion.GetPosition(0)[1];
             }
             return SurfacePoints;
         }
 
         /// <summary>
-        /// Returns the legnthscales of a particle.
+        /// Returns the length-scales of a particle.
         /// </summary>
         override public double[] GetLengthScales() {
-            return new double[] { m_Length, m_Length };
+            return new double[] { m_Radius, m_Radius };
         }
     }
 }

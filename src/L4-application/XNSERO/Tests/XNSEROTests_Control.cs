@@ -15,13 +15,8 @@ limitations under the License.
 */
 
 using ilPSP;
-using System;
 using System.Collections.Generic;
 using BoSSS.Solution.Control;
-using BoSSS.Foundation.Grid;
-using System.Diagnostics;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.XNSERO_Solver {
@@ -68,6 +63,39 @@ namespace BoSSS.Application.XNSERO_Solver {
 
             // haben fertig...
             // ===============
+
+            return C;
+        }
+
+        public static XNSERO_Control TestParticleProperties(Particle TestParticle) {
+            XNSERO_Control C = new XNSERO_Control(2, "ParticleParameterTest");
+
+            List<string> boundaryValues = new List<string> {
+                "Pressure_Outlet"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid2D(lengthX: 10, lengthY: 10, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
+
+            // Coupling Properties
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+            C.PhysicalParameters.rho_A = 1.0;
+            C.PhysicalParameters.mu_A = 1.0;
+            C.CoefficientOfRestitution = 0;
+            double dt = 1e-2;
+            C.InitialiseParticles(new List<Particle>() { TestParticle });
+
+            C.PhysicalParameters.IncludeConvection = false;
+
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AgglomerationThreshold = 0.2;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1e-2;
+            C.NoOfTimesteps = 1;
 
             return C;
         }

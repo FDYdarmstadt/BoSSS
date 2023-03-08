@@ -61,6 +61,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The inital rotational velocity.
         /// </param>
         public ParticleSuperEllipsoid(IMotion motion, double length, double thickness, int superEllipsoidExponent, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            throw new NotImplementedException("Legacy code, untested, update necessary");
             if (startPos.Length != 2)
                 throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
 
@@ -84,7 +85,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         private readonly double m_Exponent;
 
         /// <summary>
-        /// Circumference. Approximated with sphere.
+        /// Circumference. Extremely rough approximation.
         /// </summary>
         public override double Circumference => (2 * m_Length + 2 * m_Thickness + 2 * Math.PI * m_Thickness) / 2;
 

@@ -498,6 +498,20 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
+        /// Used for testing
+        /// </summary>
+        /// <param name="initalTranslation">
+        /// The initial translational velocity.
+        /// </param>
+        /// <param name="initalRotation">
+        /// The initial rotational velocity.
+        /// </param>
+        public void PrescribeHydrodynamicForcesAndTorque(Vector Forces, double Torque, int HistoryPosition) {
+            HydrodynamicForces[HistoryPosition] = Forces;
+            HydrodynamicTorque[HistoryPosition] = Torque;
+        }
+
+        /// <summary>
         /// Sets the collision time-step.
         /// </summary>
         /// <param name="collisionTimestep">
