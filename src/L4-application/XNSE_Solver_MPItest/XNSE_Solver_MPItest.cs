@@ -164,6 +164,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             
             BoSSS.Solution.Application.InitMPI();
+            //Debugger.Launch();
             //ParallelRisingDroplet(1);
             //ParallelRisingDroplet(2);
             //ParallelRisingDroplet(3);

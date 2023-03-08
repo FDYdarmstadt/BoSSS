@@ -85,7 +85,7 @@ namespace BoSSS.Solution.LoadBalancing {
         public int[] GetNewPartitioning(IApplication app, int TimestepNo, GridPartType gridPartType, string PartOptions, double imbalanceThreshold, int Period, bool redistributeAtStartup, TimestepNumber TimestepNoRestart) {
             // Create new model if number of cell classes has changed
             using (var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                //tr.InfoToConsole = true;
                 tr.Info($"Computing Partition of using {gridPartType}...");
                 counter++;
 
