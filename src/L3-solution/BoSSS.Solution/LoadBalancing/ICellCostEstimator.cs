@@ -33,18 +33,8 @@ namespace BoSSS.Solution.LoadBalancing {
         void Init(IApplication app);
 
         /// <summary>
-        /// Updates <see cref="EstimatedLocalCost"/> and
-        /// <see cref="GetEstimatedCellCosts"/> for the given mapping
-        /// cells and performance classes
+        /// Updates the internal cell costs
         /// </summary>
-        /// <param name="performanceClassCount">
-        /// 
-        /// </param>
-        /// <param name="cellToPerformanceClassMap">
-        /// Mapping from local cell to performance class
-        /// - index: local cell index
-        /// - content: performance class (between 0 and <see cref="CurrentPerformanceClassCount"/>)
-        /// </param>
         void UpdateEstimates(IApplication app);
 
       /*

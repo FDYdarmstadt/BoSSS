@@ -11,7 +11,7 @@ namespace BoSSS.Solution.LoadBalancing {
 
 
     /// <summary>
-    /// Employs the state of the level-set-tracker (cut-cell, double-cut-cell, near-cell, etc. as a classification criterion<see cref="TrackerStateClassifier.CellTypeFlags"/>)
+    /// Employs the state of the level-set-tracker (cut-cell, double-cut-cell, near-cell, etc. as a classification criterion<see cref="CutStateClassifier.CellTypeFlags"/>)
     /// </summary>
     [Serializable]
     public class CutStateClassifier : TrackerStateClassifier {
@@ -118,7 +118,7 @@ namespace BoSSS.Solution.LoadBalancing {
             Near = 0x01,
 
             /// <summary>
-            /// cell contains only the void species <see cref="VoidSpecies"/>, if specified
+            /// cell contains only the void species <see cref="TrackerStateClassifier.VoidSpecies"/>, if specified
             /// </summary>
             Void = 0x0,
 
