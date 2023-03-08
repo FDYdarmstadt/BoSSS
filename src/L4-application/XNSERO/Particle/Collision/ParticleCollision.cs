@@ -113,7 +113,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                         Vector[] nearFieldWallPoints = GetNearFieldWall(Particles[p0]);
                         for (int w = 0; w < nearFieldWallPoints.Length; w++) {
                             if (!nearFieldWallPoints[w].IsNullOrEmpty()) {
-                                MinimumDistance minimumDistance = new(new Particle[] { Particles[p0] }, GridLengthScale);
+                                DistanceAlgorithm minimumDistance = new(new Particle[] { Particles[p0] }, GridLengthScale);
                                 minimumDistance.CalculateParticleWallDistance(new Vector(nearFieldWallPoints[w]));
                                 int wallID = ParticleOffset + w; 
                                 globalMinimalDistance = CalculateGlobalMinimumDistance(globalMinimalDistance, p0, wallID, minimumDistance.DistanceVector, new Vector[] { minimumDistance.ClosestPoints[0] }, minimumDistance.Overlapping);
@@ -129,7 +129,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                             int secondParticleID = potentialCollisionPartners[p0][p1];
                             if (!AlreadyAnalysed[p0][secondParticleID] && secondParticleID > p0) {
                                 AlreadyAnalysed[p0][secondParticleID] = true;
-                                MinimumDistance minimumDistance = new(new Particle[] { Particles[p0], Particles[secondParticleID] }, GridLengthScale);
+                                DistanceAlgorithm minimumDistance = new(new Particle[] { Particles[p0], Particles[secondParticleID] }, GridLengthScale);
                                 minimumDistance.CalculateTwoParticleDistance();
                                 globalMinimalDistance = CalculateGlobalMinimumDistance(globalMinimalDistance, p0, secondParticleID, minimumDistance.DistanceVector, minimumDistance.ClosestPoints, minimumDistance.Overlapping);
                                 subTimeStepWithoutCollision = CalculateSubTimeStepWithoutCollision(subTimeStepWithoutCollision, p0, secondParticleID);

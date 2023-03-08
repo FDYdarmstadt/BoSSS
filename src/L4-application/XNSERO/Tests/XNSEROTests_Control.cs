@@ -234,6 +234,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.CoefficientOfRestitution = 0;
             C.SetGravity(new Vector(0, -9.81));
+            C.SkipSolveAndEvaluateResidual = true;
 
             // Particle Properties
             double particleDensity1 = 100.0;

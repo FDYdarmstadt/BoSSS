@@ -24,9 +24,9 @@ using System.Linq;
 using System.Runtime.Serialization;
 
 namespace BoSSS.Application.XNSERO_Solver {
-    class MinimumDistance {
+    class DistanceAlgorithm {
 
-        public MinimumDistance(Particle[] Particles, double Tolerance) {
+        public DistanceAlgorithm(Particle[] Particles, double Tolerance) {
             this.Particles = Particles;
             this.Tolerance = Tolerance;
             int spatialDimension = this.Particles[0].Motion.GetPosition(0).Dim;
@@ -84,6 +84,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Computes the minimal distance between a particle and the wall.
         /// </summary>
+        /// /// <param name="WallPoint">
+        /// A point on the wall.
+        /// </param>
         public void CalculateParticleWallDistance(Vector WallPoint) {
             using (new FuncTrace()) {
                 if (Particles.Length != 1)
@@ -222,7 +225,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                         // Calculation the new support vector with the distance
                         // algorithm
                         // -------------------------------------------------------
-                        supportVector = DistanceAlgorithm(Simplex);
+                        supportVector = SimplexDistance(Simplex);
 
                         // End algorithm if the two objects are overlapping.
                         // -------------------------------------------------------
@@ -250,7 +253,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="simplex"></param>
         /// <param name="overlapping"></param>
         /// <returns></returns>
-        private Vector DistanceAlgorithm(List<Vector> simplex) {
+        private Vector SimplexDistance(List<Vector> simplex) {
             int spatialDimension = simplex[0].Dim;
             if (spatialDimension != 2)
                 throw new NotImplementedException("Distance algorithm currently only for 2D.");

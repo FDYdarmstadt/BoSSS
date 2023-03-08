@@ -233,7 +233,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public static void TestDistance() {
             using (XNSERO p = new XNSERO()) {
                 Particle[] testParticles = new Particle[] { new ParticleDisk(new Motion(1), 1, new double[] { -2, 0 }), new ParticleDisk(new Motion(1), 1, new double[] { 2, 0 }) };
-                MinimumDistance distance = new(testParticles, 0); 
+                DistanceAlgorithm distance = new(testParticles, 0); 
                 distance.CalculateTwoParticleDistance();
                 Assert.LessOrEqual(distance.DistanceVector.Abs() - 2, 1e-12, "Error in calculation of the minimal distance between two points.");
                 Assert.LessOrEqual(distance.ClosestPoints[0].Abs() - 1, 1e-12, "Error in calculation of the closest point toward the opposing particle");
@@ -249,7 +249,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public static void TestOverlappingParticles() {
             using (XNSERO p = new XNSERO()) {
                 Particle[] testParticles = new Particle[] { new ParticleDisk(new Motion(1), 1, new double[] { -1, 0 }), new ParticleEllipse(new Motion(1), 3, 1, new double[] { 2, 0 }) };
-                MinimumDistance distance = new(testParticles, 0);
+                DistanceAlgorithm distance = new(testParticles, 0);
                 distance.CalculateTwoParticleDistance();
                 Assert.IsTrue(distance.Overlapping);
             }
@@ -263,7 +263,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             using (XNSERO p = new XNSERO()) {
                 Particle testParticle = new ParticleDisk(new Motion(1), 1, new double[] { 0, 0 });
                 testParticle.ClosestPointOnOtherObjectToThis = new Vector(2, 0); //setup wall position
-                MinimumDistance distance = new(new Particle[] { testParticle }, 0);
+                DistanceAlgorithm distance = new(new Particle[] { testParticle }, 0);
                 distance.CalculateTwoParticleDistance();
                 Assert.LessOrEqual(distance.DistanceVector.Abs() - 2, 1e-12, "Error in calculation of the minimal distance between two points.");
                 Assert.LessOrEqual(distance.ClosestPoints[0].Abs() - 1, 1e-12, "Error in calculation of the closest point toward the opposing particle");
