@@ -1002,17 +1002,37 @@ namespace BoSSS.Application.BoSSSpad {
 
         }
 
+        static string user_overrideName = null;
+
+        /// <summary>
+        /// Allows to specify the queue within the worksheet
+        /// </summary>
+        public static void SetDefaultQueue(string DefaultQueueName) {
+            user_overrideName = DefaultQueueName.CloneAs();
+        }
+
+
         /// <summary>
         /// Default execution queue. 
         /// - globally, can specified by the <see cref="BatchProcessorConfig.DefaultQueueIndex"/> in configuration file `~/.BoSSS/etc/BatchProcessorConfig.json`
         /// - can be overwritten for each project using the file `~/.BoSSS/etc/DefaultQueuesProjectOverride.txt`
+        /// - can be overwritten within a notebook by <see cref="SetDefaultQueue"/>
         /// </summary>
         public static BatchProcessorClient GetDefaultQueue() {
             ReloadExecutionQueues();
 
+            if(!user_overrideName.IsEmptyOrWhite()) {
+                foreach (var q in executionQueues) {
+                    if (q.Name?.Equals(user_overrideName, StringComparison.InvariantCultureIgnoreCase) ?? false) {
+                        return q;
+                    }
+                }
+            }
+
+
             if(!wmg.CurrentProject.IsEmptyOrWhite()) {
                 string overrideName = BatchProcessorConfig.GetDefaultBatchnameForProject(wmg.CurrentProject);
-                if(overrideName != null) {
+                if(!overrideName.IsEmptyOrWhite()) {
                     foreach(var q in executionQueues) {
                         if(q.Name?.Equals(overrideName, StringComparison.InvariantCultureIgnoreCase) ?? false) {
                             return q;
