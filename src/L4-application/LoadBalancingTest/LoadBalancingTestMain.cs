@@ -33,7 +33,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             //MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             //InitMPI();
-            //// dbg_launch();
+            // dbg_launch();
             //BoSSS.Application.LoadBalancingTest.AllUpTest.RuntimeCostDynamicBalanceTest(1);
             //throw new NotImplementedException("remove me");
 

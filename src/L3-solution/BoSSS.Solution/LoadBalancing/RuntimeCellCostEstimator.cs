@@ -67,10 +67,7 @@ namespace BoSSS.Solution.LoadBalancing {
         private double[] LastInstrumentationTimeStamps;
 
 
-        public int CurrentPerformanceClassCount {
-            get;
-            private set;
-        }
+        int CurrentPerformanceClassCount;
 
         /// <summary>
         /// Constructor.
@@ -87,7 +84,7 @@ namespace BoSSS.Solution.LoadBalancing {
             var cellToPerformanceClassMap = base.CellClassifier.ClassifyCells(app);
             int performanceClassCount = cellToPerformanceClassMap.Max().MPIMax();
 
-            //CurrentPerformanceClassCount = performanceClassCount;
+            CurrentPerformanceClassCount = performanceClassCount + 1;
             currentCellToPerformanceClassMap = cellToPerformanceClassMap;
             int J = m_app.GridData.CellPartitioning.LocalLength;
 
@@ -98,7 +95,7 @@ namespace BoSSS.Solution.LoadBalancing {
             if (CallCount >= 3) {
 
                 // Locally count cells for each performance class
-                double[] cellCountPerClass = new double[performanceClassCount];
+                double[] cellCountPerClass = new double[CurrentPerformanceClassCount];
                 for (int j = 0; j < J; j++) {
                     int performanceClass = cellToPerformanceClassMap[j];
                     cellCountPerClass[performanceClass]++;
@@ -122,8 +119,7 @@ namespace BoSSS.Solution.LoadBalancing {
             Debug.Assert(noOfEstimates == localRunTimeEstimates.Count);
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int MpiSize);
 
-            MultidimensionalArray SendBuf = MultidimensionalArray.Create(
-                noOfEstimates, CurrentPerformanceClassCount + 1);
+            MultidimensionalArray SendBuf = MultidimensionalArray.Create(noOfEstimates, CurrentPerformanceClassCount + 1);
             for (int i = 0; i < noOfEstimates; i++) {
                 for (int j = 0; j < CurrentPerformanceClassCount; j++) {
                     SendBuf[i, j] = localCellCounts[i][j];
@@ -132,11 +128,10 @@ namespace BoSSS.Solution.LoadBalancing {
                 SendBuf[i, CurrentPerformanceClassCount] = localRunTimeEstimates[i];
             }
 
-            MultidimensionalArray RecvBuf = MultidimensionalArray.Create(
-                MpiSize, noOfEstimates, CurrentPerformanceClassCount + 1);
+            MultidimensionalArray RecvBuf = MultidimensionalArray.Create(MpiSize, noOfEstimates, CurrentPerformanceClassCount + 1);
 
             unsafe {
-                fixed (double* pSendBuf = &SendBuf.Storage[0], pRecvBuf = &RecvBuf.Storage[0]) {
+                fixed (double* pSendBuf = SendBuf.Storage, pRecvBuf = RecvBuf.Storage) {
                     csMPI.Raw.Allgather(
                         (IntPtr)pSendBuf, SendBuf.Length, csMPI.Raw._DATATYPE.DOUBLE,
                         (IntPtr)pRecvBuf, SendBuf.Length, csMPI.Raw._DATATYPE.DOUBLE,
@@ -200,7 +195,7 @@ namespace BoSSS.Solution.LoadBalancing {
                 }
                 return new int[][] { cellCosts };
             } else {
-                return null;
+                return new int[0][];
             }
         }
 

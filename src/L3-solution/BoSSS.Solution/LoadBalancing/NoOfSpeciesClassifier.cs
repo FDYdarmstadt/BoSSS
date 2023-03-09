@@ -3,6 +3,7 @@ using ilPSP;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -34,21 +35,35 @@ namespace BoSSS.Solution.LoadBalancing {
                 var rg = lsTrk.Regions;
                 int NoOfLevSets = lsTrk.NoOfLevelSets;
 
-                SpeciesId voidId = default(SpeciesId);
+                SpeciesId voidId;
                 SpeciesId[] AllNonVoidSpecies;
-                if (!VoidSpecies.IsEmptyOrWhite() && lsTrk.SpeciesNames.Contains(VoidSpecies)) {
+                SpeciesId[] AllSpecies;
+                
+                if(VoidSpecies.IsNullOrEmpty() || !lsTrk.SpeciesNames.Contains(VoidSpecies)) {
+                    CountAlsoVoidSpecies = true; // we will ignore the void species
+                    AllNonVoidSpecies = null;
+                    voidId = default(SpeciesId);
+                    AllSpecies = lsTrk.SpeciesIdS.ToArray();
+                } else { 
                     voidId = lsTrk.GetSpeciesId(this.VoidSpecies);
                     var _AllNonVoidSpecies = lsTrk.SpeciesIdS.ToList();
                     _AllNonVoidSpecies.Remove(voidId);
                     AllNonVoidSpecies = _AllNonVoidSpecies.ToArray();
-                } else {
-                    CountAlsoVoidSpecies = true;
-                    AllNonVoidSpecies = lsTrk.SpeciesIdS.ToArray();
-                }
+                    AllSpecies = null;
+                } 
 
                 int CountNonVoid(int j) {
                     int r = 0;
                     foreach (var spc in AllNonVoidSpecies)
+                        if (rg.IsSpeciesPresentInCell(spc, j))
+                            r++;
+
+                    return r;
+                }
+
+                int CountAll(int j) {
+                    int r = 0;
+                    foreach (var spc in AllSpecies)
                         if (rg.IsSpeciesPresentInCell(spc, j))
                             r++;
 
@@ -62,17 +77,16 @@ namespace BoSSS.Solution.LoadBalancing {
                     return dist;
                 }
 
-
                 if (ConsiderAlsoNearCells == false && CountAlsoVoidSpecies == false) {
                     for (int j = 0; j < J; j++)
-                        ret[j] = rg.GetNoOfSpecies(j);
+                        ret[j] = CountNonVoid(j);
                 } else if (ConsiderAlsoNearCells == false && CountAlsoVoidSpecies == true) {
                     for (int j = 0; j < J; j++)
-                        ret[j] = CountNonVoid(j) + (rg.IsSpeciesPresentInCell(voidId, j) ? 1 : 0);
+                        ret[j] = CountAll(j);
 
                 } else if (ConsiderAlsoNearCells == true && CountAlsoVoidSpecies == false) {
                     for (int j = 0; j < J; j++)
-                        ret[j] = CountNonVoid(j);
+                        ret[j] = rg.GetNoOfSpecies(j) - (rg.IsSpeciesPresentInCell(voidId, j) ? 1 : 0);
 
                 } else if (ConsiderAlsoNearCells == true && CountAlsoVoidSpecies == true) {
                     for (int j = 0; j < J; j++)

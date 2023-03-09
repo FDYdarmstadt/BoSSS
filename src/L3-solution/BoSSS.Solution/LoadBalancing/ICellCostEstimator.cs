@@ -67,8 +67,8 @@ namespace BoSSS.Solution.LoadBalancing {
         public static double[] EstimatedLocalCost(this ICellCostEstimator estimator) {
             int[][] cellCost = estimator.GetEstimatedCellCosts();
             double[] ret = new double[cellCost.Length];
-            for(int i = 0; i< ret.Length; i++) {
-                ret[i] = cellCost[i].Sum();
+            for(int i = 0; i < ret.Length; i++) {
+                ret[i] = cellCost[i]?.Sum() ?? 0.0;
             }
             return ret; 
         }
