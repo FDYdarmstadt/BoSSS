@@ -293,7 +293,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
 
             if (L == null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -326,7 +326,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
         /// status after the grid has been re-distributed.
         /// </summary>
-        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             if (Timestepping != null)   // in case of startUp backup
                 Timestepping.DataBackupBeforeBalancing(L);
             CurrentStateVector = null;

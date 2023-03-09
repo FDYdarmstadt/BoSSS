@@ -57,92 +57,92 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int[] part;
                 switch (method) {
                     case GridPartType.METIS: {
-                        int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
-                        noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
-                        part = ComputePartitionMETIS(noOfPartitioningsToChooseFrom: noOfPartitioningsToChooseFrom);
+                            int.TryParse(PartOptions, out int noOfPartitioningsToChooseFrom);
+                            noOfPartitioningsToChooseFrom = Math.Max(1, noOfPartitioningsToChooseFrom);
+                            part = ComputePartitionMETIS(noOfPartitioningsToChooseFrom: noOfPartitioningsToChooseFrom);
 #if DEBUG
                             CheckPartitioning(part);
 #endif
-                        RedistributeGrid(part);
-                        break;
-                    }
+                            RedistributeGrid(part);
+                            break;
+                        }
 
 
                     case GridPartType.ParMETIS: {
-                        int.TryParse(PartOptions, out int noOfRefinements);
+                            int.TryParse(PartOptions, out int noOfRefinements);
 
-                        part = ComputePartitionParMETIS();
+                            part = ComputePartitionParMETIS();
 #if DEBUG
                             CheckPartitioning(part);
 #endif
-                        RedistributeGrid(part);
+                            RedistributeGrid(part);
 
-                        for (int i = 0; i < noOfRefinements; i++) {
-                            part = ComputePartitionParMETIS(refineCurrentPartitioning: true);
+                            for (int i = 0; i < noOfRefinements; i++) {
+                                part = ComputePartitionParMETIS(refineCurrentPartitioning: true);
 #if DEBUG
                                 CheckPartitioning(part);
+#endif
+                                RedistributeGrid(part);
+                            }
+                            break;
+                        }
+
+                    case GridPartType.clusterHilbert: {
+                            part = ComputePartitionHilbert(Functype: 0);
+#if DEBUG
+                            CheckPartitioning(part);
+#endif
+                            RedistributeGrid(part);
+                            break;
+                        }
+
+                    case GridPartType.Hilbert: {
+                            part = ComputePartitionHilbert(Functype: 1);
+#if DEBUG
+                            CheckPartitioning(part);
+#endif
+                            RedistributeGrid(part);
+                            break;
+                        }
+
+                    case GridPartType.none:
+                        break;
+
+                    case GridPartType.Predefined: {
+                            if (PartOptions == null || PartOptions.Length <= 0)
+                                //throw new ArgumentException("'" + GridPartType.Predefined.ToString() + "' requires, as an option, the name of the Partition.", "PartOptions");
+                                PartOptions = size.ToString();
+
+                            if (!m_PredefinedGridPartitioning.ContainsKey(PartOptions)) {
+                                StringWriter stw = new StringWriter();
+                                for (int i = 0; i < m_PredefinedGridPartitioning.Count; i++) {
+                                    stw.Write("'" + m_PredefinedGridPartitioning.Keys[i] + "'");
+                                    if (i < (m_PredefinedGridPartitioning.Count - 1))
+                                        stw.Write(", ");
+                                }
+
+                                throw new ArgumentException("Grid Partitioning with name '" + PartOptions + "' is unknown; known are: " + stw.ToString() + ";");
+                            }
+
+                            Console.WriteLine("redistribution according to " + PartOptions);
+
+                            var partHelp = m_PredefinedGridPartitioning[PartOptions];
+                            part = partHelp.CellToRankMap;
+                            if (part == null) {
+                                var cp = this.CellPartitioning;
+                                part = iom.LoadVector<int>(partHelp.Guid, ref cp).ToArray();
+                            }
+
+#if DEBUG
+                            CheckPartitioning(part);
 #endif
                             RedistributeGrid(part);
                         }
                         break;
-                    }
-
-                    case GridPartType.clusterHilbert: {
-                        part = ComputePartitionHilbert(Functype: 0);
-#if DEBUG
-                            CheckPartitioning(part);
-#endif
-                        RedistributeGrid(part);
-                        break;
-                    }
-
-                    case GridPartType.Hilbert: {
-                        part = ComputePartitionHilbert(Functype: 1);
-#if DEBUG
-                            CheckPartitioning(part);
-#endif
-                        RedistributeGrid(part);
-                        break;
-                    }
-
-                    case GridPartType.none:
-                    break;
-
-                    case GridPartType.Predefined: {
-                        if (PartOptions == null || PartOptions.Length <= 0)
-                            //throw new ArgumentException("'" + GridPartType.Predefined.ToString() + "' requires, as an option, the name of the Partition.", "PartOptions");
-                            PartOptions = size.ToString();
-
-                        if (!m_PredefinedGridPartitioning.ContainsKey(PartOptions)) {
-                            StringWriter stw = new StringWriter();
-                            for (int i = 0; i < m_PredefinedGridPartitioning.Count; i++) {
-                                stw.Write("'" + m_PredefinedGridPartitioning.Keys[i] + "'");
-                                if (i < (m_PredefinedGridPartitioning.Count - 1))
-                                    stw.Write(", ");
-                            }
-
-                            throw new ArgumentException("Grid Partitioning with name '" + PartOptions + "' is unknown; known are: " + stw.ToString() + ";");
-                        }
-
-                        Console.WriteLine("redistribution according to " + PartOptions);
-
-                        var partHelp = m_PredefinedGridPartitioning[PartOptions];
-                        part = partHelp.CellToRankMap;
-                        if (part == null) {
-                            var cp = this.CellPartitioning;
-                            part = iom.LoadVector<int>(partHelp.Guid, ref cp).ToArray();
-                        }
-
-#if DEBUG
-                            CheckPartitioning(part);
-#endif
-                        RedistributeGrid(part);
-                    }
-                    break;
 
 
                     default:
-                    throw new NotImplementedException();
+                        throw new NotImplementedException();
                 }
             }
         }
@@ -206,7 +206,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Tells METIS to compute
         /// </param>
         /// <returns>
-        /// Index: local cell index, content: MPI Processor rank;<br/>
+        /// - Index: local cell index, 
+        /// - content: MPI Processor rank
         /// This is the suggestion
         /// of ParMETIS for the grid partitioning:
         /// For each local cell index, the returned array contains the MPI
@@ -1179,7 +1180,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         public void RedistributeGrid(int[] part) {
             int Size = this.Size;
             int MyRank = this.MyRank;
-            
+
             CheckPartitioning(part);
 
 

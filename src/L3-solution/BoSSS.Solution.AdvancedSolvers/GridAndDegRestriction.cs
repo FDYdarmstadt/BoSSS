@@ -399,7 +399,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public long UsedMemory() {
-            return LowerPSolver.UsedMemory();
+            return LowerPSolver?.UsedMemory() ?? 0;
         }
 
         public void Dispose() {
