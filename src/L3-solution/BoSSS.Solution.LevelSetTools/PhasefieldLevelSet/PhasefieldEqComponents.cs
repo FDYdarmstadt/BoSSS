@@ -142,18 +142,22 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
     /// <summary>
     /// Transport flux for Cahn-Hilliard
     /// </summary>
-    public class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent {
-        public phi_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap, string LevelSetName = "phi") {
+    public class phi_Flux : IVolumeForm, IEdgeForm, ISupportsJacobianComponent, IParameterHandling {
+        public phi_Flux(int D, Func<DGField[]> VelocityGetter, BoundaryCondMap<BoundaryType> __boundaryCondMap, string LevelSetName = "phi") {
             m_D = D;
             m_boundaryCondMap = __boundaryCondMap;
             m_bndFunc = m_boundaryCondMap?.bndFunction[LevelSetName];
             m_LevelSetName = LevelSetName; // depending on the context, solvers might prefer a different variable name
+            m_velocityGetter = VelocityGetter;
         }
 
         protected string m_LevelSetName; // depending on the context, solvers might prefer a different variable name
         protected int m_D;
         protected BoundaryCondMap<BoundaryType> m_boundaryCondMap;
         protected Func<double[], double, double>[] m_bndFunc;
+        Func<DGField[]> m_velocityGetter;
+
+
 
         public TermActivationFlags VolTerms => TermActivationFlags.UxGradV;
 
@@ -210,6 +214,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new[] { this };
+        }
+
+        public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters)
+        {}
+
+        public DGField[] MyParameterAlloc(DGField[] Arguments)
+        {
+            return m_velocityGetter();
         }
     }
 

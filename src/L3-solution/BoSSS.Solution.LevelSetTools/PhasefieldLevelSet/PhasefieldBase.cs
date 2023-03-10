@@ -362,7 +362,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
 
                 // convection term
                 CHOp.EquationComponents["Res_phi"].Add(
-                new phi_Flux(D, m_bcMap)
+                new phi_Flux(D, () => Velocity, m_bcMap)
                 );
 
                 switch(this.Control.ModTyp) {

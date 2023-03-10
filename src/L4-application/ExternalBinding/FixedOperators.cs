@@ -222,7 +222,7 @@ namespace BoSSS.Application.ExternalBinding {
             // double sigma = 0.063;
             // double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
                                                               // double diff = M * lam;
-            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT);
+            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: 0.1);
             CahnHilliardInternal(mtx, U, ptch, ptchU, null, chParams);
         }
 
@@ -232,21 +232,10 @@ namespace BoSSS.Application.ExternalBinding {
         /// </summary>
         public void CahnHilliardInternal(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction func = null, CahnHilliardParameters chParams = new CahnHilliardParameters()) {
             try {
-                // {
-
-                // System.Diagnostics.Debugger.Launch();
-                // Console.WriteLine("Debugger is attached; press enter to continue");
-                // Console.ReadLine();
-
 
                 _mtx = mtx;
                 _ptch = ptch;
 
-
-                double tanh(double x)
-                {
-                    return Math.Tanh(x);
-                }
                 double pow(double x, int e)
                 { // inefficient but who cares
                     // return Math.Tanh(x);
@@ -254,23 +243,6 @@ namespace BoSSS.Application.ExternalBinding {
                     for (int i = 0; i < e; i++)
                         acc *= x;
                     return acc;
-                }
-                double pow2(double x)
-                {
-                    // return Math.Tanh(x);
-                    return pow(x, 2);
-                }
-                double sqrt(double x)
-                {
-                    return Math.Sqrt(x);
-                    // double Sqrt = x / 2.0;
-                    // double temp = 0;
-                    // while (Sqrt - temp > 1e-10)
-                    // {
-                    //     temp = Sqrt;
-                    //     Sqrt = (x / temp + temp) / 2;
-                    // }
-                    // return Sqrt;
                 }
                 // grid, etc
                 // =========
@@ -324,9 +296,9 @@ namespace BoSSS.Application.ExternalBinding {
                     }
                     Console.WriteLine("Zero order parameter field encountered - initializing with given function");
                     c.Clear();
-                    u.Clear();
-                    v.Clear();
-                    w.Clear();
+                    // u.Clear();
+                    // v.Clear();
+                    // w.Clear();
                     c.ProjectField(func);
                 }
                 mu = new SinglePhaseField(b);
@@ -391,8 +363,8 @@ namespace BoSSS.Application.ExternalBinding {
                 // mu.Laplacian(-cahn, c);
                 // mu.Acc(-1.0, c);
                 // mu.ProjectPow(1.0, c, 3.0);
-                RealLevSet.Clear();
-                RealLevSet.Acc(1.0, c);
+                // RealLevSet.Clear();
+                // RealLevSet.Acc(1.0, c);
                 RealTracker.UpdateTracker(0);
 
                 SubGrid subgr = RealTracker.Regions.GetNearFieldSubgrid(6);
@@ -431,7 +403,7 @@ namespace BoSSS.Application.ExternalBinding {
                 System.Collections.BitArray subGridCellMask = mask?.GetBitMask();
 
                 var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda, mask);
-                var CHCconv = new CahnHilliardCConv(new[] { u, v, w }, mask);
+                var CHCconv = new CahnHilliardCConv(() => velocity, mask);
                 var CHMudiff = new CahnHilliardMuDiff(ptch, penalty_const, cahn, mask);
                 var CHMusource = new CahnHilliardMuSource(mask);
                 op.EquationComponents["Res_c"].Add(CHCdiff);
@@ -532,8 +504,8 @@ namespace BoSSS.Application.ExternalBinding {
                 int t = 0;
                 while (time < endTime)
                 {
-                    RealLevSet.Clear();
-                    RealLevSet.Acc(1.0, c);
+                    // RealLevSet.Clear();
+                    // RealLevSet.Acc(1.0, c);
                     RealTracker.UpdateTracker(time);
                     TimeStepper.Solve(time, dt);
 
@@ -835,8 +807,8 @@ namespace BoSSS.Application.ExternalBinding {
             }
         }
         class CahnHilliardCConv : __c_Flux {
-            public CahnHilliardCConv(DGField[] Velocity, CellMask Subgrid = null)
-                : base(3, null){} // TODO check if velocity is really communicated through parameter fields
+            public CahnHilliardCConv(Func<DGField[]> VelocityGetter, CellMask Subgrid = null)
+                : base(3, VelocityGetter, null){} // TODO check if velocity is really communicated through parameter fields
 
         }
 
