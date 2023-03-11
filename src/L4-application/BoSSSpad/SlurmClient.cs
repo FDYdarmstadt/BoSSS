@@ -171,7 +171,7 @@ namespace BoSSS.Application.BoSSSpad {
                 if (m_SSHConnection == null || m_SSHConnection.IsConnected == false)
                     throw new IOException($"SSH connection to {ServerName} cant be established or is very unreliable.");
                 else 
-                    m_SSHConnectionReuse.Add(keyname, m_SSHConnection);
+                    m_SSHConnectionReuse[keyname] = m_SSHConnection;
 
                 return m_SSHConnection;
             }
