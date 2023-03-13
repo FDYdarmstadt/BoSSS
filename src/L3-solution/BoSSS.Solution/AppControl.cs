@@ -32,6 +32,7 @@ using System.Collections;
 using BoSSS.Solution.Utils;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
+using BoSSS.Solution.LoadBalancing;
 
 namespace BoSSS.Solution.Control {
 
@@ -1038,9 +1039,8 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
-        [JsonIgnore]
-        public List<Func<IApplication, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
-            new List<Func<IApplication, int, ICellCostEstimator>>();
+        [DataMember]
+        public List<ICellCostEstimator> DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
@@ -1075,9 +1075,6 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public int AMR_startUpSweeps = 1;
-
-
-
 
         /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,

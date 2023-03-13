@@ -37,7 +37,7 @@ namespace CNS.Tests.IsentropicVortex {
         /// </summary>
         [Test]
         public static void IsentropicVortexIdealGasRusanovTest() {
-            Program<VortexControl> p = null;
+            CNSProgram<VortexControl> p = null;
             Application<VortexControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.IsentropicVortex.ControlFiles.IsentropicVortexIdealGasRusanov()" },
                 false,
@@ -60,7 +60,7 @@ namespace CNS.Tests.IsentropicVortex {
         /// </summary>
         [Test]
         public static void IsentropicVortexIdealGasHLLCTest() {
-            Program<VortexControl> p = null;
+            CNSProgram<VortexControl> p = null;
             Application<VortexControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.IsentropicVortex.ControlFiles.IsentropicVortexIdealGasHLLC()" },
                 false,
@@ -82,7 +82,7 @@ namespace CNS.Tests.IsentropicVortex {
         /// </summary>
         [Test]
         public static void IsentropicVortexIdealGasOptimizedHLLCTest() {
-            Program<VortexControl> p = null;
+            CNSProgram<VortexControl> p = null;
             Application<VortexControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.IsentropicVortex.ControlFiles.IsentropicVortexIdealGasOptimizedHLLC()" },
                 false,
@@ -104,7 +104,7 @@ namespace CNS.Tests.IsentropicVortex {
         /// </summary>
         [Test]
         public static void IsentropicVortexStiffenedlGasRusanovTest() {
-            Program<VortexControl> p = null;
+            CNSProgram<VortexControl> p = null;
             Application<VortexControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.IsentropicVortex.ControlFiles.IsentropicVortexStiffenedGasRusanov()" },
                 false,
@@ -126,7 +126,7 @@ namespace CNS.Tests.IsentropicVortex {
         /// </summary>
         [Test]
         public static void IsentropicVortexCovolumeGasRusanovTest() {
-            Program<VortexControl> p = null;
+            CNSProgram<VortexControl> p = null;
             Application<VortexControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.IsentropicVortex.ControlFiles.IsentropicVortexCovolumeGasRusanov()" },
                 false,

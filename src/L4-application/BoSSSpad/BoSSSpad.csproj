@@ -45,36 +45,16 @@
     <PackageReference Include="Microsoft.AspNetCore.Html.Abstractions" Version="2.2.0" />
     <!--PackageReference Include="Microsoft.DotNet.Interactive.Documents"  Version="1.0.0-beta.21606.1" /-->
     <!--PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21606.1" /-->
-    <PackageReference Include="Microsoft.DotNet.Interactive.Documents"  Version="1.0.0-beta.21459.1" />
+    <PackageReference Include="Microsoft.DotNet.Interactive.Documents" Version="1.0.0-beta.21459.1" />
     <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21459.1" />
   </ItemGroup>
-  <!--ItemGroup>
-    <Reference Include="CommandLine">
-      <HintPath>..\..\..\libs\libcmdline-1.8-stable-bin\libcmdline\bin\Release\CommandLine.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.AspNetCore.Html.Abstractions">
-      <HintPath>..\..\..\libs\microsoft.aspnetcore.html.abstractions\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Html.Abstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DotNet.Interactive">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DotNet.Interactive.CSharp">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DotNet.Interactive.Documents">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.Documents.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DotNet.Interactive.Formatting">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
-    </Reference>
-  </ItemGroup-->
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation.SpecFEM\BoSSS.Foundation.SpecFEM.csproj" />
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj" />
-	<ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj" />
+  	<ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj" />
     <ProjectReference Include="..\..\Utils\btail\btail.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj" />

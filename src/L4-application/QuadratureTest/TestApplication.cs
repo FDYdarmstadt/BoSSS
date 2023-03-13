@@ -23,6 +23,7 @@ using BoSSS.Solution;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Grid.Classic;
+using BoSSS.Solution.LoadBalancing;
 
 namespace QuadratureAndProjectionTest {
 

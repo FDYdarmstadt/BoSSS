@@ -252,7 +252,7 @@ namespace HilbertTest {
 
         /// <summary>
         /// Testing Partition with Constraints (LTS), even distribution among processes.
-        /// The testresult is also valid for other Constrainttypes, e.g. AV, but harder to test
+        /// The test result is also valid for other Constraint-types, e.g. AV, but harder to test
         /// </summary>
         [Test]
         static public void TestingGridDistributionDynamic() {
@@ -293,6 +293,7 @@ namespace HilbertTest {
                 double[] MaxRef = { 0.6, 1 };
                 double[] MinRef = { 0, 0 };
 
+             
                 if (ItemsAreEqual(BB.Max, MaxRef) && ItemsAreEqual(BB.Min, MinRef)) {
                     //Comparing checkLTS to Distribution along HilbertCurve of Testcase
                     int[] checkLTS = { 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 3, 3, 0, 0, 2, 2, 2, 3, 3, 3 };
@@ -680,8 +681,7 @@ namespace HilbertTest {
             if (Repart) {
                 // Add one balance constraint for each subgrid
                 c.DynamicLoadBalancing_On = true;
-                c.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
-                c.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
+                c.DynamicLoadBalancing_CellCostEstimators.AddRange(LTSCellCostEstimator.Factory(c.NumberOfSubGrids));
                 c.DynamicLoadBalancing_ImbalanceThreshold = 0.0;
                 c.DynamicLoadBalancing_Period = c.ReclusteringInterval;
             }

@@ -1,5 +1,6 @@
 ﻿using BoSSS.Solution;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LoadBalancing;
 using MPI.Wrappers;
 using NUnit.Framework;
 using System;
@@ -57,7 +58,7 @@ namespace BoSSS.Application.LoadBalancingTest {
                     p = new LoadBalancingTestMain();
                     p.DynamicBalance = true;
                     p.DEGREE = DGdegree;
-                    p.cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
+                    p.cellCostEstimatorFactory = () => CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
                     return p;
                 });
         }

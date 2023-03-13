@@ -200,7 +200,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Includes assembly of the matrix.
         /// </summary>
         /// <param name="L"></param>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             using(FuncTrace tr = new FuncTrace()) {
 
                 // create operator

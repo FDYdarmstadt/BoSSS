@@ -2986,7 +2986,7 @@ namespace ilPSP {
             unsafe {
                 int i0;
                 double[] _M = TempBuffer.GetTempBuffer(out i0, N * N);
-                fixed (double* pM = _M, pTAU = &TAU[0]) {
+                fixed (double* pM = _M, pTAU = TAU) {
                     CopyToUnsafeBuffer(M, pM, true);
 
                     LAPACK.F77_LAPACK.DGEQRF(ref N, ref N, pM, ref N, pTAU);
@@ -3059,8 +3059,8 @@ namespace ilPSP {
             unsafe {
                 int i0;
                 double[] _M = TempBuffer.GetTempBuffer(out i0, N * N);
-                fixed (double* pM = _M, pTAU = &TAU[0]) {
-                    fixed (int* pP = &P[0]) {
+                fixed (double* pM = _M, pTAU = TAU) {
+                    fixed (int* pP = P) {
                         CopyToUnsafeBuffer(M, pM, true);
 
                         LAPACK.F77_LAPACK.DGEQP3(ref N, ref N, pM, ref N, pP, pTAU);

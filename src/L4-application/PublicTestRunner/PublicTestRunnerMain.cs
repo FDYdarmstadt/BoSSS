@@ -133,7 +133,7 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.XNSFE_Solver.XNSFE),
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
-                        typeof(CNS.Program),
+                        typeof(CNS.CNSProgram),
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
@@ -1319,7 +1319,7 @@ namespace PublicTestRunner {
 
                 var dir = Directory.GetCurrentDirectory();
 
-                foreach (var t in r.tests) {
+                foreach (var t in r.tests) { 
                     foreach (var fOrigin in r.RequiredFiles4Test[t]) {
                         if (File.Exists(fOrigin)) {
                             string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));

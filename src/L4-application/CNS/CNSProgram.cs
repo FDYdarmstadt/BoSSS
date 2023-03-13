@@ -35,16 +35,17 @@ using System.IO;
 using System.Linq;
 using BoSSS.Foundation.Grid;
 using ilPSP.Utils;
+using BoSSS.Solution.LoadBalancing;
 
 namespace CNS {
 
     /// <summary>
     /// CNS main program
     /// </summary>
-    public class Program : Program<CNSControl> {
+    public class CNSProgram : CNSProgram<CNSControl> {
 
         /// <summary>
-        /// Initializes an instance of <see cref="Program"/> and starts the
+        /// Initializes an instance of <see cref="CNSProgram"/> and starts the
         /// program execution as specified in <see cref="Application"/>
         /// </summary>
         /// <param name="args"></param>
@@ -74,7 +75,7 @@ namespace CNS {
             Application<CNSControl>._Main(
                 args,
                 false,
-                () => new Program());
+                () => new CNSProgram());
         }
     }
 
@@ -82,7 +83,7 @@ namespace CNS {
     /// Implementation of <see cref="Application{T}"/> specific for the solution
     /// of the compressible Navier-Stokes equations.
     /// </summary>
-    public class Program<T> : Application<T>, IProgram<T>
+    public class CNSProgram<T> : Application<T>, IProgram<T>
         where T : CNSControl, new() {
 
         /// <summary>
@@ -150,7 +151,7 @@ namespace CNS {
         /// <summary>
         /// Standard constructor, <see cref="Application"/>
         /// </summary>
-        public Program()
+        public CNSProgram()
             : base() {
         }
 
@@ -511,6 +512,7 @@ namespace CNS {
             }
         }
 
+        /*
         /// <summary>
         /// See <see cref="ICellClassifier"/>
         /// </summary>
@@ -548,6 +550,8 @@ namespace CNS {
                 (NoOfClasses, cellToPerformanceClassMap) = Control.DynamicLoadBalancing_CellClassifier.ClassifyCells(this);
             }
         }
+        */
+
 
         /// <summary>
         /// Constructs the boundary condition map to be used by the solver.

@@ -22,7 +22,7 @@ using System.Linq;
 
 namespace CNS.Tests.ViscousShockProfile {
 
-    class ViscousShockProfile : Program<CNSControl> {
+    class ViscousShockProfile : CNSProgram<CNSControl> {
 
         //static void Main(string[] args) {
         //    Application<CNSControl>._Main(args, false, null, () => new ViscousShockProfile());
