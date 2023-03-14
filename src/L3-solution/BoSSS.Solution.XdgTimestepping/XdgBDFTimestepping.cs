@@ -146,11 +146,13 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             if (Config_LevelSetHandling == LevelSetHandling.None) {
                 m_LsTrk.IncreaseHistoryLength(0);
-            } else if (Config_LevelSetHandling == LevelSetHandling.LieSplitting
-                  || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
-                  || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
-                m_LsTrk.IncreaseHistoryLength(1);
-            } else {
+            } 
+            //else if (Config_LevelSetHandling == LevelSetHandling.LieSplitting
+            //      || Config_LevelSetHandling == LevelSetHandling.StrangSplitting
+            //      || Config_LevelSetHandling == LevelSetHandling.FSILieSplittingFullyCoupled) {
+            //    m_LsTrk.IncreaseHistoryLength(1);
+            //} 
+            else {
                 m_LsTrk.IncreaseHistoryLength(S);
             }
 
@@ -289,8 +291,6 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         void PushStack() {
 
-            Console.WriteLine("before XdgBDFTimestepping.PushStacks(): m_PopulatedStackDepth = " + m_PopulatedStackDepth);
-
             m_PopulatedStackDepth++;
             if (m_PopulatedStackDepth > m_TSCchain[0].S)
                 m_PopulatedStackDepth = m_TSCchain[0].S;
@@ -350,8 +350,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Debug.Assert(m_Stack_MassMatrix[0] != null);
                 Debug.Assert(m_PrecondMassMatrix != null);
             }
-
-            Console.WriteLine("after XdgBDFTimestepping.PushStacks(): m_PopulatedStackDepth = " + m_PopulatedStackDepth);
 
         }
 
@@ -481,14 +479,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                     // reset the internal state of the LevelSetTracker
                     m_LsTrk.ResetCurrentTimeLevel(time);
 
-                    Console.WriteLine("MultiInit - time step set");
-
                     // re-sort mass matrices
-                    //{
-                    //    var Mtx2Update = m_Stack_MassMatrix.GetSubVector(1, m_Stack_MassMatrix.Length - 1);
-                    //    TimeSteppingUtils.OperatorLevelSetUpdate(m_LsTrk, Mtx2Update, CurrentStateMapping, CurrentStateMapping);
-                    //    Array.Copy(Mtx2Update, 0, m_Stack_MassMatrix, 1, Mtx2Update.Length);
-                    //}
+                    {
+                        var Mtx2Update = m_Stack_MassMatrix.GetSubVector(1, m_Stack_MassMatrix.Length - 1);
+                        TimeSteppingUtils.OperatorLevelSetUpdate(m_LsTrk, Mtx2Update, CurrentStateMapping, CurrentStateMapping);
+                        Array.Copy(Mtx2Update, 0, m_Stack_MassMatrix, 1, Mtx2Update.Length);
+                    }
 
                     // all the other stuff (cut-cell-metrics, ...)
                     InitTimestepping(iStage == (S - 1));

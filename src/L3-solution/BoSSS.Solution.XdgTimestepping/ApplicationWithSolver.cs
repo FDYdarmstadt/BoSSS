@@ -323,23 +323,21 @@ namespace BoSSS.Solution.XdgTimestepping {
         protected override void AfterSolverCreation(double phystime, int TimestepNo) {
 
             if (Timestepping.m_BDF_Timestepper != null) {
-                if (this.Control.RestartInfo != null) {
+                if (this.Control.RestartInfo != null) { // for loading restart we only allow for <see cref="BDFDelayedInitLoadRestart"/>
                     Timestepping.m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
                     Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
                          // delegate for the initialization of previous timesteps from restart session
                          BDFDelayedInitLoadRestart);
-
                 } else {
-                    if (this.Control.MultiStepInit == true) {
+                    if (this.Control.MultiStepInit) {
                         Timestepping.m_BDF_Timestepper.Timestepper_Init = Solution.Timestepping.TimeStepperInit.MultiInit;
                         Timestepping.m_BDF_Timestepper.DelayedTimestepperInit(phystime, TimestepNo, this.Control.GetFixedTimestep(),
                             // delegate for the initialization of previous timesteps from an analytic solution
                             BDFDelayedInitSetIntial);
-
-                    } else
+                    } else {
                         Timestepping.m_BDF_Timestepper.SingleInit();
+                    }
                 }
-
             }
         }
 
@@ -438,9 +436,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if ((BurstIndex >= 0 && BurstIndex < this.BurstSaves - 1)  || !runNextLoop) {
 
                     for (int ts = 1; ts < S - BurstIndex; ts++) {
-
+                        
                         var tsi = saveRestartInfoToDatabase(physTime, timeStepInt, ts);
-                        Console.WriteLine($"timestep: {tsi} saved");
+                        //Console.WriteLine($"timestep: {tsi} saved");
                         adaptedRestartInfo.Add(Tuple.Create(timeStepInt - ts, tsi, false));
 
                     }

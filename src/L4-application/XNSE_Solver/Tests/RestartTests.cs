@@ -34,6 +34,7 @@ using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.Tecplot;
+using Newtonsoft.Json.Linq;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -50,7 +51,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <param name="DbPath"></param>
         /// <param name="ExpectedTimeSteps"></param>
         /// <returns></returns>
-        static public XNSE_Control RestartTest_ReferenceControl(string DbPath, bool transient, TimeSteppingScheme timeStepScheme, bool AMRon, int savePeriod, out int[] ExpectedTimeSteps) {
+        static public XNSE_Control RestartTest_ReferenceControl(string DbPath, bool transient, LevelSetHandling LevSetHandling, TimeSteppingScheme timeStepScheme, bool AMRon, int savePeriod, out int[] ExpectedTimeSteps) {
 
             var ctrl = new XNSE_Control();
 
@@ -100,7 +101,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             ctrl.TimesteppingMode = transient ? AppControl._TimesteppingMode.Transient : AppControl._TimesteppingMode.Steady;
             ctrl.TimeSteppingScheme = timeStepScheme;
-            ctrl.Timestepper_LevelSetHandling = transient ? LevelSetHandling.Coupled_Once : LevelSetHandling.None;
+            ctrl.Timestepper_LevelSetHandling = transient ? LevSetHandling : LevelSetHandling.None;
             ctrl.Option_LevelSetEvolution = transient ? Solution.LevelSetTools.LevelSetEvolution.FastMarching : Solution.LevelSetTools.LevelSetEvolution.None;
 
 
@@ -159,7 +160,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <param name="RestartSession"></param>
         /// <param name="ExpectedTimeSteps"></param>
         /// <returns></returns>
-        static public XNSE_Control RestartTest_RestartControl(string DbPath, Guid RestartSession, bool transient, TimeSteppingScheme timeStepScheme, bool AMRon, int savePeriod,  out int[] ExpectedTimeSteps) {
+        static public XNSE_Control RestartTest_RestartControl(string DbPath, Guid RestartSession, bool transient, LevelSetHandling LevSetHandling, TimeSteppingScheme timeStepScheme, bool AMRon, int savePeriod,  out int[] ExpectedTimeSteps) {
 
             var ctrl = new XNSE_Control();
 
@@ -192,7 +193,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             ctrl.TimesteppingMode = transient ? AppControl._TimesteppingMode.Transient : AppControl._TimesteppingMode.Steady;
             ctrl.TimeSteppingScheme = timeStepScheme;
-            ctrl.Timestepper_LevelSetHandling = transient ? LevelSetHandling.Coupled_Once : LevelSetHandling.None;
+            ctrl.Timestepper_LevelSetHandling = transient ? LevSetHandling : LevelSetHandling.None;
             ctrl.Option_LevelSetEvolution = transient ? Solution.LevelSetTools.LevelSetEvolution.FastMarching : Solution.LevelSetTools.LevelSetEvolution.None;
 
             ctrl.dtFixed = 0.02;
@@ -258,7 +259,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             { "Pressure", 1e-10 },
             { "Residual-MomentumX", 1e-9 },
             { "Residual-MomentumY", 1e-9 },
-            { "Residual-ContiEq", 1e-9 },
+            { "Residual-ContiEq", 1e-14 },
             { "Velocity0X_Mean", 1e-15 },
             { "Velocity0Y_Mean", 1e-15 },
             { "VelocityX@Phi", 1e-13 },
@@ -273,6 +274,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         [Test]
         public static void RestartTest(
                 [Values(false, true)] bool transient,
+                [Values(LevelSetHandling.LieSplitting, LevelSetHandling.Coupled_Once)] LevelSetHandling LevSetHandling,
                 [Values(TimeSteppingScheme.ImplicitEuler, TimeSteppingScheme.BDF2, TimeSteppingScheme.BDF3)] TimeSteppingScheme timestepScheme,
                 [Values(false, true)] bool AMRon,
                 [Values(3, 4, 5)] int savePeriod){
@@ -288,7 +290,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 DatabaseInfo.Close(TestDb);
             }
 
-            var ctrl1 = RestartTest_ReferenceControl(restartDBfullPath, transient, timestepScheme, AMRon, savePeriod, out var ExpectedTs1stRun);
+            var ctrl1 = RestartTest_ReferenceControl(restartDBfullPath, transient, LevSetHandling, timestepScheme, AMRon, savePeriod, out var ExpectedTs1stRun);
             using (var FirstRun = new XNSE()) {
 
                 FirstRun.Init(ctrl1);
@@ -319,7 +321,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
 
-            var ctrl2 = RestartTest_RestartControl(restartDBfullPath, RestartSession, transient, timestepScheme, AMRon, savePeriod, out var ExpectedTs2ndRun);
+            var ctrl2 = RestartTest_RestartControl(restartDBfullPath, RestartSession, transient, LevSetHandling, timestepScheme, AMRon, savePeriod, out var ExpectedTs2ndRun);
             using (var SecondRun = new XNSE()) {
 
                 SecondRun.Init(ctrl2);
@@ -357,10 +359,16 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                         Assert.IsTrue(s != null);
                         s.Coordinates.Acc(-1.0, f.Coordinates);
 
-                        Console.WriteLine($"timestep {tsi.TimeStepNumber.MajorNumber}: field {f.Identification} L2-norm = {s.L2Norm()}");
-                        if (AllowedErrors.TryGetValue(f.Identification, out double value)) {
+                        //Console.WriteLine($"timestep {tsi.TimeStepNumber.MajorNumber}: field {f.Identification} L2-norm = {s.L2Norm()}");
+                        if (tsi.TimeStepNumber.MajorNumber == savePeriod) {
+                            if (s.L2Norm() > 0.0) { // loaded data needs to be exact
+                                Console.WriteLine($"Loaded data at timestep {tsi.TimeStepNumber.MajorNumber} for field {f.Identification} are not exact: L2-norm = {s.L2Norm()}");
+                                Tecplot.PlotFields(new List<DGField>() { s }, $"{f.Identification}_errorField", 0.0, 3);
+                                comparisonFailed = true;
+                            }
+                        } else if (AllowedErrors.TryGetValue(f.Identification, out double value)) {
                             if (s.L2Norm() > value) {
-                                //Console.WriteLine($"timestep {tsi.TimeStepNumber.MajorNumber}: field {f.Identification} L2-norm = {s.L2Norm()}");
+                                Console.WriteLine($"Allowed error exceeded at timestep {tsi.TimeStepNumber.MajorNumber} for field {f.Identification}: L2-norm = {s.L2Norm()}");
                                 Tecplot.PlotFields(new List<DGField>() { s }, $"{f.Identification}_errorField", 0.0, 3);
                                 comparisonFailed = true;
                             }
