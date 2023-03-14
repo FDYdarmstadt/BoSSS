@@ -1772,7 +1772,7 @@ namespace BoSSS.Solution {
         /// time value which will be associated with the field
         /// </param>
         /// <param name="timestepno">time-step number</param>
-        protected virtual ITimestepInfo SaveToDatabase(ICollection<DGField> fieldsToSave, TimestepNumber timestepno, double t) {
+        protected virtual ITimestepInfo SaveFieldsToDatabase(ICollection<DGField> fieldsToSave, TimestepNumber timestepno, double t) {
             using (var ht = new FuncTrace()) {
 
                 if (DatabaseDriver.FsDriver == null)
@@ -1931,7 +1931,7 @@ namespace BoSSS.Solution {
 
 
         /// <summary>
-        /// called after <see cref="CreateEquationsAndSolvers"/> for time-dependent initialization routines (e.g. delayed BDF-timestepper <see cref="DelayedTimestepperInit"/>)
+        /// called after <see cref="CreateEquationsAndSolvers"/> for time-dependent initialization routines (e.g. delayed BDF-timestepper)
         /// </summary>
         /// <param name="phystime"></param>
         /// <param name="TimestepNo"></param>

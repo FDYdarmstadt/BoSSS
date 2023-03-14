@@ -533,13 +533,13 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 }
 
-                tsi = SaveToDatabase(restartIOFields, tsn, time);
+                tsi = SaveFieldsToDatabase(restartIOFields, tsn, time);
 
                 ls.Clear();
                 ls.Acc(1.0, lsBkUp);
 
             } else {
-                tsi = SaveToDatabase(restartFields[historyIndex - 1], tsn, time);
+                tsi = SaveFieldsToDatabase(restartFields[historyIndex - 1], tsn, time);
             }
 
             return tsi;

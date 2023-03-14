@@ -75,12 +75,12 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
 
 
-            InitMPI();
-            DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.RotatingCubeTest(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, Newton.GlobalizationOption.None, IncompressibleBcType.Pressure_Outlet);
-            BoSSS.Application.XNSE_Solver.Tests.RestartTests.RestartTest(true, LevelSetHandling.Coupled_Once, TimeSteppingScheme.ImplicitEuler, true, 3);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
-            NUnit.Framework.Assert.IsTrue(false, "remove me");
+            //InitMPI();
+            //DeleteOldPlotFiles();
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.RotatingCubeTest(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, Newton.GlobalizationOption.None, IncompressibleBcType.Pressure_Outlet);
+            //BoSSS.Application.XNSE_Solver.Tests.RestartTests.RestartTest(true, LevelSetHandling.Coupled_Once, TimeSteppingScheme.ImplicitEuler, true, 3);
+            ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
+            //NUnit.Framework.Assert.IsTrue(false, "remove me");
 
 
             /*
