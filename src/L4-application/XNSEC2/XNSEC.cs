@@ -32,14 +32,19 @@ namespace BoSSS.Application.XNSEC {
         // Main file
         //===========
         private static void Main(string[] args) {
-            //InitMPI();
-            //BoSSS.Application.XNSEC.NUnitTest.IncompressibleUnsteadyTaylorVortexTest();
-
-
             //-n 4 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep()"
 
-            //NUnitTest.XDG_PSEUDO1D_COMBUSTION_TEST();
-            ////NUnitTest.XDG_DROPLET_COMBUSTION_TEST();
+            //InitMPI();
+            //BoSSS.Application.XNSEC.NUnitTest.ViscosityJumpTest(2, 1, 0.0d, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Local);
+            //BoSSS.Application.XNSEC.NUnitTest.XDG_PSEUDO1D_EVAPORATION_TEST();
+
+            //DeleteOldPlotFiles();
+            //DeleteOldTextFiles();
+            //Debugger.Launch();
+
+            //NUnitTest.XDG_PSEUDO1D_EVAPORATION_TEST();
+            //NUnitTest.CavityNaturalConvection();
+            //NUnitTest.XDG_DROPLET_COMBUSTION_TEST();
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //BoSSS.Solution.Application<XNSEC_Control>._Main(new string[] { "--control", "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_pseudo2dCombustion_MixtureFraction()", "--delplt" }, false, delegate () {
@@ -49,16 +54,16 @@ namespace BoSSS.Application.XNSEC {
             //NUnit.Framework.Assert.AreEqual(true, false, "remove me");
 
             //-n 8 ./XNSEC.exe -c "cs:BoSSS.Application.XNSEC.FullNSEControlExamples.XDG_DropletCombustion()"
+            //System.Environment.Exit(111);
 
             bool MixtureFractionCalculation = false;
             try {
                 // peek at control file and select correct solver depending on controlfile type
                 // parse arguments
                 args = ArgsFromEnvironmentVars(args);
-                CommandLineOptions opt = new CommandLineOptions();
-                var parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-                bool argsParseSuccess;
-                argsParseSuccess = parser.ParseArguments(args, opt);
+                var CmdlineParseRes = Parser.Default.ParseArguments<CommandLineOptions>(args);
+                bool argsParseSuccess = !CmdlineParseRes.Errors.Any();
+                CommandLineOptions opt = CmdlineParseRes.Value;
 
                 if (!argsParseSuccess) {
                     System.Environment.Exit(-1);
@@ -85,6 +90,8 @@ namespace BoSSS.Application.XNSEC {
                     return p;
                 });
             }
+
+            //MPI.Wrappers.csMPI.Raw.mpiFinalize();
         }
 
         #region Operator configuration

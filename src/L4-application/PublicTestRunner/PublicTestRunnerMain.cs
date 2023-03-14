@@ -1,5 +1,4 @@
 ﻿using BoSSS.Application.BoSSSpad;
-using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using ilPSP.Tracing;
 using ilPSP.Utils;
@@ -134,18 +133,20 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.XNSFE_Solver.XNSFE),
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
-                        typeof(CNS.Program),
+                        typeof(CNS.CNSProgram),
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
                         typeof(BoSSS.Application.XdgNastyLevsetLocationTest.AllUpTest),
                         typeof(LTSTests.Program),
-                        typeof(BoSSS.Application.TutorialTests.AllUpTest), 
+                        typeof(BoSSS.Application.TutorialTests.AllUpTest),
                         typeof(BoSSS.Application.XNSEC.XNSEC),
+                        typeof(BoSSS.Application.ExternalBinding.CahnHilliardTest),
                         //typeof(BoSSS.Application.XNSE_ViscosityAgglomerationTest.XNSE_ViscosityAgglomerationTestMain),
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),
-                        typeof(HangingNodesTests.HangingNodesTestMain)
+                        typeof(HangingNodesTests.HangingNodesTestMain),
+                        typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain)
                     };
             }
         }
@@ -170,6 +171,7 @@ namespace PublicTestRunner {
                 return new (Type type, int NoOfProcs)[] {
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest), 8),
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 3),
                         (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4),
                         (typeof(MPITest.Program), 4),
                         //(typeof(HangingNodesTests.HangingNodesTestMain), 2), // fk, 29mar22: parallel runs executed directly in `release.yml` to allow serial-parallel comparison
@@ -749,11 +751,11 @@ namespace PublicTestRunner {
                 throw new NotSupportedException("runjobmanager subprogram must be executed serially");
             }
 
-            InteractiveShell.ReloadExecutionQueues();
+            BoSSSshell.ReloadExecutionQueues();
 
-            if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
+            if(ExecutionQueueNo >= BoSSSshell.ExecutionQueues.Count)
                 throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account (see configuration file ~/.BoSSS/etc/BatchProcessorConfig.json).");
-            BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
+            BatchProcessorClient bpc = BoSSSshell.ExecutionQueues[ExecutionQueueNo];
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
 
             FileStream ServerMutex;
@@ -799,7 +801,7 @@ namespace PublicTestRunner {
                 // phase 1: discover tests
                 // ===================================
 
-                InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime);
+                BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
                 // deployment of native libraries
                 string NativeOverride;
@@ -935,7 +937,7 @@ namespace PublicTestRunner {
                             }
 
 
-                            Console.WriteLine($"Successfully submitted {j.j.Name}.");
+                            Console.WriteLine($"Successfully submitted {j.j.Name}. \n");
                             AllOpenJobs.Add(j);
                         } catch(Exception e) {
                             Console.Error.WriteLine($"{e.GetType().Name} during job submission: {e.Message}.");
@@ -1255,7 +1257,7 @@ namespace PublicTestRunner {
                     }
                     int counter = 2;
                     final_jName = jName;
-                    while (InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(final_jName)) {
+                    while (BoSSSshell.WorkflowMgm.AllJobs.ContainsKey(final_jName)) {
                         string suffix = "_" + counter;
                         counter++;
                         if (jName.Length + suffix.Length > 127) {
@@ -1599,6 +1601,12 @@ namespace PublicTestRunner {
 
 
         static int Main(string[] args) {
+            Console.WriteLine($"received {args.Length} arguments.");
+            //for(int i = 0; i < args.Length; i++) {
+            //    Console.WriteLine($"  arg#{i}  >>>>>>{args[i]}<<<<<<");
+            //}
+
+
             try {
                 return _Main(args, new PublicTests());
             } catch(Exception e) {

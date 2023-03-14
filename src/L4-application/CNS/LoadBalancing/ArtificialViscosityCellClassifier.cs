@@ -16,6 +16,8 @@ limitations under the License.
 
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution;
+using BoSSS.Solution.LoadBalancing;
 using CNS.EquationSystem;
 using System;
 
@@ -26,13 +28,16 @@ namespace CNS.LoadBalancing {
     /// </summary>
     public class ArtificialViscosityCellClassifier : ICellClassifier {
 
-        public (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IProgram<CNSControl> program) {
+        public int[] ClassifyCells(IApplication _program) {
+
+            var program = _program as IProgram<CNSControl>;
+
             if (!program.Control.ActiveOperators.HasFlag(Operators.ArtificialViscosity)) {
                 throw new Exception(
                     "The selected cell classifier is only sensible for runs with artificial viscosity");
             }
 
-            int noOfClasses = 2;
+            //int noOfClasses = 2;
             int J = program.GridData.iLogicalCells.NoOfLocalUpdatedCells;
             int[] cellToPerformanceClassMap = new int[J];
 
@@ -53,7 +58,12 @@ namespace CNS.LoadBalancing {
                 }
             }
 
-            return (noOfClasses, cellToPerformanceClassMap);
+            return cellToPerformanceClassMap;
         }
+
+        public object Clone() {
+            return new ArtificialViscosityCellClassifier();
+        }
+ 
     }
 }

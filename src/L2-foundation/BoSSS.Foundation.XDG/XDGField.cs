@@ -934,8 +934,6 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-
-
         /// <summary>
         /// Add a constant to this field
         /// </summary>
@@ -1303,7 +1301,7 @@ namespace BoSSS.Foundation.XDG {
 
             //Console.WriteLine(this.Identification + ": available XDG quad orders: " + AvailOrders.ToConcatString("", ",", ";") + " using order: " + order2Pick);
 
-            var MMF = this.Basis.Tracker.GetXDGSpaceMetrics(spc, order2Pick).MassMatrixFactory;
+            var MMF = trk.GetXDGSpaceMetrics(spc, order2Pick).MassMatrixFactory;
             var MMblox = MMF.GetMassMatrixBlocks(this.Basis.NonX_Basis, spc);
 
 
@@ -1326,7 +1324,8 @@ namespace BoSSS.Foundation.XDG {
                 var MM_j = MMblox.MassMatrixBlocks.ExtractSubArrayShallow(new int[] { iSub, 0, 0 }, new int[] { iSub - 1, N - 1, N - 1 });
 
                 MM_j.GEMV(1.0, Coords, 0.0, tmp);
-                acc += Coords.InnerProd(tmp);
+                double res_j = Coords.InnerProd(tmp);
+                acc += res_j;
 
                 cmMask[jCell] = false; // mark that we have taken care of this cell
             }

@@ -177,9 +177,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             // parameters
             var parameterFields = Operator.InvokeParameterFactory(CurrentState.Fields);
             Parameters = new List<DGField>();
+            Console.WriteLine(parameterFields.Count());
             foreach (var f in parameterFields) {
                 this.Parameters.Add(f);
-                base.RegisterField(f);
+                if(f != null) 
+                    // in some solvers, NULL parameters are present,
+                    // i.e. the parameter is specified by the operator,
+                    // but it is not needed in any equation component and therefore set to null.
+                    base.RegisterField(f);
             }            
 
         }
@@ -288,7 +293,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
 
             if (L == null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -545,7 +550,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
         /// status after the grid has been re-distributed.
         /// </summary>
-        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             if (Timestepping != null)   // in case of startUp backup
                 Timestepping.DataBackupBeforeBalancing(L);
             CurrentStateVector = null;

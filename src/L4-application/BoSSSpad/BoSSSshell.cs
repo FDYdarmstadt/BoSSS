@@ -5,9 +5,11 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Gnuplot;
 using BoSSS.Solution.GridImport;
 using ilPSP;
+using ilPSP.Connectors.Matlab;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
+using log4net;
 using log4net.Appender;
 using log4net.Config;
 using log4net.Layout;
@@ -18,6 +20,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -89,7 +92,7 @@ namespace BoSSS.Application.BoSSSpad {
                     "{0} occurred with message '{1}' while loading the databases.",
                      e.GetType(),
                      e.Message);
-                InteractiveShell.LastError = e;
+                //InteractiveShell.LastError = e;
             }
             InitTraceFile();
             ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" }; // try to log everyting, so we might find something useful
@@ -122,6 +125,24 @@ namespace BoSSS.Application.BoSSSpad {
             AddEnumFormatter<Job>();
 
             //AddTableFormatter();
+
+            try {
+                using (var pipeServer = new NamedPipeServerStream(BoSSSpadMain.BoSSSpadInitDone_Pipe, PipeDirection.InOut)) {
+                    using (var cts = new CancellationTokenSource()) {
+                        var t = pipeServer.WaitForConnectionAsync(cts.Token);
+
+                        bool timeot = t.Wait(1000);
+                        if (timeot == false) {
+                            //Console.WriteLine("timeout");
+                            cts.Cancel();
+                        } else {
+                            pipeServer.WriteByte(1);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                Console.Error.WriteLine($"{e} during startup synchronization: {e.Message}");
+            }
         }
 
         /// <summary>
@@ -361,14 +382,14 @@ namespace BoSSS.Application.BoSSSpad {
             Process.Start(dbeXmlPath);
         }
 
-        /// <summary>
-        /// Saves the current interactive session as a worksheet that can be
-        /// loaded by the worksheet edition of the BoSSSPad
-        /// </summary>
-        /// <param name="path"></param>
-        public static void SaveSessionAsWorksheet(string path) {
-            ReadEvalPrintLoop.SaveSessionAsWorksheet(path);
-        }
+        ///// <summary>
+        ///// Saves the current interactive session as a worksheet that can be
+        ///// loaded by the worksheet edition of the BoSSSPad
+        ///// </summary>
+        ///// <param name="path"></param>
+        //public static void SaveSessionAsWorksheet(string path) {
+        //    ReadEvalPrintLoop.SaveSessionAsWorksheet(path);
+        //}
 
         /// <summary>
         /// Clears the console window.
@@ -582,25 +603,24 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         static public IDatabaseInfo OpenOrCreateDatabase(string dbDir) {
 
-            return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, true);
+            return OpenOrCreateDatabase_Impl(dbDir, true);
         }
 
         /// <summary>
         /// Opens an existing database at a specific path
         /// </summary>
         static public IDatabaseInfo OpenDatabase(string dbDir) {
-            return InteractiveShell.OpenOrCreateDatabase_Impl(dbDir, false);
+            return OpenOrCreateDatabase_Impl(dbDir, false);
         }
 
-        /*
-        static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
-            foreach (var existing_dbi in InteractiveShell.databases) {
+        internal static IDatabaseInfo OpenOrCreateDatabase_Impl(string dbDir, bool allowCreation) {
+            foreach (var existing_dbi in BoSSSshell.databases) {
                 if (existing_dbi.PathMatch(dbDir)) {
                     return existing_dbi;
                 }
             }
-        
-            
+
+
             if (Directory.Exists(dbDir)) {
                 if (!DatabaseUtils.IsValidBoSSSDatabase(dbDir)) {
                     throw new ArgumentException("Directory '" + dbDir + "' exists, but is not a valid BoSSS database.");
@@ -626,7 +646,6 @@ namespace BoSSS.Application.BoSSSpad {
 
             return dbi;
         }
-        */
 
         static internal Document CurrentDoc = null;
 
@@ -995,7 +1014,7 @@ namespace BoSSS.Application.BoSSSpad {
                 string overrideName = BatchProcessorConfig.GetDefaultBatchnameForProject(wmg.CurrentProject);
                 if(overrideName != null) {
                     foreach(var q in executionQueues) {
-                        if(q.Name.Equals(overrideName, StringComparison.InvariantCultureIgnoreCase)) {
+                        if(q.Name?.Equals(overrideName, StringComparison.InvariantCultureIgnoreCase) ?? false) {
                             return q;
                         }
                     }
@@ -1048,5 +1067,63 @@ namespace BoSSS.Application.BoSSSpad {
 
             BatchProcessorConfig.SaveConfiguration(conf);
         }
+
+        /// <summary>
+        /// Prints a name of lots of BoSSS assemblies to the console.
+        /// The presence of this method enforces the compiler to link all solver assemblies, 
+        /// e.g. <see cref="NSE_SIMPLE.NSE_SIMPLEMain"/>, to BoSSSpad.
+        ///
+        /// Without this method, the compiler would prune unused dependencies; in consequence, worksheets which use e.g. <see cref="NSE_SIMPLE.NSE_SIMPLEMain"/>
+        /// will not work unless the reference the solver assembly directly.
+        /// </summary>
+        public static void EnforceSolverLinkage() {
+
+            var AllSolvers = new Type[] {
+                typeof(ilPSP.Environment),
+                typeof(ilPSP.LinSolvers.SimpleSolversInterface),
+                typeof(BatchmodeConnector), // Do it this cause connector is not referenced anywhere else, i.e. the assembly will often be missing otherwise
+                typeof(NUnit.Framework.Assert),
+                typeof(BoSSS.PlotGenerator.PlotApplication),
+                typeof(BoSSS.Platform.Utils.Geom.BoundingBox),
+                typeof(BoSSS.Foundation.Basis),
+                typeof(BoSSS.Foundation.XDG.XDGField),
+                typeof(BoSSS.Foundation.Grid.Classic.Grid1D),
+                typeof(BoSSS.Solution.Application),
+                typeof(BoSSS.Solution.Gnuplot.Gnuplot),
+                typeof(BoSSS.Solution.GridImport.Cgns),
+                typeof(BoSSS.Solution.Statistic.CellLocalization),
+                typeof(BoSSS.Solution.Tecplot.Tecplot),
+                typeof(BoSSS.Solution.ASCIIExport.CurveExportDriver),
+                typeof(BoSSS.Solution.AdvancedSolvers.MultigridOperator),
+                typeof(BoSSS.Solution.XNSECommon.CurvatureAlgorithms),
+                typeof(BoSSS.Solution.EnergyCommon.Dissipation),
+                typeof(BoSSS.Solution.XheatCommon.AuxiliaryHeatFlux_Identity),
+                typeof(BoSSS.Solution.XdgTimestepping.LevelSetHandling),
+                typeof(BoSSS.Solution.LevelSetTools.ContinuityProjection),
+                typeof(BoSSS.Solution.CompressibleFlowCommon.ShockFinding.InflectionPointFinder),
+                typeof(BoSSSpad.BoSSSpadMain),
+                typeof(MiniBatchProcessor.Client),
+                typeof(System.Numerics.Complex),
+                typeof(MathNet.Numerics.Complex32),
+                typeof(CNS.CNSProgram),
+                typeof(XNSE_Solver.XNSE),
+                typeof(BoSSS.Application.SipPoisson.SipPoissonMain),
+                typeof(Rheology.Rheology),
+                typeof(XNSERO_Solver.XNSERO),
+                typeof(BoSSS.Foundation.SpecFEM.SpecFemField),
+                typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main),
+                typeof(NSE_SIMPLE.NSE_SIMPLEMain),
+                typeof(XNSEC.XNSEC),
+                typeof(GridGen.GridGenMain)
+            };
+
+
+            var AllAssemblies = AllSolvers.Select(x => x.Assembly).ToArray();
+
+            foreach(var a in AllAssemblies) {
+                Console.WriteLine(a);
+            }
+        }
+
     }
 }

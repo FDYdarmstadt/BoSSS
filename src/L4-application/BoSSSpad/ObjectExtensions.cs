@@ -29,17 +29,7 @@ namespace BoSSS.Application.BoSSSpad {
     /// </summary>
     public static class ObjectExtensions {
 
-        /// <summary>
-        /// Gives a detailed summary of the structure of an object.
-        /// </summary>
-        /// <param name="obj">The object to be described</param>
-        /// <returns>
-        /// A string representation of the outline of <paramref name="obj"/>.
-        /// </returns>
-        /// <seealso cref="Mono.CSharp.InteractiveBase.Describe"/>
-        public static string Describe(this object obj) {
-            return Mono.CSharp.InteractiveBase.Describe(obj);
-        }
+       
 
         /// <summary>
         /// Prints a summary of the public information about an object.

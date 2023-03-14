@@ -183,7 +183,7 @@ namespace BoSSS.Application.CDG_ProjectionTest {
 
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
 
         }
 

@@ -222,7 +222,7 @@ namespace CutCellQuadrature {
         protected override void SetInitial(double t) {
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
         }
 
 

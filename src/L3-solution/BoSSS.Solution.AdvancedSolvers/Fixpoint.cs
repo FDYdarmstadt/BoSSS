@@ -152,6 +152,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         OnIterationCallback(NoOfIterations, Solution.CloneAs(), Residual.CloneAs(), this.CurrentLin);
                     }
 
+                    base.NoOfNonlinearIter = NoOfIterations;
                     return success;
                 }
             }

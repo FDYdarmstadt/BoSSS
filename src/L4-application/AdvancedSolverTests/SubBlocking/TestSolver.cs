@@ -183,7 +183,7 @@ namespace AdvancedSolverTests {
         XSpatialOperatorMk2 Op;
         int m_quadOrder;
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             m_quadOrder = u1.Basis.Degree * 2;
 
             

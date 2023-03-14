@@ -3,8 +3,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using BoSSS.Foundation.IO;
+using BoSSS.Solution.Gnuplot;
 using ilPSP;
 using ilPSP.Utils;
+//using static BoSSS.Solution.Gnuplot.Plot2Ddata;
+using NUnit.Framework;
+
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -19,7 +24,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="SessionDirectory"></param>
         public SessionMemtrace(DirectoryInfo SessionDirectory) {
-
             string FilePattern = $"memory.*.txt";
 
             FileInfo[] AllFiles = SessionDirectory.GetFiles(FilePattern);
@@ -143,23 +147,27 @@ namespace BoSSS.Application.BoSSSpad {
         /// Reports the largest memory-allocating routines in descending order
         /// </summary>
         public (int TimelineIndex, double Megs, string Name)[] ReportLargestAllocators() {
+            return ReportLargest(+1);
+        }
 
+        private (int TimelineIndex, double Megs, string Name)[] ReportLargest(double sign) {
             var ret = new List<(int TimelineIndex, double Megs, string Name)>();
 
             var _TotalMemMegs = TotalMemMegs;
             var timelNames = base.GetTimeLine();
             double Scale = ((int.MaxValue / 16) / Math.Max(_TotalMemMegs.Max(), BLAS.MachineEps));
+            Scale *= sign;
 
             // calc allocation difference
             double PrevMegs = 0.0;
-            for(int iLine = 0; iLine < base.NoOfTimeEntries; iLine++) {
+            for (int iLine = 0; iLine < base.NoOfTimeEntries; iLine++) {
                 ret.Add((iLine, _TotalMemMegs[iLine] - PrevMegs, timelNames[iLine]));
                 PrevMegs = _TotalMemMegs[iLine];
             }
 
 
             // sort
-            int ComparerFunc(ValueTuple<int,double,string> A, ValueTuple<int, double, string> B) {
+            int ComparerFunc(ValueTuple<int, double, string> A, ValueTuple<int, double, string> B) {
 
                 double Megs_A = A.Item2;
                 double Megs_B = B.Item2;
@@ -170,6 +178,106 @@ namespace BoSSS.Application.BoSSSpad {
 
             // return
             return ret.ToArray();
+        }
+
+
+        /// <summary>
+        /// Reports the largest memory-freeing routines in descending order
+        /// </summary>
+        public (int TimelineIndex, double Megs, string Name)[] ReportLargestDeallocators() {
+
+            return ReportLargest(-1);
+        }
+
+        /// <summary>
+        /// Plotting of 
+        /// minimum, average and maximum memory allocations over all MPI ranks over time
+        /// </summary>
+        public Plot2Ddata GetMinAvgMaxMemPlot() {
+            var ret = new Plot2Ddata();
+            int L = NoOfTimeEntries;
+
+
+            ret.AddDataGroup(new Plot2Ddata.XYvalues(
+                $"Min Mem [MegB] at {MPIsize} cores",
+                L.ForLoop(i => (double)i),
+                MinimumMemMegs),
+                new PlotFormat(Style: Styles.Lines, lineColor: LineColors.Blue));
+
+            ret.AddDataGroup(new Plot2Ddata.XYvalues(
+                $"Max Mem [MegB] at {MPIsize} cores",
+                L.ForLoop(i => (double)i),
+                MaximumMemMeg),
+                new PlotFormat(Style: Styles.Lines, lineColor: LineColors.Red));
+
+            ret.AddDataGroup(new Plot2Ddata.XYvalues(
+                $"Avg Mem [MegB] at {MPIsize} cores",
+                L.ForLoop(i => (double)i),
+                AverageMemMeg),
+                new PlotFormat(Style: Styles.Lines, lineColor: LineColors.Black));
+
+            ret.Title = "Memory of session ";
+
+
+            return ret;
+        }
+
+        /// <summary>
+        /// total memory (aka. sum) over all MPI ranks over time
+        /// </summary>
+        public Plot2Ddata GetMPItotalMemory() {
+            
+            int L = NoOfTimeEntries;
+
+            var ret = new Plot2Ddata();
+
+            ret.AddDataGroup(new Plot2Ddata.XYvalues(
+                $"Tot Mem [MegB] at {MPIsize} cores",
+                L.ForLoop(i => (double)i),
+                TotalMemMegs));
+
+            ret.Title = "Total memory of session ";
+
+
+            return ret;
+        }
+
+        /// <summary>
+        /// writes a CSV
+        /// </summary>
+        public void WriteCombinedRanksOutfile(string path) {
+            using (var stw = new StreamWriter(path)) {
+
+                long PrevLine = 0;
+                foreach (var e in this.CombinedRanksS) {
+                    long TotMem = e.GetMPIMem(out long min, out long max, out long avg);
+
+                    stw.Write(TotMem);
+                    stw.Write("\t");
+                    stw.Write(min);
+                    stw.Write("\t");
+                    stw.Write(max);
+                    stw.Write("\t");
+                    stw.Write(avg);
+                    stw.Write("\t");
+
+                    long diff = TotMem - PrevLine;
+                    PrevLine = TotMem;
+                    stw.Write(diff);
+                    stw.Write("\t");
+
+                    stw.Write(Math.Round(diff / 1024.0 / 1024.0));
+                    stw.Write("\t");
+
+
+                    stw.Write(e.Name);
+                    stw.WriteLine();
+                }
+
+
+                stw.Flush();
+                stw.Close();
+            }
         }
 
     }
@@ -421,7 +529,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// memory tracing record
         /// </summary>
-        internal protected class myRecord : IComparable<myRecord>, IEquatable<myRecord> {
+        internal protected class myRecord : IComparable<myRecord>, IEquatable<myRecord>, ICloneable {
 
             /// <summary>
             /// parsing from single line in text file
@@ -578,6 +686,27 @@ namespace BoSSS.Application.BoSSSpad {
             public override int GetHashCode() {
                 return this.line;
             }
+
+            /// <summary>
+            /// non-shallow copy
+            /// </summary>
+            public object Clone() {
+                var r = new myRecord() {
+                    line = this.line,
+                    Mem = this.Mem,
+                    Name = this.Name,
+                };
+
+                foreach (var p in this.peerRun) {
+                    r.peerRun.Add(p.CloneAs());
+                }
+
+                foreach (var bro in this.mpiBrothers) {
+                    r.mpiBrothers.Add(bro.CloneAs());
+                }
+
+                return r;
+            }
         }
 
 
@@ -601,6 +730,10 @@ namespace BoSSS.Application.BoSSSpad {
             return ret;
         }
 
+        /// <summary>
+        /// Reference verions from Wikipedia;
+        /// Causes stack overflow for larger data sets
+        /// </summary>
         internal static myRecord[] BackTrack(int[,] c, myRecord[] s1, myRecord[] s2, int i, int j, bool RunOrRankCombine) {
             if (i == 0 || j == 0) {
                 return new myRecord[0];
@@ -616,6 +749,46 @@ namespace BoSSS.Application.BoSSSpad {
             } else {
                 return BackTrack(c, s1, s2, i - 1, j, RunOrRankCombine);
             }
+  
+        }
+
+        /// <summary>
+        /// Non-recursive version
+        /// </summary>
+        internal static myRecord[] BackTrackNonRecursive(int[,] matrix, myRecord[] s1, myRecord[] s2, bool RunOrRankCombine) {
+            int i = s1.Length;// self.characters.count
+            int j = s2.Length;// other.characters.count
+           
+
+            var lcs = new List<myRecord>();
+
+            while (i > 0 && j > 0) {
+                if (matrix[i,j] == matrix[i,j - 1]) {
+                    // Indicates propagation without change: no new char was added to lcs.
+                    j -= 1;
+                } else if (matrix[i,j] == matrix[i - 1,j]) {
+                    // Indicates propagation without change: no new char was added to lcs.
+                    i -= 1;
+                } else {
+                    // Value on the left and above are different than current cell.
+                    // This means 1 was added to lcs length.
+
+                    Debug.Assert(s1[i - 1].Equals(s2[j - 1]));
+                    if (!RunOrRankCombine)
+                        s1[i - 1].AddMpiBrother(s2[j - 1]); // 
+                    else
+                        s1[i - 1].AddPeerRun(s2[j - 1]); // 
+
+                    i -= 1;
+                    j -= 1;
+
+                    lcs.Add(s1[i]);
+                }
+            }
+
+            lcs.Reverse();
+
+            return lcs.ToArray(); 
         }
 
         internal static myRecord[] LongestCommonSubsequence(IEnumerable<myRecord> a, IEnumerable<myRecord> b, bool RunOrRankCombine) {
@@ -623,10 +796,24 @@ namespace BoSSS.Application.BoSSSpad {
             myRecord[] _b = b.ToArray();
 
 
+            myRecord[] _aC = null;
+            myRecord[] _bC = null;
 
+            if(_a.Length*_b.Length < 400*400) {
+                _aC = _a.Select(e => e.CloneAs()).ToArray();
+                _bC = _b.Select(e => e.CloneAs()).ToArray();
+            }
 
             var aa = LongestCommonSubsequence(_a.ToArray(), _b.ToArray());
-            var r = BackTrack(aa, _a, _b, _a.Length, _b.Length, RunOrRankCombine);
+
+
+            var r = BackTrackNonRecursive(aa, _a, _b, RunOrRankCombine);
+
+            if (_aC != null && _bC != null) {
+                var r1 = BackTrack(aa, _aC, _bC, _aC.Length, _bC.Length, RunOrRankCombine);
+                if (!r1.ListEquals(r))
+                    throw new ApplicationException("mismatch between backtracking implementations");
+            }
 
             return r;
         }
@@ -634,7 +821,9 @@ namespace BoSSS.Application.BoSSSpad {
         internal static myRecord[] LongestCommonSubsequence(IEnumerable<myRecord>[] lists, bool RunOrRankCombine) {
             myRecord[] ret = lists[0].ToArray();
             for (int i = 1; i < lists.Length; i++) {
+                //Console.Write($"combining {i} of {lists.Length} ...");
                 ret = LongestCommonSubsequence(ret, lists[i], RunOrRankCombine);
+                //Console.WriteLine("done.");
             }
             return ret;
         }

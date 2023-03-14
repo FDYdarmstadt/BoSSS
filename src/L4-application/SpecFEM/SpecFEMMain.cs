@@ -41,7 +41,7 @@ namespace BoSSS.Application.SpecFEM {
             //});
             BoSSS.Solution.Application.InitMPI();
             var AUT = new BoSSS.Application.SpecFEM.AllUpTest();
-            AUT.AllUp(false, false);
+            AUT.AllUp(false, false, 1);
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
@@ -103,15 +103,17 @@ namespace BoSSS.Application.SpecFEM {
         */
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
         }
 
         internal bool Passed = false;
 
+        internal int NodesPerEdge = 4;
+
         protected override void CreateFields() {
             
             
-            spec_basis = new SpecFemBasis((GridData) this.GridData, 4);
+            spec_basis = new SpecFemBasis((GridData) this.GridData, NodesPerEdge);
             var dg_basis = spec_basis.ContainingDGBasis;
             //var dg_basis = new Basis(this.GridData, 2);
 
@@ -185,15 +187,28 @@ namespace BoSSS.Application.SpecFEM {
             
             Console.WriteLine("L2 Error: " + L2Err);
             Console.WriteLine("L2 Norm of [[u]]: " + L2Jump);
-            if ((L2Err < 1.0e-10 || ((GridCommons)this.Grid).PeriodicTrafo.Count > 0) && L2Jump < 1.0e-10) {
-                Console.WriteLine("Test PASSED");
-                Passed = true;
-            } else {
-                Console.WriteLine("Test FAILED");
-                Passed = false;
-            }
 
             Passed = true;
+            if (L2Jump >= 1.0e-10) {
+                Passed = false;
+
+                
+            } else {
+                if(((GridCommons)this.Grid).PeriodicTrafo.Count <= 0
+                    && NodesPerEdge >= 4) {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // do not check projection error if
+                    // - periodic b.c. are used (projected data is non-periodic)
+                    // - NodesPerEdge is less than 4, i.e. degree is less than 3
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+                    if (L2Err >= 1.0e-10)
+                        Passed = false;
+                }
+            }
+
+            Console.WriteLine($"Test Passed? {Passed}");
                         
             base.TerminationKey = true;
             return 0.0;

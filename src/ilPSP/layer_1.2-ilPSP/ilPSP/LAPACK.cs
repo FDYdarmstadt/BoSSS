@@ -137,7 +137,7 @@ namespace ilPSP.Utils {
             int _UPLO = UPLO;
 
             unsafe {
-                fixed (double* pa = &A[0]) {
+                fixed (double* pa = A) {
                     DPOTRF_(ref _UPLO, ref N, pa, ref LDA, out INFO);
                 }
             }
@@ -166,7 +166,7 @@ namespace ilPSP.Utils {
             int _UPLO = UPLO;
 
             unsafe {
-                fixed (double* pa = &A[0]) {
+                fixed (double* pa = A) {
                     DPOTRI_(ref _UPLO, ref N, pa, ref LDA, out INFO);
                 }
             }
@@ -200,7 +200,7 @@ namespace ilPSP.Utils {
 
 
             unsafe {
-                fixed (double* pa = &A[0]) {
+                fixed (double* pa = A) {
                     DTRTRI_(ref _UPLO, ref _DIAG, ref N, pa, ref LDA, out INFO);
                 }
             }
@@ -344,7 +344,7 @@ namespace ilPSP.Utils {
                     B.Length == Math.Max(M, N) * NRHS,
                     "B must be a vector of length max(M,N) * NRHS");
                 unsafe {
-                    fixed (double* pA = &A[0], pB = &B[0]) {
+                    fixed (double* pA = A, pB = B) {
                         // In order to make results deterministic, the start address of
                         // A and B must not be different on different calls. For now,
                         // we ensure this by allocating memory by hand (thus, we avoid
@@ -418,7 +418,7 @@ namespace ilPSP.Utils {
                 // large that the stack overflows!
                 LWORK = (int)*pLENGTH;
                 double[] work = new double[LWORK];
-                fixed (double* pWORK = &work[0]) {
+                fixed (double* pWORK = work) {
                     dgelsy(ref M, ref N, ref NRHS, (double*)pA, ref M, (double*)pB, ref LDB, JPVT, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
                 }
 
@@ -433,8 +433,8 @@ namespace ilPSP.Utils {
         /// </summary>
         public void DGELSY(ref int M, ref int N, ref int NRHS, double[] A, ref int LDA, double[] B, ref int LDB, int[] JPVT, ref double RCOND, out int RANK, double[] WORK, ref int LWORK, out int INFO) {
             unsafe {
-                fixed (double* pA = &A[0], pB = &B[0], pWORK = &WORK[0]) {
-                    fixed (int* pJPVT = &JPVT[0]) {
+                fixed (double* pA = A, pB = B, pWORK = WORK) {
+                    fixed (int* pJPVT = JPVT) {
                         dgelsy(ref M, ref N, ref NRHS, pA, ref LDA, pB, ref LDB, pJPVT, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
                     }
                 }
@@ -498,7 +498,7 @@ namespace ilPSP.Utils {
                     B.Length == Math.Max(M, N) * NRHS,
                     "B must be a vector of length max(M,N) * NRHS");
 
-                fixed (double* pA = &A[0], pB = &B[0]) {
+                fixed (double* pA = A, pB = B) {
                     // In order to make results deterministic, the start address of
                     // A and B must not be different on different calls. For now,
                     // we ensure this by allocating memory by hand (thus, we avoid
@@ -527,7 +527,7 @@ namespace ilPSP.Utils {
                     // large that the stack overflows!
                     LWORK = (int)*pLENGTH;
                     double[] work = new double[LWORK];
-                    fixed (double* pWORK = &work[0]) {
+                    fixed (double* pWORK = work) {
                         dgelss(ref M, ref N, ref NRHS, (double*)_pA, ref M, (double*)_pB, ref LDB, pS, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
                     }
 
@@ -549,7 +549,7 @@ namespace ilPSP.Utils {
         /// </summary>
         public void DGELSS(ref int M, ref int N, ref int NRHS, double[] A, ref int LDA, double[] B, ref int LDB, double[] S, ref double RCOND, out int RANK, double[] WORK, ref int LWORK, out int INFO) {
             unsafe {
-                fixed (double* pA = &A[0], pB = &B[0], pS = &S[0], pWORK = &WORK[0]) {
+                fixed (double* pA = A, pB = B, pS = S, pWORK = WORK) {
                     dgelss(ref M, ref N, ref NRHS, pA, ref LDA, pB, ref LDB, pS, ref RCOND, out RANK, pWORK, ref LWORK, out INFO);
                 }
             }
@@ -616,7 +616,7 @@ namespace ilPSP.Utils {
             double[] work = new double[LWORK];
 
             // Actual computation
-            fixed (double* pWORK = &work[0]) {
+            fixed (double* pWORK = work) {
                 dgeqp3(ref M, ref N, A, ref M, JPVT, TAU, pWORK, ref LWORK, out INFO);
             }
 
@@ -686,7 +686,7 @@ namespace ilPSP.Utils {
             double[] work = new double[LWORK];
 
             // Actual computation
-            fixed (double* pWORK = &work[0]) {
+            fixed (double* pWORK = work) {
                 dgeqrf(ref M, ref N, A, ref M, TAU, pWORK, ref LWORK, out INFO);
             }
 
@@ -756,7 +756,7 @@ namespace ilPSP.Utils {
             double[] work = new double[LWORK];
 
             // Actual computation
-            fixed (double* pWORK = &work[0]) {
+            fixed (double* pWORK = work) {
                 dorgqr(ref M, ref N, ref K, A, ref LDA, TAU, pWORK, ref LWORK, out INFO);
             }
 

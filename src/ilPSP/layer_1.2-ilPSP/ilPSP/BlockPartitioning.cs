@@ -44,7 +44,7 @@ namespace ilPSP {
 
             int[] _BlockType = new int[LocalNoOfBlocks];
             long firstBlock = othrPart.FirstBlock;
-            int NoOfBlockTypes = 0;
+            int NoOfBlockTypes = -1;
             for(int iBlockLoc = 0; iBlockLoc < LocalNoOfBlocks; iBlockLoc++) {
                 long globBlock = iBlockLoc + firstBlock;
                 int blockType = othrPart.GetBlockType(globBlock);
@@ -609,6 +609,14 @@ namespace ilPSP {
             }
         }
 
+        public override String ToString() {
+            string st = "";
+            var ListOfProperties = this.GetType().GetProperties();
+            foreach (var Prop in ListOfProperties)
+                st += $"{Prop.Name}: {Prop.GetValue(this)} ({Prop.PropertyType}) \n";
+
+            return st;
+        }
         public bool AllBlockSizesEqual {
             get {
                 Debug.Assert(m_FrameBlockSize != 0);

@@ -34,7 +34,6 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
-using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using System.Collections.Generic;
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -65,6 +64,18 @@ namespace BoSSS.Application.XNSE_Solver {
             // Tritt nur mit 4 cores auf !!!
             // Fixed: Bei AMR wird LevelsetTracker "genullt", dieser wurde bis dato noch vollständig an die Flüsse übergeben
             var C = Rotating_Cube(4, 30, 2, true);
+
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
+        [Test]
+        static public void RotCube_DomainDecompoitionError() {
+            // error occurs only with 3 processors and AMR true
+
+            var C = HardcodedControl.RotCubeDomainDecompoitionError();
 
             using (var solver = new XNSE()) {
                 solver.Init(C);
@@ -126,18 +137,21 @@ namespace BoSSS.Application.XNSE_Solver {
             // This test simulates bad initial distribution of void cells over ranks
             // which would lead to an error within Schwarz solver
             // because of voidcells Schwarzblocks would be empty
-            // Remedy: force repartitioning at startup and fallback in schwarz if only some blocks are empty ...
+            // Remedy: force repartitioning at startup and fallback in schwarz if only some blocks are empty 
             var C = PartlyCoverdDomain(2, 50, 2, false, true, false);
             C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
                 TargetBlockSize = 1000
             };
             C.GridPartType = GridPartType.clusterHilbert;
-            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = true;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = 0;
+
+            //this test takes too much time with 3 procs and exceed the 4 hr limit.
+            int NoOfCores = ilPSP.Environment.MPIEnv.MPI_Size;
+
+            C.NoOfTimesteps = 50;
             using (var solver = new XNSE()) {
                 solver.Init(C);
                 solver.RunSolverMode();
@@ -150,13 +164,15 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             
             BoSSS.Solution.Application.InitMPI();
+            //Debugger.Launch();
             //ParallelRisingDroplet(1);
             //ParallelRisingDroplet(2);
             //ParallelRisingDroplet(3);
-            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.BadInitiallyDistributionTest(true);
+            //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.BadInitiallyDistributionTest(true);
             //BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.RotCube_OrderNotSupportedInHMF();
+            BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest.EmptyMaskInSchwarz();
+            BoSSS.Solution.Application.FinalizeMPI();            
 
-            BoSSS.Solution.Application.FinalizeMPI();
         }
 
 
@@ -682,7 +698,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = useLoadBal;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            //C.DynamicLoadBalancing_CellCostEstimators = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = 0;
 
             // Timestepping

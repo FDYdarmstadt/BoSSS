@@ -563,6 +563,7 @@ namespace BoSSS.Foundation {
         /// <param name="j">a local cell index</param>
         /// <returns>%</returns>
         virtual public double GetMeanValue(int j) {
+            // TODO incorporate scaling factor
             if (j < 0 || j >= Basis.GridDat.iLogicalCells.Count)
                 throw new ArgumentException($"cell index out of range: got {j}, expecting between 0 and {Basis.GridDat.iLogicalCells.Count}, MPI rank {Basis.GridDat.MpiRank}.", "j");
 

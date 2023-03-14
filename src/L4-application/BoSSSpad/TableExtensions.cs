@@ -785,6 +785,59 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Useful for quick human readable table export
+        /// </summary>
+        /// <param name="table"></param>
+        /// <param name="filename"></param>
+        /// <param name="path"></param>
+        public static void ToHTMLFile(this DataTable table, string filename, string path = null) {
+            string fullPath;
+            if (path == null) {
+                fullPath = Path.Combine(Path.GetFullPath(Directory.GetCurrentDirectory()), filename);
+            } else {
+                fullPath = Path.Combine(Path.GetFullPath(path), filename);
+            }
+
+            File.WriteAllText(fullPath, ConvertDataTableToHTML(table));
+        }
+
+        private static string ConvertDataTableToHTML(DataTable dt) {
+            if (dt.Rows.Count == 0) return ""; // enter code here
+
+            StringBuilder builder = new StringBuilder();
+            builder.Append("<html>");
+            builder.Append("<head>");
+            builder.Append("<title>");
+            builder.Append("Druckspalt Messwerte");
+            builder.Append("</title>");
+            builder.Append("</head>");
+            builder.Append("<body>");
+            builder.Append("<table border='1px' cellpadding='5' cellspacing='0' ");
+            builder.Append("style='border: solid 1px Silver; font-size: x-small;'>");
+            builder.Append("<tr align='left' valign='top'>");
+            foreach (DataColumn c in dt.Columns) {
+                builder.Append("<td align='left' valign='top'><b>");
+                builder.Append(System.Web.HttpUtility.HtmlEncode(c.ColumnName));
+                builder.Append("</b></td>");
+            }
+            builder.Append("</tr>");
+            foreach (DataRow r in dt.Rows) {
+                builder.Append("<tr align='left' valign='top'>");
+                foreach (DataColumn c in dt.Columns) {
+                    builder.Append("<td align='left' valign='top'>");
+                    builder.Append(System.Web.HttpUtility.HtmlEncode(r[c.ColumnName]));
+                    builder.Append("</td>");
+                }
+                builder.Append("</tr>");
+            }
+            builder.Append("</table>");
+            builder.Append("</body>");
+            builder.Append("</html>");
+
+            return builder.ToString();
+        }
+
+        /// <summary>
         /// Prints table <paramref name="table"/> to a text-writer <paramref name="txt"/>.
         /// </summary>
         public static void WriteCSVToStream(this DataTable table, TextWriter txt,

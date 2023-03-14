@@ -32,6 +32,7 @@ using System.Collections;
 using BoSSS.Solution.Utils;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
+using BoSSS.Solution.LoadBalancing;
 
 namespace BoSSS.Solution.Control {
 
@@ -980,7 +981,7 @@ namespace BoSSS.Solution.Control {
         /// Activate/Deactivate memory allocation logging
         /// </summary>
         [DataMember]
-        public ilPSP.Tracing.MemoryInstrumentationLevel MemoryInstrumentationLevel = ilPSP.Tracing.MemoryInstrumentationLevel.OnlyGcTotalMemory;
+        public ilPSP.Tracing.MemoryInstrumentationLevel MemoryInstrumentationLevel = ilPSP.Tracing.MemoryInstrumentationLevel.None;
 
         /// <summary>
         /// File system path to database.
@@ -1045,9 +1046,8 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
-        [JsonIgnore]
-        public List<Func<IApplication, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
-            new List<Func<IApplication, int, ICellCostEstimator>>();
+        [DataMember]
+        public List<ICellCostEstimator> DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
@@ -1082,9 +1082,6 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public int AMR_startUpSweeps = 1;
-
-
-
 
         /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
@@ -1165,7 +1162,7 @@ namespace BoSSS.Solution.Control {
         /// Used for control objects in work-flow management, 
         /// re-loads  an object from memory.
         /// </summary>
-        public static AppControl Deserialize(string Str, SerializationBinder binder) {
+        public static AppControl Deserialize(string Str, Newtonsoft.Json.Serialization.ISerializationBinder binder) {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
@@ -1180,9 +1177,9 @@ namespace BoSSS.Solution.Control {
                 Type ControlObjectType = Type.GetType(typeName);
 
                 if(binder != null)
-                    formatter.Binder = binder;
+                    formatter.SerializationBinder = binder;
                 else
-                    formatter.Binder = new KnownTypesBinder(ControlObjectType);
+                    formatter.SerializationBinder = new KnownTypesBinder(ControlObjectType);
 
 
                 using(JsonReader reader = new JsonTextReader(tr)) {
@@ -1208,7 +1205,7 @@ namespace BoSSS.Solution.Control {
             */
         }
 
-        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+        class KnownTypesBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {
 
             internal KnownTypesBinder(Type entry) {
 

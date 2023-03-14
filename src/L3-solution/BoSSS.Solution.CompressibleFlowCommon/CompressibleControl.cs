@@ -20,6 +20,7 @@ using BoSSS.Solution.CompressibleFlowCommon.ShockCapturing;
 using BoSSS.Solution.Control;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace BoSSS.Solution.CompressibleFlowCommon {
 
@@ -148,12 +149,13 @@ namespace BoSSS.Solution.CompressibleFlowCommon {
                 SaveToDB = option
             });
         }
-
+        [DataMember]
         /// <summary>
         /// Backing field for <see cref="VariableToDegreeMap"/>
         /// </summary>
         protected Dictionary<Variable, int> variableFields = new Dictionary<Variable, int>();
 
+        [DataMember]
         /// <summary>
         /// Dictionary linking field variables (including derived ones) to
         /// the desired polynomial degree

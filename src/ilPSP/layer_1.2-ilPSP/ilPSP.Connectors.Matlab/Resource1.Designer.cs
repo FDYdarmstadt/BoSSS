@@ -19,7 +19,7 @@ namespace ilPSP.Connectors.Matlab {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resource1 {
@@ -82,8 +82,7 @@ namespace ilPSP.Connectors.Matlab {
         ///for i = 1:NoOfRows
         ///    NonZerosInRow = fscanf(fid,&apos;%d&apos;,1);
         ///    if(l0 ~= NonZerosInRow)
-        ///        str = char(zeros(1,NonZerosInRow*6));
-        ///         [rest of string was truncated]&quot;;.
+        ///        str = char(zeros(1,NonZer [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string ReadMsr {
             get {

@@ -298,7 +298,7 @@ namespace BoSSS.Application.Rheology {
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             m_Timestepper.DataBackupBeforeBalancing(L);
         }
 
@@ -307,7 +307,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Initialize Calculation, Create Equations
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             int D = this.GridData.SpatialDimension;
 
             if (XOP != null && L == null && Control.Weissenberg == 0.0)

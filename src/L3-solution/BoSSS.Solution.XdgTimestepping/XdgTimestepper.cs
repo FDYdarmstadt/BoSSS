@@ -534,7 +534,9 @@ namespace BoSSS.Solution.XdgTimestepping {
             AggregationGridData[] _MultigridSequence = null,
             ISolverFactory LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
             IList<DGField> _Parameters = null,
-            QueryHandler queryHandler = null) //
+            QueryHandler queryHandler = null,
+            Func<ISlaveTimeIntegrator> lsu = null
+        ) //
         {
             this.Scheme = __Scheme;
             this.DgOperator = op;
@@ -546,11 +548,15 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
             var spc = CreateDummyTracker(Fields.First().GridDat);
-                       
+
+            if (lsu == null){
+                lsu = () => new UpdateLevelsetWithNothing(this);
+            }
+
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
                 new[] { spc },
-                () => new UpdateLevelsetWithNothing(this),
+                lsu,
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
                 _MultigridSequence,
@@ -897,7 +903,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             
 
             JacobiParameterVars = null;
-            
+
+            if(TimesteppingBase.m_ResLogger != null)
+                TimesteppingBase.m_ResLogger.NextTimestep(false);
+
             return success;
         }
 
@@ -931,7 +940,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
         /// status after the grid has been re-distributed.
         /// </summary>
-        public void DataRestoreAfterBalancing(GridUpdateDataVaultBase L,
+        public void DataRestoreAfterBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
@@ -972,7 +981,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             
             if(m_BDF_Timestepper != null) {
                 m_BDF_Timestepper.DataBackupBeforeBalancing(L);

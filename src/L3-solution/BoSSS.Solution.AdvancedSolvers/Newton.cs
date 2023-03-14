@@ -171,9 +171,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public override bool SolverDriver<S>(CoordinateVector SolutionVec, S RHS) {
 
-            var gnSuccess = GlobalizedNewton(SolutionVec, RHS); // note: we have to run the default branch first, before we can query 'UseHomotopy' 
-            if(gnSuccess == false && UseHomotopy == true) {
-                return HomotopyNewton(SolutionVec, RHS);
+            (var gnSuccess, int NoOfIter) = GlobalizedNewton(SolutionVec, RHS); // note: we have to run the default branch first, before we can query 'UseHomotopy' 
+            base.NoOfNonlinearIter = NoOfIter;
+            if (gnSuccess == false && UseHomotopy == true) {
+                (gnSuccess, NoOfIter) = HomotopyNewton(SolutionVec, RHS);
+                base.NoOfNonlinearIter = NoOfIter;
+                return gnSuccess;
             } else {
                 return gnSuccess;
             }
@@ -183,7 +186,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Main solver routine
         /// </summary>
-        public bool GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
+        public (bool success, int NoOfIter) GlobalizedNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
             using(var tr = new FuncTrace()) {
 
                 bool success = false;
@@ -203,7 +206,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 EvaluateOperator(1, SolutionVec.Mapping.ToArray(), CurRes, 1.0);
                 if(UseHomotopy) { // after the first operator eval, we can access the 'base.AbstractOperator'
                     // don't run this branch - use the Homotopy branch
-                    return false;
+                    return (false, 0);
                 }
 
                 // intial residual evaluation
@@ -234,7 +237,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                return success;
+                return (success, itc);
 
             }
         }
@@ -361,7 +364,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Main solver routine with homotopy;
         /// </summary>
-        public bool HomotopyNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
+        public (bool success, int NoOfIter) HomotopyNewton<S>(CoordinateVector SolutionVec, S RHS) where S : IList<double> {
 
             using(var tr = new FuncTrace()) {
                 tr.InfoToConsole = false;
@@ -615,7 +618,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
 
-                return success;
+                return (success, IterCounter);
             }
         }
 
@@ -820,7 +823,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 this.CurrentLin.TransformSolFrom(SolutionVec, TempSol);
 
                 TempRes = new double[TempSol.Length];
-                EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes, HomotopyValue, ApplyRef:true);
+                EvaluateOperator(1, SolutionVec.Mapping.Fields, TempRes, HomotopyValue);
 
                 double nf0 = base.Norm(CurRes);  //.L2NormPow2().MPISum().Sqrt();
                 double nft = base.Norm(TempRes); //.L2NormPow2().MPISum().Sqrt();

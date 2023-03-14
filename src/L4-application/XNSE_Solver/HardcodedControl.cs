@@ -609,7 +609,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.TracingNamespaces = "*";
 
             C.GridPartType = GridPartType.clusterHilbert;
-            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            //C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = useLoadBal;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
@@ -778,7 +778,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.TracingNamespaces = "*";
 
             C.GridPartType = GridPartType.clusterHilbert;
-            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            //C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = useLoadBal;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
@@ -936,7 +936,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.TracingNamespaces = "*";
 
             C.GridPartType = GridPartType.clusterHilbert;
-            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            //C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = useLoadBal;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
@@ -1045,7 +1045,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.TracingNamespaces = "*";
 
             C.GridPartType = GridPartType.clusterHilbert;
-            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            //C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = useLoadBal;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
@@ -1269,11 +1269,11 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.GridPartType = GridPartType.Predefined;
             //C.GridPartOptions = "debug";
             C.GridPartType = GridPartType.clusterHilbert;
-            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_CellCostEstimators.Clear();
+            C.DynamicLoadBalancing_CellCostEstimators.Add(new Loadbalancing.XNSECellCostEstimator());
             C.DynamicLoadBalancing_ImbalanceThreshold = -0.1;
 
 
@@ -1614,11 +1614,12 @@ namespace BoSSS.Application.XNSE_Solver {
             // Loadbalancing
             // ============
             C.GridPartType = GridPartType.clusterHilbert;
-            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            //C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = loadbalancing;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_CellCostEstimators.Clear();
+            C.DynamicLoadBalancing_CellCostEstimators.Add(new Loadbalancing.XNSECellCostEstimator());
             C.DynamicLoadBalancing_ImbalanceThreshold = -0.1;
 
             // Timestepping
@@ -6141,8 +6142,10 @@ namespace BoSSS.Application.XNSE_Solver {
 
         }
         public static XNSE_Control RotCubeDomainDecompoitionError() {
-            //gives a domain decomposition error on 43th time step
+            //gives a domain decomposition error on 43th time step with np=3
             //default parameter set with AMR
+            //cs:BoSSS.Application.XNSE_Solver.HardcodedControl.RotCubeDomainDecompoitionError()
+
             var C = Rotating_Something_Unsteady(4, 30, 2, true);
             return C;
         }
@@ -6323,7 +6326,6 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = useLoadBal;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = 0;
 
             // Timestepping
@@ -6334,7 +6336,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.dtFixed = dt;
-            C.NoOfTimesteps = 100;
+            C.NoOfTimesteps = 50;
 
             return C;
         }

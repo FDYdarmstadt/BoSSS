@@ -200,7 +200,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Includes assembly of the matrix.
         /// </summary>
         /// <param name="L"></param>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             using(FuncTrace tr = new FuncTrace()) {
 
                 // create operator
@@ -322,7 +322,8 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
-                 if (Control.ExactSolution_provided) {
+
+                if (Control.ExactSolution_provided) {
                     Tex.Clear();
                     Tex.ProjectField(this.Control.InitialValues_Evaluators["Tex"]);
 

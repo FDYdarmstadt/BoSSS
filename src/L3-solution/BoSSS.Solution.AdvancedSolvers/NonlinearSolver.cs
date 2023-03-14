@@ -190,6 +190,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         abstract public bool SolverDriver<S>(CoordinateVector X, S RHS)
            where S : IList<double>;
 
+        /// <summary>
+        /// Number of nonlinear iterations in last call to <see cref="SolverDriver{S}(CoordinateVector, S)"/>
+        /// </summary>
+        public int NoOfNonlinearIter {
+            get;
+            protected set;
+        }
+
 
         /// <summary>
         /// Preconditioner/solver configuration for the linearized problem
@@ -206,6 +214,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <see cref="CurrentLin"/>*X = <see cref="LinearizationRHS"/>.
         /// </summary>
         protected MultigridOperator CurrentLin;
+
+        /// <summary>
+        /// number of DOFs in linearization of last iteration
+        /// </summary>
+        public long EssentialDOFs {
+            get {
+                return CurrentLin?.Mapping.TotalLength ?? 0;
+            }
+        }
+
 
         /// <summary>
         /// Optional RHS to the nonlinear system, 
@@ -275,9 +293,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 err.AccV(-1.0, OpEvalRaw);
                 double l2_err = err.MPI_L2Norm();
                 double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
+                
                 if (l2_err > comp) {
-                    Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err / comp} (comparison value {comp})");
-                }
+                    Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err/comp} (comparison value {comp})");
+                    //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
+				}
             }
             EvaluationCounter++;
 

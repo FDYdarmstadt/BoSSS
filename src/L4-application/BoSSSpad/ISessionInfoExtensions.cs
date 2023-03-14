@@ -23,7 +23,6 @@ using ilPSP;
 using ilPSP.Connectors.Matlab;
 using ilPSP.Tracing;
 using ilPSP.Utils;
-using Mono.CSharp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -497,14 +496,14 @@ namespace BoSSS.Foundation.IO {
             return mcr;
         }
 
-        private static void PrintImbalance(Dictionary<string, Tuple<double, double, int>> dictImbalances, int printcnt) {
-            var mostimbalance = dictImbalances.OrderByDescending(im => im.Value.Item1);
+        private static void PrintImbalance(Dictionary<string, (double RelInbalance, double Imbalance, int CallCount)> dictImbalances, int printcnt) {
+            var mostimbalance = dictImbalances.OrderByDescending(im => im.Value.RelInbalance);
             int i = 1;
             var wrt = Console.Out;
             foreach (var kv in mostimbalance) {
                 wrt.Write("#" + i + ": ");
                 wrt.WriteLine(string.Format(
-                "'{0}': {1} calls, {2:F3}% / {3:0.##E-00} sec. runtime exclusivesec",
+                "'{0}': {1} calls, {2:F3}% / {3:0.##E-00} sec. runtime exclusive",
                     kv.Key,
                     kv.Value.Item3,
                     kv.Value.Item1,
@@ -1175,10 +1174,7 @@ namespace BoSSS.Foundation.IO {
 
         /// <summary>
         /// Tries to loads the control file of the given
-        /// <paramref name="session"/> in the new REPL format. Note: Use
-        /// <see cref="InteractiveBase.LoadAssembly"/> to load the
-        /// corresponding solver assembly to be able to use solver-specific
-        /// sub-classes of <see cref="AppControl"/>.
+        /// <paramref name="session"/> in the new REPL format. 
         /// </summary>
         /// <param name="session">
         /// The session whose configuration file should be loaded
@@ -2563,14 +2559,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         static public Plot2Ddata GetMPItotalMemory(this ISessionInfo sess) {
             var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
-            int L = ana.NoOfTimeEntries;
-
-            var ret = new Plot2Ddata();
-
-            ret.AddDataGroup(new XYvalues(
-                $"Tot Mem [MegB] at {ana.MPIsize} cores",
-                L.ForLoop(i => (double)i),
-                ana.TotalMemMegs));
+            var ret = ana.GetMPItotalMemory();
 
             ret.Title = "Total memory of session " + sess;
 
@@ -2579,34 +2568,24 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// total memory (aka. sum) over all MPI ranks over time
+        /// minimum, average and maximum memory allocations over all MPI ranks over time
         /// </summary>
-        static public Plot2Ddata GetMPIMemory(this ISessionInfo sess) {
+        static public Plot2Ddata GetMinAvgMaxMemory(this ISessionInfo sess) {
             var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
-            int L = ana.NoOfTimeEntries;
-
-            var ret = new Plot2Ddata();
-
-            ret.AddDataGroup(new XYvalues(
-                $"Min Mem [MegB] at {ana.MPIsize} cores",
-                L.ForLoop(i => (double)i),
-                ana.MinimumMemMegs));
-
-            ret.AddDataGroup(new XYvalues(
-                $"Max Mem [MegB] at {ana.MPIsize} cores",
-                L.ForLoop(i => (double)i),
-                ana.MaximumMemMeg));
-
-            ret.AddDataGroup(new XYvalues(
-                $"Avg Mem [MegB] at {ana.MPIsize} cores",
-                L.ForLoop(i => (double)i),
-                ana.AverageMemMeg));
-
-            ret.Title = "Memory of session " + sess;
-
-
+            var ret = ana.GetMinAvgMaxMemPlot();
+            ret.Title = "Memory of session " + sess.ID;
             return ret;
         }
+
+        /// <summary>
+        /// Returns the memory instrumentation for a session (if available),
+        /// combined from files `memory.mpi_rank.txt` in the session directory
+        /// </summary>
+        public static SessionMemtrace GetMemtrace(this ISessionInfo sess) {
+            var ret = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+            return ret;
+        }
+
 
         /// <summary>
         /// Reports the largest memory-allocating routines in descending order
