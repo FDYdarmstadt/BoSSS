@@ -2245,14 +2245,6 @@ namespace BoSSS.Solution {
                             //LsTrk.PushStacks();
                         }
                     }
-
-                    //Console.WriteLine($"===== AfterSolverCreation() ...");
-                    //if (LsTrk.RegionsHistory.GetPopulatedLength() > 0) {
-                    //    foreach (int ai in LsTrk.RegionsHistory.AvailableIndices) {
-                    //        Console.WriteLine($"RegionHistory[{ai}] = {LsTrk.RegionsHistory[ai].Time}");
-                    //    }
-                    //}
-                    //Console.WriteLine($"=====");
                 }
 
 
@@ -2304,13 +2296,6 @@ namespace BoSSS.Solution {
                     if (LsTrk != null)
                         LsTrk.PushStacks();
 
-                    //Console.WriteLine($"===== AfterSolverCreation() ...");
-                    //if (LsTrk.RegionsHistory.GetPopulatedLength() > 0) {
-                    //    foreach (int ai in LsTrk.RegionsHistory.AvailableIndices) {
-                    //        Console.WriteLine($"RegionHistory[{ai}] = {LsTrk.RegionsHistory[ai].Time}");
-                    //    }
-                    //}
-                    //Console.WriteLine($"=====");
                 }
                 // ========================================================================
                 // initial value IO:
@@ -2379,14 +2364,6 @@ namespace BoSSS.Solution {
                                 LsTrk.UpdateTracker(physTime);
                             }
                         }
-
-                        //Console.WriteLine($"===== AfterRunSolverOneStep() ...");
-                        //if (LsTrk.RegionsHistory.GetPopulatedLength() > 0) {
-                        //    foreach (int ai in LsTrk.RegionsHistory.AvailableIndices) {
-                        //        Console.WriteLine($"RegionHistory[{ai}] = {LsTrk.RegionsHistory[ai].Time}");
-                        //    }
-                        //}
-                        //Console.WriteLine($"=====");
 
 
                         foreach (var l in PostprocessingModules) {
