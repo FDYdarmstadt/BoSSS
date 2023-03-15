@@ -38,6 +38,7 @@ using BoSSS.Foundation;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -985,8 +986,12 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             C.PostprocessingModules.Add(pp);
             C.SkipSolveAndEvaluateResidual = true;
 
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 0;
+            //C.AdaptiveMeshRefinement = true;
+            //C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            //C.AMR_startUpSweeps = 1;
+
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 0;
 
             XNSESolverTest(Tst, C);
 
