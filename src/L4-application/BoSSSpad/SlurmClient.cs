@@ -438,8 +438,11 @@ namespace BoSSS.Application.BoSSSpad {
 
                 sw.WriteLine("#!/bin/sh");
                 sw.WriteLine("#SBATCH -J " + jobname);
-                if (slurmAccount != null) {
-                    sw.WriteLine("#SBATCH -A " + slurmAccount);
+                if (this.UseLB2TestPartition) {
+                    sw.WriteLine("#SBATCH -p test24");
+                }
+                if (HHLR_project != null) {
+                    sw.WriteLine("#SBATCH -A " + HHLR_project);
                 }
                 sw.WriteLine("#SBATCH -o " + jobpath_unix + "/stdout.txt");
                 sw.WriteLine("#SBATCH -e " + jobpath_unix + "/stderr.txt");
