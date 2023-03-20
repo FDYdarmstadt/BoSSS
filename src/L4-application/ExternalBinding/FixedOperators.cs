@@ -222,7 +222,7 @@ namespace BoSSS.Application.ExternalBinding {
             // double sigma = 0.063;
             // double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
                                                               // double diff = M * lam;
-            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: 0.1);
+            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: 0.1, _stationary: false, _endT: deltaT*1.1);
             CahnHilliardInternal(mtx, U, ptch, ptchU, null, chParams);
         }
 
