@@ -712,6 +712,9 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 CommandLine = str.ToString();
+
+                if(NumberOfCores > 1) 
+                    CommandLine = "dotnet --list-runtimes";
             }
 
             string user = this.Username;

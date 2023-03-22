@@ -730,7 +730,7 @@ namespace PublicTestRunner {
         /// <summary>
         /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE)
         /// </summary>
-        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex");
+        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex_sch");
 
         /// <summary>
         /// to distinct the internalTestRunner
@@ -774,6 +774,8 @@ namespace PublicTestRunner {
                             wrt.WriteLine("Locked by BoSSS test runner at " + DateNtime);
                         }
                     } catch(Exception ee) {
+                        Console.Error.WriteLine($"Unable to get lock on {MutexFileName}: {ee}");
+                        Console.Error.WriteLine("wait and try again...");
                         ServerMutex = null;
                         Thread.Sleep(rnd.Next(10000));
                     }
