@@ -130,7 +130,7 @@ namespace BoSSS.Application.ExternalBinding {
                     return ((_3D)((x, y, z) => Math.Sign(x))).Vectorize();
                 }
 
-                var _chParams = new CahnHilliardParameters(_cahn: cahn, _dt: 0.001, _endT: 0.0045);
+                var _chParams = new CahnHilliardParameters(_cahn: cahn, stationary=true);
                 chOp.CahnHilliardInternal(mtx, U, cPtch, uPtch, func(), chParams: _chParams);
 
                 var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
