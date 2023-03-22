@@ -14,22 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Application.XNSEC;
-using BoSSS.Foundation.IO;
 using BoSSS.Platform;
 using Microsoft.DotNet.Interactive.Documents;
 using Microsoft.DotNet.Interactive.Documents.Jupyter;
-using MPI.Wrappers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using ilPSP;
 using System.IO.Pipes;
@@ -115,28 +108,40 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         //[STAThread]
         public static int Main(string[] args) {
-
-          
-
-            /*
-            string path = @"c:\Users\flori\AppData\Local\BoSSS-LocalJobs\Demo_BoundaryAndInitialData-ipPoisson2021Juni10_083737\control.obj";
-            string text = File.ReadAllText(path);
-            var obj = Solution.Control.AppControl.Deserialize(text, new KnownTypesBinder(null));
-            Console.WriteLine("desez: " + obj.GetType());
-            /*
-            SshClient_exp ssh = new SshClient_exp("lcluster3.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
-
-            var rr1 = ssh.RunCommand("ls");
-            Console.WriteLine(rr1.stdout);
-            var rr2 = ssh.RunCommand("ls -l");
-            Console.WriteLine(rr2.stdout);
-            ssh.Final();
-            return 0;
-            //*/
             int errCount = 0;
             
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            //string path = @"\\fdygitrunner\ValidationTests\LinslvPerfPar-temp\sessions\eb58bc08-a44f-4beb-99fc-4267567b1353"; 
+            //new SessionMemtrace(new DirectoryInfo(path));
+
+            /*
+            void w(ValueTuple<string,string> tt) {
+                Console.BackgroundColor = ConsoleColor.Blue;
+                Console.WriteLine(tt.Item1);
+                Console.ResetColor();
+            }
+
+            SingleSessionSshClinet ssh = new SingleSessionSshClinet("lcluster19.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
+
+            var rr = ssh.RunCommand("ls"); w(rr);
+            rr = ssh.RunCommand("cd mono"); w(rr);
+            rr = ssh.RunCommand("ls"); w(rr);
+
+            Console.WriteLine("Now Waiting.");
+            Thread.Sleep(20 * 1000);
+            rr = ssh.RunCommand("cd /"); w(rr);
+            rr = ssh.RunCommand("cd home"); w(rr);
+            rr = ssh.RunCommand("ls"); w(rr);
+
+
+            bool gracefull = ssh.Disconnect(false);
+            Console.WriteLine("gracefull exit? " + gracefull);
+            return 0;
+            */
+
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            
             // interpretation of command line options
             // ======================================
             Modes mode;
@@ -263,6 +268,8 @@ namespace BoSSS.Application.BoSSSpad {
                 BoSSS.Solution.Application.FinalizeMPI();
 
             return errCount;
+
+            //*/
         }
 
         /// <summary>
@@ -565,7 +572,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             //var data = NotebookFileFormatHandler.Serialize(fileToCreate, docNew, System.Environment.NewLine);
             using(var stw = new StreamWriter(fileToCreate)) {
-                Notebook.Write(docNew, stw);
+                Notebook.Write(docNew, System.Environment.NewLine, stw);
                 //System.IO.File.WriteAllBytes(fileToCreate, data);
                 stw.Flush();
             }
@@ -600,7 +607,7 @@ namespace BoSSS.Application.BoSSSpad {
             //var data = NotebookFileFormatHandler.Serialize(DestFile, docNew, System.Environment.NewLine);
             //System.IO.File.WriteAllBytes(DestFile, data);
             using(var stw = new StreamWriter(DestFile)) {
-                Notebook.Write(docNew, stw);
+                Notebook.Write(docNew, System.Environment.NewLine, stw);
                 //System.IO.File.WriteAllBytes(fileToCreate, data);
                 stw.Flush();
             }
@@ -661,7 +668,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void LinkEnforcer() {
             // If you remove these lines, this may break some worksheets and tutorials.
-            Console.WriteLine(typeof(CNS.Program).FullName);
+            Console.WriteLine(typeof(CNS.CNSProgram).FullName);
             Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
             Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);

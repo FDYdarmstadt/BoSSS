@@ -14,35 +14,30 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using ilPSP;
 using System;
 using System.Linq;
 
-namespace BoSSS.Solution {
+namespace BoSSS.Solution.LoadBalancing {
 
     /// <summary>
     /// Cell cost estimate with a fixed mapping between a performance class and
     /// and cost value
     /// </summary>
-    public class StaticCellCostEstimator : ICellCostEstimator {
+    [Serializable]
+    public class StaticCellCostEstimator : CellTypeBasedEstimator {
 
         /// <summary>
-        /// <see cref="ICellCostEstimator"/>
+        /// Serialization constructor
         /// </summary>
-        public int CurrentPerformanceClassCount {
-            get;
-            private set;
+        private StaticCellCostEstimator() {
+            
         }
 
-        /// <summary>
-        /// <see cref="ICellCostEstimator"/>
-        /// </summary>
-        public double EstimatedLocalCost {
-            get;
-            private set;
-        }
 
         private int[] performanceClassToCostMap;
 
+        [NonSerialized]
         private int[] cellToCostMap;
 
         /// <summary>
@@ -53,32 +48,39 @@ namespace BoSSS.Solution {
         /// </param>
         public StaticCellCostEstimator(int[] performanceClassToCostMap) {
             this.performanceClassToCostMap = performanceClassToCostMap;
-            this.CurrentPerformanceClassCount = performanceClassToCostMap.Length;
         }
 
         /// <summary>
-        /// <see cref="ICellCostEstimator"/>
+        /// <see cref="ICellCostEstimator.UpdateEstimates"/>
         /// </summary>
-        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
-            if (performanceClassCount != CurrentPerformanceClassCount) {
-                throw new Exception("Changing number of performance classes not supported");
-            }
+        override public void UpdateEstimates(IApplication app) {
+            int J = m_app.GridData.CellPartitioning.LocalLength;
 
-            cellToCostMap = new int[cellToPerformanceClassMap.Length];
-            for (int j = 0; j < cellToPerformanceClassMap.Length; j++) {
+            var cellToPerformanceClassMap = base.CellClassifier.ClassifyCells(app);
+
+            cellToCostMap = new int[J];
+            for (int j = 0; j < J; j++) {
                 int performanceClass = cellToPerformanceClassMap[j];
                 cellToCostMap[j] = performanceClassToCostMap[performanceClass];
             }
 
-            EstimatedLocalCost = cellToCostMap.Sum();
+            
         }
 
         /// <summary>
-        /// <see cref="ICellCostEstimator"/>
+        /// <see cref="ICellCostEstimator.GetEstimatedCellCosts"/>
         /// </summary>
-        /// <returns></returns>
-        public int[] GetEstimatedCellCosts() {
-            return cellToCostMap;
+        override public int[][] GetEstimatedCellCosts() {
+            return new int[][] { cellToCostMap };
         }
+               
+
+        public override object Clone() {
+            return new StaticCellCostEstimator() {
+                CellClassifier = this.CellClassifier.CloneAs(),
+                performanceClassToCostMap = this.performanceClassToCostMap.CloneAs()
+            };
+        }
+
     }
 }

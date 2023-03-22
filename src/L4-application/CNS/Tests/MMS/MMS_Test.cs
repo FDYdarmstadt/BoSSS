@@ -39,7 +39,7 @@ namespace CNS.Tests.MMS {
 
             //}
 
-            Program<CNSControl> p = null;
+            CNSProgram<CNSControl> p = null;
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.MMS.MMS_unsteady.Gassner2DStudy_conserved(3,3)" },
                 false,

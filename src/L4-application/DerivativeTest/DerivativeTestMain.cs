@@ -250,7 +250,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Nop.
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
         }
 
         SinglePhaseField f1;

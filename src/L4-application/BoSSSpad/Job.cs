@@ -167,13 +167,16 @@ namespace BoSSS.Application.BoSSSpad {
                 var files = new List<Assembly>();
 
                 var allAssis = AllDependentAssemblies;
-                Assembly mscorlib = allAssis.Single(a => a.FullName.StartsWith("mscorlib"));
+                //Debugger.Launch();
+                Assembly mscorlib = allAssis.Single(a => a.Location.EndsWith("System.Runtime.dll"));
                 string corLibPath = Path.GetDirectoryName(mscorlib.Location);
 
 
                 string MainAssemblyDir = Path.GetDirectoryName(EntryAssembly.Location);
                 tr.Info("MainAssemblyDir: " + MainAssemblyDir);
                 tr.Info("mscorlib dir: " + corLibPath);
+
+                //Debugger.Launch();
 
                 foreach (var a in AllDependentAssemblies) {
 
@@ -991,7 +994,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+        class KnownTypesBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {
 
             Job m_owner;
 
@@ -1738,6 +1741,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
             }
             */
+
+           
             void TestWR() {
                 using(new FuncTrace()) {
                     Exception OP(int iTry) {
@@ -1879,6 +1884,7 @@ namespace BoSSS.Application.BoSSSpad {
                         //
                         string alt_location = Path.Combine(entry_dir, Path.GetFileName(a_location));
                         if (File.Exists(alt_location)) {
+
                             tr.Info($"Take {alt_location} instead of {a_location}");
                             a_location = alt_location;
                         }
