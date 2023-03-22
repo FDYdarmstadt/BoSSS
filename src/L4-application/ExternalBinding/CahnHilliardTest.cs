@@ -69,7 +69,7 @@ namespace BoSSS.Application.ExternalBinding {
             //     return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
             // }
 
-            var _chParams = new CahnHilliardParameters(_cahn: 1.0);
+            var _chParams = new CahnHilliardParameters(_cahn: 1.0, _stationary: true);
             chOp.CahnHilliardInternal(mtx, U, cPtch, uPtch, chParams: _chParams);
 
             var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
@@ -130,7 +130,7 @@ namespace BoSSS.Application.ExternalBinding {
                     return ((_3D)((x, y, z) => Math.Sign(x))).Vectorize();
                 }
 
-                var _chParams = new CahnHilliardParameters(_cahn: cahn, stationary=true);
+                var _chParams = new CahnHilliardParameters(_cahn: cahn, _stationary: true);
                 chOp.CahnHilliardInternal(mtx, U, cPtch, uPtch, func(), chParams: _chParams);
 
                 var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
