@@ -215,7 +215,7 @@ namespace BoSSS.Application.ExternalBinding {
         public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, double deltaT) {
 
             // TODO sync from OpenFOAM
-            // double epsilon = 1e-5; // capillary width
+            //  double epsilon = 1e-5; // capillary width
             //                        // double cahn = 0.005;
             //                        // double M = 1; // mobility parameter
             // double M = Math.Sqrt(epsilon); // mobility parameter
