@@ -14,6 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Solution;
+using BoSSS.Solution.LoadBalancing;
 using System;
 
 namespace CNS.LoadBalancing {
@@ -24,13 +26,13 @@ namespace CNS.LoadBalancing {
     [Serializable]
     public class IndifferentCellClassifier : ICellClassifier {
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="program"></param>
-        /// <returns></returns>
-        public (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IProgram<CNSControl> program) {
-            return (1, new int[program.GridData.iLogicalCells.NoOfLocalUpdatedCells]);
+        public int[] ClassifyCells(IApplication program) {
+            return new int[program.GridData.iLogicalCells.NoOfLocalUpdatedCells];
         }
+
+        public object Clone() {
+            return new IndifferentCellClassifier();
+        }
+
     }
 }

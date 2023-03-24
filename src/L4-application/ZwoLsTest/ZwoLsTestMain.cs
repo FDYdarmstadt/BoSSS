@@ -210,7 +210,7 @@ namespace BoSSS.Application.ZwoLsTest {
             }
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             Op = new XSpatialOperatorMk2(1, 0, 1,
                 QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
                 __Species: new [] { "B" },

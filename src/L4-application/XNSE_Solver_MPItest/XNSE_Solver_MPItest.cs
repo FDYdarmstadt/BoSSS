@@ -34,7 +34,6 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
-using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using System.Collections.Generic;
 
 namespace BoSSS.Application.XNSE_Solver {
@@ -144,11 +143,9 @@ namespace BoSSS.Application.XNSE_Solver {
                 TargetBlockSize = 1000
             };
             C.GridPartType = GridPartType.clusterHilbert;
-            C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = true;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = 0;
 
             //this test takes too much time with 3 procs and exceed the 4 hr limit.
@@ -167,6 +164,7 @@ namespace BoSSS.Application.XNSE_Solver {
         static void Main(string[] args) {
             
             BoSSS.Solution.Application.InitMPI();
+            //Debugger.Launch();
             //ParallelRisingDroplet(1);
             //ParallelRisingDroplet(2);
             //ParallelRisingDroplet(3);
@@ -700,7 +698,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_On = useLoadBal;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
-            C.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            //C.DynamicLoadBalancing_CellCostEstimators = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
             C.DynamicLoadBalancing_ImbalanceThreshold = 0;
 
             // Timestepping

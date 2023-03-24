@@ -448,7 +448,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             /// <summary>
             /// The maximum order of the coarse system, which is solved by a direct solver.
-            /// NOTE: there is a hack, which consideres <see cref="CoarseLowOrder"/>-1 for pressure.
+            /// NOTE: there is a hack, which considers <see cref="CoarseLowOrder"/>-1 for pressure.
             /// pressure is assumed to be the Dimension-1-th variable
             /// </summary>
             public int CoarseLowOrder {
@@ -467,7 +467,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// - in the case of 0, Additive Schwarz degenerates to Block-Jacobi
             /// - an overlap of 1 is recommended for most cases
             /// - a higher overlap may accelerate convergence, but along the MPI boundaries, overlap will always be limited to 1
-            /// - values higher than 2 are currently not supportet (its easy to unlock, but there might be no point
+            /// - values higher than 2 are currently not supported (its easy to unlock, but there might be no point
             /// </summary>
             public int Overlap {
                 get {

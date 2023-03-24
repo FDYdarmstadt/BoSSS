@@ -176,6 +176,8 @@ namespace BoSSS.Application.BoSSSpad {
                 tr.Info("MainAssemblyDir: " + MainAssemblyDir);
                 tr.Info("mscorlib dir: " + corLibPath);
 
+                //Debugger.Launch();
+
                 foreach (var a in AllDependentAssemblies) {
 
                     // new rule for .NET6: if the file NOT located in the same directory as mscorlib.dll, it should be deployed;
@@ -1882,6 +1884,7 @@ namespace BoSSS.Application.BoSSSpad {
                         //
                         string alt_location = Path.Combine(entry_dir, Path.GetFileName(a_location));
                         if (File.Exists(alt_location)) {
+
                             tr.Info($"Take {alt_location} instead of {a_location}");
                             a_location = alt_location;
                         }

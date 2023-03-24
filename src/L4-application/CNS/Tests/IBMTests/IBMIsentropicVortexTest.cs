@@ -61,7 +61,7 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexOneStepGaussAndStokesNoAgglomerationTest() {
-            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            CNSProgram<IBMControl> p = new IBMIsentropicVortexTest();
             p.Init(ControlNoAgglomeration());
             p.RunSolverMode();
 
@@ -93,7 +93,7 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexClassicAgglomerationTest() {
-            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            CNSProgram<IBMControl> p = new IBMIsentropicVortexTest();
             p.Init(ControlRusanovAgglomeration());
             p.RunSolverMode();
 
@@ -125,7 +125,7 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexClassicHLLCAgglomerationTest() {
-            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            CNSProgram<IBMControl> p = new IBMIsentropicVortexTest();
             p.Init(ControlHLLCAgglomeration());
             p.RunSolverMode();
 
@@ -158,7 +158,7 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexClassicOptimizedHLLCAgglomerationTest() {
-            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            CNSProgram<IBMControl> p = new IBMIsentropicVortexTest();
             p.Init(ControlOptimizedHLLCAgglomeration());
             p.RunSolverMode();
 
@@ -191,7 +191,7 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexLocalTimeSteppingTest() {
-            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            CNSProgram<IBMControl> p = new IBMIsentropicVortexTest();
             p.Init(ControlLocalTimeStepping());
             p.RunSolverMode();
 
@@ -230,7 +230,7 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexCutNextToCutNoAgglomerationTest() {
-            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            CNSProgram<IBMControl> p = new IBMIsentropicVortexTest();
             p.Init(ControlCutNextToCutNoAgglomeration());
             p.RunSolverMode();
             
@@ -255,7 +255,7 @@ namespace CNS.Tests.IBMTests {
         /// </summary>
         [Test]
         public static void IBMVortexCutNextToCutAgglomerationTest() {
-            Program<IBMControl> p = new IBMIsentropicVortexTest();
+            CNSProgram<IBMControl> p = new IBMIsentropicVortexTest();
             p.Init(ControlCutNextToCutAgglomeration());
             p.RunSolverMode();
 

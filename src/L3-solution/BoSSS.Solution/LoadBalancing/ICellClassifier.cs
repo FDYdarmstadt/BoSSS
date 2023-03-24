@@ -14,13 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-namespace CNS.LoadBalancing {
+using System;
+
+namespace BoSSS.Solution.LoadBalancing {
 
     /// <summary>
-    /// Classifies cells by assigning them a performance class (a number
-    /// greater than or equal to zero)
+    /// Classifies cells by assigning them a performance class (a number greater than or equal to zero)
     /// </summary>
-    public interface ICellClassifier {
+    public interface ICellClassifier : ICloneable {
 
         /// <summary>
         /// Sorts each cell updated by the local process into a performance
@@ -31,6 +32,6 @@ namespace CNS.LoadBalancing {
         /// The total number of performance classes (across all processes) and,
         /// for each cell, its assigned performance class
         /// </returns>
-        (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IProgram<CNSControl> program);
+        int[] ClassifyCells(IApplication program);
     }
 }
