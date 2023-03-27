@@ -110,20 +110,9 @@ namespace BoSSS.Solution.LoadBalancing {
                     return null;
                 }
 
-                var imbalanceEstimates = new List<double>();
-                foreach (var estimator in CellCostEstimators) {
-                    estimator.UpdateEstimates(app);
-                    imbalanceEstimates.AddRange(estimator.ImbalanceEstimate());
-                }
-                bool imbalanceTooLarge = false;
-                for (int i = 0; i < imbalanceEstimates.Count; i++) {
-                    if (imbalanceEstimates[i].IsNaNorInf())
-                        throw new ArithmeticException("NaN/Inf in imbalance estimate: " + imbalanceEstimates[i]);
-                    imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
-                }
-               
+                bool imbalanceTooLarge = CheckImbalance(app, imbalanceThreshold);
                 if (!imbalanceTooLarge) {
-                    tr.Info("Imbalance not sufficiently high for load balancing!");
+                    tr.Info("Imbalance is not sufficiently high for load balancing!");
                     return null;
                 }
 
@@ -223,6 +212,29 @@ namespace BoSSS.Solution.LoadBalancing {
 
         int counter = 0;
 
+        /// <summary>
+        /// Checks the imbalance w.r.t. pre-defined estimators
+        /// </summary>
+        /// <param name="app"></param>
+        /// <param name="imbalanceThreshold"></param>
+        /// <returns> False: Imbalance is tolerable. True: Imbalance is too big.</returns>
+        public bool CheckImbalance(IApplication app, double imbalanceThreshold) {
+            var imbalanceEstimates = new List<double>();
+            foreach (var estimator in CellCostEstimators) {
+                estimator.UpdateEstimates(app);
+                imbalanceEstimates.AddRange(estimator.ImbalanceEstimate());
+            }
+            bool imbalanceTooLarge = false;
+
+            for (int i = 0; i < imbalanceEstimates.Count; i++) {
+                if (imbalanceEstimates[i].IsNaNorInf())
+                    throw new ArithmeticException("NaN/Inf in imbalance estimate: " + imbalanceEstimates[i]);
+                imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
+                Console.WriteLine($"imbalanceEstimates[i]: {imbalanceEstimates[i]}");
+            }
+
+            return imbalanceTooLarge;
+        }
 
         static int[] IndexBasedPartition(int[] Cost) {
             int J = Cost.Length;

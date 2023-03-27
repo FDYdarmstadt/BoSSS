@@ -17,7 +17,7 @@ namespace BoSSS.Solution.LoadBalancing {
     public class CutStateClassifier : TrackerStateClassifier {
         
         override public int[] ClassifyCells(IApplication app) {
-           
+
             var lsTrk = app.LsTrk;
             int J = app.GridData.iLogicalCells.NoOfLocalUpdatedCells;
 
@@ -32,7 +32,7 @@ namespace BoSSS.Solution.LoadBalancing {
                     int minDist = int.MaxValue;
                     NoOfCuts = 0;
                     for (int iLs = 0; iLs < NoOfLevSets; iLs++) {
-                        int dist_iLs = Math.Abs(rg.GetLevelSetDistance(0, j));
+                        int dist_iLs = Math.Abs(rg.GetLevelSetDistance(iLs, j));
                         if (dist_iLs == 0)
                             NoOfCuts++;
                         minDist = Math.Min(minDist, dist_iLs);
@@ -61,7 +61,11 @@ namespace BoSSS.Solution.LoadBalancing {
                     return false;
                 }
 
+                // Assign default CellTypeFlag for each cell
+                ret.SetAll((int)CellTypeFlags.Ordinary);
 
+
+                // Classify cells w.r.t. their distance (this is not geometric  distance) check GetLevelSetDistance
                 int NearWidth = lsTrk.NearRegionWidth;
 
                 for (int j = 0; j < J; j++) {
@@ -84,7 +88,7 @@ namespace BoSSS.Solution.LoadBalancing {
 
                 }
             } else {
-                ret.SetAll((int)CellTypeFlags.Ordinary);
+                Console.WriteLine("LevelSet Tracker is not set. Load balancing may not work as intended!!");
             }
 
             return ret;

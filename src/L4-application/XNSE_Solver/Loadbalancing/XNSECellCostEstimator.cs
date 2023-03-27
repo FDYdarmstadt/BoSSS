@@ -31,6 +31,9 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
         
 
         public override int[][] GetEstimatedCellCosts() {
+            if (cellToCostMaps == null)
+                UpdateEstimates(m_app);
+
             return cellToCostMaps;
         }
 
@@ -41,30 +44,28 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
             int J = app.GridData.CellPartitioning.LocalLength;
             var _cellToCostMapS = new List<int[]>();
 
+
             var cellToPerformanceClassMap = base.CellClassifier.ClassifyCells(app);
 
-            //int NoOfAddtitionalConstraints = 
-
-            var blabla = new[] {
+            var typeToWgt = new[] {
+                //(CutStateClassifier.CellTypeFlags.Void, 0), As void does not impact weights, it is unnecessary to include it in calculations.
                 (CutStateClassifier.CellTypeFlags.Ordinary, 10),
                 (CutStateClassifier.CellTypeFlags.Cut, (int)Math.Pow(2, 10))
             };
-            int NoOfAddtitionalConstraints = blabla.Length;
 
-            foreach(var tt in blabla) {
-                // One balance constraint per cluster
-                var cellToCostMap = new int[J];
-                _cellToCostMapS.Add(cellToCostMap);
-                int cellFlag = (int) tt.Item1;
-                int wgt = tt.Item2;
+                foreach(var tt in typeToWgt) {
+                    // One balance constraint per cluster
+                    var cellToCostMap = new int[J];
+                    _cellToCostMapS.Add(cellToCostMap);
+                    int cellFlag = (int) tt.Item1;
+                    int wgt = tt.Item2;
 
-                for (int j = 0; j < J; j++) { // loop over cells...
-                    if ((cellToPerformanceClassMap[j] & cellFlag) != 0) {
-                        cellToCostMap[j] = wgt;
+                    for (int j = 0; j < J; j++) { // loop over cells...
+                        if ((cellToPerformanceClassMap[j] & cellFlag) != 0) {
+                            cellToCostMap[j] = wgt;
                     }
                 }
             }
-
 
             cellToCostMaps = _cellToCostMapS.ToArray();
         }

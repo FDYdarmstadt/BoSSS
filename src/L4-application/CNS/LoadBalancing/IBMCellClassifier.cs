@@ -22,6 +22,7 @@ using System;
 namespace CNS.LoadBalancing {
 
     /// <summary>
+    /// Considers fluid, cut and void cells.
     /// Standard cells are "0", cut cells are "1", void cells are "2"
     /// </summary>
     public class IBMCellClassifier : ICellClassifier {
