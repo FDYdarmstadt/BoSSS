@@ -115,7 +115,6 @@ namespace BoSSS.Solution.LoadBalancing {
                     tr.Info("Imbalance is not sufficiently high for load balancing!");
                     return null;
                 }
-
 #if DEBUG
                 Console.WriteLine(
                     "At least one runtime imbalance estimate ({0}) was above configured threshold ({1:P1}); attempting repartitioning",
@@ -230,7 +229,6 @@ namespace BoSSS.Solution.LoadBalancing {
                 if (imbalanceEstimates[i].IsNaNorInf())
                     throw new ArithmeticException("NaN/Inf in imbalance estimate: " + imbalanceEstimates[i]);
                 imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
-                Console.WriteLine($"imbalanceEstimates[i]: {imbalanceEstimates[i]}");
             }
 
             return imbalanceTooLarge;

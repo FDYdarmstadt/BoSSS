@@ -397,7 +397,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                             throw new ApplicationException("METIS produced illegal partitioning - 0 cells on process " + rnk + ".");
                         }
                     }
+                    globalResult = SortPartitioning(globalResult);
                 }
+
 
                 int[] localLengths = new int[size];
                 for (int p = 0; p < localLengths.Length; p++) {
@@ -409,20 +411,74 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
-
         /// <summary>
-        /// Not implemented.
+        /// Sort the new partitioning w.r.t. current one to minimize the cost of re-distribution.
+        /// Because partitioning algorithms do not take the current partitioning into account
+        /// and assigns an arbitrary processor to partitions.
         /// </summary>
         /// <returns>
-        ///  - Index: local cell index
-        ///  - content: MPI Processor rank;
-        /// This is the suggestion
-        /// of ParMETIS for the grid partitioning:
-        /// For each local cell index, the returned array contains the MPI processor rank
-        /// where the cell should be placed.<br/>
-        /// may be null, if no repartitioning is required at all.
+        /// Global list for partitioning
+        /// For each local cell index, the returned array contains the MPI
+        /// process rank where the cell should be placed.
+        /// - Index: cell index, 
+        /// - content: MPI Processor rank
         /// </returns>
-        internal int[] SMPRedistribution() {
+        /// <param name="part"> Global list for partitioning
+        /// - Index: cell index, 
+        /// - content: MPI Processor rank
+        ///</param>  
+        internal int[] SortPartitioning(int[] part) {
+            int[] sortedPart = new int[part.Length];
+            List<int> mapping = new List<int>(m_Size);
+
+            for (int p = 0; p < m_Size; p++){
+                // The info about the old partitioning can be accessed by using offsets
+                // Get the offset and length of the processor to mask cells with respect to (w.r.t) old partitioning
+                long localOffset = m_CellPartitioning.GetI0Offest(p);
+                int localLength = m_CellPartitioning.GetLocalLength(p);
+
+                // Sort the input cell-packages w.r.t their occurrences in the old partitioning
+                var occurrences = part.GetSubVector((int)localOffset, localLength).GroupBy(v => v)
+                  .Select(g => new { Value = g.Key, Count = g.Count() })
+                  .OrderByDescending(x => x.Count)
+                  .ToList();
+
+                // Find the most repeated rank w.r.t. old partitioning
+                foreach (var processor in occurrences) {
+                    if (!mapping.Contains((int)processor.Value)) { // make sure it is not already assigned to another partition
+                        mapping.Add((int)processor.Value); // content: old rank, index: new rank
+                        break;
+                    }
+                }
+            }
+
+            // Check if every rank is assigned to mapping
+            for (int p = 0; p < m_Size; p++) {
+                if (!mapping.Contains(p))
+                    throw new Exception("Cannot sort the distribution of ranks");
+            }
+
+            // Assign the new partitioning w.r.t. mapping
+            for(int j=0; j < part.Length; j++) {
+                sortedPart[j] = mapping.IndexOf(part[j]); // Index of the list represents the new rank
+            }
+
+            return sortedPart;
+        }
+
+            /// <summary>
+            /// Not implemented.
+            /// </summary>
+            /// <returns>
+            ///  - Index: local cell index
+            ///  - content: MPI Processor rank;
+            /// This is the suggestion
+            /// of ParMETIS for the grid partitioning:
+            /// For each local cell index, the returned array contains the MPI processor rank
+            /// where the cell should be placed.<br/>
+            /// may be null, if no repartitioning is required at all.
+            /// </returns>
+            internal int[] SMPRedistribution() {
             using (new FuncTrace()) {
                 return null;
                 //throw new NotImplementedException("todo");
@@ -1142,6 +1198,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                     Array.Sort(CellIndex, RankIndex);
                 }
+                RankIndex = SortPartitioning(RankIndex);
                 //Scatter Rank-Array for local Process
                 local_Rank_RedistributionList = RankIndex.MPIScatterv(CellsPerRank);
             } else {
