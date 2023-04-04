@@ -94,6 +94,7 @@ namespace BoSSS.Foundation.XDG {
             get;
             private set;
         }
+        public object zwoLSSayeFactories { get; private set; }
 
         /// <summary>
         /// ctor.
@@ -220,10 +221,18 @@ namespace BoSSS.Foundation.XDG {
         /// the returned factory produces <see cref="QuadRule"/>'s on edges
         /// </returns>
         public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            if (zwoLSBruteForceFactories == null) {
-                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+
+            if (zwoLSSayeFactories == null)
+            {
+                zwoLSSayeFactories = new MultiLevelSetSayeFactoryCreator(m_LevelSetDatas);
             }
-            return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+            return zwoLSSayeFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+            
+            //old stuff 
+            //if (zwoLSBruteForceFactories == null) {
+            //    zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+            //}
+            //return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
         }
 
 
