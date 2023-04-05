@@ -7,11 +7,13 @@ namespace IntersectingLevelSetTest
         static void Main(string[] args)
         {
             XQuadFactoryHelper.CheckQuadRules = true;
-            
-            BoSSS.Solution.Application<PlotControl>._Main(
-                args,
-                true,
-                () => new ZwoLsCoupledSolver<PlotControl>() {MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye });
+            //AllUpTest.AllUp(0, XQuadFactoryHelper.MomentFittingVariants.Saye);
+            AllUpTest.LocalTestWithPlotting(0, XQuadFactoryHelper.MomentFittingVariants.Saye);
+
+            //BoSSS.Solution.Application<PlotControl>._Main(
+            //    args,
+            //    true,
+            //    () => new ZwoLsCoupledSolver<PlotControl>() {MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye });
         }
     }
 }
