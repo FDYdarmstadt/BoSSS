@@ -33,6 +33,6 @@
     <Compile Remove="NullSubdivisionStrategy.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="IntersectingQuadrature" Version="1.0.3" />
+    <PackageReference Include="IntersectingQuadrature" Version="1.0.4" />
   </ItemGroup>
 </Project>
