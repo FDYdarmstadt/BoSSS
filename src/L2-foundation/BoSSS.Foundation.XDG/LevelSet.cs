@@ -26,6 +26,7 @@ using IntersectingQuadrature;
 using BoSSS.Foundation.Grid.RefElements;
 using System.Collections;
 using BoSSS.Foundation.XDG.Quadrature;
+using IntersectingQuadrature.TensorAnalysis;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -761,6 +762,7 @@ namespace BoSSS.Foundation.XDG {
             this.Clear();
             this.Acc(1.0, other_dg);
         }
+        I
         double Evaluate(Tensor1 x)
         {
 
