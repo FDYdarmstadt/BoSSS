@@ -26,6 +26,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Foundation.XDG.Quadrature;
+using IntersectingQuadrature;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -94,7 +95,7 @@ namespace BoSSS.Foundation.XDG {
             get;
             private set;
         }
-        public object zwoLSSayeFactories { get; private set; }
+        public MultiLevelSetSayeFactoryCreator zwoLSSayeFactories { get; private set; }
 
         /// <summary>
         /// ctor.
@@ -220,21 +221,26 @@ namespace BoSSS.Foundation.XDG {
         /// <returns>
         /// the returned factory produces <see cref="QuadRule"/>'s on edges
         /// </returns>
-        public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-
-            //if (zwoLSSayeFactories == null)
-            //{
-            //    zwoLSSayeFactories = new MultiLevelSetSayeFactoryCreator(m_LevelSetDatas);
-            //}
-            //return zwoLSSayeFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
-
-            //old stuff 
-            if (zwoLSBruteForceFactories == null)
+        public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
+        {
+            switch (CutCellQuadratureType)
             {
-                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                case MomentFittingVariants.Saye:
+                    if (zwoLSSayeFactories == null)
+                    {
+                        zwoLSSayeFactories = new MultiLevelSetSayeFactoryCreator(m_LevelSetDatas);
+                    }
+                    return zwoLSSayeFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+                default:
+                    //old stuff 
+                    if (zwoLSBruteForceFactories == null)
+                    {
+                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                    }
+                    return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
             }
-            return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
         }
+
 
 
         /// <summary>
@@ -344,6 +350,7 @@ namespace BoSSS.Foundation.XDG {
                         zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
                     }
                     return zwoLSBruteForceFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
+
                 default:
 
                     if (zwoLSBruteForceFactories == null)

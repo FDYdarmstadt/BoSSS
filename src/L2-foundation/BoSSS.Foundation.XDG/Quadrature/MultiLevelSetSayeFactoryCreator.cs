@@ -11,10 +11,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static BoSSS.Foundation.XDG.LevelSetTracker;
-
+using IntersectingQuadrature;
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    class MultiLevelSetSayeFactoryCreator
+    public class MultiLevelSetSayeFactoryCreator
     {
         LevelSetCombination[] phis;
 
@@ -67,6 +67,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     levelSet0,
                     levelSet1),
             };
+
         }
 
         LevelSetCombination FindPhi(CombinedID iD)

@@ -22,6 +22,10 @@ using BoSSS.Platform;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using ilPSP;
+using IntersectingQuadrature;
+using BoSSS.Foundation.Grid.RefElements;
+using System.Collections;
+using BoSSS.Foundation.XDG.Quadrature;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -756,6 +760,136 @@ namespace BoSSS.Foundation.XDG {
                 throw new NotSupportedException();
             this.Clear();
             this.Acc(1.0, other_dg);
+        }
+        double Evaluate(Tensor1 x)
+        {
+
+            (NodeSet NS, int i0) = NSFromTensor(x);
+            //Evaluates the LevelSet using the NodeSet and the Cell Number
+            var ev = MultidimensionalArray.Create(1, 1);
+            this.Evaluate(i0, 1, NS, ev);
+            return ev[0];
+
+        }
+        public (double evaluation, Tensor1 gradient) EvaluateAndGradient(Tensor1 x)
+        {
+            (NodeSet NS, int i0) = NSFromTensor(x);
+            //Evaluates the LevelSet using the NodeSet and the Cell Number
+            var ev = MultidimensionalArray.Create(1, 1);
+            this.Evaluate(i0, 1, NS, ev);
+
+            MultidimensionalArray grad= MultidimensionalArray.Create(1,1,x.M);
+            this.EvaluateGradient(i0, 1, NS, grad);
+
+            return (ev[0], ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
+
+        }
+        public (double evaluation, Tensor1 gradient, Tensor2 hessian) EvaluateAndGradientAndHessian(Tensor1 x)
+        {
+            (NodeSet NS, int i0) = NSFromTensor(x);
+            //Evaluates the LevelSet using the NodeSet and the Cell Number
+            var ev = MultidimensionalArray.Create(1, 1);
+            this.Evaluate(i0, 1, NS, ev);
+            
+
+            MultidimensionalArray grad = MultidimensionalArray.Create(1,1,x.M);
+            MultidimensionalArray hess = MultidimensionalArray.Create(1,1,x.M,x.M);
+            this.EvaluateGradient(i0, 1, NS, grad);
+            this.EvaluateHessian(i0, 1, NS, hess);
+
+            return (ev[0], ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)), ToTensor2(hess.ExtractSubArrayShallow(0,0, -1, -1)));
+
+        }
+
+        public Vector TensorToVector(Tensor1 x)
+        {
+            Vector point;
+            if (Tensor1.M == 2)
+            {
+                point = new Vector(Tensor1[0], Tensor1[1], Tensor1[2]);
+            }
+            else
+            {
+                point = new Vector(Tensor1[0], Tensor1[1], Tensor1[2]);
+            }
+            return point;
+        }
+        public Tensor1 ToTensor(IEnumerable x)
+        {
+            Tensor1 point;
+            if (x.Count() == 1)
+            {
+                point = Tensor1.Vector(x[0]);
+            }
+            else if (x.Count() == 2)
+            {
+                point = Tensor1.Vector(x[0], x[1]);
+            }
+            else
+            {
+                point = Tensor1.Vector(x[0], x[1], x[2]);
+            }
+            return point;
+        }
+        public Tensor1 ToTensor1(MultidimensionalArray x)
+        {
+            Tensor1 vec;
+            if (x.Length == 1)
+            {
+                vec = Tensor1.Vector(x[0]);
+            }
+            else if (x.Length == 2)
+            {
+                vec = Tensor1.Vector(x[0], x[1]);
+            }
+            else
+            {
+                vec = Tensor1.Vector(x[0], x[1], x[2]);
+            }
+            return vec;
+        }
+        public Tensor2 ToTensor2(MultidimensionalArray x)
+        {
+            Tensor2 mat = Tensor2.Zeros(x.Lengths[0], x.Lengths[0]);
+            for(int i = 0; i < x.Lengths[0]; i++)
+            {
+                for(int j = 0; j < x.Lengths[1]; j++)
+                {
+                    mat[i, j] = x[i, j];
+                }
+            }
+        
+            return mat;
+        }
+        public MultidimensionalArray ToMultArray(Tensor1 x)
+        {
+            MultidimensionalArray vec = MultidimensionalArray.Create(x.M);
+            for (int i = 0; i < x.M; i++)
+            {
+                vec[i] = x[i];
+            }
+        }
+
+        public (NodeSet NS, int i0) NSFromTensor(Tensor1 x)
+        {
+            //transform into multarray
+            MultidimensionalArray GlobIn = MultidimensionalArray.Create(1,x.M);
+            for (int i = 0; i < x.M; i++)
+            {
+                GlobIn[0,i] = x[i];
+            }
+
+            //output array for local coordinates
+            var LocOut = MultidimensionalArray.Create(1, 1, GlobIn.Lengths[1]);
+            //gives the cell the point is located
+            this.GridDat.LocatePoint(GlobIn.ExtractSubArrayShallow(0, -1).To1DArray(), out long id, out long i0, out bool IsInside, out bool OnThisProces);
+            //gives the local Coordinates
+            this.GridDat.TransformGlobal2Local(GlobIn, LocOut, (int)i0, 1, 0);
+
+            //gives the NodeSet using the local Coords
+            var NS = new NodeSet(this.GridDat.iGeomCells.RefElements[0], LocOut.ExtractSubArrayShallow(0, -1, -1), true);
+
+            return (NS, (int) i0);
         }
     }
 }

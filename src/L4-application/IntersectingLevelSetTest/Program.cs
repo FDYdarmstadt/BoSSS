@@ -8,7 +8,7 @@ namespace IntersectingLevelSetTest
         {
             XQuadFactoryHelper.CheckQuadRules = true;
             //AllUpTest.AllUp(0, XQuadFactoryHelper.MomentFittingVariants.Saye);
-            AllUpTest.LocalTestWithPlotting(0, XQuadFactoryHelper.MomentFittingVariants.Saye);
+            AllUpTest.LocalTestWithPlotting(2, XQuadFactoryHelper.MomentFittingVariants.Saye);
 
             //BoSSS.Solution.Application<PlotControl>._Main(
             //    args,
