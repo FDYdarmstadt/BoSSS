@@ -33,7 +33,9 @@ namespace BoSSS.Foundation.XDG {
     /// <summary>
     /// a level set that is implemented as a DG field, i.e. a <see cref="XDGField"/>
     /// </summary>
-    public partial class LevelSet : SinglePhaseField, ILevelSet {
+    public partial class LevelSet : SinglePhaseField, ILevelSet,IScalarFunction {
+
+
 
         /// <summary>
         /// Constructor
@@ -762,8 +764,12 @@ namespace BoSSS.Foundation.XDG {
             this.Clear();
             this.Acc(1.0, other_dg);
         }
-        I
-        double Evaluate(Tensor1 x)
+
+        #region IScalarFunction members and Utitities
+
+        int IScalarFunction.M => this.Basis.GridDat.SpatialDimension;
+
+        double IScalarFunction.Evaluate(Tensor1 x)
         {
 
             (NodeSet NS, int i0) = NSFromTensor(x);
@@ -773,7 +779,7 @@ namespace BoSSS.Foundation.XDG {
             return ev[0];
 
         }
-        public (double evaluation, Tensor1 gradient) EvaluateAndGradient(Tensor1 x)
+        (double evaluation, Tensor1 gradient) IScalarFunction.EvaluateAndGradient(Tensor1 x)
         {
             (NodeSet NS, int i0) = NSFromTensor(x);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
@@ -786,7 +792,7 @@ namespace BoSSS.Foundation.XDG {
             return (ev[0], ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
 
         }
-        public (double evaluation, Tensor1 gradient, Tensor2 hessian) EvaluateAndGradientAndHessian(Tensor1 x)
+        (double evaluation, Tensor1 gradient, Tensor2 hessian) IScalarFunction.EvaluateAndGradientAndHessian(Tensor1 x)
         {
             (NodeSet NS, int i0) = NSFromTensor(x);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
@@ -806,33 +812,33 @@ namespace BoSSS.Foundation.XDG {
         public Vector TensorToVector(Tensor1 x)
         {
             Vector point;
-            if (Tensor1.M == 2)
+            if (x.M == 2)
             {
-                point = new Vector(Tensor1[0], Tensor1[1], Tensor1[2]);
+                point = new Vector(x[0], x[1], x[2]);
             }
             else
             {
-                point = new Vector(Tensor1[0], Tensor1[1], Tensor1[2]);
+                point = new Vector(x[0], x[1], x[2]);
             }
             return point;
         }
-        public Tensor1 ToTensor(IEnumerable x)
-        {
-            Tensor1 point;
-            if (x.Count() == 1)
-            {
-                point = Tensor1.Vector(x[0]);
-            }
-            else if (x.Count() == 2)
-            {
-                point = Tensor1.Vector(x[0], x[1]);
-            }
-            else
-            {
-                point = Tensor1.Vector(x[0], x[1], x[2]);
-            }
-            return point;
-        }
+        //public Tensor1 ToTensor(IEnumerable x)
+        //{
+        //    Tensor1 point;
+        //    if (x.Count() == 1)
+        //    {
+        //        point = Tensor1.Vector(x[0]);
+        //    }
+        //    else if (x.Count() == 2)
+        //    {
+        //        point = Tensor1.Vector(x[0], x[1]);
+        //    }
+        //    else
+        //    {
+        //        point = Tensor1.Vector(x[0], x[1], x[2]);
+        //    }
+        //    return point;
+        //}
         public Tensor1 ToTensor1(MultidimensionalArray x)
         {
             Tensor1 vec;
@@ -870,6 +876,19 @@ namespace BoSSS.Foundation.XDG {
             {
                 vec[i] = x[i];
             }
+            return vec;
+        }
+        public MultidimensionalArray ToMultArray(Tensor2 x)
+        {
+            MultidimensionalArray vec = MultidimensionalArray.Create(x.M,x.N);
+            for (int i = 0; i < x.M; i++)
+            {
+                for (int j = 0; j < x.N; j++)
+                {
+                    vec[i,j] = x[i,j];
+                }
+            }
+            return vec;
         }
 
         public (NodeSet NS, int i0) NSFromTensor(Tensor1 x)
@@ -893,5 +912,6 @@ namespace BoSSS.Foundation.XDG {
 
             return (NS, (int) i0);
         }
+        #endregion
     }
 }
