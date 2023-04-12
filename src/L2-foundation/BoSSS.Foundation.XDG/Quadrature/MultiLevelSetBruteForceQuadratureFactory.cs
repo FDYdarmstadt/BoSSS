@@ -22,9 +22,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         LevelSet levelSet1;
 
-        double sign0;
+        public double sign0 { get; private set; }
 
-        double sign1;
+        public double sign1 { get; private set; }
 
         public LevelSetCombination(CombinedID iD, LevelSet levelSet0, LevelSet levelSet1)
         {

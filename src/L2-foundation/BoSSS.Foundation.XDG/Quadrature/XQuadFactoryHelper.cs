@@ -345,11 +345,11 @@ namespace BoSSS.Foundation.XDG {
             switch (CutCellQuadratureType)
             {
                 case MomentFittingVariants.Saye:
-                    if (zwoLSBruteForceFactories == null)
+                    if (zwoLSSayeFactories == null)
                     {
-                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                        zwoLSSayeFactories = new MultiLevelSetSayeFactoryCreator(m_LevelSetDatas);
                     }
-                    return zwoLSBruteForceFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
+                    return zwoLSSayeFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1);
 
                 default:
 
@@ -461,11 +461,11 @@ namespace BoSSS.Foundation.XDG {
             switch (CutCellQuadratureType)
             {
                 case MomentFittingVariants.Saye:
-                    if (zwoLSBruteForceFactories == null)
+                    if (zwoLSSayeFactories == null)
                     {
-                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                        zwoLSSayeFactories = new MultiLevelSetSayeFactoryCreator(m_LevelSetDatas);
                     }
-                    return zwoLSBruteForceFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
+                    return zwoLSSayeFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1);
                 default:
                     if (zwoLSBruteForceFactories == null)
                     {
@@ -588,13 +588,23 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
-            if (zwoLSBruteForceFactories == null)
+            switch (CutCellQuadratureType)
             {
-                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                case MomentFittingVariants.Saye:
+                    if (zwoLSSayeFactories == null)
+                    {
+                        zwoLSSayeFactories = new MultiLevelSetSayeFactoryCreator(m_LevelSetDatas);
+                    }
+                    return zwoLSSayeFactories.GetSurfaceFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+                default:
+                    if (zwoLSBruteForceFactories == null)
+                    {
+                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                    }
+                    return zwoLSBruteForceFactories.GetSurfaceFactory(levSetIndex0,
+                        levSetIndex1,
+                        jmp1, backupFactory);
             }
-            return zwoLSBruteForceFactories.GetSurfaceFactory(levSetIndex0, 
-                levSetIndex1, 
-                jmp1, backupFactory);
         }
 
 

@@ -765,7 +765,7 @@ namespace BoSSS.Foundation.XDG {
                                     if (doublyCut.Count() > 0) {
                                         var jmpJ = IdentifyWingA(jLevSet, sp);
                                         var backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, Kref);
-                                        var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref, backupFactory);
+                                        var twoLSFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetVolRuleFactory(iLevSet, jmp, jLevSet, jmpJ, Kref, backupFactory,quadorder:fixedOrder);
                                         volQrIns.AddFactoryDomainPair(twoLSFactory, doublyCut, fixedOrder);
                                     }
                                 }
