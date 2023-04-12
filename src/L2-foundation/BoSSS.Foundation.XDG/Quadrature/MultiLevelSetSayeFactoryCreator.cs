@@ -341,7 +341,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         
         public int GetNoOfQuadNodes(int quadorder)
         {
-            return quadorder + 1;
+            return 2;
         }
         public QuadRule GetQuadRule(int j,int order)
         {
@@ -526,7 +526,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
-            return (new lSEval((LevelSet)data[0].LevelSet, j), new lSEval((LevelSet)data[1].LevelSet, j));
+            return (new lSEvalEdge((LevelSet)data[0].LevelSet, j), new lSEvalEdge((LevelSet)data[1].LevelSet, j));
         }
     }
 
@@ -545,42 +545,69 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
         double IScalarFunction.Evaluate(Tensor1 x)
         {
-            (NodeSet NS, int i0) = lSEvalUtil.NSFromTensor(x, m_levelSet);
+            NodeSet NS = lSEvalUtil.NSFromTensor(x, m_levelSet);
             //var inp = MultidimensionalArray.Create(1, m_levelSet.Basis.GridDat.SpatialDimension - 1);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var ev = MultidimensionalArray.Create(1, 1);
             var inp = MultidimensionalArray.Create(1, 1);
-            m_levelSet.EvaluateEdge(i0, 1, NS,inp, ev);
-            return inp[0];
+            if (x.M == m_levelSet.Basis.GridDat.SpatialDimension)
+            {
+                m_levelSet.Evaluate(j, 1, NS, ev);
+            }
+            else
+            {
+                m_levelSet.EvaluateEdge(j, 1, NS, ev, inp);
+            }
+            return ev[0];
         }
 
         (double evaluation, Tensor1 gradient) IScalarFunction.EvaluateAndGradient(Tensor1 x)
         {
-            (NodeSet NS, int i0) = lSEvalUtil.NSFromTensor(x, m_levelSet);
+            int D = m_levelSet.Basis.GridDat.SpatialDimension;
+            NodeSet NS = lSEvalUtil.NSFromTensor(x, m_levelSet);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var inp = MultidimensionalArray.Create(1, 1);
             var ev = MultidimensionalArray.Create(1, 1);
-            MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, x.M);
-            MultidimensionalArray gradIn = MultidimensionalArray.Create(1, 1, x.M);
-            m_levelSet.EvaluateEdge(i0, 1, NS, inp, ev,GradientIN: grad ,GradientOT:gradIn);
-            return (inp[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
+            MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, D);
+            MultidimensionalArray gradIn = MultidimensionalArray.Create(1, 1, D);
+            if (x.M == D)
+            {
+                m_levelSet.Evaluate(j, 1, NS, ev);
+                m_levelSet.EvaluateGradient(j, 1, NS, grad);
+            }
+            else
+            {
+                m_levelSet.EvaluateEdge(j, 1, NS, ev, inp, GradientIN: grad, GradientOT: gradIn);
+            }
+            return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
         }
 
         (double evaluation, Tensor1 gradient, Tensor2 hessian) IScalarFunction.EvaluateAndGradientAndHessian(Tensor1 x)
         {
-            (NodeSet NS, int i0) = lSEvalUtil.NSFromTensor(x, m_levelSet);
+            int D = m_levelSet.Basis.GridDat.SpatialDimension;
+            NodeSet NS = lSEvalUtil.NSFromTensor(x, m_levelSet);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var inp = MultidimensionalArray.Create(1, 1);
             var ev = MultidimensionalArray.Create(1, 1);
-            MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, x.M);
-            MultidimensionalArray gradIn = MultidimensionalArray.Create(1, 1, x.M);
-            m_levelSet.EvaluateEdge(i0, 1, NS, inp, ev, GradientIN: grad, GradientOT: gradIn);
+            MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, D);
+            MultidimensionalArray gradIn = MultidimensionalArray.Create(1, 1, D);
+            MultidimensionalArray hess = MultidimensionalArray.Create(1, 1,D,D);
 
+            if (x.M == m_levelSet.Basis.GridDat.SpatialDimension)
+            {
+                m_levelSet.Evaluate(j, 1, NS, ev);
+                m_levelSet.EvaluateGradient(j, 1, NS, grad);
+                m_levelSet.EvaluateHessian(j, 1, NS, hess);
+            }
+            else
+            {
+                m_levelSet.EvaluateEdge(j, 1, NS, ev, inp, GradientIN: grad, GradientOT: gradIn);
+            }
+            
             //no Hessian Evaluation on Edges
-            MultidimensionalArray hess = MultidimensionalArray.Create(1, 1, x.M, x.M);
             //m_levelSet.EvaluateHessian(i0, 1, NS, hess);
 
-            return (inp[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)), lSEvalUtil.ToTensor2(hess.ExtractSubArrayShallow(0, 0, -1, -1)));
+            return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)), lSEvalUtil.ToTensor2(hess.ExtractSubArrayShallow(0, 0, -1, -1)));
 
         }
     }
@@ -600,22 +627,22 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         double IScalarFunction.Evaluate(Tensor1 x)
         {
-            (NodeSet NS, int i0) = lSEvalUtil.NSFromTensor(x, m_levelSet);
+            NodeSet NS = lSEvalUtil.NSFromTensor(x, m_levelSet);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var ev = MultidimensionalArray.Create(1, 1);
-            m_levelSet.Evaluate(i0, 1, NS, ev);
+            m_levelSet.Evaluate(j, 1, NS, ev);
             return ev[0];
         }
 
         (double evaluation, Tensor1 gradient) IScalarFunction.EvaluateAndGradient(Tensor1 x)
         {
-            (NodeSet NS, int i0) = lSEvalUtil.NSFromTensor(x, m_levelSet);
+            NodeSet NS = lSEvalUtil.NSFromTensor(x, m_levelSet);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var ev = MultidimensionalArray.Create(1, 1);
-            m_levelSet.Evaluate(i0, 1, NS, ev);
+            m_levelSet.Evaluate(j, 1, NS, ev);
 
             MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, x.M);
-            m_levelSet.EvaluateGradient(i0, 1, NS, grad);
+            m_levelSet.EvaluateGradient(j, 1, NS, grad);
 
             return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
 
@@ -623,16 +650,17 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         (double evaluation, Tensor1 gradient, Tensor2 hessian) IScalarFunction.EvaluateAndGradientAndHessian(Tensor1 x)
         {
-            (NodeSet NS, int i0) = lSEvalUtil.NSFromTensor(x,m_levelSet);
+            
+            NodeSet NS = lSEvalUtil.NSFromTensor(x,m_levelSet);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var ev = MultidimensionalArray.Create(1, 1);
-            m_levelSet.Evaluate(i0, 1, NS, ev);
+            m_levelSet.Evaluate(j, 1, NS, ev);
 
 
             MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, x.M);
             MultidimensionalArray hess = MultidimensionalArray.Create(1, 1, x.M, x.M);
-            m_levelSet.EvaluateGradient(i0, 1, NS, grad);
-            m_levelSet.EvaluateHessian(i0, 1, NS, hess);
+            m_levelSet.EvaluateGradient(j, 1, NS, grad);
+            m_levelSet.EvaluateHessian(j, 1, NS, hess);
 
             return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)), lSEvalUtil.ToTensor2(hess.ExtractSubArrayShallow(0, 0, -1, -1)));
 
@@ -744,7 +772,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return vec;
         }
 
-        public static (NodeSet NS, int i0) NSFromTensor(Tensor1 x, LevelSet m_levelSet)
+        public static NodeSet NSFromTensor(Tensor1 x, LevelSet m_levelSet)
         {
             //transform into multarray
             MultidimensionalArray GlobIn = MultidimensionalArray.Create(1, x.M);
@@ -756,14 +784,27 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //output array for local coordinates
             //var LocOut = MultidimensionalArray.Create(1, 1, GlobIn.Lengths[1]);
             //gives the cell the point is located
-            m_levelSet.GridDat.LocatePoint(GlobIn.ExtractSubArrayShallow(0, -1).To1DArray(), out long id, out long i0, out bool IsInside, out bool Onm_levelSetProces);
+            //m_levelSet.GridDat.LocatePoint(GlobIn.ExtractSubArrayShallow(0, -1).To1DArray(), out long id, out long i0, out bool IsInside, out bool Onm_levelSetProces);
             //gives the local Coordinates
             //m_levelSet.GridDat.TransformGlobal2Local(GlobIn, LocOut, (int)i0, 1, 0);
 
-            //gives the NodeSet using the local Coords
-            var NS = new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], GlobIn, true);
 
-            return (NS, (int)i0);
+            //gives the NodeSet using the local Coords
+            if(x.M == m_levelSet.Basis.GridDat.SpatialDimension)
+            {
+                return new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], GlobIn, true);
+
+            }
+            else if(x.M == m_levelSet.Basis.GridDat.SpatialDimension-1)
+            {
+                return new NodeSet(m_levelSet.GridDat.iGeomEdges.EdgeRefElements[0], GlobIn, true);
+
+            }
+            else
+            {
+                return new NodeSet(Grid.RefElements.Point.Instance, GlobIn, true);
+
+            }
         }
         public static (NodeSet NS, int i0) NSFromGlobalTensor(Tensor1 x, LevelSet m_levelSet)
         {
