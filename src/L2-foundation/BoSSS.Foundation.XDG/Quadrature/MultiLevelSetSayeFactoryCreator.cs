@@ -130,7 +130,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 Jmp1 = jmp1
             };
 
-            LevelSetCombination lscomb = FindPhi(id0);
+            LevelSetCombination lscomb = new LevelSetCombination(id0, 
+                (LevelSet) levelSets[levSetIndex0].LevelSet,
+                (LevelSet) levelSets[levSetIndex1].LevelSet);
+            lscomb.sign0 = 0;
             return new DoubleSayeQuadratureFactory(new DoubleSayeSurfaceScheme(levelSets, lscomb), levelSets);
         }
 
@@ -320,30 +323,30 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         void Initialize(int resolution);
     }
-    internal abstract class DoubleSayeBaseScheme: ISchemeWO
+    internal abstract class DoubleSayeBaseScheme : ISchemeWO
     {
         public LevelSetData[] data;
-        
+
         public LevelSetCombination lscomb;
-        public int D ;
+        public int D;
 
         RefElement ISchemeWO.ReferenceElement => GetRefElement();
 
         public abstract RefElement GetRefElement();
 
-        public DoubleSayeBaseScheme( LevelSetData[] data, LevelSetCombination lscomb)
+        public DoubleSayeBaseScheme(LevelSetData[] data, LevelSetCombination lscomb)
         {
             this.data = data;
-            
+
             this.lscomb = lscomb;
             this.D = ((LevelSet)data[0].LevelSet).Basis.GridDat.SpatialDimension;
         }
-        
+
         public int GetNoOfQuadNodes(int quadorder)
         {
             return 2;
         }
-        public QuadRule GetQuadRule(int j,int order)
+        public QuadRule GetQuadRule(int j, int order)
         {
             //Get Phi Evaluators
             (var phi0, var phi1) = GetPhiEval(j);
@@ -361,10 +364,30 @@ namespace BoSSS.Foundation.XDG.Quadrature
             (var s1, var s2) = GetSymbols(lscomb);
 
             // Get The Quadrature rule From Intersectingquadrature
-            QuadratureRule ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes);
+            QuadratureRule ruleQ = (default);
+            bool success = false;
+            int subdiv = 0;
+            while (!success && subdiv <5)
+            {
+                //try
+                //{
+                    ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes,subdiv);
+                    success = true;
+                //}
+                //catch (Exception ex)
+                //{
+                //    subdiv++;
+                //    if(subdiv == 5)
+                //    {
+                //        throw ex;
+                //    }
+                //}
+            }
+            
 
             // Creates a QuadRule Object <- The One BoSSS uses
             QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, D, true);
+            rule.OrderOfPrecision = order;
 
             //loop over all quadrature Nodes
             for (int i = 0; i < ruleQ.Count; ++i)
@@ -377,6 +400,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 rule.Weights[i] = qNode.Weight;
             }
             rule.Nodes.LockForever();
+            rule.Nodes.SaveToTextFile($"quadNodes_{this.ToString()}_{lscomb.ID.LevSet0}{s1.ToString()}_{lscomb.ID.LevSet1}{s2.ToString()}.txt");
             return rule;
 
         }
@@ -395,7 +419,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         //does nothing so far
         public void Initialize(int resolution)
         {
-            
+
         }
         /// <summary>
         /// utility function to get the Symbols used by Intersecting Quadrature
@@ -407,23 +431,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
             double sign0 = lscomb.sign0;
             double sign1 = lscomb.sign1;
 
-            if (sign0 == -1.0 && sign1 == 1.0)
-            {
-                return (Symbol.Minus, Symbol.Plus);
-            }
-            else if (sign0 == -1.0 && sign1 == -1.0)
-            {
-                return (Symbol.Minus, Symbol.Minus);
-            }
-            else if (sign0 == 1.0 && sign1 == 1.0)
-            {
-                return (Symbol.Plus, Symbol.Plus);
-            }
-            else
-            {
-                return (Symbol.Plus, Symbol.Minus);
-            }
-        }    }
+            Symbol s1 = (sign0 == -1.0) ? Symbol.Minus : Symbol.Zero;
+            s1 = (sign0 == 1.0) ? Symbol.Plus : s1;
+
+            Symbol s2 = (sign1 == -1.0) ? Symbol.Minus : Symbol.Zero;
+            s2 = (sign1 == 1.0) ? Symbol.Plus : s2;
+
+            return (s1, s2);
+        }
+    }
+
     internal class DoubleSayeVolumeScheme : DoubleSayeBaseScheme
     {
         public DoubleSayeVolumeScheme(LevelSetData[] data, LevelSetCombination lscomb) : base( data, lscomb)
@@ -454,7 +471,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
-            return (new lSEval((LevelSet)data[0].LevelSet,j), new lSEval((LevelSet)data[1].LevelSet,j));
+            return (new lSEval((LevelSet)data[lscomb.ID.LevSet0].LevelSet,j), new lSEval((LevelSet)data[lscomb.ID.LevSet1].LevelSet,j));
         }
     }
     internal class DoubleSayeEdgeScheme : DoubleSayeBaseScheme
@@ -489,7 +506,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
-            return (new lSEvalEdge((LevelSet)data[0].LevelSet, j), new lSEvalEdge((LevelSet)data[1].LevelSet, j));
+            return (new lSEvalEdge((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEvalEdge((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
         }
 
     }
@@ -521,12 +538,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             //define the Cell
             HyperRectangle cell = new UnitCube(D);
-            cell.Dimension = D - 1;
             return cell;
         }
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
-            return (new lSEvalEdge((LevelSet)data[0].LevelSet, j), new lSEvalEdge((LevelSet)data[1].LevelSet, j));
+            return (new lSEval((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEval((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
         }
     }
 
