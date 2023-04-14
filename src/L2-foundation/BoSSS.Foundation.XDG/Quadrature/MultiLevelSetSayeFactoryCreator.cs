@@ -115,7 +115,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             };
             LevelSetCombination lscomb = FindPhi(id);
             return new DoubleSayeQuadratureFactory(new DoubleSayeEdgeScheme(levelSets, lscomb), levelSets);
-
         }
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0,
@@ -129,7 +128,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 LevSet1 = levSetIndex1,
                 Jmp1 = jmp1
             };
-
             LevelSetCombination lscomb = new LevelSetCombination(id0, 
                 (LevelSet) levelSets[levSetIndex0].LevelSet,
                 (LevelSet) levelSets[levSetIndex1].LevelSet);
@@ -342,9 +340,20 @@ namespace BoSSS.Foundation.XDG.Quadrature
             this.D = ((LevelSet)data[0].LevelSet).Basis.GridDat.SpatialDimension;
         }
 
-        public int GetNoOfQuadNodes(int quadorder)
+        public (int noOfNodes,int subdiv) GetNoOfQuadNodes(int quadorder)
         {
-            return 2;
+            //we need at least so much nodes
+            int neededNodes = (int)(quadorder+1) / 2;
+            //max noOfNodes supported is 4
+            int neededSubdiv = (int) (neededNodes) / 4;
+            if(neededSubdiv > 0)
+            {
+                return (4, neededSubdiv);
+            }
+            else
+            {
+                return (neededNodes, 0);
+            }
         }
         public QuadRule GetQuadRule(int j, int order)
         {
@@ -352,7 +361,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             (var phi0, var phi1) = GetPhiEval(j);
 
             //Get NoOfQuadNodes
-            int noOfNodes = GetNoOfQuadNodes(order);
+            (int noOfNodes, int subdiv) = GetNoOfQuadNodes(order);
 
             // get a quadrule finder
             Quadrater finder = new Quadrater();
@@ -365,25 +374,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             // Get The Quadrature rule From Intersectingquadrature
             QuadratureRule ruleQ = (default);
-            bool success = false;
-            int subdiv = 0;
-            while (!success && subdiv <5)
-            {
-                //try
-                //{
-                    ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes,subdiv);
-                    success = true;
-                //}
-                //catch (Exception ex)
-                //{
-                //    subdiv++;
-                //    if(subdiv == 5)
-                //    {
-                //        throw ex;
-                //    }
-                //}
-            }
-            
+
+            //find the quad rule
+            ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes,subdiv);
 
             // Creates a QuadRule Object <- The One BoSSS uses
             QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, D, true);

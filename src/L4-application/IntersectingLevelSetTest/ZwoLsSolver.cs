@@ -189,15 +189,21 @@ namespace IntersectingLevelSetTest {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime);
 
+
+            //reset current solution
+
             //phystime = 1.8;
             LsUpdate(phystime);
 
+            //var map = du_dx.Mapping;
+            var map = u.Mapping;
+
             // operator-matrix assemblieren
-            MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
+            MsrMatrix OperatorMatrix = new MsrMatrix(map, map);
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
 
             // operator matrix assembly
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, map, null, map);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
 
@@ -205,11 +211,11 @@ namespace IntersectingLevelSetTest {
             var Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
 
             // Mass matrix/Inverse Mass matrix
-            var Mass = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, false, LsTrk.GetSpeciesId("B"));
+            var Mass = Mfact.GetMassMatrix(map, new double[] { 1.0 }, false, LsTrk.GetSpeciesId("B"));
             var MassInv = Mass.InvertBlocks(OnlyDiagonal: true, Subblocks: true, ignoreEmptyBlocks: true, SymmetricalInversion: false);
 
             // test that operator depends only on B-species values
-            double DepTest = LsTrk.Regions.GetSpeciesSubGrid("B").TestMatrixDependency(OperatorMatrix, u.Mapping, u.Mapping);
+            double DepTest = LsTrk.Regions.GetSpeciesSubGrid("B").TestMatrixDependency(OperatorMatrix, map, map);
             Console.WriteLine("Matrix dependency test: " + DepTest);
             Assert.LessOrEqual(DepTest, 0.0);
 
@@ -217,6 +223,7 @@ namespace IntersectingLevelSetTest {
             double[] x = new double[Affine.Length];
             BLAS.daxpy(x.Length, 1.0, Affine, 1, x, 1);
             OperatorMatrix.SpMVpara(1.0, u.CoordinateVector, 1.0, x);
+            du_dx.Clear();
             MassInv.SpMV(1.0, x, 0.0, du_dx.CoordinateVector);
 
             OperatorMatrix.SaveToTextFile("matrix.txt");
