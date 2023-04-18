@@ -115,13 +115,6 @@ namespace BoSSS.Solution.LoadBalancing {
                     tr.Info("Imbalance is not sufficiently high for load balancing!");
                     return null;
                 }
-#if DEBUG
-                Console.WriteLine(
-                    "At least one runtime imbalance estimate ({0}) was above configured threshold ({1:P1}); attempting repartitioning",
-                    String.Join(", ", imbalanceEstimates.Select(e => String.Format("{0:P1}", e))),
-                    imbalanceThreshold);
-#endif
-
 
                 IList<int[]> allCellCosts = new List<int[]>();
                 foreach (var estimator in CellCostEstimators) {
@@ -224,6 +217,13 @@ namespace BoSSS.Solution.LoadBalancing {
                 imbalanceEstimates.AddRange(estimator.ImbalanceEstimate());
             }
             bool imbalanceTooLarge = false;
+
+#if DEBUG
+                Console.WriteLine(
+                    "At least one runtime imbalance estimate ({0}) was above configured threshold ({1:P1}); attempting repartitioning",
+                    String.Join(", ", imbalanceEstimates.Select(e => String.Format("{0:P1}", e))),
+                    imbalanceThreshold);
+#endif
 
             for (int i = 0; i < imbalanceEstimates.Count; i++) {
                 if (imbalanceEstimates[i].IsNaNorInf())

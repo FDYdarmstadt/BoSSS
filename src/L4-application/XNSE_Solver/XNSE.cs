@@ -839,6 +839,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 Console.WriteLine("     {0,-30}:{1}", "Globalization", this.Control.NonLinearSolver.Globalization);
                 Console.WriteLine("     {0,-30}:{1}", "Minsolver Iterations", this.Control.NonLinearSolver.MinSolverIterations);
                 Console.WriteLine("     {0,-30}:{1}", "Maxsolver Iterations", this.Control.NonLinearSolver.MaxSolverIterations);
+                Console.WriteLine("==============={0}===============", "========================");
 
 
             }

@@ -428,9 +428,13 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// - content: MPI Processor rank
         ///</param>  
         internal int[] SortPartitioning(int[] part) {
+            if (m_Size < 2)
+                    return part;
+
             int[] sortedPart = new int[part.Length];
             List<int> mapping = new List<int>(m_Size);
 
+            // Find a suitable partition for each processor(p)
             for (int p = 0; p < m_Size; p++){
                 // The info about the old partitioning can be accessed by using offsets
                 // Get the offset and length of the processor to mask cells with respect to (w.r.t) old partitioning
@@ -442,6 +446,15 @@ namespace BoSSS.Foundation.Grid.Classic {
                   .Select(g => new { Value = g.Key, Count = g.Count() })
                   .OrderByDescending(x => x.Count)
                   .ToList();
+
+                // Make sure that you supply each processor as a possible target for the partitions
+                for (int pp = 0; pp < m_Size; pp++) {
+                    // As long as they are not assigned to anyone ...
+                    if (!mapping.Contains(pp) && !occurrences.Any(x => x.Value == pp)) {
+                        // ... we can add this processor(pp) even though they do not have any cells in the current partitioning. 
+                        occurrences.Add(new { Value = pp, Count = 0 });
+                    }
+                }
 
                 // Find the most repeated rank w.r.t. old partitioning
                 foreach (var processor in occurrences) {
@@ -459,26 +472,26 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
 
             // Assign the new partitioning w.r.t. mapping
-            for(int j=0; j < part.Length; j++) {
+            for (int j = 0; j < part.Length; j++) {
                 sortedPart[j] = mapping.IndexOf(part[j]); // Index of the list represents the new rank
             }
 
             return sortedPart;
         }
 
-            /// <summary>
-            /// Not implemented.
-            /// </summary>
-            /// <returns>
-            ///  - Index: local cell index
-            ///  - content: MPI Processor rank;
-            /// This is the suggestion
-            /// of ParMETIS for the grid partitioning:
-            /// For each local cell index, the returned array contains the MPI processor rank
-            /// where the cell should be placed.<br/>
-            /// may be null, if no repartitioning is required at all.
-            /// </returns>
-            internal int[] SMPRedistribution() {
+        /// <summary>
+        /// Not implemented.
+        /// </summary>
+        /// <returns>
+        ///  - Index: local cell index
+        ///  - content: MPI Processor rank;
+        /// This is the suggestion
+        /// of ParMETIS for the grid partitioning:
+        /// For each local cell index, the returned array contains the MPI processor rank
+        /// where the cell should be placed.<br/>
+        /// may be null, if no repartitioning is required at all.
+        /// </returns>
+        internal int[] SMPRedistribution() {
             using (new FuncTrace()) {
                 return null;
                 //throw new NotImplementedException("todo");
@@ -1198,7 +1211,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                     Array.Sort(CellIndex, RankIndex);
                 }
-                RankIndex = SortPartitioning(RankIndex);
+                //RankIndex = SortPartitioning(RankIndex);
                 //Scatter Rank-Array for local Process
                 local_Rank_RedistributionList = RankIndex.MPIScatterv(CellsPerRank);
             } else {

@@ -6,6 +6,7 @@ using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LoadBalancing;
 using ilPSP;
 using ilPSP.Tracing;
 using MPI.Wrappers;
@@ -177,7 +178,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             // parameters
             var parameterFields = Operator.InvokeParameterFactory(CurrentState.Fields);
             Parameters = new List<DGField>();
-            Console.WriteLine(parameterFields.Count());
+            // Console.WriteLine(parameterFields.Count()); [Toprak]: I noticed that this is unnecessary, therefore I made it comment.
             foreach (var f in parameterFields) {
                 this.Parameters.Add(f);
                 if(f != null) 

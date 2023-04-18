@@ -35,6 +35,9 @@ using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
 using System.Collections.Generic;
+using BoSSS.Platform.LinAlg;
+using BoSSS.Application.XNSE_Solver.Loadbalancing;
+using NUnit.Framework.Internal.Execution;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -43,7 +46,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// non-trivial cases.
     /// </summary>
     [TestFixture]
-    public class XNSE_Solver_MPItest {
+    public static class XNSE_Solver_MPItest {
 
         [Test]
         static public void ParallelRisingDroplet([Values(3)] int p) {
@@ -72,10 +75,11 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         [Test]
-        static public void RotCube_DomainDecompoitionError() {
+        static public void RotCube_DomainDecompositionError() {
             // error occurs only with 3 processors and AMR true
 
             var C = HardcodedControl.RotCubeDomainDecompoitionError();
+            C.NoOfTimesteps = 50;
 
             using (var solver = new XNSE()) {
                 solver.Init(C);
@@ -111,6 +115,86 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         [Test]
+        public static void TestLoadBalancing([Values] bool AMR) {
+            GridPartType PartType = GridPartType.METIS;
+            double[] centerSphere = new double[2] { 0.5, 0.5 };
+            int[] DGorders = new int[] { 1, 2 };
+            int[] ResArray = new int[] { 16, 32 };
+            const int NoTimeSteps = 500;
+
+            var LBon = new Stopwatch();
+            var LBoff = new Stopwatch();
+            double[] LBonElapsedTimes = new double[DGorders.Length * ResArray.Length];
+            double[] LBoffElapsedTimes = new double[DGorders.Length * ResArray.Length];
+
+            XNSE_Control Control_LBon;
+            XNSE_Control Control_LBoff;
+
+            Console.WriteLine($"\n## Starting testing load balancing with AMR={AMR} and grid type of {PartType} ##\n");
+
+            int k = 0;
+            foreach (int DG in DGorders) {
+                foreach (int Res in ResArray) {
+                    // Load Balancing On
+                    Control_LBon = Rotating_Sphere_Orbital(DG, Res, 2, AMR, true, false, pos: centerSphere);
+
+                    if (Control_LBon.DynamicLoadBalancing_CellCostEstimators == null)
+                        Control_LBon.DynamicLoadBalancing_CellCostEstimators.AddRange(new XNSECellCostEstimator());
+
+                    Control_LBon.ImmediatePlotPeriod = -1;
+                    Control_LBon.NoOfTimesteps = NoTimeSteps;
+                    Control_LBon.GridPartType = PartType;
+                    Control_LBon.DynamicLoadBalancing_Period = 10;
+
+                    LBon.Restart();
+                    using (var solver = new XNSE()) {
+                        solver.Init(Control_LBon);
+                        solver.RunSolverMode();
+                    }
+                    LBon.Stop();
+
+                    // Load Balancing Off
+                    Control_LBoff = Rotating_Sphere_Orbital(DG, Res, 2, AMR, false, false, pos: centerSphere);
+
+                    if (Control_LBoff.DynamicLoadBalancing_CellCostEstimators == null)
+                        Control_LBoff.DynamicLoadBalancing_CellCostEstimators.AddRange(new XNSECellCostEstimator());
+
+                    Control_LBoff.ImmediatePlotPeriod = -1;
+                    Control_LBoff.NoOfTimesteps = NoTimeSteps;
+                    Control_LBoff.GridPartType = PartType;
+
+                    LBoff.Restart();
+                    using (var solver = new XNSE()) {
+                        solver.Init(Control_LBoff);
+                        solver.RunSolverMode();
+                    }
+                    LBoff.Stop();
+                    LBonElapsedTimes[k] = LBon.ElapsedMilliseconds;
+                    LBoffElapsedTimes[k] = LBoff.ElapsedMilliseconds;
+                    k++;
+                    Console.WriteLine($"--- For DG={DG} and res={Res}, elapsed Time: {LBon.Elapsed} - {LBoff.Elapsed} (with and without LB)");
+                }
+            }
+
+            Console.WriteLine($"\n## Summary for AMR={AMR} and grid type of {PartType} ##");
+            k = 0;
+            foreach (int DG in DGorders) {
+                foreach (int Res in ResArray) {
+                    Console.WriteLine($"-- DG={DG} and res={Res}, Time: {LBonElapsedTimes[k]} - {LBoffElapsedTimes[k]} (with and without LB) --");
+                    k++;
+                }
+            }
+            double TotalElapsedLBon = LBonElapsedTimes.Sum() / 1000 / 60; //convert from milliseconds to minutes
+            double TotalElapsedLBoff = LBoffElapsedTimes.Sum() / 1000 / 60;
+
+            Console.WriteLine("-- Overall Comparison: {0}-{1} minutes (with and without LB) --", TotalElapsedLBon, TotalElapsedLBoff);
+            Console.WriteLine("## {0}% wall-clock time reduced by load Balancing", (TotalElapsedLBoff - TotalElapsedLBon) / TotalElapsedLBoff * 100);
+
+            if (TotalElapsedLBon > TotalElapsedLBoff * 0.95)
+                throw new Exception("Load Balancing is not efficient");
+        }
+
+        //[Test]
         public static void SayeBug() {
             // fallback method (which was not implemented at this point), would have been triggered in Saye quadrature
             var C = Rotating_Cube(1, 20, 3, true, false);
@@ -496,6 +580,10 @@ namespace BoSSS.Application.XNSE_Solver {
             return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Sphere, UsePredefPartitioning);
         }
 
+        public static XNSE_Control Rotating_Sphere_Orbital(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false, double[] pos = null) {
+            return Rotating_Something_Orbital(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Sphere, UsePredefPartitioning, pos);
+        }
+
         enum Geometry {
             Cube = 0,
             Sphere = 1,
@@ -561,9 +649,9 @@ namespace BoSSS.Application.XNSE_Solver {
                     case Geometry.Sphere:
                     switch (SpaceDim) {
                         case 2:
-                        return -X[0] * X[0] - X[1] * X[1] + particleRad * particleRad;
+                        return - (X[0]- pos[0]) * (X[0] - pos[0]) - (X[1] - pos[1]) * (X[1] - pos[1]) + particleRad * particleRad;
                         case 3:
-                        return -X[0] * X[0] - X[1] * X[1] - X[2] * X[2] + particleRad * particleRad;
+                        return -(X[0] - pos[0]) * (X[0] - pos[0]) - (X[1] - pos[1]) * (X[1] - pos[1]) - (X[2] - pos[2]) * (X[2] - pos[2]) + particleRad * particleRad;
                         default:
                         throw new NotImplementedException("Dimension not supported");
                     }
@@ -575,7 +663,44 @@ namespace BoSSS.Application.XNSE_Solver {
             };
         }
 
-        private static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, bool useLoadBal, Geometry Gshape, bool UsePredefPartitioning) {
+
+        private static Func<double[], double, double> GenPhiFuncOrbital(double anglev, Geometry Gshape, int SpaceDim, double particleRad, double[] origin) {
+            return delegate (double[] X, double t) {
+                double angle = -(anglev * t) % (2 * Math.PI);
+
+                double[] pos = new double[SpaceDim];
+                pos[0] = origin[0]* Math.Cos(angle) - origin[1] * Math.Sin(angle);
+                pos[1] = origin[0] * Math.Sin(angle) + origin[1] * Math.Cos(angle);
+                //Console.WriteLine($"angle: {angle} , pos: {pos[0]},{pos[1]} , origin:{origin[0]},{origin[1]}");
+                switch (Gshape) {
+                    case Geometry.Cube:
+                        switch (SpaceDim) {
+                            case 2:
+                                return -Math.Max(Math.Abs(X[0] - pos[0]), Math.Abs(X[1] - pos[1])) + particleRad;
+                            case 3:
+                                return -Math.Max(Math.Abs(X[0] - pos[0]), Math.Max(Math.Abs(X[1] - pos[1]), Math.Abs(X[2] - pos[2]))) + particleRad;
+                            default:
+                                throw new NotImplementedException("Dimension not supported");
+                        };
+                    case Geometry.Sphere:
+                        switch (SpaceDim) {
+                            case 2:
+                                return -(X[0] - pos[0]) * (X[0] - pos[0]) - (X[1] - pos[1]) * (X[1] - pos[1]) + particleRad * particleRad;
+                            case 3:
+                                return -(X[0] - pos[0]) * (X[0] - pos[0]) - (X[1] - pos[1]) * (X[1] - pos[1]) - (X[2] - pos[2]) * (X[2] - pos[2]) + particleRad * particleRad;
+                            default:
+                                throw new NotImplementedException("Dimension not supported");
+                        }
+                    case Geometry.Parted:
+                        return -X[0] + 0.7;
+                    default:
+                        throw new NotImplementedException("Shape unknown");
+                }
+            };
+        }
+
+
+        private static XNSE_Control Rotating_Something(int k, int Res, int SpaceDim, bool useAMR, bool useLoadBal, Geometry Gshape, bool UsePredefPartitioning, double[] pos = null) {
             XNSE_Control C = new XNSE_Control();
             // basic database options
             // ======================
@@ -618,7 +743,9 @@ namespace BoSSS.Application.XNSE_Solver {
             C.PhysicalParameters.rho_A = rhoA;
             C.PhysicalParameters.mu_A = muA;
             double anglev = 10;
-            double[] pos = new double[SpaceDim];
+            if (pos is null) {
+                pos = new double[SpaceDim];
+            }
             double particleRad = 0.261;
 
             var PhiFunc = GenPhiFunc(anglev, Gshape, SpaceDim, particleRad, pos);
@@ -714,15 +841,161 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
-        public Func<double[], double, double> GetPhi() {
+
+        private static XNSE_Control Rotating_Something_Orbital(int k, int Res, int SpaceDim, bool useAMR, bool useLoadBal, Geometry Gshape, bool UsePredefPartitioning, double[] pos = null) {
+            XNSE_Control C = new XNSE_Control();
+            // basic database options
+            // ======================
+
+            C.savetodb = false;
+            //C.DbPath = @"D:\trash_db";
+            C.ProjectName = "XNSE/IBM_test";
+            C.ProjectDescription = "rotating cube";
+            C.Tags.Add("rotating");
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D", SpaceDim));
+
+            // DG degrees
+            // ==========
+
+            C.SetFieldOptions(k, Math.Max(2, k * 2));
+            if (UsePredefPartitioning) {
+                C.GridPartType = GridPartType.Predefined;
+                C.GridPartOptions = "testgrid";
+            } else
+                C.GridPartType = GridPartType.METIS;
+
+            C.SessionName = "XNSE_rotcube_test";
+            C.saveperiod = 1;
+
+
+            // grid and boundary conditions
+            // ============================
+
+            //// Create Grid
+            C.GridFunc = GridFuncFactory(SpaceDim, Res, UsePredefPartitioning);
+
+            // Physical Parameters
+            // ===================
+            const double rhoA = 1;
+            const double muA = 1;
+
+            C.PhysicalParameters.IncludeConvection = false;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+            double anglev = 1;
+
+            if (pos is null) {
+                pos = new double[SpaceDim];
+            }
+            double particleRad = 0.25;
+
+            var PhiFunc = GenPhiFuncOrbital(anglev, Gshape, SpaceDim, particleRad, pos);
+
+            Func<double[], double, double[]> VelocityAtIB = delegate (double[] X, double time) {
+
+                if (pos.Length != X.Length)
+                    throw new ArgumentException("check dimension of center of mass");
+
+                Vector angVelo = new Vector(new double[] { 0, 0, anglev });
+                Vector CenterofMass = new Vector(pos);
+                Vector Origin = new Vector(new double[SpaceDim]);
+                Vector radialVector = new Vector(X) - Origin;
+                Vector transVelocity = new Vector(new double[SpaceDim]);
+                Vector pointVelocity;
+
+                switch (SpaceDim) {
+                    case 2:
+                        pointVelocity = new Vector(transVelocity[0] - angVelo[2] * radialVector[1], transVelocity[1] + angVelo[2] * radialVector[0]);
+                        break;
+                    case 3:
+                        pointVelocity = transVelocity + angVelo.CrossProduct(radialVector);
+                        break;
+                    default:
+                        throw new NotImplementedException("this number of dimensions is not supported");
+                }
+
+                return pointVelocity;
+            };
+
+            Func<double[], double, double> VelocityX = delegate (double[] X, double time) { return VelocityAtIB(X, time)[0]; };
+            Func<double[], double, double> VelocityY = delegate (double[] X, double time) { return VelocityAtIB(X, time)[1]; };
+            Func<double[], double, double> VelocityZ = delegate (double[] X, double time) { return VelocityAtIB(X, time)[2]; };
+
+            var PhiFuncDelegate = BoSSS.Solution.Utils.NonVectorizedScalarFunction.Vectorize(PhiFunc);
+
+            C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), X => -1);
+            C.UseImmersedBoundary = true;
+            if (C.UseImmersedBoundary) {
+                //C.InitialValues_Evaluators_TimeDep.Add(VariableNames.LevelSetCGidx(1), PhiFunc);
+                C.InitialValues_EvaluatorsVec.Add(VariableNames.LevelSetCGidx(1), PhiFuncDelegate);
+                C.InitialValues_Evaluators_TimeDep.Add("VelocityX@Phi2", VelocityX);
+                C.InitialValues_Evaluators_TimeDep.Add("VelocityY@Phi2", VelocityY);
+                if (SpaceDim == 3)
+                    C.InitialValues_Evaluators_TimeDep.Add("VelocityZ@Phi2", VelocityZ);
+            }
+            C.InitialValues_Evaluators.Add("Pressure", X => 0);
+            C.AddBoundaryValue("Wall");
+
+            // misc. solver options
+            // ====================
+
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.UseSchurBlockPrec = true;
+            C.AgglomerationThreshold = 0.1;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                NoOfMultigridLevels = 5,
+                ConvergenceCriterion = 1E-8,
+                MaxSolverIterations = 100,
+                //MaxKrylovDim = 30,
+                TargetBlockSize = 10000,
+                //verbose = true
+            };
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.verbose = true;
+
+            C.AdaptiveMeshRefinement = useAMR;
+            if (useAMR) {
+                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+                C.AMR_startUpSweeps = 1;
+            }
+
+            C.DynamicLoadBalancing_On = useLoadBal;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 10;
+            //C.DynamicLoadBalancing_CellCostEstimators = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0;
+
+            // Timestepping
+            // ============
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            double dt = 0.01;
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.dtFixed = dt;
+            C.NoOfTimesteps = 500;
+
+            return C;
+        }
+
+
+
+        public static Func<double[], double, double> GetPhi() {
             throw new NotImplementedException();
         }
 
-        public GridCommons CreateGrid(int Resolution) {
+        public static GridCommons CreateGrid(int Resolution) {
             throw new NotImplementedException();
         }
 
-        public IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
+        public static IDictionary<string, AppControl.BoundaryValueCollection> GetBoundaryConfig() {
             throw new NotImplementedException();
         }
     }
