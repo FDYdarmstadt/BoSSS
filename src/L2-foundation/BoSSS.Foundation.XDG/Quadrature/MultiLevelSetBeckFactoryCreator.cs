@@ -22,7 +22,7 @@ using System.ComponentModel;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
-    public class MultiLevelSetSayeFactoryCreator
+    public class MultiLevelSetBeckFactoryCreator
     {
         LevelSetCombination[] phis;
 
@@ -30,7 +30,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         LevelSetData[] levelSets;
 
-        public MultiLevelSetSayeFactoryCreator(LevelSetData[] levelSets)
+        public MultiLevelSetBeckFactoryCreator(LevelSetData[] levelSets)
         {
             this.levelSets = levelSets;
             LevelSet levelSet0 = (LevelSet)levelSets[0].LevelSet;
@@ -114,7 +114,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 Jmp1 = jmp1
             };
             LevelSetCombination lscomb = FindPhi(id);
-            return new DoubleSayeQuadratureFactory(new DoubleSayeEdgeScheme(levelSets, lscomb), levelSets);
+            return new BeckQuadratureFactory(new BeckEdgeScheme(levelSets, lscomb), levelSets);
         }
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0,
@@ -132,7 +132,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 (LevelSet) levelSets[levSetIndex0].LevelSet,
                 (LevelSet) levelSets[levSetIndex1].LevelSet);
             lscomb.sign0 = 0;
-            return new DoubleSayeQuadratureFactory(new DoubleSayeSurfaceScheme(levelSets, lscomb), levelSets);
+            return new BeckQuadratureFactory(new BeckSurfaceScheme(levelSets, lscomb), levelSets);
         }
 
         public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1)
@@ -146,7 +146,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             };
             LevelSetCombination lscomb = FindPhi(id);
 
-            return new DoubleSayeQuadratureFactory(new DoubleSayeVolumeScheme(levelSets, lscomb),levelSets);
+            return new BeckQuadratureFactory(new BeckVolumeScheme(levelSets, lscomb),levelSets);
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory) {
@@ -202,7 +202,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
     /// <summary>
     /// Just a hack to enable special handling of cells where levelset=1 lies on an edge
     /// </summary>
-    public static class SayeSettingsOverride {
+    public static class BeckSettingsOverride {
 
         /// <summary>
         /// switch to enable special handling for cells, where the levelset=1 lies on an edge
@@ -210,21 +210,21 @@ namespace BoSSS.Foundation.XDG.Quadrature
         public static bool doubleCutCellOverride = false;
     }
 
-    class DoubleSayeQuadratureFactory : IQuadRuleFactory<QuadRule>
+    class BeckQuadratureFactory : IQuadRuleFactory<QuadRule>
     {
-        DoubleSayeBaseScheme scheme;
+        BeckBaseScheme scheme;
 
         //MultiLevelSetOnEdgeDetector detector;
 
         LevelSetData[] data;
 
-        public DoubleSayeQuadratureFactory(DoubleSayeBaseScheme scheme, LevelSetTracker.LevelSetData[] data)
+        public BeckQuadratureFactory(BeckBaseScheme scheme, LevelSetTracker.LevelSetData[] data)
         {
             this.scheme = scheme;
             this.data = data;
         }
 
-        //public DoubleSayeQuadratureFactory(LevelSetTracker.LevelSetData[] data, CombinedID id, DoubleSayeBaseScheme scheme) : this(scheme,data)
+        //public BeckQuadratureFactory(LevelSetTracker.LevelSetData[] data, CombinedID id, BeckBaseScheme scheme) : this(scheme,data)
         //{
         //    detector = new MultiLevelSetOnEdgeDetector(data, id);
         //}
@@ -251,7 +251,45 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
             return rule;
         }
+        public HyperRectangle EdgeToFlobalHR(int j, GridData gdat)
+        {
+            var jNeighCell = gdat.Edges.CellIndices[j, 0];
+            var e2C = gdat.iGeomEdges.Edge2CellTrafos[j];
 
+            var center = new Vector(gdat.SpatialDimension - 1);
+
+            // create the Hyperrectangle
+            var ret = new HyperRectangle(gdat.SpatialDimension);
+            ret.Dimension = gdat.SpatialDimension - 1;
+
+            //get the Coordinate of the Center
+            var centerInCell = e2C.Transform(center);
+            MultidimensionalArray LocalVerticesIn = MultidimensionalArray.Create(1,centerInCell.Dim);
+            MultidimensionalArray GlobalVerticesOut = MultidimensionalArray.Create(1, centerInCell.Dim);
+
+            for (int i = 0; i < centerInCell.Dim; i++)
+            {
+                LocalVerticesIn[0, i] = centerInCell[i];
+            }
+
+            gdat.TransformLocal2Global(LocalVerticesIn, GlobalVerticesOut, jNeighCell);
+
+            //asign it
+            ret.Center = lSEvalUtil.ToTensor1(GlobalVerticesOut.ExtractSubArrayShallow(0,-1));
+
+
+            //Diameters
+            for(int iD=0; iD < ret.Diameters.M; iD++)
+            {
+                LocalVerticesIn[0, iD] = 1;
+
+                LocalVerticesIn[0, iD] = -1;
+
+                LocalVerticesIn[0, iD] = 0;
+            }
+            return ret;
+
+        }
         //unused
         public HyperRectangle CellToGlobalHR(int j, GridData gdat)
         {
@@ -293,9 +331,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     // update the diameter accordingly
                     dC[d] = mmV[d, 1] - mmV[d, 0];
                 }
-
             }
-
             var HR = new HyperRectangle(D);
             if (D == 2)
             {
@@ -306,8 +342,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 HR.Center = Tensor1.Vector(cC.x, cC.y, cC.z);
             }
             HR.Diameters = dC;
-
-
             return HR;
         }
 
@@ -321,7 +355,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         void Initialize(int resolution);
     }
-    internal abstract class DoubleSayeBaseScheme : ISchemeWO
+    internal abstract class BeckBaseScheme : ISchemeWO
     {
         public LevelSetData[] data;
 
@@ -332,7 +366,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public abstract RefElement GetRefElement();
 
-        public DoubleSayeBaseScheme(LevelSetData[] data, LevelSetCombination lscomb)
+        public BeckBaseScheme(LevelSetData[] data, LevelSetCombination lscomb)
         {
             this.data = data;
 
@@ -348,7 +382,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             int neededSubdiv = (int) (neededNodes) / 4;
             if(neededSubdiv > 0)
             {
-                return (4, neededSubdiv);
+                return (4, neededSubdiv+0);
             }
             else
             {
@@ -368,6 +402,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             //get the cell on which we integrate, here depending on the scheme the right integration domain is chosen
             HyperRectangle cell = GetCell();
+
+            double scaling = GetScaling(j);
 
             //get the symbols
             (var s1, var s2) = GetSymbols(lscomb);
@@ -390,7 +426,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 {
                     rule.Nodes[i, d] = qNode.Point[d];
                 }
-                rule.Weights[i] = qNode.Weight;
+                rule.Weights[i] = qNode.Weight/ scaling;
             }
             rule.Nodes.LockForever();
             rule.Nodes.SaveToTextFile($"quadNodes_{this.ToString()}_{lscomb.ID.LevSet0}{s1.ToString()}_{lscomb.ID.LevSet1}{s2.ToString()}.txt");
@@ -402,6 +438,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
         /// </summary>
         /// <returns></returns>
         public abstract HyperRectangle GetCell();
+
+        /// <summary>
+        /// gives the scaling
+        /// </summary>
+        /// <param name="j"></param>
+        /// <returns></returns>
+        public abstract double GetScaling(int j);
 
         /// <summary>
         /// This method reutrn a Hyperrectangle that is exactly the domain we want to integrate
@@ -434,9 +477,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
     }
 
-    internal class DoubleSayeVolumeScheme : DoubleSayeBaseScheme
+    internal class BeckVolumeScheme : BeckBaseScheme
     {
-        public DoubleSayeVolumeScheme(LevelSetData[] data, LevelSetCombination lscomb) : base( data, lscomb)
+        public BeckVolumeScheme(LevelSetData[] data, LevelSetCombination lscomb) : base( data, lscomb)
         {
             
         }
@@ -466,10 +509,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             return (new lSEval((LevelSet)data[lscomb.ID.LevSet0].LevelSet,j), new lSEval((LevelSet)data[lscomb.ID.LevSet1].LevelSet,j));
         }
+
+        public override double GetScaling(int j)
+        {
+            return 1;
+        }
     }
-    internal class DoubleSayeEdgeScheme : DoubleSayeBaseScheme
+    internal class BeckEdgeScheme : BeckBaseScheme
     {
-        public DoubleSayeEdgeScheme( LevelSetData[] data, LevelSetCombination lscomb) : base(data, lscomb)
+        public BeckEdgeScheme( LevelSetData[] data, LevelSetCombination lscomb) : base(data, lscomb)
         {
         }
         public override RefElement GetRefElement()
@@ -502,10 +550,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return (new lSEvalEdge((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEvalEdge((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
         }
 
+        public override double GetScaling(int j)
+        {
+            return 1;
+        }
     }
-    internal class DoubleSayeSurfaceScheme : DoubleSayeBaseScheme
+    internal class BeckSurfaceScheme : BeckBaseScheme
     {
-        public DoubleSayeSurfaceScheme(LevelSetData[] data, LevelSetCombination lscomb) : base(data,  lscomb)
+        public BeckSurfaceScheme(LevelSetData[] data, LevelSetCombination lscomb) : base(data,  lscomb)
         {
         }
         public override RefElement GetRefElement()
@@ -536,6 +588,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
             return (new lSEval((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEval((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
+        }
+
+        public override double GetScaling(int j)
+        {
+            var ls = (LevelSet)data[lscomb.ID.LevSet0].LevelSet;
+            var grd = ls.GridDat;
+            var ret = grd.Jacobian.GetValue_Cell(GetRefElement().Center,j, 1);
+            return ret[0,0,0];
         }
     }
 
@@ -812,7 +872,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             else
             {
                 return new NodeSet(Grid.RefElements.Point.Instance, GlobIn, true);
-
             }
         }
         public static (NodeSet NS, int i0) NSFromGlobalTensor(Tensor1 x, LevelSet m_levelSet)

@@ -95,7 +95,7 @@ namespace BoSSS.Foundation.XDG {
             get;
             private set;
         }
-        public MultiLevelSetSayeFactoryCreator zwoLSSayeFactories { get; private set; }
+        public MultiLevelSetBeckFactoryCreator zwoLSSayeFactories { get; private set; }
 
         /// <summary>
         /// ctor.
@@ -228,7 +228,7 @@ namespace BoSSS.Foundation.XDG {
                 case MomentFittingVariants.Saye:
                     if (zwoLSSayeFactories == null)
                     {
-                        zwoLSSayeFactories = new MultiLevelSetSayeFactoryCreator(m_LevelSetDatas);
+                        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
                     }
                     return zwoLSSayeFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
                 default:
@@ -347,7 +347,7 @@ namespace BoSSS.Foundation.XDG {
                 case MomentFittingVariants.Saye:
                     if (zwoLSSayeFactories == null)
                     {
-                        zwoLSSayeFactories = new MultiLevelSetSayeFactoryCreator(m_LevelSetDatas);
+                        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
                     }
                     return zwoLSSayeFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1);
 
@@ -463,7 +463,7 @@ namespace BoSSS.Foundation.XDG {
                 case MomentFittingVariants.Saye:
                     if (zwoLSSayeFactories == null)
                     {
-                        zwoLSSayeFactories = new MultiLevelSetSayeFactoryCreator(m_LevelSetDatas);
+                        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
                     }
                     return zwoLSSayeFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1);
                 default:
@@ -593,7 +593,7 @@ namespace BoSSS.Foundation.XDG {
                 case MomentFittingVariants.Saye:
                     if (zwoLSSayeFactories == null)
                     {
-                        zwoLSSayeFactories = new MultiLevelSetSayeFactoryCreator(m_LevelSetDatas);
+                        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
                     }
                     return zwoLSSayeFactories.GetSurfaceFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
                 default:

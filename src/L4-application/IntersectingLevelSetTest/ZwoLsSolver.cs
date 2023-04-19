@@ -40,7 +40,7 @@ namespace IntersectingLevelSetTest {
 
         protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 4), GenericBlas.Linspace(-0.5, 0.5, 4));
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 6), GenericBlas.Linspace(-0.5, 0.5, 6));
             return grd;
         }
 
@@ -132,14 +132,14 @@ namespace IntersectingLevelSetTest {
             }
 
             double phi2(double x, double y) {
-                return (x);
+                return (y);
             }
 
             double phi3(double x, double y) {
                 return (x - (Math.Tan(t) * y));
             }
             Phi0.ProjectField(phi3);
-            Phi1.ProjectField(phi1);
+            Phi1.ProjectField(phi2);
         }
 
         private void SetLs2(double t) {
