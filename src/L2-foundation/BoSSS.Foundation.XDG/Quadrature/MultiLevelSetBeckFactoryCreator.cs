@@ -19,6 +19,7 @@ using System.Drawing;
 using BoSSS.Platform.Utils.Geom;
 using BoSSS.Platform;
 using System.ComponentModel;
+using System.Security.Cryptography.X509Certificates;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
@@ -251,50 +252,100 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
             return rule;
         }
-        public HyperRectangle EdgeToFlobalHR(int j, GridData gdat)
+
+    }
+    internal interface ISchemeWO
+    {
+        RefElement ReferenceElement { get; }
+
+        QuadRule GetQuadRule(int j,int order);
+
+        void Initialize(int resolution);
+    }
+    internal abstract class BeckBaseScheme : ISchemeWO
+    {
+        public LevelSetData[] data;
+
+        public LevelSetCombination lscomb;
+        public int D;
+        public bool isGlobalMode = false;
+
+        RefElement ISchemeWO.ReferenceElement => GetRefElement();
+
+        public abstract RefElement GetRefElement();
+
+        public BeckBaseScheme(LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode=false)
         {
-            var jNeighCell = gdat.Edges.CellIndices[j, 0];
-            var e2C = gdat.iGeomEdges.Edge2CellTrafos[j];
+            this.data = data;
+            this.isGlobalMode= isGlobalMode;
 
-            var center = new Vector(gdat.SpatialDimension - 1);
+            this.lscomb = lscomb;
+            this.D = ((LevelSet)data[0].LevelSet).Basis.GridDat.SpatialDimension;
+        }
 
-            // create the Hyperrectangle
-            var ret = new HyperRectangle(gdat.SpatialDimension);
-            ret.Dimension = gdat.SpatialDimension - 1;
-
-            //get the Coordinate of the Center
-            var centerInCell = e2C.Transform(center);
-            MultidimensionalArray LocalVerticesIn = MultidimensionalArray.Create(1,centerInCell.Dim);
-            MultidimensionalArray GlobalVerticesOut = MultidimensionalArray.Create(1, centerInCell.Dim);
-
-            for (int i = 0; i < centerInCell.Dim; i++)
+        public (int noOfNodes,int subdiv) GetNoOfQuadNodes(int quadorder)
+        {
+            //we need at least so much nodes
+            int neededNodes = (int)(quadorder+1) / 2;
+            //max noOfNodes supported is 4
+            int neededSubdiv = (int) (neededNodes) / 4;
+            if(neededSubdiv > 0)
             {
-                LocalVerticesIn[0, i] = centerInCell[i];
+                return (4, neededSubdiv+0);
             }
-
-            gdat.TransformLocal2Global(LocalVerticesIn, GlobalVerticesOut, jNeighCell);
-
-            //asign it
-            ret.Center = lSEvalUtil.ToTensor1(GlobalVerticesOut.ExtractSubArrayShallow(0,-1));
-
-
-            //Diameters
-            for(int iD=0; iD < ret.Diameters.M; iD++)
+            else
             {
-                LocalVerticesIn[0, iD] = 1;
-
-                LocalVerticesIn[0, iD] = -1;
-
-                LocalVerticesIn[0, iD] = 0;
+                return (neededNodes, 0);
             }
-            return ret;
+        }
+        public QuadRule GetQuadRule(int j, int order)
+        {
+            //Get Phi Evaluators
+            (var phi0, var phi1) = GetPhiEval(j);
+
+            //Get NoOfQuadNodes
+            (int noOfNodes, int subdiv) = GetNoOfQuadNodes(order);
+
+            // get a quadrule finder
+            Quadrater finder = new Quadrater();
+
+            //get the cell on which we integrate, here depending on the scheme the right integration domain is chosen
+            HyperRectangle cell = GetCell(j);
+
+            double scaling = GetScaling(j);
+
+            //get the symbols
+            (var s1, var s2) = GetSymbols(lscomb);
+
+            // Get The Quadrature rule From Intersectingquadrature
+            QuadratureRule ruleQ = (default);
+
+            //find the quad rule
+            ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes,subdiv);
+
+            // Creates a QuadRule Object <- The One BoSSS uses
+            QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, D, true);
+            rule.OrderOfPrecision = order;
+
+            //loop over all quadrature Nodes
+            for (int i = 0; i < ruleQ.Count; ++i)
+            {
+                QuadratureNode qNode = ruleQ[i];
+                for (int d = 0; d < D; d++)
+                {
+                    rule.Nodes[i, d] = qNode.Point[d];
+                }
+                rule.Weights[i] = qNode.Weight/ scaling;
+            }
+            rule.Nodes.LockForever();
+            rule.Nodes.SaveToTextFile($"quadNodes_{this.ToString()}_{lscomb.ID.LevSet0}{s1.ToString()}_{lscomb.ID.LevSet1}{s2.ToString()}.txt");
+            return rule;
 
         }
-        //unused
         public HyperRectangle CellToGlobalHR(int j, GridData gdat)
         {
-            var eC1 = gdat.Edges.CellIndices[j,0];
-            var eC2 = gdat.Edges.CellIndices[j,1];
+            var eC1 = gdat.Edges.CellIndices[j, 0];
+            var eC2 = gdat.Edges.CellIndices[j, 1];
             // get spatial dimension
             int D = gdat.SpatialDimension;
             // get the cell center
@@ -344,100 +395,76 @@ namespace BoSSS.Foundation.XDG.Quadrature
             HR.Diameters = dC;
             return HR;
         }
-
-
-    }
-    internal interface ISchemeWO
-    {
-        RefElement ReferenceElement { get; }
-
-        QuadRule GetQuadRule(int j,int order);
-
-        void Initialize(int resolution);
-    }
-    internal abstract class BeckBaseScheme : ISchemeWO
-    {
-        public LevelSetData[] data;
-
-        public LevelSetCombination lscomb;
-        public int D;
-
-        RefElement ISchemeWO.ReferenceElement => GetRefElement();
-
-        public abstract RefElement GetRefElement();
-
-        public BeckBaseScheme(LevelSetData[] data, LevelSetCombination lscomb)
+        public HyperRectangle EdgeToGlobalHR(int j, GridData gdat)
         {
-            this.data = data;
+            var jNeighCell = gdat.Edges.CellIndices[j, 0];
+            var e2C = gdat.iGeomEdges.Edge2CellTrafos[j];
 
-            this.lscomb = lscomb;
-            this.D = ((LevelSet)data[0].LevelSet).Basis.GridDat.SpatialDimension;
-        }
+            var center = new Vector(gdat.SpatialDimension - 1);
 
-        public (int noOfNodes,int subdiv) GetNoOfQuadNodes(int quadorder)
-        {
-            //we need at least so much nodes
-            int neededNodes = (int)(quadorder+1) / 2;
-            //max noOfNodes supported is 4
-            int neededSubdiv = (int) (neededNodes) / 4;
-            if(neededSubdiv > 0)
+            // create the Hyperrectangle
+            var ret = new HyperRectangle(gdat.SpatialDimension);
+            ret.Dimension = gdat.SpatialDimension - 1;
+
+            //get the Coordinate of the Center
+            var centerInCell = e2C.Transform(center);
+
+
+            MultidimensionalArray VectorToMA(Vector x)
             {
-                return (4, neededSubdiv+0);
-            }
-            else
-            {
-                return (neededNodes, 0);
-            }
-        }
-        public QuadRule GetQuadRule(int j, int order)
-        {
-            //Get Phi Evaluators
-            (var phi0, var phi1) = GetPhiEval(j);
-
-            //Get NoOfQuadNodes
-            (int noOfNodes, int subdiv) = GetNoOfQuadNodes(order);
-
-            // get a quadrule finder
-            Quadrater finder = new Quadrater();
-
-            //get the cell on which we integrate, here depending on the scheme the right integration domain is chosen
-            HyperRectangle cell = GetCell();
-
-            double scaling = GetScaling(j);
-
-            //get the symbols
-            (var s1, var s2) = GetSymbols(lscomb);
-
-            // Get The Quadrature rule From Intersectingquadrature
-            QuadratureRule ruleQ = (default);
-
-            //find the quad rule
-            ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes,subdiv);
-
-            // Creates a QuadRule Object <- The One BoSSS uses
-            QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, D, true);
-            rule.OrderOfPrecision = order;
-
-            //loop over all quadrature Nodes
-            for (int i = 0; i < ruleQ.Count; ++i)
-            {
-                QuadratureNode qNode = ruleQ[i];
-                for (int d = 0; d < D; d++)
+                MultidimensionalArray MA = MultidimensionalArray.Create(1, x.Dim);
+                for (int i = 0; i < x.Dim; i++)
                 {
-                    rule.Nodes[i, d] = qNode.Point[d];
+                    MA[0, i] = x[i];
                 }
-                rule.Weights[i] = qNode.Weight/ scaling;
+                return MA;
             }
-            rule.Nodes.LockForever();
-            rule.Nodes.SaveToTextFile($"quadNodes_{this.ToString()}_{lscomb.ID.LevSet0}{s1.ToString()}_{lscomb.ID.LevSet1}{s2.ToString()}.txt");
-            return rule;
+
+            MultidimensionalArray LocalVerticesIn = VectorToMA(centerInCell);
+            MultidimensionalArray GlobalVerticesOut = MultidimensionalArray.Create(1, LocalVerticesIn.Lengths[1]);
+
+
+
+            gdat.TransformLocal2Global(LocalVerticesIn, GlobalVerticesOut, jNeighCell);
+
+            //asign it
+            ret.Center = lSEvalUtil.ToTensor1(GlobalVerticesOut.ExtractSubArrayShallow(0, -1));
+
+            var corner = new Vector(gdat.SpatialDimension - 1);
+            //Diameters
+            for (int iD = 0; iD < ret.Diameters.M; iD++)
+            {
+                //get first corner
+                corner[iD] = 1;
+                var cornerInCell = e2C.Transform(corner);
+                LocalVerticesIn = VectorToMA(cornerInCell);
+                MultidimensionalArray corner1 = MultidimensionalArray.Create(1, LocalVerticesIn.Lengths[1]);
+                gdat.TransformLocal2Global(LocalVerticesIn, corner1, jNeighCell);
+
+                //get second corner
+                corner[iD] = -1;
+                cornerInCell = e2C.Transform(corner);
+                LocalVerticesIn = VectorToMA(cornerInCell);
+                MultidimensionalArray corner2 = MultidimensionalArray.Create(1, LocalVerticesIn.Lengths[1]);
+                gdat.TransformLocal2Global(LocalVerticesIn, corner2, jNeighCell);
+
+                //substract from each other
+                corner1.Acc(-1, corner2);
+
+                //set diameter
+                ret.Diameters[iD] = corner1.AbsSum(); //only one entry should be non zero.
+
+                //reset
+                corner[iD] = 0;
+            }
+            return ret;
 
         }
         /// <summary>
         /// This method reutrn a Hyperrectangle that is exactly the domain we want to integrate
         /// </summary>
         /// <returns></returns>
-        public abstract HyperRectangle GetCell();
+        public abstract HyperRectangle GetCell(int j);
 
         /// <summary>
         /// gives the scaling
@@ -479,7 +506,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
     internal class BeckVolumeScheme : BeckBaseScheme
     {
-        public BeckVolumeScheme(LevelSetData[] data, LevelSetCombination lscomb) : base( data, lscomb)
+        public BeckVolumeScheme(LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode = false) : base( data, lscomb, isGlobalMode)
         {
             
         }
@@ -501,9 +528,17 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 throw new ArgumentException();
             }
         }
-        public override HyperRectangle GetCell()
+        public override HyperRectangle GetCell(int j)
         {
-            return new UnitCube(D);
+            if (base.isGlobalMode)
+            {
+                return CellToGlobalHR(j, (GridData) ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat);
+            }
+            else
+            {
+                return new UnitCube(D);
+            }
+            
         }
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
@@ -517,7 +552,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
     }
     internal class BeckEdgeScheme : BeckBaseScheme
     {
-        public BeckEdgeScheme( LevelSetData[] data, LevelSetCombination lscomb) : base(data, lscomb)
+        public BeckEdgeScheme( LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode = false) : base(data, lscomb, isGlobalMode)
         {
         }
         public override RefElement GetRefElement()
@@ -539,11 +574,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 throw new ArgumentException();
             }
         }
-        public override HyperRectangle GetCell()
+        public override HyperRectangle GetCell( int j)
         {
-            //define the Cell
-            HyperRectangle cell = new UnitCube(D-1);
-            return cell;
+            if (isGlobalMode)
+            {
+                return EdgeToGlobalHR(j, (GridData)((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat);
+            }
+            else
+            {
+                return new UnitCube(D-1);
+            }
         }
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
@@ -557,7 +597,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
     }
     internal class BeckSurfaceScheme : BeckBaseScheme
     {
-        public BeckSurfaceScheme(LevelSetData[] data, LevelSetCombination lscomb) : base(data,  lscomb)
+        public BeckSurfaceScheme(LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode = false) : base(data, lscomb, isGlobalMode)
         {
         }
         public override RefElement GetRefElement()
@@ -579,11 +619,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 throw new ArgumentException();
             }
         }
-        public override HyperRectangle GetCell()
+        public override HyperRectangle GetCell(int j)
         {
-            //define the Cell
-            HyperRectangle cell = new UnitCube(D);
-            return cell;
+            if (isGlobalMode)
+            {
+                return CellToGlobalHR(j, (GridData)((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat);
+            }
+            else
+            {
+                return new UnitCube(D);
+            }
         }
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
@@ -598,7 +643,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return ret[0,0,0];
         }
     }
-
     internal class lSEvalEdge : IScalarFunction
     {
         //levelSet which is evaluated by this class
