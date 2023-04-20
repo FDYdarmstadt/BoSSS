@@ -164,7 +164,7 @@ namespace BoSSS.Foundation.Grid {
                 this.nPoints = nPoints;
 
                 // create BoSSS grid
-                FOAMmesh_to_BoSSS(this, nCells, _faces, _neighbour, _owner, _points, _names, _patchIDs, emptyTag);
+                FOAMmesh_to_BoSSS(this, nCells, _faces, _neighbour, _owner, _points, _names, _patchIDs, emptyTag, this.Cells2Faces);
 
                 foreach (var name in _names){
                     this.AddEdgeTag(name);
@@ -217,7 +217,7 @@ namespace BoSSS.Foundation.Grid {
             // this.dimension = dimension;
 
             // create BoSSS grid
-            FOAMmesh_to_BoSSS(this, nCells, faces, neighbour, owner, points, names, patchIDs, emptyTag);
+            FOAMmesh_to_BoSSS(this, nCells, faces, neighbour, owner, points, names, patchIDs, emptyTag, this.Cells2Faces);
 
             // create grid data object
             this.GridDataObject = new GridData(this);
@@ -255,7 +255,9 @@ namespace BoSSS.Foundation.Grid {
         }
 
 
-        internal static void FOAMmesh_to_BoSSS(GridCommons grid, int nCells, int[][] faces, int[] neighbour, int[] owner, double[,] points, string[] names, int[] patchIDs, int emptyTag) {
+        public List<int>[] Cells2Faces; // mapping of BoSSS cells to OpenFOAM faces
+
+        internal static void FOAMmesh_to_BoSSS(GridCommons grid, int nCells, int[][] faces, int[] neighbour, int[] owner, double[,] points, string[] names, int[] patchIDs, int emptyTag, List<int>[] Cells2Faces) {
 
             // if (grid.dimension == 2){
             //     // find degenerate dimension
@@ -335,7 +337,7 @@ namespace BoSSS.Foundation.Grid {
             // Build Cells-to-Faces correlation
             // ================================
 
-            List<int>[] Cells2Faces = new List<int>[nCells]; // mapping of BoSSS cells to OpenFOAM faces
+            Cells2Faces = new List<int>[nCells]; // mapping of BoSSS cells to OpenFOAM faces
             for (int j = 0; j < nCells; j++) {
                 Cells2Faces[j] = new List<int>();
             }

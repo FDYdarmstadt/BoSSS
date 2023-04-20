@@ -212,7 +212,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// For usage exclusively within BoSSS, the method <see cref="CahnHilliardInternal"/> is generally more convenient.
         /// </summary>
         [CodeGenExport]
-        public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, double deltaT) {
+        public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, double deltaT) {
 
             // TODO sync from OpenFOAM
             //  double epsilon = 1e-5; // capillary width
@@ -223,14 +223,14 @@ namespace BoSSS.Application.ExternalBinding {
             // double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
                                                               // double diff = M * lam;
             CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: 0.1, _stationary: false, _endT: deltaT*1.1);
-            CahnHilliardInternal(mtx, U, ptch, ptchU, null, chParams);
+            CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, chParams);
         }
 
         /// <summary>
         /// Solves the Cahn-Hilliard equation
         /// This method also contains arguments that cannot be made available to OpenFOAM due to limitations of the mono-C-interface.
         /// </summary>
-        public void CahnHilliardInternal(OpenFoamMatrix mtx, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction func = null, CahnHilliardParameters chParams = new CahnHilliardParameters()) {
+        public void CahnHilliardInternal(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction func = null, CahnHilliardParameters chParams = new CahnHilliardParameters()) {
             try {
 
                 _mtx = mtx;
@@ -403,7 +403,7 @@ namespace BoSSS.Application.ExternalBinding {
                 System.Collections.BitArray subGridCellMask = mask?.GetBitMask();
 
                 var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda, mask);
-                var CHCconv = new CahnHilliardCConv(() => velocity, mask);
+                var CHCconv = new CahnHilliardCConv(() => velocity, Flux, mask);
                 var CHMudiff = new CahnHilliardMuDiff(ptch, penalty_const, cahn, mask);
                 var CHMusource = new CahnHilliardMuSource(mask);
                 op.EquationComponents["Res_c"].Add(CHCdiff);
@@ -807,8 +807,55 @@ namespace BoSSS.Application.ExternalBinding {
             }
         }
         class CahnHilliardCConv : __c_Flux {
-            public CahnHilliardCConv(Func<DGField[]> VelocityGetter, CellMask Subgrid = null)
-                : base(3, VelocityGetter, null){} // TODO check if velocity is really communicated through parameter fields
+            public CahnHilliardCConv(Func<DGField[]> VelocityGetter, OpenFoamSurfaceField Flux, CellMask Subgrid = null)
+                : base(3, VelocityGetter, null){
+                this.m_Flux = Flux;
+            }
+
+            OpenFoamSurfaceField m_Flux;
+
+            public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
+            {
+                // expand for treatment of input functions, for now hardcode to -1.0
+                if (m_Flux == null) {
+                    Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
+                    return base.BoundaryEdgeForm(ref inp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
+                }
+                double UxN = m_Flux.GetFlux(inp);
+
+                double phi;
+                if (UxN >= 0)
+                {
+                    phi = _uIN[0];
+                }
+                else
+                {
+                    phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+                }
+
+                return phi * UxN * _vIN;
+            }
+
+            public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
+            {
+                if (m_Flux == null) {
+                    Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
+                    return base.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+                }
+                double UxN = 0.5 * (m_Flux.GetFluxIN(inp) + m_Flux.GetFluxOUT(inp));
+
+                double phi;
+                if (UxN >= 0)
+                {
+                    phi = _uIN[0];
+                }
+                else
+                {
+                    phi = _uOUT[0];
+                }
+
+                return phi * UxN * (_vIN - _vOUT);
+            }
 
         }
 

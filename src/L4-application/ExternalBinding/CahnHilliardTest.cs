@@ -70,7 +70,7 @@ namespace BoSSS.Application.ExternalBinding {
             // }
 
             var _chParams = new CahnHilliardParameters(_cahn: 1.0, _stationary: true);
-            chOp.CahnHilliardInternal(mtx, U, cPtch, uPtch, chParams: _chParams);
+            chOp.CahnHilliardInternal(mtx, null, U, cPtch, uPtch, chParams: _chParams);
 
             var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
             field.Acc(1.0, mtx.Fields[0].Fields[0] as SinglePhaseField);
@@ -131,7 +131,7 @@ namespace BoSSS.Application.ExternalBinding {
                 }
 
                 var _chParams = new CahnHilliardParameters(_cahn: cahn, _stationary: true);
-                chOp.CahnHilliardInternal(mtx, U, cPtch, uPtch, func(), chParams: _chParams);
+                chOp.CahnHilliardInternal(mtx, null, U, cPtch, uPtch, func(), chParams: _chParams);
 
                 var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
                 field.Acc(1.0, mtx.Fields[0].Fields[0] as SinglePhaseField);
