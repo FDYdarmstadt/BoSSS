@@ -139,7 +139,7 @@ namespace IntersectingLevelSetTest {
                 return (x - (Math.Tan(t) * y));
             }
             Phi0.ProjectField(phi3);
-            Phi1.ProjectField(phi2);
+            Phi1.ProjectField(phi1);
         }
 
         private void SetLs2(double t) {
@@ -179,7 +179,7 @@ namespace IntersectingLevelSetTest {
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx_AB()); // flux am lev-set 0
-            Op.EquationComponents["c1"].Add(new LevSetFlx_CA()); // flux am lev-set 1
+            Op.EquationComponents["c1"].Add(new LevSetFlx_CB()); // flux am lev-set 1
 
             //Op.EquationComponents["c1"].Add(new DxBroken());
 

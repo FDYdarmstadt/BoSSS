@@ -300,19 +300,20 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
         public QuadRule GetQuadRule(int j, int order)
         {
+            //get GridData 
+            var gdat = (GridData)((LevelSet)this.data[0].LevelSet).Basis.GridDat;
+
             //Get Phi Evaluators
             (var phi0, var phi1) = GetPhiEval(j);
 
             //Get NoOfQuadNodes
             (int noOfNodes, int subdiv) = GetNoOfQuadNodes(order);
 
-            // get a quadrule finder
+            //Get a quadrule finder
             Quadrater finder = new Quadrater();
 
-            //get the cell on which we integrate, here depending on the scheme the right integration domain is chosen
+            //Get the cell on which we integrate, here depending on the scheme the right integration domain is chosen
             HyperRectangle cell = GetCell(j);
-
-            double scaling = GetScaling(j);
 
             //get the symbols
             (var s1, var s2) = GetSymbols(lscomb);
@@ -327,34 +328,28 @@ namespace BoSSS.Foundation.XDG.Quadrature
             QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, D, true);
             rule.OrderOfPrecision = order;
 
-            var gdat = (GridData)((LevelSet)this.data[0].LevelSet).Basis.GridDat;
+            //transfer from Beck into BoSSS structure
             //loop over all quadrature Nodes
-
             for (int i = 0; i < ruleQ.Count; ++i)
             {
                 QuadratureNode qNode = ruleQ[i];
-
-                //var pGlobMA = MultidimensionalArray.Create(1, D);
-                //for (int d = 0; d < D; d++)
-                //{
-                //    pGlobMA[0, d] = qNode.Point[d];
-                //}
-                //var pLocMA = MultidimensionalArray.Create(1, D);
-                //gdat.TransformGlobal2Local(pGlobMA, pLocMA, j,1,0);
                 for (int d = 0; d < D; d++)
                 {
                     rule.Nodes[i, d] = qNode.Point[d];
                 }
                 rule.Weights[i] = qNode.Weight;
-
-
             }
+            
+            //do some scaling of the Nodes
             if (isGlobalMode)
             {
+                //We transform the Nodes, which are in global coordainates into Local onese
                 var NodesOut = MultidimensionalArray.Create(1,rule.Nodes.Lengths[0], rule.Nodes.Lengths[1]);
                 gdat.TransformGlobal2Local(rule.Nodes, NodesOut, j, 1, 0);
                 rule.Nodes.Set(NodesOut.ExtractSubArrayShallow(0,-1,-1));
                 rule.Nodes.LockForever();
+
+                //We need to scale the weights, as they will be multiplied by the determinant of the jacobian
                 var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
                 for(int iWeight=0;iWeight< rule.Weights.Lengths[0]; iWeight++)
                 {
@@ -364,6 +359,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
             else
             {
+                //Get the Scaling
+                double scaling = GetScaling(j);
                 rule.Weights.Scale(1 / scaling);
                 rule.Nodes.LockForever();
             }
@@ -372,6 +369,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return rule;
 
         }
+        /// <summary>
+        /// Creates a Hyperrectangle corresponding to a Grid Cell
+        /// </summary>
+        /// <param name="j">Cell No.</param>
+        /// <param name="gdat">Grid </param>
+        /// <returns></returns>
         public HyperRectangle CellToGlobalHR(int j, GridData gdat)
         {
             var eC1 = gdat.Edges.CellIndices[j, 0];
@@ -425,6 +428,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
             HR.Diameters = dC;
             return HR;
         }
+        /// <summary>
+        /// Creates a HyperRectangle From an Edge
+        /// </summary>
+        /// <param name="j">Edge No.</param>
+        /// <param name="gdat">Grid</param>
+        /// <returns></returns>
         public HyperRectangle EdgeToGlobalHR(int j, GridData gdat)
         {
             var jNeighCell = gdat.Edges.CellIndices[j, 0];
@@ -439,7 +448,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //get the Coordinate of the Center
             var centerInCell = e2C.Transform(center);
 
-
+            //Helper Function to transform a Vector into a MA of lengts[1,x.Dim]
             MultidimensionalArray VectorToMA(Vector x)
             {
                 MultidimensionalArray MA = MultidimensionalArray.Create(1, x.Dim);
@@ -460,7 +469,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             ret.Center = lSEvalUtil.ToTensor1(GlobalVerticesOut.ExtractSubArrayShallow(0, -1));
 
             var corner = new Vector(gdat.SpatialDimension - 1);
-            //Diameters
+            //Get Diameters from information of Corners
             for (int iD = 0; iD < ret.Diameters.M; iD++)
             {
                 //get first corner
