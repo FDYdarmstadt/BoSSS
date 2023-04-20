@@ -20,6 +20,8 @@ using BoSSS.Platform.Utils.Geom;
 using BoSSS.Platform;
 using System.ComponentModel;
 using System.Security.Cryptography.X509Certificates;
+using ilPSP.LinSolvers.monkey;
+using System.Data;
 
 namespace BoSSS.Foundation.XDG.Quadrature
 {
@@ -115,7 +117,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 Jmp1 = jmp1
             };
             LevelSetCombination lscomb = FindPhi(id);
-            return new BeckQuadratureFactory(new BeckEdgeScheme(levelSets, lscomb, true), levelSets);
+            return new BeckQuadratureFactory(new BeckEdgeScheme(levelSets, lscomb), levelSets);
         }
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0,
@@ -285,6 +287,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public (int noOfNodes,int subdiv) GetNoOfQuadNodes(int quadorder)
         {
+            if (quadorder == 0)
+            {
+                return (1, 0);
+            }
             //we need at least so much nodes
             int neededNodes = (int)(quadorder+1) / 2;
             //max noOfNodes supported is 4
@@ -321,8 +327,16 @@ namespace BoSSS.Foundation.XDG.Quadrature
             // Get The Quadrature rule From Intersectingquadrature
             QuadratureRule ruleQ = (default);
 
-            //find the quad rule
-            ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes, subdiv);
+            try
+            {
+                //find the quad rule
+                ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes, subdiv);
+            }
+            catch(Exception ex)
+            {
+                throw ex;
+            }
+            
 
             // Creates a QuadRule Object <- The One BoSSS uses
             QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, D, true);
@@ -333,10 +347,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             for (int i = 0; i < ruleQ.Count; ++i)
             {
                 QuadratureNode qNode = ruleQ[i];
-                for (int d = 0; d < D; d++)
-                {
-                    rule.Nodes[i, d] = qNode.Point[d];
-                }
+                PointsToNodes(rule.Nodes.ExtractSubArrayShallow(i,-1), qNode, D,j);
                 rule.Weights[i] = qNode.Weight;
             }
             
@@ -349,13 +360,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 rule.Nodes.Set(NodesOut.ExtractSubArrayShallow(0,-1,-1));
                 rule.Nodes.LockForever();
 
-                //We need to scale the weights, as they will be multiplied by the determinant of the jacobian
-                var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
-                for(int iWeight=0;iWeight< rule.Weights.Lengths[0]; iWeight++)
+                if (rule.Nodes.Lengths[0] != 0)
                 {
-                    rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0,iWeight];
+                    //We need to scale the weights, as they will be multiplied by the determinant of the jacobian
+                    var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
+                    for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
+                    {
+                        rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
+                    }
                 }
-                
             }
             else
             {
@@ -369,6 +382,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return rule;
 
         }
+
+        public abstract void PointsToNodes(MultidimensionalArray multidimensionalArray, QuadratureNode qNode, int d, int j);
+
         /// <summary>
         /// Creates a Hyperrectangle corresponding to a Grid Cell
         /// </summary>
@@ -437,13 +453,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
         public HyperRectangle EdgeToGlobalHR(int j, GridData gdat)
         {
             var jNeighCell = gdat.Edges.CellIndices[j, 0];
-            var e2C = gdat.iGeomEdges.Edge2CellTrafos[j];
+            var e2C = gdat.iGeomEdges.Edge2CellTrafos[gdat.Edges.Edge2CellTrafoIndex[j, 0]];
 
             var center = new Vector(gdat.SpatialDimension - 1);
 
             // create the Hyperrectangle
-            var ret = new HyperRectangle(gdat.SpatialDimension);
-            ret.Dimension = gdat.SpatialDimension - 1;
+            var ret = new UnitCube(gdat.SpatialDimension-1);
 
             //get the Coordinate of the Center
             var centerInCell = e2C.Transform(center);
@@ -466,11 +481,21 @@ namespace BoSSS.Foundation.XDG.Quadrature
             gdat.TransformLocal2Global(LocalVerticesIn, GlobalVerticesOut, jNeighCell);
 
             //asign it
-            ret.Center = lSEvalUtil.ToTensor1(GlobalVerticesOut.ExtractSubArrayShallow(0, -1));
+            //Pick the relevant entries of the gradient
+            int count = 0;
+            for (int d = 0; d < gdat.SpatialDimension; d++)
+            {
+                if (centerInCell[d] == 0)
+                {
+                    ret.Center[count] = GlobalVerticesOut.ExtractSubArrayShallow(0, -1)[d];
+                    count++;
+                }
+            }
+            //ret.Center = lSEvalUtil.ToTensor1(GlobalVerticesOut.ExtractSubArrayShallow(0, -1));
 
             var corner = new Vector(gdat.SpatialDimension - 1);
             //Get Diameters from information of Corners
-            for (int iD = 0; iD < ret.Diameters.M; iD++)
+            for (int iD = 0; iD < ret.Dimension; iD++)
             {
                 //get first corner
                 corner[iD] = 1;
@@ -587,6 +612,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             return 1;
         }
+
+        public override void PointsToNodes(MultidimensionalArray rNode, QuadratureNode qNode, int D, int j)
+        {
+            for (int d = 0; d < D; d++)
+            {
+                rNode[d] = qNode.Point[d];
+            }
+        }
     }
     internal class BeckEdgeScheme : BeckBaseScheme
     {
@@ -610,6 +643,24 @@ namespace BoSSS.Foundation.XDG.Quadrature
             else
             {
                 throw new ArgumentException();
+            }
+        }
+        public override void PointsToNodes(MultidimensionalArray rNode, QuadratureNode qNode, int D,int j)
+        {
+            var gdat = (GridData)((LevelSet)data[0].LevelSet).Basis.GridDat;
+            var jNeighCell = gdat.Edges.CellIndices[j, 0];
+            var e2C = gdat.iGeomEdges.Edge2CellTrafos[gdat.Edges.Edge2CellTrafoIndex[j, 0]];
+            
+            var trafoNode= e2C.Transform(lSEvalUtil.TensorToVector(qNode.Point));
+            var globTrafoNode = lSEvalUtil.VectorToMA(trafoNode);
+            if (isGlobalMode)
+            {
+                gdat.TransformLocal2Global(lSEvalUtil.VectorToMA(trafoNode), globTrafoNode, jNeighCell);
+            }
+            
+            for (int d = 0; d < gdat.SpatialDimension; d++)
+            {
+                rNode[d] = globTrafoNode[0,d];
             }
         }
         public override HyperRectangle GetCell( int j)
@@ -637,6 +688,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
     {
         public BeckSurfaceScheme(LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode = false) : base(data, lscomb, isGlobalMode)
         {
+        }
+        public override void PointsToNodes(MultidimensionalArray rNode, QuadratureNode qNode, int D, int j)
+        {
+            for (int d = 0; d < D; d++)
+            {
+                rNode[d] = qNode.Point[d];
+            }
         }
         public override RefElement GetRefElement()
         {
@@ -737,16 +795,23 @@ namespace BoSSS.Foundation.XDG.Quadrature
             var ev = MultidimensionalArray.Create(1, 1);
             MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, D);
             MultidimensionalArray gradIn = MultidimensionalArray.Create(1, 1, D);
+
+            MultidimensionalArray gradOut = MultidimensionalArray.Create(D - 1);
+            MultidimensionalArray hessOut = MultidimensionalArray.Create(D - 1, D - 1);
             if (x.M == D)
             {
                 m_levelSet.Evaluate(j, 1, NS, ev);
                 m_levelSet.EvaluateGradient(j, 1, NS, grad);
+                return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
             }
             else
             {
                 m_levelSet.EvaluateEdge(j, 1, NS, ev, inp, GradientIN: grad, GradientOT: gradIn);
+                (gradOut, hessOut) = DecideForEntries(grad);
+                return (ev[0], lSEvalUtil.ToTensor1(gradOut));
             }
-            return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
+            
+            
         }
 
         (double evaluation, Tensor1 gradient, Tensor2 hessian) IScalarFunction.EvaluateAndGradientAndHessian(Tensor1 x)
@@ -759,23 +824,62 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, D);
             MultidimensionalArray gradIn = MultidimensionalArray.Create(1, 1, D);
             MultidimensionalArray hess = MultidimensionalArray.Create(1, 1,D,D);
-
+            MultidimensionalArray gradOut = MultidimensionalArray.Create(D-1);
+            MultidimensionalArray hessOut = MultidimensionalArray.Create(D - 1, D - 1);
             if (x.M == m_levelSet.Basis.GridDat.SpatialDimension)
             {
                 m_levelSet.Evaluate(j, 1, NS, ev);
                 m_levelSet.EvaluateGradient(j, 1, NS, grad);
                 m_levelSet.EvaluateHessian(j, 1, NS, hess);
+                return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0,0,-1)), lSEvalUtil.ToTensor2(hess.ExtractSubArrayShallow(0, 0, -1,-1)));
             }
             else
             {
                 m_levelSet.EvaluateEdge(j, 1, NS, ev, inp, GradientIN: grad, GradientOT: gradIn);
+                (gradOut, hessOut) = DecideForEntries(grad);
+                return (ev[0], lSEvalUtil.ToTensor1(gradOut), lSEvalUtil.ToTensor2(hessOut));
             }
+
+
             
+            
+
             //no Hessian Evaluation on Edges
             //m_levelSet.EvaluateHessian(i0, 1, NS, hess);
 
-            return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)), lSEvalUtil.ToTensor2(hess.ExtractSubArrayShallow(0, 0, -1, -1)));
+            
 
+        }
+
+        private (MultidimensionalArray gradOut, MultidimensionalArray hessOut) DecideForEntries(MultidimensionalArray grad)
+        {
+            //output of gradient must be dim-1
+            var gradOut = MultidimensionalArray.Create(grad.Lengths[2] - 1);
+            //Dimensions must agree, will stay zero as no Hessian is provided on edges
+            var hessOut = MultidimensionalArray.Create(grad.Lengths[2] - 1, grad.Lengths[2] - 1);
+            
+            // we use the Center of the edge in Local Coordinates to decide which Entries are relevant
+            var gdat = (GridData)this.m_levelSet.Basis.GridDat;
+            var jNeighCell = gdat.Edges.CellIndices[j, 0];
+            var e2C = gdat.iGeomEdges.Edge2CellTrafos[gdat.Edges.Edge2CellTrafoIndex[j, 0]];
+
+
+            var center = new Vector(gdat.SpatialDimension - 1);
+            //get the Coordinate of the Center
+            var centerInCell = e2C.Transform(center);
+
+
+            //Pick the relevant entries of the gradient
+            int count = 0;
+            for (int d = 0; d < gdat.SpatialDimension; d++)
+            {
+                if (centerInCell[d] == 0)
+                {
+                    gradOut[count] = grad[0,0,d];
+                    count++;
+                }
+            }
+            return (gradOut, hessOut);
         }
     }
     internal class lSEvalLocal : lSEvalBase
@@ -865,15 +969,28 @@ namespace BoSSS.Foundation.XDG.Quadrature
         public static Vector TensorToVector(Tensor1 x)
         {
             Vector point;
-            if (x.M == 2)
+            if (x.M == 1)
             {
-                point = new Vector(x[0], x[1], x[2]);
+                point = new Vector(x[0]);
+            }
+            else if(x.M==2) {
+                point = new Vector(x[0], x[1]);
             }
             else
             {
                 point = new Vector(x[0], x[1], x[2]);
             }
             return point;
+        }
+        //Helper Function to transform a Vector into a MA of lengts[1,x.Dim]
+        public static MultidimensionalArray VectorToMA(Vector x)
+        {
+            MultidimensionalArray MA = MultidimensionalArray.Create(1, x.Dim);
+            for (int i = 0; i < x.Dim; i++)
+            {
+                MA[0, i] = x[i];
+            }
+            return MA;
         }
         //public Tensor1 ToTensor(IEnumerable x)
         //{
