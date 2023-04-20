@@ -115,7 +115,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 Jmp1 = jmp1
             };
             LevelSetCombination lscomb = FindPhi(id);
-            return new BeckQuadratureFactory(new BeckEdgeScheme(levelSets, lscomb), levelSets);
+            return new BeckQuadratureFactory(new BeckEdgeScheme(levelSets, lscomb, true), levelSets);
         }
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0,
@@ -133,7 +133,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 (LevelSet) levelSets[levSetIndex0].LevelSet,
                 (LevelSet) levelSets[levSetIndex1].LevelSet);
             lscomb.sign0 = 0;
-            return new BeckQuadratureFactory(new BeckSurfaceScheme(levelSets, lscomb), levelSets);
+            return new BeckQuadratureFactory(new BeckSurfaceScheme(levelSets, lscomb,true), levelSets);
         }
 
         public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1)
@@ -147,7 +147,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             };
             LevelSetCombination lscomb = FindPhi(id);
 
-            return new BeckQuadratureFactory(new BeckVolumeScheme(levelSets, lscomb),levelSets);
+            return new BeckQuadratureFactory(new BeckVolumeScheme(levelSets, lscomb,true),levelSets);
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory) {
@@ -321,24 +321,54 @@ namespace BoSSS.Foundation.XDG.Quadrature
             QuadratureRule ruleQ = (default);
 
             //find the quad rule
-            ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes,subdiv);
+            ruleQ = finder.FindRule(phi0, s1, phi1, s2, cell, noOfNodes, subdiv);
 
             // Creates a QuadRule Object <- The One BoSSS uses
             QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, D, true);
             rule.OrderOfPrecision = order;
 
+            var gdat = (GridData)((LevelSet)this.data[0].LevelSet).Basis.GridDat;
             //loop over all quadrature Nodes
+
             for (int i = 0; i < ruleQ.Count; ++i)
             {
                 QuadratureNode qNode = ruleQ[i];
+
+                //var pGlobMA = MultidimensionalArray.Create(1, D);
+                //for (int d = 0; d < D; d++)
+                //{
+                //    pGlobMA[0, d] = qNode.Point[d];
+                //}
+                //var pLocMA = MultidimensionalArray.Create(1, D);
+                //gdat.TransformGlobal2Local(pGlobMA, pLocMA, j,1,0);
                 for (int d = 0; d < D; d++)
                 {
                     rule.Nodes[i, d] = qNode.Point[d];
                 }
-                rule.Weights[i] = qNode.Weight/ scaling;
+                rule.Weights[i] = qNode.Weight;
+
+
             }
-            rule.Nodes.LockForever();
-            rule.Nodes.SaveToTextFile($"quadNodes_{this.ToString()}_{lscomb.ID.LevSet0}{s1.ToString()}_{lscomb.ID.LevSet1}{s2.ToString()}.txt");
+            if (isGlobalMode)
+            {
+                var NodesOut = MultidimensionalArray.Create(1,rule.Nodes.Lengths[0], rule.Nodes.Lengths[1]);
+                gdat.TransformGlobal2Local(rule.Nodes, NodesOut, j, 1, 0);
+                rule.Nodes.Set(NodesOut.ExtractSubArrayShallow(0,-1,-1));
+                rule.Nodes.LockForever();
+                var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
+                for(int iWeight=0;iWeight< rule.Weights.Lengths[0]; iWeight++)
+                {
+                    rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0,iWeight];
+                }
+                
+            }
+            else
+            {
+                rule.Weights.Scale(1 / scaling);
+                rule.Nodes.LockForever();
+            }
+            
+            //rule.Nodes.SaveToTextFile($"quadNodes_{this.ToString()}_{lscomb.ID.LevSet0}{s1.ToString()}_{lscomb.ID.LevSet1}{s2.ToString()}.txt");
             return rule;
 
         }
@@ -383,7 +413,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     dC[d] = mmV[d, 1] - mmV[d, 0];
                 }
             }
-            var HR = new HyperRectangle(D);
+            var HR = new UnitCube(D);
             if (D == 2)
             {
                 HR.Center = Tensor1.Vector(cC.x, cC.y);
@@ -422,7 +452,6 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             MultidimensionalArray LocalVerticesIn = VectorToMA(centerInCell);
             MultidimensionalArray GlobalVerticesOut = MultidimensionalArray.Create(1, LocalVerticesIn.Lengths[1]);
-
 
 
             gdat.TransformLocal2Global(LocalVerticesIn, GlobalVerticesOut, jNeighCell);
@@ -542,7 +571,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
-            return (new lSEval((LevelSet)data[lscomb.ID.LevSet0].LevelSet,j), new lSEval((LevelSet)data[lscomb.ID.LevSet1].LevelSet,j));
+            return (new lSEvalLocal((LevelSet)data[lscomb.ID.LevSet0].LevelSet,j), new lSEvalLocal((LevelSet)data[lscomb.ID.LevSet1].LevelSet,j));
         }
 
         public override double GetScaling(int j)
@@ -632,15 +661,31 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
-            return (new lSEval((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEval((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
+            if(isGlobalMode)
+            {
+                return (new lSEvalGlobal((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEvalGlobal((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
+            }
+            else
+            {
+                return (new lSEvalLocal((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEvalLocal((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
+            }
+            
         }
 
         public override double GetScaling(int j)
         {
-            var ls = (LevelSet)data[lscomb.ID.LevSet0].LevelSet;
-            var grd = ls.GridDat;
-            var ret = grd.Jacobian.GetValue_Cell(GetRefElement().Center,j, 1);
-            return ret[0,0,0];
+            if (isGlobalMode)
+            {
+                return 1;
+            }
+            else
+            {
+                var ls = (LevelSet)data[lscomb.ID.LevSet0].LevelSet;
+                var grd = ls.GridDat;
+                var ret = grd.Jacobian.GetValue_Cell(GetRefElement().Center, j, 1);
+                return ret[0, 0, 0];
+            }
+            
         }
     }
     internal class lSEvalEdge : IScalarFunction
@@ -724,7 +769,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         }
     }
-    internal class lSEval : IScalarFunction
+    internal class lSEvalLocal : lSEvalBase
+    {
+        public lSEvalLocal(LevelSet levelSet, int j) : base(levelSet, j)
+        {
+        }
+
+        public override NodeSet GetNodeSet(Tensor1 x)
+        {
+            return lSEvalUtil.NSFromTensor(x, m_levelSet);
+        }
+    }
+
+    internal abstract class lSEvalBase : IScalarFunction
     {
         //levelSet which is evaluated by this class
         public LevelSet m_levelSet;
@@ -732,7 +789,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         public int j;
         int IScalarFunction.M => m_levelSet.Basis.GridDat.SpatialDimension;
 
-        public lSEval(LevelSet levelSet, int j)
+        public lSEvalBase(LevelSet levelSet, int j)
         {
             m_levelSet = levelSet;
             this.j = j;
@@ -740,16 +797,18 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         double IScalarFunction.Evaluate(Tensor1 x)
         {
-            NodeSet NS = lSEvalUtil.NSFromTensor(x, m_levelSet);
+            NodeSet NS = GetNodeSet(x);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var ev = MultidimensionalArray.Create(1, 1);
             m_levelSet.Evaluate(j, 1, NS, ev);
             return ev[0];
         }
 
+        public abstract NodeSet GetNodeSet(Tensor1 x);
+
         (double evaluation, Tensor1 gradient) IScalarFunction.EvaluateAndGradient(Tensor1 x)
         {
-            NodeSet NS = lSEvalUtil.NSFromTensor(x, m_levelSet);
+            NodeSet NS = GetNodeSet(x);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var ev = MultidimensionalArray.Create(1, 1);
             m_levelSet.Evaluate(j, 1, NS, ev);
@@ -763,8 +822,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         (double evaluation, Tensor1 gradient, Tensor2 hessian) IScalarFunction.EvaluateAndGradientAndHessian(Tensor1 x)
         {
-            
-            NodeSet NS = lSEvalUtil.NSFromTensor(x,m_levelSet);
+
+            NodeSet NS = GetNodeSet(x);
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var ev = MultidimensionalArray.Create(1, 1);
             m_levelSet.Evaluate(j, 1, NS, ev);
@@ -778,28 +837,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)), lSEvalUtil.ToTensor2(hess.ExtractSubArrayShallow(0, 0, -1, -1)));
 
         }
-        //(double evaluation, Tensor1 gradient) EvaluateAndGradientGlobal(Tensor1 x)
-        //{
-        //    (NodeSet NS, int i0) = NSFromGlobalTensor(x);
-        //    //Evaluates the LevelSet using the NodeSet and the Cell Number
-        //    var ev = MultidimensionalArray.Create(1, 1);
-        //    m_levelSet.Evaluate(i0, 1, NS, ev);
+    }
 
-        //    MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, x.M);
-        //    m_levelSet.EvaluateGradient(i0, 1, NS, grad);
+    internal class lSEvalGlobal : lSEvalBase
+    {
+        public lSEvalGlobal(LevelSet levelSet, int j):base(levelSet, j) 
+        {
+        }
+        public override NodeSet GetNodeSet(Tensor1 x)
+        {
+            
+            return lSEvalUtil.NSFromGlobalTensor(x, m_levelSet, j);
+        }
 
-        //    return (ev[0], ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
-
-        //}
-        //double EvaluateGlobal(Tensor1 x)
-        //{
-        //    (NodeSet NS, int i0) = NSFromGlobalTensor(x);
-        //    //Evaluates the LevelSet using the NodeSet and the Cell Number
-        //    var ev = MultidimensionalArray.Create(1, 1);
-        //    m_levelSet.Evaluate(i0, 1, NS, ev);
-        //    return ev[0];
-
-        //}
     }
     internal static class lSEvalUtil {
         
@@ -918,7 +968,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 return new NodeSet(Grid.RefElements.Point.Instance, GlobIn, true);
             }
         }
-        public static (NodeSet NS, int i0) NSFromGlobalTensor(Tensor1 x, LevelSet m_levelSet)
+        public static NodeSet NSFromGlobalTensor(Tensor1 x, LevelSet m_levelSet, int j)
         {
             //transform into multarray
             MultidimensionalArray GlobIn = MultidimensionalArray.Create(1, x.M);
@@ -930,14 +980,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //output array for local coordinates
             var LocOut = MultidimensionalArray.Create(1, 1, GlobIn.Lengths[1]);
             //gives the cell the point is located
-            m_levelSet.GridDat.LocatePoint(GlobIn.ExtractSubArrayShallow(0, -1).To1DArray(), out long id, out long i0, out bool IsInside, out bool Onm_levelSetProces);
+            //m_levelSet.GridDat.LocatePoint(GlobIn.ExtractSubArrayShallow(0, -1).To1DArray(), out long id, out long i0, out bool IsInside, out bool Onm_levelSetProces);
             //gives the local Coordinates
-            m_levelSet.GridDat.TransformGlobal2Local(GlobIn, LocOut, (int)i0, 1, 0);
+            m_levelSet.GridDat.TransformGlobal2Local(GlobIn, LocOut, j, 1, 0);
 
             //gives the NodeSet using the local Coords
             var NS = new NodeSet(m_levelSet.GridDat.iGeomCells.RefElements[0], LocOut.ExtractSubArrayShallow(0, -1, -1), true);
 
-            return (NS, (int)i0);
+            return NS;
         }
     }
 }
