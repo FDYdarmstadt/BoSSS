@@ -24,10 +24,22 @@ namespace BoSSS.Application.ExternalBinding {
         /// Ctor
         /// /summary>
         [CodeGenExport]
-        public OpenFoamSurfaceField(OpenFOAMGrid g, double[] values)
-            : base(values) //
+        unsafe public OpenFoamSurfaceField(OpenFOAMGrid g, double* values, int nFaces)
+            : base(ConstructorHelper(values, nFaces)) //
         {
             m_grid = g;
+        }
+
+        /// <summary>
+        /// Ctor
+        /// /summary>
+        unsafe static public double[] ConstructorHelper(double* values, int nFaces)
+        {
+            double[] safeVals = new double[nFaces];
+            for (int i = 0; i < nFaces; i++) {
+                safeVals[i] = values[i];
+            }
+            return safeVals;
         }
 
 
