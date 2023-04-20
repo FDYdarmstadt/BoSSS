@@ -934,8 +934,6 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-
-
         /// <summary>
         /// Add a constant to this field
         /// </summary>

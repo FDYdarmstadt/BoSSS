@@ -58,12 +58,18 @@ namespace BoSSS.Application.XNSE_Solver {
 
             //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
-            base.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); //LinearSolver
+            base.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
             base.NonLinearSolver.ConvergenceCriterion = 0.0; //Solver_ConvergenceCriterion: solve as accurate as possible. Don't change this, Grüße von FK!
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton; //NonLinearSolver
             base.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+
+
+            base.DynamicLoadBalancing_CellCostEstimators.Clear();
+            base.DynamicLoadBalancing_CellCostEstimators.Add(new Loadbalancing.XNSECellCostEstimator());
+
         }
 
         /// <summary>
@@ -724,8 +730,11 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool NonlinearCouplingSolidFluid = false;
 
-        [DataMember]
-        public ClassifierType DynamicLoadbalancing_ClassifierType = ClassifierType.Species;
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //[DataMember]
+        //public ClassifierType DynamicLoadbalancing_ClassifierType = ClassifierType.VoidCutNormal;
 
 
         /// <summary>

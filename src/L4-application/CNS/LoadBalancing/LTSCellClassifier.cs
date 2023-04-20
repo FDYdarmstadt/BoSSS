@@ -15,6 +15,8 @@ limitations under the License.
 */
 
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution;
+using BoSSS.Solution.LoadBalancing;
 using BoSSS.Solution.Timestepping;
 using System;
 
@@ -36,7 +38,9 @@ namespace CNS.LoadBalancing {
         /// </summary>
         /// <param name="program"></param>
         /// <returns></returns>
-        public (int noOfClasses, int[] cellToPerformanceClassMap) ClassifyCells(IProgram<CNSControl> program) {
+        public int[] ClassifyCells(IApplication app) {
+            var program = app as IProgram<CNSControl>;
+
             AdamsBashforthLTS ltsTimeStepper = program.TimeStepper as AdamsBashforthLTS;
             if (ltsTimeStepper == null) {
                 throw new Exception("LTS cell classifier is only sensible for LTS runs.");
@@ -54,7 +58,13 @@ namespace CNS.LoadBalancing {
                 }
             }
 
-            return (noOfClasses, cellToPerformanceClassMap);
+            return cellToPerformanceClassMap;
+        }
+
+
+
+        public object Clone() {
+            return new LTSCellClassifier();
         }
     }
 }

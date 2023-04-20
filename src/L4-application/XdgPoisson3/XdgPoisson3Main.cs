@@ -146,7 +146,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 throw new ApplicationException();
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
 
             if(L != null)
                 throw new NotSupportedException();

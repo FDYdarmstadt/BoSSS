@@ -2559,14 +2559,7 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         static public Plot2Ddata GetMPItotalMemory(this ISessionInfo sess) {
             var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
-            int L = ana.NoOfTimeEntries;
-
-            var ret = new Plot2Ddata();
-
-            ret.AddDataGroup(new XYvalues(
-                $"Tot Mem [MegB] at {ana.MPIsize} cores",
-                L.ForLoop(i => (double)i),
-                ana.TotalMemMegs));
+            var ret = ana.GetMPItotalMemory();
 
             ret.Title = "Total memory of session " + sess;
 
@@ -2575,40 +2568,22 @@ namespace BoSSS.Foundation.IO {
         }
 
         /// <summary>
-        /// total memory (aka. sum) over all MPI ranks over time
+        /// minimum, average and maximum memory allocations over all MPI ranks over time
         /// </summary>
-        static public Plot2Ddata GetMPIMemory(this ISessionInfo sess) {
+        static public Plot2Ddata GetMinAvgMaxMemory(this ISessionInfo sess) {
             var ana = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
-            int L = ana.NoOfTimeEntries;
-
-            var ret = new Plot2Ddata();
-
-            ret.AddDataGroup(new XYvalues(
-                $"Min Mem [MegB] at {ana.MPIsize} cores",
-                L.ForLoop(i => (double)i),
-                ana.MinimumMemMegs));
-
-            ret.AddDataGroup(new XYvalues(
-                $"Max Mem [MegB] at {ana.MPIsize} cores",
-                L.ForLoop(i => (double)i),
-                ana.MaximumMemMeg));
-
-            ret.AddDataGroup(new XYvalues(
-                $"Avg Mem [MegB] at {ana.MPIsize} cores",
-                L.ForLoop(i => (double)i),
-                ana.AverageMemMeg));
-
-            ret.Title = "Memory of session " + sess;
-
-
+            var ret = ana.GetMinAvgMaxMemPlot();
+            ret.Title = "Memory of session " + sess.ID;
             return ret;
         }
 
         /// <summary>
-        /// 
+        /// Returns the memory instrumentation for a session (if available),
+        /// combined from files `memory.mpi_rank.txt` in the session directory
         /// </summary>
         public static SessionMemtrace GetMemtrace(this ISessionInfo sess) {
-            return new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+            var ret = new SessionMemtrace(new DirectoryInfo(sess.GetSessionDirectory()));
+            return ret;
         }
 
 
