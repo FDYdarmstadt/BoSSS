@@ -117,7 +117,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 Jmp1 = jmp1
             };
             LevelSetCombination lscomb = FindPhi(id);
-            return new BeckQuadratureFactory(new BeckEdgeScheme(levelSets, lscomb), levelSets);
+            return new BeckQuadratureFactory(new BeckEdgeScheme(levelSets, lscomb,false), levelSets);
         }
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0,
@@ -149,7 +149,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             };
             LevelSetCombination lscomb = FindPhi(id);
 
-            return new BeckQuadratureFactory(new BeckVolumeScheme(levelSets, lscomb,true),levelSets);
+            return new BeckQuadratureFactory(new BeckVolumeScheme(levelSets, lscomb,false),levelSets);
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory) {
@@ -289,7 +289,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             if (quadorder == 0)
             {
-                return (1, 0);
+                return (2, 0);
             }
             //we need at least so much nodes
             int neededNodes = (int)(quadorder+1) / 2;
@@ -339,7 +339,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             
 
             // Creates a QuadRule Object <- The One BoSSS uses
-            QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, D, true);
+            QuadRule rule = QuadRule.CreateEmpty(GetRefElement(), ruleQ.Count, cell.Dimension, true);
             rule.OrderOfPrecision = order;
 
             //transfer from Beck into BoSSS structure
@@ -347,12 +347,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
             for (int i = 0; i < ruleQ.Count; ++i)
             {
                 QuadratureNode qNode = ruleQ[i];
-                PointsToNodes(rule.Nodes.ExtractSubArrayShallow(i,-1), qNode, D,j);
+                PointsToNodes(rule.Nodes.ExtractSubArrayShallow(i,-1), qNode, cell.Dimension, j);
                 rule.Weights[i] = qNode.Weight;
             }
             
             //do some scaling of the Nodes
-            if (isGlobalMode)
+            if (isGlobalMode) //basically only relevant for SurfaceRules
             {
                 //We transform the Nodes, which are in global coordainates into Local onese
                 var NodesOut = MultidimensionalArray.Create(1,rule.Nodes.Lengths[0], rule.Nodes.Lengths[1]);
@@ -647,21 +647,25 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
         public override void PointsToNodes(MultidimensionalArray rNode, QuadratureNode qNode, int D,int j)
         {
-            var gdat = (GridData)((LevelSet)data[0].LevelSet).Basis.GridDat;
-            var jNeighCell = gdat.Edges.CellIndices[j, 0];
-            var e2C = gdat.iGeomEdges.Edge2CellTrafos[gdat.Edges.Edge2CellTrafoIndex[j, 0]];
-            
-            var trafoNode= e2C.Transform(lSEvalUtil.TensorToVector(qNode.Point));
-            var globTrafoNode = lSEvalUtil.VectorToMA(trafoNode);
-            if (isGlobalMode)
+            for (int d = 0; d < D; d++)
             {
-                gdat.TransformLocal2Global(lSEvalUtil.VectorToMA(trafoNode), globTrafoNode, jNeighCell);
+                rNode[d] = qNode.Point[d];
             }
+            //var gdat = (GridData)((LevelSet)data[0].LevelSet).Basis.GridDat;
+            //var jNeighCell = gdat.Edges.CellIndices[j, 0];
+            //var e2C = gdat.iGeomEdges.Edge2CellTrafos[gdat.Edges.Edge2CellTrafoIndex[j, 0]];
             
-            for (int d = 0; d < gdat.SpatialDimension; d++)
-            {
-                rNode[d] = globTrafoNode[0,d];
-            }
+            //var trafoNode= e2C.Transform(lSEvalUtil.TensorToVector(qNode.Point));
+            //var globTrafoNode = lSEvalUtil.VectorToMA(trafoNode);
+            //if (isGlobalMode)
+            //{
+            //    gdat.TransformLocal2Global(lSEvalUtil.VectorToMA(trafoNode), globTrafoNode, jNeighCell);
+            //}
+            
+            //for (int d = 0; d < gdat.SpatialDimension; d++)
+            //{
+            //    rNode[d] = globTrafoNode[0,d];
+            //}
         }
         public override HyperRectangle GetCell( int j)
         {
