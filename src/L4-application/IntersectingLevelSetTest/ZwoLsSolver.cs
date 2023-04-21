@@ -28,6 +28,7 @@ using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
+using System.Runtime.Serialization;
 
 namespace IntersectingLevelSetTest {
 
@@ -40,7 +41,7 @@ namespace IntersectingLevelSetTest {
 
         protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 2), GenericBlas.Linspace(-0.5, 0.5, 2));
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 3), GenericBlas.Linspace(-0.5, 0.5, 3));
             return grd;
         }
 
@@ -144,10 +145,11 @@ namespace IntersectingLevelSetTest {
             }
             double phi5(double x, double y)
             {
-                return (x + 0.25);
+                var kt = t / Math.PI * 90/10;
+                return (x - kt+0.2);
             }
-            Phi0.ProjectField(phi4);
-            Phi1.ProjectField(phi5);
+            Phi0.ProjectField(phi1);
+            Phi1.ProjectField(phi3);
         }
 
         private void SetLs2(double t) {
@@ -188,7 +190,7 @@ namespace IntersectingLevelSetTest {
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx_AB()); // flux am lev-set 0
             Op.EquationComponents["c1"].Add(new LevSetFlx_CB()); // flux am lev-set 1
-
+            
             //Op.EquationComponents["c1"].Add(new DxBroken());
 
             Op.Commit();

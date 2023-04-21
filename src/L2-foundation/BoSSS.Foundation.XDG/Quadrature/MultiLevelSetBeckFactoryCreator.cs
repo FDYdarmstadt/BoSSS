@@ -116,7 +116,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 LevSet1 = levSetIndex1,
                 Jmp1 = jmp1
             };
-            LevelSetCombination lscomb = FindPhi(id);
+            LevelSetCombination lscomb = new LevelSetCombination(id,
+                (LevelSet)levelSets[levSetIndex0].LevelSet,
+                (LevelSet)levelSets[levSetIndex1].LevelSet);
             return new BeckQuadratureFactory(new BeckEdgeScheme(levelSets, lscomb,false), levelSets);
         }
 
@@ -323,10 +325,9 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
             //get the symbols
             (var s1, var s2) = GetSymbols(lscomb);
-
             // Get The Quadrature rule From Intersectingquadrature
             QuadratureRule ruleQ = (default);
-
+            
             try
             {
                 //find the quad rule
@@ -354,6 +355,12 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //do some scaling of the Nodes
             if (isGlobalMode) //basically only relevant for SurfaceRules
             {
+                //Tensor1 root0 = Tensor1.Vector(0.5);
+                //Tensor1 root1 = Tensor1.Vector(-0.5);
+
+                //var ret0 = phi0.Evaluate(root0);
+                //var ret1 = phi1.Evaluate(root1);
+
                 //We transform the Nodes, which are in global coordainates into Local onese
                 var NodesOut = MultidimensionalArray.Create(1,rule.Nodes.Lengths[0], rule.Nodes.Lengths[1]);
                 gdat.TransformGlobal2Local(rule.Nodes, NodesOut, j, 1, 0);
@@ -605,7 +612,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
         public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
         {
-            return (new lSEvalLocal((LevelSet)data[lscomb.ID.LevSet0].LevelSet,j), new lSEvalLocal((LevelSet)data[lscomb.ID.LevSet1].LevelSet,j));
+            if (base.isGlobalMode)
+            {
+                return (new lSEvalGlobal((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEvalGlobal((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
+            }
+            else
+            {
+                return (new lSEvalLocal((LevelSet)data[lscomb.ID.LevSet0].LevelSet, j), new lSEvalLocal((LevelSet)data[lscomb.ID.LevSet1].LevelSet, j));
+            }
+            
         }
 
         public override double GetScaling(int j)
