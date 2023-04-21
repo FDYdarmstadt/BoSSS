@@ -149,7 +149,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             };
             LevelSetCombination lscomb = FindPhi(id);
 
-            return new BeckQuadratureFactory(new BeckVolumeScheme(levelSets, lscomb,false),levelSets);
+            return new BeckQuadratureFactory(new BeckVolumeScheme(levelSets, lscomb,true),levelSets);
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory) {
@@ -289,7 +289,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             if (quadorder == 0)
             {
-                return (2, 0);
+                return (1, 0);
             }
             //we need at least so much nodes
             int neededNodes = (int)(quadorder+1) / 2;
