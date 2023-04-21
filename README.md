@@ -23,9 +23,9 @@ application of numerical discretization schemes based on the Discontinuous Galer
 
 ### Latest Installers:
 - Please Read [Installation/Public Wiki](https://git.rwth-aachen.de/kummer/bosss-public/-/wikis/Getting-Started/Installation-and-Testing) first!
-- Windows: https://kummer.pages.rwth-aachen.de/bosss-public/BoSSS-setup-latest.run
+- Windows: https://kummer.pages.rwth-aachen.de/bosss-public/BoSSS-setup-latest.exe
 - Linux: https://kummer.pages.rwth-aachen.de/bosss-public/BoSSS-setup-latest.run
-- (If links fail, please take a look at https://kummer.pages.rwth-aachen.de/bosss-public/ and search for `*exe` or `*.run` - files)
+- (If links fail, please take a look at https://kummer.pages.rwth-aachen.de/bosss-public/ and search for `*.exe` or `*.run` - files)
 
 ## Note for publication
 
