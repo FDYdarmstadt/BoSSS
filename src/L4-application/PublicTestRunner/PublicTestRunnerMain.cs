@@ -730,7 +730,7 @@ namespace PublicTestRunner {
         /// <summary>
         /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE)
         /// </summary>
-        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex_sch");
+        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex_" + System.Environment.UserName);
 
         /// <summary>
         /// to distinct the internalTestRunner
