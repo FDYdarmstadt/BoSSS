@@ -138,8 +138,16 @@ namespace IntersectingLevelSetTest {
             double phi3(double x, double y) {
                 return (x - (Math.Tan(t) * y));
             }
-            Phi0.ProjectField(phi3);
-            Phi1.ProjectField(phi1);
+            double phi4(double x, double y)
+            {
+                return (x - 0.25);
+            }
+            double phi5(double x, double y)
+            {
+                return (x + 0.25);
+            }
+            Phi0.ProjectField(phi4);
+            Phi1.ProjectField(phi5);
         }
 
         private void SetLs2(double t) {

@@ -60,6 +60,7 @@ namespace IntersectingLevelSetTest {
             var p = new ZwoLsSolver<PlotControl>();
             p.DEGREE= DGdegree;    
             p.MomentFittingVariant = quadVariant;
+            C.SuperSampling = 5;
             p.Init(C);
             p.RunSolverMode();
         }
