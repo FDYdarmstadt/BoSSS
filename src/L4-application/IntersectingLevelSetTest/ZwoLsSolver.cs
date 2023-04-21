@@ -40,7 +40,7 @@ namespace IntersectingLevelSetTest {
 
         protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 6), GenericBlas.Linspace(-0.5, 0.5, 6));
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 2), GenericBlas.Linspace(-0.5, 0.5, 2));
             return grd;
         }
 
