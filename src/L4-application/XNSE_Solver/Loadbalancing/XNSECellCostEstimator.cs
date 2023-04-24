@@ -38,6 +38,31 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
         }
 
         /// <summary>
+        /// returns the weight for the individual cell type
+        /// </summary>
+        public int FindWeightFor(CutStateClassifier.CellTypeFlags CellType) {
+            return TypeToWgt.Where(p => p.Item1 == CellType).First().Item2;
+        }
+
+        (CutStateClassifier.CellTypeFlags, int)[] typeToWgt;
+
+        /// <summary>
+        /// returns tuple array for cell-weights for a multi-constrained optimization
+        /// Manually set
+        /// </summary>
+        public (CutStateClassifier.CellTypeFlags, int)[] TypeToWgt {
+            get {
+                typeToWgt = typeToWgt ?? new[] {
+                //(CutStateClassifier.CellTypeFlags.Void, 0), As void does not impact weights, it is unnecessary to include it in calculations.
+                (CutStateClassifier.CellTypeFlags.Ordinary, 10),
+                (CutStateClassifier.CellTypeFlags.Cut, (int)Math.Pow(2, 10))
+            };
+                return typeToWgt;
+            }
+            set { typeToWgt = value; }
+        }
+
+        /// <summary>
         /// returns multiple sets to cell-weights for a multi-constrained optimization
         /// </summary>
         public override void UpdateEstimates(IApplication app) {
@@ -47,13 +72,8 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
 
             var cellToPerformanceClassMap = base.CellClassifier.ClassifyCells(app);
 
-            var typeToWgt = new[] {
-                //(CutStateClassifier.CellTypeFlags.Void, 0), As void does not impact weights, it is unnecessary to include it in calculations.
-                (CutStateClassifier.CellTypeFlags.Ordinary, 10),
-                (CutStateClassifier.CellTypeFlags.Cut, (int)Math.Pow(2, 10))
-            };
 
-                foreach(var tt in typeToWgt) {
+                foreach(var tt in TypeToWgt) {
                     // One balance constraint per cluster
                     var cellToCostMap = new int[J];
                     _cellToCostMapS.Add(cellToCostMap);

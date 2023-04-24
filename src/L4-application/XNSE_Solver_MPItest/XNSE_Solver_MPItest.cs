@@ -38,6 +38,9 @@ using System.Collections.Generic;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Application.XNSE_Solver.Loadbalancing;
 using NUnit.Framework.Internal.Execution;
+using BoSSS.Solution.LoadBalancing;
+using BoSSS.Solution;
+using MathNet.Numerics.Statistics;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -115,12 +118,13 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         [Test]
-        public static void TestLoadBalancing([Values] bool AMR) {
+        public static void TestLoadBalancingAMRfalse() {
+            bool AMR = false;
             GridPartType PartType = GridPartType.METIS;
             double[] centerSphere = new double[2] { 0.5, 0.5 };
-            int[] DGorders = new int[] { 1, 2 };
-            int[] ResArray = new int[] { 16, 32 };
-            const int NoTimeSteps = 500;
+            int[] DGorders = new int[] { 2, 3 };
+            int[] ResArray = new int[] { 16, 20 };
+            const int NoTimeSteps = 200;
 
             var LBon = new Stopwatch();
             var LBoff = new Stopwatch();
@@ -130,28 +134,36 @@ namespace BoSSS.Application.XNSE_Solver {
             XNSE_Control Control_LBon;
             XNSE_Control Control_LBoff;
 
-            Console.WriteLine($"\n## Starting testing load balancing with AMR={AMR} and grid type of {PartType} ##\n");
+            Console.WriteLine($"\n## Starting testing dynamic load balancing with AMR={AMR} and grid type of {PartType} ##\n");
+            double[,] ImbalancesOn = new double[DGorders.Length * ResArray.Length, 2];
+            double[,] ImbalancesOff = new double[DGorders.Length * ResArray.Length, 2];
 
             int k = 0;
             foreach (int DG in DGorders) {
                 foreach (int Res in ResArray) {
+
                     // Load Balancing On
                     Control_LBon = Rotating_Sphere_Orbital(DG, Res, 2, AMR, true, false, pos: centerSphere);
 
                     if (Control_LBon.DynamicLoadBalancing_CellCostEstimators == null)
                         Control_LBon.DynamicLoadBalancing_CellCostEstimators.AddRange(new XNSECellCostEstimator());
 
+                    Control_LBon.SkipSolveAndEvaluateResidual = true;
                     Control_LBon.ImmediatePlotPeriod = -1;
                     Control_LBon.NoOfTimesteps = NoTimeSteps;
                     Control_LBon.GridPartType = PartType;
                     Control_LBon.DynamicLoadBalancing_Period = 10;
-
+                    Control_LBon.dtFixed = (double)(2 * Math.PI) / NoTimeSteps;
                     LBon.Restart();
+                    List<(double, double)> ImbalanceListOn = new List<(double, double)>(); ;
                     using (var solver = new XNSE()) {
                         solver.Init(Control_LBon);
+                        solver.ImbalanceTrack = ImbalanceListOn;
                         solver.RunSolverMode();
                     }
                     LBon.Stop();
+                    ImbalancesOn[k, 0] = ImbalanceListOn.Select(p => p.Item1).Average();
+                    ImbalancesOn[k, 1] = ImbalanceListOn.Select(p => p.Item2).Average();
 
                     // Load Balancing Off
                     Control_LBoff = Rotating_Sphere_Orbital(DG, Res, 2, AMR, false, false, pos: centerSphere);
@@ -159,42 +171,222 @@ namespace BoSSS.Application.XNSE_Solver {
                     if (Control_LBoff.DynamicLoadBalancing_CellCostEstimators == null)
                         Control_LBoff.DynamicLoadBalancing_CellCostEstimators.AddRange(new XNSECellCostEstimator());
 
+                    Control_LBoff.SkipSolveAndEvaluateResidual = true;
                     Control_LBoff.ImmediatePlotPeriod = -1;
                     Control_LBoff.NoOfTimesteps = NoTimeSteps;
                     Control_LBoff.GridPartType = PartType;
-
+                    Control_LBoff.dtFixed = (double)(2 * Math.PI) / NoTimeSteps;
                     LBoff.Restart();
+                    List<(double, double)> ImbalanceListOff = new List<(double, double)>(); ;
+
                     using (var solver = new XNSE()) {
                         solver.Init(Control_LBoff);
+                        solver.ImbalanceTrack = ImbalanceListOff;
                         solver.RunSolverMode();
                     }
+
+                    // Data collection
+                    ImbalancesOff[k, 0] = ImbalanceListOff.Select(p => p.Item1).Average(); //Over time steps
+                    ImbalancesOff[k, 1] = ImbalanceListOff.Select(p => p.Item2).Average(); //Over time steps
+
                     LBoff.Stop();
                     LBonElapsedTimes[k] = LBon.ElapsedMilliseconds;
                     LBoffElapsedTimes[k] = LBoff.ElapsedMilliseconds;
-                    k++;
                     Console.WriteLine($"--- For DG={DG} and res={Res}, elapsed Time: {LBon.Elapsed} - {LBoff.Elapsed} (with and without LB)");
+                    Console.WriteLine($"--- Average imbalance of all cells: {ImbalancesOn[k, 0]:g4} - {ImbalancesOff[k, 0]:g4} (with and without LB)--");
+                    Console.WriteLine($"--- Average imbalance of cut cells: {ImbalancesOn[k, 1]:g4} - {ImbalancesOff[k, 1]:g4} (with and without LB)--");
+                    k++;
                 }
             }
 
+
+            // Summary info for each simulation
             Console.WriteLine($"\n## Summary for AMR={AMR} and grid type of {PartType} ##");
             k = 0;
             foreach (int DG in DGorders) {
                 foreach (int Res in ResArray) {
                     Console.WriteLine($"-- DG={DG} and res={Res}, Time: {LBonElapsedTimes[k]} - {LBoffElapsedTimes[k]} (with and without LB) --");
+                    Console.WriteLine($"--- Average imbalance of all cells: {ImbalancesOn[k, 0]:g2} - {ImbalancesOff[k, 0]:g2} (with and without LB)--");
+                    Console.WriteLine($"--- Average imbalance of cut cells: {ImbalancesOn[k, 1]:g2} - {ImbalancesOff[k, 1]:g2} (with and without LB)--\n");
                     k++;
                 }
             }
+
+            // Summary of overall comparison
             double TotalElapsedLBon = LBonElapsedTimes.Sum() / 1000 / 60; //convert from milliseconds to minutes
             double TotalElapsedLBoff = LBoffElapsedTimes.Sum() / 1000 / 60;
+            Console.WriteLine("## Overall Comparison: {0:g2}-{1:g2} minutes (with and without LB) ##", TotalElapsedLBon, TotalElapsedLBoff);
+            Console.WriteLine("-- {0:f2}% wall-clock time reduced by load Balancing --", (TotalElapsedLBoff - TotalElapsedLBon) / TotalElapsedLBoff * 100);
+            Console.WriteLine("-- Average Imbalance for all cells {0:g2}-{1:g2} (with and without LB) --", ImbalancesOn.GetColumn(0).Mean(), ImbalancesOff.GetColumn(0).Mean());
+            Console.WriteLine("-- Average Imbalance for cut cells {0:g2}-{1:g2} (with and without LB) --\n", ImbalancesOn.GetColumn(1).Mean(), ImbalancesOff.GetColumn(1).Mean());
 
-            Console.WriteLine("-- Overall Comparison: {0}-{1} minutes (with and without LB) --", TotalElapsedLBon, TotalElapsedLBoff);
-            Console.WriteLine("## {0}% wall-clock time reduced by load Balancing", (TotalElapsedLBoff - TotalElapsedLBon) / TotalElapsedLBoff * 100);
+            var CostEstimator = new XNSECellCostEstimator();
+            double WeightedAverageImbalanceOn = ImbalancesOn.GetColumn(0).Mean() * CostEstimator.FindWeightFor(CutStateClassifier.CellTypeFlags.Ordinary)
+                                                + ImbalancesOn.GetColumn(1).Mean() * CostEstimator.FindWeightFor(CutStateClassifier.CellTypeFlags.Cut);
 
-            if (TotalElapsedLBon > TotalElapsedLBoff * 0.95)
+            double WeightedAverageImbalanceOff = ImbalancesOff.GetColumn(0).Mean() * CostEstimator.FindWeightFor(CutStateClassifier.CellTypeFlags.Ordinary)
+                                    + ImbalancesOff.GetColumn(1).Mean() * CostEstimator.FindWeightFor(CutStateClassifier.CellTypeFlags.Cut);
+
+            Console.WriteLine($"WeightedAverageImbalanceOn={WeightedAverageImbalanceOn:0.#}, WeightedAverageImbalanceOff={WeightedAverageImbalanceOff:0.#}");
+            int NoOfErrs = 0;
+
+            //Compare weighted average imbalances
+            if (WeightedAverageImbalanceOn > WeightedAverageImbalanceOff) {
+                Console.WriteLine("!! Overall balancing is not sufficient !!");
+                NoOfErrs++;
+            }
+
+            //Compare wall-clock time
+            if (TotalElapsedLBon > TotalElapsedLBoff * 0.95) {
+                Console.WriteLine("!! Wall-clock time reduction is not sufficient !!!");
+                Console.WriteLine("!! Please make sure that it's not due to the software !!!");
+                NoOfErrs++;
+            }
+
+            //if both, average imbalance and wall-clock time, tests fail
+            if (NoOfErrs > 1)
                 throw new Exception("Load Balancing is not efficient");
+
+            Console.WriteLine($"\n## Regular end for testing load balancing with AMR={AMR} and grid type of {PartType} ##\n");
         }
 
-        //[Test]
+
+        [Test]
+        public static void TestLoadBalancingAMRtrue() {
+            bool AMR = true;
+            GridPartType PartType = GridPartType.METIS;
+            double[] centerSphere = new double[2] { 0.5, 0.5 };
+            int[] DGorders = new int[] { 2, 3}; 
+            int[] ResArray = new int[] { 16, 20};
+            const int NoTimeSteps = 200;
+
+            var LBon = new Stopwatch();
+            var LBoff = new Stopwatch();
+            double[] LBonElapsedTimes = new double[DGorders.Length * ResArray.Length];
+            double[] LBoffElapsedTimes = new double[DGorders.Length * ResArray.Length];
+
+            XNSE_Control Control_LBon;
+            XNSE_Control Control_LBoff;
+
+            Console.WriteLine($"\n## Starting testing dynamic load balancing with AMR={AMR} and grid type of {PartType} ##\n");
+            double[,] ImbalancesOn = new double[DGorders.Length * ResArray.Length, 2];
+            double[,] ImbalancesOff = new double[DGorders.Length * ResArray.Length, 2];
+
+            int k = 0;
+            foreach (int DG in DGorders) {
+                foreach (int Res in ResArray) {
+
+                    // Load Balancing On
+                    Control_LBon = Rotating_Sphere_Orbital(DG, Res, 2, AMR, true, false, pos: centerSphere);
+
+                    if (!Control_LBon.DynamicLoadBalancing_CellCostEstimators.Any())
+                        Control_LBon.DynamicLoadBalancing_CellCostEstimators.AddRange(new XNSECellCostEstimator());
+
+                    Control_LBon.SkipSolveAndEvaluateResidual = true;
+                    Control_LBon.ImmediatePlotPeriod = -1;
+                    Control_LBon.NoOfTimesteps = NoTimeSteps;
+                    Control_LBon.GridPartType = PartType;
+                    Control_LBon.DynamicLoadBalancing_Period = 10;
+                    Control_LBon.dtFixed = (double)(2 * Math.PI) / NoTimeSteps;
+                    LBon.Restart();
+                    List<(double, double)> ImbalanceListOn = new List<(double, double)>(); ;
+                    using (var solver = new XNSE()) {
+                        solver.Init(Control_LBon);
+                        solver.ImbalanceTrack = ImbalanceListOn;
+                        solver.RunSolverMode();
+                    }
+                    LBon.Stop();
+                    ImbalancesOn[k,0] = ImbalanceListOn.Select(p => p.Item1).Average();
+                    ImbalancesOn[k, 1] = ImbalanceListOn.Select(p => p.Item2).Average();
+
+                    // Load Balancing Off
+                    Control_LBoff = Rotating_Sphere_Orbital(DG, Res, 2, AMR, false, false, pos: centerSphere);
+
+                    if (!Control_LBoff.DynamicLoadBalancing_CellCostEstimators.Any())
+                        Control_LBoff.DynamicLoadBalancing_CellCostEstimators.AddRange(new XNSECellCostEstimator());
+
+                    Control_LBoff.SkipSolveAndEvaluateResidual = true;
+                    Control_LBoff.ImmediatePlotPeriod = -1;
+                    Control_LBoff.NoOfTimesteps = NoTimeSteps;
+                    Control_LBoff.GridPartType = PartType;
+                    Control_LBoff.dtFixed = (double)(2 * Math.PI) / NoTimeSteps;
+                    LBoff.Restart();
+                    List<(double, double)> ImbalanceListOff = new List<(double, double)>(); ;
+
+                    using (var solver = new XNSE()) {
+                        solver.Init(Control_LBoff);
+                        solver.ImbalanceTrack = ImbalanceListOff;
+                        solver.RunSolverMode();
+                    }
+
+                    // Data collection
+                    ImbalancesOff[k, 0] = ImbalanceListOff.Select(p => p.Item1).Average(); //Over time steps
+                    ImbalancesOff[k, 1] = ImbalanceListOff.Select(p => p.Item2).Average(); //Over time steps
+
+                    LBoff.Stop();
+                    LBonElapsedTimes[k] = LBon.ElapsedMilliseconds;
+                    LBoffElapsedTimes[k] = LBoff.ElapsedMilliseconds;
+                    Console.WriteLine($"--- For DG={DG} and res={Res}, elapsed Time: {LBon.Elapsed} - {LBoff.Elapsed} (with and without LB)");
+                    Console.WriteLine($"--- Average imbalance of all cells: {ImbalancesOn[k, 0]:g4} - {ImbalancesOff[k, 0]:g4} (with and without LB)--");
+                    Console.WriteLine($"--- Average imbalance of cut cells: {ImbalancesOn[k, 1]:g4} - {ImbalancesOff[k, 1]:g4} (with and without LB)--");
+                    k++;
+                }
+            }
+
+
+            // Summary info for each simulation
+            Console.WriteLine($"\n## Summary for AMR={AMR} and grid type of {PartType} ##");
+            k = 0;
+            foreach (int DG in DGorders) {
+                foreach (int Res in ResArray) {
+                    Console.WriteLine($"-- DG={DG} and res={Res}, Time: {LBonElapsedTimes[k]} - {LBoffElapsedTimes[k]} (with and without LB) --");
+                    Console.WriteLine($"--- Average imbalance of all cells: {ImbalancesOn[k,0]:g2} - {ImbalancesOff[k, 0]:g2} (with and without LB)--");
+                    Console.WriteLine($"--- Average imbalance of cut cells: {ImbalancesOn[k,1]:g2} - {ImbalancesOff[k, 1]:g2} (with and without LB)--\n");
+                    k++;
+                }
+            }
+
+            // Summary of overall comparison
+            double TotalElapsedLBon = LBonElapsedTimes.Sum() / 1000 / 60; //convert from milliseconds to minutes
+            double TotalElapsedLBoff = LBoffElapsedTimes.Sum() / 1000 / 60;
+            Console.WriteLine("## Overall Comparison: {0:g2}-{1:g2} minutes (with and without LB) ##", TotalElapsedLBon, TotalElapsedLBoff);
+            Console.WriteLine("-- {0:f2}% wall-clock time reduced by load Balancing --", (TotalElapsedLBoff - TotalElapsedLBon) / TotalElapsedLBoff * 100);
+            Console.WriteLine("-- Average Imbalance for all cells {0:g2}-{1:g2} (with and without LB) --", ImbalancesOn.GetColumn(0).Mean(), ImbalancesOff.GetColumn(0).Mean());
+            Console.WriteLine("-- Average Imbalance for cut cells {0:g2}-{1:g2} (with and without LB) --\n", ImbalancesOn.GetColumn(1).Mean(), ImbalancesOff.GetColumn(1).Mean());
+
+            var CostEstimator = new XNSECellCostEstimator();
+            double WeightedAverageImbalanceOn = ImbalancesOn.GetColumn(0).Mean() * CostEstimator.FindWeightFor(CutStateClassifier.CellTypeFlags.Ordinary)
+                                                + ImbalancesOn.GetColumn(1).Mean() * CostEstimator.FindWeightFor(CutStateClassifier.CellTypeFlags.Cut);
+
+            double WeightedAverageImbalanceOff = ImbalancesOff.GetColumn(0).Mean() * CostEstimator.FindWeightFor(CutStateClassifier.CellTypeFlags.Ordinary)
+                                    + ImbalancesOff.GetColumn(1).Mean() * CostEstimator.FindWeightFor(CutStateClassifier.CellTypeFlags.Cut);
+            
+            Console.WriteLine($"WeightedAverageImbalanceOn={WeightedAverageImbalanceOn:0.#}, WeightedAverageImbalanceOff={WeightedAverageImbalanceOff:0.#}");
+            int NoOfErrs = 0;
+
+            //Compare weighted average imbalances
+            if (WeightedAverageImbalanceOn > WeightedAverageImbalanceOff) { 
+                Console.WriteLine("!! Overall balancing is not sufficient !!"); 
+                NoOfErrs++;
+            }
+
+            //Compare wall-clock time
+            if (TotalElapsedLBon > TotalElapsedLBoff * 0.95) {
+                Console.WriteLine("!! Wall-clock time reduction is not sufficient !!!");
+                Console.WriteLine("!! Please make sure that it's not due to the software !!!");
+                NoOfErrs++;
+            }
+
+            //if both, average imbalance and wall-clock time, tests fail
+            if (NoOfErrs > 1) 
+                throw new Exception("Load Balancing is not efficient");
+
+            Console.WriteLine($"\n## Regular end for testing load balancing with AMR={AMR} and grid type of {PartType} ##\n");
+        }
+
+
+
+        [Test]
         public static void SayeBug() {
             // fallback method (which was not implemented at this point), would have been triggered in Saye quadrature
             var C = Rotating_Cube(1, 20, 3, true, false);
@@ -226,14 +418,11 @@ namespace BoSSS.Application.XNSE_Solver {
             C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
                 TargetBlockSize = 1000
             };
-            C.GridPartType = GridPartType.clusterHilbert;
+            C.GridPartType = GridPartType.Hilbert; // clusterHilbert is not suitable for XNSECostEstimator for this case as we have void cells
             C.DynamicLoadBalancing_On = true;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
             C.DynamicLoadBalancing_Period = 1;
             C.DynamicLoadBalancing_ImbalanceThreshold = 0;
-
-            //this test takes too much time with 3 procs and exceed the 4 hr limit.
-            int NoOfCores = ilPSP.Environment.MPIEnv.MPI_Size;
 
             C.NoOfTimesteps = 50;
             using (var solver = new XNSE()) {
