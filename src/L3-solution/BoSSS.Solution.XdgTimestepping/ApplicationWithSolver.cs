@@ -9,8 +9,10 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.LoadBalancing;
 using ilPSP;
 using ilPSP.Tracing;
+using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -720,6 +722,50 @@ namespace BoSSS.Solution.XdgTimestepping {
                     }
                 }
             }, new CellQuadratureScheme());
+
+            // MPI_rank
+            int my_rank = ilPSP.Environment.MPIEnv.MPI_Rank;
+            var MPI_rank = this.m_RegisteredFields.Where(s => s.Identification == "MPI_rank").SingleOrDefault();
+            if (MPI_rank == null) {
+                MPI_rank = new SinglePhaseField(new Basis(this.GridData, 0), "MPI_rank");
+                this.RegisterField(MPI_rank);
+            }
+            MPI_rank.Clear();
+            MPI_rank.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < K; k++) {
+                        result[j, k] = my_rank;
+                    }
+                }
+            }, new CellQuadratureScheme());
+
+
+            // CutCell
+            var XNSE_classifier = new CutStateClassifier();
+            var classifiedCells = XNSE_classifier.ClassifyCells(this);
+
+            var cutCellClass = this.m_RegisteredFields.Where(s => s.Identification == "cutCellClass").SingleOrDefault();
+            if (cutCellClass == null) {
+                cutCellClass = new SinglePhaseField(new Basis(this.GridData, 0), "cutCellClass");
+                this.RegisterField(cutCellClass);
+            }
+            cutCellClass.Clear();
+
+            int J = cutCellClass.Basis.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
+            for (int j = 0; j < J; j++) {
+                cutCellClass.SetMeanValue(j, (double)classifiedCells[j]);
+            }
+
+            // LvSetDist
+            var LvSetDist = this.m_RegisteredFields.Where(s => s.Identification == "LvSetDist").SingleOrDefault();
+            if (LvSetDist == null) {
+                LvSetDist = new SinglePhaseField(new Basis(this.GridData, 0), "LvSetDist");
+                this.RegisterField(LvSetDist);
+            }
+            LvSetDist.Clear();
+            LvSetDist.AccLevelSetDist(1, this.LsTrk, 1);
+
 
             if (PlotShadowfields) {
                 List<DGField> Fields2Plot = new List<DGField>();
