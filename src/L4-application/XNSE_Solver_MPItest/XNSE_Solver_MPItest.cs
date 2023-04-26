@@ -435,7 +435,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         static void Main(string[] args) {
-            
+
             BoSSS.Solution.Application.InitMPI();
             //Debugger.Launch();
             //ParallelRisingDroplet(1);
@@ -761,6 +761,10 @@ namespace BoSSS.Application.XNSE_Solver {
             return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Parted, UsePredefPartitioning);
         }
 
+        public static XNSE_Control Rotating_Cardioid(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
+            return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Cardioid, UsePredefPartitioning);
+        }
+
         public static XNSE_Control Rotating_Cube(int k = 4, int Res = 30, int SpaceDim = 2, bool useAMR = true, bool useLoadBal = false, bool UsePredefPartitioning = false) {
             return Rotating_Something(k, Res, SpaceDim, useAMR, useLoadBal, Geometry.Cube, UsePredefPartitioning);
         }
@@ -776,7 +780,8 @@ namespace BoSSS.Application.XNSE_Solver {
         enum Geometry {
             Cube = 0,
             Sphere = 1,
-            Parted = 2
+            Parted = 2,
+            Cardioid = 3
         }
 
         public static Func<IGrid> GridFuncFactory(int SpaceDim, int Res, bool UsePredefPartitioning) {
@@ -846,6 +851,26 @@ namespace BoSSS.Application.XNSE_Solver {
                     }
                     case Geometry.Parted:
                         return -X[0] + 0.7;
+
+                    case Geometry.Cardioid:
+                        Vector TiltVector = new Vector(0,0,1);
+                        AffineTrafo affineTrafoRot;
+
+                        affineTrafoRot = AffineTrafo.Rotation3D(TiltVector, angle);
+                        double[] x;
+
+                        switch (SpaceDim) {
+                            case 2:
+                                double[] X3d = new double[3] { X[0], X[1], 0 };
+                                double[] x3d = affineTrafoRot.Transform(X3d);
+                                x = new double[2] { x3d[0], x3d[1] };
+                                return -Math.Sqrt(Math.Pow(x[0] * x[0] + x[1] * x[1] - particleRad, 2) - 4 * particleRad * particleRad * x[0] * x[0]);
+                            case 3:
+                                x = affineTrafoRot.Transform(X);
+                                return -Math.Sqrt(Math.Pow(x[0] * x[0] + x[1] * x[1] + x[2] * x[2] - particleRad, 2) - 4 * particleRad * particleRad * (x[0] * x[0] + x[1] * x[1])); ;
+                            default:
+                                throw new NotImplementedException("Dimension not supported");
+                        }
                     default:
                     throw new NotImplementedException("Shape unknown");
                 }
