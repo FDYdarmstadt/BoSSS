@@ -353,7 +353,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
             
             //do some scaling of the Nodes
-            if (isGlobalMode) //basically only relevant for SurfaceRules
+            if (isGlobalMode) //used for Surface and Volume Rules
             {
                 //Tensor1 root0 = Tensor1.Vector(0.5);
                 //Tensor1 root1 = Tensor1.Vector(-0.5);
@@ -370,11 +370,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 if (rule.Nodes.Lengths[0] != 0)
                 {
                     //We need to scale the weights, as they will be multiplied by the determinant of the jacobian
-                    var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
-                    for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
-                    {
-                        rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
-                    }
+
+                    //Get the Scaling
+                    ScaleWeights(rule,j);
+
+                    
                 }
             }
             else
@@ -390,6 +390,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         }
 
+        public abstract void ScaleWeights(QuadRule rule, int j);
         public abstract void PointsToNodes(MultidimensionalArray multidimensionalArray, QuadratureNode qNode, int d, int j);
 
         /// <summary>
@@ -628,6 +629,17 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return 1;
         }
 
+        public override void ScaleWeights(QuadRule rule, int j)
+        {
+            var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
+            var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
+            for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
+            {
+                //rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
+                rule.Weights[iWeight] = rule.Weights[iWeight]/ jacDet[0, iWeight];
+            }
+        }
+
         public override void PointsToNodes(MultidimensionalArray rNode, QuadratureNode qNode, int D, int j)
         {
             for (int d = 0; d < D; d++)
@@ -702,6 +714,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             return 1;
         }
+        public override void ScaleWeights(QuadRule rule, int j)
+        {
+            var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
+            var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
+            for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
+            {
+                rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
+            }
+        }
     }
     internal class BeckSurfaceScheme : BeckBaseScheme
     {
@@ -772,6 +793,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 return ret[0, 0, 0];
             }
             
+        }
+        public override void ScaleWeights(QuadRule rule, int j)
+        {
+            var gdat = ((LevelSet)data[lscomb.ID.LevSet0].LevelSet).GridDat;
+            var jacDet = gdat.JacobianDeterminat.GetValue_Cell(rule.Nodes, j, 1);
+            for (int iWeight = 0; iWeight < rule.Weights.Lengths[0]; iWeight++)
+            {
+                rule.Weights[iWeight] = rule.Weights[iWeight] / jacDet[0, iWeight];
+            }
         }
     }
     internal class lSEvalEdge : IScalarFunction
