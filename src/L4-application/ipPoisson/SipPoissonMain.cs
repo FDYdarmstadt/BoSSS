@@ -39,6 +39,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.Statistic;
 using System.IO;
 using BoSSS.Platform.Utils.Geom;
+using System.Threading;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -55,8 +56,7 @@ namespace BoSSS.Application.SipPoisson {
             
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
-                Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
-                    + " on compute node '" + ilPSP.Environment.MPIEnv.Hostname + "';");
+                
                 return p;
             });
             //*/

@@ -1108,7 +1108,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Typed version of <see cref="iGridData"/>
         /// </summary>
-        public GridData GridData {
+        virtual public GridData GridData {
             get {
                 InitGridData();
                 if (!object.ReferenceEquals(m_GridData.Grid, this))

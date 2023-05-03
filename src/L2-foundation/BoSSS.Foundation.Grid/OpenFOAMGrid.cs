@@ -221,7 +221,11 @@ namespace BoSSS.Foundation.Grid {
 
             // create grid data object
             this.GridDataObject = new GridData(this);
+            
+            
         }
+
+        
 
 
         /// <summary>
@@ -245,6 +249,9 @@ namespace BoSSS.Foundation.Grid {
             get;
             private set;
         }
+
+        public override GridData GridData => GridDataObject;
+
 
         /// <summary>
         /// <see cref="GridDataObject"/>
