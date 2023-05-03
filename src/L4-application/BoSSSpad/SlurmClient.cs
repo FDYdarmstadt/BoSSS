@@ -22,6 +22,7 @@ using ilPSP;
 using System.Diagnostics;
 using ilPSP.Tracing;
 using System.Linq;
+using System.Collections.Generic;
 //using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace BoSSS.Application.BoSSSpad {
@@ -123,26 +124,54 @@ namespace BoSSS.Application.BoSSSpad {
         [NonSerialized]
         SshClient m_SSHConnection;
 
+        /// <summary>
+        /// Non-instance storage of SSH connection objects:
+        /// This enables re-using an open SSH connection if the <see cref="SlurmClient"/> is re-instantiated multiple times,
+        /// which happens quite often due to frequent calls to <see cref="BoSSSshell.ReloadExecutionQueues"/>.
+        /// Otherwise, we might have multiple abandoned <see cref="SshClient"/> objects.
+        /// </summary>
+        static Dictionary<string, SshClient> m_SSHConnectionReuse = new Dictionary<string, SshClient>();
+
+
         SshClient SSHConnection {
             get {
-                if (m_SSHConnection == null || m_SSHConnection.IsConnected == false) {
+                string keyname = (this.Name ?? "SLURM") + ":" + Username + "@" + ServerName;
+                
+                if(m_SSHConnection == null) {
+                    if(m_SSHConnectionReuse.TryGetValue(keyname, out m_SSHConnection)) {
+                        
+                    }
+                }
+
+                if (m_SSHConnection != null && m_SSHConnection.IsConnected == false) {
+                    m_SSHConnection.Dispose();
+                    m_SSHConnectionReuse.Remove(keyname);
+                    m_SSHConnection = null;
+                }
+
+                if (m_SSHConnection == null) {
                     // SSHConnection = new SshClient(m_ServerName, m_Username, m_Password);
                     if (PrivateKeyFilePath != null) {
                         var pkf = new PrivateKeyFile(PrivateKeyFilePath);
-                        m_SSHConnection = new SingleSessionSshClinet(ServerName, Username, pkf);
+                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, pkf);
                     } else if (Password != null) {
-                        m_SSHConnection = new SingleSessionSshClinet(ServerName, Username, Password);
+                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, Password);
                     } else if (Password == null) {
                         Console.WriteLine();
                         Console.WriteLine("Please enter your password...");
                         Password = ReadPassword();
-                        m_SSHConnection = new SingleSessionSshClinet(ServerName, Username, Password);
+                        m_SSHConnection = new SingleSessionSshClient(ServerName, Username, Password);
                     } else {
                         throw new NotSupportedException("Unable to initiate SSH connection -- either a password or private key file is required.");
                     }
 
                     //m_SSHConnection.Connect();
                 }
+
+                if (m_SSHConnection == null || m_SSHConnection.IsConnected == false)
+                    throw new IOException($"SSH connection to {ServerName} cant be established or is very unreliable.");
+                else 
+                    m_SSHConnectionReuse[keyname] = m_SSHConnection;
 
                 return m_SSHConnection;
             }

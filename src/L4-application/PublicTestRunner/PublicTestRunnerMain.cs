@@ -1321,7 +1321,7 @@ namespace PublicTestRunner {
 
                 var dir = Directory.GetCurrentDirectory();
 
-                foreach (var t in r.tests) {
+                foreach (var t in r.tests) { 
                     foreach (var fOrigin in r.RequiredFiles4Test[t]) {
                         if (File.Exists(fOrigin)) {
                             string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));

@@ -1182,8 +1182,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             int MyRank = this.MyRank;
 
             CheckPartitioning(part);
-
-
+            
             // partition is no longer valid anymore!
             InvalidateGridData();
             m_CellPartitioning = null;
