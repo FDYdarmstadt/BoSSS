@@ -1344,8 +1344,9 @@ namespace PublicTestRunner {
             InitTraceFile($"Nunit3.{DateTime.Now.ToString("MMMdd_HHmmss")}.{MpiRank}of{MpiSize}");
 
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
+            Tracer.NamespacesToLog_EverythingOverrideTestRunner = true;
 
-            using(var ftr = new FuncTrace()) {
+            using (var ftr = new FuncTrace()) {
                 Assembly[] assln = GetAllAssembliesForTests();
 
                 if(MpiSize != 1) {
