@@ -64,8 +64,8 @@ namespace BoSSS.Foundation.Grid {
                 double[] X = new double[D];
                 Debug.Assert(GlobalCoord.Dimension == 3);
                 Debug.Assert(GlobalCoord.GetLength(0) == 1);
-                Debug.Assert(GlobalCoord.GetLength(0) == 1);
-                Debug.Assert(GlobalCoord.GetLength(0) == D);
+                Debug.Assert(GlobalCoord.GetLength(1) == 1);
+                Debug.Assert(GlobalCoord.GetLength(2) == D);
 
                 for(int d = 0; d < D; d++) {
                     X[d] = GlobalCoord[0, 0, d];
