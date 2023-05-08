@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BoSSS.Solution.Tecplot;
+using System.IO;
 
 namespace BoSSS.Application.ExternalBinding {
 
@@ -44,19 +45,46 @@ namespace BoSSS.Application.ExternalBinding {
 
 
         public double GetFlux(int cellIndex, int surfaceIndex){
-            int faceIndex = m_grid.Cells2Faces[cellIndex][surfaceIndex];
-            return this[faceIndex];
+            // Console.WriteLine();
+            // Console.WriteLine(surfaceIndex);
+            // Console.WriteLine(m_grid.BoSSSiEdgeToOpenFOAMFace.Count);
+            try {
+                int faceIndex = m_grid.BoSSSiEdgeToOpenFOAMFace[surfaceIndex];
+                // Console.WriteLine(faceIndex);
+                if (Double.IsNaN(this[faceIndex]))
+                {
+                    Console.WriteLine();
+                    Console.WriteLine(surfaceIndex);
+                    Console.WriteLine(m_grid.BoSSSiEdgeToOpenFOAMFace.Length);
+                    Console.WriteLine(faceIndex);
+                }
+                double faceArea = m_grid.GridData.Edges.GetEdgeArea(surfaceIndex);
+
+                // using (var fs = new FileStream("./out2.txt", FileMode.Append))
+                // using (var sw = new StreamWriter(fs))
+                // {
+                //     sw.WriteLine("faceArea: " + faceArea);
+                // }
+                return this[faceIndex]/faceArea;
+            } catch (Exception e) {
+                Console.WriteLine("surfaceIndex: " + surfaceIndex);
+                Console.WriteLine("length " + m_grid.BoSSSiEdgeToOpenFOAMFace.Length);
+                if (surfaceIndex < m_grid.BoSSSiEdgeToOpenFOAMFace.Length && surfaceIndex >= 0){
+                    Console.WriteLine(m_grid.BoSSSiEdgeToOpenFOAMFace[surfaceIndex]);
+                }
+                throw;
+            }
         }
 
-        public double GetFluxIN(CommonParams inp){
+        public double GetFluxIN(ref CommonParams inp){
             return this.GetFlux(inp.jCellIn, inp.iEdge);
         }
 
-        public double GetFluxOUT(CommonParams inp){
+        public double GetFluxOUT(ref CommonParams inp){
             return this.GetFlux(inp.jCellOut, inp.iEdge);
         }
 
-        public double GetFlux(CommonParamsBnd bnp){
+        public double GetFlux(ref CommonParamsBnd bnp){
             return this.GetFlux(bnp.jCellIn, bnp.iEdge);
         }
 

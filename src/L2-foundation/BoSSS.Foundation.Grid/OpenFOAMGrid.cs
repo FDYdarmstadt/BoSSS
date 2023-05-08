@@ -164,13 +164,103 @@ namespace BoSSS.Foundation.Grid {
                 this.nPoints = nPoints;
 
                 // create BoSSS grid
-                FOAMmesh_to_BoSSS(this, nCells, _faces, _neighbour, _owner, _points, _names, _patchIDs, emptyTag, this.Cells2Faces);
+                FOAMmesh_to_BoSSS(this, nCells, _faces, _neighbour, _owner, _points, _names, _patchIDs, emptyTag);
 
                 foreach (var name in _names){
                     this.AddEdgeTag(name);
                 }
                 // create grid data object
                 this.GridDataObject = new GridData(this);
+
+                // TODO build correlation between bosss iEdges and OF face indices
+                this.BoSSSiEdgeToOpenFOAMFace = new int[_faces.Length];
+                for (int face = 0; face < _neighbour.Length; face++)
+                {
+                    int inCell = _owner[face];
+                    int outCell = _neighbour[face];
+                    int iEdgeIndex = -1;
+                    bool found = false;
+                    for (int iEdge = 0; iEdge < _faces.Length; iEdge++)
+                    {
+                        if (
+                        (this.GridData.Edges.CellIndices[iEdge, 0] == inCell && this.GridData.Edges.CellIndices[iEdge, 1] == outCell) ||
+                        (this.GridData.Edges.CellIndices[iEdge, 1] == inCell && this.GridData.Edges.CellIndices[iEdge, 0] == outCell) //||
+                        // (this.GridData.Edges.CellIndices[iEdge, 0] == inCell && outCell < 1 && this.GridData.Edges.CellIndices[iEdge, 1] < 1)
+                    )
+                        {
+                            if (found){
+                                Console.WriteLine(inCell);
+                                Console.WriteLine(outCell);
+                                Console.WriteLine(this.GridData.Edges.CellIndices[iEdge, 0]);
+                                Console.WriteLine(this.GridData.Edges.CellIndices[iEdge, 1]);
+                                Console.WriteLine(iEdge);
+                                Console.WriteLine(iEdgeIndex);
+                                throw new ApplicationException("inner face " + face + " already found");
+                            }
+                            iEdgeIndex = iEdge;
+                            found = true;
+                        }
+                    }
+                    if (iEdgeIndex > 0)
+                    {
+                        this.BoSSSiEdgeToOpenFOAMFace[iEdgeIndex] = face;
+                    }
+                    else
+                    {
+                        throw new ApplicationException("inner face " + face + " not found");
+                    }
+                    // var edge = this.GridDataObject.
+                    // BoSSSInCell.
+                }
+
+                // using (var fs = new FileStream("./faces.txt", FileMode.Append))
+                // using (var sw = new StreamWriter(fs))
+                // {
+                //     foreach (var elem in this.BoSSSiEdgeToOpenFOAMFace)
+                //     {
+                //         sw.WriteLine(elem);
+                //     }
+                // }
+
+                // boundary faces
+                // for (int face = _neighbour.Length; face < _faces.Length; face++) {
+                //     int inCell = _owner[face];
+                //     Vector OFNormal = this.GetNormal(face, _faces, _owner, _points);
+                //     int iEdgeIndex = -1;
+                //     bool found = false;
+                //     for (int iEdge = 0; iEdge < _faces.Length; iEdge++)
+                //     {
+                //         if (this.GridData.Edges.CellIndices[iEdge, 0] == inCell && this.GridData.Edges.CellIndices[iEdge, 1] < 1)
+                //         {
+                //             Vector BoSSSNormal = new Vector(3);
+                //             for (int dim = 0; dim < 3; dim++)
+                //             {
+                //                 BoSSSNormal[dim] = this.GridData.Edges.NormalsForAffine[iEdge, dim];
+                //             }
+                //             double angle = BoSSSNormal.CrossProduct(OFNormal).L2Norm();
+                //             if (angle < 1e-10){
+                //                 if (found || this.BoSSSiEdgeToOpenFOAMFace[iEdge] >= 1e-10){
+                //                     Console.WriteLine(inCell);
+                //                     Console.WriteLine(this.GridData.Edges.CellIndices[iEdge, 0]);
+                //                     Console.WriteLine(this.GridData.Edges.CellIndices[iEdge, 1]);
+                //                     Console.WriteLine(iEdge);
+                //                     Console.WriteLine(iEdgeIndex);
+                //                     throw new ApplicationException("boundary face " + face + " already found");
+                //                 }
+                //                 iEdgeIndex = iEdge;
+                //                 found = true;
+                //             }
+                //         }
+                //     }
+                //     if (iEdgeIndex > 0)
+                //     {
+                //         this.BoSSSiEdgeToOpenFOAMFace[iEdgeIndex] = face;
+                //     }
+                //     else
+                //     {
+
+                //     }
+                // }
             } catch(Exception e) {
                 Console.Error.WriteLine(e.GetType() + ": " + e.Message);
                 Console.Error.WriteLine(e.StackTrace);
@@ -217,10 +307,33 @@ namespace BoSSS.Foundation.Grid {
             // this.dimension = dimension;
 
             // create BoSSS grid
-            FOAMmesh_to_BoSSS(this, nCells, faces, neighbour, owner, points, names, patchIDs, emptyTag, this.Cells2Faces);
+            FOAMmesh_to_BoSSS(this, nCells, faces, neighbour, owner, points, names, patchIDs, emptyTag);
 
             // create grid data object
             this.GridDataObject = new GridData(this);
+
+            // TODO build correlation between bosss iEdges and OF face indices
+            // this.BoSSSiEdgeToOpenFOAMFace = new List<int>();
+            // for (int face = 0; face < faces.Length; face++) {
+            //     int inCell = owner[face];
+            //     int outCell = neighbour[face];
+            //     int iEdgeIndex = -1;
+            //     for (int iEdge = 0; iEdge < faces.Length; iEdge++) {
+            //         if (
+            //         (this.GridData.Edges.CellIndices[iEdge, 0] == inCell && this.GridData.Edges.CellIndices[iEdge, 1] == outCell) ||
+            //         (this.GridData.Edges.CellIndices[iEdge, 1] == inCell && this.GridData.Edges.CellIndices[iEdge, 0] == outCell)
+            //     ) {
+            //             iEdgeIndex = iEdge;
+            //         }
+            //     }
+            //     if (iEdgeIndex > 0) {
+            //         this.BoSSSiEdgeToOpenFOAMFace.Add(iEdgeIndex);
+            //     } else {
+            //         throw new ApplicationException("Face " + face + " not found");
+            //     }
+            //     // var edge = this.GridDataObject.
+            //     // BoSSSInCell.
+            // }
         }
 
 
@@ -255,9 +368,22 @@ namespace BoSSS.Foundation.Grid {
         }
 
 
-        public List<int>[] Cells2Faces; // mapping of BoSSS cells to OpenFOAM faces
+        public int[] BoSSSiEdgeToOpenFOAMFace; // mapping of BoSSS iEdges to OpenFOAM faces
 
-        internal static void FOAMmesh_to_BoSSS(GridCommons grid, int nCells, int[][] faces, int[] neighbour, int[] owner, double[,] points, string[] names, int[] patchIDs, int emptyTag, List<int>[] Cells2Faces) {
+        Vector GetNormal(int faceIndex, int[][] faces, int[] owner, double[,] points){
+            int cellIndex = owner[faceIndex];
+            int[] pts = faces[cellIndex];
+            List<Vector> ptVectors = new List<Vector>();
+            foreach (var pt in pts){
+                ptVectors.Add(new Vector{points[pt, 0], points[pt, 1], points[pt, 2]});
+            }
+            Vector faceVec1 = ptVectors[1] - ptVectors[0];
+            Vector faceVec2 = ptVectors[2] - ptVectors[0];
+            Vector normalVector = (faceVec1.CrossProduct(faceVec2)).Normalize();
+            return normalVector;
+        }
+
+        internal static void FOAMmesh_to_BoSSS(GridCommons grid, int nCells, int[][] faces, int[] neighbour, int[] owner, double[,] points, string[] names, int[] patchIDs, int emptyTag) {
 
             // if (grid.dimension == 2){
             //     // find degenerate dimension
@@ -337,7 +463,7 @@ namespace BoSSS.Foundation.Grid {
             // Build Cells-to-Faces correlation
             // ================================
 
-            Cells2Faces = new List<int>[nCells]; // mapping of BoSSS cells to OpenFOAM faces
+            var Cells2Faces = new List<int>[nCells]; // mapping of BoSSS cells to OpenFOAM faces
             for (int j = 0; j < nCells; j++) {
                 Cells2Faces[j] = new List<int>();
             }

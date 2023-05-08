@@ -27,6 +27,7 @@ using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.Grid.RefElements;
+using System.IO;
 
 // TODO: test mit norm, jump norm zum laufen bringen
 // erst dotnet, dann mono, dann openfoam
@@ -814,46 +815,78 @@ namespace BoSSS.Application.ExternalBinding {
 
             OpenFoamSurfaceField m_Flux;
 
-            public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
+            // public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
+            // {
+            //     // expand for treatment of input functions, for now hardcode to -1.0
+            //     double referenceValue = base.BoundaryEdgeForm(ref inp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
+            //     // Console.WriteLine("Test1");
+            //     if (m_Flux == null) {
+            //         Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
+            //         return base.BoundaryEdgeForm(ref inp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
+            //     }
+            //     double UxN = m_Flux.GetFlux(ref inp);
+            //     // Console.Write("Test2");
+            //     // Console.Write(UxN);
+
+            //     double phi;
+            //     if (UxN >= 0)
+            //     {
+            //     // Console.Write("Test3");
+            //         phi = _uIN[0];
+            //     }
+            //     else
+            //     {
+            //     // Console.Write("Test4");
+            //         phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+            //     }
+
+            //     using (var fs = new FileStream("./out.txt", FileMode.Append))
+            //     using (var sw = new StreamWriter(fs))
+            //     {
+            //         sw.WriteLine("flux: " + (double)(phi * UxN * (_vIN)));
+            //         sw.WriteLine("velocityfield (boundary): " + (double)(referenceValue));
+            //     }
+            //     // Console.WriteLine("Difference between flux and velocityfield (boundary): " + (double)(phi * UxN * _vIN - referenceValue));
+            //     // Console.Write("Test5");
+            //     return phi * UxN * _vIN;
+            // }
+
+            public override double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
             {
-                // expand for treatment of input functions, for now hardcode to -1.0
-                if (m_Flux == null) {
-                    Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
-                    return base.BoundaryEdgeForm(ref inp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
-                }
-                double UxN = m_Flux.GetFlux(inp);
-
-                double phi;
-                if (UxN >= 0)
-                {
-                    phi = _uIN[0];
-                }
-                else
-                {
-                    phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
-                }
-
-                return phi * UxN * _vIN;
-            }
-
-            public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
-            {
+                // double referenceValue = base.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+                // Console.WriteLine("Test1inner");
                 if (m_Flux == null) {
                     Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
                     return base.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
                 }
-                double UxN = 0.5 * (m_Flux.GetFluxIN(inp) + m_Flux.GetFluxOUT(inp));
+                double UxN = 0.5 * (m_Flux.GetFluxIN(ref inp) + m_Flux.GetFluxOUT(ref inp));
+                // Console.Write("Testinner2");
+
+                double UxNReference = 0;
+                for (int d = 0; d < 3; d++)
+                    UxNReference += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
 
                 double phi;
                 if (UxN >= 0)
                 {
+                    // Console.Write("Test3inner");
                     phi = _uIN[0];
                 }
                 else
                 {
+                    // Console.Write("Test4inner");
                     phi = _uOUT[0];
                 }
 
+                using (var fs = new FileStream("./out.txt", FileMode.Append))
+                using (var sw = new StreamWriter(fs))
+                {
+                    // sw.WriteLine("flux: " + (double)(phi * UxN * (_vIN - _vOUT)));
+                    // sw.WriteLine("velocityfield (inner): " + (double)(referenceValue));
+                    sw.WriteLine("flux: " + (double)(UxN));
+                    sw.WriteLine("velocityfield (inner): " + (double)(UxNReference));
+                }
+                // Console.Write("Test5inner");
                 return phi * UxN * (_vIN - _vOUT);
             }
 
