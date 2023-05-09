@@ -439,8 +439,8 @@ namespace BoSSS.Application.BoSSSpad {
                         p.StandardInput.WriteLine("exit");
 
                         // wait here a bit more...
-                        { 
-                        //try {
+                        //{ 
+                        try {
 
                             // Miss-used pipe for inter-process synchronization.
                             // An `EventWaitHandle` would be much nicer, but that works only on Windows-machines.
@@ -460,21 +460,22 @@ namespace BoSSS.Application.BoSSSpad {
 
                                     t.Start();
 
-                                    //try {
-                                    { 
+                                    try {
+                                    //{ 
                                         if (t.Wait(60*1000) == false) {
                                             cts.Cancel();
                                             Console.Error.WriteLine("Timeout waiting for Cancellation token pipe.");
                                         }
-                                    } /*catch (Exception e) {
+                                    } catch (Exception e) {
                                         Console.Error.WriteLine("Exception while waiting for Cancellation token pipe: " + e);
 
-                                    }*/
+                                    }
                                 }
                             }
-                        } /*catch (Exception e) {
+                        } catch (Exception e) {
                             Console.Error.WriteLine("Exception while waiting for pipe connection: " + e);
-                        }*/
+                            throw new AggregateException(e);
+                        }
 
                         if (useMutex)
                             ReleaseMutex();

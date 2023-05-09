@@ -127,31 +127,31 @@ namespace BoSSS.Application.BoSSSpad {
             //AddTableFormatter();
 
             {
-                //try {
-                // Synchronization during batch-execution of BoSSS-worksheets:
-                // We send a signal to 'RunPapermillAndNbconvert(...)' to notify it can release its mutex.
+                try {
+                    // Synchronization during batch-execution of BoSSS-worksheets:
+                    // We send a signal to 'RunPapermillAndNbconvert(...)' to notify it can release its mutex.
 
-                var tempguid = System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName);
+                    var tempguid = System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName);
 
-                if (!tempguid.IsEmptyOrWhite()) {
-                    using (var pipeServer = new NamedPipeServerStream(tempguid, PipeDirection.InOut)) {
-                        using (var cts = new CancellationTokenSource()) {
-                            var t = pipeServer.WaitForConnectionAsync(cts.Token);
+                    if (!tempguid.IsEmptyOrWhite()) {
+                        using (var pipeServer = new NamedPipeServerStream(tempguid, PipeDirection.InOut)) {
+                            using (var cts = new CancellationTokenSource()) {
+                                var t = pipeServer.WaitForConnectionAsync(cts.Token);
 
-                            bool timeot = t.Wait(1000 * 60);
-                            if (timeot == false) {
-                                //Console.WriteLine("timeout");
-                                cts.Cancel();
-                            } else {
-                                pipeServer.WriteByte(1);
+                                bool timeot = t.Wait(1000 * 60);
+                                if (timeot == false) {
+                                    //Console.WriteLine("timeout");
+                                    cts.Cancel();
+                                } else {
+                                    pipeServer.WriteByte(1);
+                                }
                             }
                         }
                     }
+                } catch (Exception e) {
+                    Console.Error.WriteLine($"{e} during startup synchronization: {e.Message}");
+                    throw new AggregateException(e);
                 }
-                //} catch (Exception e) {
-                //    Console.Error.WriteLine($"{e} during startup synchronization: {e.Message}");
-                //    throw e;
-                //}
             }
 
             Console.WriteLine("BoSSSpad is ready to go!");

@@ -992,6 +992,9 @@ namespace PublicTestRunner {
                                             Console.WriteLine("changed its mind to: " + s1);
                                             s = s1;
                                         }
+
+
+                                        //jj.job.Reactivate();vsxvkjjhn
                                     }
 
 
