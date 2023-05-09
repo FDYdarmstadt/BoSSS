@@ -473,7 +473,10 @@ namespace BoSSS.Application.BoSSSpad {
                                 }
                             }
                         } catch (Exception e) {
+
                             Console.Error.WriteLine("Exception while waiting for pipe connection: " + e);
+
+                            Console.WriteLine($"token file exists? " + File.Exists(tempguid + ".txt"));
                             throw new AggregateException(e);
                         }
 

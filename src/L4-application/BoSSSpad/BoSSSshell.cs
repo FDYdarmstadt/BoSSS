@@ -147,6 +147,9 @@ namespace BoSSS.Application.BoSSSpad {
                                 }
                             }
                         }
+
+                        File.WriteAllText(tempguid + ".txt", "Hallo du Arsch!");
+                        Console.WriteLine("token file written.");
                     }
                 } catch (Exception e) {
                     Console.Error.WriteLine($"{e} during startup synchronization: {e.Message}");
