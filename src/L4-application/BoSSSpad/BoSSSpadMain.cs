@@ -464,17 +464,17 @@ namespace BoSSS.Application.BoSSSpad {
                                     //{ 
                                         if (t.Wait(60*1000) == false) {
                                             cts.Cancel();
-                                            Console.Error.WriteLine("Timeout waiting for Cancellation token pipe.");
+                                            Console.Error.WriteLine("Timeout waiting for Cancellation token pipe. " + DateTime.Now);
                                         }
                                     } catch (Exception e) {
-                                        Console.Error.WriteLine("Exception while waiting for Cancellation token pipe: " + e);
+                                        Console.Error.WriteLine("Exception " + DateTime.Now + " while waiting for Cancellation token pipe: " + e);
 
                                     }
                                 }
                             }
                         } catch (Exception e) {
 
-                            Console.Error.WriteLine("Exception while waiting for pipe connection: " + e);
+                            Console.Error.WriteLine("Exception " + DateTime.Now + " while waiting for pipe connection: " + e);
 
                             Console.WriteLine($"token file exists? " + File.Exists(tempguid + ".txt"));
                             throw new AggregateException(e);

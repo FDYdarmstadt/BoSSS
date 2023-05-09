@@ -132,7 +132,7 @@ namespace BoSSS.Application.BoSSSpad {
                     // We send a signal to 'RunPapermillAndNbconvert(...)' to notify it can release its mutex.
 
                     var tempguid = System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName);
-                    Console.WriteLine("Worksheet got tempguid = " + tempguid);
+                    Console.WriteLine("Worksheet got tempguid = " + tempguid + " @ " + DateTime.Now);
                     if (!tempguid.IsEmptyOrWhite()) {
                         using (var pipeServer = new NamedPipeServerStream(tempguid, PipeDirection.InOut)) {
                             using (var cts = new CancellationTokenSource()) {
@@ -140,7 +140,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                                 bool timeot = t.Wait(1000 * 60);
                                 if (timeot == false) {
-                                    //Console.WriteLine("timeout");
+                                    Console.WriteLine("timeout in worksheet  @ " + DateTime.Now);
                                     cts.Cancel();
                                 } else {
                                     pipeServer.WriteByte(1);
@@ -149,7 +149,7 @@ namespace BoSSS.Application.BoSSSpad {
                         }
 
                         File.WriteAllText(tempguid + ".txt", "Hallo du Arsch!");
-                        Console.WriteLine("token file written.");
+                        Console.WriteLine("token file written @ " + DateTime.Now);
                     }
                 } catch (Exception e) {
                     Console.Error.WriteLine($"{e} during startup synchronization: {e.Message}");
