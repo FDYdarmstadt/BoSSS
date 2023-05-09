@@ -258,7 +258,7 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new NotImplementedException();
                 }
             } catch (Exception e) {
-                Console.WriteLine(e.GetType().Name + ": " + e.Message);
+                Console.Error.WriteLine(e.GetType().Name + ": " + e.Message);
                 errCount = -666;
                 //throw new AggregateException(e);
             }

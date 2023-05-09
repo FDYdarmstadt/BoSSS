@@ -132,7 +132,7 @@ namespace BoSSS.Application.BoSSSpad {
                     // We send a signal to 'RunPapermillAndNbconvert(...)' to notify it can release its mutex.
 
                     var tempguid = System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName);
-
+                    Console.WriteLine("Worksheet got tempguid = " + tempguid);
                     if (!tempguid.IsEmptyOrWhite()) {
                         using (var pipeServer = new NamedPipeServerStream(tempguid, PipeDirection.InOut)) {
                             using (var cts = new CancellationTokenSource()) {

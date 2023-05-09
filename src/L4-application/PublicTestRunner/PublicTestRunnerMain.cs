@@ -984,18 +984,24 @@ namespace PublicTestRunner {
                                 }
 
 
-                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
-                                    if(s == JobStatus.FailedOrCanceled) {
-                                        Console.WriteLine(" ------------------- Job Failed reason:");
-                                        var s1 = jj.job.GetStatus(true);
-                                        if(s1 != s) {
-                                            Console.WriteLine("changed its mind to: " + s1);
-                                            s = s1;
-                                        }
-
-
-                                        //jj.job.Reactivate();vsxvkjjhn
+                                if (s == JobStatus.FailedOrCanceled) {
+                                    Console.WriteLine(" ------------------- Job Failed reason:");
+                                    var s1 = jj.job.GetStatus(true);
+                                    if (s1 != s) {
+                                        Console.WriteLine("changed its mind to: " + s1);
+                                        s = s1;
                                     }
+
+                                    if (jj.job.SubmitCount < jj.job.RetryCount) {
+                                        Console.WriteLine("Trying once again with failed job...");
+                                        jj.job.Reactivate();
+                                        continue;
+                                    }
+                                }
+
+
+                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
+                                    
 
 
                                     // message:
@@ -1280,7 +1286,7 @@ namespace PublicTestRunner {
                 // create job
                 Job j = new Job(final_jName, TestTypeProvider.GetType());
                 j.SessionReqForSuccess = false;
-                j.RetryCount = 1;
+                j.RetryCount = 3;
                 string resultFile = $"result-{dor}-{cnt}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileNameWithoutExtension(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {
