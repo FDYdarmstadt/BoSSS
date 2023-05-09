@@ -127,6 +127,12 @@ namespace BoSSS.Application.BoSSSpad {
             //AddTableFormatter();
 
             try {
+                // Synchronization during batch-execution of BoSSS-worksheets:
+                // We send a signal to 'RunPapermillAndNbconvert(...)' to notify it can release its mutex.
+
+                //var tempguid = System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_Pipe);
+                //Console.WriteLine("Received  var tempguid = " + tempguid);
+
                 using (var pipeServer = new NamedPipeServerStream(BoSSSpadMain.BoSSSpadInitDone_Pipe, PipeDirection.InOut)) {
                     using (var cts = new CancellationTokenSource()) {
                         var t = pipeServer.WaitForConnectionAsync(cts.Token);
@@ -143,6 +149,8 @@ namespace BoSSS.Application.BoSSSpad {
             } catch (Exception e) {
                 Console.Error.WriteLine($"{e} during startup synchronization: {e.Message}");
             }
+
+            Console.WriteLine("BoSSSpad is ready to go!");
         }
 
         /// <summary>
