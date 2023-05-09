@@ -279,7 +279,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// during startup we might run into an exception 
         /// `System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.`
         /// 
-        /// Therefore, this mutex is used, in combination with a named pipe named <see cref="BoSSSpadInitDone_Pipe"/> to prevent BoSSSpad from 
+        /// Therefore, this mutex is used, in combination with a named pipe named <see cref="BoSSSpadInitDone_PipeName"/> to prevent BoSSSpad from 
         /// starting another Jupyter instance before the port is acquired.
         /// </summary>
         static Mutex JupyterMutex = new Mutex(false, "JupyterMutex");
@@ -287,7 +287,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Name used for a synchronization pipe
         /// </summary>
-        internal static string BoSSSpadInitDone_Pipe => "BoSSSpadInitDone" + System.Environment.UserName;
+        internal static string BoSSSpadInitDone_PipeName => "BoSSSpadInitDone" + System.Environment.UserName;
 
 
         private static int RunJupyter(string fileToOpen) {
@@ -376,8 +376,8 @@ namespace BoSSS.Application.BoSSSpad {
             return System.OperatingSystem.IsWindows();
         }
 
-        const bool UseMutexOnPapermill = false;
-        const bool UseMutexOnNbconvert = false;
+        const bool UseMutexOnPapermill = true;
+        const bool UseMutexOnNbconvert = true;
 
        
         private static int RunPapermillAndNbconvert(string fileToOpen) {
@@ -425,29 +425,27 @@ namespace BoSSS.Application.BoSSSpad {
                         psi.RedirectStandardInput = true;
                         psi.FileName = @"C:\Windows\System32\cmd.exe";
 
-                        //var tempguid = Guid.NewGuid().ToString();
-                        //Console.WriteLine("Temp GUID = " + tempguid);
-                        //psi.EnvironmentVariables.Add(tempguid, tempguid);
+                        var tempguid = Guid.NewGuid().ToString();
+                        Console.WriteLine("Temp GUID = " + tempguid);
+                        psi.EnvironmentVariables.Add(BoSSSpadInitDone_PipeName, tempguid);
 
                         // wait here a bit to avoid a port conflict...
                         // when two notebooks are started simultaneously, we might run into the following:
                         //  ---> System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.
                        
                         Process p = Process.Start(psi);
-                        //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
-
-                        //p.StandardInput.WriteLine("dir");
                         p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
                         p.StandardInput.WriteLine(command);// "jupyter.exe nbconvert \"" + fileToOpen + "\" --to html ");
                         p.StandardInput.WriteLine("exit");
 
                         // wait here a bit more...
-                        try {
-                            //static internal EventWaitHandle BoSSSpadInitDone = new EventWaitHandle(false, EventResetMode.ManualReset, "MyUniqueEventName");
+                        { 
+                        //try {
 
                             // Miss-used pipe for inter-process synchronization.
                             // An `EventWaitHandle` would be much nicer, but that works only on Windows-machines.
-                            using (NamedPipeClientStream BoSSSpadInitDone = new NamedPipeClientStream(".", BoSSSpadInitDone_Pipe, PipeDirection.InOut)) {
+                            //static internal EventWaitHandle BoSSSpadInitDone = new EventWaitHandle(false, EventResetMode.ManualReset, "MyUniqueEventName");
+                            using (NamedPipeClientStream BoSSSpadInitDone = new NamedPipeClientStream(".", tempguid, PipeDirection.InOut)) {
                                 BoSSSpadInitDone.Connect(60*1000);
                                 using (var cts = new CancellationTokenSource()) {
                                     Task t = new Task(delegate () {
@@ -462,20 +460,21 @@ namespace BoSSS.Application.BoSSSpad {
 
                                     t.Start();
 
-                                    try {
+                                    //try {
+                                    { 
                                         if (t.Wait(60*1000) == false) {
                                             cts.Cancel();
                                             Console.Error.WriteLine("Timeout waiting for Cancellation token pipe.");
                                         }
-                                    } catch (Exception e) {
+                                    } /*catch (Exception e) {
                                         Console.Error.WriteLine("Exception while waiting for Cancellation token pipe: " + e);
 
-                                    }
+                                    }*/
                                 }
                             }
-                        } catch (Exception) {
-
-                        }
+                        } /*catch (Exception e) {
+                            Console.Error.WriteLine("Exception while waiting for pipe connection: " + e);
+                        }*/
 
                         if (useMutex)
                             ReleaseMutex();
