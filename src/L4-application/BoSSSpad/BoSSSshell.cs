@@ -152,7 +152,7 @@ namespace BoSSS.Application.BoSSSpad {
                         Console.WriteLine("token file written @ " + DateTime.Now);
                     }
                 } catch (Exception e) {
-                    Console.Error.WriteLine($"{e} during startup synchronization: {e.Message}");
+                    Console.Error.WriteLine($"{e} during startup synchronization: {e.Message} at {DateTime.Now}");
                     throw new AggregateException(e);
                 }
             }

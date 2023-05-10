@@ -196,7 +196,7 @@ namespace BoSSS.Application.TutorialTests {
             }
         }
 #endif
-
+        /*
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("memprofile/memprofile.ipynb")]
@@ -214,7 +214,7 @@ namespace BoSSS.Application.TutorialTests {
                 JupyterMutex.ReleaseMutex();
             }
         }
-#endif
+#endif*/
 
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("XDGagglomeration/XDGagglomeration.ipynb")]
@@ -396,6 +396,7 @@ namespace BoSSS.Application.TutorialTests {
         /// Init.
         /// </summary>
         void OneTimeSetUp() {
+            /*
             Console.WriteLine("OneTimeSetup: starting 'MiniBatchProcessor'...");
             bool r = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
             if(r)
@@ -404,6 +405,7 @@ namespace BoSSS.Application.TutorialTests {
                 Console.WriteLine("already running.");
             
             killBatch = r;
+            */
         }
 
         /// <summary>

@@ -397,17 +397,19 @@ namespace BoSSS.Application.BoSSSpad {
 
                 void GetMutex() {
                     if (MutexReleased) {
-                        Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
+                        Console.WriteLine("Waiting for Jupyter mutex, " + DateTime.Now +" (can only start one Jupyter notebook at time) ...");
                         JupyterMutex.WaitOne();
-                        Console.WriteLine("Mutex obtained!");
+                        Console.WriteLine("Mutex obtained at " + DateTime.Now + ".");
                         MutexReleased = false;
                     }
                 }
 
                 void ReleaseMutex() {
-                    Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
-                    if(!MutexReleased)
+                    //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
+                    Console.WriteLine("Releasing Jupyter mutex @ " + DateTime.Now + " ...");
+                    if (!MutexReleased)
                         JupyterMutex.ReleaseMutex();
+                    Console.WriteLine("Mutex obtained at " + DateTime.Now + ".");
                     MutexReleased = true;
                 }
 
@@ -436,7 +438,8 @@ namespace BoSSS.Application.BoSSSpad {
                         Process p = Process.Start(psi);
                         p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
                         p.StandardInput.WriteLine(command);// "jupyter.exe nbconvert \"" + fileToOpen + "\" --to html ");
-                        p.StandardInput.WriteLine("exit");
+                        p.StandardInput.Flush();
+                        
 
                         // wait here a bit more...
                         //{ 
@@ -446,16 +449,19 @@ namespace BoSSS.Application.BoSSSpad {
                             // An `EventWaitHandle` would be much nicer, but that works only on Windows-machines.
                             //static internal EventWaitHandle BoSSSpadInitDone = new EventWaitHandle(false, EventResetMode.ManualReset, "MyUniqueEventName");
                             using (NamedPipeClientStream BoSSSpadInitDone = new NamedPipeClientStream(".", tempguid, PipeDirection.InOut)) {
+                                Console.WriteLine("Waiting for BoSSSpad to start up at " + DateTime.Now + ".");
                                 BoSSSpadInitDone.Connect(60*1000);
+                                Console.WriteLine("BoSSSpad connected at " + DateTime.Now + "; now waiting for signal...");
+
                                 using (var cts = new CancellationTokenSource()) {
                                     Task t = new Task(delegate () {
-                                        Console.WriteLine("Server: waiting for signal (1) ...");
+                                        Console.WriteLine($" waiting for signal {DateTime.Now} ...");
                                         int str = BoSSSpadInitDone.ReadByte();
                                         while (str != 1) {
-                                            Console.WriteLine($"Server: waiting for signal...; got {str}");
+                                            Console.WriteLine($" received signal {DateTime.Now}, got {str}");
                                             str = BoSSSpadInitDone.ReadByte();
                                         }
-                                        Console.WriteLine("Finally received: " + str);
+                                        Console.WriteLine($" Finally received: {DateTime.Now}" + str);
                                     }, cts.Token);
 
                                     t.Start();
@@ -483,6 +489,7 @@ namespace BoSSS.Application.BoSSSpad {
                         if (useMutex)
                             ReleaseMutex();
 
+                        p.StandardInput.WriteLine("exit");
                         p.WaitForExit();
 
                         return p.ExitCode;
