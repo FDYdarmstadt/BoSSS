@@ -26,6 +26,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -1434,14 +1435,25 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="bpc"></param>
         public void Activate(BatchProcessorClient bpc) {
             using (var tr = new FuncTrace()) {
-                
+
                 // ============================================
                 // ensure that this method is only called once.
                 // ============================================
                 if (this.AssignedBatchProc != null)
                     throw new NotSupportedException("Job can only be activated once.");
                 AssignedBatchProc = bpc;
-                
+
+                Reactivate();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Reactivate() {
+            using (var tr = new FuncTrace()) {
+                if (this.AssignedBatchProc == null)
+                    throw new NotSupportedException("Job must be activated before.");
 
                 // ================
                 // status
@@ -1469,14 +1481,14 @@ namespace BoSSS.Application.BoSSSpad {
                 Console.WriteLine($"Deploying job {this.Name} ... ");
 
                 // some database syncing might be necessary 
-                FiddleControlFile(bpc);
+                FiddleControlFile(AssignedBatchProc);
 
                 // deploy additional files
                 string DeploymentDirectory = this.DeployExecuteables();
                 
                 // submit job
                 using (new BlockTrace("JOB_SUBMISSION", tr)) {
-                    var rr = bpc.Submit(this, DeploymentDirectory);
+                    var rr = AssignedBatchProc.Submit(this, DeploymentDirectory);
                     File.WriteAllText(Path.Combine(DeploymentDirectory, "IdentifierToken.txt"), rr.id);
 
                     //Deployment dep = AllDeployments.SingleOrDefault(d => d?.BatchProcessorIdentifierToken == rr.id);
