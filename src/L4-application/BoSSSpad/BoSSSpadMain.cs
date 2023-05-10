@@ -409,7 +409,7 @@ namespace BoSSS.Application.BoSSSpad {
                     Console.WriteLine("Releasing Jupyter mutex @ " + DateTime.Now + " ...");
                     if (!MutexReleased)
                         JupyterMutex.ReleaseMutex();
-                    Console.WriteLine("Mutex obtained at " + DateTime.Now + ".");
+                    Console.WriteLine("Mutex released at " + DateTime.Now + ".");
                     MutexReleased = true;
                 }
 
@@ -418,7 +418,7 @@ namespace BoSSS.Application.BoSSSpad {
                     
 
 
-                    int RunAnacondaShell(string command, bool useMutex) {
+                    int RunAnacondaShell(string command, bool useMutex, bool startupMutex) {
                         if (useMutex)
                             GetMutex();
 
@@ -439,65 +439,71 @@ namespace BoSSS.Application.BoSSSpad {
                         p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
                         p.StandardInput.WriteLine(command);// "jupyter.exe nbconvert \"" + fileToOpen + "\" --to html ");
                         p.StandardInput.Flush();
-                        
 
-                        // wait here a bit more...
-                        //{ 
-                        try {
+                        if (startupMutex == true) {
+                            // wait here a bit more...
+                            //{ 
+                            try {
 
-                            // Miss-used pipe for inter-process synchronization.
-                            // An `EventWaitHandle` would be much nicer, but that works only on Windows-machines.
-                            //static internal EventWaitHandle BoSSSpadInitDone = new EventWaitHandle(false, EventResetMode.ManualReset, "MyUniqueEventName");
-                            using (NamedPipeClientStream BoSSSpadInitDone = new NamedPipeClientStream(".", tempguid, PipeDirection.InOut)) {
-                                Console.WriteLine("Waiting for BoSSSpad to start up at " + DateTime.Now + ".");
-                                BoSSSpadInitDone.Connect(60*1000);
-                                Console.WriteLine("BoSSSpad connected at " + DateTime.Now + "; now waiting for signal...");
 
-                                using (var cts = new CancellationTokenSource()) {
-                                    Task t = new Task(delegate () {
-                                        Console.WriteLine($" waiting for signal {DateTime.Now} ...");
-                                        int str = BoSSSpadInitDone.ReadByte();
-                                        while (str != 1) {
-                                            Console.WriteLine($" received signal {DateTime.Now}, got {str}");
-                                            str = BoSSSpadInitDone.ReadByte();
+                                // Miss-used pipe for inter-process synchronization.
+                                // An `EventWaitHandle` would be much nicer, but that works only on Windows-machines.
+                                //static internal EventWaitHandle BoSSSpadInitDone = new EventWaitHandle(false, EventResetMode.ManualReset, "MyUniqueEventName");
+                                using (NamedPipeClientStream BoSSSpadInitDone = new NamedPipeClientStream(".", tempguid, PipeDirection.InOut)) {
+                                    Console.WriteLine("Waiting for BoSSSpad to start up at " + DateTime.Now + ".");
+                                    BoSSSpadInitDone.Connect(3 * 60 * 1000);
+                                    Console.WriteLine("BoSSSpad connected at " + DateTime.Now + "; now waiting for signal...");
+
+                                    using (var cts = new CancellationTokenSource()) {
+                                        Task t = new Task(delegate () {
+                                            Console.WriteLine($" waiting for signal {DateTime.Now} ...");
+                                            int str = BoSSSpadInitDone.ReadByte();
+                                            while (str != 1) {
+                                                Console.WriteLine($" received signal {DateTime.Now}, got {str}");
+                                                str = BoSSSpadInitDone.ReadByte();
+                                            }
+                                            Console.WriteLine($" Finally received: {DateTime.Now}" + str);
+                                        }, cts.Token);
+
+                                        t.Start();
+
+                                        try {
+                                            //{ 
+                                            if (t.Wait(60 * 1000) == false) {
+                                                cts.Cancel();
+                                                Console.Error.WriteLine("Timeout waiting for Cancellation token pipe. " + DateTime.Now);
+                                            }
+                                        } catch (Exception e) {
+                                            Console.Error.WriteLine("Exception " + DateTime.Now + " while waiting for Cancellation token pipe: " + e);
+
                                         }
-                                        Console.WriteLine($" Finally received: {DateTime.Now}" + str);
-                                    }, cts.Token);
-
-                                    t.Start();
-
-                                    try {
-                                    //{ 
-                                        if (t.Wait(60*1000) == false) {
-                                            cts.Cancel();
-                                            Console.Error.WriteLine("Timeout waiting for Cancellation token pipe. " + DateTime.Now);
-                                        }
-                                    } catch (Exception e) {
-                                        Console.Error.WriteLine("Exception " + DateTime.Now + " while waiting for Cancellation token pipe: " + e);
-
                                     }
                                 }
+                            } catch (Exception e) {
+                                Console.Error.WriteLine("Exception " + DateTime.Now + " while waiting for pipe connection: " + e);
+                                throw new AggregateException(e);
                             }
-                        } catch (Exception e) {
 
-                            Console.Error.WriteLine("Exception " + DateTime.Now + " while waiting for pipe connection: " + e);
-
-                            Console.WriteLine($"token file exists? " + File.Exists(tempguid + ".txt"));
-                            throw new AggregateException(e);
+                            // received a signal from worksheet that it is up and running, 
+                            // so we can release the mutex **before** the external process exits
+                            if (useMutex)
+                                ReleaseMutex(); 
                         }
-
-                        if (useMutex)
-                            ReleaseMutex();
 
                         p.StandardInput.WriteLine("exit");
                         p.WaitForExit();
 
+                        if(startupMutex == false) {
+                            // the mutex should block the entire call to the external process.
+                            if (useMutex)
+                                ReleaseMutex();
+                        }
+
                         return p.ExitCode;
                     }
 
-                    papermill_exit = RunAnacondaShell($"papermill {fileToOpen} {fileToOpen_out}", UseMutexOnPapermill);
-                    //nbconvert_exit = RunAnacondaShell(token2, "jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html ", UseMutexOnNbconvert);
-                    nbconvert_exit = 0;
+                    papermill_exit = RunAnacondaShell($"papermill {fileToOpen} {fileToOpen_out}", UseMutexOnPapermill, true);
+                    nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html ", UseMutexOnNbconvert, false);
                     
                     //nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html --execute");
                     //papermill_exit = nbconvert_exit;
