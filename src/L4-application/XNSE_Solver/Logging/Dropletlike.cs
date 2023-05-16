@@ -2,6 +2,7 @@
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution;
 using BoSSS.Solution.XNSECommon;
+using MPI.Wrappers;
 using ilPSP;
 using System;
 using System.Collections.Generic;
@@ -63,14 +64,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                 Xcoord[i] = interP[i, 0];
                 Ycoord[i] = interP[i, 1];
             }
-            double semiAxisX = Xcoord.Max() - Xcoord.Min();
-            double semiAxisY = Ycoord.Max() - Ycoord.Min();
+            double semiAxisX = Xcoord.Max().MPIMax() - Xcoord.Min().MPIMin();
+            double semiAxisY = Ycoord.Max().MPIMax() - Ycoord.Min().MPIMin();
 
             double[] sphereProps = this.ComputeSphericalPorperties();
+            sphereProps = sphereProps.MPISum();
 
-            string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", TimestepNo, phystime, semiAxisX, semiAxisY, sphereProps[0], sphereProps[1]);
-            Log.WriteLine(line);
-            Log.Flush();
+            AppendToLog(TimestepNo);
+            AppendToLog(phystime);
+            AppendToLog(semiAxisX);
+            AppendToLog(semiAxisY);
+            AppendToLog(sphereProps[0]);
+            AppendToLog(sphereProps[1]);
+            //string line = String.Format("{0}\t{1}\t{2}\t{3}\t{4}\t{5}", TimestepNo, phystime, semiAxisX, semiAxisY, sphereProps[0], sphereProps[1]);
+            //Log.WriteLine(line);
+            //Log.Flush();
 
             return;
         }
