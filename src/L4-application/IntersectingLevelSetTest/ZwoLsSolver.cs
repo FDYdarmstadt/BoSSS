@@ -28,6 +28,7 @@ using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
+using System.Runtime.Serialization;
 
 namespace IntersectingLevelSetTest {
 
@@ -40,7 +41,7 @@ namespace IntersectingLevelSetTest {
 
         protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 4), GenericBlas.Linspace(-0.5, 0.5, 4));
+            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 3), GenericBlas.Linspace(-0.5, 0.5, 3));
             return grd;
         }
 
@@ -132,14 +133,23 @@ namespace IntersectingLevelSetTest {
             }
 
             double phi2(double x, double y) {
-                return (x);
+                return (y);
             }
 
             double phi3(double x, double y) {
                 return (x - (Math.Tan(t) * y));
             }
-            Phi0.ProjectField(phi3);
-            Phi1.ProjectField(phi1);
+            double phi4(double x, double y)
+            {
+                return (x - 0.25);
+            }
+            double phi5(double x, double y)
+            {
+                var kt = t / Math.PI * 90/10;
+                return (x - kt+0.2);
+            }
+            Phi0.ProjectField(phi1);
+            Phi1.ProjectField(phi3);
         }
 
         private void SetLs2(double t) {
@@ -179,8 +189,8 @@ namespace IntersectingLevelSetTest {
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx_AB()); // flux am lev-set 0
-            Op.EquationComponents["c1"].Add(new LevSetFlx_CA()); // flux am lev-set 1
-
+            Op.EquationComponents["c1"].Add(new LevSetFlx_CB()); // flux am lev-set 1
+            
             //Op.EquationComponents["c1"].Add(new DxBroken());
 
             Op.Commit();
@@ -189,15 +199,21 @@ namespace IntersectingLevelSetTest {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime);
 
+
+            //reset current solution
+
             //phystime = 1.8;
             LsUpdate(phystime);
 
+            //var map = du_dx.Mapping;
+            var map = u.Mapping;
+
             // operator-matrix assemblieren
-            MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
+            MsrMatrix OperatorMatrix = new MsrMatrix(map, map);
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
 
             // operator matrix assembly
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, map, null, map);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
 
@@ -205,11 +221,11 @@ namespace IntersectingLevelSetTest {
             var Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
 
             // Mass matrix/Inverse Mass matrix
-            var Mass = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, false, LsTrk.GetSpeciesId("B"));
+            var Mass = Mfact.GetMassMatrix(map, new double[] { 1.0 }, false, LsTrk.GetSpeciesId("B"));
             var MassInv = Mass.InvertBlocks(OnlyDiagonal: true, Subblocks: true, ignoreEmptyBlocks: true, SymmetricalInversion: false);
 
             // test that operator depends only on B-species values
-            double DepTest = LsTrk.Regions.GetSpeciesSubGrid("B").TestMatrixDependency(OperatorMatrix, u.Mapping, u.Mapping);
+            double DepTest = LsTrk.Regions.GetSpeciesSubGrid("B").TestMatrixDependency(OperatorMatrix, map, map);
             Console.WriteLine("Matrix dependency test: " + DepTest);
             Assert.LessOrEqual(DepTest, 0.0);
 
@@ -217,6 +233,7 @@ namespace IntersectingLevelSetTest {
             double[] x = new double[Affine.Length];
             BLAS.daxpy(x.Length, 1.0, Affine, 1, x, 1);
             OperatorMatrix.SpMVpara(1.0, u.CoordinateVector, 1.0, x);
+            du_dx.Clear();
             MassInv.SpMV(1.0, x, 0.0, du_dx.CoordinateVector);
 
             OperatorMatrix.SaveToTextFile("matrix.txt");

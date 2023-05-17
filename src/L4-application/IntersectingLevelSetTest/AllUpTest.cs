@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using BoSSS.Foundation;
+using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.XDG;
 using ilPSP;
 using MPI.Wrappers;
@@ -36,6 +37,7 @@ namespace IntersectingLevelSetTest {
             [Values(1, 2, 3)] int DGdegree,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants quadVariant)            
          {
+            var C = new PlotControl();
             ZwoLsSolver<BoSSS.Solution.Application.EmptyAppControl> p = null;
             BoSSS.Solution.Application._Main(
                 new string[0],
@@ -47,5 +49,38 @@ namespace IntersectingLevelSetTest {
                     return p;
                 });
         }
+
+        static public void LocalTestWithPlotting(
+            [Values(1, 2, 3)] int DGdegree,
+            [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGauss, XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants quadVariant)
+        {
+            BoSSS.Solution.Application.InitMPI();
+            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            var C = new PlotControl();
+            var p = new ZwoLsSolver<PlotControl>();
+            p.DEGREE= DGdegree;    
+            p.MomentFittingVariant = quadVariant;
+            C.SuperSampling = 5;
+            p.Init(C);
+            p.RunSolverMode();
+        }
+        //static public void OneCellTwoIntersectingLevelSets()
+        //{
+        //    var C = new PlotControl();
+        //    C.SetDGdegree(0);
+
+        //    C.SetGrid(Grid2D.Cartesian2DGrid(new double[] {0,1}, new double[] { 0, 2}));
+
+        //    ZwoLsSolver<BoSSS.Solution.Application.EmptyAppControl> p = null;
+        //    BoSSS.Solution.Application._Main(
+        //        new string[0],
+        //        true,
+        //        delegate () {
+        //            p = new ZwoLsSolver<BoSSS.Solution.Application.EmptyAppControl>();
+        //            p.DEGREE = 0;
+        //            p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+        //            return p;
+        //        });
+        //}
     }
 }

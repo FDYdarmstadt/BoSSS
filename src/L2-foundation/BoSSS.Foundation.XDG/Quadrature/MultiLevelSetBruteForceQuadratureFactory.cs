@@ -16,15 +16,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
 {
     class LevelSetCombination
     {
-        CombinedID ID;
+        public CombinedID ID;
 
         LevelSet levelSet0;
 
         LevelSet levelSet1;
 
-        double sign0;
+        public double sign0 { get; set; }
 
-        double sign1;
+        public double sign1 { get; set; }
 
         public LevelSetCombination(CombinedID iD, LevelSet levelSet0, LevelSet levelSet1)
         {
