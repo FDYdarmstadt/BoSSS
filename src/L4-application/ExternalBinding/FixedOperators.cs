@@ -394,17 +394,11 @@ namespace BoSSS.Application.ExternalBinding {
                         {"LevelSetGradient[0]", c},
                         {"LevelSetGradient[1]", c},
                         {"LevelSetGradient[2]", c}
-                        });
-                Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> GetNamedInputFields = delegate (DGField[] fields)
-                {
-
-                    return (domfields, paramfields);
-                };
+                });
                 RealLevSet.Clear();
                 RealLevSet.Acc(1.0, c);
                 LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
                                                          6, new string[] { "a", "b" },
-                                                         GetNamedInputFields,
                                                          RealLevSet, "c", ContinuityProjectionOption.None);
 
                 var RealTracker = lsu.Tracker;

@@ -554,8 +554,8 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 throw new NotImplementedException();
             }
 
-            public double Update(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
-                LevsetEvo(phystime, dt, null);
+            public double Update(IList<string> variableNames, DGField[] CurrentVariableState, IList<string> parameterNames, DGField[] CurrentParameterState, double time, double dt, double UnderRelax, bool incremental) {
+                LevsetEvo(time, dt, null);
 
                 return 0.0;
             }
@@ -579,6 +579,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     throw new NotImplementedException();
                 }
             }
+            
         }
 
 

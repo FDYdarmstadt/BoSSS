@@ -71,7 +71,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return this.LsUpdater;
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             base.CreateEquationsAndSolvers(L);
 
             var domainFields = CurrentState.Fields;

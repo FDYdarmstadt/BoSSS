@@ -153,10 +153,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             // ====================
             #region solver
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
@@ -350,10 +348,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.NonLinearSolver.MaxSolverIterations = 80;
             C.NonLinearSolver.MinSolverIterations = 60;
-            C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-10;
-            C.LinearSolver.ConvergenceCriterion = 1e-10;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
 
@@ -556,10 +552,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.NonLinearSolver.MaxSolverIterations = 80;
             C.NonLinearSolver.MinSolverIterations = 2;
-            C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-10;
-            C.LinearSolver.ConvergenceCriterion = 1e-10;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
 
@@ -804,16 +798,12 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.adaptiveReInit = false;
 
             //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.SolverCode = LinearSolverCode.automatic;
             //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
             //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 80;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-9;
             C.LevelSet_ConvergenceCriterion = 1e-7;
 
@@ -1032,11 +1022,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.NonLinearSolver.MaxSolverIterations = 80;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MinSolverIterations = 0;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
 
@@ -1178,10 +1165,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.NonLinearSolver.MaxSolverIterations = 80;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-10;
-            C.LinearSolver.ConvergenceCriterion = 1e-10;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
 
@@ -1323,10 +1308,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.NonLinearSolver.MaxSolverIterations = 80;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.MaxSolverIterations = 50;
             //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-10;
-            C.LinearSolver.ConvergenceCriterion = 1e-10;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
 
@@ -1514,7 +1497,6 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.NonLinearSolver.MaxSolverIterations = 20;
             C.NonLinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.MaxSolverIterations = 20;
             //C.Solver_MaxIterations = 50;
             
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
@@ -1701,11 +1683,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.NonLinearSolver.MaxSolverIterations = 20;
             C.NonLinearSolver.MinSolverIterations = 2;
-            C.LinearSolver.MaxSolverIterations = 20;
             //C.Solver_MaxIterations = 50;
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-10;
-            C.LinearSolver.ConvergenceCriterion = 1e-10;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
 
@@ -1878,11 +1858,9 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.NonLinearSolver.MaxSolverIterations = 20;
             C.NonLinearSolver.MinSolverIterations = 2;
-            C.LinearSolver.MaxSolverIterations = 20;
             //C.Solver_MaxIterations = 50;
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-10;
-            C.LinearSolver.ConvergenceCriterion = 1e-10;
             //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-12;
 

@@ -134,7 +134,8 @@ namespace BoSSS.Application.LoadBalancingTest {
                 throw new NotImplementedException();
             }
 
-            public double Update(DGField[] CurrentState, double phystime, double dt, double UnderRelax, bool incremental) {
+            public double Update(IList<string> variablenames, DGField[] CurrentState, IList<string> parameterNames, 
+                DGField[] parameterState,double phystime, double dt, double UnderRelax, bool incremental) {
 
                 return m_owner.DelUpdateLevelset(CurrentState, phystime, dt, UnderRelax, incremental);
             }

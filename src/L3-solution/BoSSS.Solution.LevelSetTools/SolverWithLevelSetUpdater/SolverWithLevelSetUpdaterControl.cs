@@ -149,9 +149,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         [DataMember]
         public ContinuityProjectionOption LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
 
-
+        /// <summary>
+        /// Controls the behavior of the <see cref="ContinuityProjection"/>, i.e. the algorithm which enforces continuity of the second level-set 
+        /// </summary>
+        [DataMember]
+        public ContinuityProjectionOption LSContiProjectionMethod2 = ContinuityProjectionOption.ConstrainedDG;
     }
-
-
 }
 

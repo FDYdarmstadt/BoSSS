@@ -95,6 +95,16 @@ namespace BoSSS.Solution.Statistic {
         }
         */
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="__CS"></param>
+        /// <param name="Title"></param>
+        /// <param name="expectedRegressionModels">
+        /// intercept is ?
+        /// </param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public static (string Name, double slope, double Intercept)[] SolverConvergenceTest_Experimental(this IEnumerable<AppControl> __CS, string Title, params (string FieldName, NormType normType, double Slope, double intercept, double interceptTol)[] expectedRegressionModels) {
             int D = -1;
             var CS = __CS.ToArray();

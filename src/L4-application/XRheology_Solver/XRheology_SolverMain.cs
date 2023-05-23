@@ -2091,8 +2091,8 @@ namespace BoSSS.Application.XRheology_Solver {
                 m_owner.PushLevelSetAndRelatedStuff();
             }
 
-            public double Update(DGField[] CurrentState, double time, double dt, double UnderRelax, bool incremental) {
-                return m_owner.DelUpdateLevelSet(CurrentState, time, dt, UnderRelax, incremental);
+            public double Update(IList<string> variableNames, DGField[] CurrentVariableState, IList<string> parameterNames, DGField[] CurrentParameterState, double time, double dt, double UnderRelax, bool incremental) {
+                return m_owner.DelUpdateLevelSet(CurrentVariableState, time, dt, UnderRelax, incremental);
             }
         }
 
