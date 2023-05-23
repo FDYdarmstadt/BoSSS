@@ -1,4 +1,5 @@
 ﻿using BoSSS.Solution;
+using BoSSS.Solution.LoadBalancing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -7,62 +8,77 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
-    public class XNSECellCostEstimator : ICellCostEstimator {
-        private int[] cellToCostMap;
 
-        private int selectedCellType;
+
+    [Serializable]
+    public class XNSECellCostEstimator : CellTypeBasedEstimator {
+
+        [NonSerialized]
+        private int[][] cellToCostMaps;
+
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="selectedCellType">
-        /// See <see cref="IBMCellClassifier"/>:
-        /// - 0: Void (Solid)
-        /// - 1: Fluid
-        /// - 2: cut cells
-        /// </param>
-        public XNSECellCostEstimator(int selectedCellType) {
-            this.selectedCellType = selectedCellType;
+        public XNSECellCostEstimator() {
+            base.CellClassifier = new CutStateClassifier();
+
+
+
+            
         }
 
-        public double EstimatedLocalCost {
-            get;
-            private set;
+        
+
+        public override int[][] GetEstimatedCellCosts() {
+            return cellToCostMaps;
         }
 
-        public int CurrentPerformanceClassCount {
-            get;
-            private set;
-        }
+        /// <summary>
+        /// returns multiple sets to cell-weights for a multi-constrained optimization
+        /// </summary>
+        public override void UpdateEstimates(IApplication app) {
+            int J = app.GridData.CellPartitioning.LocalLength;
+            var _cellToCostMapS = new List<int[]>();
 
-        public int[] GetEstimatedCellCosts() {
-            return cellToCostMap;
-        }
+            var cellToPerformanceClassMap = base.CellClassifier.ClassifyCells(app);
 
-        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
-            CurrentPerformanceClassCount = performanceClassCount;
+            //int NoOfAddtitionalConstraints = 
 
-            // One balance constraint per cluster
-            cellToCostMap = new int[cellToPerformanceClassMap.Length];
-            cellToCostMap.SetAll(1);
-            for (int j = 0; j < cellToPerformanceClassMap.Length; j++) {
-                if (cellToPerformanceClassMap[j] == selectedCellType) {
-                    if (selectedCellType == 2)
-                        cellToCostMap[j] = (int)Math.Pow((double)selectedCellType, 10) - selectedCellType;
-                    else
-                        cellToCostMap[j] = 10;
+            var blabla = new[] {
+                (CutStateClassifier.CellTypeFlags.Ordinary, 10),
+                (CutStateClassifier.CellTypeFlags.Cut, (int)Math.Pow(2, 10))
+            };
+            int NoOfAddtitionalConstraints = blabla.Length;
+
+            foreach(var tt in blabla) {
+                // One balance constraint per cluster
+                var cellToCostMap = new int[J];
+                _cellToCostMapS.Add(cellToCostMap);
+                int cellFlag = (int) tt.Item1;
+                int wgt = tt.Item2;
+
+                for (int j = 0; j < J; j++) { // loop over cells...
+                    if ((cellToPerformanceClassMap[j] & cellFlag) != 0) {
+                        cellToCostMap[j] = wgt;
+                    }
                 }
             }
 
-            EstimatedLocalCost = cellToCostMap.Sum();
+
+            cellToCostMaps = _cellToCostMapS.ToArray();
         }
 
-        public static IEnumerable<Func<IApplication, int, ICellCostEstimator>> Factory() {
-            int noOfCellTypes = 3; // Fluid + Cut + Void
-            for (int i = 0; i < noOfCellTypes; i++) {
-                int temp = i; // Avoid delegate creation from capturing variable $i
-                yield return (app, classCount) => new XNSECellCostEstimator(temp);
-            }
+        //public static IEnumerable<ICellCostEstimator> Factory() {
+        //    int noOfCellTypes = 3; // Fluid + Cut + Void
+        //    for (int i = 0; i < noOfCellTypes; i++) {
+        //        int temp = i; // Avoid delegate creation from capturing variable $i
+        //        yield return new XNSECellCostEstimator(temp);
+        //    }
+        //}
+
+        public override object Clone() {
+            throw new NotImplementedException();
         }
 
     }

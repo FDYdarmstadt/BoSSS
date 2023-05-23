@@ -387,8 +387,7 @@ namespace MPI.Wrappers {
     /// <summary>
     /// 
     /// </summary>
-    public interface IMPIdriver_wTimeTracer : IMPIdriver
-    {
+    public interface IMPIdriver_wTimeTracer : IMPIdriver {
         /// <summary>
         /// 
         /// </summary>

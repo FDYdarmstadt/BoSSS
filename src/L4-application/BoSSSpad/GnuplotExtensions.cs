@@ -32,7 +32,7 @@ namespace BoSSS.Application.BoSSSpad {
     /// </summary>
     public static class GnuplotExtensions {
         
-        
+        /*
         /// <summary>
         /// Plot to a gif file (`set terminal png`).
         /// </summary>

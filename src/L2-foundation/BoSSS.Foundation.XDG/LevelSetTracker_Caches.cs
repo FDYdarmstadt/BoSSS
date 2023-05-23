@@ -459,7 +459,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// Variant of <see cref="GetLevelSetReferenceGradients(int, NodeSet, int, int)"/> which normalizes the
+            /// Variant of <see cref="GetLevelSetReferenceGradients(NodeSet, int, int)"/> which normalizes the
             /// gradients before returning them.
             /// </summary>
             /// <param name="NS">

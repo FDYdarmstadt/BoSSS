@@ -21,6 +21,7 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -56,7 +57,16 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__BoundaryAndInitialData() {
             // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData
-            RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
+             Mutex JupyterMutex = new Mutex(false, "BoundaryAndInitialData");
+            try {
+                JupyterMutex.WaitOne();
+
+                NotebookRunner.DeleteDatabase("Demo_BoundaryAndInitialData");
+                NotebookRunner.DeleteDeployments("Demo_BoundaryAndInitialData*");
+                RunWorksheet("BoundaryAndInitialData/BoundaryAndInitialData.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -64,9 +74,15 @@ namespace BoSSS.Application.TutorialTests {
         [Test]
         static public void Run__MetaJobManager() {
             //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__MetaJobManager
-            NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
-            NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
-            RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+            Mutex JupyterMutex = new Mutex(false, "MetaJobManager_Tutorial");
+            try {
+                JupyterMutex.WaitOne();
+                NotebookRunner.DeleteDatabase("MetaJobManager_Tutorial");
+                NotebookRunner.DeleteDeployments("MetaJobManager_Tutorial*");
+                RunWorksheet("MetaJobManager/MetaJobManager.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 
         /// <summary> Testing of respective worksheet. </summary>
@@ -94,7 +110,16 @@ namespace BoSSS.Application.TutorialTests {
         [NUnitFileToCopyHack("ue2Basics/ue2Basics.ipynb")]
         [Test]
         static public void Run__ue2Basics() {
+            //--test=BoSSS.Application.TutorialTests.AllUpTest.Run__ue2Basics
             RunWorksheet("ue2Basics/ue2Basics.ipynb");
+        }
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
+        [Test]
+        static public void Run__CsharpAndBoSSSpad() {
+            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
+            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
         }
 
 #if !DEBUG
@@ -146,37 +171,63 @@ namespace BoSSS.Application.TutorialTests {
 #if !DEBUG
 
         /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack( "tutorial11-Stokes/StokesEq.ipynb")]
+        [NUnitFileToCopyHack("tutorial11-Stokes/StokesEq.ipynb")]
         [Test]
         static public void Run__StokesEq() {
             RunWorksheet("tutorial11-Stokes/StokesEq.ipynb");
         }
 #endif
- 
-#if !DEBUG
-        /// <summary> Testing of respective worksheet. </summary>
-        [NUnitFileToCopyHack("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb")]
-        [Test]
-        static public void Run__CsharpAndBoSSSpad() {
-            // --test=BoSSS.Application.TutorialTests.AllUpTest.Run__CsharpAndBoSSSpad
-            RunWorksheet("CsharpAndBoSSSpad/CsharpAndBoSSSpad.ipynb");
-        }
-#endif
+
+
 
 #if !DEBUG
         /// <summary> Testing of respective worksheet. </summary>
         [NUnitFileToCopyHack("convergenceStudyTutorial/convStudy.ipynb")]
         [Test]
         static public void Run__convStudy() {
-            RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
+            Mutex JupyterMutex = new Mutex(false, "ConvStudyTutorial");
+            try {
+                JupyterMutex.WaitOne();
+                NotebookRunner.DeleteDatabase("ConvStudyTutorial");
+                NotebookRunner.DeleteDeployments("ConvStudyTutorial*");
+                RunWorksheet("convergenceStudyTutorial/convStudy.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
         }
 #endif
+        /*
+#if !DEBUG
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("memprofile/memprofile.ipynb")]
+        [Test]
+        static public void Run__memprofile() {
+            //BoSSS.Application.TutorialTests.AllUpTest.Run__memprofile#
+            Mutex JupyterMutex = new Mutex(false, "memprofileMutex");
+            try {
+                JupyterMutex.WaitOne();
+
+                NotebookRunner.DeleteDatabase("memprofile");
+                NotebookRunner.DeleteDeployments("memprofile*");
+                RunWorksheet("memprofile/memprofile.ipynb");
+            } finally {
+                JupyterMutex.ReleaseMutex();
+            }
+        }
+#endif*/
+
+        /// <summary> Testing of respective worksheet. </summary>
+        [NUnitFileToCopyHack("XDGagglomeration/XDGagglomeration.ipynb")]
+        [Test]
+        static public void Run__XDGagglomeration() {
+            RunWorksheet("XDGagglomeration/XDGagglomeration.ipynb");
+        }
 
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
         static public void RunWorksheet(string NotebookPartialPath) {
-            using(new NotebookRunner(NotebookPartialPath, DirectoryOffset)) { }
+            using(new NotebookRunner(NotebookPartialPath, DirectoryOffset, false)) { }
         }
 
     }
@@ -189,10 +240,10 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// 
         /// </summary>
-        public NotebookRunner(string __NotebookPartialPath, string __DirectoryOffset) {
+        public NotebookRunner(string __NotebookPartialPath, string __DirectoryOffset, bool __allowErrors) {
             NotebookPartialPath = __NotebookPartialPath;
             DirectoryOffset = __DirectoryOffset;
-            RunWorksheet();
+            RunWorksheet(__allowErrors);
         }
 
         /// <summary>
@@ -216,43 +267,57 @@ namespace BoSSS.Application.TutorialTests {
         /// <summary>
         /// Runs some worksheet contained in the BoSSS handbook.
         /// </summary>
-        void RunWorksheet() {
+        void RunWorksheet(bool allowErrors) {
 
             // locate script
             string TexFileName = NotebookPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
-            string FullTexName;
+            string WorksheetName;
             if (!File.Exists(TexFileName)) {
-                FullTexName = LocateFile(NotebookPartialPath).Single();
+                WorksheetName = LocateFile(NotebookPartialPath).Single();
             } else {
-                FullTexName = TexFileName;
+                WorksheetName = TexFileName;
             }
 
-            Assert.IsTrue(File.Exists(FullTexName), "unable to find source: " + FullTexName);
+            Assert.IsTrue(File.Exists(WorksheetName), "unable to find source: " + WorksheetName);
+
+            if(Directory.GetFiles(Path.GetDirectoryName(Path.GetFullPath(WorksheetName)), Path.GetFileName(typeof(BoSSSpadMain).Assembly.Location)).Length <= 0) {
+                typeof(BoSSSpadMain).Assembly.DeployAt(new DirectoryInfo(Path.GetDirectoryName(Path.GetFullPath(WorksheetName))));
+            }
+
+
 
             // start the minibatchprocessor which is used internally
             OneTimeSetUp();
 
-            BoSSSpad.Job.UndocumentedSuperHack = true;
-            BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
+            //BoSSSpad.Job.UndocumentedSuperHack = true;
+            //BoSSSpad.ReadEvalPrintLoop.WriteFullExceptionInfo = true;
             
             try {
                 // run test:
                 string mode;
-                if(Path.GetExtension(FullTexName).Equals(".tex", StringComparison.InvariantCultureIgnoreCase))
+                if(Path.GetExtension(WorksheetName).Equals(".tex", StringComparison.InvariantCultureIgnoreCase))
                     mode = "--texbatch";
                 else
                     mode = "--JupyterBatch";
 
                 
-                int ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, FullTexName });
+                ErrCount = BoSSS.Application.BoSSSpad.BoSSSpadMain.Main(new string[] { mode, WorksheetName });
 
-                Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", FullTexName, ErrCount);
-                Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
-                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + FullTexName + " (negative numbers may indicate file-not-found, etc.).");
+                Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", WorksheetName, ErrCount);
+                if(!allowErrors)
+                    Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
+                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
             } finally {
                 // shutting down the local mini batch processor:
                 OneTimeTearDown();
             }
+        }
+
+        /// <summary>
+        /// return value from BoSSSpad 
+        /// </summary>
+        public int ErrCount {
+            get; private set;
         }
 
 
@@ -331,6 +396,7 @@ namespace BoSSS.Application.TutorialTests {
         /// Init.
         /// </summary>
         void OneTimeSetUp() {
+            /*
             Console.WriteLine("OneTimeSetup: starting 'MiniBatchProcessor'...");
             bool r = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: false, Reset: true);
             if(r)
@@ -339,13 +405,14 @@ namespace BoSSS.Application.TutorialTests {
                 Console.WriteLine("already running.");
             
             killBatch = r;
+            */
         }
 
         /// <summary>
         /// Deletes a database <paramref name="Directory"/>
         /// 
         /// Note: the database must be located beneath the <see cref="BatchProcessorClient.AllowedDatabasesPaths"/>
-        /// of the <see "BoSSSshell.GetDefaultQueue"/>.
+        /// of the <see cref="BoSSSshell.GetDefaultQueue"/>.
         /// </summary>
         public static void DeleteDatabase(string Directory) {
 
@@ -367,8 +434,7 @@ namespace BoSSS.Application.TutorialTests {
         }
 
         /// <summary>
-        /// Deletes all deployments matchin the search patter <paramref name="Directory"/>
-        /// 
+        /// Deletes all deployments matching the search patter <paramref name="DirectoryWildCard"/>
         /// </summary>
         public static void DeleteDeployments(string DirectoryWildCard) {
 
@@ -379,7 +445,14 @@ namespace BoSSS.Application.TutorialTests {
                     var deplDirs = localBaseDir.GetDirectories(DirectoryWildCard, SearchOption.TopDirectoryOnly);
                     foreach(var d in deplDirs) {
                         Console.WriteLine("Deleting deployment: " + d.FullName);
-                        d.Delete(true);
+                        try {
+                            // we can be forgiving on deletion of old deployments; 
+                            // an old deployment will not harm or influence the worksheet execution
+                            // (for an old database, it's a different story!
+                            d.Delete(true);
+                        } catch (Exception e) {
+                            Console.Error.WriteLine($"{e.GetType()} during deletion of {d.FullName}: {e.Message}.");
+                        }
                     }
                 } else {
                     Console.WriteLine("Warning: missing directory: " + localBaseDir.FullName);

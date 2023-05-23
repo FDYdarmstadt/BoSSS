@@ -39,10 +39,7 @@ namespace BoSSS.Application.Rheology {
         public RheologyControl() {
             base.NoOfMultigridLevels = 1;
             //shift of Solver Information
-            base.LinearSolver.MaxSolverIterations = 10; //MaxIter
-            base.LinearSolver.MinSolverIterations = 1; //MinIter
-            base.LinearSolver.ConvergenceCriterion = 1.0e-6; //ConvCritGMRES
-            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //LinearSolver
+            base.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 10; //MaxIter
             base.NonLinearSolver.MinSolverIterations = 1; //MinIter
             base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //ConvCrit

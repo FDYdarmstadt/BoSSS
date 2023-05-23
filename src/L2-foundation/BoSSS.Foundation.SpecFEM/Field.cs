@@ -455,7 +455,7 @@ namespace BoSSS.Foundation.SpecFEM {
                     //try {
                     b_sub.AccVi64(1.0, b.To1DArray(), default(long[]), OccupiedRows_Global, b_index_shift: -i0);
                     //} catch(Exception e) {
-                    //    Debugger.Launch();
+                    //     dbg_launch();
                     //}
                     //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 

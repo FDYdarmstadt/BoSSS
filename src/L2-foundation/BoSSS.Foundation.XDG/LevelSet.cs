@@ -22,13 +22,20 @@ using BoSSS.Platform;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using ilPSP;
+using IntersectingQuadrature;
+using BoSSS.Foundation.Grid.RefElements;
+using System.Collections;
+using BoSSS.Foundation.XDG.Quadrature;
+using IntersectingQuadrature.TensorAnalysis;
 
 namespace BoSSS.Foundation.XDG {
 
     /// <summary>
     /// a level set that is implemented as a DG field, i.e. a <see cref="XDGField"/>
     /// </summary>
-    public partial class LevelSet : SinglePhaseField, ILevelSet {
+    public partial class LevelSet : SinglePhaseField, ILevelSet{
+
+
 
         /// <summary>
         /// Constructor
@@ -69,11 +76,11 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="NodeSet"></param>
         /// <param name="result">
         /// <list type="bullet">
-        ///   <item>1st index: cell index <em>j</em></item>
-        ///   <item>2nd index: node index <em>m</em> into nodeset #<paramref name="NodeSetIndex"/></item>
+        ///   - 1st index: cell index <em>j</em>
+        ///   - 2nd index: node index <em>m</em> into nodeset <paramref name="NodeSet"/>
         /// </list>
         /// So, the entry [j,m] = \f$ \sum_{d=1}^{D} \frac{\partial}{\partial x_d} \varphi (\vec{\xi}_m)\f$ 
-        /// where \f$ \vec{xi}_m\f$  is the <em>m</em>-th vector in the nodeset #<paramref name="NodeSetIndex"/>,
+        /// where \f$ \vec{xi}_m\f$  is the <em>m</em>-th vector in the <paramref name="NodeSet"/>,
         /// in the <em>j</em>-th cell.
         /// </param>
         /// <remarks>
@@ -640,7 +647,7 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// Values of the gradient of <see cref="m_phi"/>
             /// </summary>
-            private MultidimensionalArray m_gradPhi;
+            public MultidimensionalArray m_gradPhi;
 
             /// <summary>
             /// Sum of L2 errors in the current process
@@ -650,10 +657,8 @@ namespace BoSSS.Foundation.XDG {
            
 
             /// <summary>
-            /// <see cref="Quadrature{U,V}.CreateNodeSetFamily"/>
+            /// <see cref="Quadrature{U,V}.AllocateBuffers"/>
             /// </summary>
-            /// <param name="NoOfItems"></param>
-            /// <param name="rule"></param>
             protected override void AllocateBuffers(int NoOfItems, NodeSet rule) {
                 base.AllocateBuffers(NoOfItems, rule);
                 int NoOfNodes = rule.GetLength(0);
@@ -714,7 +719,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Clones this object
         /// </summary>
-        new public LevelSet CloneAs() {
+        new public virtual LevelSet CloneAs() {
             return (LevelSet)Clone();
         }
 

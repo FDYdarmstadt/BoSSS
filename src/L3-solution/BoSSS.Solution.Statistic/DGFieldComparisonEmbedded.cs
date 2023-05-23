@@ -35,6 +35,32 @@ namespace BoSSS.Solution.Statistic {
     /// </summary>
     public static class DGFieldComparisonEmbedded {
 
+        static Func<DGField, double> NormTypeFactory(NormType nt) {
+            switch(nt) {
+                case NormType.H1_embedded:
+                    return ((DGField f) => f.H1Norm());
+
+                case NormType.L2_embedded:
+                    return ((DGField f) => f.L2Norm());
+
+                case NormType.L2noMean_embedded:
+                    return ((DGField f) => f.L2Norm_IgnoreMean());
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        static Func<DGField, double>[] NormTypeFactory(IList<IEnumerable<DGField>> fields, NormType nt) {
+            int L = fields.First().Count();
+            var r = NormTypeFactory(nt);
+            var rr = new Func<DGField, double>[L];
+            rr.SetAll(r);
+            return rr;
+        }
+
+
+
         /// <summary>
         /// Computes L2 norms between DG fields on different grid resolutions, i.e. for a 
         /// convergence study, where the solution on the finest grid is assumed to be exact.
@@ -56,9 +82,9 @@ namespace BoSSS.Solution.Statistic {
         /// (for each field specified in <paramref name="fields"/>).
         /// </param>
         public static void ComputeErrors_L2(IList<IEnumerable<DGField>> fields,
-            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+        out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
 
-            ComputeErrors((DGField f) => f.L2Norm(),
+            ComputeErrors(NormTypeFactory(fields, NormType.L2_embedded),
                 fields, out GridRes, out __DOFs, out Errors);
         }
 
@@ -85,7 +111,7 @@ namespace BoSSS.Solution.Statistic {
         public static void ComputeErrors_H1(IList<IEnumerable<DGField>> fields,
             out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
 
-            ComputeErrors((DGField f) => f.H1Norm(),
+            ComputeErrors(NormTypeFactory(fields, NormType.H1_embedded),
                 fields, out GridRes, out __DOFs, out Errors);
 
 
@@ -114,17 +140,48 @@ namespace BoSSS.Solution.Statistic {
         public static void ComputeErrors_L2noMean(IList<IEnumerable<DGField>> fields,
             out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
 
-            ComputeErrors((DGField f) => f.L2Norm_IgnoreMean(),
+            ComputeErrors(NormTypeFactory(fields, NormType.L2noMean_embedded),
                 fields, out GridRes, out __DOFs, out Errors);
+        }
 
 
+        /// <summary>
+        /// Computes norms (specified by <paramref name="normTypes"/>) between DG fields on different grid resolutions, i.e. for a 
+        /// convergence study, where the solution on the finest grid is assumed to be exact.
+        /// </summary>
+        /// <param name="fields">
+        /// - outer enumeration: sequence of meshes;
+        /// - inner enumeration: a set of fields on the same mesh level
+        /// </param>
+        /// <param name="normTypes">
+        /// norm selection for eacjh field; index correlates with second index into <paramref name="fields"/>
+        /// </param>
+        /// <param name="GridRes">
+        /// On exit, the resolution of the different grids.
+        /// </param>
+        /// <param name="Errors">
+        /// On exit, the L2 error 
+        /// (for each field specified in <paramref name="fields"/>)
+        /// in comparison to the solution on the finest grid.
+        /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="fields"/>).
+        /// </param>
+        public static void ComputeErrors(IList<IEnumerable<DGField>> fields, NormType[] normTypes,
+            out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors) {
+
+            if (fields.First().Count() != normTypes.Length)
+                throw new ArgumentException("mismatch between number of fields and number of specified norms");
+
+            ComputeErrors(normTypes.Select(nt => NormTypeFactory(nt)).ToArray(),
+                fields, out GridRes, out __DOFs, out Errors);
         }
 
 
 
-       
         static void ComputeErrors(
-            Func<DGField, double> NormFunc,
+            Func<DGField, double>[] NormFuncS,
             IList<IEnumerable<DGField>> fields,
             out double[] GridRes, out Dictionary<string, long[]> __DOFs, out Dictionary<string, double[]> Errors,
             Func<ilPSP.Vector, bool> SelectionFunc = null) {
@@ -215,7 +272,7 @@ namespace BoSSS.Solution.Statistic {
                         DGField injSol = injectedFields[index].ElementAt(iLevel);
                         Error.Acc(-1.0, injSol);
 
-                        L2Error[iLevel] = NormFunc(Error);
+                        L2Error[iLevel] = NormFuncS[index](Error);
 
                         //Console.WriteLine("done (Error is {0:0.####E-00}).", L2Error[iLevel]);
                         tr.Info(string.Format("done (Error is {0:0.####E-00}).", L2Error[iLevel]));
@@ -230,6 +287,98 @@ namespace BoSSS.Solution.Statistic {
         }
 
 
+        /// <summary>
+        /// Computes L2 norms between DG fields on different grid resolutions, i.e. for a 
+        /// convergence study, where the solution on the finest grid is assumed to be exact.
+        /// </summary>
+        /// <param name="FieldsToCompare">
+        /// Identification (<see cref="DGField.Identification"/>) of the fields which should be compared.
+        /// </param>
+        /// <param name="timestepS">
+        /// A collection of solutions on different grid resolutions.
+        /// </param>
+        /// <param name="GridRes">
+        /// On exit, the resolution of the different grids.
+        /// </param>
+        /// <param name="L2Errors">
+        /// On exit, the L2 error 
+        /// (for each field specified in <paramref name="FieldsToCompare"/>)
+        /// in comparison to the solution on the finest grid.
+        /// </param>
+        /// <param name="__DOFs">
+        /// On exit, the number of degrees-of-freedom 
+        /// (for each field specified in <paramref name="FieldsToCompare"/>).
+        /// </param>
+        /// <param name="timestepIds">
+        /// on exit, the timestep id which correlate with the resolutions <paramref name="GridRes"/>
+        /// (remarks: <paramref name="timestepIds"/> may be re-sorted internally according to grid resolution).
+        /// </param>
+        /// <param name="SelectionFunc">
+        /// if specified, all cells where this evaluates as false are ignored. 
+        /// </param>
+        public static void ComputeErrors_L2noMean(IEnumerable<string> FieldsToCompare,
+            IEnumerable<ITimestepInfo> timestepS,
+            out double[] GridRes,
+            out Dictionary<string, long[]> __DOFs,
+            out Dictionary<string, double[]> L2Errors, out Guid[] timestepIds, Func<ilPSP.Vector, bool> SelectionFunc = null) {
+            using (var tr = new FuncTrace()) {
+                if (FieldsToCompare == null || FieldsToCompare.Count() <= 0)
+                    throw new ArgumentException("empty list of field names.");
+                if (timestepS == null || timestepS.Count() < 1)
+                    throw new ArgumentException("requiring at least two different solutions.");
+
+                // load the DG-Fields
+                List<IEnumerable<DGField>> fields = new List<IEnumerable<DGField>>();
+                int i = 1;
+                foreach (var timestep in timestepS) {
+                    //Console.WriteLine("Loading timestep {0} of {1}, ({2})...", i, timestepS.Count(), timestep.ID);
+                    fields.Add(timestep.Fields);
+                    i++;
+                    //Console.WriteLine("done (Grid has {0} cells).", fields.Last().First().GridDat.CellPartitioning.TotalLength);
+                }
+
+
+                // clear cut-out cells 
+                if (SelectionFunc != null) {
+                    foreach (var fenum in fields) {
+                        foreach (var f in fenum) {
+                            GridData grd = (GridData)f.GridDat;
+                            //SelectionFunc = X => (X[1] < (3.0/9.0) && ( ((X[0] > 3.0 * (1.5 / 9.0)) && (X[0] < 6.0 * (1.5 / 9.0))) || ((X[0] < -3.0 * (1.5 / 9.0)) && (X[0] > -6.0 * (1.5 / 9.0)))));
+                            CellMask cutout = CellMask.GetCellMask(grd, SelectionFunc);
+                            Console.WriteLine("number of cut-out cells: {0}", cutout.NoOfItemsLocally);
+                            f.Clear(cutout);
+                        }
+                    }
+                }
+
+
+                // sort according to grid resolution
+                {
+                    var s = fields.OrderBy(f => f.First().GridDat.CellPartitioning.TotalLength).ToArray();
+                    var orgfields = fields.ToArray();
+                    fields.Clear();
+                    fields.AddRange(s);
+                    s = null;
+
+                    // filter equal grids:
+                    while (fields.Count >= 2
+                        && (fields[fields.Count - 1].First().GridDat.CellPartitioning.TotalLength
+                        == fields[fields.Count - 2].First().GridDat.CellPartitioning.TotalLength)) {
+                        fields.RemoveAt(fields.Count - 2);
+                    }
+
+                    // extract timestep Id's
+                    timestepIds = new Guid[fields.Count];
+                    for (int z = 0; z < timestepIds.Length; z++) {
+                        int idx = orgfields.IndexOf(fields[z], (f1, f2) => object.ReferenceEquals(f1, f2));
+                        timestepIds[z] = timestepS.ElementAt(idx).ID;
+                    }
+                }
+
+                // continue in other routine
+                ComputeErrors_L2noMean(fields, out GridRes, out __DOFs, out L2Errors);
+            }
+        }
 
 
         /// <summary>
@@ -614,7 +763,7 @@ namespace BoSSS.Solution.Statistic {
 
                     // transform quad. nodes from cell 2 (extrapolate to) to cell 1 (extrapolate FROM)
                     ctxFine.TransformLocal2Global(xi, tmp, _2);
-                    NodeSet eta = new NodeSet(ctxFine.iGeomCells.GetRefElement(_2), K, D);
+                    NodeSet eta = new NodeSet(ctxFine.iGeomCells.GetRefElement(_2), K, D, false);
                     ctxCors.TransformGlobal2Local(tmp, eta, _1, null);
                     eta.LockForever();
 

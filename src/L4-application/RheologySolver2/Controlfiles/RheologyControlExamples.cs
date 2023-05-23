@@ -64,13 +64,7 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-7;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-            //C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            //C.NoOfMultigridLevels = 3;
-            //C.LinearSolver.TargetBlockSize = 1000;
-            C.LinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.ConvergenceCriterion = 1E-7;
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             C.useFDJacobianForOperatorMatrix = true;
 
             C.dt = 1E20;
@@ -422,15 +416,9 @@ namespace BoSSS.Application.Rheology {
             */
             // linear solver config 
             // ====================
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;//.exp_Kcycle_schwarz_4Rheology;
-
-            C.LinearSolver.MaxSolverIterations = 500;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.TargetBlockSize = 10000;//100000;
-            C.LinearSolver.ConvergenceCriterion = 1E-8;
-            C.LinearSolver.NoOfMultigridLevels = 4;
-           
+            //C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();//.exp_Kcycle_schwarz_4Rheology;
+          
 
             // nonlinear solver config
             // =======================
@@ -438,7 +426,7 @@ namespace BoSSS.Application.Rheology {
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 1E-5;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
 
             // more solver options

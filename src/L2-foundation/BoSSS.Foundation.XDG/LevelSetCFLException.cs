@@ -20,7 +20,7 @@ using System.IO;
 namespace BoSSS.Foundation.XDG {
 
     /// <summary>
-    /// see <see cref="LevelSetTracker.UpdateTracker(int, int[])"/>;
+    /// thrown by <see cref="LevelSetTracker.UpdateTracker"/>;
     /// </summary>
     public class LevelSetCFLException : Exception {
 

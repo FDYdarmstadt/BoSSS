@@ -74,7 +74,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// the corresponding cell center into a text file.
         /// </summary>
         public static void SumOfWeightsToTextFileVolume(this ICompositeQuadRule<QuadRule> compositeRule, IGridData g, string filename) {
-            int J = g.iLogicalCells.Count;
+            int J = g.iLogicalCells.NoOfLocalUpdatedCells;
             var bMask = new System.Collections.BitArray(J);
             double[] wSum = new double[J];
             foreach (IChunkRulePair<QuadRule> crp in compositeRule) {

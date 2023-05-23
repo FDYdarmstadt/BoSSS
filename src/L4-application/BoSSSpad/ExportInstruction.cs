@@ -123,7 +123,7 @@ namespace BoSSS.Application.BoSSSpad {
                 FieldStateConfiguration.Serialize(plotConfigPath, config);
 
 
-                //Debugger.Launch();
+                // dbg_launch();
 
                 // we are expecting 'BoSSS.PlotGen.dll' to be in the same dir as BoSSSpad binary
                 Assembly a = typeof(BoSSS.PlotGenerator.PlotApplication).Assembly;

@@ -76,7 +76,7 @@ namespace CNS {
                     Dm1Dy = new SinglePhaseField(m1Field.Basis);
 
                     CNSControl c = app.Control as CNSControl;
-                    Program prog = app as Program;
+                    CNSProgram prog = app as CNSProgram;
 
                     byte edgeTag = app.Grid.EdgeTagNames.First(item => item.Value.Equals(edgeTagName)).Key;
 

@@ -330,21 +330,21 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                     //break;
                 }
 
-                switch(this.Control.CurvatureCorrectionType) {
-                    case PhasefieldControl.CurvatureCorrection.FullyCoupled:
-                    domainVar = domainVar.Cat(VariableNames.Curvature);
-                    codomainVar = codomainVar.Cat("Res_" + VariableNames.Curvature);
-                    break;
-                    case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:
-                    case PhasefieldControl.CurvatureCorrection.DirectCoupledOnce:
-                    domainVar = domainVar.Cat(VariableNames.Curvature);
-                    codomainVar = codomainVar.Cat("Res_" + VariableNames.Curvature);
-                    paramVar = paramVar.Cat("D" + VariableNames.Curvature);
-                    break;
-                    case PhasefieldControl.CurvatureCorrection.None:
-                    default:
-                    break;
-                }
+                //switch(this.Control.CurvatureCorrectionType) {
+                //    case PhasefieldControl.CurvatureCorrection.FullyCoupled:
+                //    domainVar = domainVar.Cat(VariableNames.Curvature);
+                //    codomainVar = codomainVar.Cat("Res_" + VariableNames.Curvature);
+                //    break;
+                //    case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:
+                //    case PhasefieldControl.CurvatureCorrection.DirectCoupledOnce:
+                //    domainVar = domainVar.Cat(VariableNames.Curvature);
+                //    codomainVar = codomainVar.Cat("Res_" + VariableNames.Curvature);
+                //    paramVar = paramVar.Cat("D" + VariableNames.Curvature);
+                //    break;
+                //    case PhasefieldControl.CurvatureCorrection.None:
+                //    default:
+                //    break;
+                //}
 
                 #endregion
 
@@ -377,34 +377,34 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                         new mu_Diffusion(D, this.Control.penalty_poisson, this.Control.cahn * this.Control.diff.Sqrt(), m_bcMap)
                         );
 
-                    switch(this.Control.CurvatureCorrectionType) {
-                        case PhasefieldControl.CurvatureCorrection.FullyCoupled:
-                        CHOp.EquationComponents["Res_phi"].Add(
-                            new phi_CurvatureCorrection(D, this.Control.cahn * this.Control.diff.Sqrt())
-                            );
+                    //switch(this.Control.CurvatureCorrectionType) {
+                    //    case PhasefieldControl.CurvatureCorrection.FullyCoupled:
+                    //    CHOp.EquationComponents["Res_phi"].Add(
+                    //        new phi_CurvatureCorrection(D, this.Control.cahn * this.Control.diff.Sqrt())
+                    //        );
 
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Source(D)
-                            );
+                    //    CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                    //        new curvature_Source(D)
+                    //        );
 
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Divergence(D, this.Control.penalty_poisson, 0.001 / this.Control.cahn)
-                            );
-                        break;
-                        case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:
-                        case PhasefieldControl.CurvatureCorrection.DirectCoupledOnce:
-                        CHOp.EquationComponents["Res_phi"].Add(
-                            new phi_CurvatureCorrection(D, this.Control.cahn * this.Control.diff.Sqrt())
-                            );
+                    //    CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                    //        new curvature_Divergence(D, this.Control.penalty_poisson, 0.001 / this.Control.cahn)
+                    //        );
+                    //    break;
+                    //    case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:
+                    //    case PhasefieldControl.CurvatureCorrection.DirectCoupledOnce:
+                    //    CHOp.EquationComponents["Res_phi"].Add(
+                    //        new phi_CurvatureCorrection(D, this.Control.cahn * this.Control.diff.Sqrt())
+                    //        );
 
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Direct(D)
-                            );
-                        break;
-                        case PhasefieldControl.CurvatureCorrection.None:
-                        default:
-                        break;
-                    }
+                    //    CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                    //        new curvature_Direct(D)
+                    //        );
+                    //    break;
+                    //    case PhasefieldControl.CurvatureCorrection.None:
+                    //    default:
+                    //    break;
+                    //}
                     break;
                     case PhasefieldControl.ModelType.modelB:
 
@@ -420,34 +420,34 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                         new mu_Source()
                         );
 
-                    switch(this.Control.CurvatureCorrectionType) {
-                        case PhasefieldControl.CurvatureCorrection.FullyCoupled:
-                        CHOp.EquationComponents["Res_mu"].Add(
-                            new phi_CurvatureCorrection(D, this.Control.cahn)
-                            );
+                    //switch(this.Control.CurvatureCorrectionType) {
+                    //    case PhasefieldControl.CurvatureCorrection.FullyCoupled:
+                    //    CHOp.EquationComponents["Res_mu"].Add(
+                    //        new phi_CurvatureCorrection(D, this.Control.cahn)
+                    //        );
 
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Source(D)
-                            );
+                    //    CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                    //        new curvature_Source(D)
+                    //        );
 
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Divergence(D, this.Control.penalty_poisson, 0.001 / this.Control.cahn)
-                            );
-                        break;
-                        case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:
-                        case PhasefieldControl.CurvatureCorrection.DirectCoupledOnce:
-                        CHOp.EquationComponents["Res_mu"].Add(
-                            new phi_CurvatureCorrection(D, this.Control.cahn)
-                            );
+                    //    CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                    //        new curvature_Divergence(D, this.Control.penalty_poisson, 0.001 / this.Control.cahn)
+                    //        );
+                    //    break;
+                    //    case PhasefieldControl.CurvatureCorrection.DirectCoupledIterative:
+                    //    case PhasefieldControl.CurvatureCorrection.DirectCoupledOnce:
+                    //    CHOp.EquationComponents["Res_mu"].Add(
+                    //        new phi_CurvatureCorrection(D, this.Control.cahn)
+                    //        );
 
-                        CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
-                            new curvature_Direct(D)
-                            );
-                        break;
-                        case PhasefieldControl.CurvatureCorrection.None:
-                        default:
-                        break;
-                    }
+                    //    CHOp.EquationComponents["Res_" + VariableNames.Curvature].Add(
+                    //        new curvature_Direct(D)
+                    //        );
+                    //    break;
+                    //    case PhasefieldControl.CurvatureCorrection.None:
+                    //    default:
+                    //    break;
+                    //}
                     break;
                     
                     case PhasefieldControl.ModelType.modelC:
@@ -487,9 +487,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                 break;
             }
 
-            if(this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None) {
-                SolutionFields.Cat(Curvature);
-            }
+            //if(this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None) {
+            //    SolutionFields.Cat(Curvature);
+            //}
 
             return SolutionFields;
         }
@@ -514,9 +514,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                 break;
             }
 
-            if(this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None) {
-                ResidualFields.Cat(curvature_Resi);
-            }
+            //if(this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None) {
+            //    ResidualFields.Cat(curvature_Resi);
+            //}
 
             return ResidualFields;
         }
@@ -541,9 +541,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                     break;
                 }
 
-                if(this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None) {
-                    m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.Curvature));
-                }
+                //if(this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None) {
+                //    m_CurrentSolution = new CoordinateVector(ArrayTools.Cat(m_CurrentSolution.Mapping.Fields.ToArray(), this.Curvature));
+                //}
 
                 return m_CurrentSolution;
             }
@@ -569,9 +569,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
                     break;
                 }
 
-                if(this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None) {
-                    m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.curvature_Resi));
-                }
+                //if(this.Control.CurvatureCorrectionType != PhasefieldControl.CurvatureCorrection.None) {
+                //    m_CurrentResidual = new CoordinateVector(ArrayTools.Cat(m_CurrentResidual.Mapping.Fields.ToArray(), this.curvature_Resi));
+                //}
 
                 return m_CurrentResidual;
             }
@@ -627,22 +627,22 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
             this.gradPhi0.Clear();
             this.gradPhi0.Gradient(1.0, this.phi0);
 
-            if(this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledIterative) {
-                VectorField<SinglePhaseField> filtgrad;
-                CurvatureAlgorithmsForLevelSet.CurvatureDriver(
-                             CurvatureAlgorithmsForLevelSet.SurfaceStressTensor_IsotropicMode.Curvature_Projected,
-                             CurvatureAlgorithmsForLevelSet.FilterConfiguration.Phasefield,
-                             this.DCurvature, out filtgrad, CorrectionLsTrk,
-                             this.DCurvature.Basis.Degree * 2,
-                             this.phi);
-            }
+            //if(this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledIterative) {
+            //    VectorField<SinglePhaseField> filtgrad;
+            //    CurvatureAlgorithmsForLevelSet.CurvatureDriver(
+            //                 CurvatureAlgorithmsForLevelSet.SurfaceStressTensor_IsotropicMode.Curvature_Projected,
+            //                 CurvatureAlgorithmsForLevelSet.FilterConfiguration.Phasefield,
+            //                 this.DCurvature, out filtgrad, CorrectionLsTrk,
+            //                 this.DCurvature.Basis.Degree * 2,
+            //                 this.phi);
+            //}
         }
 
         (string ParameterName, DGField ParamField)[] AllocateParameters(IReadOnlyDictionary<string, DGField> DomainVarFields) {
             DGField[] prms = Velocity.ToArray().Cat(phi0);
 
-            if(this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledIterative || this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledOnce)
-                prms.Cat(DCurvature);
+            //if(this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledIterative || this.Control.CurvatureCorrectionType == PhasefieldControl.CurvatureCorrection.DirectCoupledOnce)
+            //    prms.Cat(DCurvature);
 
 
             if(prms.Length != this.CHOp.ParameterVar.Count)

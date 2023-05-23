@@ -146,8 +146,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     nodeArg.NodesAndWeights.AddRule(newRule);
                     break;
                 case SayeArgument<S>.Mode.LowOrderQuadrature:
-                    newRule = SetLowOrderQuadratureNodes(nodeArg);
-                    nodeArg.NodesAndWeights.AddRule(newRule);
+                    SetLowOrderNodes(node);
                     break;
                 case SayeArgument<S>.Mode.DomainIsEmpty:
                     break;
@@ -186,6 +185,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     }
                 }
             }
+        }
+
+
+        private void SetLowOrderNodes(TreeNode<T> node) {
+            T arg = node.Value;
+            SayeQuadRule newRule;
+            NodeSet c = arg.GetCellCenter();
+            if (arg.Surface) {
+                newRule = BuildSurfaceQuadRule(c, 2, arg.HeightDirection, cell);
+            } else {
+                newRule = SetLowOrderQuadratureNodes(arg);
+            }
+            arg.NodesAndWeights.AddRule(newRule);
         }
 
         //Algorithm 1

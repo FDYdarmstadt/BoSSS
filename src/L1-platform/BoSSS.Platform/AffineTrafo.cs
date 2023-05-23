@@ -366,6 +366,41 @@ namespace BoSSS.Platform.LinAlg {
         }
 
         /// <summary>
+        /// 3D rotation around an arbitrary axis
+        /// see also: https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
+        /// </summary>
+        /// <param name="Axis">rotation axis</param>
+        /// <param name="theta">angle in radians</param>
+        /// <returns></returns>
+        public static AffineTrafo Rotation3D(Vector Axis, double theta) {
+            if(Axis.Dim != 3)
+                throw new ArgumentException("expecting a 3D vector"); 
+            var axisN = Axis.Normalize();
+            double u_x = axisN.x;
+            double u_y = axisN.y;
+            double u_z = axisN.z;
+
+            MultidimensionalArray dreh = MultidimensionalArray.Create(3, 3);
+            dreh[0, 0] = Math.Cos(theta) + u_x * u_x * (1 - Math.Cos(theta));
+            dreh[0, 1] = u_x*u_y*(1 - Math.Cos(theta)) - u_z*Math.Sin(theta);
+            dreh[0, 2] = u_x*u_z*(1 - Math.Cos(theta)) + u_y*Math.Sin(theta);
+
+            dreh[1, 0] = u_y*u_x*(1 - Math.Cos(theta)) + u_z*Math.Sin(theta);
+            dreh[1, 1] = Math.Cos(theta) + u_y*u_y*(1 - Math.Cos(theta));
+            dreh[1, 2] = u_y*u_z*(1 - Math.Cos(theta)) - u_x*Math.Sin(theta);
+            
+            dreh[2, 0] = u_z* u_x* (1 - Math.Cos(theta)) - u_y*Math.Sin(theta);
+            dreh[2, 1] = u_z* u_y* (1 - Math.Cos(theta)) + u_x*Math.Sin(theta);
+            dreh[2, 2] = Math.Cos(theta) + u_z * u_z * (1 - Math.Cos(theta));
+
+            AffineTrafo Trafo = new AffineTrafo();
+            Trafo.Affine = new double[3];
+            Trafo.Matrix = dreh;
+
+            return Trafo;
+        }
+
+        /// <summary>
         /// computes matrix and affine vector of the affine-linear transformation
         /// that maps the vectors in the <paramref name="preimage"/> to <paramref name="image"/>;
         /// </summary>

@@ -1,6 +1,4 @@
-﻿
-//#define TEST
-using BoSSS.Foundation;
+﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
@@ -45,9 +43,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             get {
                 // set the MultigridOperator configuration for each level:
                 // it is not necessary to have exactly as many configurations as actual multigrid levels:
-                // the last configuration enty will be used for all higher level
-                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[this.Control.LinearSolver.NoOfMultigridLevels][];
-                for (int iLevel = 0; iLevel < configs.Length; iLevel++) {
+                // the last configuration entry will be used for all higher level
+                MultigridOperator.ChangeOfBasisConfig[][] configs = new MultigridOperator.ChangeOfBasisConfig[15][];
+                for(int iLevel = 0; iLevel < Math.Min(15, configs.Length); iLevel++) { // after level 14, the same config is used over an over;
                     var configsLevel = new List<MultigridOperator.ChangeOfBasisConfig>();
 
                     AddMultigridConfigLevel(configsLevel, iLevel);
@@ -248,19 +246,20 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                             break;
                         }
                     case LevelSetEvolution.StokesExtension: {
-                            ILevelSetEvolver stokesExtEvo;
-                            if (LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
-                                stokesExtEvo = new ImplicitStokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
-                                GetBcMap(),
-                                this.Control.AgglomerationThreshold, this.GridData);
-                            } else {
-                                stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
-                                GetBcMap(),
-                                this.Control.AgglomerationThreshold, new Basis(this.GridData, Control.FieldOptions[LevelSetCG].Degree), false);
-                            }
-                            lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
-                            break;
+                        ILevelSetEvolver stokesExtEvo;
+                        if (LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
+                            stokesExtEvo = new ImplicitStokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                            GetBcMap(),
+                            this.Control.AgglomerationThreshold, this.GridData);
+                        } else {
+                            stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                            GetBcMap(),
+                            this.Control.AgglomerationThreshold, this.GridData,
+                            ReInitPeriod: Control.ReInitPeriod);
                         }
+                        lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
+                        break;
+                    }
                     case LevelSetEvolution.Phasefield: {
                             var PhasefieldEvolver = new PhasefieldEvolver(LevelSetCG, QuadOrder(), D,
                                 GetBcMap(), this.Control,
@@ -315,6 +314,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return lsUpdater;
         }
 
+        /*
         /// <summary>
         /// Cell-performance classes:
         /// cell performance class equals number of species present in that cell
@@ -329,10 +329,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 //Console.WriteLine("No of Species in cell {0} : {1}", j, CellPerfomanceClasses[j]);
             }
         }
+        */
 
         /// <summary>
         /// Corresponding to <see cref="LevelSetEvolution"/> initialization of LevelSetDG
-        /// and projection on continous LevelSetCG
+        /// and projection on continuous LevelSetCG
         /// calls <see cref="LevelSetTracker.UpdateTracker(double, int, bool, int[])">
         /// </summary>
         protected virtual void InitializeLevelSets(LevelSetUpdater lsUpdater, double time) {
@@ -407,6 +408,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             }
 
+            LsUpdater.Tracker.UpdateTracker(time); // update the tracker **before** pushing
+
             LsUpdater.Tracker.PushStacks();
 
             LsUpdater.Tracker.UpdateTracker(time);
@@ -466,7 +469,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             base.CreateEquationsAndSolvers(L);
 
             // Level Set Parameters
@@ -575,7 +578,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 Tecplot.Tecplot.PlotFields(allfields, "AgglomerationKatastrophe", 0.0, 3);
             }
-            MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
+            AgglomerationAlgorithm.Katastrophenplot = KatastrophenPlot;
 
             base.Init(control);
         }

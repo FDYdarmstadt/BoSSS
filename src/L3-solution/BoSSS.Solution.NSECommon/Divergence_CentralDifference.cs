@@ -302,7 +302,9 @@ namespace BoSSS.Solution.NSECommon {
                             case PhysicsMode.Multiphase: {
                                     // opt1:
                                     TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
-                                    res = EoS.GetDensity(TemperatureOut) * Uout * inp.Normal[Component];
+
+                                   res = EoS.GetDensity(TemperatureOut) * Uout * inp.Normal[Component];
+
                                     // opt2:
                                     //double TemperatureIN = inp.Parameters_IN[0];
                                     //double rhoIn = EoS.GetDensity(TemperatureIN);
@@ -315,9 +317,25 @@ namespace BoSSS.Solution.NSECommon {
                                     double[] argsa = new double[NumberOfSpecies + 1];
                                     argsa[0] = TemperatureOut;
                                     for (int n = 0; n < NumberOfSpecies; n++) {
-                                        argsa[n+1] = Bcmap.bndFunction[VariableNames.MassFraction_n(n)][inp.EdgeTag](inp.X, inp.time);
+                                        argsa[n + 1] = Bcmap.bndFunction[VariableNames.MassFraction_n(n)][inp.EdgeTag](inp.X, inp.time);
                                     }
                                     res = EoS.GetDensity(argsa) * Uout * inp.Normal[Component];
+
+
+                                    // todo: should i also use central difference flux here?
+
+                                    //double TemperatureIn = Uin[m_SpatialDimension];
+                                    //TemperatureOut = Bcmap.bndFunction[VariableNames.Temperature][inp.EdgeTag](inp.X, inp.time);
+                                    //double[] argsa = new double[NumberOfSpecies + 1];
+                                    //double[] argsb= new double[NumberOfSpecies + 1];
+                                    //argsa[0] = TemperatureOut;
+                                    //argsb[0] = TemperatureIn;
+                                    //for (int n = 0; n < NumberOfSpecies; n++) {
+                                    //    argsa[n+1] = Bcmap.bndFunction[VariableNames.MassFraction_n(n)][inp.EdgeTag](inp.X, inp.time);
+                                    //    argsb[n + 1] = Uin[m_SpatialDimension + n+1];
+                                    //}
+                                    //res = EoS.GetDensity(argsa) * Uout * inp.Normal[Component] + EoS.GetDensity(argsb)*Uin[Component]*inp.Normal[Component];
+                                    //res *= 0.5;
                                     break;
                                 }
                             default:
@@ -334,7 +352,8 @@ namespace BoSSS.Solution.NSECommon {
                                 break;
                             case PhysicsMode.MixtureFraction:
                                 double Zin = Uin[inp.D];
-                                res = EoS.getDensityFromZ(Zin) * Uin[Component] * inp.Normal[Component];
+                                double rho = EoS.getDensityFromZ(Zin);
+                                res = rho * Uin[Component] * inp.Normal[Component];
                                 break;
                             case PhysicsMode.LowMach:
                             case PhysicsMode.Multiphase:
@@ -434,7 +453,7 @@ namespace BoSSS.Solution.NSECommon {
         double[] buf = null;
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             int D = GradV.Length;
-            double acc = 0;
+            double acc = 0; 
             if(buf == null)
                 buf = new double[D];
             this.Flux(ref cpv, U, buf);

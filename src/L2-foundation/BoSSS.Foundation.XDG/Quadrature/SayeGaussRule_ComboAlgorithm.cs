@@ -88,7 +88,8 @@ namespace BoSSS.Foundation.XDG.Quadrature
                         nodeArg.NodesAndWeights.AddRule(newRule);
                         break;
                     case SayeArgument<S>.Mode.LowOrderQuadrature:
-                        throw new NotImplementedException();
+                        SetLowOrderNodes(node);
+                        break;
                     case SayeArgument<S>.Mode.DomainIsEmpty:
                         break;
                     default:
@@ -114,6 +115,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
                     ComboIntegrand(integrationNode.Item1, integrationNode.Item2, arg);
                 }
             }
+        }
+
+        private void SetLowOrderNodes(TreeNode<T> node) {
+            T arg = node.Value;
+            NodeSet c = arg.GetCellCenter();
+            SayeQuadRule surf = BuildSurfaceQuadRule(c, 2, arg.HeightDirection, cell);
+            SurfRule.AddRule(surf);
+            SayeQuadRule volume =  SetLowOrderQuadratureNodes(arg);
+            arg.NodesAndWeights.AddRule(volume);
         }
 
         //Evaluate volume and surface integrand

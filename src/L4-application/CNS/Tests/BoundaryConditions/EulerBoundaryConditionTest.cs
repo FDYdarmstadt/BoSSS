@@ -33,7 +33,7 @@ namespace CNS.Tests.BoundaryConditions {
         /// </summary>
         [Test]
         public static void TestSupersonicInletCondition1D() {
-            Program<CNSControl> p = null;
+            CNSProgram<CNSControl> p = null;
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSupersonicInlet1D()" },
                 false,
@@ -50,7 +50,7 @@ namespace CNS.Tests.BoundaryConditions {
         /// </summary>
         [Test]
         public static void TestSubsonicOutletBoundaryCondition1D() {
-            Program<CNSControl> p = null;
+            CNSProgram<CNSControl> p = null;
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSubsonicOutlet1D()" },
                 false,
@@ -67,7 +67,7 @@ namespace CNS.Tests.BoundaryConditions {
         /// </summary>
         [Test]
         public static void TestSubsonicInletBoundaryCondition1D() {
-            Program<CNSControl> p = null;
+            CNSProgram<CNSControl> p = null;
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSubsonicInlet1D()" },
                 false,
@@ -84,7 +84,7 @@ namespace CNS.Tests.BoundaryConditions {
         /// </summary>
         [Test]
         public static void TestSubsonicInletAndOutletBoundaryCondition1D() {
-            Program<CNSControl> p = null;
+            CNSProgram<CNSControl> p = null;
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSubsonicInletAndOutlet1D()" },
                 false,
@@ -101,7 +101,7 @@ namespace CNS.Tests.BoundaryConditions {
         /// </summary>
         [Test]
         public static void TestSubsonicPressureInletBoundaryCondition1D() {
-            Program<CNSControl> p = null;
+            CNSProgram<CNSControl> p = null;
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSubsonicPressureInletTest1D()" },
                 false,
@@ -118,7 +118,7 @@ namespace CNS.Tests.BoundaryConditions {
         /// </summary>
         [Test]
         public static void TestSubsonicPressureInletAndOutletBoundaryCondition1D() {
-            Program<CNSControl> p = null;
+            CNSProgram<CNSControl> p = null;
             Application<CNSControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.BoundaryConditions.ControlFiles.EulerSubsonicPressureInletAndOutletTest1D()" },
                 false,

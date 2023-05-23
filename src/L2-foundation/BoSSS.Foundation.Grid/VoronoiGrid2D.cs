@@ -166,8 +166,8 @@ namespace BoSSS.Foundation.Grid.Voronoi
         /// <param name="noOfLyyodsIter">
         /// Number of smoothing iterations.
         /// </param>
-        /// <param name="FirstCellNodeIndice">
-        /// Indice of node where the algorithm will start looking for the first Vector of PolygonBoundary.
+        /// <param name="firstCellNodeIndice">
+        /// Indices of node where the algorithm will start looking for the first Vector of PolygonBoundary.
         /// </param>
         /// <returns></returns>
         public static VoronoiGrid Polygonal(

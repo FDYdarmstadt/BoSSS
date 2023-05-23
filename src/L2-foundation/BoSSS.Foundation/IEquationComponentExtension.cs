@@ -107,19 +107,13 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <remarks>
         /// The operator assembly must be finalized before by calling
-        /// <see cref="Commit"/> before this method can be called.
+        /// <see cref="ISpatialOperator.Commit"/> before this method can be called.
         /// </remarks>
-        /// <param name="edgeRule">
-        /// Quadrature rule and domain for edge integration; specifying this is exclusive with <paramref name="edgeQuadScheme"/>, i.e. both cannot be unequal null at the same time.
-        /// </param>
         /// <param name="edgeQuadScheme">
-        /// Quadrature scheme for edge integration; specifying this is exclusive with <paramref name="edgeRule"/>, i.e. both cannot be unequal null at the same time.
-        /// </param>
-        /// <param name="volRule">
-        /// Quadrature rule and domain for volume integration; specifying this is exclusive with <paramref name="volQuadScheme"/>, i.e. both cannot be unequal null at the same time.
+        /// Quadrature scheme for edge integration; 
         /// </param>
         /// <param name="volQuadScheme">
-        /// Quadrature scheme for volume integration; specifying this is exclusive with <paramref name="volRule"/>, i.e. both cannot be unequal null at the same time.
+        /// Quadrature scheme for volume integration;
         /// </param>
         /// <param name="SubGridBoundaryMask">
         /// </param>
@@ -207,18 +201,18 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Evaluates this operator for given DG fields;
         /// </summary>
+        /// <param name="op"></param>
+        /// <param name="time"></param>
         /// <param name="DomainMapping">
         /// the domain variables, or "input data" for the operator; the number
-        /// of elements must be equal to the number of elements in the
-        /// <see cref="DomainVar"/>-list;
+        /// of elements must be equal to the number of elements in the <see cref="ISpatialOperator.DomainVar"/>-list;
         /// </param>
         /// <param name="Params">
         /// List of parameter fields; May be null
         /// </param>
         /// <param name="CodomainMapping">
         /// the co-domain variables, or "output" for the evaluation of the
-        /// operator; the number of elements must be equal to the number of
-        /// elements in the <see cref="CodomainVar"/>-list;
+        /// operator; the number of elements must be equal to the number of elements in the <see cref="ISpatialOperator.CodomainVar"/>-list;
         /// </param>
         /// <param name="alpha">
         /// scaling of the operator 
@@ -231,8 +225,7 @@ namespace BoSSS.Foundation {
         /// the full grid.
         /// </param>
         /// <param name="bndMode">
-        /// Treatment of subgrid boundaries, if <paramref name="sgrd"/> is not
-        /// null. See <see cref="Evaluator"/>
+        /// Treatment of subgrid boundaries, if <paramref name="sgrd"/> is not null. See <see cref="IEvaluator.SubGridBoundaryTreatment"/>
         /// </param>
         /// <param name="qInsEdge">
         /// Optional definition of the edge quadrature scheme. Since this
@@ -248,18 +241,7 @@ namespace BoSSS.Foundation {
         /// If some of the input data, <paramref name="DomainMapping"/>, is
         /// contained in the  output data, <paramref name="CodomainMapping"/>,
         /// these DG fields will be cloned to ensure correct operation of the
-        /// operator evaluation.<br/>
-        /// It is not a good choice to use this function if this operator
-        /// should be evaluated multiple times and  contains linear components
-        /// (i.e. <see cref="ContainsLinear"/> returns true); If the latter is
-        /// the case, the matrix which represents the linear components of the
-        /// operator must be computed first, which is computational- and
-        /// memory-intensive; After execution of this method, the matrix will
-        /// be lost; If multiple evaluation is desired, the
-        /// <see cref="Evaluator"/>-class should be used, in which the matrix
-        /// of the operator will persist; However, if no linear components are
-        /// present, the performance of this function should be almost
-        /// comparable to the use of the <see cref="Evaluator"/>-class;
+        /// operator evaluation.
         /// </remarks>
         static public void Evaluate(
                              this SpatialOperator op,
@@ -275,7 +257,7 @@ namespace BoSSS.Foundation {
                 if(sgrd != null && (qInsEdge != null || qInsVol != null))
                     throw new ArgumentException("Specification of Subgrid and quadrature schemes is exclusive: not allowed to specify both at the same time.", "sgrd");
 #if DEBUG
-                op.Verify(); 
+                op.Verify(false); 
 #endif
                 
 
@@ -328,16 +310,15 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Another wrapper for
-        /// <see cref="Evaluate(SpatialOperator,double,double,CoordinateMapping,IList{DGField},CoordinateMapping,SubGrid,EdgeQuadratureScheme,CellQuadratureScheme,SubGridBoundaryModes)"/>
+        /// Another wrapper for operator evaluation
         /// </summary>
         /// <param name="DomainFields">
         /// the domain variables; the number of elements
-        /// must be equal to the number of elements in the <see cref="DomainVar"/>-list;
+        /// must be equal to the number of elements in the <see cref="ISpatialOperator.DomainVar"/>-list;
         /// </param>
         /// <param name="CodomainFields">
         /// the codomain variables; the number of elements
-        /// must be equal to the number of elements in the <see cref="CodomainVar"/>-list;
+        /// must be equal to the number of elements in the <see cref="ISpatialOperator.CodomainVar"/>-list;
         /// </param>
         /// <remarks>
         /// If some of the input field, i.e. some element of <paramref name="DomainFields"/>, is contained in the 
@@ -346,15 +327,12 @@ namespace BoSSS.Foundation {
         /// It is not a good choice to use this 
         /// function if this operator should be evaluated multiple times
         /// and 
-        /// contains linear components (i.e. <see cref="ContainsLinear"/> returns true);
+        /// contains linear components (i.e. <see cref="ISpatialOperator.IsLinear"/> returns true);
         /// If the later one is the case, the matrix which represents
         /// the linear components of the operator must be computed first, which is computational- and
         /// memory - intensive;
         /// After execution of this method, the matrix will be lost;
-        /// If multiple evaluation is desired, the <see cref="Evaluator"/>-class should be used,
-        /// in which the matrix of the operator will persist;
-        /// However, if no linear components are present, the performance of this function should
-        /// be almost comparable to the use of the <see cref="Evaluator"/>-class;
+        /// If multiple evaluation is desired, the <see cref="ISpatialOperator.GetEvaluatorEx"/>-method should be used.
         /// </remarks>
         /// <param name="op"></param>
         /// <param name="time"></param>
@@ -381,7 +359,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// And another wrapper.
         /// </summary>
-        static public void Evaluate(this SpatialOperator op,double time, params DGField[] f) {
+        static public void Evaluate(this SpatialOperator op, double time, params DGField[] f) {
             Evaluate(op, time, null, SubGridBoundaryModes.OpenBoundary, f);
         }
 

@@ -301,7 +301,7 @@ namespace BoSSS.Solution.XNSECommon {
         #region local energy fields
 
 
-        static ScalarFunctionEx GetSpeciesKineticDissipationFunc(DGField[] U, double mu) {
+        public static ScalarFunctionEx GetSpeciesKineticDissipationFunc(DGField[] U, double mu) {
 
             int D = U[0].Basis.GridDat.SpatialDimension;
 

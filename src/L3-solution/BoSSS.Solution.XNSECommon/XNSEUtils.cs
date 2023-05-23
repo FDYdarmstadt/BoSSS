@@ -1252,9 +1252,9 @@ namespace BoSSS.Solution.XNSECommon {
                     for (int j = 0; j < Length; j++) {
 
                         var NormalsIN = LsTrk.DataHistories[0].Current.GetLevelSetNormals(
-                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 0]), LsTrk.GridDat.Edges.CellIndices[e0 + j, 0], 1);
+                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 0], false), LsTrk.GridDat.Edges.CellIndices[e0 + j, 0], 1);
                         var NormalsOT = LsTrk.DataHistories[0].Current.GetLevelSetNormals(
-                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 1]), LsTrk.GridDat.Edges.CellIndices[e0 + j, 1], 1);
+                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 1], false), LsTrk.GridDat.Edges.CellIndices[e0 + j, 1], 1);
 
                         for (int k = 0; k < QR.NoOfNodes; k++) {
 
@@ -1329,15 +1329,15 @@ namespace BoSSS.Solution.XNSECommon {
                         if (LsTrk.GridDat.BoundaryEdges.Contains(e0 + j))
                             continue;
 
-                        NodeSet vnds_loc = QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 0]);
+                        NodeSet vnds_loc = QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 0], false);
                         NodeSet vnds_glob = vnds_loc.CloneAs();
                         LsTrk.GridDat.TransformLocal2Global(vnds_loc, vnds_glob, LsTrk.GridDat.Edges.CellIndices[e0 + j, 0]);
                         Console.WriteLine("volume node ({0}, {1})", vnds_glob[0, 0], vnds_glob[0, 1]);
 
                         var NormalsIN = LsTrk.DataHistories[0].Current.GetLevelSetNormals(
-                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 0]), LsTrk.GridDat.Edges.CellIndices[e0 + j, 0], 1);
+                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 0], false), LsTrk.GridDat.Edges.CellIndices[e0 + j, 0], 1);
                         var NormalsOT = LsTrk.DataHistories[0].Current.GetLevelSetNormals(
-                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 1]), LsTrk.GridDat.Edges.CellIndices[e0 + j, 1], 1);
+                            QR.Nodes.GetVolumeNodeSet(LsTrk.GridDat, LsTrk.GridDat.Edges.Edge2CellTrafoIndex[e0 + j, 1], false), LsTrk.GridDat.Edges.CellIndices[e0 + j, 1], 1);
 
                         for (int k = 0; k < QR.NoOfNodes; k++) {
 

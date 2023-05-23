@@ -1,4 +1,5 @@
-﻿using ilPSP.Tracing;
+﻿using ilPSP;
+using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,8 +24,11 @@ namespace BoSSS.Foundation {
             if (!op.IsCommitted)
                 throw new NotSupportedException("not allowed before commit.");
             var _DomainFields = __DomainFields.ToArray();
-            if (_DomainFields.Length != op.DomainVar.Count)
-                throw new ArgumentException("Mismatch in number of domain variables.");
+            if (_DomainFields.Length != op.DomainVar.Count) {
+                string fl_domNames = _DomainFields.Select(f => f?.Identification ?? "NULL").ToConcatString("[", ",", "]");
+                string op_domNames = op.DomainVar.ToConcatString("[", ",", "]");
+                throw new ArgumentException($"Mismatch in number of domain variables: provided domain fields {fl_domNames}, specified by operator {op_domNames}.");
+            }
 
             int NoOfParams = op.ParameterVar.Count;
             DGField[] ret = new DGField[NoOfParams];

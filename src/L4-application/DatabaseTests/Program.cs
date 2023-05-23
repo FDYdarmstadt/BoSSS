@@ -6,12 +6,9 @@ using System.Threading.Tasks;
 using MPI.Wrappers;
 using System.Diagnostics;
 
-namespace BoSSS.Application.DatabaseTests
-{
-    public class DatabaseTestsProgram
-    {
-        public static void Main()
-        {
+namespace BoSSS.Application.DatabaseTests {
+    public class DatabaseTestsProgram {
+        public static void Main() {
             BoSSS.Solution.Application.InitMPI();
             PrintActiveThreads();
 #if DEBUG
@@ -21,16 +18,14 @@ namespace BoSSS.Application.DatabaseTests
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
-        static void RunTest()
-        {
-            var tst = new DBDriverTests();
+        static void RunTest() {
+            var tst = new MiscTests();
             tst.Init();
-            tst.TestRenameGrid();
+            tst.GridEquivalenceTest();
             tst.CleanUp();
         }
 
-        static void PrintActiveThreads()
-        {
+        static void PrintActiveThreads() {
             csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
 
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
@@ -39,14 +34,12 @@ namespace BoSSS.Application.DatabaseTests
             Console.WriteLine("Hello from " + rank + " of " + size + ".");
         }
 
-        static void StartDebugger()
-        {
+        static void StartDebugger() {
             csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int size);
-            if(size > 1)
-            {
+            if(size > 1) {
                 csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out int rank);
-                if (rank == 1)
-                    Debugger.Launch();
+                if(rank == 1)
+                     Debugger.Launch();
             }
         }
     }

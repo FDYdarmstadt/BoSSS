@@ -1689,7 +1689,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
                         int jCell2 = grid.iGeomEdges.CellIndices[IndexOffset + i0, 1];
 
                         bool DomainBnd = jCell2 < 0;
-                        bool SubGrdBnd = (SubGridCellsMarker != null) && (!DomainBnd) && (SubGridCellsMarker[jCell1] != SubGridCellsMarker[jCell2]); ;
+                        bool SubGrdBnd = (SubGridCellsMarker != null) && (!DomainBnd) && (SubGridCellsMarker[jCell1] != SubGridCellsMarker[jCell2]);
                         Debug.Assert(DomainBnd || SubGrdBnd);
 
                         int jEdge = IndexOffset + i0;

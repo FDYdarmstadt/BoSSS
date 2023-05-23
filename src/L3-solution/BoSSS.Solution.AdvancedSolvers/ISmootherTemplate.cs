@@ -82,23 +82,75 @@ namespace BoSSS.Solution.AdvancedSolvers {
         long UsedMemory();
     }
 
+    /// <summary>
+    /// Minimal information which a solver/smoother might require; This is
+    /// - obviously, the matrix <see cref="OperatorMatrix"/>
+    /// - minimal information about the underlying GD discretization, see <see cref="DgMapping"/>
+    /// </summary>
+    /// <remarks>
+    /// Feb22: This was designed in an attempt to make the solvers defined by <see cref="ISolverSmootherTemplate"/>,
+    /// which always work on the **entire** mesh and system usable on **sub-systems**.
+    /// At this point, the functionality in <see cref="SubBlockSelector"/> and <see cref="BlockMask"/> allows
+    /// to extract sub-matrices of the full system matrix. However, it is not possible to apply a <see cref="ISolverSmootherTemplate"/>
+    /// onto this matrix, since those solvers require a full <see cref="MultigridOperator"/> 
+    /// to be initialized (<see cref="ISolverSmootherTemplate.Init(MultigridOperator)"/>.
+    /// </remarks>
+    public interface IOperatorMappingPair {
+        
+        /// <summary>
+        /// Returns the Operator matrix on the current multigrid level.
+        /// </summary>
+        BlockMsrMatrix OperatorMatrix {
+            get;
+        }
+
+        /// <summary>
+        /// Minimal information about the DG structure behind matrix <see cref="OperatorMatrix"/>
+        /// </summary>
+        ICoordinateMapping DgMapping {
+            get;
+        }
+
+    }
+
 
     /// <summary>
-    /// Individual Configuration of Solver. Inherits <see cref="LinearSolverConfig"/>, which can be adjusted by control object (by the user).
+    /// Defines a solver which is able to work on sub-system, i.e. some part of the matrix on the full mesh.
     /// </summary>
-    public abstract class ConfigBase : LinearSolverConfig {
-
+    public interface ISubsystemSolver : ISolverSmootherTemplate {
+        
         /// <summary>
-        /// cctor of Individual Configuration
+        /// Initializes the linear solver.
         /// </summary>
-        public ConfigBase() : base() { }
-
-        /// <summary>
-        /// returns an instance of the configured linear solver
-        /// </summary>
-        /// <returns></returns>
-        public abstract ISolverSmootherTemplate GetInstance();
+        /// <param name="op">
+        /// Provides the matrix for the solver.
+        /// </param>
+        void Init(IOperatorMappingPair op);
+        
     }
+  
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public interface ISolverFactory : IEquatable<ISolverFactory> {
+
+        /// <summary>
+        /// Name/Description of the solver configuration
+        /// </summary>
+        string Name { get; }
+
+        /// <summary>
+        /// short version of <see cref="Name"/>, e.g. to be used in plots or tables
+        /// </summary>
+        string Shortname { get; }
+
+        /// <summary>
+        /// Creates an Instance of the respective solver
+        /// </summary>
+        ISolverSmootherTemplate CreateInstance(MultigridOperator level);
+    }
+
 
 
     /// <summary>
@@ -112,9 +164,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// - 1st argument: iteration index
         /// - 2nd argument: l2-Norm of residual of initial solution 
         /// - 3rd argument: l2-Norm of residual of solution in current iteration
-        /// - return value: true to continue, false to terminate
+        /// - return value, 1st item: true to continue, false to terminate
+        /// - return value, 2nd item: true for successful convergence (e.g. convergence criterion reached), false for failure (e.g. maximum number of iterations reached)
         /// </summary>
-        Func<int, double, double, bool> TerminationCriterion {
+        /// <remarks>
+        /// For an example implementation, see
+        /// <see cref="IterativeSolverConfig.DefaultTermination"/>.
+        /// </remarks>
+        Func<int, double, double, (bool bNotTerminate, bool bSuccess)> TerminationCriterion {
             get;
             set;
         }
@@ -127,10 +184,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
     public interface ISolverWithCallback : ISolverSmootherTemplate {
 
         /// <summary>
-        ///  - 1st argument: iteration index<br/>
-        ///  - 2nd argument: current solution<br/>
-        ///  - 3rd argument: current residual<br/>
-        ///  - 4th argument: the currently used operator<br/>
+        ///  - 1st argument: iteration index
+        ///  - 2nd argument: current solution
+        ///  - 3rd argument: current residual
+        ///  - 4th argument: the currently used operator
         /// </summary>      
         Action<int, double[], double[], MultigridOperator> IterationCallback {
             get;

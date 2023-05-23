@@ -13,6 +13,7 @@ using System.Text;
 
 namespace BoSSS.Solution.XdgTimestepping {
     
+    /*
     class XdgTScore {
 
         /// <summary>
@@ -104,6 +105,8 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
     }
+
+    */
 
     /*
     

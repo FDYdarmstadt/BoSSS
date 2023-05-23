@@ -132,6 +132,10 @@ namespace BoSSS.Foundation.Caching {
         /// Returns the (hopefully) cached value.
         /// </summary>
         public virtual MultidimensionalArray GetValues(NodeSet NS, int Degree) {
+
+            if(NS.Reference == 0) { 
+                return this.Evaluate(NS, Degree);
+            }
             
             // lookup table garbage collection, if necessary
             // ---------------------------------------------
@@ -167,6 +171,7 @@ namespace BoSSS.Foundation.Caching {
                     CacheRef.Degree = -1;
                 }
             }
+
 
             // try to get value from cache
             // ---------------------------
@@ -310,7 +315,7 @@ namespace BoSSS.Foundation.Caching {
         Func<NodeSet, int, MultidimensionalArray> m_evalfunc;
 
         /// <summary>
-        /// Evaluation fo Values if they are not in the cache.
+        /// Evaluation of Values if they are not in the cache.
         /// </summary>
         /// <param name="Degree">minimum required degree.</param>
         /// <param name="Nodes">node set</param>
@@ -467,7 +472,7 @@ namespace BoSSS.Foundation.Caching {
 #endif
 
             MultidimensionalArray R = null;
-            if(lastCell_j0 == j0 && lastCell_Len == Len && lastCell_Degree == Degree && lastCell_NSref == NS.Reference) {
+            if(NS.Reference != 0 && lastCell_j0 == j0 && lastCell_Len == Len && lastCell_Degree == Degree && lastCell_NSref == NS.Reference) {
                 R = (MultidimensionalArray)Cache.GetItem(lastCell_CashRef);
                 Debug.Assert((R == null) || (R.GetLength(0) == Len));
                 Debug.Assert((R == null) || (R.GetLength(1) == NS.NoOfNodes));
@@ -483,7 +488,8 @@ namespace BoSSS.Foundation.Caching {
                 this.m_ComputeValues(NS, j0, Len, Degree, R);
                 Debug.Assert(R.GetLength(0) == Len);
                 Debug.Assert(R.GetLength(1) == NS.NoOfNodes);
-                lastCell_CashRef = Cache.CacheItem(R, R.Length * sizeof(double));
+                if(NS.Reference != 0)
+                    lastCell_CashRef = Cache.CacheItem(R, R.Length * sizeof(double));
             }
             return R;
         }
@@ -506,7 +512,7 @@ namespace BoSSS.Foundation.Caching {
 #endif
 
             MultidimensionalArray Rin = null;
-            if(lastEdge_e0 == e0 && lastEdge_Len == Len && lastEdge_Degree == Degree && lastEdge_NSref == NS.Reference) {
+            if(NS.Reference != 0 && lastEdge_e0 == e0 && lastEdge_Len == Len && lastEdge_Degree == Degree && lastEdge_NSref == NS.Reference) {
                 Rin = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefIn);
                 
                 Debug.Assert((Rin == null) || (Rin.GetLength(0) == Len));
@@ -545,10 +551,11 @@ namespace BoSSS.Foundation.Caching {
                     i0[0] = e;
                     iE[0] = e;
 
-                    this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
+                    this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
                 }
 
-                lastEdge_CashRefIn = Cache.CacheItem(Rin, Rin.Length * sizeof(double));
+                if(NS.Reference != 0)
+                    lastEdge_CashRefIn = Cache.CacheItem(Rin, Rin.Length * sizeof(double));
             }
 
             return Rin;
@@ -586,7 +593,7 @@ namespace BoSSS.Foundation.Caching {
 
             MultidimensionalArray Rin = null, Rot = null;
 
-            if(lastEdge_e0 == e0 && lastEdge_Len == Len && lastEdge_Degree == Degree && lastEdge_NSref == NS.Reference) {
+            if(NS.Reference != 0 && lastEdge_e0 == e0 && lastEdge_Len == Len && lastEdge_Degree == Degree && lastEdge_NSref == NS.Reference) {
                 Rin = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefIn);
                 Rot = (MultidimensionalArray)Cache.GetItem(lastEdge_CashRefOt);
 
@@ -638,20 +645,20 @@ namespace BoSSS.Foundation.Caching {
                     iE[0] = e;
 
                     if(RinReq) {
-                        this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
+                        this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, 1, Degree, Rin.ExtractSubArrayShallow(i0, iE));
                     }
                     if(RotReq) {
                         if(jCell2 >= 0) {
-                            this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge2), jCell2, 1, Degree, Rot.ExtractSubArrayShallow(i0, iE));
+                            this.m_ComputeValues(NS.GetVolumeNodeSet(this.GridData, edge2, false), jCell2, 1, Degree, Rot.ExtractSubArrayShallow(i0, iE));
                         } else {
                             Rot.ExtractSubArrayShallow(i0, iE).Clear();
                         }
                     }
                 }
 
-                if(RinReq)
+                if(NS.Reference != 0 && RinReq)
                     lastEdge_CashRefIn = Cache.CacheItem(Rin, Rin.Length * sizeof(double));
-                if(RotReq)
+                if(NS.Reference != 0 && RotReq)
                     lastEdge_CashRefOt = Cache.CacheItem(Rot, Rot.Length * sizeof(double));
             }
 
@@ -1262,6 +1269,14 @@ namespace BoSSS.Foundation.Caching {
         /// Evaluation of a single-valued property on edges.
         /// </summary>
         public MultidimensionalArray GetNormals_Edge(NodeSet NS, int e0, int Len) {
+            // for temporary nodesets (no caching)
+            if(NS.Reference == 0) {
+                MultidimensionalArray normals;
+                MultidimensionalArray metrics;
+                EdgeEval(NS, e0, Len, out normals, out metrics);
+                return normals;
+            }
+
             if(e0 == last_e0 && Len == last_Len && NS.Reference == last_NSref) {
                 // lucky punch successful
                 Debug.Assert(last_Normals.GetLength(0) == Len);
@@ -1344,7 +1359,7 @@ namespace BoSSS.Foundation.Caching {
                     i0[0] = e;
                     iE[0] = e - 1;
 
-                    this.GridData.Edges.GetNormalsForCell(NS.GetVolumeNodeSet(this.GridData, edge1), jCell1, iFace1, Normals, Metrics, e);
+                    this.GridData.Edges.GetNormalsForCell(NS.GetVolumeNodeSet(this.GridData, edge1, false), jCell1, iFace1, Normals, Metrics, e);
                 }
             }
         }
@@ -1354,6 +1369,14 @@ namespace BoSSS.Foundation.Caching {
         /// Evaluation of a single-valued property on edges.
         /// </summary>
         public MultidimensionalArray GetIntegrationMetric(NodeSet NS, int e0, int Len) {
+            // for temporary nodesets (no caching)
+            if(NS.Reference == 0) {
+                MultidimensionalArray normals;
+                MultidimensionalArray metrics;
+                EdgeEval(NS, e0, Len, out normals, out metrics);
+                return metrics;
+            }
+
             if(e0 == last_e0 && Len == last_Len && NS.Reference == last_NSref) {
                 // lucky punch successful
                 Debug.Assert(last_metrics.GetLength(0) == Len);
@@ -1423,46 +1446,16 @@ namespace BoSSS.Foundation.Caching {
             IList<int> kredIdx = this.GridData.iGeomEdges.Edge2CellTrafosRefElementIndices;
             int[,] cellIdx = this.GridData.iGeomEdges.CellIndices;
 
-            // try to access cache
-            // ===================
 
-            // try to find CacheEntry ....
-            CacheEntry CE;
-            if(!this.m_LinkToCache.TryGetValue(NS.Reference, out CE)) {
-                CE = new CacheEntry() {
-                    ValueAvail = new bool[E2Ctrafo.Count]
-                };
-                this.m_LinkToCache.Add(NS.Reference, CE);
-            } else {
-                if(CE.Degree < Degree) {
-                    // We might have some cached values, but with insufficient degree;
-                    // throw away everything in this case.
-
-                    CE.Degree = Degree;
-                    Array.Clear(CE.ValueAvail, 0, CE.ValueAvail.Length);
-
-                    if(CE.CacheRef_Value > 0)
-                        Cache.ForgetItem(CE.CacheRef_Value);
-                    CE.CacheRef_Value = 0;
-                }
-            }
-
-            // try to obtain values from cache...
             MultidimensionalArray Value = null;
-            if(CE.CacheRef_Value > 0) {
-                Value = (MultidimensionalArray)Cache.GetItem(CE.CacheRef_Value);
-                if(Value == null)
-                    Array.Clear(CE.ValueAvail, 0, CE.ValueAvail.Length);
-            }
-            
-            // allocate memory (if necessary) and store it in cache...
-            int Nmax = -1;
-            Degree = Math.Max(CE.Degree, Degree);
-            CE.Degree = Degree;
-            PolynomialList[] Polynomials = this.GridData.ChefBasis.GetOrthonormalPolynomials(Degree);
-            if(Value == null) {
-                //Debug.Assert(N_kref.Length == N_kref.Length);
 
+            if(NS.Reference == 0) {
+
+                // recompute values (no caching available)
+                // =======================================
+
+                int Nmax = -1;
+                PolynomialList[] Polynomials = this.GridData.ChefBasis.GetOrthonormalPolynomials(Degree);
                 for(int iKref = 0; iKref < Polynomials.Length; iKref++) {
                     int N_kref = Polynomials[iKref].Count;
                     Nmax = Math.Max(Nmax, N_kref);
@@ -1473,39 +1466,118 @@ namespace BoSSS.Foundation.Caching {
                 } else {
                     Value = MultidimensionalArray.Create(NoOfTrafos, NS.NoOfNodes, Nmax, this.GridData.SpatialDimension);
                 }
-                CE.CacheRef_Value = Cache.CacheItem(Value, Value.Length * sizeof(double));
-            }
-            
 
-            // recompute values if necessary
-            // =============================
-                        
-            for(int e = 0; e < Len; e++) { // for all edges in the chunk from 'e0' to 'e0 + Len - 1'...
-                int iEdge = e + e0;
+                for(int e = 0; e < Len; e++) { // for all edges in the chunk from 'e0' to 'e0 + Len - 1'...
+                    int iEdge = e + e0;
 
-                // compute the value for the respective edge-to-cell trafo, if necessary:
+                    // compute the value for the respective edge-to-cell trafo:
 
-                int iTrafoIN = trafoIdx[iEdge, 0];
-                int iTrafoOT = trafoIdx[iEdge, 1];
+                    int iTrafoIN = trafoIdx[iEdge, 0];
+                    int iTrafoOT = trafoIdx[iEdge, 1];
 
-                if(CE.ValueAvail[iTrafoIN] == false) {
-                    // missing value for (edge-to-cell trafo for) IN-cell
-                    int N_kref = Polynomials[kredIdx[iTrafoIN]].Count;
-                    if(this.m_gradient)
-                        NewMethod2(NS, Degree, Value, iTrafoIN, N_kref);
-                    else 
-                        NewMethod1(NS, Degree, Value, iTrafoIN, N_kref);
-                    CE.ValueAvail[iTrafoIN] = true;
+                    {
+                        int N_kref = Polynomials[kredIdx[iTrafoIN]].Count;
+                        if(this.m_gradient)
+                            NewMethod2(NS, Degree, Value, iTrafoIN, N_kref);
+                        else
+                            NewMethod1(NS, Degree, Value, iTrafoIN, N_kref);
+                    }
+
+                    if(cellIdx[iEdge, 1] >= 0) {
+                        int N_kref = Polynomials[kredIdx[iTrafoOT]].Count;
+                        if(this.m_gradient)
+                            NewMethod2(NS, Degree, Value, iTrafoOT, N_kref);
+                        else
+                            NewMethod1(NS, Degree, Value, iTrafoOT, N_kref);
+                    }
                 }
 
-                if(cellIdx[iEdge, 1] >= 0 && CE.ValueAvail[iTrafoOT] == false) {
-                    // missing value for (edge-to-cell trafo for) OUT-cell
-                    int N_kref = Polynomials[kredIdx[iTrafoOT]].Count;
-                    if(this.m_gradient)
-                        NewMethod2(NS, Degree, Value, iTrafoOT, N_kref);
-                    else
-                        NewMethod1(NS, Degree, Value, iTrafoOT, N_kref);
-                    CE.ValueAvail[iTrafoOT] = true;
+            } else {
+
+                // try to access cache
+                // ===================
+
+                // try to find CacheEntry ....
+                CacheEntry CE;
+                if(!this.m_LinkToCache.TryGetValue(NS.Reference, out CE)) {
+                    CE = new CacheEntry() {
+                        ValueAvail = new bool[E2Ctrafo.Count]
+                    };
+                    this.m_LinkToCache.Add(NS.Reference, CE);
+                } else {
+                    if(CE.Degree < Degree) {
+                        // We might have some cached values, but with insufficient degree;
+                        // throw away everything in this case.
+
+                        CE.Degree = Degree;
+                        Array.Clear(CE.ValueAvail, 0, CE.ValueAvail.Length);
+
+                        if(CE.CacheRef_Value > 0)
+                            Cache.ForgetItem(CE.CacheRef_Value);
+                        CE.CacheRef_Value = 0;
+                    }
+                }
+
+                // try to obtain values from cache...
+                //MultidimensionalArray Value = null;
+                if(CE.CacheRef_Value > 0) {
+                    Value = (MultidimensionalArray)Cache.GetItem(CE.CacheRef_Value);
+                    if(Value == null)
+                        Array.Clear(CE.ValueAvail, 0, CE.ValueAvail.Length);
+                }
+
+                // allocate memory (if necessary) and store it in cache...
+                int Nmax = -1;
+                Degree = Math.Max(CE.Degree, Degree);
+                CE.Degree = Degree;
+                PolynomialList[] Polynomials = this.GridData.ChefBasis.GetOrthonormalPolynomials(Degree);
+                if(Value == null) {
+                    //Debug.Assert(N_kref.Length == N_kref.Length);
+
+                    for(int iKref = 0; iKref < Polynomials.Length; iKref++) {
+                        int N_kref = Polynomials[iKref].Count;
+                        Nmax = Math.Max(Nmax, N_kref);
+                    }
+
+                    if(!this.m_gradient) {
+                        Value = MultidimensionalArray.Create(NoOfTrafos, NS.NoOfNodes, Nmax);
+                    } else {
+                        Value = MultidimensionalArray.Create(NoOfTrafos, NS.NoOfNodes, Nmax, this.GridData.SpatialDimension);
+                    }
+                    CE.CacheRef_Value = Cache.CacheItem(Value, Value.Length * sizeof(double));
+                }
+
+
+                // recompute values if necessary
+                // =============================
+
+                for(int e = 0; e < Len; e++) { // for all edges in the chunk from 'e0' to 'e0 + Len - 1'...
+                    int iEdge = e + e0;
+
+                    // compute the value for the respective edge-to-cell trafo, if necessary:
+
+                    int iTrafoIN = trafoIdx[iEdge, 0];
+                    int iTrafoOT = trafoIdx[iEdge, 1];
+
+                    if(CE.ValueAvail[iTrafoIN] == false) {
+                        // missing value for (edge-to-cell trafo for) IN-cell
+                        int N_kref = Polynomials[kredIdx[iTrafoIN]].Count;
+                        if(this.m_gradient)
+                            NewMethod2(NS, Degree, Value, iTrafoIN, N_kref);
+                        else
+                            NewMethod1(NS, Degree, Value, iTrafoIN, N_kref);
+                        CE.ValueAvail[iTrafoIN] = true;
+                    }
+
+                    if(cellIdx[iEdge, 1] >= 0 && CE.ValueAvail[iTrafoOT] == false) {
+                        // missing value for (edge-to-cell trafo for) OUT-cell
+                        int N_kref = Polynomials[kredIdx[iTrafoOT]].Count;
+                        if(this.m_gradient)
+                            NewMethod2(NS, Degree, Value, iTrafoOT, N_kref);
+                        else
+                            NewMethod1(NS, Degree, Value, iTrafoOT, N_kref);
+                        CE.ValueAvail[iTrafoOT] = true;
+                    }
                 }
             }
             
@@ -1518,7 +1590,7 @@ namespace BoSSS.Foundation.Caching {
         private void NewMethod1(NodeSet NS, int Degree, MultidimensionalArray Value, int iTrafo, int N) {
 
             // values for node set 'NS' under edge-to-cell trafo #iKrefIN
-            MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisValues.GetValues(NS.GetVolumeNodeSet(this.GridData, iTrafo), Degree);
+            MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisValues.GetValues(NS.GetVolumeNodeSet(this.GridData, iTrafo, false), Degree);
             Debug.Assert(value_iTrafo.GetLength(1) >= N);
             if(value_iTrafo.GetLength(1) > N) {
                 value_iTrafo = value_iTrafo.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NS.NoOfNodes - 1, N - 1 });
@@ -1530,7 +1602,7 @@ namespace BoSSS.Foundation.Caching {
         private void NewMethod2(NodeSet NS, int Degree, MultidimensionalArray Value, int iTrafo, int N) {
 
             // values for node set 'NS' under edge-to-cell trafo #iKrefIN
-            MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisGradientValues.GetValues(NS.GetVolumeNodeSet(this.GridData, iTrafo), Degree);
+            MultidimensionalArray value_iTrafo = this.GridData.ChefBasis.BasisGradientValues.GetValues(NS.GetVolumeNodeSet(this.GridData, iTrafo, false), Degree);
             Debug.Assert(value_iTrafo.GetLength(1) >= N);
             int D = value_iTrafo.GetLength(2);
             Debug.Assert(D == this.GridData.SpatialDimension);

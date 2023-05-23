@@ -84,13 +84,12 @@ namespace BoSSS.Solution.Timestepping {
         /// ctor.
         /// </summary>
         /// <param name="temporalOp">
-        /// Indicates, for each each equation whether it is
+        /// Indicates, for each equation whether it is
         /// <list type="bullet">
         ///   <item>(false) a auxiliary condition  i.e. a variable where no time derivative occurs in the equation, or</item>
         ///   <item>(true) a differential equation</item>
         /// </list>
         /// At least one equation must be time-dependent;
-        /// Otherwise, the <see cref="BoSSS.Solution.Solvers.LinearSolver"/> should be used;
         /// </param>
         /// <param name="spatialOp"></param>
         /// <param name="fields"></param>
@@ -284,7 +283,6 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// <see cref="ITimeStepper.ResetTime"/>
         /// </summary>
-        /// <param name="NewTime">The new time</param>
         public void ResetTime(double NewTime, int timestepNumber) {
             m_Time = NewTime;
         }

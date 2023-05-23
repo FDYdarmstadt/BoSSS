@@ -108,11 +108,12 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", X => 0.0);
             R.InitialValues_Evaluators.Add("Tex", X => (Math.Log(X[0].Pow2() + X[1].Pow2()) / Math.Log(4.0)) + 1.0);
             R.ExactSolution_provided = true;
-            R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            //R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            R.LinearSolver.TargetBlockSize = 1000;
+            R.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                //R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+                TargetBlockSize = 1000,
+                NoOfMultigridLevels = 4
+            };
             R.SuperSampling = 2;
-            R.NoOfMultigridLevels = 4;
 
             R.GridFunc = delegate () {
                 var grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 3), GenericBlas.Linspace(0, 1, 11), CellType.Square_9, true);
@@ -147,12 +148,9 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", X => 1.0);
             R.InitialValues_Evaluators.Add("Tex", X => 1.0 / 6.0 * (X[0]*X[0]+ X[1] * X[1] + X[2]*X[2]) + 5.0/6.0);
             R.ExactSolution_provided = true;
-            //R.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            //R.LinearSolver.TargetBlockSize = 1000;
+            R.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             R.SuperSampling = 2;
-            //R.NoOfMultigridLevels = 4;
-
+            
             R.GridFunc = delegate () {
                 double Ra = 0.1;
                 double Rb = 1;
@@ -241,7 +239,7 @@ namespace BoSSS.Application.SipPoisson {
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
 
-            RR.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            RR.LinearSolver = new Solution.AdvancedSolvers.DirectSolver.Config() { WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
 
             return RR;
         }
@@ -249,11 +247,11 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// </summary>
-        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 5, string blapath = null, int xRes = 2, double xStretch = 1.0, int yRes = 2, double yStretch = 1.0, int zRes = 2, double zStretch = 1.0, LinearSolverCode solver =  LinearSolverCode.classic_pardiso) {
+        public static SipControl TestCartesian3D(int PowRes = 2, int DGdegree = 4, string blapath = null, double xStretch = 1.0, double yStretch = 1.0, double zStretch = 1.0) {
             // --control 'cs:BoSSS.Application.SipPoisson.SipHardcodedControl.TestCartesian3D(DGdegree: 2, solver:BoSSS.Solution.Control.LinearSolverCode.exp_Kcycle_schwarz)'
-            xRes = (int)Math.Pow(xRes, PowRes);
-            yRes = (int)Math.Pow(yRes, PowRes);
-            zRes = (int)Math.Pow(zRes, PowRes);
+            int xRes = (int)Math.Pow(2, PowRes);
+            int yRes = (int)Math.Pow(2, PowRes);
+            int zRes = (int)Math.Pow(2, PowRes);
             var R = new SipControl();
             R.ProjectName = "ipPoison/cartesian";
             R.savetodb = false;
@@ -284,19 +282,12 @@ namespace BoSSS.Application.SipPoisson {
             };
 
 
-            //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_jacobi_mg;
-            //R.LinearSolver.SolverCode = LinearSolverCode.exp_decomposedMG_OrthoScheme;
-            R.LinearSolver.SolverCode = solver;
-            //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            //R.LinearSolver.SolverCode = LinearSolverCode.exp_gmres_levelpmg;
-            R.LinearSolver.NoOfMultigridLevels = 10;
-            R.LinearSolver.TargetBlockSize = 40;
-            R.LinearSolver.ConvergenceCriterion = 1e-8;
-            R.LinearSolver.MaxSolverIterations = 10;
-            //R.LinearSolver.MaxSolverIterations = 10;
+            R.LinearSolver = new Solution.AdvancedSolvers.DirectSolver.Config() { WhichSolver = Solution.AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
+
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString());
             R.AddBoundaryValue(BoundaryType.Neumann.ToString());
+            R.PostprocessingModules.Add(new CondLogger());
 
             return R;
         }
@@ -374,14 +365,14 @@ namespace BoSSS.Application.SipPoisson {
             #region linear solver config
 
             // Linear Solver Settings
-            C.LinearSolver.MaxKrylovDim = 5000;
-            C.LinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.NoOfMultigridLevels = 5;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
-            C.LinearSolver.TargetBlockSize = 10000;
-            C.LinearSolver.SolverMode = LinearSolverMode.Solve;
             C.SuperSampling = 2;
-            C.LinearSolver.ConvergenceCriterion = 1E-8;
+
+            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                MaxSolverIterations = 50,
+                NoOfMultigridLevels = 5,
+                TargetBlockSize = 10000,
+                ConvergenceCriterion = 1e-8
+            };
             //C.LinearSolver.SolverMode = LinearSolverMode.SpectralAnalysis;
 
             #endregion
@@ -421,16 +412,17 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", X => -Math.Sin(X[0]));
             R.InitialValues_Evaluators.Add("Tex", X => Math.Sin(X[0]));
             R.ExactSolution_provided = true;
-            R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
-            R.LinearSolver.SolverCode = solver_name;
+            R.LinearSolver = solver_name.GetConfig();
             R.GridPartType = GridPartType.Hilbert;
             // exp_Kcycle_schwarz
             // exp_gmres_levelpmg
 
 #if DEBUG
-            // For testing in DEBUG mode, this setting enforces the use 
-            // of many multigrid-levels. In 2D, the examples are so small that 
-            R.LinearSolver.TargetBlockSize = 100;
+            if(R.LinearSolver is Solution.AdvancedSolvers.OrthoMGSchwarzConfig omg) {
+                // For testing in DEBUG mode, this setting enforces the use 
+                // of many multigrid-levels. In 2D, the examples are so small that 
+                omg.TargetBlockSize = 100;
+            }
 #endif
 
 
@@ -524,10 +516,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", exRhs);
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
-            //R.LinearSolver.NoOfMultigridLevels = 2;
-            //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-            R.SuppressExceptionPrompt = true;
+            R.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
             
             R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(-1, 1, xRes + 1);
@@ -546,14 +535,12 @@ namespace BoSSS.Application.SipPoisson {
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", exSol);
 
-            R.NoOfSolverRuns = 1;
-
             R.AdaptiveMeshRefinement = false;
             R.NoOfTimesteps = 1;
             //R.ImmediatePlotPeriod = 1;
             //R.SuperSampling = 2;
 
-
+            R.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
             return R;
         }
 
@@ -592,11 +579,7 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", exRhs);
             R.InitialValues_Evaluators.Add("Tex", exSol);
             R.ExactSolution_provided = true;
-            //R.LinearSolver.NoOfMultigridLevels = 2;
-            //R.LinearSolver.SolverCode = LinearSolverCode.exp_softpcg_mg;
-            R.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            R.SuppressExceptionPrompt = true;
-            //R.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            R.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             R.GridFunc = delegate () {
                 double[] xNodes = GenericBlas.Linspace(0, 1, xRes + 1);
@@ -614,8 +597,6 @@ namespace BoSSS.Application.SipPoisson {
             };
 
             R.AddBoundaryValue(BoundaryType.Dirichlet.ToString(), "T", exSol);
-
-            R.NoOfSolverRuns = 1;
 
             R.AdaptiveMeshRefinement = true;
             R.NoOfTimesteps = 100;

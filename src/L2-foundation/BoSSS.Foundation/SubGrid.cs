@@ -58,13 +58,12 @@ namespace BoSSS.Foundation.Grid {
         private int[] m_LocalCellIndex2SubgridIndex;
 
         /// <summary>
-        /// mapping from local (within the current MPI process) cell indices to
-        /// the subgrid;<br/>
-        /// index: a local cell index <em>j</em>, i.e. 0 &#8804; <em>j</em> &lt;
-        /// <see cref="GridData.CellData.NoOfCells"/>;<br/>
-        /// content: a subgrid index <em>k</em>, i.e. 0 &#8804; <em>k</em> &lt;
-        /// <see cref="LocalNoOfCells"/>, or a negative number if cell
-        /// <em>j</em> is not contained in the subgrid.;
+        /// mapping from local (within the current MPI process) cell indices to the subgrid;
+        /// - index: a local cell index <em>j</em>, i.e. 0 &#8804; <em>j</em> &lt;
+        ///   <see cref="ILogicalCellData.Count"/>;
+        /// - content: a subgrid index <em>k</em>, i.e. 0 &#8804; <em>k</em> &lt;
+        ///   <see cref="LocalNoOfCells"/>, or a negative number if cell
+        ///   <em>j</em> is not contained in the subgrid.
         /// </summary>
         /// <remarks>
         /// The inverse of this mapping is
@@ -104,13 +103,12 @@ namespace BoSSS.Foundation.Grid {
         private int[] m_SubgridIndex2LocalCellIndex;
 
         /// <summary>
-        /// mapping from subgrid indices to local (within the current MPI
-        /// process) cell indices;<br/>
-        /// index: a subgrid index <em>k</em>, i.e. 0 &#8804; <em>k</em> &lt;
-        /// <see cref="LocalNoOfCells"/>, or a negative number if cell
-        /// <em>j</em> is not contained in the subgrid;<br/>
-        /// content: a local cell index <em>j</em>, i.e. 0 &#8804;
-        /// <em>j</em> &lt; <see cref="GridData.CellData.NoOfCells"/>;
+        /// mapping from subgrid indices to local (within the current MPI process) cell indices;
+        /// - index: a subgrid index <em>k</em>, i.e. 0 &#8804; <em>k</em> &lt;
+        ///   <see cref="LocalNoOfCells"/>, or a negative number if cell
+        ///   <em>j</em> is not contained in the subgrid;
+        /// - content: a local cell index <em>j</em>, i.e. 0 &#8804;
+        ///   <em>j</em> &lt; <see cref="ILogicalCellData.Count"/>;
         /// </summary>
         /// <remarks>
         /// The inverse of this mapping is
@@ -422,7 +420,7 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// minimum cell diameter over all cells in the subgrid
-        /// <see cref="GridData.CellData.h_min"/>
+        /// <see cref="IGeometricalCellsData.h_min"/>
         /// </summary>
         public double h_minSubGrd {
             get {
@@ -447,7 +445,7 @@ namespace BoSSS.Foundation.Grid {
 
         /// <summary>
         /// maximum cell diameter over all cells in the subgrid
-        /// <see cref="GridData.CellData.h_max"/>
+        /// <see cref="IGeometricalCellsData.h_max"/>
         /// </summary>
         public double h_maxSubGrd {
             get {

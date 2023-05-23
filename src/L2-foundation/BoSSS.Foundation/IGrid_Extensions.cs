@@ -48,7 +48,6 @@ namespace BoSSS.Foundation.Grid {
         /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
         /// the dictionary
         /// </summary>
-        /// <param name="EdgeTagFunc"></param>
         static public void DefineEdgeTags(this IGrid g, Func<double[], byte> EdgeTagFunc) {
             g.DefineEdgeTags((Vector v) => EdgeTagFunc(v));
         }
@@ -60,7 +59,6 @@ namespace BoSSS.Foundation.Grid {
         /// returned by the <paramref name="EdgeTagFunc"/>-function is not in
         /// the dictionary
         /// </summary>
-        /// <param name="EdgeTagFunc"></param>
         static public void DefineEdgeTags(this IGrid g, Func<double[], string> EdgeTagFunc) {
             g.DefineEdgeTags((Vector v) => EdgeTagFunc(v));
         }
@@ -211,8 +209,6 @@ namespace BoSSS.Foundation.Grid {
             bool GridChanged = LoopOverEdges(RecordTag);
             GridChanged = GridChanged.MPIOr();
 
-
-
             // pass 2: MPI syncronization
             if(GridChanged && g.Size > 1) {
                 byte[] ETTranslation = SyncEdgeTagsOverMPI(EdgeTagNames_Reverse);
@@ -239,17 +235,19 @@ namespace BoSSS.Foundation.Grid {
                 Console.WriteLine("Grid Edge Tags changed.");
             }
 
-            foreach(string EdgeTagName in EdgeTagNamesToEnsure) {
-                g.AddEdgeTag(EdgeTagName);
-            }
+            if (EdgeTagNamesToEnsure != null) {
+                foreach (string EdgeTagName in EdgeTagNamesToEnsure) {
+                    g.AddEdgeTag(EdgeTagName);
+                }
 
-            {
-                string[] allBndys = g.EdgeTagNames.Values.ToArray();
-                string[][] allBndys_allProcs = allBndys.MPIAllGatherO();
+                {
+                    string[] allBndys = g.EdgeTagNames.Values.ToArray();
+                    string[][] allBndys_allProcs = allBndys.MPIAllGatherO();
 
-                for(int r = 0; r < allBndys_allProcs.Length; r++) {
-                    if(!allBndys_allProcs[r].SetEquals(allBndys)) {
-                        throw new ApplicationException("Internal Error: mismatch in edge tag names among MPI processors.");
+                    for (int r = 0; r < allBndys_allProcs.Length; r++) {
+                        if (!allBndys_allProcs[r].SetEquals(allBndys)) {
+                            throw new ApplicationException("Internal Error: mismatch in edge tag names among MPI processors.");
+                        }
                     }
                 }
             }

@@ -76,6 +76,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         /// <param name="cell">
         /// Enumeration starts with this cell and then return its neighbors and so on.
         /// </param>
+        /// <param name="visited"></param>
         /// <returns></returns>
         static IEnumerable<MeshCell<T>> RecursiveYieldConnectedCells(MeshCell<T> cell, HashSet<int> visited)
         {
@@ -101,6 +102,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing
         /// <param name="cell">
         /// Enumeration starts with this cell and then return its neighbors and so on.
         /// </param>
+        /// <param name="visited"></param>
         /// <returns></returns>
         static IEnumerable<MeshCell<T>> IterativeYieldConnectedCells(MeshCell<T> cell, HashSet<int> visited)
         {

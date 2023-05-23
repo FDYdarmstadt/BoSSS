@@ -234,6 +234,13 @@ namespace BoSSS.Solution.Control {
         }
 
         /// <summary>
+        /// 
+        /// </summary>
+        public override string ToString() {
+            return m_Code;
+        }
+
+        /// <summary>
         /// Evaluates the function.
         /// </summary>
         /// <param name="X">global/physical coordinates.</param>
@@ -280,7 +287,7 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Vectorized evaluation
         /// </summary>
-        public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+        public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
             NonVectorizedScalarFunction.Vectorize(this.Evaluate, time)(input, output);
         }
     }

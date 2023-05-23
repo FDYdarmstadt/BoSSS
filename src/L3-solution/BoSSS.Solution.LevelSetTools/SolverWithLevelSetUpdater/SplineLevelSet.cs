@@ -19,9 +19,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// - the internal spline represents the y-position in dependence of the x-coordinate.
     /// </summary>
     public class SplineLevelSet : LevelSet {
-        double[] x;
+        public double[] x { get; private set; }
 
-        double[] y;
+        public double[] y { get; private set; }
 
         /// <summary>
         /// the y-position of the interface in dependence of the x-coordinate
@@ -61,6 +61,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public int numberOfNodes { get; private set; }
 
         public MultidimensionalArray Nodes { get; private set; }
+
+        /// <summary>
+        /// Sets a node
+        /// </summary>
+        /// <param name="i">number of node</param>
+        /// <param name="j">x or y node</param>
+        /// <param name="value"></param>
+        public void SetNode(int i, int j, double value )
+        {
+            Nodes[i, j] = value;
+        }
 
         public void Interpolate(Func<double, double> initial, CellMask region = null) {
             for(int i = 0; i < numberOfNodes; ++i) {

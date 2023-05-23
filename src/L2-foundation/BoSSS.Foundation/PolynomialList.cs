@@ -201,7 +201,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// returns the index of the first polynomial (see <see cref="Polynomials"/>)
+        /// returns the index of the first polynomial in this list
         /// which is of degree <paramref name="deg"/>;
         /// (see also <see cref="NoOfPolynomialsPerDegree"/>);
         /// </summary>

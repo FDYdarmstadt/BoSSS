@@ -24,6 +24,10 @@ using ilPSP.Tracing;
 using System.Runtime.InteropServices;
 
 namespace ilPSP.LinSolvers.PARDISO {
+
+    /// <summary>
+    /// Compressed Sparse Row (CSR) sparse format for the Intel MKL, resp. PARDISO
+    /// </summary>
     public class Matrix {
 
         /// <summary>

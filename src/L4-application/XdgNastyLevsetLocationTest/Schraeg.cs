@@ -143,8 +143,8 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
 
             NodeSet EdgeCenter = g.Edges.GetRefElement(iEdge).Center;
             NodeSet EdgeVertices = g.Edges.GetRefElement(iEdge).Vertices;
-            g.TransformLocal2Global(EdgeCenter.GetVolumeNodeSet(g, g.Edges.Edge2CellTrafoIndex[iEdge, 0]), EdgeCenterGlobal, g.Edges.CellIndices[iEdge, 0]);
-            g.TransformLocal2Global(EdgeVertices.GetVolumeNodeSet(g, g.Edges.Edge2CellTrafoIndex[iEdge, 0]), EdgeVerticesGlobal, g.Edges.CellIndices[iEdge, 0]);
+            g.TransformLocal2Global(EdgeCenter.GetVolumeNodeSet(g, g.Edges.Edge2CellTrafoIndex[iEdge, 0], false), EdgeCenterGlobal, g.Edges.CellIndices[iEdge, 0]);
+            g.TransformLocal2Global(EdgeVertices.GetVolumeNodeSet(g, g.Edges.Edge2CellTrafoIndex[iEdge, 0], false), EdgeVerticesGlobal, g.Edges.CellIndices[iEdge, 0]);
 
 
             double phi = this.GetLevelSet(EdgeCenterGlobal[0, 0], EdgeCenterGlobal[0, 1]);

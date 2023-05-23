@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
+using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Solution.Control;
@@ -161,7 +162,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var resFields = InstantiateResidualFields();
             CurrentResidualVector = new CoordinateVector(resFields);
             foreach(var f in resFields) {
-                base.RegisterField(f/*,IOListOption.Always*/);
+                base.RegisterField(f, IOListOption.Always);
             }
 
             CreateAdditionalFields();
@@ -176,9 +177,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             // parameters
             var parameterFields = Operator.InvokeParameterFactory(CurrentState.Fields);
             Parameters = new List<DGField>();
+            Console.WriteLine(parameterFields.Count());
             foreach (var f in parameterFields) {
                 this.Parameters.Add(f);
-                base.RegisterField(f);
+                if(f != null) 
+                    // in some solvers, NULL parameters are present,
+                    // i.e. the parameter is specified by the operator,
+                    // but it is not needed in any equation component and therefore set to null.
+                    base.RegisterField(f);
             }            
 
         }
@@ -287,7 +293,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
 
             if (L == null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -320,7 +326,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
         /// status after the grid has been re-distributed.
         /// </summary>
-        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             if (Timestepping != null)   // in case of startUp backup
                 Timestepping.DataBackupBeforeBalancing(L);
             CurrentStateVector = null;
@@ -640,7 +646,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Control.AgglomerationThreshold,
                 Control.LinearSolver, Control.NonLinearSolver,
                 this.LsTrk,
-                Parameters);
+                Parameters,
+                this.QueryHandler);
             base.Timestepping = solver;
             Timestepping.RegisterResidualLogger(this.ResLogger);
             Timestepping.TimesteppingBase.Config_LevelSetConvergenceCriterion = Control.LevelSet_ConvergenceCriterion;
@@ -661,6 +668,58 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Plot using Tecplot
         /// </summary>
         protected override void PlotCurrentState(double physTime, TimestepNumber timestepNo, int superSampling = 0) {
+
+            // Cells Numbers - Local
+            var CellNumbers = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbers").SingleOrDefault();
+            if (CellNumbers == null) {
+                CellNumbers = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbers");
+                this.RegisterField(CellNumbers);
+            }
+            CellNumbers.Clear();
+            CellNumbers.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                for (int j = 0; j < Len; j++) {
+                    for (int k = 0; k < K; k++) {
+                        result[j, k] = j0 + j;
+                    }
+                }
+            }, new CellQuadratureScheme());
+
+            // Cells Numbers - Global
+            var CellNumbersGlob = this.m_RegisteredFields.Where(s => s.Identification == "CellNumbersGlobal").SingleOrDefault();
+            if (CellNumbersGlob == null) {
+                CellNumbersGlob = new SinglePhaseField(new Basis(this.GridData, 0), "CellNumbersGlobal");
+                this.RegisterField(CellNumbersGlob);
+            }
+            CellNumbersGlob.Clear();
+            CellNumbersGlob.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                for (int j = 0; j < Len; j++) {
+                    long gidx = this.GridData.CellPartitioning.i0 + j0 + j;
+                    for (int k = 0; k < K; k++) {
+                        result[j, k] = gidx;
+                    }
+                }
+            }, new CellQuadratureScheme());
+
+
+            // GlobalID
+            var GlobalID = this.m_RegisteredFields.Where(s => s.Identification == "GlobalID").SingleOrDefault();
+            if (GlobalID == null) {
+                GlobalID = new SinglePhaseField(new Basis(this.GridData, 0), "GlobalID");
+                this.RegisterField(GlobalID);
+            }
+            GlobalID.Clear();
+            GlobalID.ProjectField(1.0, delegate (int j0, int Len, NodeSet NS, MultidimensionalArray result) {
+                int K = result.GetLength(1); // No nof Nodes
+                for (int j = 0; j < Len; j++) {
+                    long gid = this.GridData.iLogicalCells.GetGlobalID(j + j0); ;
+                    for (int k = 0; k < K; k++) {
+                        result[j, k] = gid;
+                    }
+                }
+            }, new CellQuadratureScheme());
+
             if (PlotShadowfields) {
                 List<DGField> Fields2Plot = new List<DGField>();
                 foreach (var field in this.m_RegisteredFields) {
@@ -783,7 +842,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 MultigridOperatorConfig,
                 MultigridSequence,
                 Control.LinearSolver, Control.NonLinearSolver,
-                Parameters);
+                Parameters,
+                this.QueryHandler);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
             base.Timestepping = solver;

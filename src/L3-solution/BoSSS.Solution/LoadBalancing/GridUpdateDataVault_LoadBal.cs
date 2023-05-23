@@ -31,11 +31,11 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 
-namespace BoSSS.Solution {
+namespace BoSSS.Solution.LoadBalancing {
     
 
     /// <summary>
-    /// During dynamic load balancing <see cref="Application{T}.MpiRedistributeAndMeshAdapt(int, double)"/>, this is used to
+    /// During dynamic load balancing <see cref="Application{T}.MpiRedistributeAndMeshAdapt"/>, this is used to
     /// - backup/serialize objects before balancing and
     /// - restore/serialize objects after balancing.
     /// </summary>
@@ -505,7 +505,7 @@ namespace BoSSS.Solution {
         }
 
         /// <summary>
-        /// Scatters data from cells back to edges, i.e. the inverse to <see cref="GatherEdge2Cell{T}(Func{int, T})"/>
+        /// Scatters data from cells back to edges, i.e. the inverse to <see cref="GatherEdge2Cell{T}"/>
         /// </summary>
         /// <param name="Data">
         /// Function which provides the local edge index and the associated data.

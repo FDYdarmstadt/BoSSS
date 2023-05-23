@@ -432,7 +432,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             MultidimensionalArray startGlobal = MultidimensionalArray.Create(1, 1, SpatialDimension);
             context.TransformLocal2Global(
                 //MultidimensionalArray.CreateWrapper(Start, 1, SpatialDimension),
-                new NodeSet(this.m_Kref, this.Start),
+                new NodeSet(this.m_Kref, this.Start, false),
                 cell,
                 1,
                 startGlobal,
@@ -441,7 +441,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
             MultidimensionalArray endGlobal = MultidimensionalArray.Create(1, 1, SpatialDimension);
             context.TransformLocal2Global(
                 //MultidimensionalArray.CreateWrapper(End, 1, SpatialDimension),
-                new NodeSet(this.m_Kref, this.End),
+                new NodeSet(this.m_Kref, this.End, false),
                 cell,
                 1,
                 endGlobal,
@@ -716,6 +716,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                         int NO_OF_BRACKETS = 8;
                         List<double> lowerBounds = new List<double>();
                         List<double> upperBounds = new List<double>();
+                        int ZeroNodes = 0;
                         double dx2 = 2.0 / NO_OF_BRACKETS;
                         double x = xLow;
                         double fOld = Eval(x, pCoeff, coefficients.Length);
@@ -727,6 +728,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                                 lowerBounds.Add(x - dx2);
                                 upperBounds.Add(x);
                                 fOld = fNew;
+                                ZeroNodes++;
                                 continue;
                             } else {
                                 if (fNew.Abs() < Tolerance) {
@@ -735,6 +737,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                                     x += dx2;
                                     fOld = Eval(x, pCoeff, coefficients.Length);
+                                    ZeroNodes++;
                                     continue;
                                 }
                             }
@@ -748,80 +751,85 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         // Actual Newton-Raphson
                         int MAX_ITERATIONS = 50;
+                        if (ZeroNodes == NO_OF_BRACKETS) {
+                            roots = new double[2];
+                            roots[0] = -1;
+                            roots[1] = 1;
+                        } else {
+                            roots = new double[lowerBounds.Count];
+                            for (int j = 0; j < lowerBounds.Count; j++) {
+                                xLow = lowerBounds[j];
+                                xHigh = upperBounds[j];
 
-                        roots = new double[lowerBounds.Count];
-                        for (int j = 0; j < lowerBounds.Count; j++) {
-                            xLow = lowerBounds[j];
-                            xHigh = upperBounds[j];
+                                double fLeft = Eval(xLow, pCoeff, coefficients.Length);
+                                double fRight = Eval(xHigh, pCoeff, coefficients.Length);
 
-                            double fLeft = Eval(xLow, pCoeff, coefficients.Length);
-                            double fRight = Eval(xHigh, pCoeff, coefficients.Length);
-
-                            if (fLeft.Abs() < Tolerance) {
-                                roots[j] = xLow;
-                                break;
-                            }
-
-                            if (fRight.Abs() < Tolerance) {
-                                roots[j] = xHigh;
-                                break;
-                            }
-
-                            if (fLeft.Sign() == fRight.Sign()) {
-                                throw new Exception();
-                            }
-
-                            if (fLeft > 0.0) {
-                                xLow = upperBounds[j];
-                                xHigh = lowerBounds[j];
-                            }
-
-                            double root = 0.5 * (xLow + xHigh);
-                            double f;
-                            double df;
-                            Eval(root, pCoeff, coefficients.Length, out f, out df);
-
-                            double dxOld = (xHigh - xLow).Abs();
-                            double dx = dxOld;
-
-                            int i = 0;
-                            while (true) {
-                                if (i > MAX_ITERATIONS) {
-                                    throw new Exception("Max iterations exceeded");
-                                }
-
-                                double a = ((root - xHigh) * df - f) * ((root - xLow) * df - f);
-                                if (a > 0.0 || 2.0 * Math.Abs(f) > Math.Abs(dxOld * df)) {
-                                    // Newton out of range or too slow -> Bisect
-                                    dxOld = dx;
-                                    dx = 0.5 * (xHigh - xLow);
-                                    root = xLow + dx;
-                                } else {
-                                    // Take Newton step
-                                    dxOld = dx;
-                                    dx = -f / df;
-
-                                    //// Convergence acceleration according to Yao2014
-                                    //double fDelta = Eval(root + dx, pCoeff, coefficients.Length);
-                                    //dx = -(f + fDelta) / df;
-
-                                    root += dx;
-                                }
-
-                                Eval(root, pCoeff, coefficients.Length, out f, out df);
-
-                                if (Math.Abs(f) <= Tolerance) {
-                                    roots[j] = root;
+                                if (fLeft.Abs() < Tolerance) {
+                                    roots[j] = xLow;
                                     break;
                                 }
 
-                                if (f < 0.0) {
-                                    xLow = root;
-                                } else {
-                                    xHigh = root;
+                                if (fRight.Abs() < Tolerance) {
+                                    roots[j] = xHigh;
+                                    break;
                                 }
 
-                                i++;
+                                if (fLeft.Sign() == fRight.Sign()) {
+                                    throw new Exception();
+                                }
+
+                                if (fLeft > 0.0) {
+                                    xLow = upperBounds[j];
+                                    xHigh = lowerBounds[j];
+                                }
+
+                                double root = 0.5 * (xLow + xHigh);
+                                double f;
+                                double df;
+                                Eval(root, pCoeff, coefficients.Length, out f, out df);
+
+                                double dxOld = (xHigh - xLow).Abs();
+                                double dx = dxOld;
+
+                                int i = 0;
+                                while (true) {
+                                    if (i > MAX_ITERATIONS) {
+                                        throw new Exception("Max iterations exceeded");
+                                    }
+
+                                    double a = ((root - xHigh) * df - f) * ((root - xLow) * df - f);
+                                    if (a > 0.0 || 2.0 * Math.Abs(f) > Math.Abs(dxOld * df)) {
+                                        // Newton out of range or too slow -> Bisect
+                                        dxOld = dx;
+                                        dx = 0.5 * (xHigh - xLow);
+                                        root = xLow + dx;
+                                    } else {
+                                        // Take Newton step
+                                        dxOld = dx;
+                                        dx = -f / df;
+
+                                        //// Convergence acceleration according to Yao2014
+                                        //double fDelta = Eval(root + dx, pCoeff, coefficients.Length);
+                                        //dx = -(f + fDelta) / df;
+
+                                        root += dx;
+                                    }
+
+                                    Eval(root, pCoeff, coefficients.Length, out f, out df);
+
+                                    if (Math.Abs(f) <= Tolerance) {
+                                        roots[j] = root;
+                                        break;
+                                    }
+
+                                    if (f < 0.0) {
+                                        xLow = root;
+                                    } else {
+                                        xHigh = root;
+                                    }
+
+                                    i++;
+                                }
                             }
                         }
                     }

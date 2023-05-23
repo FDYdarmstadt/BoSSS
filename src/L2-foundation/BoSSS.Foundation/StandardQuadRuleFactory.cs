@@ -51,7 +51,7 @@ namespace BoSSS.Foundation.Quadrature {
         }
 
         /// <summary>
-        /// Uses <see cref="Grid.RefElement.GetQuadratureRule"/> to create a quad rule
+        /// Uses <see cref="Grid.RefElements.RefElement.GetQuadratureRule"/> to create a quad rule
         /// (i.e., the quad rule is the same for all elements of
         /// <paramref name="mask"/>)
         /// </summary>
@@ -62,7 +62,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="IQuadRuleFactory{QuadRule}.GetQuadRuleSet"/>
         /// </param>
         /// <returns>
-        /// <see cref="Grid.RefElement.GetQuadratureRule"/>
+        /// <see cref="Grid.RefElements.RefElement.GetQuadratureRule"/>
         /// </returns>
         public IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             if (mask.MaskType != MaskType.Geometrical)
@@ -113,7 +113,7 @@ namespace BoSSS.Foundation.Quadrature {
         }
 
         /// <summary>
-        /// Uses <see cref="Grid.RefElement.GetQuadratureRule"/> to create a quad rule
+        /// Uses <see cref="Grid.RefElements.RefElement.GetQuadratureRule"/> to create a quad rule
         /// (i.e., the quad rule is the same for all elements of
         /// <paramref name="mask"/>)
         /// </summary>
@@ -124,7 +124,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// <see cref="IQuadRuleFactory{QuadRule}.GetQuadRuleSet"/>
         /// </param>
         /// <returns>
-        /// <see cref="Grid.RefElement.GetQuadratureRule"/>
+        /// <see cref="Grid.RefElements.RefElement.GetQuadratureRule"/>
         /// </returns>
         public IEnumerable<IChunkRulePair<CellBoundaryQuadRule>> GetQuadRuleSet(ExecutionMask mask, int order) {
             CellBoundaryQuadRule rule = RefElement.GetBoundaryQuadRule(order);

@@ -24,12 +24,12 @@ namespace BoSSS.Solution.Utils {
 
     /// <summary>
     /// Utility class which helps the user in creating the function matrices that are needed
-    /// in an implementatation of LinearDualValueFlux;
+    /// in an implementation of LinearDualValueFlux;
     /// The user only needs to override
     /// <see cref="InnerEdgeFlux"/>
     /// and <see cref="BorderEdgeFlux_"/>)
     /// where he is able to implement the linear function as 
-    /// an algebraic formula. All function matrixes and offsets (aka. intercept) are constructed from the user-defined
+    /// an algebraic formula. All function matrices and offsets (aka. intercept) are constructed from the user-defined
     /// functions by this class.
     /// </summary>
     abstract public class LinearDualValueFlux : IEdgeForm, ISupportsJacobianComponent {

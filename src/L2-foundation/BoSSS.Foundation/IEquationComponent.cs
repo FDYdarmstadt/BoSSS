@@ -44,6 +44,29 @@ namespace BoSSS.Foundation {
         IList<string> ParameterOrdering { get; }
     }
 
+
+    /// <summary>
+    /// imposes constraints (e.g. DG polynomial degree grater than 0) on the DG polynomial degree of a discretization
+    /// </summary>
+    public interface IDGdegreeConstraint : IEquationComponent {
+
+        /// <summary>
+        /// Indicate wheter a specfic combination of DG degrees is a valid combination (e.g. with respect to numerical stability, a degree 0 is invalid for an SIP discretization)
+        /// </summary>
+        /// <param name="DomainDegreesPerVariable">
+        /// - index correlates with <see cref="IEquationComponent.ArgumentOrdering"/>
+        /// - content: DG polynomial degree for respective variable
+        /// </param>
+        /// <param name="CodomainDegree">
+        ///  DG polynomial degree for codomain respective variable
+        /// </param>        
+        /// <returns>
+        /// - true: combination of DG degrees is OK;
+        /// - false if not
+        /// </returns>
+        bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int CodomainDegree);
+    }
+
     /// <summary>
     /// Interface for equation components that require parameters which are based on the current state 
     /// </summary>
@@ -522,16 +545,7 @@ namespace BoSSS.Foundation {
         /// values of parameters in OUT - cell; values are sorted according to <see cref="IEquationComponent.ParameterOrdering"/>;
         /// </summary>
         public double[] ParameterValuesOut;
-        
-        /// <summary>
-        /// 'cj' of IN - cell: see <see cref="Grid.GridData.CellData.cj"/>.
-        /// </summary>
-        public double cj_in;
-        
-        /// <summary>
-        /// 'cj' of OUT - cell: see <see cref="Grid.GridData.CellData.cj"/>.
-        /// </summary>
-        public double cj_out;
+                
 
         /// <summary>
         /// true if integrating over an edge that is on the boundary of the subgrid
@@ -616,7 +630,10 @@ namespace BoSSS.Foundation {
         public double[] Parameters_OUT;
 
         /// <summary>
-        /// edge index (local on current MPI rank)
+        /// edge index (local on current MPI rank), i.e. 0th index into <see cref="ILogicalEdgeData.CellIndices"/>;
+        /// - the IN-cell is: <see cref="ILogicalEdgeData.CellIndices"/>[iEdge, 0] == <see cref="jCellIn"/>
+        /// - the OUT-cell is: <see cref="ILogicalEdgeData.CellIndices"/>[iEdge, 1] == <see cref="jCellOut"/>
+        /// - access via <see cref="GridDat"/>, <see cref="IGridData.iLogicalEdges"/>, <see cref="ILogicalEdgeData.CellIndices"/>
         /// </summary>
         public int iEdge;
 

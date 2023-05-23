@@ -28,11 +28,11 @@ namespace BoSSS.Solution.Timestepping {
     ///    y' = f(t,y), y(0) = y0 
     /// \f] 
     /// is defined as:
-    /// \f{align*}{
-    /// k[0] & = f(0,y0), \\
-    /// k[r] & = f(c[r],y0 + k[0]*a[r,0] + ... + k[r-1]*a[r,r-1]); \\
-    /// y1   & = y0 + (b[0]*k[0] + ... + b[s-1]*k[s-1]);
-    /// \f}
+    /// ```math
+    /// k[0] = f(0,y0), \\
+    /// k[r] = f(c[r],y0 + k[0]*a[r,0] + ... + k[r-1]*a[r,r-1]); \\
+    /// y1   = y0 + (b[0]*k[0] + ... + b[s-1]*k[s-1]);
+    /// ```
     /// </summary>
     public class RungeKuttaScheme : ICloneable {
 
@@ -422,7 +422,7 @@ namespace BoSSS.Solution.Timestepping {
         }
 
         /// <summary>
-        /// Toulorge & Desmet 2012: Optimal Runge–Kutta schemes for
+        /// Toulorge and Desmet 2012: Optimal Runge–Kutta schemes for
         /// discontinuous Galerkin space discretizations applied to wave
         /// propagation problems
         /// Scheme optimized towards size of the stability region and

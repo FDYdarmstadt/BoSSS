@@ -24,38 +24,53 @@ using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Platform;
 using BoSSS.Platform.Utils;
-
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-    public class Jacobi : ISolverSmootherTemplate, ISolverWithCallback {
+    public class Jacobi : ISubsystemSolver {
 
-        MultigridOperator m_mgop;
+        IOperatorMappingPair m_mgop;
+
+
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
 
         public void Init(MultigridOperator op) {
-            var M = op.OperatorMatrix;
-            var MgMap = op.Mapping;
-            this.m_mgop = op;
-                        
-            if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Row partitioning mismatch.");
-            if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
-                throw new ArgumentException("Column partitioning mismatch.");
-            
-            Mtx = M;
-            int L = M.RowPartitioning.LocalLength;
+            InitImpl(op);
+        }
+        void InitImpl(IOperatorMappingPair op) {
+            using(new FuncTrace()) {
+                if(object.ReferenceEquals(op, m_mgop))
+                    return; // already initialized
+                else
+                    this.Dispose();
 
-            diag = new double[L];
-            long i0 = Mtx.RowPartitioning.i0;
+                var M = op.OperatorMatrix;
+                var MgMap = op.DgMapping;
+                this.m_mgop = op;
 
-            for(int i = 0; i < L; i++) {
-                diag[i] = Mtx[i0 + i, i0 + i];
+                if(!M.RowPartitioning.EqualsPartition(MgMap))
+                    throw new ArgumentException("Row partitioning mismatch.");
+                if(!M.ColPartition.EqualsPartition(MgMap))
+                    throw new ArgumentException("Column partitioning mismatch.");
+
+                Mtx = M;
+                int L = M.RowPartitioning.LocalLength;
+
+                diag = new double[L];
+                long i0 = Mtx.RowPartitioning.i0;
+
+                for(int i = 0; i < L; i++) {
+                    diag[i] = Mtx[i0 + i, i0 + i];
+                }
             }
         }
 
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
-            get;
-            set;
-        }
+        //public Action<int, double[], double[], MultigridOperator> IterationCallback {
+        //    get;
+        //    set;
+        //}
 
         BlockMsrMatrix Mtx;
         double[] diag;
@@ -72,8 +87,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Jacobi iteration
         /// </summary>
-        /// <param name="l">muligrid level</param>
-        /// <param name="NoOfIter">number of Jacobi-Iterations</param>
         public void Solve<U, V>(U xl, V bl)
             where U : IList<double>
             where V : IList<double> 
@@ -97,12 +110,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     xl[i] = omega * ((ql[i] + diag[i] * xl[i]) / diag[i]) + (1.0 - omega) * xl[i];
                 }
 
-                if(this.IterationCallback != null) {
-                    double[] _xl = xl.ToArray();
-                    double[] _bl = bl.ToArray();
-                    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                    this.IterationCallback(iIter, _xl, _bl, this.m_mgop);
-                }
+                //if(this.IterationCallback != null) {
+                //    double[] _xl = xl.ToArray();
+                //    double[] _bl = bl.ToArray();
+                //    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
+                //    this.IterationCallback(iIter, _xl, _bl, this.m_mgop);
+                //}
             }
         }
 

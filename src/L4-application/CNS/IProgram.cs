@@ -23,7 +23,7 @@ using BoSSS.Solution.CompressibleFlowCommon;
 namespace CNS {
 
     /// <summary>
-    /// Generic interface of <see cref="Program"/>.
+    /// Generic interface of <see cref="CNSProgram"/>.
     /// </summary>
     /// <typeparam name="T">
     /// The type of the control file to be used

@@ -140,7 +140,7 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
             int[,] TrafoIdx = gridDat.Edges.Edge2CellTrafoIndex;
             MultidimensionalArray PhiEdge = MultidimensionalArray.Create(1, (int)Math.Pow(resolution, D - 1));
 
-            NodeSet EdgeNodes = new NodeSet(gridDat.Edges.EdgeRefElements[0], (int)Math.Pow(resolution, D - 1), D - 1);
+            NodeSet EdgeNodes = new NodeSet(gridDat.Edges.EdgeRefElements[0], (int)Math.Pow(resolution, D - 1), D - 1, false);
             EdgeNodes.Set(localCoordinates);
             EdgeNodes.LockForever();
 
@@ -153,11 +153,11 @@ namespace BoSSS.Solution.LevelSetTools.FastMarching.LocalMarcher {
 
                     //Build Nodeset for evaluation
                     int iTrafo = TrafoIdx[neighbor.Item2, neighbor.Item3];
-                    NodeSet CellNodes = EdgeNodes.GetVolumeNodeSet(gridDat, iTrafo);
+                    NodeSet CellNodes = EdgeNodes.GetVolumeNodeSet(gridDat, iTrafo, false);
 
                     //Evaluate and find global position
                     Phi.Evaluate(neighbor.Item1, 1, CellNodes, PhiEdge);
-                    gridDat.TransformLocal2Global(EdgeNodes.GetVolumeNodeSet(this.gridDat, iTrafo), EdgeNodesGlobal, neighbor.Item1);
+                    gridDat.TransformLocal2Global(EdgeNodes.GetVolumeNodeSet(this.gridDat, iTrafo, false), EdgeNodesGlobal, neighbor.Item1);
                     gridDat.TransformGlobal2Local(EdgeNodesGlobal, EdgeNodesLocal, jCell, null);
 
                     //Find corresponding nodes in NodeGraph and Set them. 

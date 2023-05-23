@@ -180,7 +180,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int myRank = this.MpiRank;
                 if (m_Grid.NoOfUpdateCells <= 0)
                 {
-                    //Debugger.Launch();
+                    // dbg_launch();
                     throw new ApplicationException("grid contains no cells on processor " + myRank + ";");
 
                 }
@@ -501,7 +501,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                         if (LocalVerticesIn is NodeSet) {
                             _LocalVerticesIn[iKref] = (NodeSet)LocalVerticesIn; 
                         } else {
-                            _LocalVerticesIn[iKref] = new NodeSet(Kref, LocalVerticesIn); // convert to node set
+                            _LocalVerticesIn[iKref] = new NodeSet(Kref, LocalVerticesIn, false); // convert to node set
                         }
                     }
 
@@ -937,6 +937,11 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </list>
         /// </param>
         /// <param name="jCell">local cell index of the cell to transform</param>
+        /// <param name="NewtonConvergence">
+        /// in the case of curved cells/isoparametric elements, where a Newton algorithm has to be used for the inverse transformation, 
+        /// diagnostic information whether the Newton algorithm has converged or not.
+        /// The index correlates with the vertex index in <paramref name="GlobalVerticesIn"/>.
+        /// </param>
         public void TransformGlobal2Local(MultidimensionalArray GlobalVerticesIn, MultidimensionalArray LocalVerticesOut, int jCell, bool[] NewtonConvergence) {
             int N = GlobalVerticesIn.GetLength(0); // number of nodes/points
             int D = SpatialDimension;
@@ -997,9 +1002,13 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 while (true) {
 
-                    // RES = GlobalVerticesIn - Trfao(x[i-1])
+                    // RES = GlobalVerticesIn - Trafo(x[i-1])
                     RES.Clear();
-                    NodeSet __LocalVerticesOut = new NodeSet(Kref, _LocalVerticesOut);
+                    NodeSet __LocalVerticesOut;
+                    if(LocalVerticesOut is NodeSet)
+                        __LocalVerticesOut = new NodeSet(Kref, _LocalVerticesOut, ((NodeSet)LocalVerticesOut).Reference != 0);
+                    else
+                        __LocalVerticesOut = new NodeSet(Kref, _LocalVerticesOut, false);
                     this.TransformLocal2Global(__LocalVerticesOut, jCell, 1, RES, 0);
                     RES.Scale(-1.0);
                     _RES.Acc(1.0, GlobalVerticesIn);
@@ -1129,8 +1138,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 // compute neighborship info 
                 // =========================
-
-                var CNglb = m_Grid.GetCellNeighbourship(true);
+                
+                GridCommons.Neighbour[][] CNglb = m_Grid.GetCellNeighbourship(true);
                 Debug.Assert(CNglb.Length == (J + J_BC));
 #if DEBUG
                 for(int j = 0; j < J; j++) {
@@ -1155,10 +1164,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // separate normal cells and boundary-condition -- cells
                 // =====================================================
 
-                m_Cells.CellNeighbours_global_tmp = new IEnumerable<GridCommons.Neighbour>[J];
+                m_Cells.CellNeighbours_global_tmp = new GridCommons.Neighbour[J][];
                 Array.Copy(CNglb, m_Cells.CellNeighbours_global_tmp, J);
 
-                var BcCNglb = new IEnumerable<GridCommons.Neighbour>[J_BC];
+                var BcCNglb = new GridCommons.Neighbour[J_BC][];
                 Array.Copy(CNglb, J, BcCNglb, 0, J_BC);
 
                 var NeighGlobalIdx = m_Cells.CellNeighbours_global_tmp;
@@ -1171,10 +1180,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                 Dictionary<int, List<long>> ExternalCells = new Dictionary<int, List<long>>();
 
                 for (int j = 0; j < J; j++) { // loop over cells
-                    int Nj = NeighGlobalIdx[j].Count();
+                    var NeighGlobalIdx_j = NeighGlobalIdx[j];
+                    int Nj = NeighGlobalIdx_j.Length;
 
                     for (int n = 0; n < Nj; n++) { // loop over faces
-                        var idx = NeighGlobalIdx[j].ElementAt(n).Neighbour_GlobalIndex;
+                        var idx = NeighGlobalIdx_j[n].Neighbour_GlobalIndex;
                         Debug.Assert(idx >= 0);
 
                         if (idx >= Jglob) {

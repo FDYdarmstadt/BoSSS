@@ -16,15 +16,15 @@ namespace BoSSS.Foundation.XDG.Quadrature
 {
     class LevelSetCombination
     {
-        CombinedID ID;
+        public CombinedID ID;
 
         LevelSet levelSet0;
 
         LevelSet levelSet1;
 
-        double sign0;
+        public double sign0 { get; set; }
 
-        double sign1;
+        public double sign1 { get; set; }
 
         public LevelSetCombination(CombinedID iD, LevelSet levelSet0, LevelSet levelSet1)
         {
@@ -347,33 +347,13 @@ namespace BoSSS.Foundation.XDG.Quadrature
                                 active = detector.IsActiveEdge(i);
                                 singleMask = new EdgeMask(em.GridData, singleChunk, MaskType.Geometrical);
                             }
+
+                            // detected a "special" cell, treat differently
                             if (special) {
                                 QuadRule specialRule;
-                                if (active) {
-                                    if (fallBackFactory.RefElement == scheme.ReferenceElement) {
-                                        specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
-                                    } else if (fallBackFactory.RefElement.SpatialDimension < scheme.ReferenceElement.SpatialDimension) {
-                                        // determine edge
-                                        (int iEdge, int trf) = detector.GetSpecialEdge(i);
-                                        singleMask = new EdgeMask(mask.GridData, Chunk.GetSingleElementChunk(iEdge), MaskType.Geometrical);
-                                        // get edge trafoindex
-                                        // construct edgerule
-                                        var specialRule_t = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
-                                        // transform edgerule to volume rule
-                                        specialRule = new QuadRule();
-                                        specialRule.Nodes = specialRule_t.Nodes.GetVolumeNodeSet(mask.GridData, trf);
-                                        specialRule.Weights = specialRule_t.Weights;                                       
-                                        // scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
-                                        double scale = mask.GridData.iGeomCells.GetRefElement(i).Volume / mask.GridData.iGeomCells.GetCellVolume(i) * mask.GridData.iGeomEdges.SqrtGramian[iEdge]; 
-                                        specialRule.Weights.Scale(scale); 
-                                    } else {
-                                        throw new NotImplementedException();
-                                    }
-                                } else {
-                                    // if the chunk is inactive, fill with an empty rule
-                                    specialRule = QuadRule.CreateEmpty(scheme.ReferenceElement, 1, scheme.ReferenceElement.SpatialDimension);
-                                    specialRule.Nodes.LockForever();
-                                }
+                                specialRule = GetSpecialQuadRule(i, singleMask, order, active);
+
+                                // add to List and jump to next chunk
                                 ChunkRulePair<QuadRule> pairSpecial = new ChunkRulePair<QuadRule>(singleChunk, specialRule);
                                 rule.Add(pairSpecial);
                                 continue;
@@ -385,6 +365,157 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 }
             }
             return rule;
+        }
+
+        private QuadRule GetSpecialQuadRule(int i, ExecutionMask singleMask, int order, bool activeChunk) {
+            QuadRule specialRule;
+
+            switch (scheme) {
+                case BruteForceZeroScheme b:
+                    // to avoid deadlocks? construct here
+                    specialRule = ConstructSpecialQuadRule(i, singleMask, order);
+
+                    // skip cells not in active phase, could otherwise lead to problems, when there are kinks in the levelset (i.e. different contact angle from right and left)
+                    if (activeChunk) {
+                        // do nothing, already built
+                    } else {
+                        specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                        specialRule.Nodes.LockForever();
+                    }
+                    break;
+                case BruteForceEdgePointScheme b:
+                    specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
+                    break;
+                case BruteForceEdgeScheme b: 
+                    {
+                        specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
+
+                        // remove edge scheme from "true" coinciding edge
+                        int jCell = ((GridData)singleMask.GridData).Edges.CellIndices[i, 0];
+                        int specialFace = detector.GetSpecialFace(jCell);
+                        int iFace = ((GridData)singleMask.GridData).Edges.FaceIndices[i, 0];
+                        bool coinciding = specialFace == iFace;
+                        if (coinciding) {
+                            specialRule = QuadRule.CreateEmpty(specialRule.RefElement, 1, specialRule.RefElement.SpatialDimension);
+                            specialRule.Nodes.LockForever();
+                        }
+                        break;
+                    }
+                case BruteForceSurfaceScheme b:
+                    if (fallBackFactory.RefElement == scheme.ReferenceElement) {
+                        // skip cells not in active phase
+                        if (activeChunk) {
+                            specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
+                        } else {
+                            specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                            specialRule.Nodes.LockForever();
+                        }
+                    } else {
+                        int iFace = detector.GetSpecialFace(i);
+                        int iEdge = ((GridData)singleMask.GridData).Cells.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
+
+                        int J = ((GridData)singleMask.GridData).Cells.NoOfLocalUpdatedCells;
+                        int OtherCell = ((GridData)singleMask.GridData).Edges.CellIndices[iEdge, InOrOut == 0 ? 1 : 0];
+                        long ThisCellGlob = i + ((GridData)singleMask.GridData).CellPartitioning.i0;
+                        long OtherCellGlob = OtherCell < J ? OtherCell + ((GridData)singleMask.GridData).CellPartitioning.i0 : ((GridData)singleMask.GridData).Parallel.GlobalIndicesExternalCells[OtherCell - J];
+                        bool ThisConform = InOrOut == 0 ? ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell1(iEdge) : ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell2(iEdge);
+                        bool OtherConform = InOrOut == 0 ? ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell2(iEdge) : ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell1(iEdge);
+
+                        // to avoid deadlocks? construct here
+                        specialRule = ConstructSpecialQuadRule(i, singleMask, order);
+
+                        // take conformal cell or that one with globally lower index
+                        if (ThisConform & OtherConform) {
+                            if(ThisCellGlob < OtherCellGlob) {
+                                // do nothing, already built
+                            } else {
+                                specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                                specialRule.Nodes.LockForever();
+                            }
+                        } else if (ThisConform & !OtherConform) {
+                            // do nothing, already built
+                        } else if (!ThisConform & OtherConform) {
+                            specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                            specialRule.Nodes.LockForever();
+                        } else {
+                            throw new NotSupportedException(String.Format("Error in cell {0}, {1}: Only one cell should have the hanging node.", i, OtherCell));
+                        }                        
+                    }
+                    break;
+                case BruteForceVolumeScheme b:
+                    // skip cells not in active phase
+                    if (activeChunk) {
+                        specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
+                    } else {
+                        specialRule = QuadRule.CreateEmpty(b.ReferenceElement, 1, b.ReferenceElement.SpatialDimension);
+                        specialRule.Nodes.LockForever();
+                    }
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }            
+            return specialRule;
+        }
+
+        private QuadRule ConstructSpecialQuadRule(int i, ExecutionMask singleMask, int order) {
+            QuadRule specialRule;
+            if (singleMask.GetType() != typeof(CellMask))
+                throw new NotSupportedException();
+
+            // determine face
+            int iFace = detector.GetSpecialFace(i);
+            int iEdge = ((GridData)singleMask.GridData).Cells.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
+            // select all edges, relevant in cells with hanging nodes
+            singleMask = new EdgeMask(singleMask.GridData, Chunk.GetSingleElementChunk(iEdge), MaskType.Geometrical);
+            if (FurtherEdges != null) {
+                specialRule = QuadRule.CreateEmpty(scheme.ReferenceElement, 1, scheme.ReferenceElement.SpatialDimension);
+                specialRule.Nodes.LockForever();
+
+                foreach (var edg in FurtherEdges) {
+                    singleMask = singleMask.Union(new EdgeMask(singleMask.GridData, Chunk.GetSingleElementChunk(edg), MaskType.Geometrical));
+                }
+            }
+            // construct edgerule
+            var specialRule_t = fallBackFactory.GetQuadRuleSet(singleMask, order);
+            List<NodeSet> specialNodes = new List<NodeSet>();
+            List<MultidimensionalArray> specialWeights = new List<MultidimensionalArray>();
+            int NoOfNodes = 0;
+            foreach (var crp in specialRule_t) {
+                var rule_t = crp.Rule;
+                foreach (int edg in crp.Chunk.Elements) {
+                    int trf;
+                    if (singleMask.GridData.iGeomEdges.CellIndices[edg, 0] == i) {
+                        trf = singleMask.GridData.iGeomEdges.Edge2CellTrafoIndex[edg, 0];
+                    } else {
+                        trf = singleMask.GridData.iGeomEdges.Edge2CellTrafoIndex[edg, 1];
+                    }
+                    // transform edgerule to volume rule
+                    var nodes_t = rule_t.Nodes.GetVolumeNodeSet(singleMask.GridData, trf, false);
+                    var weights_t = rule_t.Weights;
+
+                    // scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
+                    double scale = singleMask.GridData.iGeomCells.GetRefElement(i).Volume / singleMask.GridData.iGeomCells.GetCellVolume(i) * singleMask.GridData.iGeomEdges.SqrtGramian[edg];
+                    weights_t.Scale(scale);
+
+                    specialNodes.Add(nodes_t);
+                    specialWeights.Add(weights_t);
+                    NoOfNodes += nodes_t.NoOfNodes;
+                }
+            }
+            MultidimensionalArray specialNodes_t = MultidimensionalArray.Create(NoOfNodes, singleMask.GridData.SpatialDimension);
+            MultidimensionalArray specialWeights_t = MultidimensionalArray.Create(NoOfNodes);
+            int offset = 0;
+            for (int j = 0; j < specialNodes.Count; j++) {
+                int count = specialNodes[j].Lengths[0];
+                specialNodes_t.ExtractSubArrayShallow(new int[] { offset, 0 }, new int[] { offset + count - 1, singleMask.GridData.SpatialDimension - 1 }).Acc(1.0, specialNodes[j]);
+                specialWeights_t.ExtractSubArrayShallow(new int[] { offset }, new int[] { offset + count - 1 }).Acc(1.0, specialWeights[j]);
+                offset += count;
+            }
+            specialRule = new QuadRule();
+            specialRule.Nodes = new NodeSet(scheme.ReferenceElement, specialNodes_t, true);
+            specialRule.Weights = specialWeights_t;
+
+            return specialRule;
         }
     }
 }

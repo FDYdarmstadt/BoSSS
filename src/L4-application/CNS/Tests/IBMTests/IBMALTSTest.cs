@@ -422,7 +422,7 @@ namespace CNS.Tests.IBMTests {
             c.ProjectName = "IBM ALTS Tests";
             c.SessionName = String.Format("IBM ALTS test (contact discontinuity), levelSetPosition={0}, ALTS {1}/{2}", levelSetPosition, explicitOrder, numOfClusters);
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -432,7 +432,7 @@ namespace CNS.Tests.IBMTests {
         private static Dictionary<string, object> SetupIBMShockTubeRotatedTest() {
             IBMControl c = IBMShockTubeRotated();
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 

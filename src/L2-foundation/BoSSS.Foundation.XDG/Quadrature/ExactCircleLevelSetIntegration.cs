@@ -70,7 +70,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                     if (alpha_0 == alpha_1) {
                         QuadRule emptyRule = new QuadRule();
-                        emptyRule.Nodes = new NodeSet(this.RefElement, new double[1,2]);
+                        emptyRule.Nodes = new NodeSet(this.RefElement, new double[1,2], false);
                         emptyRule.Weights = MultidimensionalArray.Create(1);
                         emptyRule.OrderOfPrecision = 123;
                         ret.Add(new ChunkRulePair<QuadRule>(new Chunk() { i0  = jCell, Len = 1 }, emptyRule));
@@ -82,7 +82,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         var GlobNodes = MultidimensionalArray.Create(da1Drule.NoOfNodes, 2);
                         var LocNodes = MultidimensionalArray.Create(1, da1Drule.NoOfNodes, 2);
-                        Bogenrule.Nodes = new NodeSet(this.RefElement, da1Drule.NoOfNodes, 2);
+                        Bogenrule.Nodes = new NodeSet(this.RefElement, da1Drule.NoOfNodes, 2, true);
 
                         for (int k = 0; k < da1Drule.NoOfNodes; k++) {
                             double beta = da1Drule.Nodes[k, 0];

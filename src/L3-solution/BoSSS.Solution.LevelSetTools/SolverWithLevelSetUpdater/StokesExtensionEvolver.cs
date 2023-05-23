@@ -1,5 +1,7 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
+using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Solution.TimeStepping;
@@ -29,7 +31,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, Basis extVelBasis, bool fullStokes = true) {
+        public StokesExtensionEvolver(string levelSetName, int hMForder, int D, IncompressibleBoundaryCondMap bcMap, double AgglomThreshold, IGridData grd, bool fullStokes = true, int ReInitPeriod = 0) {
             for(int d = 0; d < D; d++) {
                 if(!bcMap.bndFunction.ContainsKey(NSECommon.VariableNames.Velocity_d(d)))
                     throw new ArgumentException($"Missing boundary condition for variable {NSECommon.VariableNames.Velocity_d(d)}.");
@@ -41,13 +43,14 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             this.levelSetName = levelSetName;
             this.bcmap = bcMap;
             parameters = NSECommon.VariableNames.AsLevelSetVariable(this.levelSetName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)).ToArray();
+            this.m_grd = grd;
             timeStepOrder = 2;
-            extensionVelocity = new SinglePhaseField[D];
-            for (int i = 0; i < D; ++i) {
-                extensionVelocity[i] = new SinglePhaseField(extVelBasis, $"ExtensionVelocity_{levelSetName}_X{i}");
-            }
+
+            this.ReInit_Period = ReInitPeriod;
+            ReInit_Control = new EllipticReInitAlgoControl();
         }
 
+        IGridData m_grd;
         int SpatialDimension;
         double AgglomThreshold;
         int m_HMForder;
@@ -68,7 +71,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         public IList<string> VariableNames => null;
 
         // nothing to do
-        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => null;
+        public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => Reinitialize;
 
 
         /// <summary>
@@ -79,8 +82,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             get {
                 var Ret = new Dictionary<string, DGField>();
 
-                foreach(var f in extensionVelocity)
-                    Ret.Add(f.Identification, f);
+                if(extensionVelocity != null) {
+                    foreach(var f in extensionVelocity)
+                        Ret.Add(f.Identification, f);
+                }
 
                 return Ret;
             }
@@ -134,12 +139,18 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 int D = levelSet.Tracker.GridDat.SpatialDimension;
 
                 SinglePhaseField[] meanVelocity = D.ForLoop(
-                    d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]);
-                foreach(var f in extensionVelocity)
-                    f.Clear();
+                    d => (SinglePhaseField)ParameterVarFields[BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(levelSetName, BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d))]
+                    );
 
-                var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
-                ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
+                if(extensionVelocity == null) {
+                    extensionVelocity = D.ForLoop(d => new SinglePhaseField(meanVelocity[d].Basis, $"ExtensionVelocity[{d}]"));
+                } else {
+                    foreach(var f in extensionVelocity)
+                        f.Clear();
+                }
+
+            var ExtVelBuilder = new StokesExtension.StokesExtension(D, this.bcmap, this.m_HMForder, this.AgglomThreshold, fullStokes);
+            ExtVelBuilder.SolveExtension(levelSet.LevelSetIndex, levelSet.Tracker, meanVelocity, extensionVelocity);
 
                 if(timeStepper == null) {
                     //timeStepper = InitializeAdamsBashforth(levelSet.DGLevelSet, extensionVelocity);
@@ -153,6 +164,47 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                 tr.Info("time in LS evolver: " + timeStepper.Time );
             }
+        }
+
+
+
+        private EllipticReInitAlgoControl ReInit_Control;
+        private int ReInit_TimestepIndex = 0;
+        private int ReInit_Period = 0;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="phaseInterface"></param>
+        /// <param name="time"></param>
+        /// <param name="dt"></param>
+        /// <param name="incremental"></param>
+        /// <param name="DomainVarFields"></param>
+        /// <param name="ParameterVarFields"></param>
+        public void Reinitialize(
+            DualLevelSet phaseInterface,
+            double time,
+            double dt,
+            bool incremental,
+            IReadOnlyDictionary<string, DGField> DomainVarFields,
+            IReadOnlyDictionary<string, DGField> ParameterVarFields) {
+
+            // after level-set evolution and for initializing non-signed-distance level set fields
+            if(ReInit_Period > 0 && ReInit_TimestepIndex % ReInit_Period == 0) {
+
+                Console.WriteLine("Performing ReInit");
+                ReInit_Control.Potential = ReInitPotential.BastingSingleWell;
+                EllipticReInit.EllipticReInit ReInitPDE = new EllipticReInit.EllipticReInit(phaseInterface.Tracker, ReInit_Control, phaseInterface.DGLevelSet);
+                ReInitPDE.ReInitialize(); // Restriction: phaseInterface.Tracker.Regions.GetCutCellSubGrid());
+
+                //FastMarchReinit FastMarchReinitSolver = new FastMarchReinit(phaseInterface.DGLevelSet.Basis);
+                //CellMask Accepted = phaseInterface.Tracker.Regions.GetCutCellMask();
+                ////CellMask ActiveField = phaseInterface.Tracker.Regions.GetNearFieldMask(1);
+                //CellMask NegativeField = phaseInterface.Tracker.Regions.GetSpeciesMask("A");
+                //FastMarchReinitSolver.FirstOrderReinit(phaseInterface.DGLevelSet, Accepted, NegativeField, null);
+            }
+
+            ReInit_TimestepIndex++;
         }
     }
 }

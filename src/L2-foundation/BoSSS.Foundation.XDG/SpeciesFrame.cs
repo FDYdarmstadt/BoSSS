@@ -29,14 +29,14 @@ namespace BoSSS.Foundation.XDG {
     
     
     /// <summary>
-    /// common functionality for the framing classes <see cref="BoSSS.Foundation.XDG.XSpatialOperator.SpeciesFrameMatrix{M}"/> and <see cref="BoSSS.Foundation.XDG.XSpatialOperator.SpeciesFrameVector{V}"/>.
+    /// common functionality for the framing classes <see cref="BoSSS.Foundation.XDG.XSpatialOperatorMk2.SpeciesFrameMatrix{M}"/> and <see cref="BoSSS.Foundation.XDG.XSpatialOperatorMk2.SpeciesFrameVector{V}"/>.
     /// </summary>
     public sealed class FrameBase {
 
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="lsTrk">level set tracker</param>
+        /// <param name="regions">l</param>
         /// <param name="spcId">species which should be framed</param>
         /// <param name="__FullMap"></param>
         /// <param name="SupportExternal">
@@ -107,7 +107,7 @@ namespace BoSSS.Foundation.XDG {
 
         void Setup_Frame2Full() {
             //if (FrameMap.Rank == 0)
-            //    Debugger.Launch();
+            //     dbg_launch();
             //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
             //FrameMap.GridDat.Cells.NoOfLocalUpdatedCells
 

@@ -104,12 +104,12 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 { -2.0 * Math.Sqrt(3.0) / 3.0, -2.0 / 3.0 }, 
                 { 2.0 * Math.Sqrt(3.0) / 3.0, -2.0 / 3.0 }
                 
-                // edge length woud be 2
+                // edge length would be 2
                 //{ 2 / Math.Sqrt(2), 0 },
                 //{-1, 1/Math.Sqrt(3) },
                 //{1, 1/Math.Sqrt(3) }
             };
-            this.m_Vertices = new NodeSet(this, 3, 2);
+            this.m_Vertices = new NodeSet(this, 3, 2, false);
             this.m_Vertices.InitializeFrom(_Vertices);
             this.Vertices.LockForever();
 
@@ -130,7 +130,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             {
                 var qrTemp = QuadRuleResource.DecodeFromBase64(Resource.TriangleQuadRules_bin);
                 foreach(var q in qrTemp) {
-                    var realQr = QuadRule.CreateEmpty(this, q.Item2.GetLength(0), this.SpatialDimension);
+                    var realQr = QuadRule.CreateEmpty(this, q.Item2.GetLength(0), this.SpatialDimension, true);
                     realQr.Nodes.Set2DArray(q.Item2);
                     realQr.Weights.SetVector(q.Item3);
                     realQr.OrderOfPrecision = q.Item1;
@@ -14120,10 +14120,10 @@ namespace BoSSS.Foundation.Grid.RefElements {
         }
 
         /// <summary>
-        /// transforms some vertices from local edge coordinates to the local coorinate system of this
+        /// transforms some vertices from local edge coordinates to the local coordinate system of this
         /// simplex
         /// </summary>
-        /// <param name="FaceIndex">specifyes the face</param>
+        /// <param name="FaceIndex">specifies the face</param>
         /// <param name="EdgeVertices">
         /// Input; Vertices in the local coordinate system of the edge;
         /// 1st index: vertex index; 2nd index: spatial coordinate index, the only valid value is 0;
@@ -14181,7 +14181,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
 
         /// <summary>
-        /// partitions this triangle into 4 subtringles of equal size;
+        /// partitions this triangle into 4 subtriangles of equal size;
         /// </summary>
         /// <returns></returns>
         public override AffineTrafo[] GetSubdivision() {
@@ -14299,7 +14299,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
 
                         int K = 9;
-                        InterpolationNodes = new NodeSet(this, K, D);
+                        InterpolationNodes = new NodeSet(this, K, D, true);
                         InterpolationNodes.Set(_InterpolationNodes.ExtractSubArrayShallow(new int[] { 1, 0 }, new int[] { _K - 1, D - 1 }));
                         InterpolationNodes.LockForever();
                         InterpolationPolynomials = new PolynomialList(_InterpolationPolynomials.Skip(1).Take(K));
@@ -14334,7 +14334,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
 
                         int K = 12;
-                        InterpolationNodes = new NodeSet(this, K, D);
+                        InterpolationNodes = new NodeSet(this, K, D, true);
                         InterpolationNodes.Set(_InterpolationNodes.ExtractSubArrayShallow(new int[] { 3, 0 }, new int[] { _K - 1, D - 1 }));
                         InterpolationNodes.LockForever();
                         InterpolationPolynomials = new PolynomialList(_InterpolationPolynomials.Skip(3).Take(K));
@@ -14365,7 +14365,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
 
                         int K = 15;
-                        InterpolationNodes = new NodeSet(this, K, D);
+                        InterpolationNodes = new NodeSet(this, K, D, true);
                         InterpolationNodes.Set(_InterpolationNodes.ExtractSubArrayShallow(new int[] { 6, 0 }, new int[] { _K - 1, D - 1 }));
                         InterpolationNodes.LockForever();
                         InterpolationPolynomials = new PolynomialList(_InterpolationPolynomials.Skip(6).Take(K));

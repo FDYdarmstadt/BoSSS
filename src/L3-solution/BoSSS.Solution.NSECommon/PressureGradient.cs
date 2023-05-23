@@ -34,6 +34,9 @@ namespace BoSSS.Solution.NSECommon {
     /// </remarks>
     public class PressureGradientLin_d : LinearFlux {
 
+        /// <summary>
+        /// spatial direction of derivative
+        /// </summary>
         protected int m_d = -1;
 
         BoundaryCondMap<IncompressibleBcType> m_bcmap;
@@ -56,6 +59,18 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         protected Func<double[], double, double>[] pressureFunction;
 
+        //double Stress(double[] X, int d) {
+        //    double x = X[0];
+        //    double y = X[1];
+        //    double factor = -1;
+        //    switch(d) {
+        //        dfdfsfew
+        //        case 0: return (-2.0 * Math.Exp(-1) * (y * Math.Cos(y) + 2 * Math.Sin(y)))*factor;
+        //        case 1: return (-2 * Math.Exp(-1) * (Math.Cos(y) - y * Math.Sin(y)))*factor;
+        //        default: throw new ArgumentOutOfRangeException();
+        //    }
+        //}
+
         /// <summary>
         /// A central difference at Dirichlet boundary regions (<see cref="IncompressibleBcType.Pressure_Outlet"/>),
         /// an open end everywhere else.
@@ -67,9 +82,10 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.Pressure_Dirichlet:
                 case IncompressibleBcType.Pressure_Outlet:
                 case IncompressibleBcType.ScalarDirichlet_PressureOutlet:
-                    // Atmospheric outlet/pressure outlet: inhom. Dirichlet
-                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    return pressureFunction[inp.EdgeTag](inp.X, inp.time) * inp.Normal[m_d];
+                // Atmospheric outlet/pressure outlet: inhom. Dirichlet
+                // ++++++++++++++++++++++++++++++++++++++++++++++++++++
+                return pressureFunction[inp.EdgeTag](inp.X, inp.time) * inp.Normal[m_d];
+                //return Stress(inp.X, m_d) * inp.Normal[m_d];
 
                 case IncompressibleBcType.Outflow:
                     throw new ArithmeticException("Tests on channel flow indicate that b.c. " + edgType + " is ill-posed, fk 25may16.");

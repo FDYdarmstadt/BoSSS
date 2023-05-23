@@ -63,7 +63,7 @@ namespace CNS.Tests.MovingIBMTests {
             c.dtMin = 3.01E-2;
             c.dtMax = c.dtMin;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -87,7 +87,7 @@ namespace CNS.Tests.MovingIBMTests {
             c.dtMin = 1.0E-2;
             c.dtMax = c.dtMin;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -111,7 +111,7 @@ namespace CNS.Tests.MovingIBMTests {
             c.dtMin = 3.01E-2;
             c.dtMax = c.dtMin;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -135,7 +135,7 @@ namespace CNS.Tests.MovingIBMTests {
             c.dtMin = 1.01E-2;
             c.dtMax = c.dtMin;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -159,7 +159,7 @@ namespace CNS.Tests.MovingIBMTests {
             c.dtMin = 3.01E-2;
             c.dtMax = c.dtMin;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -186,7 +186,7 @@ namespace CNS.Tests.MovingIBMTests {
             // Don't cross cell border
             c.Endtime = 0.5;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -211,7 +211,7 @@ namespace CNS.Tests.MovingIBMTests {
             c.dtMin = 3.01E-2;
             c.dtMax = c.dtMin;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -235,7 +235,7 @@ namespace CNS.Tests.MovingIBMTests {
             c.dtMin = 1.0E-2;
             c.dtMax = c.dtMin;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 

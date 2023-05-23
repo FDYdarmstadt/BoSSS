@@ -108,7 +108,6 @@ namespace BoSSS.Foundation.IO {
             bool found;
             IGrid grid = grd;
             Guid GridGuid;
-
             if(!force) {
                 GridGuid = database.Controller.DBDriver.SaveGridIfUnique(ref grid, out found, database);
                 if(found) {
@@ -233,7 +232,7 @@ namespace BoSSS.Foundation.IO {
             }
 
             if (projectName == null) {
-                dummySession.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
+                dummySession.ProjectName = BoSSSshell.WorkflowMgm.CurrentProject;
             } else {
                 dummySession.ProjectName = projectName;
             }

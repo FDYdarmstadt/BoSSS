@@ -471,6 +471,8 @@ namespace BoSSS.Foundation {
             } else {
                 m_ParameterVar = new string[0];
             }
+            // foreach (var elem in m_ParameterVar)
+            //     Console.WriteLine(elem);
 
             m_CodomainVar = new string[__CoDomainVar.Count];
             for(int i = 0; i < m_CodomainVar.Length; i++) {
@@ -494,9 +496,9 @@ namespace BoSSS.Foundation {
         /// if a component has an illegal configuration (e.g. it's arguments
         /// (<see cref="BoSSS.Foundation.IEquationComponent.ArgumentOrdering"/>) are not contained
         /// in the domain variable list (<see cref="DomainVar"/>)), an 
-        /// exception is thrown;
+        /// exception is thrown, if <paramref name="allowVarAddition"/> is set true, see also <see cref="ISpatialOperator.Commit(bool)"/>
         /// </remarks>
-        internal protected void Verify() {
+        internal protected void Verify(bool allowVarAddition) {
             if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
                 throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
 
@@ -504,11 +506,14 @@ namespace BoSSS.Foundation {
                 foreach(IEquationComponent c in comps) {
                     foreach(string varname in c.ArgumentOrdering) {
                         if(Array.IndexOf<string>(m_DomainVar, varname) < 0) {
-                            //throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on variable \""
-                            //    + varname
-                            //    + "\", but this name is not a member of the domain variable list.");
-
-                            m_DomainVar = m_DomainVar.Cat(varname);
+                            if (allowVarAddition)
+                                m_DomainVar = m_DomainVar.Cat(varname);
+                            else {
+                                throw new ApplicationException("configuration error in spatial differential operator; equation component " + c.ToString() + " depends on variable \""
+                                    + varname
+                                    + "\", but this name is not a member of the domain variable list: "
+                                    + m_DomainVar.ToConcatString("[", ", ", "]"));
+                            }
 
                         }
                     }
@@ -516,11 +521,15 @@ namespace BoSSS.Foundation {
                     if(c.ParameterOrdering != null) {
                         foreach(string varname in c.ParameterOrdering) {
                             if(Array.IndexOf<string>(m_ParameterVar, varname) < 0) {
-                                //throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on (parameter) variable \""
-                                //    + varname
-                                //    + "\", but this name is not a member of the parameter variable list.");
-
-                                m_ParameterVar = m_ParameterVar.Cat(varname);
+                                if (allowVarAddition)
+                                    m_ParameterVar = m_ParameterVar.Cat(varname);
+                                else {
+                                    throw new ApplicationException("configuration error in spatial differential operator; equation component " + c.ToString() + " depends on (parameter) variable \""
+                                        + varname
+                                        + "\", but this name is not a member of the parameter variable list: "
+                                        + m_ParameterVar.ToConcatString("[", ", ", "]")
+                                        ); ;
+                                }
                             }
                         }
                     }
@@ -581,7 +590,7 @@ namespace BoSSS.Foundation {
                 throw new ArgumentException("the provided variable name \""
                     + CodomVar
                     + "\" is not a member of the Codomain variable list of this spatial differential operator");
-            Verify();
+            Verify(false);
 
             var comps = m_EquationComponents[CodomVar];
             List<string> ret = new List<string>();
@@ -646,8 +655,8 @@ namespace BoSSS.Foundation {
         /// Can be called only once in the lifetime of this object.
         /// After calling this method, no adding/removing of equation components is possible.
         /// </summary>
-        public virtual void Commit() {
-            Verify();
+        public virtual void Commit(bool allowVarAddition = true) {
+            Verify(allowVarAddition);
 
             if(TemporalOperator != null) {
                 TemporalOperator.Commit();
@@ -922,9 +931,7 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// returns true, if any of the equation components associated with 
-        /// variable <paramref name="CodomVar"/> contains nonlinear integrands
-        /// on edges (these are objects that implement <see cref="INonlinearFlux"/>,
-        /// <see cref="INonlinearFluxEx"/> or <see cref="IDualValueFlux"/>);
+        /// variable <paramref name="CodomVar"/> contains nonlinear integrands on edges.
         /// </summary>
         /// <param name="CodomVar">
         /// identifies the codomain variable name, must be a member of
@@ -1003,8 +1010,6 @@ namespace BoSSS.Foundation {
         /// are assumed to be 0.0;
         /// If the differential operator contains no parameters, this argument can be null;
         /// </param>
-        /// <param name="edgeQrCtx">optional quadrature instruction for edges</param>
-        /// <param name="volQrCtx">optional quadrature instruction for volumes/cells</param>
         public virtual IEvaluatorNonLin GetEvaluatorEx(
             IList<DGField> DomainFields, IList<DGField> ParameterMap, UnsetteledCoordinateMapping CodomainVarMap) //
         {
@@ -1112,6 +1117,14 @@ namespace BoSSS.Foundation {
                     DomainMapping = DomainVarMap;
                     m_Parameters = (ParameterMap != null) ? ParameterMap.ToArray() : new DGField[0];
                     if(m_Parameters.Length != owner.ParameterVar.Count) {
+                        Console.WriteLine("m_Parameters: " + m_Parameters.Length);
+                        foreach (var elem in m_Parameters){
+                            Console.WriteLine(elem.Identification);
+                        }
+                        Console.WriteLine("owner.ParameterVar: " + owner.ParameterVar.Count);
+                        foreach (var elem in owner.ParameterVar){
+                            Console.WriteLine(elem);
+                        }
                         throw new ArgumentException("wrong number of parameter variables provided.");
                     }
 
@@ -1541,8 +1554,8 @@ namespace BoSSS.Foundation {
             }
 
             /// <summary>
-            /// evaluates the differential operator (<see cref="Owner"/>)
-            /// for the domain variables/fields in <see cref="DomainMapping"/>, i.e.
+            /// evaluates the differential operator (<see cref="EvaluatorBase.Owner"/>)
+            /// for the domain variables/fields in <see cref="EvaluatorBase.DomainMapping"/>, i.e.
             /// performs the operation
             /// <paramref name="output"/> = <paramref name="output"/>*<paramref name="beta"/> + Op(%)*<paramref name="alpha"/>
             /// </summary>
@@ -1553,7 +1566,7 @@ namespace BoSSS.Foundation {
             /// is <b>ACCUMULATED</b> here;
             /// It's up to the user to ensure that this array is initialized to 0.0,
             /// if necessary;
-            /// Indices into this vector are computed according to <see cref="CodomainMapping"/>;
+            /// Indices into this vector are computed according to <see cref="EvaluatorBase.CodomainMapping"/>;
             /// </param>
             /// <param name="outputBndEdge">
             /// Some additional output vector for boundary fluxes, used only by the local time stepping
@@ -2207,7 +2220,7 @@ namespace BoSSS.Foundation {
                         if(DeadlockWatch >= 1000)
                             throw new ApplicationException("Deadlock in parallel coloring.");
                         continue;
-                        //Debugger.Launch();
+                        // dbg_launch();
                     }
 
 
@@ -2218,7 +2231,7 @@ namespace BoSSS.Foundation {
 
                     if(gDat.MpiSize > 1) {
 
-                        //Debugger.Launch();
+                        // dbg_launch();
 
                         var ExchData = new Dictionary<int, List<Tuple<long, long>>>();
 
@@ -2398,7 +2411,7 @@ namespace BoSSS.Foundation {
 
                     if(gDat.MpiSize > 1) {
 
-                        //Debugger.Launch();
+                        // dbg_launch();
 
                         var ExchData = new Dictionary<int, List<Tuple<int, int>>>();
 
@@ -2630,7 +2643,7 @@ namespace BoSSS.Foundation {
                 for(int iCellPass = 0; iCellPass < ColorLists.Length; iCellPass++) { // loop over all cell lists...
                     int[] CellList = this.ColorLists[iCellPass];
                     int[] ExtCellList = this.ExternalColorLists[iCellPass];
-
+                    
                     int[] CoordCounter = new int[JE];
                     int[] FieldCounter = new int[JE];
 
@@ -2800,8 +2813,8 @@ namespace BoSSS.Foundation {
                                     continue; // external cell; should be treated on other proc.
 
 
-                                int i0Row = domMap.LocalUniqueCoordinateIndex(0, jRow, 0);
-                                int iERow = domMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
+                                int i0Row = codMap.LocalUniqueCoordinateIndex(0, jRow, 0);
+                                int iERow = codMap.LocalUniqueCoordinateIndex(NoOfCodFields - 1, jRow, lastCodB.GetLength(jRow) - 1);
 
                                 var Block = Buffer.ExtractSubArrayShallow(new int[] { i0Row, 0 }, new int[] { iERow, iECol - i0Col });
 
@@ -2961,8 +2974,42 @@ namespace BoSSS.Foundation {
             JacobianOp.OperatorCoefficientsProvider = this.OperatorCoefficientsProvider;
             JacobianOp.m_HomotopyUpdate.AddRange(this.m_HomotopyUpdate);
             JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
-            JacobianOp.Commit();
+            JacobianOp.Commit(false);
             return JacobianOp;
+        }
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.IsValidDomainDegreeCombination"/>
+        /// </summary>
+        public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable) {
+            if (!this.IsCommitted)
+                throw new InvalidOperationException("Invalid prior to calling Commit().");
+
+            if (DomainDegreesPerVariable.Length != this.DomainVar.Count)
+                throw new ArgumentException("Mismatch between length of input and number of domain variables.");
+            if (CodomainDegreesPerVariable.Length != this.CodomainVar.Count)
+                throw new ArgumentException("Mismatch between length of input and number of codomain variables.");
+
+            int i = 0;
+            foreach(var cod in this.CodomainVar) {
+                foreach(var comp in this.EquationComponents[cod]) {
+                    if(comp is IDGdegreeConstraint dgconstr) {
+                        int[] argDegrees;
+                        if (comp.ArgumentOrdering != null)
+                            argDegrees = comp.ArgumentOrdering.Select(argName => DomainDegreesPerVariable[this.DomainVar.IndexWhere(domName => domName == argName)]).ToArray();
+                        else
+                            argDegrees = new int[0];
+
+                        if (dgconstr.IsValidDomainDegreeCombination(argDegrees, CodomainDegreesPerVariable[i]) == false)
+                            return false;
+                    } 
+                }
+
+                i++;
+            }
+
+
+            return true;
         }
 
         /// <summary>

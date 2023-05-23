@@ -276,7 +276,7 @@ namespace BoSSS.Foundation.Comm {
                             if (_vector != null)
                                 insertAddr = (IntPtr)(pCA + iInsert * N * sz);
                             else {
-                                RcvBufferPin[i] = GCHandle.Alloc(RcvBuffer[i]);
+                                RcvBufferPin[i] = GCHandle.Alloc(RcvBuffer[i], GCHandleType.Pinned);
                                 insertAddr = Marshal.UnsafeAddrOfPinnedArrayElement(RcvBuffer[i], 0);
                             }
 

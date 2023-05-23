@@ -166,10 +166,8 @@ namespace BoSSS.Foundation {
 
         /// <summary>
         /// the DG basis functions for the reference elements
-        /// <list type="bullet">
-        ///     <item>1st index: reference element index (see <see cref="BoSSS.Foundation.Grid.GridCommons.RefElements"/>)</item>
-        ///     <item>2nd index: Polynomial index</item>
-        /// </list>
+        /// - 1st index: reference element index (see <see cref="IGeometricalCellsData.RefElements"/>)
+        /// - 2nd index: Polynomial index
         /// </summary>
         public IList<PolynomialList> Polynomials {
             get;
@@ -240,8 +238,8 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// if <see cref="MinimalLength"/>==<see cref="MaximalLength"/>,
-        /// this value; otherwise an exception.
+        /// the number of degrees-of-freedom per cell, 
+        /// if <see cref="MinimalLength"/>==<see cref="MaximalLength"/>; otherwise an exception.
         /// </summary>
         public int Length {
             get {

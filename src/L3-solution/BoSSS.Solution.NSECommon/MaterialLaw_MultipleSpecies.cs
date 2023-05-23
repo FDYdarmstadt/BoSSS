@@ -201,7 +201,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
 
                 case CpCalculationMode.constant:
-                    cp = 1.0; // => cpRef/cpRef
+                    cp = ConstantHeatCapacityValue; // => cpRef/cpRef
                     break;
 
                 default:
@@ -217,14 +217,7 @@ namespace BoSSS.Solution.NSECommon {
             }
         }
 
-        /// <summary>
-        /// The mass diffusivity,D  multiplied by rho.
-        /// </summary>
-        /// <param name="phi"></param>
-        /// <returns></returns>
-        public virtual double GetDiffusivity(double phi) {
-            return GetViscosity(phi);
-        }
+   
 
         /// <summary>
         ///
@@ -235,6 +228,23 @@ namespace BoSSS.Solution.NSECommon {
         ///
         /// </summary>
         public double ConstantViscosityValue { get; set; } = 1.0;
+
+
+        /// <summary>
+        ///
+        /// </summary>
+        public double ConstantHeatConductivityValue { get; set; } = 1.0;
+        /// <summary>
+        ///
+        /// </summary>
+        public double ConstantDiffusivityFactorVal { get; set; } = 1.0;
+
+        /// <summary>
+        ///
+        /// </summary>
+        public double ConstantHeatCapacityValue { get; set; } = 1.0;
+
+
 
         /// <summary>
         /// Dimensionless Sutherland's law.
@@ -257,7 +267,6 @@ namespace BoSSS.Solution.NSECommon {
                         break;
                     }
                 case MaterialParamsMode.PowerLaw: {
-                        //double exponent = 0.7;
                         double exponent = 2.0 / 3.0;//
                         visc = Math.Pow(phi, exponent);
                         break;
@@ -276,11 +285,65 @@ namespace BoSSS.Solution.NSECommon {
         /// <param name="phi"></param>
         /// <returns></returns>
         public virtual double GetHeatConductivity(double phi) {
-            double res = GetViscosity(phi);
-            if (double.IsNaN(res) || double.IsInfinity(res))
-                throw new ArithmeticException("Invalid value for viscosity: " + res);
-            return res;
+            phi = Math.Max(0.01, phi);
+            double visc = 0; // nondimensional heat conductivity
+            switch (this.MatParamsMode) {
+                case MaterialParamsMode.Constant: {
+                        visc = ConstantHeatConductivityValue;
+                        break;
+                    }
+                case MaterialParamsMode.Sutherland: {
+                        double S = 110.5;
+                        visc = Math.Pow(phi, 1.5) * (1 + S / T_RefSutherland) / (phi + S / T_RefSutherland);
+                        break;
+                    }
+                case MaterialParamsMode.PowerLaw: {
+                        //double exponent = 0.7;
+                        double exponent = 2.0 / 3.0;//
+                        visc = Math.Pow(phi, exponent);
+                        break;
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+            if (double.IsNaN(visc) || double.IsInfinity(visc) || visc < 0)
+                throw new ArithmeticException("Invalid value for viscosity: " + visc);
+            return visc;
         }
+
+
+        /// <summary>
+        /// The mass diffusivity,D  multiplied by rho.
+        /// </summary>
+        /// <param name="phi"></param>
+        /// <returns></returns>
+        public virtual double GetDiffusivity(double phi) {
+            phi = Math.Max(0.01, phi);
+            double visc = 0; // nondimensional heat conductivity
+            switch (this.MatParamsMode) {
+                case MaterialParamsMode.Constant: {
+                        visc = ConstantDiffusivityFactorVal;
+                        break;
+                    }
+                case MaterialParamsMode.Sutherland: {
+                        double S = 110.5;
+                        visc = Math.Pow(phi, 1.5) * (1 + S / T_RefSutherland) / (phi + S / T_RefSutherland);
+                        break;
+                    }
+                case MaterialParamsMode.PowerLaw: {
+                        //double exponent = 0.7;
+                        double exponent = 2.0 / 3.0;//
+                        visc = Math.Pow(phi, exponent);
+                        break;
+                    }
+                default:
+                    throw new NotImplementedException();
+            }
+            if (double.IsNaN(visc) || double.IsInfinity(visc) || visc < 0)
+                throw new ArithmeticException("Invalid value for viscosity: " + visc);
+            return visc;
+        }
+
 
         /// <summary>
         /// Returns thermodynamic pressure as function of inital mass and temperature.

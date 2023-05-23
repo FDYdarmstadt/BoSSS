@@ -77,7 +77,7 @@ namespace BoSSS.Solution.TimeStepping {
         /// </summary>
         /// <remarks>
         /// If boundary conditions are time-dependent, this vector may change over 
-        /// time; Re-calculation can be implemented e.g. in <see cref="BeforeTimeStep"/>.
+        /// time.
         /// At a given time <em>t</em>, for given initial values
         /// it is 
         /// the convention is that this vector represents the inhomogeouos b.c.
@@ -104,7 +104,7 @@ namespace BoSSS.Solution.TimeStepping {
 
         /// <summary>
         /// The sparse solver used to solve the equation system in
-        /// <see cref="PerformTimeStep"/>
+        /// <see cref="Perform"/>
         /// </summary>
         /// <remarks>
         /// The Matrix of the system is stored within the sparse solver;

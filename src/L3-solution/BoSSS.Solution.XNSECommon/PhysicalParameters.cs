@@ -149,7 +149,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// clone
         /// </summary>
         public virtual object Clone() {
-            var cl = (PhysicalParameters) MemberwiseClone(); // ok for this object, since it contains only value types
+            var cl = (PhysicalParameters)MemberwiseClone(); // ok for this object, since it contains only value types
             return cl;
         }
 
@@ -201,7 +201,7 @@ namespace BoSSS.Solution.XNSECommon {
 
         public override bool Equals(object obj) {
             var other = obj as PhysicalParameters;
-            if(other == null)
+            if (other == null)
                 return false;
 
             return
@@ -287,9 +287,29 @@ namespace BoSSS.Solution.XNSECommon {
         /// clone
         /// </summary>
         public override object Clone() {
-            var cl = (PhysicalParameters) MemberwiseClone(); // ok for this object, since it contains only value types
+            var cl = (PhysicalParameters)MemberwiseClone(); // ok for this object, since it contains only value types
             return cl;
         }
     }
+    [DataContract]
+    [Serializable]
+    public class PhysicalParametersCombustion : PhysicalParameters {
+
+        /// <summary>
+        /// Diffusivity factor in fluid A
+        /// </summary>
+        [DataMember]
+        public double rhoD_A = 1.0;
+
+        /// <summary>
+        /// Diffusivity factor in fluid B
+        /// </summary>
+        [DataMember]
+        public double rhoD_B = 1.0;
+
+    }
+
+
+
 }
 

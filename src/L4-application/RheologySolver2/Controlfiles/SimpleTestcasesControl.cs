@@ -60,16 +60,7 @@ namespace BoSSS.Application.Rheology
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.MaxSolverIterations = 10;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //.exp_Kcycle_schwarz;
-            C.LinearSolver.TargetBlockSize = 100;
-            //C.NonLinearSolver.verbose = true;
-            //C.LinearSolver.verbose = true;
-
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;//   .classic_pardiso;
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            // Maximum analytical output ...
-            //C.NonLinearSolver.PrecondSolver.verbose = true;
-            //C.GridPartType = GridPartType.METIS;
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig(); //.exp_Kcycle_schwarz;
 
             // Maximum analytical output ...
             C.ObjectiveParam = 1.0;
@@ -260,15 +251,7 @@ namespace BoSSS.Application.Rheology
             C.useFDJacobianForOperatorMatrix = true;
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.exp_Kcycle_schwarz;
             C.NonLinearSolver.verbose = true;
-            C.LinearSolver.verbose = true;
-
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;//   .classic_pardiso;
-            //C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
-            // Maximum analytical output ...
-            //C.NonLinearSolver.PrecondSolver.verbose = true;
-            //C.GridPartType = GridPartType.METIS;
 
             // Maximum analytical output ...
             C.ObjectiveParam = 1.0;
@@ -451,16 +434,13 @@ namespace BoSSS.Application.Rheology
             C.NonLinearSolver.MaxSolverIterations = 10;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion= 1E-7;
-            C.LinearSolver.MaxSolverIterations = 30;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.ConvergenceCriterion = 1E-7;
-            //C.ConvCritGMRES = 1E-13;
+
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
             C.Timestepper_Scheme = RheologyControl.TimesteppingScheme.ImplicitEuler;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_pardiso;
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.ObjectiveParam = 1.0;
 
             //Grid Params
@@ -691,15 +671,11 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "Staupunkt";
-            //C.MaxIter = 20;
-            //C.MinIter = 3;
-            //C.ConvCrit = 1E-14;
+
             C.NonLinearSolver.MaxSolverIterations = 20;
             C.NonLinearSolver.MinSolverIterations = 3;
             C.NonLinearSolver.ConvergenceCriterion = 1E-14;
-            C.LinearSolver.MaxSolverIterations = 20;
-            C.LinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.ConvergenceCriterion = 1E-14;
+
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
@@ -884,16 +860,11 @@ namespace BoSSS.Application.Rheology
             C.DbPath = path;
             C.SessionName = "Degree" + degree + ", GridLevel" + GridLevel;
             C.ProjectName = "ConvStudyLDG";
-            //C.MaxIter = 3;
-            //C.MinIter = 1;
-            //C.ConvCrit = 5E-7;
+
             C.NonLinearSolver.MaxSolverIterations = 3;
             C.NonLinearSolver.MinSolverIterations = 1;
             C.NonLinearSolver.ConvergenceCriterion = 5E-7;
-            C.LinearSolver.MaxSolverIterations = 3;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.ConvergenceCriterion = 5E-7;
-            //C.ConvCritGMRES = 1E-08;
+
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
@@ -1118,9 +1089,7 @@ namespace BoSSS.Application.Rheology
             C.NonLinearSolver.MaxSolverIterations = 7;
             C.NonLinearSolver.MinSolverIterations = 3;
             C.NonLinearSolver.ConvergenceCriterion = 1E-13;
-            C.LinearSolver.MaxSolverIterations = 7;
-            C.LinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.ConvergenceCriterion = 1E-13;
+
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;
@@ -1275,10 +1244,6 @@ namespace BoSSS.Application.Rheology
                         C.NonLinearSolver.MaxSolverIterations = 2;
                         C.NonLinearSolver.MinSolverIterations = 1;
                         C.NonLinearSolver.ConvergenceCriterion = 1E-10;
-                        C.LinearSolver.MaxSolverIterations = 2;
-                        C.LinearSolver.MinSolverIterations = 1;
-                        C.LinearSolver.ConvergenceCriterion = 1E-10;
-
 
                         // Create Fields
                         C.FieldOptions.Add("VelocityX", new FieldOpts() { Degree = p + q, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
@@ -1404,9 +1369,7 @@ namespace BoSSS.Application.Rheology
             C.NonLinearSolver.MaxSolverIterations = 15;
             C.NonLinearSolver.MinSolverIterations = 3;
             C.NonLinearSolver.ConvergenceCriterion = 1E-14;
-            C.LinearSolver.MaxSolverIterations = 15;
-            C.LinearSolver.MinSolverIterations = 3;
-            C.LinearSolver.ConvergenceCriterion = 1E-14;
+
             C.dt = 1E20;
             C.dtMax = C.dt;
             C.dtMin = C.dt;

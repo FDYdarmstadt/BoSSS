@@ -26,7 +26,6 @@ using ilPSP;
 
 namespace BoSSS.Solution.NSECommon {
 
-    //this class is a stub. It needs to be finished. Currently constant values for heat conductivity, diffusivity and partial and mean heat capacity are being used. 
 
     /// <summary>
     /// Material law for low Mach number flows with combustion number.

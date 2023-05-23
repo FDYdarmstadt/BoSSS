@@ -235,7 +235,7 @@ namespace ilPSP {
         /// <summary>
         /// Computes the slope of a double-logarithmic regression model
         /// </summary>
-        public static double LogLogRegression(this IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
+        public static double LogLogRegressionSlope(this IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
             double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
             double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
 
@@ -244,9 +244,27 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Computes a double-logarithmic regression model
+        /// </summary>
+        public static (double Slope, double Intercept) LogLogRegression(this IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
+            double[] xValues = _xValues.Select(x => Math.Log10(x)).ToArray();
+            double[] yValues = _yValues.Select(y => Math.Log10(y)).ToArray();
+
+            return xValues.LinearRegression(yValues);
+
+        }
+
+        /// <summary>
         /// Computes the slope of a linear regression model
         /// </summary>
         public static double LinearRegressionSlope(this IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
+            return LinearRegression(_xValues, _yValues).Slope;
+        }
+
+        /// <summary>
+        /// Computes a linear regression model
+        /// </summary>
+        public static (double Slope, double Intercept) LinearRegression(this IEnumerable<double> _xValues, IEnumerable<double> _yValues) {
             double[] xValues = _xValues.ToArray();
             double[] yValues = _yValues.ToArray();
 
@@ -269,9 +287,8 @@ namespace ilPSP {
             double a = v1 / v2;
             double b = yAvg - a * xAvg;
 
-            return a;
+            return (a, b);
         }
-
 
 
         /// <summary>

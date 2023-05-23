@@ -16,9 +16,10 @@ namespace BoSSS.Solution.Utils
     {
 
         /// <summary>
-        /// Accumulates an identity matrix, but only for selected variabels
+        /// Accumulates an identity matrix, but only for selected variables
         /// </summary>
         /// <param name="M">matrix to be modified (input/output)</param>
+        /// <param name="map">mapping which must correlate with the matrix row and column structure</param>
         /// <param name="factor"></param>
         /// <param name="iVar"></param>
         static public void AccEyeSp(this ISparseMatrix M, UnsetteledCoordinateMapping map, int[] iVar, double factor = 1.0) {

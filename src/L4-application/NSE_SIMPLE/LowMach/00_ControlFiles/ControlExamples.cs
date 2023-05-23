@@ -23,18 +23,79 @@ using BoSSS.Solution.Queries;
 using ilPSP.LinSolvers.PARDISO;
 using System;
 using static System.Math;
+using ilPSP.Utils;
+using BoSSS.Foundation.Grid.Classic;
 
 namespace NSE_SIMPLE.LowMach {
 
     public static class ControlExamples {
 
-        public static LowMachSIMPLEControl SteadyCouetteFlowWithTemperatureGradient() {
+        public static LowMachSIMPLEControl SteadyCouetteFlowWithTemperatureGradient(int dgDegree, int nCells, string dbpath = null) {
             LowMachSIMPLEControl c = new LowMachSIMPLEControl();
 
-            c.DbPath = @"NUnitTests.zip";
-            c.savetodb = false;
+            if(dbpath == null) {
+                c.savetodb = false;
+            }else{
+                c.DbPath = dbpath;
+                c.savetodb = true;
+            }
 
-            c.GridGuid = new Guid("b3eb0eac-d1a1-440c-9f08-5dae1284607d");
+
+
+
+
+            //double h = Math.Pow(2, -resolutions + 1); // cell length
+            //double cells = 1 / h;
+            //int nCells = (int)cells;
+
+
+            Func<double[], byte> GridEdgeTagFunc = delegate (double[] X) {
+                double x = X[0];
+                double y = X[1];
+
+                //Edge tags
+                //1: Velocity inlet O_2
+                //2: Wall upper
+                //3: Pressure outlet
+                //4: Wall lower
+
+                //left Inlet
+                if (Math.Abs(x - 0) < 1e-8)
+                    return 2;
+
+                //bottom Wall
+                if (Math.Abs(y - 0) < 1e-8)
+                    return 1;
+
+                // right outlet
+                if (Math.Abs(x - 1) < 1e-8)
+                    return 3;
+
+                //top Wall
+                if (Math.Abs(y - 1) < 1e-8)
+                    return 4;
+                else throw new ArgumentOutOfRangeException();
+            };
+
+            c.GridFunc = delegate {
+                var _xNodes = GenericBlas.Linspace(0, 1, nCells + 1);
+                var _yNodes = GenericBlas.Linspace(0, 1, (nCells) + 1);
+                var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
+                grd.EdgeTagNames.Add(1, "wall_bottom");
+                // grd.EdgeTagNames.Add(1, "velocity_inlet_bottom");
+                grd.EdgeTagNames.Add(2, "velocity_inlet_left");
+                grd.EdgeTagNames.Add(3, "velocity_inlet_right");
+                grd.EdgeTagNames.Add(4, "velocity_inlet_top"); // moving wall
+
+                grd.DefineEdgeTags(GridEdgeTagFunc);
+                return grd;
+            };
+
+
+
+
+
+            //c.GridGuid = new Guid("b3eb0eac-d1a1-440c-9f08-5dae1284607d");
             c.GridPartType = GridPartType.METIS;
 
             c.ProjectName = "Couette with temperature gradient";
@@ -43,46 +104,46 @@ namespace NSE_SIMPLE.LowMach {
             // Required fields
             c.FieldOptions.Add(
                 VariableNames.VelocityX,
-                new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+                new FieldOpts() { Degree = dgDegree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             c.FieldOptions.Add(
                 VariableNames.VelocityY,
-                new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+                new FieldOpts() { Degree = dgDegree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             c.FieldOptions.Add(
                 VariableNames.Pressure,
-                new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+                new FieldOpts() { Degree = dgDegree-1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             c.FieldOptions.Add(
                 VariableNames.Temperature,
-                new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+                new FieldOpts() { Degree = dgDegree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             c.FieldOptions.Add(
                 VariableNames.ThermodynamicPressure,
                 new FieldOpts() { Degree = 0, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
 
             c.FieldOptions.Add(
                 "Density",
-                new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+                new FieldOpts() { Degree = dgDegree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             c.FieldOptions.Add(
                 "Eta",
-                new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+                new FieldOpts() { Degree = dgDegree, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
 
             // Auxiliary fields
             c.FieldOptions.Add(
                 "DivB4",
-                new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
+                new FieldOpts() { Degree = dgDegree-1, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
             c.FieldOptions.Add(
                 "DivAfter",
-                new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
+                new FieldOpts() { Degree = dgDegree-1, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
             c.FieldOptions.Add(
                 "OperatorTest_x",
-                new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
+                new FieldOpts() { Degree = dgDegree, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
             c.FieldOptions.Add(
                 "OperatorTest_y",
-                new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
+                new FieldOpts() { Degree = dgDegree, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
             c.FieldOptions.Add(
                 "OperatorAna_x",
-                new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
+                new FieldOpts() { Degree = dgDegree, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
             c.FieldOptions.Add(
                 "OperatorAna_y",
-                new FieldOpts() { Degree = 2, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
+                new FieldOpts() { Degree = dgDegree, SaveToDB = FieldOpts.SaveToDBOpt.FALSE });
 
             c.InitialValues_Evaluators.Add(VariableNames.VelocityX, X => X[1]);
             c.InitialValues_Evaluators.Add(VariableNames.VelocityY, X => 0.0);
@@ -127,6 +188,11 @@ namespace NSE_SIMPLE.LowMach {
 
             c.PressureReferencePoint = new double[] { 0.0, 0.5 };
             c.PressureMeanValue = 0.0;
+
+
+
+
+
 
             c.PredictorApproximation = PredictorApproximations.BlockDiagonal;
             c.PressureStabilizationScaling = 0.0;

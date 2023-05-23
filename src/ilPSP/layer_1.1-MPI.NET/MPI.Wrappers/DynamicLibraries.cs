@@ -36,13 +36,48 @@ namespace MPI.Wrappers.Utils {
         /// <summary>
         /// Unix command to open a shared object (lib*.so), aka. DLL, called <paramref name="filename"/>;
         /// </summary>
-        //[DllImport("libdl.so.2", EntryPoint="dlopen", CharSet = CharSet.Ansi)]
-        [DllImport("dl", CharSet = CharSet.Ansi)]
-        static extern IntPtr dlopen(string filename, int flag);
+        [DllImport("dl", CharSet = CharSet.Ansi, EntryPoint = "dlopen")]
+        static extern IntPtr dlopen_libdl(string filename, int flag);
 
-        //[DllImport("fakedl", EntryPoint="my_dlerror")]
-        [DllImport("dl")]
-        unsafe static extern byte* dlerror();
+        /// <summary>
+        /// Unix command to open a shared object (lib*.so), aka. DLL, called <paramref name="filename"/>;
+        /// </summary>
+        [DllImport("libdl.so.2", CharSet = CharSet.Ansi, EntryPoint = "dlopen")]
+        static extern IntPtr dlopen_libdl2(string filename, int flag);
+
+
+        static public IntPtr dlopen(string filename, int flag) {
+            try {
+                return dlopen_libdl(filename, flag);
+            } catch (DllNotFoundException nf1) {
+                try {
+                    return dlopen_libdl2(filename, flag);
+                } catch (DllNotFoundException nf2) {
+                    throw new AggregateException(nf1, nf2);
+                }
+            }
+        }
+
+
+
+        [DllImport("dl", EntryPoint = "dlerror")]
+        unsafe static extern byte* dlerror_libdl();
+
+        [DllImport("libdl.so.2", EntryPoint = "dlerror")]
+        unsafe static extern byte* dlerror_libdl2();
+
+        unsafe static public byte* dlerror() {
+            try {
+                return dlerror_libdl();
+            } catch (DllNotFoundException nf1) {
+                try {
+                    return dlerror_libdl2();
+                } catch (DllNotFoundException nf2) {
+                    throw new AggregateException(nf1, nf2);
+                }
+            }
+        }
+
 
         /// <summary>
         /// wrapper around <see cref="dlerror"/>
@@ -65,8 +100,30 @@ namespace MPI.Wrappers.Utils {
         /// Unix command to load a symbol <paramref name="symbol"/> from a shared object,
         /// (lib*.so), aka. DLL;
         /// </summary>
-        [DllImport("dl", CharSet = CharSet.Ansi)]
-        unsafe static extern IntPtr dlsym(DynLibHandle handle, string symbol);
+        [DllImport("dl", CharSet = CharSet.Ansi, EntryPoint = "dlsym")]
+        unsafe static extern IntPtr dlsym_libdl(DynLibHandle handle, string symbol);
+
+        /// <summary>
+        /// Unix command to load a symbol <paramref name="symbol"/> from a shared object,
+        /// (lib*.so), aka. DLL;
+        /// </summary>
+        [DllImport("libdl.so.2", CharSet = CharSet.Ansi, EntryPoint = "dlsym")]
+        unsafe static extern IntPtr dlsym_libdl2(DynLibHandle handle, string symbol);
+
+
+        static public IntPtr dlsym(DynLibHandle handle, string symbol) {
+            try {
+                return dlsym_libdl(handle, symbol);
+            } catch (DllNotFoundException nf1) {
+                try {
+                    return dlsym_libdl2(handle, symbol);
+                } catch (DllNotFoundException nf2) {
+                    throw new AggregateException(nf1, nf2);
+                }
+            }
+        }
+
+
 
         /// <summary>
         /// Windows command to load a symbol <paramref name="lpProcName"/> from a dynamic library;
@@ -77,8 +134,26 @@ namespace MPI.Wrappers.Utils {
         /// <summary>
         /// Unix command to close a shared object.
         /// </summary>
-        [DllImport("dl")]
-        static extern int dlclose(DynLibHandle handle);
+        [DllImport("dl", EntryPoint = "dlclose")]
+        static extern int dlclose_libdl(DynLibHandle handle);
+       
+        /// <summary>
+        /// Unix command to close a shared object.
+        /// </summary>
+        [DllImport("libdl.so.2", EntryPoint = "dlclose")]
+        static extern int dlclose_libdl2(DynLibHandle handle);
+
+        static public int dlclose(DynLibHandle handle) {
+            try {
+                return dlclose_libdl(handle);
+            } catch (DllNotFoundException nf1) {
+                try {
+                    return dlclose_libdl2(handle);
+                } catch (DllNotFoundException nf2) {
+                    throw new AggregateException(nf1, nf2);
+                }
+            }
+        }
 
         /// <summary>
         /// Windows command to open a dynamic library (*.dll), aka. DLL, called <paramref name="lpFileName"/>;
@@ -210,17 +285,17 @@ namespace MPI.Wrappers.Utils {
         /// handle, which was acquired by <see cref="LoadDynLib"/>
         /// </param>
         /// <returns>
-        /// a function/symbol pointer;<br/>
-        /// using the function <see cref="System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer"/>
+        /// - a function/symbol pointer;
+        /// - using the function <see cref="System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer"/>
         /// it can be converted to a .NET delegate.
         /// </returns>
         /// <remarks>
-        /// On Windows, this function redirects to the 'GetProcAddress'-function in kernel32.dll;<br/>
-        /// On Unix, this function redirects to the 'dlsym'-function in libdl.so;
+        /// - On Windows, this function redirects to the 'GetProcAddress'-function in kernel32.dll;
+        /// - On Unix, this function redirects to the 'dlsym'-function in libdl.so;
         /// </remarks>
         /// <param name="errstr">
-        /// on success, null;
-        /// if call failed (return value is null), an error information provided by the operating system
+        /// - on success, null;
+        /// - if call failed (return value is null), an error information provided by the operating system
         /// </param>
         public static IntPtr LoadSymbol(DynLibHandle libHandle, string SymbName, out string errstr) {
             PlatformID plattid = System.Environment.OSVersion.Platform;

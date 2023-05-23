@@ -50,27 +50,64 @@ namespace BoSSS.Application.CDG_ProjectionTest {
         }
 
         /// <summary>
-        /// case 1, 2, 3
+        /// case 1
         /// </summary>
         [Test]
-        static public void AllUp_patchwiseOnly(
+        static public void AllUp_patchwiseOnly_case1(
 #if DEBUG
-            [Values(0, 1, 2)] int caseNo,
             [Values(2)] int dimension,
             [Values(2)] int degree,
             [Values(2, 4)] int gridResolution,
             [Values(true, false)] bool projectOnSameBasis
 #else
-            [Values(0, 1, 2)] int caseNo,
             [Values(2, 3)] int dimension,
             [Values(2, 3, 4)] int degree,
             [Values(2, 4, 8)] int gridResolution,
             [Values(true, false)] bool projectOnSameBasis
 #endif
             ) {
-            AllUp(caseNo, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+            AllUp(1, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
         }
 
+        /// <summary>
+        /// case 2
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case2(
+#if DEBUG
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#else
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#endif
+            ) {
+            AllUp(2, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+        }
+
+        /// <summary>
+        /// case 3
+        /// </summary>
+        [Test]
+        static public void AllUp_patchwiseOnly_case3(
+#if DEBUG
+            [Values(2)] int dimension,
+            [Values(2)] int degree,
+            [Values(2, 4)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#else
+            [Values(2, 3)] int dimension,
+            [Values(2, 3, 4)] int degree,
+            [Values(2, 4, 8)] int gridResolution,
+            [Values(true, false)] bool projectOnSameBasis
+#endif
+            ) {
+            AllUp(3, dimension, degree, gridResolution, projectOnSameBasis, ProjectionStrategy.patchwiseOnly);
+        }
         
         static public void AllUp(
 #if DEBUG

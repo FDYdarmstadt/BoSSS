@@ -499,7 +499,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeform_GradUxV.InternalEdge"/>
+        /// see <see cref="IInnerEdgeform_GradUxV.InternalEdge_GradUxV"/>
         /// </summary>
         void IInnerEdgeform_GradUxV.InternalEdge_GradUxV(ref EdgeFormParams efp, MultidimensionalArray GradUxV) {
             InitGlobals(efp);
@@ -789,7 +789,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeSource_V.InternalEdge"/>
+        /// see <see cref="IInnerEdgeSource_V.InternalEdge_V"/>
         /// </summary>
         void IInnerEdgeSource_V.InternalEdge_V(ref EdgeFormParams efp, MultidimensionalArray V) {
             InitGlobals(efp);
@@ -830,7 +830,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeSource_V.BoundaryEdge"/>
+        /// see <see cref="IBoundaryEdgeSource_V.BoundaryEdge_V"/>
         /// </summary>
         void IBoundaryEdgeSource_V.BoundaryEdge_V(ref EdgeFormParams efp, MultidimensionalArray V) {
             InitGlobals(efp);
@@ -865,7 +865,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeSource_GradV.InternalEdge"/>
+        /// see <see cref="IInnerEdgeSource_GradV.InternalEdge_GradV"/>
         /// </summary>
         void IInnerEdgeSource_GradV.InternalEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray GradV) {
             InitGlobals(efp);
@@ -908,7 +908,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeSource_GradV.BoundaryEdge"/>
+        /// see <see cref="IBoundaryEdgeSource_GradV.BoundaryEdge_GradV"/>
         /// </summary>
         void IBoundaryEdgeSource_GradV.BoundaryEdge_GradV(ref EdgeFormParams efp, MultidimensionalArray GradV) {
             InitGlobals(efp);
@@ -945,7 +945,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeForm_UxV.InternalEdge"/>
+        /// see <see cref="IInnerEdgeform_UxV.InternalEdge_UxV"/>
         /// </summary>
         void IInnerEdgeform_UxV.InternalEdge_UxV(ref EdgeFormParams efp, MultidimensionalArray UxV) {
             InitGlobals(efp);
@@ -992,7 +992,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         }
 
         /// <summary>
-        /// see <see cref="IEdgeForm_UxV.BoundaryEdge"/>
+        /// see <see cref="IBoundaryEdgeform_UxV.BoundaryEdge_UxV"/>
         /// </summary>
         void IBoundaryEdgeform_UxV.BoundaryEdge_UxV(ref EdgeFormParams efp, MultidimensionalArray UxV) {
             InitGlobals(efp);

@@ -49,7 +49,7 @@ namespace AdvancedSolverTests {
         diagonal_spec, // a matrix without coupling of cells and variables
     }
 
-    class SubBlockTestSolver2Var : Application {
+    public class SubBlockTestSolver2Var : Application {
 
         internal XDGusage m_UseXdg;
         internal MatrixShape m_Mshape;
@@ -59,7 +59,6 @@ namespace AdvancedSolverTests {
             //base.Control.ImmediatePlotPeriod = 1;
             DeleteOldPlotFiles();
 
-            //base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.METIS;
             var comm = csMPI.Raw._COMM.WORLD;
             int size;
             csMPI.Raw.Comm_Size(comm,out size);
@@ -93,6 +92,7 @@ namespace AdvancedSolverTests {
 
             m_grid = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-1, 1, m_Res + 1), GenericBlas.Linspace(-1, 1, m_Res + 1));
             if (size == 4) {
+                //base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Hilbert;
                 base.Control.GridPartType = BoSSS.Foundation.Grid.GridPartType.Predefined;
                 base.Control.GridPartOptions = "hallo";
                 ((Grid2D)m_grid).AddPredefinedPartitioning("hallo", MakeMyPartioning);
@@ -183,7 +183,7 @@ namespace AdvancedSolverTests {
         XSpatialOperatorMk2 Op;
         int m_quadOrder;
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             m_quadOrder = u1.Basis.Degree * 2;
 
             
@@ -211,10 +211,12 @@ namespace AdvancedSolverTests {
                     Op.EquationComponents["c1"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
                     Op.EquationComponents["c1"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u2"));      // Bulk form
                     Op.EquationComponents["c1"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
+                    
                     Op.EquationComponents["c2"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u1"));      // Bulk form
                     Op.EquationComponents["c2"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u1"));   // coupling form
                     Op.EquationComponents["c2"].Add(new XLaplace_Bulk(MU_A, MU_B, penalty_base * 2, "u2"));      // Bulk form
                     Op.EquationComponents["c2"].Add(new XLaplace_Interface( MU_A, MU_B, penalty_base * 2, "u2"));   // coupling form
+                    
                     Op.EquationComponents["c1"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
                     Op.EquationComponents["c1"].Add(new SourceTest("u2", 11)); // Flux in Bulk Phase;
                     Op.EquationComponents["c2"].Add(new SourceTest("u1", 11)); // Flux in Bulk Phase;
@@ -401,20 +403,19 @@ namespace AdvancedSolverTests {
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(OperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);
 
-            foreach (var S in this.LsTrk.SpeciesNames) {
-                Console.WriteLine("  Species {0}: no of agglomerated cells: {1}",
-                    S, Agg.GetAgglomerator(this.LsTrk.GetSpeciesId(S)).AggInfo.SourceCells.NoOfItemsLocally);
-            }
+            Agg.PrintInfo(Console.Out);
 
+            var MamaAgg = this.massFact.GetMassMatrix(map, false);
+            Agg.ManipulateMatrixAndRHS(MamaAgg, default(double[]), map, map);
 
             MGOp = new MultigridOperator(XAggB, map,
                     OperatorMatrix,
-                    this.massFact.GetMassMatrix(map, false),
-                    OpConfig, null);
+                    MamaAgg,
+                    OpConfig, this.Op);
             Debug.Assert(MGOp.OperatorMatrix != null);
             Debug.Assert(MGOp.Mapping != null);
 
-            someVec=GetRHS(Affine, OperatorMatrix);
+            someVec = GetRHS(Affine, OperatorMatrix);
 
             mtxBuilder.ComputeMatrix(AltOperatorMatrix, Affine);
             Agg.ManipulateMatrixAndRHS(AltOperatorMatrix, Affine, MG_Mapping.ProblemMapping, MG_Mapping.ProblemMapping);

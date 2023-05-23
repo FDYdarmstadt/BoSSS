@@ -221,7 +221,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+        virtual public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
             if (m_OrgForm is ILevelSetEquationComponentCoefficient eqc) {
                 eqc.CoefficientUpdate(csA,csB,DomainDGdeg,TestDGdeg);
             }
@@ -752,11 +752,14 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// passes the coefficients to original form
         /// </summary>
-        public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
+        override public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
             if (m_EdgForm is ILevelSetEquationComponentCoefficient eqc) {
                 eqc.CoefficientUpdate(csA, csB, DomainDGdeg, TestDGdeg);
             }
+            base.CoefficientUpdate(csA,csB, DomainDGdeg, TestDGdeg);
         }
+
+        
 
         private double Diff(
             ref double PertubVar, double Var,

@@ -29,6 +29,7 @@ using ilPSP;
 using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
+using ilPSP.Tracing;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -199,21 +200,70 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public Func<Job, AppControl, bool> JobAppControlCorrelation;
 
+        /*
+        /// <summary>
+        /// deletes old job deployments and databases
+        /// </summary>
+        public void Reset() {
+            if(CurrentProject.IsEmptyOrWhite()) {
+                Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
+                return;
+            }
+
+            // delete old databases
+            // ====================
+            foreach(var q in BoSSSshell.ExecutionQueues) {
+                //var dirsToDelete = new HashSet<DirectoryInfo>();
+                //bool delete = false;
+                foreach(var allowedPath in q.AllowedDatabasesPaths) {
+                    var localBaseDir = new DirectoryInfo(allowedPath.LocalMountPath);
+
+                    var dbDirs = localBaseDir.GetDirectories(Directory, SearchOption.TopDirectoryOnly);
+                    foreach(var db in dbDirs) {
+                        if(db.Exists) {
+                            Console.WriteLine("Deleting database: " + db.FullName);
+                            db.Delete(true);
+                        }
+                    }
+                }
+            }
+
+            // delete old deployment
+            // =====================
+
+            {
+                var deplDirs = (new DirectoryInfo(q.DeploymentBaseDirectory)).GetDirectories(DeployMents, SearchOption.TopDirectoryOnly);
+                foreach(var d in deplDirs) {
+                    
+
+                    if(d.Exists) {
+                        Console.WriteLine("Deleting deployment dir: " + d.FullName);
+                        d.Delete(true);
+                    }
+                }
+            }
+        }
+        */
        
 
         /// <summary>
         /// Defines the name of the current project; also creates a default database
         /// </summary>
-        public void Init(string ProjectName) {
+        public void Init(string ProjectName, BatchProcessorClient ExecutionQueue = null) {
             if ((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
                 InvalidateCaches();
             m_CurrentProject = ProjectName;
             Console.WriteLine("Project name is set to '{0}'.", ProjectName);
 
+            if (ExecutionQueue == null) {
+                ExecutionQueue = BoSSSshell.GetDefaultQueue();
+                Console.WriteLine("Default Execution queue is chosen for the database.");
+            }
+
             //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
             //    MiniBatchProcessor.Server.StartIfNotRunning();
             try {
-                DefaultDatabase = BoSSSshell.GetDefaultQueue().CreateOrOpenCompatibleDatabase(ProjectName);
+                DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
             } catch (Exception e) {
                 Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
             }
@@ -333,8 +383,8 @@ namespace BoSSS.Application.BoSSSpad {
                 {
                     List<ISessionInfo> ret = new List<ISessionInfo>();
 
-                    if (InteractiveShell.databases != null) {
-                        foreach (var db in InteractiveShell.databases) {
+                    if (BoSSSshell.databases != null) {
+                        foreach (var db in BoSSSshell.databases) {
                             var SS = db.Sessions.Where(delegate( ISessionInfo si) {
                                 //#if DEBUG 
                                 //                                return si.ProjectName.Equals(this.CurrentProject);
@@ -411,8 +461,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // Fill with values
                 { 
-                    if (InteractiveShell.databases != null) {
-                        foreach (var db in InteractiveShell.databases) {
+                    if (BoSSSshell.databases != null) {
+                        foreach (var db in BoSSSshell.databases) {
                             foreach(var si in db.Sessions) {
                                 DataRow[] foundProject = m_Projects.Select("Name = '"+si.ProjectName+"'");
                                 if (foundProject.Length != 0) {
@@ -526,7 +576,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// see <see cref="IDatabaseInfoExtensions.SaveGrid{TG}(IDatabaseInfo, ref TG, bool)"/>
         /// </summary>
         public GridCommons SaveGrid(GridCommons g) {
-            this.DefaultDatabase.SaveGrid(ref g, force:false);
+            this.DefaultDatabase.SaveGrid(ref g, force: false);
             m_Grids = null; // trigger re-read;
             return g;
         }
@@ -585,42 +635,46 @@ namespace BoSSS.Application.BoSSSpad {
         /// Seconds to wait before checking the jobs status again; should be in the order of seconds, not to overload the IO.
         /// </param>
         public void BlockUntilAllJobsTerminate(double TimeOutSeconds = -1, double PollingIntervallSeconds = 10) {
-            DateTime start = DateTime.Now;
-            while(true) {
-                
-                //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
-                //    MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
+            using(var tr = new FuncTrace()) {
+                DateTime start = DateTime.Now;
+                while(true) {
 
-                Thread.Sleep((int)PollingIntervallSeconds);
+                    //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
+                    //    MiniBatchProcessor.Server.StartIfNotRunning(false); // hack for parallel execution of tests
 
-                if(TimeOutSeconds > 0) {
-                    double RuntimeSoFar = (DateTime.Now - start).TotalSeconds;
-                    if(RuntimeSoFar > TimeOutSeconds) {
-                        Console.WriteLine("Timeout.");
+                    Thread.Sleep((int)PollingIntervallSeconds);
+
+                    if(TimeOutSeconds > 0) {
+                        double RuntimeSoFar = (DateTime.Now - start).TotalSeconds;
+                        if(RuntimeSoFar > TimeOutSeconds) {
+                            Console.WriteLine("Timeout.");
+                            return;
+                        }
+                    }
+
+                    // dbg_launch();
+
+                    bool terminate = true;
+                    foreach(var J in this.AllJobs) {
+                        var s = J.Value.Status;
+                        tr.Info("Testing job: " + J);
+                        if(s != JobStatus.FailedOrCanceled && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation && s != JobStatus.Unknown) {
+                            tr.Info("not terminating because of job: " + J);
+                            terminate = false;
+                            break;
+                        }
+                    }
+
+                    if(terminate) {
+                        Console.WriteLine("All jobs finished.");
+                        m_Sessions = null;
                         return;
                     }
-                }
 
-                bool terminate = true;
-                foreach(var J in this.AllJobs) {
-                    var s = J.Value.Status;
-                    if(s!= JobStatus.FailedOrCanceled && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation) {
-                        terminate = false;
-                        break;
-                    }
+                    Thread.Sleep((int)(1000.0 * PollingIntervallSeconds));
                 }
-
-                if (terminate) {
-                    Console.WriteLine("All jobs finished.");
-                    m_Sessions = null;
-                    return;
-                }
-
-                Thread.Sleep((int)(1000.0*PollingIntervallSeconds));
             }
-            
         }
-
         List<Tuple<AppControl, int>> RegisteredControls = new List<Tuple<AppControl, int>>();
 
 

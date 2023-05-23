@@ -977,10 +977,7 @@ namespace BoSSS.Application.XNSFE_Solver {
                 }
 
                 Console.WriteLine("=============== {0} ===============", "Linear Solver Configuration");
-                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.LinearSolver.SolverCode);
-                if (this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_mumps & this.Control.LinearSolver.SolverCode != LinearSolverCode.classic_pardiso) {
-                    Console.WriteLine("TODO");
-                }
+                Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.LinearSolver.Shortname);
 
                 Console.WriteLine("=============== {0} ===============", "Nonlinear Solver Configuration");
                 Console.WriteLine("     {0,-30}:{1}", "Solvercode", this.Control.NonLinearSolver.SolverCode);

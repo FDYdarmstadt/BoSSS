@@ -66,7 +66,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 m_OpMtx,
                 m_Mass,
                 OpConfig,
-                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray());
+                abstractOperator);
         }
 
         AggregationGridBasis[][] m_XAggB;
@@ -126,7 +126,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             // extract sub-matrix
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            FullSel.VariableSelector(this.VarGroup);
+            FullSel.SetVariableSelector(this.VarGroup);
             var mask = new BlockMask(FullSel);
             var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
 
@@ -138,6 +138,23 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return (bla.lambdaMin, Vret);
         }
 
+        public (double lambdaMax, double[] V) MaximalEigen() {
+            var Mtx = this.m_OpMtx;
+            int L = Mtx.RowPartitioning.LocalLength;
+
+            // extract sub-matrix
+            var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
+            FullSel.SetVariableSelector(this.VarGroup);
+            var mask = new BlockMask(FullSel);
+            var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
+
+            var bla = Part.MaximalEigen();
+
+            double[] Vret = new double[L];
+            mask.AccSubVec(bla.V, Vret);
+
+            return (bla.lambdaMax, Vret);
+        }
 
         /// <summary>
         /// fully analyses the matrix with
@@ -154,7 +171,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             Console.WriteLine("Doing symmetry test");
             bool[] Symmetry_Write = Symmetry();
             Console.WriteLine("Doing eigenvalues test");
-            double[] Eigenval_Write = Eigenval();
+            var Eigenval_Write = Eigenval();
 
             Console.WriteLine("");
             Console.WriteLine("==================================================================");
@@ -168,8 +185,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             Console.WriteLine("is positive definite: {0}", Symmetry_Write[1]);
             Console.WriteLine("==================================================================");
             Console.WriteLine("Eigenvalues:");
-            Console.WriteLine("maximal eigenvalue: {0}", Eigenval_Write[0]);
-            Console.WriteLine("minimal eigenvalue: {0}", Eigenval_Write[1]);
+            Console.WriteLine("maximal eigenvalue: {0}", Eigenval_Write.maxEigen);
+            Console.WriteLine("minimal eigenvalue: {0}", Eigenval_Write.minEigen);
 
             rankAnalysis(m_OpMtx, localRHS);
 
@@ -252,7 +269,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
         /// <summary>
         /// returns the condition number of the full matrix using MUMPS;
-        /// Note: 
+        /// From manual it is unclear in which norm the cond num is calculated
+        /// results from parallel and single execution differ!
         /// </summary>
         public double CondNumMUMPS() {
             using(new FuncTrace()) {
@@ -269,17 +287,17 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 var InnerCellsMask = grd.GetBoundaryCells().Complement();
 
                 var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-                FullSel.VariableSelector(this.VarGroup);
+                FullSel.SetVariableSelector(this.VarGroup);
 
                 var InnerSel = new SubBlockSelector(m_MultigridOp.Mapping);
-                InnerSel.VariableSelector(this.VarGroup);
+                InnerSel.SetVariableSelector(this.VarGroup);
                 InnerSel.CellSelector(InnerCellsMask);
 
 
                 // MUMPS condition number
                 // ======================
 
-                double condestFullMUMPS = (new BlockMask(FullSel)).GetSubBlockMatrix(Mtx).Condest_MUMPS();
+                double condestFullMUMPS = (new BlockMask(FullSel)).GetSubBlockMatrix_MpiSelf(Mtx).Condest_MUMPS();
                 //double condestInnerMUMPS = 1.0;
 
                 //if(InnerCellsMask.NoOfItemsLocally.MPISum() > 0) {
@@ -316,10 +334,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             var InnerCellsMask = grd.GetBoundaryCells().Complement();
 
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            FullSel.VariableSelector(this.VarGroup);
+            FullSel.SetVariableSelector(this.VarGroup);
 
             var InnerSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            InnerSel.VariableSelector(this.VarGroup);
+            InnerSel.SetVariableSelector(this.VarGroup);
             InnerSel.CellSelector(InnerCellsMask);
             
             // Matlab
@@ -363,6 +381,16 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             }
             
         }
+
+        public double CondLAPACK() {
+            var Mtx = m_OpMtx.ToFullMatrixOnProc0();
+            double res = double.NaN;
+            if (this.m_OpMtx.RowPartitioning.MpiRank == 0) {
+                res=Mtx.Cond('I');
+            }
+            return res;
+        }
+
 
         /// <summary>
         /// Creates a new <see cref="MultigridOperator"/>, where all variables in <see cref="VarGroup"/> are preconditioned according to <paramref name="altMode"/>.
@@ -427,7 +455,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 m_OpMtx.CloneAs(),
                 m_Mass,
                 AlternativeOpConfig,
-                m_MultigridOp.FreeMeanValue.CloneAs());
+                m_MultigridOp.AbstractOperator);
 
         }
 
@@ -496,7 +524,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             // ==========================================
 
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            FullSel.VariableSelector(this.VarGroup);
+            FullSel.SetVariableSelector(this.VarGroup);
             var mask = new BlockMask(FullSel);
             long[] GidxS = mask.GlobalIndices;
 
@@ -601,7 +629,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             var InnerCellsMask = grd.GetBoundaryCells().Complement();
 
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            FullSel.VariableSelector(this.VarGroup);
+            FullSel.SetVariableSelector(this.VarGroup);
 
             //long J = grd.CellPartitioning.TotalLength;
 
@@ -652,6 +680,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             
         }
 
+        public double Cond2Matlab() {
+            var Mtx = this.m_OpMtx;
+            return Mtx.cond();
+        }
 
         /// <summary>
         /// Test if the matrix is symmetric positive definite
@@ -709,7 +741,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
         /// returns the maximum and minimum eigenvalues of the matrix
         /// </summary>
         /// <returns>Array myeigs =[MaximumEig, MinimumEig]</returns>
-        public double[] Eigenval() {
+        public (double maxEigen, double minEigen) Eigenval() {
+            
+            var Mtx = m_OpMtx;
 
             double[] eigenvalues = new double[2];
             MultidimensionalArray eigs = MultidimensionalArray.Create(1, 2);
@@ -723,7 +757,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 // if Octave should be used instead of Matlab....
                 //BatchmodeConnector.Flav = BatchmodeConnector.Flavor.Octave;
 
-                bmc.PutSparseMatrix(m_OpMtx, "FullMatrix");
+                bmc.PutSparseMatrix(Mtx, "FullMatrix");
                 bmc.PutVector(DepVars_subvec, "DepVars_subvec");
                 bmc.Cmd("output = zeros(2,1)");
                 bmc.Cmd("output(1) = eigs(FullMatrix(DepVars_subvec,DepVars_subvec),1,'lm');");
@@ -732,10 +766,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 bmc.Execute(false);
             }
 
-            double[] myeigs = new double[] { output[0, 0], output[1, 0] };
             Debug.Assert(output[0, 0].MPIEquals(), "value does not match on procs");
             Debug.Assert(output[1, 0].MPIEquals(), "value does not match on procs");
-            return myeigs;
+            return (output[0, 0], output[1, 0]);
         }
 
 
@@ -757,7 +790,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
 
             var Sel = new SubBlockSelector(m_MultigridOp.Mapping);
-            Sel.VariableSelector(this.VarGroup);
+            Sel.SetVariableSelector(this.VarGroup);
            
             var Mask = new BlockMask(Sel);
 
@@ -814,7 +847,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     }
 
                     var Sel = new SubBlockSelector(m_MultigridOp.Mapping);
-                    Sel.VariableSelector(this.VarGroup);
+                    Sel.SetVariableSelector(this.VarGroup);
                     Sel.CellSelector(LocBlk, global: false);
                     var Mask = new BlockMask(Sel);
 
@@ -887,9 +920,23 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
                 // global condition numbers
                 // ========================
+                var stpw = new Stopwatch();
+                stpw.Start();
                 //double CondNo = this.CondNumMUMPS();
                 double CondNo = this.CondNumMatlab(); // matlab seems to be more reliable
+                //double CondNo = this.Cond2Matlab();
+                //double CondNo = this.CondLAPACK();
                 Ret.Add("TotCondNo-" + VarNames, CondNo);
+                stpw.Stop();
+                Console.WriteLine(stpw.Elapsed.TotalSeconds);
+
+                //var pair = this.Eigenval();
+                //Ret.Add("maxEigenvalue", pair.maxEigen);
+                //Ret.Add("minEigenvalue", pair.minEigen);
+                //var mineig = this.MinimalEigen();
+                //var maxeig = this.MaximalEigen();
+                //Ret.Add("lambdaMin", mineig.lambdaMin);
+                //Ret.Add("lambdaMax", maxeig.lambdaMax);
 
                 // block-wise condition numbers
                 // ============================

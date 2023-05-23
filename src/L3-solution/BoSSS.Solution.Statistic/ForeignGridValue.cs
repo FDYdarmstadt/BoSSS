@@ -135,7 +135,7 @@ namespace BoSSS.Solution.Statistic {
         /// <summary>
         /// vectorized evaluation
         /// </summary>
-        public void Evaluate(MultidimensionalArray input, double time, MultidimensionalArray output) {
+        public void EvaluateV(MultidimensionalArray input, double time, MultidimensionalArray output) {
             Init();
 
             int L = input.GetLength(0);

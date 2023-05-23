@@ -108,7 +108,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             BlockMsrMatrix bmsrM;
             try {
                 bmsrM = (BlockMsrMatrix)matrix;
-            } catch (InvalidCastException ex) {
+            } catch (InvalidCastException) {
                 throw new NotSupportedException("this solver only supports block msr matrix as input!");
             }
             m_matrix = bmsrM;
@@ -134,7 +134,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         BlockMsrMatrix m_matrix;
         ISparseSolver m_PCG;
         IImplicitPrecond m_ILU;
-        MsrMatrix m_localMsrMatrix;
+        //MsrMatrix m_localMsrMatrix;
 
         public SolverResult Solve<Tunknowns, Trhs>(Tunknowns x, Trhs rhs)
             where Tunknowns : IList<double>
@@ -150,7 +150,6 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         public void Dispose() {
             m_PCG.Dispose();
             m_ILU.Dispose();
-            m_localMsrMatrix = null;
             m_matrix = null;
         }
     }

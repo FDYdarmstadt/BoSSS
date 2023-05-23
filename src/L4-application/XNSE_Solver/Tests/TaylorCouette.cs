@@ -61,8 +61,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 this.TestImmersedBoundary = true;
                 rhoA = 0.1;
                 rhoB = 0.1;
-                muA = 0.1;
-                muB = 0.1;
+                muA = 0.001;
+                muB = 1;
                 sigma = 0.0;
                 break;
 

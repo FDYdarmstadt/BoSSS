@@ -86,10 +86,9 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             /// <summary>
             /// Global indices of external cells (local indices j in the range
-            /// <see cref="CellData.NoOfLocalUpdatedCells"/> &lt;= j &lt;
-            /// <see cref="CellData.NoOfCells"/>); Note that there is an index
+            /// <see cref="ILogicalCellData.NoOfLocalUpdatedCells"/> &lt;= j &lt; <see cref="ILogicalCellData.Count"/>); Note that there is an index
             /// offset, so the entry at index 0 is the global index of cell at
-            /// local index <see cref="CellData.NoOfLocalUpdatedCells"/>;
+            /// local index <see cref="ILogicalCellData.NoOfLocalUpdatedCells"/>;
             /// See also <see cref="GlobalIndicesExternalCells"/>;
             /// </summary>
             public long[] GlobalIndicesExternalCells {

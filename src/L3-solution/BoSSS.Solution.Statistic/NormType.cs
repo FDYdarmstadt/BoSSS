@@ -45,7 +45,7 @@ namespace BoSSS.Solution.Statistic {
 
         /// <summary>
         /// Approximate comparison, the mean value (average) of the DG fields is ignored.
-        /// This is typically used for comparing pressure in incompressible simpulations.
+        /// This is typically used for comparing pressure in incompressible simulations.
         /// 
         /// Norm computed by <see cref="DGFieldComparisonNonEmb.ComputeErrors_L2noMean(IList{IEnumerable{Foundation.DGField}}, out double[], out Dictionary{string, long[]}, out Dictionary{string, double[]})"/>.
         /// </summary>

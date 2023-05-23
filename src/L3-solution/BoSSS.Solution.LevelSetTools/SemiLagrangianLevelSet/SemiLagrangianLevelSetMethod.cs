@@ -1230,22 +1230,18 @@ namespace BoSSS.Solution.LevelSetTool.SemiLagrangianLevelSet
 
                 NormalField = new Dictionary<int, MultidimensionalArray []> ();
 
-                foreach (int cell in NarrowBandCells.ItemEnum)
-                {
-                    NodeSet NormalEvalPoints = new NodeSet (Grid.iGeomCells.GetRefElement (cell), nds);
-                    NormalField.Add (cell, new MultidimensionalArray [nbrofTestPoints]);
-                    for (int dim = 0; dim < SpatialDimension; dim++)
-                    {
-                        InterfaceLevelSetGradient [dim].Evaluate (cell, 1, NormalEvalPoints, result[dim]);
+                foreach (int cell in NarrowBandCells.ItemEnum) {
+                    NodeSet NormalEvalPoints = new NodeSet(Grid.iGeomCells.GetRefElement(cell), nds, false);
+                    NormalField.Add(cell, new MultidimensionalArray[nbrofTestPoints]);
+                    for (int dim = 0; dim < SpatialDimension; dim++) {
+                        InterfaceLevelSetGradient[dim].Evaluate(cell, 1, NormalEvalPoints, result[dim]);
                     }
-                    for(int k=0;k<nbrofTestPoints;k++)
-                    {
-                        NormalField [cell] [k] = MultidimensionalArray.Create (1, SpatialDimension);
-                        for(int dim=0;dim<SpatialDimension;dim++)
-                        {
-                            NormalField [cell] [k] [0, dim] = result [dim] [0, k];
+                    for (int k = 0; k < nbrofTestPoints; k++) {
+                        NormalField[cell][k] = MultidimensionalArray.Create(1, SpatialDimension);
+                        for (int dim = 0; dim < SpatialDimension; dim++) {
+                            NormalField[cell][k][0, dim] = result[dim][0, k];
                         }
-                        NormalField [cell] [k] = NormalizeVector (NormalField [cell] [k]);
+                        NormalField[cell][k] = NormalizeVector(NormalField[cell][k]);
                     }
                 }
 
@@ -1412,7 +1408,7 @@ namespace BoSSS.Solution.LevelSetTool.SemiLagrangianLevelSet
                 for (int f = 0; f < Fields.Length; f++)
                 {
                     buffer[0, 0] = 0;
-                    Fields[f].Evaluate(CellIndexGuess, 1, new NodeSet(((GridData)Grid).iGeomCells.GetRefElement(CellIndexGuess), logicCoords.ExtractSubArrayShallow(0, -1, -1)), buffer, 1.0);
+                    Fields[f].Evaluate(CellIndexGuess, 1, new NodeSet(((GridData)Grid).iGeomCells.GetRefElement(CellIndexGuess), logicCoords.ExtractSubArrayShallow(0, -1, -1), false), buffer, 1.0);
                     if (double.IsNaN(buffer[0, 0]) || double.IsInfinity(buffer[0, 0]))
                         throw new Exception("NaN of Infinity Values evaluated");
                     FieldsResults[0, f] = buffer[0, 0];
@@ -1431,7 +1427,7 @@ namespace BoSSS.Solution.LevelSetTool.SemiLagrangianLevelSet
                     for (int f = 0; f < Fields.Length; f++)
                     {
                         buffer[0, 0] = 0;
-                        Fields[f].Evaluate(j, 1, new NodeSet(((GridData)Grid).iGeomCells.GetRefElement(j), logicCoords.ExtractSubArrayShallow(0, -1, -1)), buffer, 1.0);
+                        Fields[f].Evaluate(j, 1, new NodeSet(((GridData)Grid).iGeomCells.GetRefElement(j), logicCoords.ExtractSubArrayShallow(0, -1, -1), false), buffer, 1.0);
                         if (double.IsNaN(buffer[0, 0]) || double.IsNaN(buffer[0, 0]))
                             throw new Exception("NaN of Infinity Values evaluated");
                         FieldsResults[0, f] = buffer[0, 0];
@@ -1481,7 +1477,7 @@ namespace BoSSS.Solution.LevelSetTool.SemiLagrangianLevelSet
                 for (int f = 0; f < Fields.Length; f++)
                 {
                     Fields[f].Evaluate(CellIndexGuess, 1, new NodeSet(((GridData)Grid).iGeomCells.GetRefElement(CellIndexGuess),
-                        LogicPointsCoordinates.ExtractSubArrayShallow(0, -1, -1)), Result.ExtractSubArrayShallow(f,-1, -1));
+                        LogicPointsCoordinates.ExtractSubArrayShallow(0, -1, -1), false), Result.ExtractSubArrayShallow(f,-1, -1));
                 }
             }
             else
@@ -1529,7 +1525,7 @@ namespace BoSSS.Solution.LevelSetTool.SemiLagrangianLevelSet
                                 {
                                     Res[0, 0] = 0;
                                     Fields[f].Evaluate(j, 1, new NodeSet(((GridData)Grid).iGeomCells.GetRefElement(j),
-                                        logicCoords.ExtractSubArrayShallow(0, -1, -1)), Res, 1.0);
+                                        logicCoords.ExtractSubArrayShallow(0, -1, -1), false), Res, 1.0);
                                     if (double.IsNaN(Res[0,0]) || double.IsInfinity(Res[0,0]))
                                         throw new Exception("NaN or Infinity not allowed");
                                     Result[f, 0, index] = Res[0, 0];
@@ -1559,7 +1555,7 @@ namespace BoSSS.Solution.LevelSetTool.SemiLagrangianLevelSet
                     for (int f = 0; f < Fields.Count(); f++)
                     {
                         Fields[f].Evaluate(CellIndexGuess, 1, new NodeSet(((GridData)Grid).iGeomCells.GetRefElement(CellIndexGuess),
-                            LogicPointsInCellCoordinates.ExtractSubArrayShallow(0, -1, -1)), ResultInCell.ExtractSubArrayShallow(f, -1, -1));
+                            LogicPointsInCellCoordinates.ExtractSubArrayShallow(0, -1, -1), false), ResultInCell.ExtractSubArrayShallow(f, -1, -1));
                     }
 
                     indexInCell = 0;

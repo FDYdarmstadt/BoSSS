@@ -121,11 +121,14 @@ namespace BoSSS.Solution.NSECommon {
                 double[] densityArguments = new double[] { T, Y0, Y1, Y2, Y3/*, Y4*/ }; // Y4 is calculated internally in the GetDensity method
                 res = base.GetDensity(densityArguments);
             } else {
-                res = 1.0;
+                res = ConstantDensityValue;
             }
             return res;
         }
-
+        /// <summary>
+        /////
+        ///// </summary>
+        //public double ConstantDensityValue { get; set; } = 1.0;
         /// <summary>
         ///  The diffusivity  D. Possibly dependent on the variable <see cref="phi"/> representing the temperature
         ///  Used for the mixture fraction equations
@@ -198,7 +201,7 @@ namespace BoSSS.Solution.NSECommon {
 
             switch (id) {
                 case VariableNames.Temperature:
-                    res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * zst * (1 - Z) / (1 - zst);
+                    res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 /*/ cp*/ * zst * (1 - Z) / (1 - zst);
                     break;
 
                 case VariableNames.MassFraction0:
@@ -239,7 +242,7 @@ namespace BoSSS.Solution.NSECommon {
             double res;
             switch (id) {
                 case VariableNames.Temperature:
-                    res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 / cp * Z;
+                    res = Z * TF0 + (1 - Z) * TO0 + Q * YF0 /*/ cp */* Z;
                     break;
 
                 case VariableNames.MassFraction0:

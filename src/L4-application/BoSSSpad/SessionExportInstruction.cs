@@ -153,6 +153,16 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Returns the external process
+        /// </summary>
+        public Process YouMustWithoutStart() {
+            //Console.Write("Starting export process... ");
+            return PrepareProcess(CreateConfiguration(), PlotDirPath);
+            //Console.WriteLine("Data will be written to the directory: " + PlotDirPath);
+            //return PlotDirPath;
+        }
+
+        /// <summary>
         /// Starts the export in an external process window.
         /// </summary>
         public override string YouMust() {

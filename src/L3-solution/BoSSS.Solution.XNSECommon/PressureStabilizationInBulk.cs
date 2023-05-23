@@ -35,16 +35,16 @@ namespace BoSSS.Solution.XNSECommon {
 
         double PressureStabilizationFactor;
         string m_spcName;
-        SpeciesId m_spcId;
+        //SpeciesId m_spcId;
         //MultidimensionalArray h_max_Edge;
 
         /// <summary>
         /// Ctor.
         /// </summary>
-        public PressureStabilizationInBulk(double PressureStabilizationFactor, double ReynoldsA, double ReynoldsB, string spcName, SpeciesId spcId): base(PressureStabilizationFactor, 0.0) {
+        public PressureStabilizationInBulk(double PressureStabilizationFactor, double ReynoldsA, double ReynoldsB, string spcName): base(PressureStabilizationFactor, 0.0) {
             this.PressureStabilizationFactor = PressureStabilizationFactor;
             this.m_spcName = spcName;
-            this.m_spcId = spcId;
+            //this.m_spcId = spcId;
 
             switch (spcName) {
                 case "A": base.Reynolds = ReynoldsA; break;

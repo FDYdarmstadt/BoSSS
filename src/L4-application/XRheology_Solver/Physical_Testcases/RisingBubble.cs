@@ -321,11 +321,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.EnforceLevelSetConservation = true;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.StressBlockPrecondMode = MultigridOperator.Mode.LeftInverse_DiagBlock;
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MinSolverIterations = 1;
-            C.LinearSolver.ConvergenceCriterion = 1e-7;
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
@@ -626,10 +622,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.StressBlockPrecondMode = MultigridOperator.Mode.LeftInverse_DiagBlock;
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
-            C.LinearSolver.NoOfMultigridLevels = 1;
-            C.LinearSolver.MaxSolverIterations = 10;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             //C.NonLinearSolver.UsePresRefPoint = false;
@@ -955,13 +948,8 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.AdvancedDiscretizationOptions.UseGhostPenalties = true;
 
 
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.Standard;
@@ -1156,7 +1144,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // ====================
             #region solver
 
-            C.LinearSolver.SolverCode = LinearSolverCode.classic_mumps;
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;
@@ -1164,13 +1152,8 @@ namespace BoSSS.Application.XRheology_Solver {
 
             C.LSContiProjectionMethod = ContinuityProjectionOption.SpecFEM;
             //C.option_solver = C.PhysicalParameters.IncludeConvection ? "fixpoint+levelset" : "direct";
-            C.LinearSolver.NoOfMultigridLevels = 1;
             C.NonLinearSolver.MaxSolverIterations = 50;
-            C.LinearSolver.MaxSolverIterations = 50;
-            //C.Solver_MaxIterations = 50;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver.ConvergenceCriterion = 1e-8;
-            //C.Solver_ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
             C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;

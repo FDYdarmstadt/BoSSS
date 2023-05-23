@@ -100,7 +100,7 @@ namespace BoSSS.Solution.Gnuplot {
                 this.PointType = PointTypes.OpenBox;
             if (ContainsRemove(ref FormatString, "^", ref AnySymb))
                 this.PointType = PointTypes.OpenLowerTriangle;
-            if (ContainsRemove(ref FormatString, "^", ref AnySymb))
+            if (ContainsRemove(ref FormatString, "v", ref AnySymb))
                 this.PointType = PointTypes.LowerTriangle;
 
             if(anyLine == true) {
@@ -169,6 +169,17 @@ namespace BoSSS.Solution.Gnuplot {
 
             var values = Enum.GetValues(typeof(LineColors)).Cast<LineColors>().ToArray();
             this.LineColor = values[i % values.Length];
+        }
+
+        /// <summary>
+        /// Conversts continuous numbers into line colors; useful, when a Plot is created by a loop.
+        /// </summary>
+        public void SetPointTypeFromIndex(int i) {
+            if (i < 0)
+                throw new ArgumentOutOfRangeException();
+
+            var values = Enum.GetValues(typeof(PointTypes)).Cast<PointTypes>().ToArray();
+            this.PointType = values[i % values.Length];
         }
 
 

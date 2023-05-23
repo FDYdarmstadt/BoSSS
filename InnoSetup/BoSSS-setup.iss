@@ -84,7 +84,7 @@ Root: HKLM; \
     ValueType: expandsz; \
     ValueName: "Path"; \
     ValueData: "{olddata};{app}\bin\Release;"; \
-    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release\net5.0')) and ( not IsRegularUser() )
+    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release\net6.0')) and ( not IsRegularUser() )
 ; as regular user (non-admin): set BOSSS_INSTALL only local
 Root: HKCU; \
    Subkey: "Environment"; \
@@ -98,7 +98,7 @@ Root: HKCU; \
     ValueType: expandsz; \
     ValueName: "Path"; \
     ValueData: "{olddata};{app}\bin\Release;"; \
-    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release\net5.0')) and ( IsRegularUser() )
+    Check: NeedsAddPath(ExpandConstant('{app}\bin\Release\net6.0')) and ( IsRegularUser() )
 
 ;[Run]
 ; Filename: bcl.exe; \

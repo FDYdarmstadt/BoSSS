@@ -72,22 +72,22 @@ namespace BoSSS.Solution.NSECommon
 
         public TermActivationFlags BoundaryEdgeTerms {
             get {
-                // return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
-                return TermActivationFlags.AllOn;
+                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.V | TermActivationFlags.GradV);
+                //return TermActivationFlags.AllOn;
             }
         }
 
         public TermActivationFlags InnerEdgeTerms {
             get {
-                // return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV);
-                return TermActivationFlags.AllOn;
+                return (TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV);
+                //return TermActivationFlags.AllOn;
             }
         }
 
         public TermActivationFlags VolTerms {
             get {
-                return TermActivationFlags.AllOn;
-                // return TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV; // should be changed. The term UxGradV is not allways needed
+                //return TermActivationFlags.AllOn;
+                return TermActivationFlags.GradUxGradV | TermActivationFlags.UxGradV; // should be changed. The term UxGradV is not allways needed
             }
         }
 
@@ -110,18 +110,7 @@ namespace BoSSS.Solution.NSECommon
         /// interior penalty method, K. Shahbazi, J. of Comp. Phys. 205 (2004) 401-407,
         /// look at formula (7) in cited paper
         /// </summary>
-        /// <param name="inp"></param>
         /// <returns></returns>
-        //private double GetPenalty(int jCellIn, int jCellOut) {
-        //    double cj_in = cj[jCellIn];
-        //    double mu = PenaltyBase * cj_in;
-        //    if (jCellOut >= 0) {
-        //        double cj_out = cj[jCellOut];
-        //        mu = Math.Max(mu, PenaltyBase * cj_out);
-        //    }
-        //    return mu;
-        //}
-
         protected double GetPenalty(int jCellIn, int jCellOut) {
 
             double penaltySizeFactor = 1;

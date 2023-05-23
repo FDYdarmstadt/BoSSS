@@ -517,7 +517,7 @@ namespace ilPSP {
         
 
         /// <summary>
-        /// Caches the infromation extracted form the string arguments of 
+        /// Caches the information extracted form the string arguments of 
         /// the tensor-multiplication routine <see cref="Multiply(double,MultidimensionalArray,MultidimensionalArray, double, string, string, string)"/>.
         /// </summary>
         public struct MultiplyProgram {

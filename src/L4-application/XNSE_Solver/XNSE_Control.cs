@@ -55,19 +55,21 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Ctor.
         /// </summary>
         public XNSE_Control() {
-            base.LinearSolver.NoOfMultigridLevels = 1;
+
             //base.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             //shift of Solver Information
-            base.LinearSolver.MaxKrylovDim = 100; //Solver_MaxKrylovDim;
-            base.LinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
-            base.LinearSolver.MinSolverIterations = 4; //Solver_MinIterations
-            base.LinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
-            base.LinearSolver.SolverCode = LinearSolverCode.classic_mumps; //LinearSolver
+            base.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig(); //LinearSolver
             base.NonLinearSolver.MaxSolverIterations = 2000; //Solver_MaxIterations
             base.NonLinearSolver.MinSolverIterations = 4; //Solver_MinIterations
-            base.NonLinearSolver.ConvergenceCriterion = 1.0e-10; //Solver_ConvergenceCriterion
-            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard; //NonLinearSolver
+            base.NonLinearSolver.ConvergenceCriterion = 0.0; //Solver_ConvergenceCriterion: solve as accurate as possible. Don't change this, Grüße von FK!
+            base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton; //NonLinearSolver
             base.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+
+
+            base.DynamicLoadBalancing_CellCostEstimators.Clear();
+            base.DynamicLoadBalancing_CellCostEstimators.Add(new Loadbalancing.XNSECellCostEstimator());
+
         }
 
         /// <summary>
@@ -85,6 +87,31 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public XRigid Rigidbody = new XRigid();
+
+        /// <summary>
+        /// Sets Field options for residual fields,
+        /// residual fields are now written to database.
+        /// </summary>
+        /// <param name="ctrl"></param>
+        /// <param name="k">Velocity Degree</param>
+        public void SetOptionsResFields (int k) {
+            this.FieldOptions.Add("Residual-MomentumX", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            this.FieldOptions.Add("Residual-MomentumY", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            this.FieldOptions.Add("Residual-MomentumZ", new FieldOpts() {
+                Degree = k,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            this.FieldOptions.Add("Residual-ContiEq", new FieldOpts() {
+                Degree = k - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+        }
 
         public void SetMaximalRefinementLevel(int maxLvl) {
             this.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = maxLvl });
@@ -268,12 +295,14 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /* killed by fk:
+         * the following adds a configuration redundancy, which is always a recipe for confusion
         /// <summary>
         /// switches off all plotCurrentState calls
         /// </summary>
         [DataMember]
         public bool switchOffPlotting = false;
-
+        */
 
 
         /// <summary>
@@ -387,6 +416,12 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool SkipSolveAndEvaluateResidual = false;
 
+        /// <summary>
+        /// Terminates the simulation if the linear or nonlinear solver fails to converge
+        /// </summary>
+        [DataMember]
+        public bool FailOnSolverFail = true;
+
 
         /// <summary>
         /// See <see cref="TimestepperInit"/>
@@ -411,19 +446,6 @@ namespace BoSSS.Application.XNSE_Solver {
         /// </summary>
         [DataMember]
         public double[] prescribedLSwaveData;
-
-        /// <summary>
-        /// Block-Preconditiond for the velocity/momentum-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite;
-
-        /// <summary>
-        /// Block-Preconditiond for the pressure/continuity-block of the saddle-point system
-        /// </summary>
-        [DataMember]
-        public MultigridOperator.Mode PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
-
 
         /// <summary>
         /// Enforce the level-set to be globally conservative, by adding a constant to the level-set field
@@ -556,6 +578,12 @@ namespace BoSSS.Application.XNSE_Solver {
         [NonSerialized]
         [JsonIgnore]
         public IDictionary<string, Func<double[], double, double>> ExactSolutionTemperature;
+        /// <summary>
+        /// Exact solution, Mixture fraction, for each species (either A or B).
+        /// </summary>
+        [NonSerialized]
+        [JsonIgnore]
+        public IDictionary<string, Func<double[], double, double>> ExactSolutionMixtureFraction;
 
         /// <summary>
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
@@ -604,7 +632,10 @@ namespace BoSSS.Application.XNSE_Solver {
         /// Time dependent (component-wise) gravitational acceleration (either A or B).
         /// </summary>
         public ScalarFunctionTimeDep GetVolumeForce(string species, int d) {
-            this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.VolumeForce_d(d) + "#" + species, out var ret);
+            bool bfound = this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.VolumeForce_d(d) + "#" + species, out var ret);
+            if(!bfound)
+                this.InitialValues_EvaluatorsVec.TryGetValue(VariableNames.VolumeForce_d(d), out ret);
+            //Console.WriteLine("Using volume Force: " + (ret?.ToString() ?? "NIX"));
             return ret;
         }
 
@@ -699,8 +730,11 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         public bool NonlinearCouplingSolidFluid = false;
 
-        [DataMember]
-        public ClassifierType DynamicLoadbalancing_ClassifierType = ClassifierType.Species;
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        //[DataMember]
+        //public ClassifierType DynamicLoadbalancing_ClassifierType = ClassifierType.VoidCutNormal;
 
 
         /// <summary>
@@ -729,7 +763,7 @@ namespace BoSSS.Application.XNSE_Solver {
         /// 
         /// </summary>
         public override bool Equals(object obj) {
-            //System.Diagnostics.Debugger.Launch();
+            //System.Diagnostics. dbg_launch();
             if(!base.Equals(obj))
                 return false;
 

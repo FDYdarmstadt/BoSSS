@@ -31,7 +31,7 @@ namespace ilPSP.Utils {
     
     
     /// <summary>
-    /// This class provides an easy way of exchanching arbitrary (serializeable)
+    /// This class provides an easy way of exchanging arbitrary (serializeable)
     /// objects between MPI processes. Internally, it uses nonblocking MPI point-to-point 
     /// routines.
     /// </summary>
@@ -119,7 +119,7 @@ namespace ilPSP.Utils {
         int m_Rank;
 
         /// <summary>
-        /// rank of the actuall process within  the MPI communicator <see cref="MPI_comm"/>;
+        /// rank of the actual process within  the MPI communicator <see cref="MPI_comm"/>;
         /// </summary>
         int Rank {
             get { return m_Rank; }
@@ -277,10 +277,11 @@ namespace ilPSP.Utils {
             TypeNameHandling = TypeNameHandling.All,
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
-            TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+            //TypeNameAssemblyFormat = System.Runtime.Serialization.Formatters.FormatterAssemblyStyle.Full
+            TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Full
         };
         
-        bool m_UseJson = true;
+        bool m_UseJson = false;
 
         /// <summary>
         /// Whether to use a JSON formatter or the binary formatter
@@ -302,25 +303,35 @@ namespace ilPSP.Utils {
             public object PayLoad;
         }
 
+        public static bool writeSize = false;
+
         byte[] SerializeObject(object o) {
             using (var ms = new MemoryStream()) {
+                Stopwatch stw = new Stopwatch();
+                stw.Start();
                 if (m_UseJson) {
                     // see: https://stackoverflow.com/questions/25741895/error-serialising-simple-string-to-bson-using-newtonsoft-json-net
                     //var containerArray = Array.CreateInstance(o.GetType(), 1);
                     //containerArray.SetValue(o, 0);
                     var containerObj = new JsonContainer() { PayLoad = o };
 
-                    using (var w = new BsonWriter(ms)) {
+                    using (var w = new BsonDataWriter(ms)) {
                         jsonFormatter.Serialize(w, containerObj);
                     }
                 } else {
                     m_Formatter.Serialize(ms, o);
                 }
+                stw.Stop(); 
 
                 byte[] ret = ms.GetBuffer();
                 //if (ret.Length > ms.Position) {
                 //    Array.Resize(ref ret, (int)ms.Position);
                 //}
+
+                if (writeSize) {
+                    Console.Error.WriteLine($"r{this.m_Rank}: serialized to {ret.Length/(1024.0*1024.0)} MEGAbyte! took {stw.Elapsed.TotalMilliseconds} msec(UesJSON = {m_UseJson})");
+                }
+
                 return ret;
             }
 
@@ -331,7 +342,7 @@ namespace ilPSP.Utils {
                 if (m_UseJson) {
                     //Type ArrayType = Array.CreateInstance(t, 0).GetType();
 
-                    using (var w = new BsonReader(ms)) {
+                    using (var w = new BsonDataReader(ms)) {
                         var containerObj = (JsonContainer) jsonFormatter.Deserialize(w, typeof(JsonContainer));
                         return containerObj.PayLoad;
                     }
@@ -753,8 +764,10 @@ namespace ilPSP.Utils {
         /// keys: MPI rank of the process from which <em>q</em> has been received.<br/>
         /// values: some object <em>q</em>
         /// </returns>
-        public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send, MPI_Comm comm) {
-            using( var sms = new SerialisationMessenger(comm)) {
+        /// <param name="__UseJSON"></param>
+        public static IDictionary<int, T> ExchangeData<T>(IDictionary<int, T> objects_to_send, MPI_Comm comm, bool __UseJSON = false) {
+            using (var sms = new SerialisationMessenger(comm)) {
+                sms.UseJson = __UseJSON;
                 //if (PoorManDebugger != null) {
                 //    PoorManDebugger.WriteLine("tag offset is " + sms.m_MyTagOffset);
                 //    PoorManDebugger.Flush();

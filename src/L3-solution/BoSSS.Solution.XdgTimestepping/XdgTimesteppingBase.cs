@@ -28,7 +28,7 @@ using ilPSP;
 using MPI.Wrappers;
 using BoSSS.Foundation.Grid.Aggregation;
 using ilPSP.Tracing;
-
+using BoSSS.Solution.Queries;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -141,7 +141,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         StrangSplitting = 2,
 
         /// <summary>
-        /// Level-Set is updated once per time-step.
+        /// Moving Interface: Level-Set is updated once per time-step.
         /// </summary>
         Coupled_Once = 3,
 
@@ -180,7 +180,8 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         protected XdgTimesteppingBase(
             Control.NonLinearSolverConfig nonlinconfig,
-            Control.LinearSolverConfig linearconfig) {
+            ISolverFactory linearconfig) {
+            this.LinearSolverConfig = linearconfig;
             XdgSolverFactory = new SolverFactory(nonlinconfig, linearconfig);
         }
 
@@ -228,6 +229,15 @@ namespace BoSSS.Solution.XdgTimestepping {
             get;
             protected set;
         }
+
+        /// <summary>
+        /// Optional logging of solver diagnostic infromation
+        /// </summary>
+        public QueryHandler QueryHandler {
+            get;
+            internal set;
+        }
+
 
         /// <summary>
         /// Quadrature order on cut cells.
@@ -404,83 +414,69 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         public SolverFactory XdgSolverFactory;
 
-        private Control.NonLinearSolverConfig m_nonlinconfig {
-            get {
-                return XdgSolverFactory.GetNonLinearConfig;
-            }
-        }
+        
 
-        private Control.LinearSolverConfig m_linearconfig {
-            get {
-                return XdgSolverFactory.GetLinearConfig;
-            }
+        /// <summary>
+        /// linear solver to use
+        /// </summary>
+        public ISolverFactory LinearSolverConfig {
+            get;
+            private set;
         }
 
 
         /// <summary>
-        /// Returns either a solver for the Navier-Stokes or the Stokes system.
-        /// E.g. for testing purposes, one might also use a nonlinear solver on a Stokes system.
+        /// Returns the nonlinear solver
         /// </summary>
-        protected virtual string GetSolver(out NonlinearSolver nonlinSolver, out ISolverSmootherTemplate linearSolver) {
-            nonlinSolver = null;
-            linearSolver = null;
+        protected virtual NonlinearSolver GetNonlinSolver() {
+            NonlinearSolver nonlinSolver = null;
 
             if (Config_SpatialOperatorType != SpatialOperatorType.Nonlinear)
-                m_nonlinconfig.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Picard;
+                this.XdgSolverFactory.Config.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Picard;
 
-            XdgSolverFactory.GenerateNonLin(out nonlinSolver, out linearSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator, MultigridSequence);
+            XdgSolverFactory.GenerateNonLin(out nonlinSolver, this.AssembleMatrixCallback, this.MultigridBasis, Config_MultigridOperator);
             
-            string ls_strg = String.Format("{0}", m_linearconfig.SolverCode);
-            string nls_strg = String.Format("{0}", m_nonlinconfig.SolverCode);
-
+     
             if ((this.Config_LevelSetHandling == LevelSetHandling.Coupled_Iterative)) {
                 if(nonlinSolver is FixpointIterator fixPoint) {
                     fixPoint.CoupledIteration_Converged = LevelSetConvergenceReached;
                 }
             }
 
-            // set callback for diagnostic output
-            // ----------------------------------
-            if (nonlinSolver != null) {
-                nonlinSolver.IterationCallback += this.LogResis;
-                if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    //((ISolverWithCallback)linearSolver).IterationCallback = this.MiniLogResi;
-                }
-            } else {
-                if (linearSolver != null && linearSolver is ISolverWithCallback) {
-                    ((ISolverWithCallback)linearSolver).IterationCallback = this.LogResis;
+            nonlinSolver.IterationCallback += this.LogResis;
+
+            return nonlinSolver;
+
+          
+        }
+
+        /// <summary>
+        /// Returns the linear solver
+        /// </summary>
+        protected virtual ISolverSmootherTemplate GetLinearSolver(MultigridOperator op) {
+            using (var ft = new FuncTrace()) {
+                using (new BlockTrace("Solver_Init", ft)) {
+                    ISolverSmootherTemplate linearSolver = this.LinearSolverConfig.CreateInstance(op);
+
+                    if (linearSolver is ISolverWithCallback swc) {
+                        swc.IterationCallback += this.LogResis;
+                    }
+
+                    return linearSolver;
                 }
             }
-
-            return String.Format("nonlinear Solver: {0}, linear Solver: {1}", nls_strg, ls_strg);
         }
 
 
-        
-        /// <summary>
-        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
-        /// </summary>
-        public ResidualLogger m_ResLogger;
 
         /// <summary>
-        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
-        /// 
-        /// Names for the residual of each variable.
+        /// Residual logging
         /// </summary>
-        public string[] m_ResidualNames;
-
-        /// <summary>
-        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
-        /// 
-        /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
-        /// before the L2-norm is computed.
-        /// </summary>
-        public bool m_TransformedResi = true;
-
-        /// <summary>
-        /// Logging of residuals (provisional).
-        /// </summary>
-        virtual protected void LogResis(int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
+        /// <param name="iterIndex"></param>
+        /// <param name="currentSol"></param>
+        /// <param name="currentRes"></param>
+        /// <param name="Mgop"></param>
+        private void LogResis (int iterIndex, double[] currentSol, double[] currentRes, MultigridOperator Mgop) {
 
             if (m_ResLogger != null) {
                 int NF = this.CurrentStateMapping.Fields.Count;
@@ -495,18 +491,37 @@ namespace BoSSS.Solution.XdgTimestepping {
                     var R = this.Residuals;
                     R.Clear();
 
+                    /*
+                    double Norm(IList<double> V, ISparseMatrix Mass) {
+                        double[] tmp = new double[V.Count];
+                        Mass.SpMV(1.0, V, 0.0, tmp);
+                        return V.MPI_InnerProd(tmp).Sqrt();
+                    }
+
+                    Console.WriteLine($"RESILOG: w.r.t. MG OP {Norm(currentRes, Mgop.MassMatrix):0.####E-00}");
+                    */
+
                     Mgop.TransformRhsFrom(R, currentRes);
                     this.m_CurrentAgglomeration.Extrapolate(R.Mapping);
-                   
+                    /*
                     //// plotting during Newton iterations:  
-                    //var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
-                    //Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
-                                        
+                    var DgSolution = Mgop.ProlongateSolToDg(currentSol, "Sol_");
+                    Tecplot.Tecplot.PlotFields(DgSolution.Cat(this.Residuals.Fields), "DuringNewton-" + iterIndex, iterIndex, 2);
+
+
+                    //MassMatrixFactory MassFact = m_LsTrk.GetXDGSpaceMetrics(Config_SpeciesToCompute, Config_CutCellQuadratureOrder, 1).MassMatrixFactory;
+                    //var FreshMama = MassFact.GetMassMatrix(CurrentStateMapping, false);
+                    //Console.WriteLine($"RESILOG: w.r.t. XDG (nonagg): {Norm(R, FreshMama):0.####E-00}");
+                    */
+
                     for (int i = 0; i < NF; i++) {
                         var field = R.Mapping.Fields[i];
-                        if(field is XDGField) {
-                            foreach(var spc in ((XDGBasis)field.Basis).Tracker.SpeciesNames) {
-                                double L2Res = ((XDGField)field).GetSpeciesShadowField(spc).L2Norm();
+                        if (field is XDGField xField) {
+                            XDGBasis xBasis = xField.Basis;
+                            foreach (var spc in xBasis.Tracker.SpeciesNames) {
+                                //var cm = xBasis.Tracker.Regions.GetSpeciesMask(spc);
+                                //double L2Res = xField.GetSpeciesShadowField(spc).L2Norm(cm);
+                                double L2Res = xField.L2NormSpecies(spc);
                                 m_ResLogger.CustomValue(L2Res, m_ResidualNames[i] + "#" + spc);
                                 totResi += L2Res.Pow2();
                             }
@@ -530,7 +545,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         foreach (int idx in VarIdx[i])
                             L2Res += currentRes[idx - Mgop.Mapping.i0].Pow2();
                         L2Res = L2Res.MPISum().Sqrt(); // would be better to do the MPISum for all L2Res together,
-                                                       //                                but this implementation is anyway inefficient....
+                                                        //                                but this implementation is anyway inefficient....
                         totResi += L2Res.Pow2();
 
                         m_ResLogger.CustomValue(L2Res, m_ResidualNames[i]);
@@ -548,6 +563,26 @@ namespace BoSSS.Solution.XdgTimestepping {
             }
         }
         
+        /// <summary>
+        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
+        /// </summary>
+        public ResidualLogger m_ResLogger;
+
+        /// <summary>
+        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
+        /// 
+        /// Names for the residual of each variable.
+        /// </summary>
+        public string[] m_ResidualNames;
+
+        /// <summary>
+        /// Configuration for residual logging (provisional), see <see cref="LogResis(int, double[], double[], MultigridOperator)"/>.
+        /// 
+        /// If true, the residual will we transformed back to the original XDG basis (before agglomeration and block preconditioning)
+        /// before the L2-norm is computed.
+        /// </summary>
+        public bool m_TransformedResi = false;
+
         public double m_LastLevelSetResidual;
 
         protected bool LevelSetConvergenceReached() {
@@ -661,13 +696,8 @@ namespace BoSSS.Solution.XdgTimestepping {
             var Ret = new Dictionary<string, double>();
             //int k = 0;
             foreach(int[] varGroup in VarGroups) {
-                
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
-                //*
-                //if(k == 0)
-                //    ana.PrecondOpMatrix.SaveToTextFileSparse("OpMtx-J" + J + ".txt");
-                //Console.WriteLine("################ remember to deactivate me ^^^^^  ");
-
+               
 
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();
@@ -681,17 +711,15 @@ namespace BoSSS.Solution.XdgTimestepping {
                 if (plotStencilCondNumViz) {
                     StencilCondNoVizS.Add(ana.StencilCondNumbersV());
                 }
-                //*/
+
                 /*
                 {
                     Console.WriteLine($"finding minimal Eigenvalue for variable group {ana.VarNames} ...");
                     var bla = ana.MinimalEigen();
                     Console.WriteLine("done: " + bla.lambdaMin);
-                    
-                    var Spurious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
-                    m_CurrentAgglomeration.Extrapolate(new CoordinateMapping(Spurious));
-                    Tecplot.Tecplot.PlotFields(Spurious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
-                }//*/
+                    var Suprious = ana.MultigridOp.ProlongateSolToDg(bla.V, "Spurious_");
+                    Tecplot.Tecplot.PlotFields(Suprious, "SpuriousModes-" + ana.VarNames + "--mesh" + BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest.RunNumber, bla.lambdaMin, 2);
+                }*/
                 //k++;
             }
 

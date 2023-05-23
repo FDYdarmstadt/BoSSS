@@ -121,12 +121,25 @@ namespace ilPSP.Connectors.Matlab {
             Flav = Flavor.Matlab;
             //Flav = Flavor.Octave;
             MatlabExecuteable = null;  //"D:\\cygwin64\\bin\\bash.exe";
+
+            try {
+                TempDirMutex = new Mutex(false, "BoSSSbatchmodeconnector_IOmutex-new");
+            } catch(Exception) {
+                TempDirMutex = null; 
+            }
+
+            random = new Random();
         }
 
         /// <summary>
         /// Inter-process synchronization of file IO
         /// </summary>
-        static Mutex TempDirMutex = new Mutex(false, "BoSSSbatchmodeconnector_IOmutex");
+        static Mutex TempDirMutex;
+
+        /// <summary>
+        /// a random timer, initialized at app startup, to obtain random wait times on IO problems
+        /// </summary>
+        static Random random;
 
         /// <summary>
         /// creates a new instance of the MATLAB connector.
@@ -145,22 +158,34 @@ namespace ilPSP.Connectors.Matlab {
             if (Rank == 0) {
                 if (WorkingPath == null) {
                     try {
-                        TempDirMutex.WaitOne();
+                        if(TempDirMutex != null) // in the batch environment, Mutex sometimes throws UnauthorizedAccessException;
+                            //                      then, we have no mutex and must rely on something else
+                            //                      regarding IO, nothing seems reliable.
+                            TempDirMutex.WaitOne();
 
-                        var rnd = new Random();
                         bool Exists = false;
                         do {
                             var tempPath = Path.GetTempPath();
-                            var tempDir = rnd.Next().ToString();
+                            var tempDir = Guid.NewGuid().ToString(); // GUIDs should be unlikely to create collisions
                             WorkingDirectory = new DirectoryInfo(Path.Combine(tempPath, tempDir));
-                            Exists = WorkingDirectory.Exists;
-                            if(!Exists) {
-                                WorkingDirectory.Create();
-                                DelWorkingDir = true;
+                            try {
+                                Exists = WorkingDirectory.Exists;
+                                if (!Exists) {
+                                    WorkingDirectory.Create();
+                                    DelWorkingDir = true;
+                                }
+                            } catch (Exception) {
+                                // some unfortunate IO collision
+                                Exists = false;
+                                Thread.Sleep(random.Next(1000, 10000)); // wait somewhat between 1 and 10 seconds
                             }
                         } while(Exists == true);
+                    
+                    
+                    
                     } finally {
-                        TempDirMutex.ReleaseMutex();
+                        if(TempDirMutex != null)
+                            TempDirMutex.ReleaseMutex();
                     }
                 } else {
                     WorkingDirectory = new DirectoryInfo(WorkingPath);
@@ -841,7 +866,8 @@ namespace ilPSP.Connectors.Matlab {
             { 
                 if(SuccessfulExe) {
                     try {
-                        TempDirMutex.WaitOne();
+                        if (TempDirMutex != null)
+                            TempDirMutex.WaitOne();
                         foreach(var f in CreatedFiles) {
                             try {
                                 File.Delete(f);
@@ -857,7 +883,8 @@ namespace ilPSP.Connectors.Matlab {
                             }
                         }
                     } finally {
-                        TempDirMutex.ReleaseMutex();
+                        if(TempDirMutex != null)
+                            TempDirMutex.ReleaseMutex();
                     }
                 } else {
                     // keeping files for diagnostic purposes

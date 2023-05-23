@@ -38,7 +38,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Wrapper around the monkey solver (supports GPU acceleration).
     /// </summary>
-    public class MonkeySolver : ISolverSmootherTemplate {
+    public class MonkeySolver : ISubsystemSolver {
 
         /// <summary>
         /// 
@@ -58,49 +58,85 @@ namespace BoSSS.Solution.AdvancedSolvers {
             
         }
 
-   
+        /// <summary>
+        /// Configurable factory for the Money solver
+        /// </summary>
+        [Serializable]
+        public class Config : IterativeSolverConfig {
+
+            /// <summary>
+            /// Switch between CG/PCG
+            /// </summary>
+            public _whichSolver WhichSolver = _whichSolver.CG;
+
+            public override string Name => "Monkey" + WhichSolver;
+
+            public override string Shortname => "Mky" + WhichSolver;
+
+            public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
+                var inst = new MonkeySolver();
+                inst.m_config = this;
+                inst.Init(level);
+                return inst;
+            }
+        }
+
+        Config m_config = new Config();
 
         /// <summary>
-        /// Switch between PARDISO and MUMPS.
+        /// Solver configuration
         /// </summary>
-        public _whichSolver WhichSolver = _whichSolver.CG;
+        public Config config {
+            get {
+                return m_config;
+            }
+        }
+
+
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
 
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+        void InitImpl(IOperatorMappingPair op) {
             using (var tr = new FuncTrace()) {
                 var Mtx = op.OperatorMatrix;
-                var MgMap = op.Mapping;
+                var MgMap = op.DgMapping;
                 m_MultigridOp = op;
 
-                if (!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if (!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if (!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if (!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 m_Mtx = Mtx;
             }
         }
 
-        MultigridOperator m_MultigridOp;
+        IOperatorMappingPair m_MultigridOp;
 
         
         ISparseSolverExt GetSolver(IMutableMatrixEx Mtx) {
             ISparseSolverExt solver;
 
             
-            switch (WhichSolver) {
+            switch (config.WhichSolver) {
 
                 case _whichSolver.CG: {
                     var _solver = new CG(); solver = _solver;
                     _solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda;
-                    _solver.MaxIterations = Switcher<int>(_solver.MaxIterations, LinConfig.MaxSolverIterations);
-                    _solver.Tolerance = Switcher<double>(_solver.Tolerance, LinConfig.ConvergenceCriterion);
+                    _solver.MaxIterations = config.MaxSolverIterations;
+                    _solver.Tolerance = config.ConvergenceCriterion;
                     break;
                 }
                 case _whichSolver.PCG: {
                     var _solver = new PCG();solver = _solver;
                     _solver.DevType = ilPSP.LinSolvers.monkey.DeviceType.Cuda;
-                    _solver.MaxIterations = Switcher<int>(_solver.MaxIterations, LinConfig.MaxSolverIterations);
-                    _solver.Tolerance = Switcher<double>(_solver.Tolerance, LinConfig.ConvergenceCriterion);
+                    _solver.MaxIterations = config.MaxSolverIterations;
+                    _solver.Tolerance = config.ConvergenceCriterion;
                     break;
                 }
 
@@ -172,20 +208,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Converged = false;
         }
 
-        private static T Switcher<T>(T origin,T setter) {
-            T thisreturn;
-            if (setter != null) {
-                thisreturn = setter;
-            } else {
-                thisreturn = origin;
-            }
-            return thisreturn;
-        }
+        //private static T Switcher<T>(T origin,T setter) {
+        //    T thisreturn;
+        //    if (setter != null) {
+        //        thisreturn = setter;
+        //    } else {
+        //        thisreturn = origin;
+        //    }
+        //    return thisreturn;
+        //}
 
-        public LinearSolverConfig LinConfig {
-            get;
-            set;
-        }
 
         /// <summary>
         /// 

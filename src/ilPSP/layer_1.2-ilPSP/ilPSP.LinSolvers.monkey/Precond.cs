@@ -76,8 +76,11 @@ namespace ilPSP.LinSolvers.monkey {
         /// </summary>
         abstract public void DoPrecond();
 
+        /// <summary>
+        /// releasing of internal resources; **must** be overridden
+        /// </summary>
         virtual public void Dispose() {
-            throw new NotImplementedException();
+            throw new NotImplementedException(); // This is intentional: enforce to override this method; if we miss to override, throw an exception
         }
         #endregion
     }

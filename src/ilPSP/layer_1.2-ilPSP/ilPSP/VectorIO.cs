@@ -107,11 +107,24 @@ namespace ilPSP.Utils {
                     stw.Close();
                 }
             }
-
         }
 
         /// <summary>
-        /// saves a vector (distributed over various MPI processes) into one text file
+        /// saves a vector (distributed over various MPI processes) into a text stream
+        /// </summary>
+        public static void SaveToStream(this IEnumerable<double> list, TextWriter stw) {
+            SaveToStream(list, stw, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// saves a vector (distributed over various MPI processes) into a text stream
+        /// </summary>
+        public static void SaveToStream(this IEnumerable<double> list, TextWriter stw, MPI_Comm comm) {
+            SaveToStream<double>(list, stw, comm, x => x.ToString(NumberFormatInfo.InvariantInfo));
+        }
+
+        /// <summary>
+        /// saves a vector (distributed over various MPI processes) into a text stream
         /// </summary>
         /// <param name="list"></param>
         /// <param name="stw">text writer on output stream</param>
@@ -363,7 +376,7 @@ namespace ilPSP.Utils {
             }
 
             Dictionary<int, T[]> SendDataPackets = new Dictionary<int, T[]>();
-            if (Rank != 0) {
+            if (Rank == 0) {
                 for (int prc = 1; prc < Size; prc++) {
                     T[] vec_prc = vec.GetSubVector((int)p.GetI0Offest(prc), p.GetLocalLength(prc));
                     SendDataPackets.Add(prc, vec_prc);

@@ -78,12 +78,9 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// returns the distance layer index for level-set <paramref name="levSetInd"/>,
+            /// returns the distance layer index for level-set <paramref name="levSetIdx"/>,
             /// see also <see cref="DecodeLevelSetDist(ushort, int)"/>, <see cref="RegionsCode"/>.
             /// </summary>
-            /// <param name="levSetIdx"></param>
-            /// <param name="jCell"></param>
-            /// <returns></returns>
             public int GetLevelSetDistance(int levSetIdx, int jCell) {
                 if(levSetIdx < 0 || levSetIdx >= this.m_owner.NoOfLevelSets)
                     throw new IndexOutOfRangeException();
@@ -265,7 +262,7 @@ namespace BoSSS.Foundation.XDG {
 
                         if (!ColorsOfAllParts.Add(Color)) {
                             
-                            //Debugger.Launch();
+                            // dbg_launch();
                             //using (var stw = new System.IO.StreamWriter("verdammte-zelle.csv")) {
                             //    for (int i = 0; i < Je; i++) {
                             //        var cen = gdat.GlobalNodes.GetValue_Cell(Grid.RefElements.Square.Instance.Center, i, 1);
@@ -791,7 +788,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                         MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
-                        Debugger.Launch();
+                         dbg_launch();
                     }
                     */
 

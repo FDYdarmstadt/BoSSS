@@ -93,10 +93,14 @@ namespace BoSSS.Foundation.Grid.RefElements {
             if (P > 1) {
                 GetNodeSet(P, out UnsortNodes, out UnsortType);
             } else {
-                UnsortNodes = MultidimensionalArray.Create(D+1, D);
+                UnsortNodes = MultidimensionalArray.Create(D + 1, D);
                 UnsortNodes.Set(this.Vertices.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { D, D - 1 }));
-                UnsortType = new int[D+1];
+                UnsortType = new int[D + 1];
                 UnsortType.SetAll(D);
+                //UnsortNodes = this.Vertices.CloneAs();
+                //UnsortType = new int[NoOfVertices];
+                //UnsortType.SetAll(D);
+
             }
             if (UnsortNodes.GetLength(0) != UnsortType.Length)
                 throw new ApplicationException();
@@ -111,7 +115,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 						throw new ArgumentOutOfRangeException("illegal type filter");
 			}
 
-            Nodes = new NodeSet(this, UnsortNodes.Lengths[0], UnsortNodes.Lengths[1]);
+            Nodes = new NodeSet(this, UnsortNodes.Lengths[0], UnsortNodes.Lengths[1], TypeFilter.Length == 0);
             int NoOfNodes = UnsortType.Length;
             Type = new int[NoOfNodes];
             EntityIndex = new int[NoOfNodes];
@@ -261,7 +265,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 
 				int NewNoOfNodes = Type.Where(ty => !TypeFilter.Contains(ty)).Count();
 
-				Nodes = new NodeSet(this, NewNoOfNodes, D);
+				Nodes = new NodeSet(this, NewNoOfNodes, D, true);
 				Type = new int[NewNoOfNodes];
 				EntityIndex = new int[NewNoOfNodes];
 
@@ -301,8 +305,8 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
             int D = this.SpatialDimension;
 
-            if (ModalBasisSelector== null)
-                ModalBasisSelector = delegate(Polynomial p) {
+            if (ModalBasisSelector == null)
+                ModalBasisSelector = delegate (Polynomial p) {
 
                     Debug.Assert(p.Coeff.Length == p.Exponents.GetLength(0));
                     Debug.Assert(p.Exponents.GetLength(1) == D);

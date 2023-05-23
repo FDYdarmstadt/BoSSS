@@ -8,18 +8,21 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BoSSS.Foundation.Grid;
 
 namespace BoSSS.Application.ExternalBinding {
     public class OpenFoamMatrix : BlockMsrMatrix, IForeignLanguageProxy {
 
+        public OpenFoamDGField[] Fields;
 
         /// <summary>
         /// Constructor for quadratic matrices
         /// </summary>
         [CodeGenExport]
-        public OpenFoamMatrix(OpenFoamDGField f) :
+        public OpenFoamMatrix(OpenFOAMGrid grd, OpenFoamDGField f) :
             base(f.Mapping, f.Mapping) //
         {
+            Fields = new[]{f};
             RowMap = f.Mapping;
             ColMap = f.Mapping;
             m_SolBuffer = f;
@@ -67,7 +70,6 @@ namespace BoSSS.Application.ExternalBinding {
             return RHSbuffer[this.RowMap.LocalUniqueCoordinateIndex(f, j, n)];
         }
 
-
         OpenFoamDGField m_SolBuffer;
 
         /// <summary>
@@ -88,7 +90,8 @@ namespace BoSSS.Application.ExternalBinding {
         /// <returns></returns>
         [CodeGenExport]
         public double GetSolCoordinate(int f, int j, int n) {
-            return RHSbuffer[this.RowMap.LocalUniqueCoordinateIndex(f, j, n)];
+            // return SolBuffer[f][this.RowMap.LocalUniqueCoordinateIndex(f, j, n)];
+            return SolBuffer[this.RowMap.LocalUniqueCoordinateIndex(0, j, n)];
         }
 
 
@@ -101,7 +104,6 @@ namespace BoSSS.Application.ExternalBinding {
         [CodeGenExport]
         public void Solve() {
             try {
-                Console.WriteLine("Solving Matrix, norm is " + this.InfNorm());
                 this.Solve_Direct(this.SolBuffer, RHSbuffer);
             } catch(Exception e) {
                 Console.WriteLine(e.GetType().FullName + ": " + e.Message);
@@ -285,6 +287,18 @@ namespace BoSSS.Application.ExternalBinding {
         public IntPtr _GetForeignPointer() {
             return m_ForeignPtr;
         }
+
+        // public override string ToString(){
+        //     var ret = new System.String("");
+        //     ret += "OpenFoamMatrix with " + this.NoOfRows + " rows and " + this.NoOfCols + " columns\n";
+        //     for (int i = 0; i < this.NoOfRows; i++){
+        //         for (int j = 0; j < this.NoOfCols; j++){
+        //             ret += string.Format("{0:#.#e+0} ", this[i, j]);
+        //         }
+        //         ret += "\n";
+        //     }
+        //     return ret;
+        // }
 
     }
 }

@@ -35,7 +35,7 @@ namespace BoSSS.Application.SipPoisson {
             int deg = 1,
             int NoOfLlyodsIter = 10,
             bool mirror = false,
-            LinearSolverCode solver_name = LinearSolverCode.classic_pardiso,
+            LinearSolverCode solver_name = LinearSolverCode.direct_pardiso,
             Foundation.IO.IDatabaseInfo db = null)
         {
             return TestGrid(new VoronoiGrids.Square(Res, NoOfLlyodsIter), deg, solver_name, db);
@@ -65,7 +65,7 @@ namespace BoSSS.Application.SipPoisson {
             int deg = 1,
             int NoOfLlyodsIter = 10,
             bool mirror = false,
-            LinearSolverCode solver_name = LinearSolverCode.classic_pardiso,
+            LinearSolverCode solver_name = LinearSolverCode.direct_pardiso,
             Foundation.IO.IDatabaseInfo db = null)
         {
 
@@ -96,7 +96,7 @@ namespace BoSSS.Application.SipPoisson {
         static SipControl TestGrid(
             VoronoiGrid grid,
             int deg = 1,
-            LinearSolverCode solver_name = LinearSolverCode.classic_pardiso,
+            LinearSolverCode solver_name = LinearSolverCode.direct_pardiso,
             Foundation.IO.IDatabaseInfo db = null)
         {
             var R = new SipControl
@@ -117,9 +117,8 @@ namespace BoSSS.Application.SipPoisson {
             R.InitialValues_Evaluators.Add("RHS", X => 1.0);
             R.InitialValues_Evaluators.Add("Tex", X => X[0]);
             R.ExactSolution_provided = false;
-            R.LinearSolver.NoOfMultigridLevels = int.MaxValue;
-            R.LinearSolver.SolverCode = solver_name;
-            R.LinearSolver.NoOfMultigridLevels = 1;
+            R.LinearSolver = solver_name.GetConfig();
+            
             //R.TargetBlockSize = 100;
 
             grid.SetGridAndBoundaries(R);

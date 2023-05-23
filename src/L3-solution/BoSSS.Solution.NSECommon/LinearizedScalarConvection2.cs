@@ -514,7 +514,7 @@ namespace BoSSS.Solution.NSECommon {
                     break;
 
                 case PhysicsMode.MixtureFraction:
-                    ;
+                    
                     m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction); // VelocityX,VelocityY,(VelocityZ), MixtureFraction as variables.
 
                     if (EoS == null)

@@ -203,21 +203,23 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="RelTime">
         /// time, relative to the point of time at which the initial value holds.
         /// </param>
+        /// <param name="edgeFluxes"></param>
         /// <remarks>
         /// Assume an ODE
-        /// <br/>
+        /// ``` math
         /// d/dt u = f(u)
-        /// <br/>
+        /// ```
         /// which is discretized by an explicit Euler scheme
-        /// <br/>
+        /// ```math
         /// (u_1 - u_0)/delta_t = f(u_0).
-        /// <br/>
+        /// ```
         /// Here, f(u) denotes the discretization of the spatial operator by the DG method.
         /// The purpose of this method is to evaluate f(u_0).<br/>
-        /// It does so by calling <see cref="SpatialOperator.Evaluator.Evaluate{Tout}"/>
+        /// It does so by calling <see cref="IEvaluatorNonLin.Evaluate{Tout}"/>
         /// of <see cref="Evaluator"/>.<br/>
         /// Override this method e.g. for the implementation of (some types of) limiters.
         /// </remarks>
+        /// 
         virtual internal protected void ComputeChangeRate(double[] k, double AbsTime, double RelTime, double[] edgeFluxes = null) {
             using (var tr = new ilPSP.Tracing.FuncTrace("ComputeChangeRate")) {
                 RaiseOnBeforeComputechangeRate(AbsTime, RelTime);
@@ -308,8 +310,6 @@ namespace BoSSS.Solution.Timestepping {
         /// Calculates a stable time step according to the time step constraints
         /// The individual constraints are connected by a harmonic sum 
         /// </summary>
-        /// <param name="dt"></param>
-        /// <returns></returns>
         virtual protected double CalculateTimeStep() {
             double dt;
             if (TimeStepConstraints.First().dtMin != TimeStepConstraints.First().dtMax) {
@@ -363,7 +363,6 @@ namespace BoSSS.Solution.Timestepping {
         /// <summary>
         /// <see cref="ITimeStepper.ResetTime"/>
         /// </summary>
-        /// <param name="NewTime"></param>
         public virtual void ResetTime(double NewTime, int timestepNumber) {
             m_Time = NewTime;
         }

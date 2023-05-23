@@ -71,7 +71,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
             double[] _EdgeNodes = GenericBlas.Linspace(-1, 1, Math.Max(10, (this.LevelSetBasis_Geometric.Degree + 1) * 2));
             int NN = _EdgeNodes.Length;
-            this.EdgeNodes = new NodeSet(GridDat.Edges.EdgeRefElements[0], NN, 1);
+            this.EdgeNodes = new NodeSet(GridDat.Edges.EdgeRefElements[0], NN, 1, true);
             EdgeNodes.ExtractSubArrayShallow(-1, 0).SetVector(_EdgeNodes);
             this.EdgeNodes.LockForever();
 
@@ -124,9 +124,9 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
                 int iTrafo = TrafoIdx[iEdg, InOrOut];
 
                 this.PhiEvalBuffer[nnk].Clear();
-                Phi.Evaluate(jNC, 1, this.EdgeNodes.GetVolumeNodeSet(this.GridDat, iTrafo), this.PhiEvalBuffer[nnk]);
+                Phi.Evaluate(jNC, 1, this.EdgeNodes.GetVolumeNodeSet(this.GridDat, iTrafo, false), this.PhiEvalBuffer[nnk]);
 
-                this.GridDat.TransformLocal2Global(this.EdgeNodes.GetVolumeNodeSet(this.GridDat, iTrafo), this.CellNodesGlobal[nnk], jNC);
+                this.GridDat.TransformLocal2Global(this.EdgeNodes.GetVolumeNodeSet(this.GridDat, iTrafo, false), this.CellNodesGlobal[nnk], jNC);
 
                 Max = Math.Max(Max, PhiEvalBuffer[nnk].Max());
                 Min = Math.Min(Min, PhiEvalBuffer[nnk].Min());

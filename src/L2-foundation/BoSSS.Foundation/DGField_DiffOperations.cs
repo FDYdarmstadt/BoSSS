@@ -49,7 +49,7 @@ namespace BoSSS.Foundation {
         /// computed (it may, e.g. be only required in boundary cells, so a
         /// computation over the whole domain would be a waste of computational
         /// power. A proper execution mask for this case would be e.g. 
-        /// <see cref="BoSSS.Foundation.Grid.GridData.BoundaryCells"/>.)<br/>
+        /// <see cref="BoSSS.Foundation.Grid.Classic.GridData.BoundaryCells"/>.)
         /// if null, the computation is carried out in the whole domain
         /// </param>
         /// <remarks>
@@ -83,7 +83,7 @@ namespace BoSSS.Foundation {
         /// computed (it may, e.g. be only required in boundary cells, so a
         /// computation over the whole domain would be a waste of computational
         /// power. A proper execution mask would be see e.g. 
-        /// <see cref="GridData.BoundaryCells"/>.)
+        /// <see cref="Grid.Classic.GridData.BoundaryCells"/>.)
         /// <br/>
         /// if null, the computation is carried out in the whole domain.
         /// </param>
@@ -232,7 +232,7 @@ namespace BoSSS.Foundation {
         /// computed (it may, e.g. be only required in boundary cells, so a
         /// computation over the whole domain would be a waste of computational
         /// power. A proper execution mask for this case would be e.g. 
-        /// <see cref="BoSSS.Foundation.Grid.GridData.BoundaryCells"/>.)<br/>
+        /// <see cref="BoSSS.Foundation.Grid.Classic.GridData.BoundaryCells"/>.)<br/>
         /// if null, the computation is carried out in the whole domain
         /// </param>
         /// <remarks>
@@ -265,7 +265,7 @@ namespace BoSSS.Foundation {
         /// computed (it may, e.g. be only required in boundary cells, so a
         /// computation over the whole domain would be a waste of computational
         /// power. A proper execution mask would be see e.g. 
-        /// <see cref="GridData.BoundaryCells"/>.)
+        /// <see cref="Grid.Classic.GridData.BoundaryCells"/>.)
         /// <br/>
         /// if null, the computation is carried out in the whole domain.
         /// </param>
@@ -485,7 +485,7 @@ namespace BoSSS.Foundation {
         /// computed (it may, e.g. be only required in boundary cells, so a
         /// computation over the whole domain would be a waste of computational
         /// power. A proper execution mask would be see e.g. 
-        /// <see cref="GridData.BoundaryCells"/>.)
+        /// <see cref="Grid.Classic.GridData.BoundaryCells"/>.)
         /// <br/>
         /// if null, the computation is carried out in the whole domain.
         /// </param>
@@ -495,7 +495,8 @@ namespace BoSSS.Foundation {
         /// </param>
         /// <remarks>
         /// The derivative is calculated using Riemann flux functions
-        /// (central difference);<br/>
+        /// (central difference);
+        /// 
         /// In comparison to
         /// <see cref="Derivative(double, DGField, int, CellMask)"/>, this method
         /// should be slower, but produce more sane results, especially for

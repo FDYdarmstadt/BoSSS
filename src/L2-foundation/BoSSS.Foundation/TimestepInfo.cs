@@ -20,7 +20,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
+using ilPSP.Utils;
 
 namespace BoSSS.Foundation.IO {
 
@@ -55,10 +57,6 @@ namespace BoSSS.Foundation.IO {
         /// <param name="fields">
         /// The fields associated with this time-step.
         /// </param>
-        /// <param name="storageID">
-        /// <see cref="Guid"/> of the storage vector containing the serialized
-        /// information stored in this object.
-        /// </param>
         public TimestepInfo(
             double physTime, ISessionInfo session, TimestepNumber TimestepNo, IEnumerable<DGField> fields) {
 
@@ -75,7 +73,7 @@ namespace BoSSS.Foundation.IO {
                 HashSet<string> allIdentifications = new HashSet<string>(new ilPSP.FuncEqualityComparer<string>((a, b) => a.Equals(b), a => a.GetHashCode()));
                 foreach (var f in _Fields) {
                     if (f.Identification == null || f.Identification.Length <= 0) {
-                        throw new ArgumentException("Creating timesteps from fields without an identification is not supported.");
+                        throw new ArgumentException("Creating Timesteps from fields without an identification is not supported.");
                     }
 
                     if (allIdentifications.Contains(f.Identification)) {
@@ -85,18 +83,24 @@ namespace BoSSS.Foundation.IO {
                     allIdentifications.Add(f.Identification);
                 }
             }
+                       
 
             // set members:
             ID = Guid.Empty;
             this.m_StorageID = Guid.Empty;
-            DGField[] _fields = fields.ToArray();
-            m_Fields = new Lazy<IEnumerable<DGField>>(() => _fields);
+            m_Fields = new Lazy<IEnumerable<DGField>>(() => fields);
             this.m_TimestepNumber = TimestepNo;
             this.PhysicalTime = physTime;
             this.Session = session;
             this.m_FieldInitializers = fields.Select(f => f.Initializer).ToArray();
             CreationTime = DateTime.Now;
+
         }
+
+       
+
+
+
 
         /// <summary>
         /// Creates a new instance of <see cref="TimestepInfo"/>

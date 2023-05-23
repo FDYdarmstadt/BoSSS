@@ -454,7 +454,7 @@ namespace CutCellQuadrature.TestCases {
 
         public override int LevelSetDegree {
             get {
-                return 1;
+                return 2;
             }
         }
 
@@ -465,8 +465,19 @@ namespace CutCellQuadrature.TestCases {
                 double z = input[i, 2] - CurrentShift.OffsetZ;
 
                 //output[i] = x - 0.5;
-                output[i] = x + 0.5 * z;
+                //output[i] = x + z +0.1;
                 //output[i] = x + y + z;
+
+                double[] pos = new double[3] { 0, 0, 0 };
+
+                double particleRad = 0.5;
+
+                double angle = 0;
+
+                output[i] = -Math.Max(Math.Abs((x - pos[0]) * Math.Cos(angle) - (y - pos[1]) * Math.Sin(angle)),
+                                        Math.Max(Math.Abs((x - pos[0]) * Math.Sin(angle) + (y - pos[1]) * Math.Cos(angle)),
+                                        Math.Abs(z - pos[2])))
+                                        + particleRad;
 
 
             }
@@ -475,10 +486,13 @@ namespace CutCellQuadrature.TestCases {
         public override IGrid GetGrid(IDatabaseInfo db) {
             switch (GridType) {
                 case GridTypes.Structured:
-                    return Grid3D.Cartesian3DGrid(
-                        GenericBlas.Linspace(-2.0, 2.0, 2),
-                        GenericBlas.Linspace(-1.0, 1.0, 2),
-                        GenericBlas.Linspace(-1.0, 1.0, 2));
+
+                    double[] m_mesh = new double[] {-0.934736903889974,-0.808658283817455,-0.69561928549564,-0.603323329854382,-0.538060233744357,-0.504277569313095,-0.5,-0.495722430686905,-0.461939766255643,-0.396676670145618,-0.30438071450436,-0.191341716182545,-0.0652630961100258,0.0652630961100258,0.191341716182545,0.30438071450436,0.396676670145618,0.461939766255643,0.495722430686905,0.5,0.504277569313095,0.538060233744357,0.603323329854382,0.69561928549564,0.808658283817455,0.934736903889974};
+                        return Grid3D.Cartesian3DGrid(m_mesh, m_mesh, m_mesh);
+
+            //            GenericBlas.Linspace(-2.0, 2.0, m_k * 10 +1),
+            //            GenericBlas.Linspace(-2.0, 2.0, m_k * 10 +1),
+            //            GenericBlas.Linspace(-2.0, 2.0, m_k * 10 +1));
                 //return Grid3D.Cartesian3DGrid(
                 //    GenericBlas.Linspace(0.0, 2.0, 2),
                 //    GenericBlas.Linspace(-1.0, 1.0, 2),
@@ -528,7 +542,7 @@ namespace CutCellQuadrature.TestCases {
                 //return 2.0;
                 //return 4.0;
                 //return 14.0;
-                return 16.0;
+                return 1.0;
             }
         }
     }
@@ -588,9 +602,9 @@ namespace CutCellQuadrature.TestCases {
 
         public override IGrid GetGrid(IDatabaseInfo db) {
             return Grid3D.Cartesian3DGrid(
-                        GenericBlas.Linspace(-1.0, 1.0, 2),
-                        GenericBlas.Linspace(-1.0, 1.0, 2),
-                        GenericBlas.Linspace(-1.0, 1.0, 2));
+                        GenericBlas.Linspace(-1.0, 1.0, 21),
+                        GenericBlas.Linspace(-1.0, 1.0, 21),
+                        GenericBlas.Linspace(-1.0, 1.0, 21));
         }
     }
 

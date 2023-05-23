@@ -65,7 +65,7 @@ namespace BoSSS.Solution.Utils {
         }
 
         /// <summary>
-        /// translates <see cref="Source"/> into <see cref="IVolumeForm.VolumeForm"/>
+        /// translates the source term into <see cref="IVolumeForm.VolumeForm"/>
         /// </summary>
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             return m_func(cpv.Xglobal, cpv.time) * V;

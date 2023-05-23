@@ -56,7 +56,7 @@ namespace BoSSS.Foundation {
         /// accumulates a vector to the coordinates of all fields in this mapping (see <see cref="CoordinateMapping.Fields"/>);
         /// </summary>
         /// <param name="x">
-        /// Length of <paramref name="x"/> vector must be equal the update length (<see cref="Count"/> or <see cref="UnsetteledCoordinateMapping.LocalLength"/>);
+        /// Length of <paramref name="x"/> vector must be equal the update length (<see cref="Count"/> or <see cref="ilPSP.Partitioning.LocalLength"/>);
         /// </param>
         /// <param name="alpha">
         /// accumulation factor for <paramref name="x"/>.

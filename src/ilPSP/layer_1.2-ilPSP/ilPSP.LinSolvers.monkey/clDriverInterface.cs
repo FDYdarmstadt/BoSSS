@@ -1132,6 +1132,9 @@ namespace ilPSP.LinSolvers.monkey.CL
     /// </summary>
     public class cl : DynLibLoader
     {
+        /// <summary>
+        /// ctor
+        /// </summary>
         public cl()
             : base(
                 new string[] { "opencl.dll", "libopencl.so", "libOpenCL.so" },

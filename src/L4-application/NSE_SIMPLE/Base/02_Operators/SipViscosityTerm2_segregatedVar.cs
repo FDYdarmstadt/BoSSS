@@ -133,12 +133,14 @@ namespace NSE_SIMPLE {
                 }
                 case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.SlipSymmetry: {
-
+                    throw new NotImplementedException();
+                    /*
                     int D = inp.D;
                     double g_D;
 
                     for(int dN = 0; dN < D; dN++) {
                         for(int dD = 0; dD < D; dD++) {
+                            
                             // consistency
                             Acc += muA * (inp.Normal[dN] * _Grad_uA[dD, dN] * inp.Normal[dD]) * (_vA * inp.Normal[m_iComp]) * base.m_alpha;
                             // symmetry
@@ -149,7 +151,6 @@ namespace NSE_SIMPLE {
                             //        break;
                             //    case ViscositySolverMode.Segregated:
                             //    default:
-                                    throw new NotImplementedException();
                             //}
                         }
                         g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, dN);
@@ -157,7 +158,7 @@ namespace NSE_SIMPLE {
                         Acc -= muA * ((_uA[dN] - g_D) * inp.Normal[dN]) * ((_vA - 0) * inp.Normal[m_iComp]) * pnlty;
                     }
 
-                    break;
+                    break;*/
                 }
                 case IncompressibleBcType.NavierSlip_Linear: {
 

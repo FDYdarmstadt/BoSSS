@@ -668,6 +668,22 @@ namespace ilPSP {
         }
 
         /// <summary>
+        /// Tests if a string is null/empty or contains only whitespaces.
+        /// </summary>
+        public static bool ContainsWhite(this string s) {
+            if (s == null)
+                return true;
+
+            int L = s.Length;
+            for (int l = 0; l < L; l++) {
+                if (char.IsWhiteSpace(s[l]))
+                    return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
         /// Converts a wildcard-string into a regular expression; probably stolen from stackoverflow.
         /// </summary>
         public static System.Text.RegularExpressions.Regex WildcardToRegex(this string pattern) {

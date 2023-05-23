@@ -76,6 +76,15 @@ namespace BoSSS.Foundation {
         }
 
 
+        /// <summary>
+        /// Assigns a new <see cref="DGField.Identification"/> to each field
+        /// </summary>
+        public void RenameFields(params string[] NewNames) {
+            for (int i = 0; i < this.m_Fields.Length; i++)
+                m_Fields[i].Identification = NewNames[i];
+        }
+
+
 
         static Basis[] GetBasisList(IList<DGField> _fields) {
             Basis[] ret = new Basis[_fields.Count];
@@ -134,7 +143,7 @@ namespace BoSSS.Foundation {
         /// computes a local unique coordinate index ("local" means local on this processor);
         /// this index is unique over all fields (in this mapping), over all cells, over all basis functions, 
         /// but it's only locally (on this processor) valid.
-        /// A local index in the update range (smaller than <see cref="UnsetteledCoordinateMapping.LocalLength"/>) can be converted into 
+        /// A local index in the update range (smaller than <see cref="ilPSP.Partitioning.LocalLength"/>) can be converted into 
         /// a global index by adding <see cref="ilPSP.Partitioning.i0"/>.
         /// </summary>
         /// <param name="f">the field</param>

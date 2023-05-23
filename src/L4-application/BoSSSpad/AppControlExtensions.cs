@@ -6,6 +6,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution;
 using ilPSP;
+using System.Diagnostics;
 
 namespace BoSSS.Application.BoSSSpad {
     /// <summary>
@@ -40,6 +41,32 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         /// <summary>
+        /// Creates a job for the control object <paramref name="ctrl"/>.
+        /// The method returns immediately.
+        /// This job can still be configured (e.g. setting number of MPI processors) and must be activated (<see cref="Job.Activate(BatchProcessorClient)"/>)
+        /// to run on a batch system.
+        /// </summary>
+        /// <param name="ctrl"></param>
+        /// <returns></returns>
+        public static Job CreateJob(this AppControl ctrl) {
+            ctrl.ProjectName = BoSSSshell.WorkflowMgm.CurrentProject;
+
+            string JobName = ctrl.SessionName;
+            int ctrl_idx = BoSSSshell.WorkflowMgm.RegisterControl(ctrl);
+            if (JobName.IsEmptyOrWhite()) {
+                JobName = "UnnamedJob_" + ctrl_idx;
+                ctrl.SessionName = JobName;
+            }
+
+            Type solverClass = ctrl.GetSolverType();
+            Job job = new Job(ctrl.SessionName, solverClass);
+            job.SetControlObject(ctrl);
+
+
+            return job;
+        }
+
+        /// <summary>
         /// Runs the solver described by the control object <paramref name="ctrl"/> on a batch system.
         /// The method returns immediately.
         /// </summary>
@@ -47,73 +74,64 @@ namespace BoSSS.Application.BoSSSpad {
         /// <param name="BatchSys"></param>
         /// <returns></returns>
         public static Job RunBatch(this AppControl ctrl, BatchProcessorClient BatchSys) {
-            ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
-
-            string JobName = ctrl.SessionName;
-            int ctrl_idx = InteractiveShell.WorkflowMgm.RegisterControl(ctrl);
-            if(JobName.IsEmptyOrWhite()) {
-                JobName = "UnnamedJob_" + ctrl_idx;
-                ctrl.SessionName = JobName;
-            }
-
-            Type solverClass = ctrl.GetSolverType();
-            Job job = new Job(JobName, solverClass);
-
-            //job.ExecutionTime = executionTime;
-            //job.NumberOfMPIProcs = NumberOfMPIProcs;
-            //job.UseComputeNodesExclusive = UseComputeNodesExclusive;
-            job.SetControlObject(ctrl);
+            var job = ctrl.CreateJob();
+            
             job.Activate(BatchSys);
             
             return job;
         }
 
         /// <summary>
-        /// Runs the solver described by the control object <paramref name="ctrl"/> on a batch system from the currently defined queues (<see cref="InteractiveShell.ExecutionQueues"/>).
+        /// Runs the solver described by the control object <paramref name="ctrl"/> on a batch system from the currently defined queues (<see cref="BoSSSshell.ExecutionQueues"/>).
         /// The method returns immediately.
         /// </summary>
         /// <param name="ctrl"></param>
         /// <param name="queueIdx">
-        /// Index int <see cref="InteractiveShell.ExecutionQueues"/>
+        /// Index int <see cref="BoSSSshell.ExecutionQueues"/>
         /// </param>
-        public static Job RunBatch(this AppControl ctrl, int queueIdx = 0) {
-            var b = InteractiveShell.ExecutionQueues[queueIdx];
-            return RunBatch(ctrl, InteractiveShell.ExecutionQueues[queueIdx]);
+        public static Job RunBatch(this AppControl ctrl, int queueIdx) {
+            var b = BoSSSshell.ExecutionQueues[queueIdx];
+            return RunBatch(ctrl, b);
         }
+
 
         /// <summary>
-        /// Creates a job for the control object <paramref name="ctrl"/>.
-        /// The method returns immediately.
-        /// This job can still be configured (e.g. setting number of MPI processors) and must be activated (<see cref="Job.Activate"/>)
-        /// to run on a batch system.
+        /// Runs the solver described by the control object <paramref name="ctrl"/> 
+        /// on the default batch system 
+        /// The method returns immediately after the job is deployed., i.e. it does not wait for the job to finish.
         /// </summary>
-        /// <param name="ctrl"></param>
-        /// <returns></returns>
-        public static Job CreateJob(this AppControl ctrl) {
-            ctrl.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
-
-            Type solverClass = ctrl.GetSolverType();
-            Job job = new Job(ctrl.SessionName , solverClass);
-            job.SetControlObject(ctrl);
-
-            
-            return job;
+        public static Job RunBatch(this AppControl ctrl) {
+            var b = BoSSSshell.GetDefaultQueue();
+            return RunBatch(ctrl, b);
         }
+
+
+       
 
         /// <summary>
         /// Returns the job correlated to a control object
         /// </summary>
         public static Job GetJob(this AppControl ctrl) {
-            foreach (var j in InteractiveShell.WorkflowMgm.AllJobs.Values) {
+            var ret = new List<Job>();
+            foreach (var j in BoSSSshell.WorkflowMgm.AllJobs.Values) {
                 var cj = j.GetControl();
                 if (cj == null)
                     continue;
 
                 if (cj.Equals(ctrl))
-                    return j;
+                    ret.Add(j);
             }
-            Console.WriteLine("No Job assigned for given control object yet.");
-            return null;
+            if (ret.Count <= 0) {
+                Console.WriteLine("No Job assigned for given control object yet.");
+                return null;
+            } else {
+                if(ret.Count > 1) {
+                    string messeage = $"Unable to find a 1:1 correlation between control object and jobs: matching jobs {ret.ToConcatString("", ", ", "")};";
+                    throw new ApplicationException(messeage);
+                }
+
+                return ret[0];
+            }
         }
         
         /// <summary>
@@ -128,8 +146,8 @@ namespace BoSSS.Application.BoSSSpad {
         /// Returns all sessions which can be correlated to a specific control object
         /// </summary>
         public static ISessionInfo[] GetAllSessions(this AppControl ctrl) {
-            var AllCandidates = InteractiveShell.WorkflowMgm.Sessions.Where(
-                    sinf => InteractiveShell.WorkflowMgm.SessionInfoAppControlCorrelation(sinf, ctrl));
+            var AllCandidates = BoSSSshell.WorkflowMgm.Sessions.Where(
+                    sinf => BoSSSshell.WorkflowMgm.SessionInfoAppControlCorrelation(sinf, ctrl));
 
             var cnt = AllCandidates.Count();
 
@@ -156,7 +174,7 @@ namespace BoSSS.Application.BoSSSpad {
             job.NumberOfMPIProcs = job2rest.NumberOfMPIProcs;
             job.RetryCount = job2rest.RetryCount;
             //job.MemPerCPU = job2rest.MemPerCPU;
-            job.ExecutionTime = job2rest.ExecutionTime;
+            //job.ExecutionTime = job2rest.ExecutionTime;
             return job;
         }
 
@@ -208,15 +226,17 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         /// <param name="ctrl"></param>
         public static void VerifyEx(this AppControl ctrl) {
-
+           
             // call basic verification
             ctrl.Verify();
+
+
 
             // see is legacy-features are used, which don't support serialization.
             if (ctrl.GridFunc != null)
                 throw new ArgumentException("'GridFunc' is not supported - cannot be serialized.");
-            if(ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count != 0)
-                throw new ArgumentException("'DynamicLoadBalancing_CellCostEstimatorFactories' is not supported - cannot be serialized.");
+            //if(ctrl.DynamicLoadBalancing_CellCostEstimators.Count != 0)
+            //    throw new ArgumentException("'DynamicLoadBalancing_CellCostEstimatorFactories' is not supported - cannot be serialized.");
 
             // try serialization/deserialization
             AppControl ctrlBack;
@@ -403,7 +423,7 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
             // try to match it with on of the already known databases
-            foreach(var db in InteractiveShell.databases) {
+            foreach(var db in BoSSSshell.databases) {
                 if(db.PathMatch(dbPath))
                     return db;
             }

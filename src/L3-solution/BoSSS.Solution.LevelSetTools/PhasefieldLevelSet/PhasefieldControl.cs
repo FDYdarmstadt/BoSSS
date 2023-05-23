@@ -6,16 +6,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
-{
-    public class PhasefieldControl : AppControlSolver, ILevSetControl
-    {
+namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
+    public class PhasefieldControl : AppControlSolver, ILevSetControl {
 
         /// <summary>
         /// ctor
         /// </summary>
-        public PhasefieldControl() : base()
-        {
+        public PhasefieldControl() : base() {
             NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             NonLinearSolver.MaxSolverIterations = 50;
 
@@ -28,8 +25,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Model Type of Phasefield equation, see Halperin (1977)
         /// </summary>
-        public enum ModelType
-        {
+        public enum ModelType {
             /// <summary>
             /// Order Parameter is nonconserved
             /// </summary>
@@ -54,8 +50,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Type of algebraic correction that is performed
         /// </summary>
-        public enum Correction
-        {
+        public enum Correction {
             /// <summary>
             /// Mass of a phase is conserved
             /// </summary>
@@ -74,33 +69,32 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
 
         public Correction CorrectionType = Correction.None;
 
-        /// <summary>
-        /// Type of algebraic correction that is performed
-        /// </summary>
-        public enum CurvatureCorrection
-        {
-            /// <summary>
-            /// Curvature by divergence form
-            /// </summary>
-            FullyCoupled,
+        ///// <summary>
+        ///// Type of algebraic correction that is performed
+        ///// </summary>
+        //public enum CurvatureCorrection {
+        //    /// <summary>
+        //    /// Curvature by divergence form
+        //    /// </summary>
+        //    FullyCoupled,
 
-            /// <summary>
-            /// Direct evaluation from concentration field, evaluated in each Newton iteration
-            /// </summary>
-            DirectCoupledIterative,
+        //    /// <summary>
+        //    /// Direct evaluation from concentration field, evaluated in each Newton iteration
+        //    /// </summary>
+        //    DirectCoupledIterative,
 
-            /// <summary>
-            /// Direct evaluation from concentration field, only evaluated once per timestep
-            /// </summary>
-            DirectCoupledOnce,
+        //    /// <summary>
+        //    /// Direct evaluation from concentration field, only evaluated once per timestep
+        //    /// </summary>
+        //    DirectCoupledOnce,
 
-            /// <summary>
-            /// No curvature correction
-            /// </summary>
-            None
-        }
+        //    /// <summary>
+        //    /// No curvature correction
+        //    /// </summary>
+        //    None
+        //}
 
-        public CurvatureCorrection CurvatureCorrectionType = CurvatureCorrection.None;
+        //public CurvatureCorrection CurvatureCorrectionType = CurvatureCorrection.None;
 
         [BoSSS.Solution.Control.ExclusiveLowerBound(0.0)]
         public double penalty_poisson = 2.6;

@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
         public MultidimensionalArray Evaluate(NodeSet nodes) {
             //Debug.Assert(object.ReferenceEquals(nodes.RefElement, base.RefElement));
-            NodeSet edgeNodes = new NodeSet(base.RefElement, nodes.RefElement.GetInverseFaceTrafo(localEdge).Transform(nodes));
+            NodeSet edgeNodes = new NodeSet(base.RefElement, nodes.RefElement.GetInverseFaceTrafo(localEdge).Transform(nodes), false);
 
             //MultidimensionalArray monomials = Polynomial.GetMonomials(
             //    edgeNodes, m_GridDat.Grid.RefElements[0].FaceRefElement.SpatialDimension, Degree);

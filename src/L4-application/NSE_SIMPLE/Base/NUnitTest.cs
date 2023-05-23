@@ -61,7 +61,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the Taylor vortex flow using the 'Unsteady_SIMPLE' algorithm.
         /// </summary>
-        //[NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
+        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void IncompressibleUnsteadyTaylorVortexTest() {
             var C = NSE_SIMPLE.Incompressible.ControlExamples.UnsteadyTaylorVortex();
@@ -92,7 +92,7 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the unsteady smooth interface solver.
         /// </summary>
-        //[NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
+        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void MultiphaseUnsteadyWaveTest() {
 
@@ -129,31 +129,31 @@ namespace NSE_SIMPLE {
         /// <summary>
         /// Tests the steady low-Mach solver for Couette flow with temperature gradient.
         /// </summary>
-        //[NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
+        [NUnitFileToCopyHack("Base/06_ZipDatabases/NUnitTests.zip")]
         [Test]
         public static void LowMachSteadyCouetteWithTemperatureGradientTest() {
-            var C = NSE_SIMPLE.LowMach.ControlExamples.SteadyCouetteFlowWithTemperatureGradient();
+            var C = NSE_SIMPLE.LowMach.ControlExamples.SteadyCouetteFlowWithTemperatureGradient(2,8);
             using (NSE_SIMPLEMain p = new NSE_SIMPLEMain()) {
                 p.Init(C);
                 p.RunSolverMode();
-
+                
 
                 double err_u = (double)p.QueryHandler.QueryResults["SolL2err_u"];
                 double err_v = (double)p.QueryHandler.QueryResults["SolL2err_v"];
                 double err_p = (double)p.QueryHandler.QueryResults["SolL2err_p"];
                 double err_T = (double)p.QueryHandler.QueryResults["SolL2err_T"];
-                double thres_u = 3.7e-5;
-                double thres_v = 2.3e-5;
-                double thres_p = 5.1e-4;
-                double thres_T = 2.0e-5;
+                double thres_u = 0.0002;
+                double thres_v = 9.3e-5;
+                double thres_p = 0.002;
+                double thres_T = 0.0002; 
 
-                Console.WriteLine("Number of SIMPLE iterations: " + p.SIMPLEStatus.SIMPLEStepNo + ". Expected number of iterations is less than 430.");
+                Console.WriteLine("Number of SIMPLE iterations: " + p.SIMPLEStatus.SIMPLEStepNo + ". Expected number of iterations is less than 150.");
                 Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
                 Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
                 Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
                 Console.WriteLine("L2 Error of solution T: " + err_T + " (threshold is " + thres_T + ")");
 
-                Assert.IsTrue(p.SIMPLEStatus.SIMPLEStepNo < 430);
+                Assert.IsTrue(p.SIMPLEStatus.SIMPLEStepNo < 150);
 
                 Assert.Less(err_u, thres_u);
                 Assert.Less(err_v, thres_v);

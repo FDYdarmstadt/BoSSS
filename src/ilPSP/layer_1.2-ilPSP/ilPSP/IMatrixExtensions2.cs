@@ -93,22 +93,42 @@ namespace ilPSP {
         /// <param name="row">
         /// an array with length greater or equal to 1st length of <paramref name="inp"/>;
         /// </param>
-        /// <param name="i0">
+        /// <param name="ReadOffset">
         /// offset into <paramref name="row"/>, coping starts from this index
         /// </param>
-        /// <param name="inc">
+        /// <param name="ReadInc">
         /// skip between to consecutive elements that are taken from <paramref name="row"/>
         /// </param>
-        public static void SetRow<T>(this IMatrix inp, int RowNo, T row, int i0 = 0, int inc = 1) where T : IList<double> {
+        public static void SetRow<T>(this IMatrix inp, int RowNo, T row, int ReadOffset = 0, int ReadInc = 1) where T : IEnumerable<double> {
 
             if (RowNo < 0 || RowNo >= inp.NoOfRows)
                 throw new IndexOutOfRangeException("RowNo out of range");
-            if ((row.Count - i0) < inp.NoOfCols * inc)
-                throw new ArgumentException("array to short", "row");
+            //if ((row.Count - i0) < inp.NoOfCols * inc)
+            //    throw new ArgumentException("array to short", "row");
 
-            int I1 = inp.NoOfCols;
-            for (int i = 0; i < I1; i++)
-                inp[RowNo, i] = row[i * inc + i0];
+            //int I1 = Math.Max(inp.NoOfCols, (row.Count - i0) / inc);
+            //for (int i = 0; i < I1; i++)
+            //    inp[RowNo, i] = row[i * inc + i0];
+
+
+            
+
+            int i = 0;
+            if (ReadInc == 1 && ReadOffset == 0) {
+                foreach (double row_i in row) {
+                    inp[RowNo, i] = row_i;
+                    i++;
+                }
+            } else {
+                int j = 0;
+                foreach (double row_i in row) {
+                    if (i >= ReadOffset && ((j - ReadOffset) % ReadInc == 0)) {
+                        inp[RowNo, i] = row_i;
+                        i++;
+                    }
+                    j++;
+                }
+            }
         } 
         
         /*
@@ -167,8 +187,18 @@ namespace ilPSP {
             return ret;
         }
 
-        
-    
+
+        /// <summary>
+        /// extracts <paramref name="N"/> items from the <paramref name="RowNo"/>-th row of matrix <paramref name="inp"/>, starting at column <paramref name="j0"/>
+        /// </summary>
+        public static double[] GetRowPart(this IMatrix inp, int RowNo, int j0, int N) {
+            double[] ret = new double[N];
+            for (int i = 0; i < N; i++)
+                ret[i] = inp[RowNo, i + j0];
+            return ret;
+        }
+
+
         /// <summary>
         /// extracts the <paramref name="ColNo"/>-th column from
         /// <paramref name="inp"/> and copies it to <paramref name="outp"/>,

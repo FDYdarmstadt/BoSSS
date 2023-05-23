@@ -71,7 +71,7 @@ namespace CutEdgeQuadrature {
 
                     gridDat.iGeomEdges.Edge2CellTrafos[iTrafo].Transform(localCenterEdge, localCenterVolume);
 
-                    gridDat.TransformLocal2Global(new NodeSet(KrefCell, localCenterVolume), cell, 1, centers, edge);
+                    gridDat.TransformLocal2Global(new NodeSet(KrefCell, localCenterVolume, false), cell, 1, centers, edge);
 
                 }
             }

@@ -46,7 +46,7 @@ namespace CNS.Tests.Ringleb {
         [ilPSP.NUnitFileToCopyHack("Tests/Ringleb/ringlebTests.zip")]
         [Test]
         public static void RinglebIdealGasTest() {
-            Program<RinglebControl> p = null;
+            CNSProgram<RinglebControl> p = null;
             Application<RinglebControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.Ringleb.ControlFiles.RinglebIdealGasTest()" },
                 false,
@@ -78,10 +78,10 @@ namespace CNS.Tests.Ringleb {
         /// <summary>
         /// Tests the error a stiffened gas
         /// </summary>
-        //[ilPSP.NUnitFileToCopyHack("Tests/Ringleb/ringlebTests.zip")]
+        [ilPSP.NUnitFileToCopyHack("Tests/Ringleb/ringlebTests.zip")]
         [Test]
         public static void RinglebStiffenedTest() {
-            Program<RinglebControl> p = null;
+            CNSProgram<RinglebControl> p = null;
             Application<RinglebControl>._Main(
                 new string[] { @"-c cs:CNS.Tests.Ringleb.ControlFiles.RinglebStiffenedGasTest()" },
                 false,

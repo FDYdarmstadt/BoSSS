@@ -303,7 +303,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         var Nodes1D = GenericBlas.Linspace(-1, 1, K);
 
-                        var _NodeSet = new NodeSet(this.RefElement, K*K, 2);
+                        var _NodeSet = new NodeSet(this.RefElement, K*K, 2, true);
                         int n = 0;
                         for (int i = 0; i < K /*&& n <= NoOfEq*1.1*/; i++) {
                             for (int j = 0; j < K /*&& n <= NoOfEq*1.1*/; j++) {
@@ -595,7 +595,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                                 var FaceRule = RefElement.FaceRefElement.GetQuadratureRule(IntOrder);
                                 int K = FaceRule.NoOfNodes;
-                                NodeSet VolumeNodes = new NodeSet(RefElement, K, D);
+                                NodeSet VolumeNodes = new NodeSet(RefElement, K, D, true);
                                 RefElement.TransformFaceCoordinates(SpecialFace, FaceRule.Nodes, VolumeNodes);
                                 VolumeNodes.LockForever();
 
@@ -747,7 +747,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 LevSetGrad = this.LevelSetData.GetLevelSetGradients(Nodes, j, 1);
                 
                 
-                m_Context.TransformLocal2Global(new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)), j, 1, x0_i_Global, 0);
+                m_Context.TransformLocal2Global(new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), false), j, 1, x0_i_Global, 0);
 
                 for (int nn = 0; nn < NN; nn++) {
 
@@ -771,7 +771,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 
                 // next iter: x0_i <- x0_{i+1}
                 x0_i_Local.Set(x0_ip1_Local);
-                Nodes = (new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)));
+                Nodes = (new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), true));
             }
 
             return Nodes;
@@ -1154,7 +1154,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                             // ~~~~
 
                             // physical:
-                            NodeSet FaceNodes = new NodeSet(this.RefElement, cR.Nodes.ExtractSubArrayShallow(new int[] { iNode, 0 }, new int[] { iNode + NodesPerEdge[e] - 1, D - 1 }));
+                            NodeSet FaceNodes = new NodeSet(this.RefElement, cR.Nodes.ExtractSubArrayShallow(new int[] { iNode, 0 }, new int[] { iNode + NodesPerEdge[e] - 1, D - 1 }), false);
                             var FaceNormals = MultidimensionalArray.Create(NodesPerEdge[e], D);
                             GridDat.Edges.GetNormalsForCell(FaceNodes, i0, e, FaceNormals);
                             // ~~~~
