@@ -311,30 +311,11 @@ namespace BoSSS.Foundation.Grid {
 
             // create grid data object
             this.GridDataObject = new GridData(this);
-
-            // TODO build correlation between bosss iEdges and OF face indices
-            // this.BoSSSiEdgeToOpenFOAMFace = new List<int>();
-            // for (int face = 0; face < faces.Length; face++) {
-            //     int inCell = owner[face];
-            //     int outCell = neighbour[face];
-            //     int iEdgeIndex = -1;
-            //     for (int iEdge = 0; iEdge < faces.Length; iEdge++) {
-            //         if (
-            //         (this.GridData.Edges.CellIndices[iEdge, 0] == inCell && this.GridData.Edges.CellIndices[iEdge, 1] == outCell) ||
-            //         (this.GridData.Edges.CellIndices[iEdge, 1] == inCell && this.GridData.Edges.CellIndices[iEdge, 0] == outCell)
-            //     ) {
-            //             iEdgeIndex = iEdge;
-            //         }
-            //     }
-            //     if (iEdgeIndex > 0) {
-            //         this.BoSSSiEdgeToOpenFOAMFace.Add(iEdgeIndex);
-            //     } else {
-            //         throw new ApplicationException("Face " + face + " not found");
-            //     }
-            //     // var edge = this.GridDataObject.
-            //     // BoSSSInCell.
-            // }
+            
+            
         }
+
+        
 
 
         /// <summary>
@@ -358,6 +339,9 @@ namespace BoSSS.Foundation.Grid {
             get;
             private set;
         }
+
+        public override GridData GridData => GridDataObject;
+
 
         /// <summary>
         /// <see cref="GridDataObject"/>

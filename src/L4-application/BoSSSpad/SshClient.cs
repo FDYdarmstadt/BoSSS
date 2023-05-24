@@ -98,7 +98,7 @@ namespace BoSSS.Application.BoSSSpad {
 
     /// <summary>
     /// internal wrapper around ssh/slurm commands;
-    /// slow verions, which starts a seperate ssh connection for every command.
+    /// slow version, which starts a separate ssh connection for every command.
     /// </summary>
     class SlowSshClient : SshClient {
 
@@ -205,23 +205,37 @@ namespace BoSSS.Application.BoSSSpad {
     }
 
     /// <summary>
-    /// SSH clinet which tires to keep the SSH connection open,
+    /// SSH client which tries to keep the SSH connection open,
     /// so only a single connection is required.
     /// Thus, it should be much faster than the <see cref="SlowSshClient"/>.
     /// </summary>
-    class SingleSessionSshClinet : SshClient {
+    class SingleSessionSshClient : SshClient {
 
-        static int instance_conter = 0;
+        static Dictionary<string,int> instance_conter = new Dictionary<string,int>();
 
-        public SingleSessionSshClinet(string ServerName, string Username, PrivateKeyFile pkf) : base(ServerName, Username, pkf) {
-            instance_conter++;
-            Console.WriteLine($"{instance_conter} instnce of ssh instaciated.");
-            if (instance_conter > 5)
-                throw new ApplicationException("Ctreating tons of s is bad.");
+        public SingleSessionSshClient(string ServerName, string Username, PrivateKeyFile pkf) : base(ServerName, Username, pkf) {
+            ConstructorCommon(ServerName, Username);
         }
 
-        public SingleSessionSshClinet(string ServerName, string Username, string pwd) : base(ServerName, Username, pwd) {
-            instance_conter++;
+        private static void ConstructorCommon(string ServerName, string Username) {
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
+                string keyname = Username + "@" + ServerName;
+
+                if (!instance_conter.ContainsKey(keyname)) {
+                    instance_conter.Add(keyname, 0);
+                }
+                instance_conter[keyname]++;
+                tr.Info($"Instance #{instance_conter[keyname]} of ssh client {keyname} instantiated.");
+
+                if (instance_conter[keyname] > 10) {
+                    tr.Warning($"Creating tons ssh-connections to same server ({keyname}) is bad.");
+                }
+            }
+        }
+
+        public SingleSessionSshClient(string ServerName, string Username, string pwd) : base(ServerName, Username, pwd) {
+            ConstructorCommon(ServerName, Username);
         }
 
 
@@ -384,7 +398,7 @@ namespace BoSSS.Application.BoSSSpad {
             return false;
         }
 
-        ILog m_Logger = LogManager.GetLogger(typeof(SingleSessionSshClinet));
+        ILog m_Logger = LogManager.GetLogger(typeof(SingleSessionSshClient));
 
         protected override void Connect() {
             using (var tr = new FuncTrace()) {

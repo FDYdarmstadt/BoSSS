@@ -1294,8 +1294,7 @@ namespace BoSSS.Solution {
 
                 // kernel setup
                 //====================
-                //RedistributeGrid();
-                {
+               {
                     Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
                     if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
@@ -1310,8 +1309,8 @@ namespace BoSSS.Solution {
                         this.MultigridSequence = new AggregationGridData[0];
                     }
                 }
+                
                
-
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 if (this.CurrentSessionInfo != null) {
