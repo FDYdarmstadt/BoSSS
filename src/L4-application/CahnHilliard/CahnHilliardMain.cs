@@ -338,8 +338,7 @@ namespace BoSSS.Application.CahnHilliard {
             // convection term
             if (this.Control.includeConvection == true) {
                 CHOp.EquationComponents["Res_c"].Add(
-                    //new c_Flux(D, () => this.Velocity.ToArray(), m_bcMap) // old/L4
-                    new __c_Flux(D, () => this.Velocity.ToArray(), m_bcMap) // new/L3, TODO: check if velocity is communicated correctly
+                    new __c_Flux(D, () => this.Velocity.ToArray(), m_bcMap)
                 );
             }
 

@@ -28,6 +28,8 @@ using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation.Grid.RefElements;
 using System.IO;
+using BoSSS.Solution.LevelSetTools.StokesExtension;
+using BoSSS.Solution.NSECommon;
 
 // TODO: test mit norm, jump norm zum laufen bringen
 // erst dotnet, dann mono, dann openfoam
@@ -447,9 +449,35 @@ namespace BoSSS.Application.ExternalBinding {
                 // nls.MaxSolverIterations = 100;
                 nls.verbose = true;
 
+                // TODO
+                var leftBVC = new AppControl.BoundaryValueCollection();
+                leftBVC.type = "Pressure_Outlet";
+                var rightBVC = new AppControl.BoundaryValueCollection();
+                rightBVC.type = "Pressure_Outlet";
+                var topBVC = new AppControl.BoundaryValueCollection();
+                topBVC.type = "Wall";
+                var bottomBVC = new AppControl.BoundaryValueCollection();
+                bottomBVC.type = "Wall";
+                var fbBVC = new AppControl.BoundaryValueCollection();
+                fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
+                var bcmapcollection = new Dictionary<string, AppControl.BoundaryValueCollection>() {
+                    { "left", leftBVC},
+                    { "right", rightBVC},
+                    { "bottom", bottomBVC},
+                    { "top", topBVC },
+                    { "frontAndBack", fbBVC},
+                };
+                string[] bndFuncName = new string[]{"left", "right", "bottom", "top"};
+                var BCmap = new IncompressibleBoundaryCondMap(grd, bcmapcollection, PhysicsMode.Incompressible);
+                var stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true);
+                // var uStokes = velocity.CloneAs();
+                // stokesExt.SolveExtension(0, RealTracker, velocity, uStokes);
+                stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
+
                 lsu.InitializeParameters(domfields, paramfields);
 
                 // var tp = new Tecplot(grd.Grid.GridData, 3);
+                // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
                 Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w);
 
                 // TODO saye instead of hmf
@@ -503,12 +531,32 @@ namespace BoSSS.Application.ExternalBinding {
                 double dt = chParams.dt;
                 double time = 0.0;
                 int t = 0;
+
+                double cMean0 = c.IntegralOver(null);
+                SinglePhaseField cVar = new SinglePhaseField(b);
+                cVar.Clear();
+                cVar.Acc(1.0, c);
+                cVar.ProjectPow(1.0, cVar, 2.0);
+                cVar.AccConstant(- Math.Pow(cMean0, 2.0));
+                double cVarVal = cVar.IntegralOver(null);
+                Console.WriteLine("cMean: " + cMean0);
+                Console.WriteLine("cVar: " + cVarVal);
                 while (time < endTime)
                 {
                     // RealLevSet.Clear();
                     // RealLevSet.Acc(1.0, c);
                     RealTracker.UpdateTracker(time);
                     TimeStepper.Solve(time, dt);
+
+                    var cMean = c.IntegralOver(null);
+                    cVar.Clear();
+                    cVar.Acc(1.0, c);
+                    cVar.ProjectPow(1.0, cVar, 2.0);
+                    cVar.AccConstant(- Math.Pow(cMean, 2.0));
+                    cVarVal = cVar.IntegralOver(null);
+                    Console.WriteLine("cMean change compared to starting configuration: " + (cMean - cMean0));
+                    Console.WriteLine("relative cMean change compared to starting configuration: " + (cMean - cMean0)/cMean0);
+                    Console.WriteLine("cVar: " + cVarVal);
 
                     Tecplot("plot." + (t + 2), time, 3, c, mu, RealLevSet, u, v, w);
 
@@ -792,7 +840,7 @@ namespace BoSSS.Application.ExternalBinding {
             override protected double g_Diri(ref Foundation.CommonParamsBnd inp) { // TODO generalize
                 // throw new Exception("g_diri should not be called");
                 if (inp.EdgeTag == 0){
-                    throw new ApplicationException("Edge Index of a boundary edge should not be zero");
+                    throw new ApplicationException("Edge Tag of a boundary edge should not be zero");
                 }
                 // Console.WriteLine("diriC " + _ptch.Values[inp.EdgeTag - 1][0]);
                 return _ptch.Values[inp.EdgeTag - 1][0];
