@@ -56,7 +56,32 @@ namespace ilPSP.Utils {
             SaveToTextFile<T>(list, filename, csMPI.Raw._COMM.WORLD, ToString);
         }
 
+        /// <summary>
+        /// For parallel debugging for re-called elements 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="filename"></param>
+        public static void SaveToTextFileDebugUnsteady<T>(this IEnumerable<T> list, string filename, string ext = "") {
+            int Rank;
+            MPI_Comm comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out Rank);
 
+            int c = 0;
+            string fullfilename = String.Concat(filename, "_", Rank,"_",c, ext);
+
+            while (File.Exists(fullfilename)) {
+                c++;
+                fullfilename = String.Concat(filename, "_", Rank, "_", c, ext);
+            }
+
+            using (var sw = new StreamWriter(fullfilename)) {
+                foreach (T element in list) {
+                    sw.WriteLine(element);
+                }
+            }
+
+        }
 
 
         /// <summary>
@@ -65,11 +90,11 @@ namespace ilPSP.Utils {
         /// <typeparam name="T"></typeparam>
         /// <param name="list"></param>
         /// <param name="filename"></param>
-        public static void SaveToTextFileDebug<T>(this IEnumerable<T> list, string filename) {
+        public static void SaveToTextFileDebug<T>(this IEnumerable<T> list, string filename, string ext = "") {
             int Rank;
             MPI_Comm comm = csMPI.Raw._COMM.WORLD;
             csMPI.Raw.Comm_Rank(comm, out Rank);
-            string fullfilename = String.Concat(filename,"_", Rank);
+            string fullfilename = String.Concat(filename,"_", Rank, ext);
             using (var sw = new StreamWriter(fullfilename)) {
                 foreach(T element in list) {
                     sw.WriteLine(element);

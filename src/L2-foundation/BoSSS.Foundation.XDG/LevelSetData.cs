@@ -1274,7 +1274,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// For each level-set, a mask cotaining all edges that coincide with the level-set itself.
+            /// For each level-set, a mask containing all edges that coincide with the level-set itself.
             /// Return value can be null, if there are no such edges.
             /// </summary>
             public EdgeMask GetZeroSetEdges(int LevSetIdx) {
