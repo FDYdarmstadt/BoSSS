@@ -43,7 +43,8 @@ namespace BoSSS.Solution.LoadBalancing {
 
                 SpeciesId voidId = default(SpeciesId);
                 SpeciesId[] AllNonVoidSpecies;
-                if (!VoidSpecies.IsEmptyOrWhite()) {
+
+                if (!VoidSpecies.IsEmptyOrWhite() && lsTrk.SpeciesNames.Contains(VoidSpecies)) {
                     voidId = lsTrk.GetSpeciesId(this.VoidSpecies);
                     var _AllNonVoidSpecies = lsTrk.SpeciesIdS.ToList();
                     _AllNonVoidSpecies.Remove(voidId);

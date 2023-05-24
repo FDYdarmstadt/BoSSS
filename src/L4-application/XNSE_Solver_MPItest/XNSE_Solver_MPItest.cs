@@ -122,7 +122,7 @@ namespace BoSSS.Application.XNSE_Solver {
             bool AMR = false;
             GridPartType PartType = GridPartType.METIS;
             double[] centerSphere = new double[2] { 0.5, 0.5 };
-            int[] DGorders = new int[] { 2, 3 };
+            int[] DGorders = new int[] { 1, 2 };
             int[] ResArray = new int[] { 16, 20 };
             const int NoTimeSteps = 200;
 
@@ -256,7 +256,7 @@ namespace BoSSS.Application.XNSE_Solver {
             bool AMR = true;
             GridPartType PartType = GridPartType.METIS;
             double[] centerSphere = new double[2] { 0.5, 0.5 };
-            int[] DGorders = new int[] { 2, 3}; 
+            int[] DGorders = new int[] { 1, 2}; 
             int[] ResArray = new int[] { 16, 20};
             const int NoTimeSteps = 200;
 
