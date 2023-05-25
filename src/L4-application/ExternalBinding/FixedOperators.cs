@@ -297,11 +297,16 @@ namespace BoSSS.Application.ExternalBinding {
                         Console.WriteLine("No initialization function given - using droplet");
                         func = InitFunc();
                     }
+                    ScalarFunction UInitFunc()
+                    {
+                        return ((_3D)((x, y, z) => y)).Vectorize();
+                    }
                     Console.WriteLine("Zero order parameter field encountered - initializing with given function");
                     c.Clear();
-                    // u.Clear();
-                    // v.Clear();
-                    // w.Clear();
+                    u.Clear();
+                    v.Clear();
+                    w.Clear();
+                    u.ProjectField(UInitFunc());
                     c.ProjectField(func);
                 }
                 mu = new SinglePhaseField(b);
