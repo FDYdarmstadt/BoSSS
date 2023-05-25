@@ -26,6 +26,7 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using BoSSS.Platform.LinAlg;
+using System.Reflection;
 
 namespace BoSSS.Foundation.Grid.Classic {
 
@@ -1298,7 +1299,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             if (T.Item1 == myRank && ActiveItemsMarker[T.Item2] == true) {
                                 Debug.Assert(Owned[T.Item2] == false);
 
-                                if (T.Item2 == k_mein) {
+                                if (T.Item2 == k_mein && !ItemPermutation.Contains(k_mein)) { // in some rare cases, the item can be repeated due to the long agg. chains so we need to check if this certain item is already assigned
                                     found = true;
                                     ItemPermutation[NoOfPureLocal + NoOfRelayed] = k_mein;
                                     NoOfRelayed++;
@@ -1405,15 +1406,35 @@ namespace BoSSS.Foundation.Grid.Classic {
                     LocalDuplicates = LocalIdentities.ToArray();
                 }
 
-                // sorting of purly external
+                // sorting of purely external
                 // =========================
                 {
                     int ii = 0;
+                    int index = 0;
                     for (int k = 0; k < K; k++) {
-                        if (ActiveItemsMarker != null && !ActiveItemsMarker[k]) {
-                            // vertex k is used purly by external cells
-                            ItemPermutation[NoOfPureLocal + NoOfRelayed + NoOfBorrowed + NoOfPeriodicElim + ii] = k;
-                            ii++;
+                        try { // in some cases with high agglomeration threshold, this could lead to exceptions. A try and catch block simply allows to record the exception.
+                            if (ActiveItemsMarker != null && !ActiveItemsMarker[k]) {
+                                    // vertex k is used purely by external cells
+                                    index = NoOfPureLocal + NoOfRelayed + NoOfBorrowed + NoOfPeriodicElim + ii;
+                                    ItemPermutation[NoOfPureLocal + NoOfRelayed + NoOfBorrowed + NoOfPeriodicElim + ii] = k;
+                                    ii++;
+                            }
+                        } catch {
+                            // 
+                            List<String> VerticeList = new List<String>();
+                            for (int l = 0; l < K; l++) {
+                                var item = ItemIndicesOnOtherProcessors[l];
+                                string str = " ";
+                                foreach (var elem in item)
+                                    str += $"{elem}, ";
+                                VerticeList.Add(str);
+                            }
+                            VerticeList.SaveToTextFileDebugUnsteadyNumbered("e_VerticeList", ".txt");
+                            string[] errStr = new string[] { $"k={k}, K={K}, index={index}, NoOfPureLocal={NoOfPureLocal}, NoOfRelayed={NoOfRelayed}, NoOfBorrowed={NoOfBorrowed}, NoOfPeriodicElim={NoOfPeriodicElim}, ii={ii} on RANK-{myRank}"};
+                            errStr.SaveToTextFileDebugUnsteady("e_text",".txt");
+                            ActiveItemsMarker.ToBoolArray().SaveToTextFileDebugUnsteadyNumbered("e_ActiveItemsMarker", ".txt");
+                            ItemPermutation.SaveToTextFileDebugUnsteadyNumbered("e_ItemPermutation", ".txt");
+                            throw new Exception("Error in negotiating purely external cells");
                         }
                     }
                     NoOfExternal = ii;

@@ -68,11 +68,11 @@ namespace ilPSP.Utils {
             csMPI.Raw.Comm_Rank(comm, out Rank);
 
             int c = 0;
-            string fullfilename = String.Concat(filename, "_", Rank,"_",c, ext);
+            string fullfilename = String.Concat(filename, "_proc", Rank,"_t",c, ext);
 
             while (File.Exists(fullfilename)) {
                 c++;
-                fullfilename = String.Concat(filename, "_", Rank, "_", c, ext);
+                fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
             }
 
             using (var sw = new StreamWriter(fullfilename)) {
@@ -83,6 +83,29 @@ namespace ilPSP.Utils {
 
         }
 
+        public static void SaveToTextFileDebugUnsteadyNumbered<T>(this IEnumerable<T> list, string filename, string ext = "") {
+            int Rank;
+            MPI_Comm comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out Rank);
+
+            int c = 0;
+            string fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
+
+            while (File.Exists(fullfilename)) {
+                c++;
+                fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
+            }
+
+            using (var sw = new StreamWriter(fullfilename)) {
+                int K = list.Count();
+                for (int k = 0; k < K; k++) {
+                    string item = $"{list.ElementAt(k)}"
+                        ?? "null";
+                    sw.WriteLine($"{k}, {item}");
+                }
+            }
+
+        }
 
         /// <summary>
         /// For parallel debugging

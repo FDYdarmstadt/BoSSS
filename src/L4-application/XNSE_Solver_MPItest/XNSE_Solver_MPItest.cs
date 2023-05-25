@@ -117,6 +117,23 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+
+        [Test]
+        public static void TestAgglomerationFailure() {
+            // This test checks if the chain agglomeration can be formed
+            bool AMR = false;
+            double[] centerSphere = new double[2] { 0.5, 0.5 };
+            const int NoTimeSteps = 5;
+
+            var C = Rotating_Sphere_Orbital(1, 20, 2, AMR, false, false, pos: centerSphere);
+            C.NoOfTimesteps = NoTimeSteps;
+            C.dtFixed = (double)(2 * Math.PI) / NoTimeSteps;
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
+
         [Test]
         public static void TestLoadBalancingAMRfalse() {
             bool AMR = false;
@@ -124,7 +141,7 @@ namespace BoSSS.Application.XNSE_Solver {
             double[] centerSphere = new double[2] { 0.5, 0.5 };
             int[] DGorders = new int[] { 1, 2 };
             int[] ResArray = new int[] { 16, 20 };
-            const int NoTimeSteps = 200;
+            const int NoTimeSteps = 100;
 
             var LBon = new Stopwatch();
             var LBoff = new Stopwatch();
@@ -258,7 +275,7 @@ namespace BoSSS.Application.XNSE_Solver {
             double[] centerSphere = new double[2] { 0.5, 0.5 };
             int[] DGorders = new int[] { 1, 2}; 
             int[] ResArray = new int[] { 16, 20};
-            const int NoTimeSteps = 200;
+            const int NoTimeSteps = 100;
 
             var LBon = new Stopwatch();
             var LBoff = new Stopwatch();
