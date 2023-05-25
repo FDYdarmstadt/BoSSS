@@ -914,7 +914,7 @@ namespace BoSSS.Foundation.XDG {
                 AggCandidates.MPIExchange(grdDat);
 
                 //exchange the source cell information to be able to know about external/ghost cells (needed only once)
-                var AggSourcesWithExternalCell = Tracker.Regions.GetSpeciesMask(spId).GetBitMaskWithExternal().CloneAs();
+                var AggSourcesWithExternalCell = new BitArray(grdDat.iLogicalCells.Count, false);
                 foreach (var jCell in AgglomSourceCellsList)
                     AggSourcesWithExternalCell[jCell] = true;
 
