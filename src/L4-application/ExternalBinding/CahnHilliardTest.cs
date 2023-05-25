@@ -352,15 +352,15 @@ namespace BoSSS.Application.ExternalBinding {
                 File.Copy(examplesDirectory1D + "large/polyMesh/pointsLarge1D", "./meshes/1D/large/polyMesh/points");
             } catch (Exception e) { Console.WriteLine("Continuing despite " + e); }
 
-            // string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             // string grd = currentDirectory + "/../../../meshes/big/large/polyMesh/";
-            // string grd = currentDirectory + "/../../../meshes/big/medium/polyMesh/";
+            string grd = currentDirectory + "/../../../meshes/big/small/polyMesh/";
 
-            // RunDropletTest(grd);
+            RunDropletTest(grd);
 
             // DropletTest();
             // ConvergenceTest();
-            Test1D();
+            // Test1D();
 
         }
 

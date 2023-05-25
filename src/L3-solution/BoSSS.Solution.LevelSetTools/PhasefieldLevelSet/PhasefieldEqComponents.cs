@@ -33,12 +33,14 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         BoundaryCondMap<BoundaryType> m_boundaryCondMap;
 
         int m_D;
-        public override IList<string> ParameterOrdering => null;
+        // public override IList<string> ParameterOrdering => null;
+        public override IList<string> ParameterOrdering => VariableNames.VelocityVector(m_D);
 
         protected override double g_Diri(ref CommonParamsBnd inp) {
             double UxN = 0;
             for (int d = 0; d < m_D; d++) {
-                UxN += (inp.Parameters_IN[d + 1]) * inp.Normal[d];
+                // UxN += (inp.Parameters_IN[d + 1]) * inp.Normal[d];
+                UxN += (inp.Parameters_IN[d]) * inp.Normal[d];
             }
 
             double v;

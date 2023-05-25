@@ -153,7 +153,7 @@ namespace BoSSS.Application.ExternalBinding {
             return getNestedDoubleArray("points", polyMeshDir);
         }
 
-        internal static string[] names = new string[] {"left", "right", "empty"};
+        internal static string[] names = new string[] {"left", "right", "top", "bottom", "frontAndBack"};
 
         internal static int[] getPatchIDs(int len){
             int[] ret = new int[len];

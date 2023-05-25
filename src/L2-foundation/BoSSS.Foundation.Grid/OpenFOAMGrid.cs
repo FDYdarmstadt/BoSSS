@@ -166,9 +166,6 @@ namespace BoSSS.Foundation.Grid {
                 // create BoSSS grid
                 FOAMmesh_to_BoSSS(this, nCells, _faces, _neighbour, _owner, _points, _names, _patchIDs, emptyTag);
 
-                foreach (var name in _names){
-                    this.AddEdgeTag(name);
-                }
                 // create grid data object
                 this.GridDataObject = new GridData(this);
 
@@ -745,6 +742,9 @@ namespace BoSSS.Foundation.Grid {
             // }
             grid.Description = "imported form OpenFOAM";
 
+            foreach (var name in names) {
+                grid.AddEdgeTag(name);
+            }
 
         }
 

@@ -242,19 +242,58 @@ namespace BoSSS.Application.CahnHilliard {
                 double[] zNodes = GenericBlas.Linspace(-0.1, 0.1, 2);
 
                 var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
-                grd.DefineEdgeTags((double[] X) => BoundaryType.Wall.ToString());
+                // grd.DefineEdgeTags((double[] X) => BoundaryType.Wall.ToString());
+
+                grd.DefineEdgeTags(delegate (double[] X)
+                {
+                    if (Math.Abs(X[0] - 15) < 1e-10)
+                    {
+                        return "Top_Wall";
+                    }
+                    if (Math.Abs(X[0] + 15) < 1e-10)
+                    {
+                        return "Bottom_Wall";
+                    }
+                    if (Math.Abs(X[1] - 15) < 1e-10)
+                    {
+                        return BoundaryType.Outflow.ToString();
+                    }
+                    if (Math.Abs(X[1] + 15) < 1e-10)
+                    {
+                        return BoundaryType.Outflow.ToString();
+                    }
+                    if (Math.Abs(X[2] - 0.1) < 1e-10)
+                    {
+                        return BoundaryType.Outflow.ToString();
+                    }
+                    if (Math.Abs(X[2] + 0.1) < 1e-10)
+                    {
+                        return BoundaryType.Outflow.ToString();
+                    }
+                    // Console.WriteLine("Argument out of range!");
+                    Console.WriteLine(X[0]);
+                    Console.WriteLine(X[1]);
+                    Console.WriteLine(X[2]);
+                    throw new ArgumentOutOfRangeException();
+                }
+                );
 
                 return grd;
             };
 
-            RR.AddBoundaryValue(BoundaryType.Wall.ToString(), "c", new Formula("X => -1"));
+            // RR.AddBoundaryValue("Wall", "c", new Formula("X => -1"));
+            RR.AddBoundaryValue("Top_Wall", "c", new Formula("X => -1"));
+            RR.AddBoundaryValue("Bottom_Wall", "c", new Formula("X => -1"));
+            RR.AddBoundaryValue(BoundaryType.Outflow.ToString(), "c", new Formula("X => -1"));
+            // RR.AddBoundaryValue("Top_Wall", VariableNames.VelocityX, new Formula("X => 1"));
+            // RR.AddBoundaryValue("Bottom_Wall", VariableNames.VelocityX, new Formula("X => -1"));
 
             //RR.AddInitialValue("c", new Formula("X => (X[0]*X[0] + X[1]*X[1]) < 0.25 ? 1.0 : -1.0", false));
             // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)/(1e-5 * Math.Sqrt(2))))"));
             // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)/(1e-5*Math.Sqrt(2))))"));
             // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5)*Math.Sqrt(2)))"));
             RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-8)*Math.Sqrt(2)))"));
-            RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => 0.0 ", false));
+            RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => 1.0/15.0 * X[1] ", false));
             RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => 0.0 ", false));
             RR.AddInitialValue(VariableNames.VelocityZ, new Formula("X => 0.0 ", false));
 
@@ -275,6 +314,7 @@ namespace BoSSS.Application.CahnHilliard {
             // RR.diff = (M*lam);
             RR.lambda = 0;
             // RR.penalty_poisson = 1.0;
+            RR.includeConvection = true;
 
             return RR;
         }

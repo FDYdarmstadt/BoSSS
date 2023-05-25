@@ -875,7 +875,15 @@ namespace BoSSS.Foundation.XDG {
                         
                         // Loop includes external cells
                         for(int j = 0; j < JE; j++) {
-                                LengthScales[j] = CellVolume[j] / CellSurface[j];
+                                if (Math.Abs(CellSurface[j]) < 1e-25){
+                                    Console.WriteLine("Attempting to divide by zero for VolumeFrac at j = " + j);
+                                } else
+                                {
+                                    LengthScales[j] = CellVolume[j] / CellSurface[j];
+                                }
+
+                                Console.WriteLine($"WARNING: commented out exception");
+                                LengthScales[j] = Math.Max(LengthScales[j], BLAS.MachineEps * this.Tracker.GridDat.Cells.h_min[j]);
                         }
 
 

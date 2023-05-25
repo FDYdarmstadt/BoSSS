@@ -358,7 +358,7 @@ namespace BoSSS.Application.ExternalBinding {
                 RealLevSet.Clear();
                 RealLevSet.Acc(1.0, c);
                 LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
-                                                         6, new string[] { "a", "b" },
+                                                         2, new string[] { "a", "b" },
                                                          GetNamedInputFields,
                                                          RealLevSet, "c", ContinuityProjectionOption.None);
 
@@ -370,11 +370,11 @@ namespace BoSSS.Application.ExternalBinding {
                 // RealLevSet.Acc(1.0, c);
                 RealTracker.UpdateTracker(0);
 
-                SubGrid subgr = RealTracker.Regions.GetNearFieldSubgrid(6);
-                SubGridBoundaryModes subgrbnd = 0;
-                CellMask subgrMask = subgr.VolumeMask;
-                CellMask fullMask = CellMask.GetFullMask(grd);
-                SubGrid fullSubGrd = new SubGrid(fullMask);
+                // SubGrid subgr = RealTracker.Regions.GetNearFieldSubgrid(6);
+                // SubGridBoundaryModes subgrbnd = 0;
+                // CellMask subgrMask = subgr.VolumeMask;
+                // CellMask fullMask = CellMask.GetFullMask(grd);
+                // SubGrid fullSubGrd = new SubGrid(fullMask);
 
                 CellMask mask = null;
                 SubGrid sgrid = null;
@@ -467,12 +467,12 @@ namespace BoSSS.Application.ExternalBinding {
                     { "top", topBVC },
                     { "frontAndBack", fbBVC},
                 };
-                string[] bndFuncName = new string[]{"left", "right", "bottom", "top"};
-                var BCmap = new IncompressibleBoundaryCondMap(grd, bcmapcollection, PhysicsMode.Incompressible);
+                // string[] bndFuncName = new string[]{"left", "right", "bottom", "top"};
+                var BCmap = new IncompressibleBoundaryCondMap(RealTracker.GridDat, bcmapcollection, PhysicsMode.Incompressible);
                 var stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true);
-                // var uStokes = velocity.CloneAs();
-                // stokesExt.SolveExtension(0, RealTracker, velocity, uStokes);
-                stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
+                var uStokes = velocity.CloneAs();
+                stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
+                // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
 
                 lsu.InitializeParameters(domfields, paramfields);
 
@@ -546,6 +546,9 @@ namespace BoSSS.Application.ExternalBinding {
                     // RealLevSet.Clear();
                     // RealLevSet.Acc(1.0, c);
                     RealTracker.UpdateTracker(time);
+                    uStokes = velocity.CloneAs();
+                    stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
+                    // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
                     TimeStepper.Solve(time, dt);
 
                     var cMean = c.IntegralOver(null);

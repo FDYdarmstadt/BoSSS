@@ -821,6 +821,8 @@ namespace BoSSS.Foundation.XDG {
                     {
                         if(jCellNeigh_max < 0) {
                             failCells.Add(jCell);
+                            Console.WriteLine($"WARNING: commented out exception");
+                            continue;
                         }
 
                         //_AccEdgesMask[jEdge_max] = true;
@@ -844,7 +846,8 @@ namespace BoSSS.Foundation.XDG {
                 }
 
                 if (failCells.Count.MPISum() > 0) {
-                    PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, ExceptionOnFailedAgglomeration, failCells);
+                    Console.WriteLine($"WARNING: commented out exception");
+                    PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, ExceptionOnFailedAgglomeration & false, failCells);
 
                 }
 
