@@ -76,6 +76,8 @@ namespace BoSSS.Application.ExternalBinding {
         SinglePhaseField c;
         SinglePhaseField[] velocity;
         SinglePhaseField mu;
+        
+        
         OpenFoamMatrix _mtx;
         OpenFoamPatchField _ptch;
         double rho0 = 1;
@@ -239,6 +241,7 @@ namespace BoSSS.Application.ExternalBinding {
                 _mtx = mtx;
                 _ptch = ptch;
 
+                /*
                 double pow(double x, int e)
                 { // inefficient but who cares
                     // return Math.Tanh(x);
@@ -247,6 +250,9 @@ namespace BoSSS.Application.ExternalBinding {
                         acc *= x;
                     return acc;
                 }
+                */
+
+
                 // grid, etc
                 // =========
 
@@ -271,20 +277,11 @@ namespace BoSSS.Application.ExternalBinding {
 
                 var map = new UnsetteledCoordinateMapping(b, bMu);
 
-                int nParams = 7;
-                // var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
-                var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.NonLinearWithoutParameters(3), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
-                // var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "mu", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
-                // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "mu_Res");
-                // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "mu_Res");
 
 
                 // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
-                double lambda = 0.0;
-                double penalty_const = 2.6;
-                double diff = chParams.Diffusion;
-                double cahn = chParams.Cahn;
+
 
                 var RealLevSet = new LevelSet(b, "Levset");
 
@@ -292,13 +289,12 @@ namespace BoSSS.Application.ExternalBinding {
 
                 c = C.Fields[0] as SinglePhaseField;
 
-                if (c.L2Norm() < 1e-20){
-                    if (func == null){
+                if (c.L2Norm() < 1e-20) {
+                    if (func == null) {
                         Console.WriteLine("No initialization function given - using droplet");
                         func = InitFunc();
                     }
-                    ScalarFunction UInitFunc()
-                    {
+                    ScalarFunction UInitFunc() {
                         return ((_3D)((x, y, z) => y)).Vectorize();
                     }
                     Console.WriteLine("Zero order parameter field encountered - initializing with given function");
@@ -355,8 +351,7 @@ namespace BoSSS.Application.ExternalBinding {
                         {"LevelSetGradient[1]", c},
                         {"LevelSetGradient[2]", c}
                         });
-                Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> GetNamedInputFields = delegate (DGField[] fields)
-                {
+                Func<DGField[], (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields)> GetNamedInputFields = delegate (DGField[] fields) {
 
                     return (domfields, paramfields);
                 };
@@ -366,13 +361,24 @@ namespace BoSSS.Application.ExternalBinding {
                                                          2, new string[] { "a", "b" },
                                                          GetNamedInputFields,
                                                          RealLevSet, "c", ContinuityProjectionOption.None);
-
+                lsu.EnforceContinuity();
                 var RealTracker = lsu.Tracker;
                 // mu.Laplacian(-cahn, c);
                 // mu.Acc(-1.0, c);
                 // mu.ProjectPow(1.0, c, 3.0);
                 // RealLevSet.Clear();
                 // RealLevSet.Acc(1.0, c);
+
+                foreach (var _ls in RealTracker.LevelSets) {
+                    var _dgls = _ls as LevelSet;
+                    if (_dgls != null) {
+                        if (_dgls.L2Norm() == 0) {
+                            throw new ArithmeticException("level-set is exactly zero");
+                        }
+                    }
+                }
+
+
                 RealTracker.UpdateTracker(0);
 
                 // SubGrid subgr = RealTracker.Regions.GetNearFieldSubgrid(6);
@@ -382,7 +388,7 @@ namespace BoSSS.Application.ExternalBinding {
                 // SubGrid fullSubGrd = new SubGrid(fullMask);
 
                 CellMask mask = null;
-                SubGrid sgrid = null;
+                //SubGrid sgrid = null;
                 // CellMask mask = fullMask;
                 // SubGrid sgrid = fullSubGrd;
                 // CellMask mask = subgrMask;
@@ -390,14 +396,12 @@ namespace BoSSS.Application.ExternalBinding {
 
                 int noOfNarrowBandCells = 0;
                 if (mask != null) {
-                    foreach (bool cellInNarrowBand in mask.GetBitMask())
-                    {
-                        if (cellInNarrowBand)
-                        {
+                    foreach (bool cellInNarrowBand in mask.GetBitMask()) {
+                        if (cellInNarrowBand) {
                             noOfNarrowBandCells++;
                         }
                     }
-                    if (noOfNarrowBandCells == 0){
+                    if (noOfNarrowBandCells == 0) {
                         Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
                         // throw new ApplicationException("No interface found");
                         // mask = fullMask;
@@ -408,76 +412,91 @@ namespace BoSSS.Application.ExternalBinding {
                     }
                 }
 
-                System.Collections.BitArray subGridCellMask = mask?.GetBitMask();
+                //System.Collections.BitArray subGridCellMask = mask?.GetBitMask();
 
-                var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda, mask);
-                var CHCconv = new CahnHilliardCConv(() => velocity, Flux, mask);
-                var CHMudiff = new CahnHilliardMuDiff(ptch, penalty_const, cahn, mask);
-                var CHMusource = new CahnHilliardMuSource(mask);
-                op.EquationComponents["Res_c"].Add(CHCdiff);
-                op.EquationComponents["Res_c"].Add(CHCconv);
-                op.EquationComponents["Res_mu"].Add(CHMusource);
-                op.EquationComponents["Res_mu"].Add(CHMudiff);
-                // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
-                double[] MassScales = new double[2];
-                MassScales[0] = 1.0;
-                // MassScales[1] = 1.0;
-                op.TemporalOperator = new ConstantTemporalOperator(op, MassScales);
-
-                op.LinearizationHint = LinearizationHint.GetJacobiOperator;
-
-                op.Commit();
-
-                SinglePhaseField Res_c = new SinglePhaseField(b);
-                SinglePhaseField Res_mu = new SinglePhaseField(b);
-                List<DGField> ParameterMap = new List<DGField>();
-                for (int i = 0; i < nParams; i++)
+                // Assembly of Cahn Hilliard operator
+                // ==================================
+                int nParams = 7;
+                SpatialOperator CahnHillOp;
                 {
-                    ParameterMap.Add(new SinglePhaseField(b));
-                }
-                for (int j = 0; j < J; j++)
-                {
-                    int N = b.GetLength(j);
-                    for (int n = 0; n < N; n++)
-                        ParameterMap[3].Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
-                }
-                for (int j = 0; j < 3; j++)
-                {
-                    ParameterMap[j] = new[] { u, v, w }[j];
-                }
-                NonLinearSolverConfig nls = new NonLinearSolverConfig();
-                var ls = new DirectSolver.Config();
-                nls.SolverCode = NonLinearSolverCode.Newton;
-                // nls.SolverCode = NonLinearSolverCode.Picard;
-                // nls.ConvergenceCriterion = 1e-5;
-                // nls.MaxSolverIterations = 100;
-                nls.verbose = true;
+                    double lambda = 0.0;
+                    double penalty_const = 2.6;
+                    double diff = chParams.Diffusion;
+                    double cahn = chParams.Cahn;
 
-                // TODO
-                var leftBVC = new AppControl.BoundaryValueCollection();
-                leftBVC.type = "Pressure_Outlet";
-                var rightBVC = new AppControl.BoundaryValueCollection();
-                rightBVC.type = "Pressure_Outlet";
-                var topBVC = new AppControl.BoundaryValueCollection();
-                topBVC.type = "Wall";
-                var bottomBVC = new AppControl.BoundaryValueCollection();
-                bottomBVC.type = "Wall";
-                var fbBVC = new AppControl.BoundaryValueCollection();
-                fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
-                var bcmapcollection = new Dictionary<string, AppControl.BoundaryValueCollection>() {
-                    { "left", leftBVC},
-                    { "right", rightBVC},
-                    { "bottom", bottomBVC},
-                    { "top", topBVC },
-                    { "frontAndBack", fbBVC},
-                };
-                // string[] bndFuncName = new string[]{"left", "right", "bottom", "top"};
-                var BCmap = new IncompressibleBoundaryCondMap(RealTracker.GridDat, bcmapcollection, PhysicsMode.Incompressible);
-                var stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true);
-                var uStokes = velocity.CloneAs();
-                stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
-                // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
+
+                    // var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
+                    CahnHillOp = new SpatialOperator(2, nParams, 2, QuadOrderFunc.NonLinearWithoutParameters(3), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
+                    // var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "mu", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
+                    // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "mu_Res");
+                    // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "mu_Res");
+
+
+                    var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda, mask);
+                    var CHCconv = new CahnHilliardCConv(() => velocity, Flux, mask);
+                    var CHMudiff = new CahnHilliardMuDiff(ptch, penalty_const, cahn, mask);
+                    var CHMusource = new CahnHilliardMuSource(mask);
+                    CahnHillOp.EquationComponents["Res_c"].Add(CHCdiff);
+                    CahnHillOp.EquationComponents["Res_c"].Add(CHCconv);
+                    CahnHillOp.EquationComponents["Res_mu"].Add(CHMusource);
+                    CahnHillOp.EquationComponents["Res_mu"].Add(CHMudiff);
+                    // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
+
+                    double[] MassScales = new double[2];
+                    MassScales[0] = 1.0;
+                    // MassScales[1] = 1.0;
+                    CahnHillOp.TemporalOperator = new ConstantTemporalOperator(CahnHillOp, MassScales);
+
+                    CahnHillOp.LinearizationHint = LinearizationHint.GetJacobiOperator;
+
+                    CahnHillOp.Commit();
+                }
+
+
+
+             
+
+                // Boundary Condition map
+                // ======================
+
+                IncompressibleBoundaryCondMap BCmap;
+                {
+
+                    // TODO
+                    var leftBVC = new AppControl.BoundaryValueCollection();
+                    leftBVC.type = "Pressure_Outlet";
+                    var rightBVC = new AppControl.BoundaryValueCollection();
+                    rightBVC.type = "Pressure_Outlet";
+                    var topBVC = new AppControl.BoundaryValueCollection();
+                    topBVC.type = "Wall";
+                    var bottomBVC = new AppControl.BoundaryValueCollection();
+                    bottomBVC.type = "Wall";
+                    var fbBVC = new AppControl.BoundaryValueCollection();
+                    fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
+                    var bcmapcollection = new Dictionary<string, AppControl.BoundaryValueCollection>() {
+                            { "left", leftBVC},
+                            { "right", rightBVC},
+                            { "bottom", bottomBVC},
+                            { "top", topBVC },
+                            { "frontAndBack", fbBVC},
+                    };
+                    // string[] bndFuncName = new string[]{"left", "right", "bottom", "top"};
+                    BCmap = new IncompressibleBoundaryCondMap(RealTracker.GridDat, bcmapcollection, PhysicsMode.Incompressible);
+                }
+
+                // perform Stokes Extension
+                // ========================
+                StokesExtension stokesExt;
+                SinglePhaseField[] uStokes;
+                {
+                    stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true);
+                    uStokes = velocity.CloneAs();
+                    stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
+                    // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
+                }
+
+
 
                 lsu.InitializeParameters(domfields, paramfields);
 
@@ -485,103 +504,138 @@ namespace BoSSS.Application.ExternalBinding {
                 // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
                 Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w);
 
-                // TODO saye instead of hmf
-                // XdgSubGridTimestepping TimeStepper = new XdgSubGridTimestepping(op,
-                //                                          new SinglePhaseField[] { c, mu },
-                //                                          new SinglePhaseField[] { Res_c, Res_mu },
-                //                                          // TimeSteppingScheme.ExplicitEuler,
-                //                                          TimeSteppingScheme.ImplicitEuler,
-                //                                          sgrid,
-                //                                          subgrbnd,
-                //                                          LinearSolver: ls,
-                //                                          NonLinearSolver: nls,
-                //                                          _UpdateLevelset: (() => lsu),
-                //                                          _LevelSetHandling: LevelSetHandling.LieSplitting,
-                //                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
-                //                                          _AgglomerationThreshold: 0.0,
-                //                                          _optTracker: RealTracker
-                //                                          );
 
-                // XdgTimestepping TimeStepperNoSG = new XdgTimestepping(opNoSG,
-                //                                          new SinglePhaseField[]{cNoSG, muNoSG},
-                //                                          new SinglePhaseField[]{Res_cNoSG, Res_muNoSG},
-                //                                          // TimeSteppingScheme.ExplicitEuler,
-                //                                          TimeSteppingScheme.ImplicitEuler,
-                //                                          LinearSolver: ls,
-                //                                          NonLinearSolver: nls,
-                //                                          // _UpdateLevelset: (() => lsu),
-                //                                          // _LevelSetHandling: LevelSetHandling.LieSplitting,
-                //                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
-                //                                          _AgglomerationThreshold: 0.0,
-                //                                          _optTracker: RealTrackerNoSG
-                //                                          );
-
-                XdgTimestepping TimeStepper = new XdgTimestepping(op,
-                                                         new SinglePhaseField[]{c, mu},
-                                                         new SinglePhaseField[]{Res_c, Res_mu},
-                                                         // TimeSteppingScheme.CrankNicolson,
-                                                         TimeSteppingScheme.ImplicitEuler,
-                                                                  null,
-                                                                  null,
-                                                         LinearSolver: ls,
-                                                         NonLinearSolver: nls,
-                                                         // RealTracker,
-                                                         lsu: (() => lsu)
-                                                         // _LevelSetHandling: LevelSetHandling.LieSplitting,
-                                                         // _LevelSetHandling: LevelSetHandling.Coupled_Once,
-                                                         // _AgglomerationThreshold: 0.0
-                                                         );
-
-                double endTime = chParams.endT;
-                double dt = chParams.dt;
-                double time = 0.0;
-                int t = 0;
-
-                double cMean0 = c.IntegralOver(null);
-                SinglePhaseField cVar = new SinglePhaseField(b);
-                cVar.Clear();
-                cVar.Acc(1.0, c);
-                cVar.ProjectPow(1.0, cVar, 2.0);
-                cVar.AccConstant(- Math.Pow(cMean0, 2.0));
-                double cVarVal = cVar.IntegralOver(null);
-                Console.WriteLine("cMean: " + cMean0);
-                Console.WriteLine("cVar: " + cVarVal);
-                while (time < endTime)
+                // Timestepper initialization
+                // ==========================
+                XdgTimestepping TimeStepper;
                 {
-                    // RealLevSet.Clear();
-                    // RealLevSet.Acc(1.0, c);
-                    RealTracker.UpdateTracker(time);
-                    uStokes = velocity.CloneAs();
-                    stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
-                    // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
-                    TimeStepper.Solve(time, dt);
+                    SinglePhaseField Res_c = new SinglePhaseField(b);
+                    SinglePhaseField Res_mu = new SinglePhaseField(b);
+                    List<DGField> ParameterMap = new List<DGField>();
+                    for (int i = 0; i < nParams; i++) {
+                        ParameterMap.Add(new SinglePhaseField(b));
+                    }
+                    for (int j = 0; j < J; j++) {
+                        int N = b.GetLength(j);
+                        for (int n = 0; n < N; n++)
+                            ParameterMap[3].Coordinates[j, n] += C.GetDGcoordinate(0, j, n);
+                    }
+                    for (int j = 0; j < 3; j++) {
+                        ParameterMap[j] = new[] { u, v, w }[j];
+                    }
 
-                    var cMean = c.IntegralOver(null);
+
+
+                    NonLinearSolverConfig nls = new NonLinearSolverConfig();
+                    var ls = new DirectSolver.Config();
+                    nls.SolverCode = NonLinearSolverCode.Newton;
+                    // nls.SolverCode = NonLinearSolverCode.Picard;
+                    // nls.ConvergenceCriterion = 1e-5;
+                    // nls.MaxSolverIterations = 100;
+                    nls.verbose = true;
+
+                    // TODO saye instead of hmf
+                    // XdgSubGridTimestepping TimeStepper = new XdgSubGridTimestepping(op,
+                    //                                          new SinglePhaseField[] { c, mu },
+                    //                                          new SinglePhaseField[] { Res_c, Res_mu },
+                    //                                          // TimeSteppingScheme.ExplicitEuler,
+                    //                                          TimeSteppingScheme.ImplicitEuler,
+                    //                                          sgrid,
+                    //                                          subgrbnd,
+                    //                                          LinearSolver: ls,
+                    //                                          NonLinearSolver: nls,
+                    //                                          _UpdateLevelset: (() => lsu),
+                    //                                          _LevelSetHandling: LevelSetHandling.LieSplitting,
+                    //                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
+                    //                                          _AgglomerationThreshold: 0.0,
+                    //                                          _optTracker: RealTracker
+                    //                                          );
+
+                    // XdgTimestepping TimeStepperNoSG = new XdgTimestepping(opNoSG,
+                    //                                          new SinglePhaseField[]{cNoSG, muNoSG},
+                    //                                          new SinglePhaseField[]{Res_cNoSG, Res_muNoSG},
+                    //                                          // TimeSteppingScheme.ExplicitEuler,
+                    //                                          TimeSteppingScheme.ImplicitEuler,
+                    //                                          LinearSolver: ls,
+                    //                                          NonLinearSolver: nls,
+                    //                                          // _UpdateLevelset: (() => lsu),
+                    //                                          // _LevelSetHandling: LevelSetHandling.LieSplitting,
+                    //                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
+                    //                                          _AgglomerationThreshold: 0.0,
+                    //                                          _optTracker: RealTrackerNoSG
+                    //                                          );
+
+                    TimeStepper = new XdgTimestepping(CahnHillOp,
+                                                      new SinglePhaseField[] { c, mu },
+                                                      new SinglePhaseField[] { Res_c, Res_mu },
+                                                      // TimeSteppingScheme.CrankNicolson,
+                                                      TimeSteppingScheme.ImplicitEuler,
+                                                      null,
+                                                      null,
+                                                      LinearSolver: ls,
+                                                      NonLinearSolver: nls,
+                                                      // RealTracker,
+                                                      lsu: (() => lsu)
+                                                      // _LevelSetHandling: LevelSetHandling.LieSplitting,
+                                                      // _LevelSetHandling: LevelSetHandling.Coupled_Once,
+                                                      // _AgglomerationThreshold: 0.0
+                                                      );
+                }
+
+                // temporal integration
+                // ====================
+
+                {
+                    double endTime = chParams.endT;
+                    double dt = chParams.dt;
+                    double time = 0.0;
+                    int t = 0;
+
+                    double cMean0 = c.IntegralOver(null);
+                    SinglePhaseField cVar = new SinglePhaseField(b);
                     cVar.Clear();
                     cVar.Acc(1.0, c);
                     cVar.ProjectPow(1.0, cVar, 2.0);
-                    cVar.AccConstant(- Math.Pow(cMean, 2.0));
-                    cVarVal = cVar.IntegralOver(null);
-                    Console.WriteLine("cMean change compared to starting configuration: " + (cMean - cMean0));
-                    Console.WriteLine("relative cMean change compared to starting configuration: " + (cMean - cMean0)/cMean0);
+                    cVar.AccConstant(-Math.Pow(cMean0, 2.0));
+                    double cVarVal = cVar.IntegralOver(null);
+                    Console.WriteLine("cMean: " + cMean0);
                     Console.WriteLine("cVar: " + cVarVal);
+                    while (time < endTime) {
+                        // RealLevSet.Clear();
+                        // RealLevSet.Acc(1.0, c);
+                        RealTracker.UpdateTracker(time);
+                        uStokes = velocity.CloneAs();
+                        stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
+                        // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
+                        TimeStepper.Solve(time, dt);
 
-                    Tecplot("plot." + (t + 2), time, 3, c, mu, RealLevSet, u, v, w);
+                        var cMean = c.IntegralOver(null);
+                        cVar.Clear();
+                        cVar.Acc(1.0, c);
+                        cVar.ProjectPow(1.0, cVar, 2.0);
+                        cVar.AccConstant(-Math.Pow(cMean, 2.0));
+                        cVarVal = cVar.IntegralOver(null);
+                        Console.WriteLine("cMean change compared to starting configuration: " + (cMean - cMean0));
+                        Console.WriteLine("relative cMean change compared to starting configuration: " + (cMean - cMean0)/cMean0);
+                        Console.WriteLine("cVar: " + cVarVal);
 
-                    time += dt;
-                    t++;
-                    // if (time > 2e0)
-                    //     dt *= 10;
-                    // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, mu, RealLevSet, u, v, w, cNoSG, muNoSG);
+                        Tecplot("plot." + (t + 2), time, 3, c, mu, RealLevSet, u, v, w);
 
+                        time += dt;
+                        t++;
+                        // if (time > 2e0)
+                        //     dt *= 10;
+                        // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, mu, RealLevSet, u, v, w, cNoSG, muNoSG);
+
+                    }
                 }
             } catch (Exception e) {
                 Console.WriteLine(e.GetType());
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
                 Console.WriteLine(e);
-                throw e;
-                }
+                throw new AggregateException(e);
+            }
             // }
         }
 

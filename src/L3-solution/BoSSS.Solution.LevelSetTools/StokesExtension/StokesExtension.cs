@@ -143,10 +143,10 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 (int[] a, int[] b, int[] c) => m_CutCellQuadOrder,
                 requiredSpecies);
 
-            var cc = LsTrk.Regions.GetCutCellMask();
-            Console.WriteLine("Stokes Extension No of cut cells " + cc.NoOfItemsLocally.MPISum());
-            Console.WriteLine(InterfaceVelocity.Select(vel => vel.L2Norm(cc)).ToConcatString("[", ",", "]"));
-            Console.WriteLine(InterfaceVelocity.Select(vel => vel.L2Norm()).ToConcatString("[", ",", "]"));
+            //var cc = LsTrk.Regions.GetCutCellMask();
+            //Console.WriteLine("Stokes Extension No of cut cells " + cc.NoOfItemsLocally.MPISum());
+            //Console.WriteLine(InterfaceVelocity.Select(vel => vel.L2Norm(cc)).ToConcatString("[", ",", "]"));
+            //Console.WriteLine(InterfaceVelocity.Select(vel => vel.L2Norm()).ToConcatString("[", ",", "]"));
             
             for(int d = 0; d < D; d++) {
                 foreach ((string, string) speciesPair in LsTrk.GetSpeciesPairsSeparatedByLevSet(levelSetIndex)) {
