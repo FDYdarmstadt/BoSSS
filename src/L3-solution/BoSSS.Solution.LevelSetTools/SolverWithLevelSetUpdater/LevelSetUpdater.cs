@@ -265,7 +265,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     phaseInterface.CGLevelSet.Basis,
                     phaseInterface.DGLevelSet.Basis,
                     Tracker.GridDat,
-                    ContinuityProjectionOption.ConstrainedDG);
+                    ContinuityProjectionOption.None);
                 LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
                 preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
                 LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
