@@ -231,6 +231,16 @@ namespace BoSSS.Application.ExternalBinding {
             CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, chParams);
         }
 
+        static void VerifyTrackerState(LevelSetTracker lsTrk) {
+            var NoOfCells_a = lsTrk.Regions.GetSpeciesMask("a").NoOfItemsLocally.MPISum();
+            var NoOfCells_b = lsTrk.Regions.GetSpeciesMask("a").NoOfItemsLocally.MPISum();
+            var NoOfCells_cut = lsTrk.Regions.GetCutCellMask().NoOfItemsLocally.MPISum();
+
+            if (NoOfCells_a > 0 && NoOfCells_b > 0 && NoOfCells_cut == 0)
+                throw new ArithmeticException("Level-Set yields positive and negative cells, but no cut-cells can be identified; probably the level-set was just polynomial degree 0 (this does not work)");
+        }
+
+
         /// <summary>
         /// Solves the Cahn-Hilliard equation
         /// This method also contains arguments that cannot be made available to OpenFOAM due to limitations of the mono-C-interface.
@@ -303,7 +313,12 @@ namespace BoSSS.Application.ExternalBinding {
                     v.Clear();
                     w.Clear();
                     u.ProjectField(UInitFunc());
-                    c.ProjectField(func);
+
+                    var cP0 = new SinglePhaseField(new Basis(c.GridDat, 0));
+                    cP0.ProjectField(func);
+                    c.AccLaidBack(1.0, cP0);
+
+                    //c.ProjectField(func);
                 }
                 mu = new SinglePhaseField(b);
                 // for (int j = 0; j < J; j++)
@@ -360,7 +375,7 @@ namespace BoSSS.Application.ExternalBinding {
                 LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
                                                          2, new string[] { "a", "b" },
                                                          GetNamedInputFields,
-                                                         RealLevSet, "c", ContinuityProjectionOption.None);
+                                                         RealLevSet, "c", ContinuityProjectionOption.ConstrainedDG);
                 lsu.EnforceContinuity();
                 var RealTracker = lsu.Tracker;
                 // mu.Laplacian(-cahn, c);
@@ -380,6 +395,7 @@ namespace BoSSS.Application.ExternalBinding {
 
 
                 RealTracker.UpdateTracker(0);
+                VerifyTrackerState(RealTracker);
 
                 // SubGrid subgr = RealTracker.Regions.GetNearFieldSubgrid(6);
                 // SubGridBoundaryModes subgrbnd = 0;
@@ -604,6 +620,7 @@ namespace BoSSS.Application.ExternalBinding {
                         // RealLevSet.Clear();
                         // RealLevSet.Acc(1.0, c);
                         RealTracker.UpdateTracker(time);
+                        VerifyTrackerState(RealTracker);
                         uStokes = velocity.CloneAs();
                         stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
                         // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
