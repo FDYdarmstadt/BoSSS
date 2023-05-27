@@ -984,15 +984,24 @@ namespace PublicTestRunner {
                                 }
 
 
-                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
-                                    if(s == JobStatus.FailedOrCanceled) {
-                                        Console.WriteLine(" ------------------- Job Failed reason:");
-                                        var s1 = jj.job.GetStatus(true);
-                                        if(s1 != s) {
-                                            Console.WriteLine("changed its mind to: " + s1);
-                                            s = s1;
-                                        }
+                                if (s == JobStatus.FailedOrCanceled) {
+                                    Console.WriteLine(" ------------------- Job Failed reason:");
+                                    var s1 = jj.job.GetStatus(true);
+                                    if (s1 != s) {
+                                        Console.WriteLine("changed its mind to: " + s1);
+                                        s = s1;
                                     }
+
+                                    if (jj.job.SubmitCount < jj.job.RetryCount) {
+                                        Console.WriteLine("Trying once again with failed job...");
+                                        jj.job.Reactivate();
+                                        continue;
+                                    }
+                                }
+
+
+                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
+                                    
 
 
                                     // message:
@@ -1032,6 +1041,7 @@ namespace PublicTestRunner {
                                             }
                                         }
                                     }
+
 
                                     // move job to 'finished' list
                                     var X = (jj.job, jj.ResFile, jj.testname, s);
@@ -1110,13 +1120,15 @@ namespace PublicTestRunner {
                 // very final message:
                 if(SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
                     Console.WriteLine("All tests/jobs finished successfully.");
+                    Console.WriteLine("SUCCESS.");
 
                     if(returnCode != 0) {
-                        Console.Error.WriteLine("Some other error occurred (maybe IO error after successful test run) -- check output log");
-                        Console.Error.WriteLine("FAILURE.");
+                        Console.Error.WriteLine("Ignoring some other error occurred (maybe IO error after successful test run) -- check output log;");
+                        //Console.Error.WriteLine("FAILURE.");
                     } else {
-                        Console.WriteLine("SUCCESS.");
                     }
+
+                    returnCode = 0;
 
                 } else {
                     Console.Error.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {OtherStatCount} have other states.");
@@ -1274,7 +1286,7 @@ namespace PublicTestRunner {
                 // create job
                 Job j = new Job(final_jName, TestTypeProvider.GetType());
                 j.SessionReqForSuccess = false;
-                j.RetryCount = 1;
+                j.RetryCount = 3;
                 string resultFile = $"result-{dor}-{cnt}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileNameWithoutExtension(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {

@@ -126,23 +126,38 @@ namespace BoSSS.Application.BoSSSpad {
 
             //AddTableFormatter();
 
-            try {
-                using (var pipeServer = new NamedPipeServerStream(BoSSSpadMain.BoSSSpadInitDone_Pipe, PipeDirection.InOut)) {
-                    using (var cts = new CancellationTokenSource()) {
-                        var t = pipeServer.WaitForConnectionAsync(cts.Token);
+            {
+                try {
+                    // Synchronization during batch-execution of BoSSS-worksheets:
+                    // We send a signal to 'RunPapermillAndNbconvert(...)' to notify it can release its mutex.
 
-                        bool timeot = t.Wait(1000);
-                        if (timeot == false) {
-                            //Console.WriteLine("timeout");
-                            cts.Cancel();
-                        } else {
-                            pipeServer.WriteByte(1);
+                    var tempguid = System.Environment.GetEnvironmentVariable(BoSSSpadMain.BoSSSpadInitDone_PipeName);
+                    if (!tempguid.IsEmptyOrWhite()) {
+                        Console.WriteLine("Worksheet got tempguid = " + tempguid + " @ " + DateTime.Now);
+                        using (var pipeServer = new NamedPipeServerStream(tempguid, PipeDirection.InOut)) {
+                            using (var cts = new CancellationTokenSource()) {
+                                var t = pipeServer.WaitForConnectionAsync(cts.Token);
+
+                                bool timeot = t.Wait(1000 * 60);
+                                if (timeot == false) {
+                                    Console.WriteLine("timeout in worksheet  @ " + DateTime.Now);
+                                    cts.Cancel();
+                                } else {
+                                    pipeServer.WriteByte(1);
+                                }
+                            }
                         }
+
+                        //File.WriteAllText(tempguid + ".txt", "Hallo du Arsch!");
+                        //Console.WriteLine("token file written @ " + DateTime.Now);
                     }
+                } catch (Exception e) {
+                    Console.Error.WriteLine($"{e} during startup synchronization: {e.Message} at {DateTime.Now}");
+                    throw new AggregateException(e);
                 }
-            } catch (Exception e) {
-                Console.Error.WriteLine($"{e} during startup synchronization: {e.Message}");
             }
+
+            Console.WriteLine("BoSSSpad is ready to go!");
         }
 
         /// <summary>

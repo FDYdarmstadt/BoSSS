@@ -33,7 +33,7 @@ namespace BoSSS.Foundation.XDG {
 
             var r = LevSetTrk.Regions;
             for (int j = 0; j < J; j++) {
-                int dist = LevelSetTracker.DecodeLevelSetDist(r.m_LevSetRegions[j], 0);
+                int dist = LevelSetTracker.DecodeLevelSetDist(r.m_LevSetRegions[j], LevSetIdx);
                 f.SetMeanValue(j, f.GetMeanValue(j) + dist * alpha);
             }
         }
