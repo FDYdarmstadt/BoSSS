@@ -707,7 +707,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Square-root of the Gramian determinat for each transformation in <see cref="Edge2CellTrafos"/>, i.e.
+        /// Square-root of the Gramian determinant for each transformation in <see cref="Edge2CellTrafos"/>, i.e.
         /// if \f$ \myMatrix{M} \f$ 
         /// is the matrix of the transformation, this number is 
         /// \f$ \sqrt{ \operatorname{det} ( \myMatrix{M}^T \cdot \myMatrix{M} ) } \f$.

@@ -26,6 +26,7 @@ using System.Linq;
 using BoSSS.Foundation.Comm;
 using ilPSP.Utils;
 using MPI.Wrappers;
+using log4net.Core;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -1169,6 +1170,14 @@ namespace BoSSS.Foundation.XDG {
             /// - entry: if null, there is no face on the cell which coincides with any level-set 
             /// - contains tuples, which level-set coincides with which face (if any)
             /// </summary>
+            /// <remarks>
+            /// This member enables stable treatment of the special case when 
+            /// the level set is on some cell boundary.
+            /// There, the normal rules behave unstably, e.g.
+            /// - the Level set is recognized in both cells
+            /// - the Level set is not recognized in any cell.
+            /// Therefore, this case is already intercepted in the tracker beforehand, see <see cref="Quadrature.LevelSetOnEdgeRule"/>
+            /// </remarks>
             internal (int iLevSet, int iFace)[][] m_LevSetCoincidingFaces;
 
             /// <summary>
