@@ -19,11 +19,6 @@
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <!--Reference Include="log4net">
-      <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference-->
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.monkey\ilPSP.LinSolvers.monkey.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
     <ProjectReference Include="..\..\L1-platform\BoSSS.Platform\BoSSS.Platform.csproj" />
@@ -36,5 +31,8 @@
     <Compile Remove="IEquationComponentExtension.cs" />
     <Compile Remove="MakeshiftCutLineQuadRuleFactory.cs" />
     <Compile Remove="NullSubdivisionStrategy.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="IntersectingQuadrature" Version="1.0.4" />
   </ItemGroup>
 </Project>

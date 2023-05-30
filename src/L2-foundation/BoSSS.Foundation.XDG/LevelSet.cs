@@ -22,13 +22,20 @@ using BoSSS.Platform;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using ilPSP;
+using IntersectingQuadrature;
+using BoSSS.Foundation.Grid.RefElements;
+using System.Collections;
+using BoSSS.Foundation.XDG.Quadrature;
+using IntersectingQuadrature.TensorAnalysis;
 
 namespace BoSSS.Foundation.XDG {
 
     /// <summary>
     /// a level set that is implemented as a DG field, i.e. a <see cref="XDGField"/>
     /// </summary>
-    public partial class LevelSet : SinglePhaseField, ILevelSet {
+    public partial class LevelSet : SinglePhaseField, ILevelSet{
+
+
 
         /// <summary>
         /// Constructor

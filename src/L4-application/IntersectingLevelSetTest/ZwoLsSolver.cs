@@ -28,6 +28,7 @@ using ilPSP.LinSolvers;
 using ilPSP.Utils;
 using NUnit.Framework;
 using System;
+using System.Runtime.Serialization;
 
 namespace IntersectingLevelSetTest {
 
@@ -38,15 +39,42 @@ namespace IntersectingLevelSetTest {
     internal class ZwoLsSolver<T> : BoSSS.Solution.Application<T> where T : BoSSS.Solution.Control.AppControl, new() {
         internal XQuadFactoryHelper.MomentFittingVariants MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
 
+        int resolution;
+        int dimension;
+        double errorThreshold;
+        Func<double, double, double, double> levelSet0;
+        Func<double, double, double, double> levelSet1;
+        Func<double, double, double, double, double> levelSet3D_0;
+        Func<double, double, double, double, double> levelSet3D_1;
+
         protected override IGrid CreateOrLoadGrid() {
             var t = Triangle.Instance;
-            var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, 4), GenericBlas.Linspace(-0.5, 0.5, 4));
-            return grd;
+            if (dimension == 2) {
+                var grd = Grid2D.Cartesian2DGrid(GenericBlas.Linspace(-0.5, 0.5, resolution), GenericBlas.Linspace(-0.5, 0.5, resolution));
+                return grd;
+            }
+            else if (dimension == 3) {
+                var grd = Grid3D.Cartesian3DGrid(GenericBlas.Linspace(-0.5, 0.5, resolution), GenericBlas.Linspace(-0.5, 0.5, resolution), GenericBlas.Linspace(-0.5, 0.5, resolution));
+                return grd;
+            }
+            else {
+                throw new ArgumentException("please give spatial dimension value 2 or 3");
+            }
         }
 
         public override void Init(BoSSS.Solution.Control.AppControl control) {
-            BoSSS.Solution.Application.DeleteOldPlotFiles();
+            //BoSSS.Solution.Application.DeleteOldPlotFiles();
             base.Init(control);
+            if (control is TestControl testControl) {
+                levelSet0 = testControl.LevelSet0;
+                levelSet1 = testControl.LevelSet1;
+                levelSet3D_0 = testControl.LevelSet3D_0;
+                levelSet3D_1 = testControl.LevelSet3D_1;
+                dimension = testControl.Dimension;
+                resolution = testControl.Resolution;
+                errorThreshold = testControl.ErrorThreshold;
+            }
+
         }
 
         private LevelSet Phi0;
@@ -109,7 +137,7 @@ namespace IntersectingLevelSetTest {
         private void LsUpdate(double t) {
             Console.WriteLine("LSUpdate t = " + t);
             SetLs(t);
-            
+
             LsTrk.UpdateTracker(t);
             LsTrk.PushStacks();
 
@@ -121,46 +149,50 @@ namespace IntersectingLevelSetTest {
             Cmarker.AccConstant(1.0, LsTrk.Regions.GetSpeciesSubGrid("C").VolumeMask);
         }
 
+
         private void SetLs(double t) {
-            t = t / 90 * Math.PI;
-            double phi0(double x, double y) {
-                return (y > 0) ? Math.Sqrt(x.Pow2() + (y - 0.1).Pow2()) - 1.3 : 1;
+
+            if (dimension == 2) {
+
+                double phi0(double x, double y) {
+                    return levelSet0(x, y, t);
+                }
+
+                double phi1(double x, double y) {
+                    return levelSet1(x, y, t);
+                }
+
+                Phi0.ProjectField(phi0);
+                Phi1.ProjectField(phi1);
+            }
+            else if (dimension == 3) {
+
+                double phi0(double x, double y, double z) {
+                    return levelSet3D_0(x, y, z, t);
+                }
+
+                double phi1(double x, double y, double z) {
+                    return levelSet3D_1(x, y, z, t);
+                }
+
+                Phi0.ProjectField(phi0);
+                Phi1.ProjectField(phi1);
             }
 
-            double phi1(double x, double y) {
-                return (Math.Tan(t) * x) - (y);
-            }
-
-            double phi2(double x, double y) {
-                return (x);
-            }
-
-            double phi3(double x, double y) {
-                return (x - (Math.Tan(t) * y));
-            }
-            Phi0.ProjectField(phi3);
-            Phi1.ProjectField(phi1);
-        }
-
-        private void SetLs2(double t) {
-            double phi1(double x, double y) {
-                return (x - 0.1);
-            }
-
-            double phi3(double x, double y) {
-                return (x +  0.1 + t * 0.001);
-            }
-
-            Phi0.ProjectField(phi3);
-            Phi1.ProjectField(phi1);
         }
 
 
         protected override void SetInitial(double t) {
             this.LsUpdate(t);
 
-            u.ProjectField((x, y) => x * x);
-            du_dx_Exact.ProjectField((x, y) => 2 * x);
+            if (dimension == 2) {
+                u.ProjectField((x, y) => x * x);
+                du_dx_Exact.ProjectField((x, y) => 2 * x);
+            }
+            else if (dimension == 3) {
+                u.ProjectField((x, y, z) => x * x);
+                du_dx_Exact.ProjectField((x, y, z) => 2 * x);
+            }
         }
 
         private XSpatialOperatorMk2 Op;
@@ -179,6 +211,7 @@ namespace IntersectingLevelSetTest {
 
             Op.EquationComponents["c1"].Add(new DxFlux()); // Flux in Bulk Phase;
             Op.EquationComponents["c1"].Add(new LevSetFlx_AB()); // flux am lev-set 0
+            Op.EquationComponents["c1"].Add(new LevSetFlx_CB()); // flux am lev-set 1
             Op.EquationComponents["c1"].Add(new LevSetFlx_CA()); // flux am lev-set 1
 
             //Op.EquationComponents["c1"].Add(new DxBroken());
@@ -189,15 +222,21 @@ namespace IntersectingLevelSetTest {
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             Console.WriteLine("    Timestep # " + TimestepNo + ", phystime = " + phystime);
 
+
+            //reset current solution
+
             //phystime = 1.8;
             LsUpdate(phystime);
 
+            //var map = du_dx.Mapping;
+            var map = u.Mapping;
+
             // operator-matrix assemblieren
-            MsrMatrix OperatorMatrix = new MsrMatrix(u.Mapping, u.Mapping);
+            MsrMatrix OperatorMatrix = new MsrMatrix(map, map);
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
 
             // operator matrix assembly
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, u.Mapping, null, u.Mapping);
+            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, map, null, map);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
 
@@ -205,11 +244,11 @@ namespace IntersectingLevelSetTest {
             var Mfact = LsTrk.GetXDGSpaceMetrics(new SpeciesId[] { LsTrk.GetSpeciesId("B") }, QuadOrder, 1).MassMatrixFactory;// new MassMatrixFactory(u.Basis, Agg);
 
             // Mass matrix/Inverse Mass matrix
-            var Mass = Mfact.GetMassMatrix(u.Mapping, new double[] { 1.0 }, false, LsTrk.GetSpeciesId("B"));
+            var Mass = Mfact.GetMassMatrix(map, new double[] { 1.0 }, false, LsTrk.GetSpeciesId("B"));
             var MassInv = Mass.InvertBlocks(OnlyDiagonal: true, Subblocks: true, ignoreEmptyBlocks: true, SymmetricalInversion: false);
 
             // test that operator depends only on B-species values
-            double DepTest = LsTrk.Regions.GetSpeciesSubGrid("B").TestMatrixDependency(OperatorMatrix, u.Mapping, u.Mapping);
+            double DepTest = LsTrk.Regions.GetSpeciesSubGrid("B").TestMatrixDependency(OperatorMatrix, map, map);
             Console.WriteLine("Matrix dependency test: " + DepTest);
             Assert.LessOrEqual(DepTest, 0.0);
 
@@ -217,6 +256,7 @@ namespace IntersectingLevelSetTest {
             double[] x = new double[Affine.Length];
             BLAS.daxpy(x.Length, 1.0, Affine, 1, x, 1);
             OperatorMatrix.SpMVpara(1.0, u.CoordinateVector, 1.0, x);
+            du_dx.Clear();
             MassInv.SpMV(1.0, x, 0.0, du_dx.CoordinateVector);
 
             OperatorMatrix.SaveToTextFile("matrix.txt");
@@ -239,14 +279,16 @@ namespace IntersectingLevelSetTest {
             Console.WriteLine("L2 Error (in XDG space): " + xL2Err);
 
             // check error
-            double ErrorThreshold = 1.0e-1;
+            //double ErrorThreshold = 1.0e-1;
+            double ErrorThreshold = errorThreshold;
             if (this.MomentFittingVariant == XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)
                 ErrorThreshold = 1.0e-6; // HMF is designed for such integrands and should perform close to machine accuracy; on general integrands, the precision is different.
 
             bool IsPassed = (L2Err <= ErrorThreshold || xL2Err <= ErrorThreshold);
             if (IsPassed) {
                 Console.WriteLine("Test PASSED");
-            } else {
+            }
+            else {
                 Console.WriteLine("Test FAILED: check errors.");
                 //PlotCurrentState(phystime, TimestepNo, 3);
             }
@@ -256,8 +298,8 @@ namespace IntersectingLevelSetTest {
             }
 
             // return/Ende
-            base.NoOfTimesteps = 20;
-            //base.NoOfTimesteps = 2;
+            //base.NoOfTimesteps = timeStep;
+            //base.NoOfTimesteps = 181;
             dt = 1;
             return dt;
         }
