@@ -356,7 +356,7 @@ namespace BoSSS.Application.ExternalBinding {
             string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             // string grd = Path.Combine(currentDirectory, "/../../../meshes/big/large/polyMesh/");
             //string grd = Path.Combine(currentDirectory, "../../../meshes/big/small/polyMesh/");
-            string grd = Path.Combine(currentDirectory, "meshes", "big", "small", "polyMesh");
+            string grd = Path.Combine(currentDirectory, "meshes", "big", "medium", "polyMesh");
 
             RunDropletTest(grd);
 

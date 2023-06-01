@@ -230,6 +230,7 @@ namespace BoSSS.Application.ExternalBinding {
             CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: 0.1, _stationary: false, _endT: deltaT*1.1);
             CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, chParams);
         }
+        // public static bool FirstTimeStep = true;
 
         /// <summary>
         /// Solves the Cahn-Hilliard equation
@@ -360,7 +361,10 @@ namespace BoSSS.Application.ExternalBinding {
                 LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
                                                          2, new string[] { "a", "b" },
                                                          GetNamedInputFields,
-                                                         RealLevSet, "c", ContinuityProjectionOption.None);
+                                                         RealLevSet, "c",
+                                                          ContinuityProjectionOption.ConstrainedDG
+                                                          // ContinuityProjectionOption.None
+                );
                 lsu.EnforceContinuity();
                 var RealTracker = lsu.Tracker;
                 // mu.Laplacian(-cahn, c);
@@ -501,8 +505,8 @@ namespace BoSSS.Application.ExternalBinding {
                 lsu.InitializeParameters(domfields, paramfields);
 
                 // var tp = new Tecplot(grd.Grid.GridData, 3);
-                // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
-                Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w);
+                Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
+                // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w);
 
 
                 // Timestepper initialization
@@ -600,14 +604,18 @@ namespace BoSSS.Application.ExternalBinding {
                     double cVarVal = cVar.IntegralOver(null);
                     Console.WriteLine("cMean: " + cMean0);
                     Console.WriteLine("cVar: " + cVarVal);
+                    TimeStepper.Solve(time, dt);
+                    t++;
+                    time += dt;
                     while (time < endTime) {
                         // RealLevSet.Clear();
                         // RealLevSet.Acc(1.0, c);
                         RealTracker.UpdateTracker(time);
                         uStokes = velocity.CloneAs();
+                        // if (t > 0)
                         stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
-                        // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
                         TimeStepper.Solve(time, dt);
+                        // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
 
                         var cMean = c.IntegralOver(null);
                         cVar.Clear();
@@ -966,7 +974,7 @@ namespace BoSSS.Application.ExternalBinding {
                 // double referenceValue = base.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
                 // Console.WriteLine("Test1inner");
                 if (m_Flux == null) {
-                    Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
+                    // Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
                     return base.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
                 }
                 double UxN = 0.5 * (m_Flux.GetFluxIN(ref inp) + m_Flux.GetFluxOUT(ref inp));
