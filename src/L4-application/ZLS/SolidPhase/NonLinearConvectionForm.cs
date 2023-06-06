@@ -130,13 +130,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Vector VelocityIn = new Vector(_uIN, 0, D);
             Vector VelocityOt = new Vector(_uOT, 0, D);
             Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
-            //*
-            double penalty = rho * 0.5 * Math.Abs(VelocityAvg * inp.Normal) * (_uIN[D] - _uOT[D]) * (_vIN - _vOUT);
-            penalty *= penaltyScale;
-            return rho * 0.5 * (_uIN[D] + _uOT[D]) * (VelocityAvg * inp.Normal) * (_vIN - _vOUT) + penalty;
-            //*/
             // Upwinding:
-            /*
+            //*
             if(VelocityAvg*inp.Normal >= 0) {
                 return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN - _vOUT);
             } else {
@@ -152,36 +147,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 acc += U[dim] * U[D] * GradV[dim];
             acc *= rho;
             return -acc;
-        }
-    }
-
-
-    class SolidNonLinearConvectionForm : NonLinearConvectionForm {
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="speciesName"></param>
-        /// <param name="variableName">
-        /// variable name of transport property
-        /// </param>
-        /// <param name="velocity">
-        /// variable names for velocity component.
-        /// </param>
-        /// <param name="d"></param>
-        /// <param name="rho"></param>
-        public SolidNonLinearConvectionForm(string speciesName, string variableName, string[] velocity, int d, double rho)
-            : base(speciesName, variableName, velocity, rho) {
-        }
-
-        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uA, double _vIN, double[] _Grad_vA) {
-            //return 0.0; // solid wall
-            Vector VelocityIn = new Vector(_uIN, 0, D);
-            if(VelocityIn * inp.Normal >= 0) {
-                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN); // outflow
-            } else {
-                return rho * _uIN[D] * (VelocityIn * inp.Normal) * (_vIN);
-            }
         }
     }
 }

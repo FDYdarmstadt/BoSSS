@@ -62,7 +62,6 @@ namespace ZwoLevelSetSolver.Tests
             var C = ZwoLevelSetSolver.ControlFiles.HardCodedControl.AcceleratedBallInChannel(p, res);
             C.NonLinearSolver.SolverCode = BoSSS.Solution.Control.NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 0.0;
-            C.DisplacementExtension = true;
             //C.NonLinearSolver.MinSolverIterations = 200;
             C.NonLinearSolver.MaxSolverIterations = 20;
 

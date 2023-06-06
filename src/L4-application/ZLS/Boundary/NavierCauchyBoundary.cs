@@ -25,24 +25,19 @@ namespace ZwoLevelSetSolver.Boundary {
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
 
             //Stress equality
-            //AddComponent(new SolidLinearIncompressibleNeoHookeanBoundaryForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Viscosity, material.Lame2));
             AddComponent(new NeoHookeanNeumannForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Viscosity, material.Lame2));
             //AddComponent(new NonLinearNeoHookeanNeumannForm(fluidSpecies, solidSpecies, d, 1, viscosity, material.Viscosity, material.Lame2));
             //AddComponent(new SlipSolidLinearIncompressibleNeoHookeanBoundaryForm(fluidSpecies, solidSpecies, d, 1, viscosity,material.Viscosity, material.Lame2));
 
-            
+            //Transport therms 
+            AddComponent(new NonLinearSolidConvectionForm(
+                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
+                material.Density, rho_fluid, d, 1, fluidSpecies, solidSpecies));
+
+
             //Penalty coupling
-            AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Viscosity));
+            AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, 1 * viscosity, 0));
             //AddComponent(new NavierSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2, 0.1));
-
-            /*
-            AddComponent(new NonLinearSolidMomentumConvectionForm(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 
-                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), material.Density, D, 1, fluidSpecies, solidSpecies));
-            
-
-            AddComponent(new NonLinearFluidMomentumConvectionForm(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 
-                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), rho_fluid, D, 1, fluidSpecies, solidSpecies));
-            //*/
         }
 
         public override string FirstSpeciesName => fluidSpecies;
@@ -50,13 +45,5 @@ namespace ZwoLevelSetSolver.Boundary {
         public override string SecondSpeciesName => solidSpecies;
 
         public override string CodomainName => codomainName;
-    }
-
-    class ExtensionNavierCauchyBoundary : NavierCauchyBoundary {
-
-        public ExtensionNavierCauchyBoundary(string fluidSpecies, string solidSpecies, int d, int D, Solid material, double rho_fluid, double viscosity) 
-            : base(fluidSpecies, solidSpecies, d, D, material, rho_fluid, viscosity){
-            AddComponent(new DisplacementPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, material.Lame2));
-        }
     }
 }

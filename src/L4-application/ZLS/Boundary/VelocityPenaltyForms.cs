@@ -16,16 +16,16 @@ namespace ZwoLevelSetSolver.Boundary {
         string fluidSpecies;
         string[] variableNames;
         int d;
-        double viscosity;
-        double solidViscosity;
+        double penaltySolid;
+        double penaltyFluid;
 
-        public NoSlipVelocityPenaltyForm(string fluidSpecies, string solidSpecies, int d, int D, int levelSetIndex, double viscosity, double solidViscosity) {
+        public NoSlipVelocityPenaltyForm(string fluidSpecies, string solidSpecies, int d, int D, int levelSetIndex, double penaltyFluid, double penaltySolid) {
             this.levelSetIndex = levelSetIndex;
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
             this.d = d;
-            this.viscosity = viscosity;
-            this.solidViscosity = solidViscosity;
+            this.penaltyFluid = penaltyFluid;
+            this.penaltySolid = penaltySolid;
             variableNames = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D);
         }
 
@@ -91,7 +91,7 @@ namespace ZwoLevelSetSolver.Boundary {
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, 
             double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
 
-            double flux = viscosity * PenaltyIn(inp.jCellIn) * (_uIN[d] - _uOUT[d])  * (_vIN);
+            double flux =  PenaltyIn(inp.jCellIn) * (_uIN[d] - _uOUT[d])  * (penaltyFluid * _vIN - penaltySolid *_vOUT);
             return flux;
         }
 

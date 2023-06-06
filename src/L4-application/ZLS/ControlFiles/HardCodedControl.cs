@@ -856,7 +856,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             ZLS_Control C = new ZLS_Control(p);
             C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 3;
-            C.AgglomerationThreshold = 0.001;
+            C.AgglomerationThreshold = 0.2;
             C.NoOfMultigridLevels = 1;
             int D = 2;
 
@@ -1049,7 +1049,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
 
             C.TimesteppingMode = compMode;
-            double dt = 1e-2;
+            double dt = 2e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 30;

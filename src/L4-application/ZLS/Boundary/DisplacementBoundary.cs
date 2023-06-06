@@ -61,33 +61,4 @@ namespace ZwoLevelSetSolver.Boundary {
 
         public override string CodomainName => codomainName;
     }
-
-    class ExtensionDisplacementBoundary : SurfaceEquation {
-        string fluidSpecies;
-        string solidSpecies;
-        string codomainName;
-
-        public ExtensionDisplacementBoundary(LevelSetTracker LsTrkr, string fluidSpecies, string solidSpecies, int d, int D, double extensionViscosity, double artificialViscosity) {
-            codomainName = ZwoLevelSetSolver.EquationNames.DisplacementEvolutionComponent(d);
-            this.fluidSpecies = fluidSpecies;
-            this.solidSpecies = solidSpecies;
-
-            AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
-            AddComponent(new NonLinearSolidConvectionForm(ZwoLevelSetSolver.VariableNames.DisplacementVector(D),
-                BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
-                1.0, d, 1,
-                fluidSpecies,
-                solidSpecies));
-            if(artificialViscosity != 0.0) {
-                AddComponent(new ExtensionSolidTensionForm(
-                    fluidSpecies, solidSpecies, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, D, 1, extensionViscosity, artificialViscosity));
-            }
-        }
-
-        public override string FirstSpeciesName => fluidSpecies;
-
-        public override string SecondSpeciesName => solidSpecies;
-
-        public override string CodomainName => codomainName;
-    }
 }

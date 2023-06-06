@@ -16,8 +16,6 @@ namespace ZwoLevelSetSolver {
         [DataMember]
         public int Degree { get; private set; }
 
-        public bool DisplacementExtension = false;
-
         public double ArtificialViscosity = 0.000;
         
         public double ExtensionArtificialViscosity = 0.000;

@@ -27,7 +27,7 @@ namespace ZwoLevelSetSolver.Boundary {
             m_SolidSpecies = SolidSpecies;
             m_FluidSpc = FluidSpc;
             m_rho = rho;
-            this.variableNames = velocityNames.Cat( variableNames);
+            this.variableNames = velocityNames.Cat(variableNames[d]);
             parameterNames = new string[] { };
             this.d = d;
         }
@@ -69,7 +69,7 @@ namespace ZwoLevelSetSolver.Boundary {
             Vector VelocityOt = new Vector(uOut, 0, D);
             Vector VelocityIn = new Vector(uIn, 0, D);
 
-            r += uOut[D + d] * (VelocityOt * inp.Normal);
+            r += uOut[D] * (VelocityOt * inp.Normal);
 
             return m_rho * r * (-vOut);
             // Upwinding:
@@ -93,22 +93,22 @@ namespace ZwoLevelSetSolver.Boundary {
 
     class NonLinearSolidConvectionForm : ILevelSetForm, ISupportsJacobianComponent {
         int m_iLevSet;
-        double m_rho;
+        double rhoFluid;
+        double rhoSolid;
         string m_FluidSpc;
         string m_SolidSpecies;
         string[] variableNames;
-        string[] parameterNames;
         int D;
         int d;
 
-        public NonLinearSolidConvectionForm(string[] variableNames, string[] velocityNames, double rho, int d, int iLevSet, string FluidSpc, string SolidSpecies) {
+        public NonLinearSolidConvectionForm(string[] variableNames, string[] velocityNames, double rhoSolid, double rhoFluid, int d, int iLevSet, string FluidSpc, string SolidSpecies) {
             D = velocityNames.Length;
             m_iLevSet = iLevSet;
             m_SolidSpecies = SolidSpecies;
             m_FluidSpc = FluidSpc;
-            m_rho = rho;
-            this.variableNames = velocityNames.Cat(variableNames);
-            parameterNames = new string[] { };
+            this.rhoSolid = rhoSolid;
+            this.rhoFluid = rhoFluid;
+            this.variableNames = velocityNames.Cat(variableNames[d]);
             this.d = d;
         }
 
@@ -141,17 +141,15 @@ namespace ZwoLevelSetSolver.Boundary {
         }
 
         public IList<string> ParameterOrdering {
-            get { return parameterNames; }
+            get { return new string[] { }; }
         }
 
-        public double InnerEdgeForm(ref CommonParams inp, double[] uIn, double[] uOut, double[,] Grad_uIN, double[,] Grad_uOut, double vIn, double vOut, double[] Grad_vIN, double[] Grad_vOUT) {
+        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOT, double[,] Grad_uIN, double[,] Grad_uOut, double _vIN, double _vOUT, double[] Grad_vIN, double[] Grad_vOUT) {
             double r = 0.0;
-            Vector VelocityIn = new Vector(uIn, 0, D);
-            Vector VelocityOt = new Vector(uOut, 0, D);
-            Vector VelocityAvg = 0.5 * (VelocityIn + VelocityOt);
+            Vector VelocityIn = new Vector(_uIN, 0, D);
+            Vector VelocityOt = new Vector(_uOT, 0, D);
+            return rhoFluid * _uIN[D] * (VelocityIn * inp.Normal) *  _vIN - rhoSolid * _uOT[D] * (VelocityOt * inp.Normal) * _vOUT;
 
-            double penalty = m_rho * 0.5 * Math.Abs(VelocityAvg * inp.Normal) * (uIn[D+d] - uOut[D+d]) * (vIn-vOut);
-            return m_rho * 0.5 * (uOut[D + d] + uIn[D+d]) * (VelocityAvg * inp.Normal) * (vIn - vOut) + penalty;
         }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
