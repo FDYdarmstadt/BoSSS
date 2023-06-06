@@ -335,8 +335,8 @@ namespace BoSSS.Foundation.XDG {
                 int[][] C2E = g.Cells.Cells2Edges;
                 {
                     foreach(var pair in AggPairs) {
-                        int j1 = pair.Item1;
-                        int j2 = pair.Item2;
+                        int j1 = pair.jSource;
+                        int j2 = pair.jTarget;
 
                         Debug.Assert(j1 < J || j2 < J);
                         if(j1 >= J) {
@@ -448,9 +448,9 @@ namespace BoSSS.Foundation.XDG {
                             clear_CycleDetection();
 
                         while(jTarget < J && Cells2Aggpairs[jTarget] >= 0) { // traverse the agglomeration chain to find its end...
-                            //                                                  ... but only as log as the target cell is a local one.
+                            //                                                  ... but only as long as the target cell is a local one.
                             if(CycleDetection[jTarget] == true) {
-                                
+
                                 // the pair `Cells2Aggpairs[jTarget]` should be removed
                                 int currentPair = Cells2Aggpairs[jTarget];
 
@@ -462,6 +462,10 @@ namespace BoSSS.Foundation.XDG {
 
                                 MustDeletePair[jTarget] = true;
 
+                                //int jAggSrcGlob = (int)GridDat.Parallel.GetGlobalCellIndex(jSource);
+                                //int jAggTrgGlob = (int)GridDat.Parallel.GetGlobalCellIndex(jTarget);
+                                //Console.WriteLine($"Reduced level for CurrentPair={currentPair}, jAggSrc={jSource}, jAggTrg={jTarget}, jAggSrcGlob={jAggSrcGlob}, jAggTrgGlob={jAggTrgGlob}, rank={mpiRank} offset={g.CellPartitioning.GetI0Offest(mpiRank)}");
+
                                 break;
                             } else {
                                 set_CycleDetection(jTarget);
@@ -470,8 +474,6 @@ namespace BoSSS.Foundation.XDG {
                                 jTarget = AggPairs[nextPair].Item2;
                             }
                         }
-
-
 
                         if(jTarget >= J)
                             // do not reduce over MPI boundaries...
@@ -486,15 +488,16 @@ namespace BoSSS.Foundation.XDG {
                     }
 
 
-                    
+
                     void ClearExternalPairs() {
                         MustDeletePair.MPIExchange(g);
 
-                        for(int j = J; j < J; j++) {
+                        for(int j = 0; j < J; j++) {
                             if(MustDeletePair[j]) {
                                 int currentPair = Cells2Aggpairs[j];
-                                if(AggPairs[currentPair].jSource >= 0 || AggPairs[currentPair].jTarget >= 0)
-                                    throw new ApplicationException($"Error in Algorithm: " + AggPairs[currentPair].ToString());
+                                if (currentPair >=0 )
+                                    if(AggPairs[currentPair].jSource >= 0 || AggPairs[currentPair].jTarget >= 0)
+                                        throw new ApplicationException($"Error in Algorithm: " + AggPairs[currentPair].ToString());
                             }
                         }
 
@@ -504,11 +507,15 @@ namespace BoSSS.Foundation.XDG {
                                 // the pair `Cells2Aggpairs[j]` should be removed
                                 int currentPair = Cells2Aggpairs[j];
 
-                                // mark as invalid, i.e. set members to illegal values; The pair will be removed later;
-                                Cells2Aggpairs[j] = -1;
-                                AggPairs[currentPair] = (int.MinValue, int.MinValue);
-                                SourceCellMpiRank[currentPair] = -1;
-                                TargetCellMpiRank[currentPair] = -1;
+                                if (currentPair >=0) { // is already assigned as illegal (can happen in other processors)
+                                                       // mark as invalid, i.e. set members to illegal values; The pair will be removed later;
+                                    //Console.WriteLine($"Queried for CurrentPair={currentPair}, j={j},  AggPairs[currentPair]: ({AggPairs[currentPair].jSource} , {AggPairs[currentPair].jTarget}) on rank viz. ({SourceCellMpiRank[currentPair]} , {TargetCellMpiRank[currentPair]} )  rank={mpiRank} offset={g.CellPartitioning.GetI0Offest(mpiRank)}");
+
+                                    Cells2Aggpairs[j] = -1;
+                                    AggPairs[currentPair] = (int.MinValue, int.MinValue);
+                                    SourceCellMpiRank[currentPair] = -1;
+                                    TargetCellMpiRank[currentPair] = -1;
+                                } 
                             }
                         }
                         MustDeletePair.SetAll(false);
@@ -549,10 +556,14 @@ namespace BoSSS.Foundation.XDG {
                                 var CurrentPair = AggPairs[CurrentPairIndex];
                                 int jAggSrc = CurrentPair.jSource;
                                 int jAggTrg = CurrentPair.jTarget;
-
+                                
                                 if(CycleDetection[jAggSrc] == true) {
                                     // the pair `Cells2Aggpairs[jAggTrg]` should be removed
                                     int currentPair = Cells2Aggpairs[jAggTrg];
+
+                                    //int jAggSrcGlob = (int)GridDat.Parallel.GetGlobalCellIndex(jAggSrc);
+                                    //int jAggTrgGlob = (int)GridDat.Parallel.GetGlobalCellIndex(jAggTrg);
+                                    //Console.WriteLine($"Cycle detected for CurrentPair={currentPair}, jAggSrc={jAggSrc}, jAggTrg={jAggTrg}, jAggSrcGlob={jAggSrcGlob}, jAggTrgGlob={jAggTrgGlob} rank={mpiRank} offset={g.CellPartitioning.GetI0Offest(mpiRank)}");
 
                                     // mark as invalid, i.e. set members to illegal values; The pair will be removed later;
                                     Cells2Aggpairs[jAggTrg] = -1;

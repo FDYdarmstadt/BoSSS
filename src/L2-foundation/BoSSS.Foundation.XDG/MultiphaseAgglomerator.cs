@@ -848,10 +848,13 @@ namespace BoSSS.Foundation.XDG {
                         if(iLevel == 0) {
                             // convert un-cut volume into volume fraction
                             for(int j = 0; j < J; j++) {
-                                if (Math.Abs(VolumeFrac[j]) < 1e-25){
-                                    Console.WriteLine("Attempting to divide by zero for VolumeFrac at j = " + j);
-                                }
-                                VolumeFrac[j] = CellVolume[j] / VolumeFrac[j];
+                                //if (Math.Abs(VolumeFrac[j]) < 1e-25) {
+                                //    Console.WriteLine("Attempting to divide by zero for VolumeFrac at j = " + j);
+                                //}
+                                double uncutVolume = VolumeFrac[j]; // so far, VolumeFrac[j] is the un-cut cell volume;
+                                VolumeFrac[j] = CellVolume[j] / VolumeFrac[j]; 
+                                if (VolumeFrac[j] < 0 || VolumeFrac[j] > 1.1)
+                                    throw new ArithmeticException($"Agglomerated cell volume fraction is {VolumeFrac[j]}; expected to be between 0 and 1; cut cell volume = {CellVolume[j]}, un-cut volume = {uncutVolume}");
                             }
                         }
 
@@ -866,6 +869,8 @@ namespace BoSSS.Foundation.XDG {
                     // Needed, such that all ExternalCells (i.e. Ghost cells) have the correct CellSurface
                     CellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
 
+                    var uncutLengthScale = Tracker.GridDat.Cells.CellLengthScale;
+
                     for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                         SpeciesId spc = species[iSpc];
                         MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
@@ -875,7 +880,11 @@ namespace BoSSS.Foundation.XDG {
                         
                         // Loop includes external cells
                         for(int j = 0; j < JE; j++) {
-                                LengthScales[j] = CellVolume[j] / CellSurface[j];
+                            // Note: the following un-guarded division might result in NaN's or Inf's.
+                            // (especially in void-cells, the NaN's are desired)
+                            // This is intended, since it will create exceptions in the penalty computation when something is wrong with the cut-cell integration domain.
+
+                            LengthScales[j] = CellVolume[j] / CellSurface[j]; // length scale is [Volume / Area]
                         }
 
 
@@ -889,7 +898,7 @@ namespace BoSSS.Foundation.XDG {
                                 double Fraction = VolumeFrac[j];
 
                                 if(Fraction <= 1.0e-10)
-                                    LengthScales[j] = 1e10;
+                                    LengthScales[j] = 1e10*uncutLengthScale[j];
                             }
                         }
                     }

@@ -27,7 +27,7 @@ namespace BoSSS.Foundation {
     public partial class Basis {
 
         /// <summary>
-        /// Basis transformation between adjacent cells, required e.g. for cell agglomeration
+        /// Basis transformation between cells, required e.g. for cell agglomeration
         /// </summary>
         /// <param name="CellPairs">
         /// - 1st index: list of cells 

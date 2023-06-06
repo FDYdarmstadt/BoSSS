@@ -22,7 +22,8 @@ using System;
 namespace CNS.LoadBalancing {
 
     /// <summary>
-    /// Fluid cells are "0", void cells are "1"
+    /// Considers only fluid and void cells.
+    /// Fluid cells are "0", void cells are "1". 
     /// </summary>
     public class IBMCellClassifierTwo : ICellClassifier {
 

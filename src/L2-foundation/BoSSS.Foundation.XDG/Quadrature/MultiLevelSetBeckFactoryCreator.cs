@@ -1094,7 +1094,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 m_levelSet.EvaluateEdge(j, 1, NS, ev, inp);
             }
-            return ev[0];
+            return ev[0, 0];
         }
 
         (double evaluation, Tensor1 gradient) IScalarFunction.EvaluateAndGradient(Tensor1 x)
@@ -1119,7 +1119,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 m_levelSet.EvaluateEdge(j, 1, NS, ev, inp, GradientIN: grad, GradientOT: gradIn);
                 (gradOut, hessOut) = DecideForEntries(grad);
-                return (ev[0], lSEvalUtil.ToTensor1(gradOut));
+                return (ev[0, 0], lSEvalUtil.ToTensor1(gradOut));
             }
             
             
@@ -1148,7 +1148,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 m_levelSet.EvaluateEdge(j, 1, NS, ev, inp, GradientIN: grad, GradientOT: gradIn);
                 (gradOut, hessOut) = DecideForEntries(grad);
-                return (ev[0], lSEvalUtil.ToTensor1(gradOut), lSEvalUtil.ToTensor2(hessOut));
+                return (ev[0, 0], lSEvalUtil.ToTensor1(gradOut), lSEvalUtil.ToTensor2(hessOut));
             }
 
 
@@ -1225,7 +1225,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var ev = MultidimensionalArray.Create(1, 1);
             m_levelSet.Evaluate(j, 1, NS, ev);
-            return ev[0];
+            return ev[0, 0];
         }
 
         public abstract NodeSet GetNodeSet(Tensor1 x);
@@ -1240,7 +1240,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, x.M);
             m_levelSet.EvaluateGradient(j, 1, NS, grad);
 
-            return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
+            return (ev[0, 0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
 
         }
 
@@ -1258,7 +1258,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             m_levelSet.EvaluateGradient(j, 1, NS, grad);
             m_levelSet.EvaluateHessian(j, 1, NS, hess);
 
-            return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)), lSEvalUtil.ToTensor2(hess.ExtractSubArrayShallow(0, 0, -1, -1)));
+            return (ev[0, 0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)), lSEvalUtil.ToTensor2(hess.ExtractSubArrayShallow(0, 0, -1, -1)));
 
         }
     }

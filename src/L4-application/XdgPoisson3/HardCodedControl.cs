@@ -91,7 +91,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// A circular interface in the 2D domain \f$ (3/2,3/2)^2 \f$.
         /// </summary>
         public static XdgPoisson3Control Circle(int Resolution = 16, int p = 1, string DBPath = null, LinearSolverCode solver = LinearSolverCode.direct_pardiso) {
-            //BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 8);
+            // --control cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 8)
 
             XdgPoisson3Control R = new XdgPoisson3Control();
 

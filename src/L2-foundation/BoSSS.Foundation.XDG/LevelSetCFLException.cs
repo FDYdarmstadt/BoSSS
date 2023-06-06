@@ -20,24 +20,25 @@ using System.IO;
 namespace BoSSS.Foundation.XDG {
 
     /// <summary>
-    /// thrown by <see cref="LevelSetTracker.UpdateTracker"/>;
+    /// thrown by <see cref="LevelSetTracker.UpdateTracker"/>, if the level-set has moved by **more** than one cell in a single timestep/update
     /// </summary>
     public class LevelSetCFLException : Exception {
 
         static string ComposeMessage(int[] failCnt) {
-            StringWriter stw = new StringWriter();
-            stw.Write("failed on Level Set(s): ");
-            bool beistrich = false;
-            for (int i = 0; i < failCnt.Length; i++) {
-                if (failCnt[i] > 0) {
-                    if (beistrich)
-                        stw.Write(", ");
-                    stw.Write(i + " (" + failCnt[i] + " cells)");
+            using (StringWriter stw = new StringWriter()) {
+                stw.Write("failed on Level Set(s): ");
+                bool beistrich = false;
+                for (int i = 0; i < failCnt.Length; i++) {
+                    if (failCnt[i] > 0) {
+                        if (beistrich)
+                            stw.Write(", ");
+                        stw.Write(i + " (" + failCnt[i] + " cells)");
+                    }
+                    stw.Write(";");
                 }
-                stw.Write(";");
-            }
 
-            return stw.ToString();
+                return stw.ToString();
+            }
         }
 
         /// <summary>

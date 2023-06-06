@@ -397,7 +397,9 @@ namespace BoSSS.Foundation.Grid.Classic {
                             throw new ApplicationException("METIS produced illegal partitioning - 0 cells on process " + rnk + ".");
                         }
                     }
+                    globalResult = SortPartitioning(globalResult);
                 }
+
 
                 int[] localLengths = new int[size];
                 for (int p = 0; p < localLengths.Length; p++) {
@@ -409,6 +411,73 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
+        /// <summary>
+        /// Sort the new partitioning w.r.t. current one to minimize the cost of re-distribution.
+        /// Because partitioning algorithms do not take the current partitioning into account
+        /// and assigns an arbitrary processor to partitions.
+        /// </summary>
+        /// <returns>
+        /// Global list for partitioning
+        /// For each local cell index, the returned array contains the MPI
+        /// process rank where the cell should be placed.
+        /// - Index: cell index, 
+        /// - content: MPI Processor rank
+        /// </returns>
+        /// <param name="part"> Global list for partitioning
+        /// - Index: cell index, 
+        /// - content: MPI Processor rank
+        ///</param>  
+        internal int[] SortPartitioning(int[] part) {
+            if (m_Size < 2)
+                    return part;
+
+            int[] sortedPart = new int[part.Length];
+            List<int> mapping = new List<int>(m_Size);
+
+            // Find a suitable partition for each processor(p)
+            for (int p = 0; p < m_Size; p++){
+                // The info about the old partitioning can be accessed by using offsets
+                // Get the offset and length of the processor to mask cells with respect to (w.r.t) old partitioning
+                long localOffset = m_CellPartitioning.GetI0Offest(p);
+                int localLength = m_CellPartitioning.GetLocalLength(p);
+
+                // Sort the input cell-packages w.r.t their occurrences in the old partitioning
+                var occurrences = part.GetSubVector((int)localOffset, localLength).GroupBy(v => v)
+                  .Select(g => new { Value = g.Key, Count = g.Count() })
+                  .OrderByDescending(x => x.Count)
+                  .ToList();
+
+                // Make sure that you supply each processor as a possible target for the partitions
+                for (int pp = 0; pp < m_Size; pp++) {
+                    // As long as they are not assigned to anyone ...
+                    if (!mapping.Contains(pp) && !occurrences.Any(x => x.Value == pp)) {
+                        // ... we can add this processor(pp) even though they do not have any cells in the current partitioning. 
+                        occurrences.Add(new { Value = pp, Count = 0 });
+                    }
+                }
+
+                // Find the most repeated rank w.r.t. old partitioning
+                foreach (var processor in occurrences) {
+                    if (!mapping.Contains((int)processor.Value)) { // make sure it is not already assigned to another partition
+                        mapping.Add((int)processor.Value); // content: old rank, index: new rank
+                        break;
+                    }
+                }
+            }
+
+            // Check if every rank is assigned to mapping
+            for (int p = 0; p < m_Size; p++) {
+                if (!mapping.Contains(p))
+                    throw new Exception("Cannot sort the distribution of ranks");
+            }
+
+            // Assign the new partitioning w.r.t. mapping
+            for (int j = 0; j < part.Length; j++) {
+                sortedPart[j] = mapping.IndexOf(part[j]); // Index of the list represents the new rank
+            }
+
+            return sortedPart;
+        }
 
         /// <summary>
         /// Not implemented.
@@ -1142,6 +1211,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
                     Array.Sort(CellIndex, RankIndex);
                 }
+                //RankIndex = SortPartitioning(RankIndex);
                 //Scatter Rank-Array for local Process
                 local_Rank_RedistributionList = RankIndex.MPIScatterv(CellsPerRank);
             } else {

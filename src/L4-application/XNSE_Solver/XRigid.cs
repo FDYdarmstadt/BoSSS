@@ -25,7 +25,7 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XRigid {
 
         [DataMember]
-        private double[] m_pos;
+        private double[] m_pos; //center of mass
         [DataMember]
         private double m_anglevelocity = -1.0;
         [DataMember]
@@ -38,6 +38,8 @@ namespace BoSSS.Application.XNSE_Solver {
         private double m_tiltDegree = 0.0;
         [DataMember]
         private double[] m_tiltVector = new double[] {0, 1, 0};
+        [DataMember]
+        private double[] m_RotationCenter;
         [DataMember]
         private Shape theShape = Shape.None;
 
@@ -78,7 +80,15 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         public void SetRotationAxis(string Axis) {
-            switch(m_SpaceDim) {
+            double[] rotCenter = m_pos;
+            SetRotation(Axis, rotCenter);
+        }
+
+        public void SetRotation(string Axis, double[] RotationCenter) {
+            if (m_SpaceDim != RotationCenter.Length)
+                throw new ArgumentException($"RotationCenter should be in {m_SpaceDim}-dimension");
+
+            switch (m_SpaceDim) {
                 case 3:
                 var verify = new string[] { "x", "y", "z" }.Take(m_SpaceDim);
                 bool isSupported = verify.Any(s => s == Axis);
@@ -91,6 +101,7 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new NotSupportedException("Axis not supported: " + Axis + " (In 2D one can only rotate around z)");
                 break;
             }
+            m_RotationCenter = RotationCenter;
             m_RotationAxis = Axis;
         }
 
@@ -136,17 +147,49 @@ namespace BoSSS.Application.XNSE_Solver {
             var anglevelocity = m_anglevelocity;
             var SpaceDim = m_SpaceDim;
             var particleRad = m_partRadius;
+            var RotationCenter = m_RotationCenter;
+            var RotationAxis = m_RotationAxis;
             m_ctrl.Tags.Add("Sphere");
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.None;
+
             Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+                double[] RotationArm = new double[SpaceDim];
+                double angle = -(anglevelocity * t) % (2 * Math.PI);
+                Vector rotAxis;
+                switch (RotationAxis) {
+                    case "x":
+                        rotAxis = new Vector(1, 0, 0);
+                        break;
+                    case "y":
+                        rotAxis = new Vector(0, 1, 0);
+                        break;
+                    case "z":
+                        rotAxis = new Vector(0, 0, 1);
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+
+                if (!Enumerable.SequenceEqual(pos, RotationCenter))
+                    RotationArm = pos.Zip(RotationCenter, (p, RC) => p - RC).ToArray(); // subtraction: pos - RotationCenter 
+                AffineTrafo affineTrafoFinal;
+                if (SpaceDim == 2) {
+                    affineTrafoFinal = AffineTrafo.Some2DRotation(angle);
+                } else {
+                    affineTrafoFinal = AffineTrafo.Rotation3D(rotAxis, angle);
+                }
+
+                double[] rotated_arm = affineTrafoFinal.Transform(RotationArm);
+                double[] rotated_pos = RotationCenter.Zip(rotated_arm, (RC,rA) => RC + rA).ToArray(); // sum: RotationCenter + affineTrafoFinal.Transform(RotationArm) 
+
                 switch (SpaceDim) {
                     case 2:
                     // circle
-                    return -(X[0] - pos[0]) * (X[0] - pos[0]) - (X[1] - pos[1]) * (X[1] - pos[1]) + particleRad * particleRad;
+                    return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) + particleRad * particleRad;
 
                     case 3:
                     // sphere
-                    return -(X[0] - pos[0]) * (X[0] - pos[0]) - (X[1] - pos[1]) * (X[1] - pos[1]) - (X[2] - pos[2]) * (X[2] - pos[2]) + particleRad * particleRad;
+                    return -(X[0] - rotated_pos[0]) * (X[0] - rotated_pos[0]) - (X[1] - rotated_pos[1]) * (X[1] - rotated_pos[1]) - (X[2] - pos[2]) * (X[2] - rotated_pos[2]) + particleRad * particleRad;
 
                     default:
                     throw new NotImplementedException();
@@ -264,6 +307,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         private void SetVelocityAtIB() {
             var pos = m_pos;
+            var rotCenter = m_RotationCenter;
             var anglevelocity = m_anglevelocity;
             var SpaceDim = m_SpaceDim;
             var tiltVector = m_tiltVector;
@@ -272,16 +316,19 @@ namespace BoSSS.Application.XNSE_Solver {
             Func<double[], double, double[]> VelocityAtIB = delegate (double[] x, double time) {
                 if (pos.Length != x.Length)
                     throw new ArgumentException("check dimension of center of mass");
+                double[] X = x;
 
-                Vector TiltVector = new Vector(tiltVector);
+                if (tiltDegree != 0.0 && SpaceDim == 3) {
+                    Vector TiltVector = new Vector(tiltVector);
 
-                AffineTrafo affineTrafoTilt;
-                if (tiltDegree == 0.0) {
-                    affineTrafoTilt = AffineTrafo.Identity(TiltVector.Dim);
-                } else {
-                    affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, -tiltDegree); //to define the rotation around the original axis of the rigid body, reverse the tilt
+                    AffineTrafo affineTrafoTilt;
+                    if (tiltDegree == 0.0) {
+                        affineTrafoTilt = AffineTrafo.Identity(TiltVector.Dim);
+                    } else {
+                        affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, -tiltDegree); //to define the rotation around the original axis of the rigid body, reverse the tilt
+                    }
+                    X = affineTrafoTilt.Transform(x);
                 }
-                double[] X = affineTrafoTilt.Transform(x);
 
                 Vector angVelo = new Vector(new double[] { 0, 0, 0 });
                 switch (m_RotationAxis) {
@@ -298,7 +345,7 @@ namespace BoSSS.Application.XNSE_Solver {
                         throw new NotSupportedException("Axis not supported");
                 }
 
-                Vector CenterofMass = new Vector(pos);
+                Vector CenterofMass = new Vector(rotCenter); //rotation around the given point
                 Vector radialVector = new Vector(X) - CenterofMass;
                 Vector transVelocity = new Vector(new double[SpaceDim]);
                 Vector pointVelocity;

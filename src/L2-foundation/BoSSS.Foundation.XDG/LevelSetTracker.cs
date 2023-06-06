@@ -2311,6 +2311,39 @@ namespace BoSSS.Foundation.XDG {
                 this.m_QuadFactoryHelpersHistory.Current.Clear();
                 this.m_XDGSpaceMetricsHistory.Current.Clear();
 
+                // Check Level-Set Topology
+                // ========================
+                var TopologyProblems = new List<(int iLevSet, int j, int Neigh, int dist_j, int dist_neigh)>();
+                using (new BlockTrace("TOPOLOGY_CHECK", tr)) {
+                    int[][] Neighbours = m_gDat.iLogicalCells.CellNeighbours;
+
+
+                    for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
+                        for (int j = 0; j < J; j++) {
+                            int dist = DecodeLevelSetDist(LevSetRegions[j], levSetInd);
+                            //Console.WriteLine($"dist[{j}] = {dist}");
+                            int distSign = Math.Sign(dist);
+
+                            if (Math.Abs(distSign) > 0) {
+                                int[] Neighs = Neighbours[j];
+                                foreach (var jNeigh in Neighs) {
+                                    int distNeigh = DecodeLevelSetDist(LevSetRegions[jNeigh], levSetInd); //lsTrk.Regions.GetLevelSetDistance(0, jNeigh);
+
+                                    int distNeighSign = Math.Sign(distNeigh);
+
+                                    if (Math.Abs(distNeighSign) != 0 && distNeighSign != distSign) {
+                                        TopologyProblems.Add((levSetInd, j, jNeigh, dist, distNeigh));
+                                        //Console.WriteLine($"Topology error in Cell {j}; contact of purly positive/negative domain across an edge without a cut cell in between. distance of cell {j} is {dist}, distance of neighbour cell {jNeigh} is {distNeigh}.");
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                   
+
+                }
+
                 // check the LevelSet CFL
                 // ======================
 
@@ -2344,8 +2377,8 @@ namespace BoSSS.Foundation.XDG {
                     ObserverUpdate(null);
                 }
 
-                // throw exception, if levelset CFL violated
-                // =========================================
+                // throw exceptions, if levelset topology/CFL violated
+                // ===================================================
 
                 //
                 // Ein schöner Gruß von Florian
@@ -2361,6 +2394,18 @@ namespace BoSSS.Foundation.XDG {
                 // Congratulations!
                 //
 
+
+                if (TopologyProblems.Count > 0) {
+                    LevelSetTopologyException exception = new LevelSetTopologyException(TopologyProblems);
+                    foreach (var reference in m_Observers) {
+                        IObserver<LevelSetRegions> observer = reference.Target;
+                        if (observer != null) {
+                            observer.OnError(exception);
+                        }
+                    }
+                    throw exception;
+                }
+
                 if (throwCFL) {
                     LevelSetCFLException exception = new LevelSetCFLException(fail);
                     foreach(var reference in m_Observers) {
@@ -2371,6 +2416,8 @@ namespace BoSSS.Foundation.XDG {
                     }
                     throw exception;
                 }
+
+
             }
         }
 
