@@ -1018,6 +1018,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.SurfaceTension {
     /// LaplaceBeltrami with max sigma as parameter, for contact line between two level sets
     /// </summary>
     public class SurfaceTension_LaplaceBeltrami_Contactline : IBM_ContactLine, IVolumeForm, ISupportsJacobianComponent  {
+
         int d;
         int D;
         int iLevSet;

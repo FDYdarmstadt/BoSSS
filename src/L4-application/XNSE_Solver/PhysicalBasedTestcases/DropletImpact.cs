@@ -35,6 +35,7 @@ using BoSSS.Solution.LevelSetTools;
 using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Application.XNSE_Solver.Logging;
 using System.Configuration;
+using static BoSSS.Solution.AMRLevelIndicatorLibrary;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -176,6 +177,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
+            C.activeAMRlevelIndicators.Add(new AMRonBoundary(new byte[] { 3 }) { maxRefinementLevel = 1 });
             C.AMR_startUpSweeps = 1;
 
 
@@ -220,6 +222,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.ProjectName = "XNSE/DropletImpact";
             C.ProjectDescription = "droplet impact on solid wall (hydrophobic)";
 
+            //C.PostprocessingModules.Add(new MovingContactLineLogging() { LogPeriod = 1, printToConsole = true });
+
             #endregion
 
 
@@ -241,8 +245,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             double sigma = 0.07;
             C.PhysicalParameters.Sigma = sigma;
 
-            C.PhysicalParameters.betaS_A = 0.0;
-            C.PhysicalParameters.betaS_B = 0.0;
+            C.PhysicalParameters.betaS_A = 5.0;
+            C.PhysicalParameters.betaS_B = 5.0;
 
             C.PhysicalParameters.betaL = 0.0;
             C.PhysicalParameters.theta_e = (150.0 / 180.0) * Math.PI;
@@ -294,9 +298,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
             double radius = 1.05e-3;
-            double offset = 0.0;
+            double offset = 0.5e-3; // -1.0e-6;
 
             Func<double[], double> PhiFunc = (X => ((X[0]).Pow2() + (X[1] - (radius + offset)).Pow2()).Sqrt() - radius);
+            //Func<double[], double> PhiFunc = (X => ((X[0]).Pow2() + (X[1] - (radius + offset)).Pow2()) - radius.Pow2());
 
             C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
@@ -304,7 +309,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.InitialValues_Evaluators.Add("Pressure#A", X => sigma / radius);
             C.InitialValues_Evaluators.Add("Pressure#B", X => 0.0);
 
-            double U0 = 0.5;
+            double U0 = 0.0;
             C.InitialValues_Evaluators.Add("VelocityY#A", X => -U0);
 
             double g = 9.81;
@@ -333,13 +338,17 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region solver
 
 
-            C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
 
             C.AdvancedDiscretizationOptions.SST_isotropicMode = Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 1 });
-            C.AMR_startUpSweeps = 1;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
+            C.activeAMRlevelIndicators.Add(new AMRonBoundary(new byte[] { 3 }) { maxRefinementLevel = 3 });
+            C.AMR_startUpSweeps = 3;
+
+            //C.ReInitPeriod = 1;
+            //C.InitSignedDistance = true;  // Deprecated
 
 
             #endregion
@@ -355,7 +364,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 2e-6;
+            double dt = 5e-4;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;

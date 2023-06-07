@@ -891,6 +891,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         bool PlotShadowfields = false;
+
         /// <summary>
         /// Plot using Tecplot
         /// </summary>
