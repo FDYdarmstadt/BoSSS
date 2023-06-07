@@ -526,7 +526,7 @@ namespace BoSSS.Application.Matrix_MPItest {
                 solver.Init(null);
                 ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
                 solver.RunSolverMode();
-                ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" };
+                ilPSP.Tracing.Tracer.NamespacesToLog = new string[] { "" }; // try to log everyting, so we might find something useful
 
                 Stopwatch stw = new Stopwatch();
                 stw.Reset();

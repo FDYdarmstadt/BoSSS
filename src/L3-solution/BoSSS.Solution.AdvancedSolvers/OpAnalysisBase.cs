@@ -66,7 +66,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 m_OpMtx,
                 m_Mass,
                 OpConfig,
-                abstractOperator.DomainVar.Select(varName => abstractOperator.FreeMeanValue[varName]).ToArray());
+                abstractOperator);
         }
 
         AggregationGridBasis[][] m_XAggB;
@@ -126,7 +126,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             // extract sub-matrix
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            FullSel.VariableSelector(this.VarGroup);
+            FullSel.SetVariableSelector(this.VarGroup);
             var mask = new BlockMask(FullSel);
             var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
 
@@ -144,7 +144,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
             // extract sub-matrix
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            FullSel.VariableSelector(this.VarGroup);
+            FullSel.SetVariableSelector(this.VarGroup);
             var mask = new BlockMask(FullSel);
             var Part = mask.GetSubBlockMatrix(Mtx, Mtx.MPI_Comm);
 
@@ -287,17 +287,17 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 var InnerCellsMask = grd.GetBoundaryCells().Complement();
 
                 var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-                FullSel.VariableSelector(this.VarGroup);
+                FullSel.SetVariableSelector(this.VarGroup);
 
                 var InnerSel = new SubBlockSelector(m_MultigridOp.Mapping);
-                InnerSel.VariableSelector(this.VarGroup);
+                InnerSel.SetVariableSelector(this.VarGroup);
                 InnerSel.CellSelector(InnerCellsMask);
 
 
                 // MUMPS condition number
                 // ======================
 
-                double condestFullMUMPS = (new BlockMask(FullSel)).GetSubBlockMatrix(Mtx).Condest_MUMPS();
+                double condestFullMUMPS = (new BlockMask(FullSel)).GetSubBlockMatrix_MpiSelf(Mtx).Condest_MUMPS();
                 //double condestInnerMUMPS = 1.0;
 
                 //if(InnerCellsMask.NoOfItemsLocally.MPISum() > 0) {
@@ -334,10 +334,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             var InnerCellsMask = grd.GetBoundaryCells().Complement();
 
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            FullSel.VariableSelector(this.VarGroup);
+            FullSel.SetVariableSelector(this.VarGroup);
 
             var InnerSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            InnerSel.VariableSelector(this.VarGroup);
+            InnerSel.SetVariableSelector(this.VarGroup);
             InnerSel.CellSelector(InnerCellsMask);
             
             // Matlab
@@ -455,7 +455,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 m_OpMtx.CloneAs(),
                 m_Mass,
                 AlternativeOpConfig,
-                m_MultigridOp.FreeMeanValue.CloneAs());
+                m_MultigridOp.AbstractOperator);
 
         }
 
@@ -524,7 +524,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             // ==========================================
 
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            FullSel.VariableSelector(this.VarGroup);
+            FullSel.SetVariableSelector(this.VarGroup);
             var mask = new BlockMask(FullSel);
             long[] GidxS = mask.GlobalIndices;
 
@@ -629,7 +629,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             var InnerCellsMask = grd.GetBoundaryCells().Complement();
 
             var FullSel = new SubBlockSelector(m_MultigridOp.Mapping);
-            FullSel.VariableSelector(this.VarGroup);
+            FullSel.SetVariableSelector(this.VarGroup);
 
             //long J = grd.CellPartitioning.TotalLength;
 
@@ -790,7 +790,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
 
             var Sel = new SubBlockSelector(m_MultigridOp.Mapping);
-            Sel.VariableSelector(this.VarGroup);
+            Sel.SetVariableSelector(this.VarGroup);
            
             var Mask = new BlockMask(Sel);
 
@@ -847,7 +847,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     }
 
                     var Sel = new SubBlockSelector(m_MultigridOp.Mapping);
-                    Sel.VariableSelector(this.VarGroup);
+                    Sel.SetVariableSelector(this.VarGroup);
                     Sel.CellSelector(LocBlk, global: false);
                     var Mask = new BlockMask(Sel);
 

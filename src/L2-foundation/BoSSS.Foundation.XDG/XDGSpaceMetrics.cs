@@ -17,7 +17,7 @@ namespace BoSSS.Foundation.XDG {
     /// (e.g. measures of cut-cells and the mass matrix) depend on the 
     /// the chosen type (<see cref="XQuadFactoryHelper.MomentFittingVariants"/>) and order of the cut-cell quadrature, 
     /// therefore these are collected in this central object.
-    /// Instances of this object are obtained via <see cref="LevelSetTracker.GetXDGSpaceMetrics"/>.
+    /// Instances of this object are obtained via <see cref="LevelSetTracker.GetXDGSpaceMetrics(IEnumerable{SpeciesId}, int, int)"/>.
     /// </summary>
     public sealed class XDGSpaceMetrics {
 

@@ -21,7 +21,7 @@ using ilPSP.Utils;
 
 namespace CNS.Tests.IsentropicVortex {
 
-    class VortexRock4 : Program<CNSControl> {
+    class VortexRock4 : CNSProgram<CNSControl> {
 
         //static void Main(string[] args) {
         //    BoSSS.Solution.Application._Main(args, false, null, () => new VortexRock4());

@@ -39,6 +39,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Solution.Statistic;
 using System.IO;
 using BoSSS.Platform.Utils.Geom;
+using System.Threading;
 
 namespace BoSSS.Application.SipPoisson {
 
@@ -52,19 +53,10 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI();
-            //DeleteOldPlotFiles();
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestIterativeSolver(3, 8, 3, LinearSolverCode.exp_gmres_levelpmg);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestOperatorScaling2D(1);
-            //BoSSS.Application.SipPoisson.Tests.TestProgram.TestCartesian();
-            //Assert.AreEqual(1, 2, "Kill me, I don't deserve to live!!");
-            //FinalizeMPI();
-            //return;
             
             _Main(args, false, delegate () {
                 SipPoissonMain p = new SipPoissonMain();
-                Console.WriteLine("ipPoisson: " + ilPSP.Environment.MPIEnv.MPI_Rank + " of " + ilPSP.Environment.MPIEnv.MPI_Size
-                    + " on compute node '" + ilPSP.Environment.MPIEnv.Hostname + "';");
+                
                 return p;
             });
             //*/
@@ -208,7 +200,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Includes assembly of the matrix.
         /// </summary>
         /// <param name="L"></param>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             using(FuncTrace tr = new FuncTrace()) {
 
                 // create operator
@@ -330,7 +322,8 @@ namespace BoSSS.Application.SipPoisson {
         /// </summary>
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (new FuncTrace()) {
-                 if (Control.ExactSolution_provided) {
+
+                if (Control.ExactSolution_provided) {
                     Tex.Clear();
                     Tex.ProjectField(this.Control.InitialValues_Evaluators["Tex"]);
 

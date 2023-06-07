@@ -67,7 +67,7 @@ namespace BoSSS.Application.MultigridTest {
                 var MgMapSeq = new MultigridMapping[MgSeq.Length];
                 var BasisSeq = AggregationGridBasis.CreateSequence(MgSeq, uMapping.BasisS);
                 for (int iLevel = 0; iLevel < MgSeq.Length; iLevel++) {
-                    MgMapSeq[iLevel] = new MultigridMapping(uMapping, BasisSeq[iLevel], new int[] { p }); 
+                    MgMapSeq[iLevel] = new MultigridMapping(uMapping, BasisSeq[iLevel], new int[] { p });
                 }
                 MultigrigMap.Add(p, MgMapSeq);
             }
@@ -82,7 +82,7 @@ namespace BoSSS.Application.MultigridTest {
 
 
         internal static GridData grid;
-        
+
         /// <summary>
         /// Multigrid mappings containing one DG field, for different polynomial degrees (to test), for each multigrid level. 
         /// key: polynomial degree 
@@ -90,7 +90,7 @@ namespace BoSSS.Application.MultigridTest {
         /// </summary>
         static Dictionary<int, MultigridMapping[]> MultigrigMap = new Dictionary<int, MultigridMapping[]>();
 
-        
+
         static void SetTestValue(ConventionalDGField f) {
             switch (f.Basis.Degree) {
 
@@ -196,8 +196,8 @@ namespace BoSSS.Application.MultigridTest {
                         MultidimensionalArray Grad_uIN = MultidimensionalArray.Create(1, NoOfNodes, D);
                         MultidimensionalArray Grad_uOT = MultidimensionalArray.Create(1, NoOfNodes, D);
 
-                        NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN);
-                        NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT);
+                        NodeSet NS_IN = NS.GetVolumeNodeSet(grd, iTrafo_IN, false);
+                        NodeSet NS_OT = NS.GetVolumeNodeSet(grd, iTrafo_OT, false);
 
                         f.Evaluate(jCell_IN, 1, NS_IN, uIN);
                         f.Evaluate(jCell_OT, 1, NS_OT, uOT);
@@ -307,7 +307,7 @@ namespace BoSSS.Application.MultigridTest {
             //Console.WriteLine("Rest. matrix test: {0}, Prolong. matrix test {1}, Lost info {2}", RestErrNorm, PrlgErrNorm, LostInfNorm);
             Assert.IsTrue(RestErrNorm < 1.0e-10);
             Assert.IsTrue(PrlgErrNorm < 1.0e-10);
-            
+
             // restriction onto level itself
             BlockMsrMatrix RestMtx = currentLevelMap.FromOtherLevelMatrix(currentLevelMap);
             BlockMsrMatrix ShldBeEye = BlockMsrMatrix.Multiply(RestMtx, RestMtx.Transpose());
@@ -390,9 +390,7 @@ namespace BoSSS.Application.MultigridTest {
                 //Dummy.EquationComponents["c1"].Add(new 
                 Dummy.Commit();
 
-                //Tecplot.PlotFields(new DGField[] { LevSet }, "agglo", 0.0, 3);
-
-
+               
                 // operator
                 // ========
 
@@ -403,12 +401,12 @@ namespace BoSSS.Application.MultigridTest {
                 int quadOrder = Dummy.QuadOrderFunction(map.BasisS.Select(bs => bs.Degree).ToArray(), new int[0], map.BasisS.Select(bs => bs.Degree).ToArray());
                 //agg = new MultiphaseCellAgglomerator(new CutCellMetrics(momentFittingVariant, quadOrder, LsTrk, LsTrk.SpeciesIdS.ToArray()), AggregationThreshold, false);
                 agg = LsTrk.GetAgglomerator(LsTrk.SpeciesIdS.ToArray(), quadOrder, __AgglomerationTreshold: AggregationThreshold);
-                               
 
-                foreach (var S in LsTrk.SpeciesIdS)
-                    Console.WriteLine("Species {0}, no. of agglomerated cells {1} ",
-                        LsTrk.GetSpeciesName(S),
-                        agg.GetAgglomerator(S).AggInfo.SourceCells.Count());
+
+                agg.PrintInfo(Console.Out);
+
+
+
 
                 // mass matrix factory
                 // ===================
@@ -431,13 +429,9 @@ namespace BoSSS.Application.MultigridTest {
                     i -= 1;
                 }
                 SetTestValue(Xdg_uTest, dumia);
-                               
 
-                // dummy operator matrix which fits polynomial degree p
-                // ====================================================
 
-                Xdg_opMtx = new BlockMsrMatrix(Xdg_uTest.Mapping, Xdg_uTest.Mapping);
-                Xdg_opMtx.AccEyeSp(120.0);
+                
 
                 // XDG Aggregation BasiseS
                 // =======================
@@ -453,14 +447,15 @@ namespace BoSSS.Application.MultigridTest {
                 // Multigrid Operator
                 // ==================
 
-
-
                 Xdg_opMtx = new BlockMsrMatrix(Xdg_uTest.Mapping, Xdg_uTest.Mapping);
                 Xdg_opMtx.AccEyeSp(120.0);
 
-                XdgMultigridOp = new MultigridOperator( XAggB, Xdg_uTest.Mapping,
+                var MassMatrix = MassFact.GetMassMatrix(Xdg_uTest.Mapping, false);
+                agg.ManipulateMatrixAndRHS(MassMatrix, default(double[]), Xdg_uTest.Mapping, Xdg_uTest.Mapping);
+
+                XdgMultigridOp = new MultigridOperator(XAggB, Xdg_uTest.Mapping,
                     Xdg_opMtx,
-                    MassFact.GetMassMatrix(Xdg_uTest.Mapping, false),
+                    MassMatrix,
                     new MultigridOperator.ChangeOfBasisConfig[][] {
                         new MultigridOperator.ChangeOfBasisConfig[] {
                             new MultigridOperator.ChangeOfBasisConfig() { VarIndex = new int[] { 0 }, mode = mumo, DegreeS = new int[] { p } }
@@ -579,7 +574,7 @@ namespace BoSSS.Application.MultigridTest {
                 XAggBasis.GetRestrictionMatrix(RestMtx, mgMap, 0);
                 double[] RestVec = new double[mgMap.LocalLength];
                 RestMtx.SpMV(1.0, Test.CoordinateVector, 0.0, RestVec);
-                
+
                 double[] X1 = new double[xt.XdgMultigridOp.Mapping.LocalLength];
                 XDGField X2 = new XDGField(Test.Basis);
                 xt.XdgMultigridOp.TransformSolInto(Test.CoordinateVector, X1);
@@ -685,7 +680,7 @@ namespace BoSSS.Application.MultigridTest {
                 // create random test vector
                 Random rnd = new Random(mgop.LevelIndex);
                 double[] vecCoarse = new double[L_coarse];
-                for(int l = 0; l < L_coarse; l++) {
+                for (int l = 0; l < L_coarse; l++) {
                     vecCoarse[l] = rnd.NextDouble();
                 }
 
@@ -698,11 +693,11 @@ namespace BoSSS.Application.MultigridTest {
                 // for 'MultigridOperator.Mode.IdMass', prolongation->restriction must be the identity
                 double err = GenericBlas.L2Dist(vecCoarse, vecCoarse_check);
                 double Ref = Math.Max(vecCoarse.L2Norm(), vecCoarse_check.L2Norm());
-                Console.WriteLine("Restriction/prolongation error: " + err/Ref);
+                Console.WriteLine("Restriction/prolongation error: " + err / Ref);
                 Assert.LessOrEqual(err / Ref, 1.0e-8);
             }
 
-            
+
         }
 
 
@@ -832,7 +827,7 @@ namespace BoSSS.Application.MultigridTest {
                 );
             int Jup = grid.Cells.NoOfLocalUpdatedCells;
 
-            
+
             Random rnd = new Random();
             int Ltop = xt.XdgMultigridOp.Mapping.LocalLength; // Number of DOF's on top multigrid level.
 
@@ -863,7 +858,7 @@ namespace BoSSS.Application.MultigridTest {
                     for (int jagg = 0; jagg < aggGrd.iLogicalCells.NoOfLocalUpdatedCells; jagg++) {
                         BitArray CompCellMask = new BitArray(Jup);
                         foreach (int jCell in aggGrd.iLogicalCells.AggregateCellToParts[jagg]) {
-                            if(!AggSourceBitmask[jCell])
+                            if (!AggSourceBitmask[jCell])
                                 CompCellMask[jCell] = true;
                         }
 
@@ -872,11 +867,144 @@ namespace BoSSS.Application.MultigridTest {
                         Err += JumpNorm(Test_spc, CompCellSubGrid.InnerEdgesMask).Pow2();
                     }
 
-                    
+
                     Console.WriteLine("prolongation jump test (level {0}, species {2}): {1}", iLevel, Err, xt.LsTrk.GetSpeciesName(spc));
                     Assert.LessOrEqual(Err, 1.0e-8);
                 }
             }
+        }
+
+
+
+        /// <summary>
+        /// Tests whether restriction and prolongation on a polynomial field 
+        /// results in the original data.
+        /// </summary>
+        [Test]
+        public static void XDG_Norm(
+#if DEBUG
+            [Values(0, 1)] int p,
+#else
+            [Values(0, 1, 2, 3)] int p,
+#endif           
+            [Values(0.0, 0.3)] double AggregationThreshold,
+            [Values(0, 1)] int TrackerWidth,
+            [Values(MultigridOperator.Mode.IdMass, MultigridOperator.Mode.IdMass_DropIndefinite, MultigridOperator.Mode.SymPart_DiagBlockEquilib, MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite, MultigridOperator.Mode.Eye)] MultigridOperator.Mode changeOfBasis) {
+
+            XQuadFactoryHelper.MomentFittingVariants variant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+
+            var xt = new XDGTestSetup(p, AggregationThreshold, TrackerWidth, MultigridOperator.Mode.Eye, variant);
+
+            var Basis = xt.XB;
+            var DgOne = new XDGField(Basis, "Field1");
+            foreach(var s in xt.LsTrk.SpeciesIdS) {
+                DgOne.GetSpeciesShadowField(s).AccConstant(1.0);
+            }
+
+            // Inner Product x'*M*y
+            double Inner(IList<double> x, ISparseMatrix M, IList<double> y) {
+                double[] tmp = new double[y.Count];
+                M.SpMV(1.0, y, 0.0, tmp);
+                return x.MPI_InnerProd(tmp);
+            }
+
+            // mass-matrix based norm in the multigrid dg basis
+            double MgOpNormPow2(double[] x) {
+                return Inner(x, xt.XdgMultigridOp.MassMatrix, x);
+            }
+
+            var mgOp = xt.XdgMultigridOp;
+            int L = mgOp.Mapping.LocalLength;
+
+
+            // Part 1: tests for the build-in XDG L2 norm
+            // ==========================================
+            double vol, volA, volB;
+            {
+                volA = DgOne.L2NormSpecies("A").Pow2();
+                volB = DgOne.L2NormSpecies("B").Pow2(); // should be equal to the area of the circle
+                double domSz = 0;
+                for (int j = 0; j < xt.LsTrk.GridDat.iLogicalCells.NoOfLocalUpdatedCells; j++) {
+                    domSz += xt.LsTrk.GridDat.iLogicalCells.GetCellVolume(j);
+                }
+                double circ = Math.Pow(0.8, 2) * Math.PI;
+
+                var f = new SinglePhaseField(new Basis(xt.LsTrk.GridDat, 1));
+                f.AccConstant(1.0);
+                vol = f.L2Norm().Pow2(); // should be equal to domain size
+
+
+                double totVolERR = (volA + volB - vol).Abs();
+                Console.WriteLine("Total Norm Error: " + totVolERR);
+
+                double bVolErr = (volB - circ).Abs();
+                Console.WriteLine("Circle Norm Error: " + bVolErr);
+
+                Assert.Less((vol - domSz).Abs(), 1e-13, "Error in NON-XDG norm");
+                Assert.Less(totVolERR, 1e-10, "Error in total volume");
+                Assert.Less(bVolErr, 1e-10, "Error in B volume");
+
+                
+            }
+
+            // part 2: tests with respect to mass matrix and agglomerated mass matrix
+            // ======================================================================
+
+            {
+
+                var MM = xt.MassFact.GetMassMatrix(DgOne.Mapping);
+                double norm_DGone = Inner(DgOne.CoordinateVector, MM, DgOne.CoordinateVector);
+                double norm_DGoneErr = (norm_DGone - vol).Abs();
+                Console.WriteLine("Norm error with respect to mass matrix: " + norm_DGoneErr);
+
+
+                var MMagg = MM.CloneAs();
+                xt.agg.ManipulateMatrixAndRHS(MMagg, default(double[]), DgOne.Mapping, DgOne.Mapping);
+
+                double norm_DGoneAgg0 = Inner(DgOne.CoordinateVector, MMagg, DgOne.CoordinateVector); // MMagg is zero with respect to all agglomeration source DG coordinates
+                double norm_DGoneAgg0Err = (norm_DGoneAgg0 - vol).Abs();
+                Console.WriteLine("Norm error with respect to agglomerated mass matrix (0): " + norm_DGoneAgg0Err);
+                Assert.Less(norm_DGoneAgg0Err, 1e-10, "Norm error with respect to agglomerated mass matrix (0)");
+
+                var DGoneAgg1 = DgOne.CloneAs();
+                xt.agg.ClearAgglomerated(DGoneAgg1.Mapping);
+                double norm_DGoneAgg1 = Inner(DGoneAgg1.CoordinateVector, MMagg, DGoneAgg1.CoordinateVector);
+                double norm_DGoneAgg1Err = (norm_DGoneAgg1 - vol).Abs();
+                Console.WriteLine("Norm error with respect to agglomerated mass matrix (1): " + norm_DGoneAgg1Err);
+                Assert.Less(norm_DGoneAgg1Err, 1e-10, "Norm error with respect to agglomerated mass matrix (1)");
+
+
+          
+                double[] DgOneVec1 = new double[L];
+                mgOp.TransformSolInto(DGoneAgg1.CoordinateVector, DgOneVec1);
+                double a1 = MgOpNormPow2(DgOneVec1);
+                double norm_DGoneAgg3Err = (a1 - vol).Abs();
+                Console.WriteLine("Norm error with respect to agglomerated mass matrix (3): " + norm_DGoneAgg3Err);
+                Assert.Less(norm_DGoneAgg3Err, 1e-10, "Norm error with respect to agglomerated mass matrix (3)");
+            }
+
+
+
+
+
+            {
+                double[] DgOneVec = new double[L];
+                DgOneVec.FillRandom(0);
+                //DgOneVec.SetAll(1.0);
+
+                //xt.agg.ManipulateMatrixAndRHS(default(BlockMsrMatrix), DgOne.CoordinateVector, DgOne.Mapping, null);
+                //mgOp.TransformSolInto(DgOne.CoordinateVector, DgOneVec);
+
+                double totNorm = MgOpNormPow2(DgOneVec);
+                mgOp.TransformSolFrom(DgOne.CoordinateVector, DgOneVec);
+                xt.agg.Extrapolate(DgOne.Mapping);
+                double totNormDG = DgOne.L2NormSpecies("A").Pow2() + DgOne.L2NormSpecies("B").Pow2();
+                double err = totNorm - totNormDG;
+                Console.WriteLine("Prolongated norm: " + err);
+                Assert.Less(err, 1e-10, "Norm error with respect to prolongated field");
+
+            }
+
         }
     }
 }

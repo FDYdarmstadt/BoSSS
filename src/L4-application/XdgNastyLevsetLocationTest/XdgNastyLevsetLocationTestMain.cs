@@ -68,7 +68,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
             return test.GetGrid();
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
         }
 
         LevelSet Phi;
@@ -446,7 +446,7 @@ namespace BoSSS.Application.XdgNastyLevsetLocationTest {
                         int iTrf = trfIdx[iEdge, 0];
 
                         //var NodesCell = Trafos[iTrf].Transform(Nodes);
-                        NodeSet NodesCell = Nodes.GetVolumeNodeSet(this.GridData, iTrf);
+                        NodeSet NodesCell = Nodes.GetVolumeNodeSet(this.GridData, iTrf, false);
                         var NodesGlob = MultidimensionalArray.Create(NodesCell.Lengths);
 
                         this.GridData.TransformLocal2Global(NodesCell, NodesGlob, jCell);

@@ -26,7 +26,7 @@ namespace BoSSS.Solution.Statistic {
         /// </summary>
         static public void ProjectFromForeignGrid(this ConventionalDGField target, double alpha, ConventionalDGField source, CellQuadratureScheme scheme = null) {
             using(new FuncTrace()) {
-                Console.WriteLine(string.Format("Projecting {0} onto {1}... ", source.Identification, target.Identification));
+                //Console.WriteLine(string.Format("Projecting {0} onto {1}... ", source.Identification, target.Identification));
                 int maxDeg = Math.Max(target.Basis.Degree, source.Basis.Degree);
                 var CompQuadRule = scheme.SaveCompile(target.GridDat, maxDeg * 3 + 3); // use over-integration
                 int D = target.GridDat.SpatialDimension;

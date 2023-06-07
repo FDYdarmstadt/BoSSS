@@ -78,7 +78,7 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             R.xLaplaceBCs.IsDirichlet = (inp => true);
 
-            R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            R.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             R.AgglomerationThreshold = 0.0;
             R.PrePreCond = MultigridOperator.Mode.IdMass;
             R.penalty_multiplyer = 1.1;
@@ -90,8 +90,8 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// A circular interface in the 2D domain \f$ (3/2,3/2)^2 \f$.
         /// </summary>
-        public static XdgPoisson3Control Circle(int Resolution = 16, int p = 1, string DBPath = null, LinearSolverCode solver = LinearSolverCode.classic_pardiso) {
-            //BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 8);
+        public static XdgPoisson3Control Circle(int Resolution = 16, int p = 1, string DBPath = null, LinearSolverCode solver = LinearSolverCode.direct_pardiso) {
+            // --control cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Circle(Resolution: 8)
 
             XdgPoisson3Control R = new XdgPoisson3Control();
 
@@ -226,7 +226,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            R.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             R.AgglomerationThreshold = 0.0;
 
             return R;
@@ -311,7 +311,8 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// a piecewise parabolic solution.
         /// </summary>
-        public static XdgPoisson3Control PiecewiseParabola(double delta = 0.0, double muA = -20, double muB = -1) {
+        public static XdgPoisson3Control PiecewiseParabola(int dgDeg = 3, double delta = 0.0, double muA = -20, double muB = -1, double agg = 0.0) {
+            // --control cs:BoSSS.Application.XdgPoisson3.HardCodedControl.PiecewiseParabola();
             XdgPoisson3Control R = new XdgPoisson3Control();
 
             if (delta < -1.5 || delta > 1.5)
@@ -320,14 +321,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             R.ProjectName = "XdgPoisson3/PiecewiseParabola";
             R.savetodb = false;
 
-            R.FieldOptions.Add("Phi", new FieldOpts() {
-                Degree = 3,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
-            R.FieldOptions.Add("u", new FieldOpts() {
-                Degree = 3,
-                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
-            });
+            R.SetDGdegree(dgDeg);
 
             R.GridFunc = delegate () {
                 double[] xNodes = new double[] { -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6 };
@@ -373,15 +367,15 @@ namespace BoSSS.Application.XdgPoisson3 {
                     return false;
             };
 
-            R.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
-            R.AgglomerationThreshold = 0.0;
+            R.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+            R.AgglomerationThreshold = agg;
             R.PrePreCond = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
 
             return R;
         }
 
         /// <summary>
-        /// A parameter study over <see cref="PiecewiseParabola(double, double, double)"/>.
+        /// A parameter study over <see cref="PiecewiseParabola"/>.
         /// </summary>
         public static IEnumerable<XdgPoisson3Control> PiecewiseParabola_Parameterstudy() {
             List<XdgPoisson3Control> cases = new List<XdgPoisson3Control>();
@@ -392,7 +386,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                     foreach (var _delta in new double[] { 1, 3, 6, 10, 20 }) {
                         double delta = 1.0 - 1.0 / _delta;
 
-                        var C = PiecewiseParabola(delta, -1.0, -1.0);
+                        var C = PiecewiseParabola(3, delta, -1.0, -1.0);
                         C.ViscosityMode = vmode;
 
 
@@ -459,7 +453,7 @@ namespace BoSSS.Application.XdgPoisson3 {
         /// <summary>
         /// A spherical interface in the 3D domain \f$ (-2, 2)^3 \f$.
         /// </summary>
-        public static XdgPoisson3Control Ball3D(int pDeg, int Res, LinearSolverCode solverCode = LinearSolverCode.classic_pardiso) {
+        public static XdgPoisson3Control Ball3D(int pDeg, int Res, LinearSolverCode solverCode = LinearSolverCode.direct_pardiso) {
             //--control "cs:BoSSS.Application.XdgPoisson3.HardCodedControl.Ball3D(2, 5)"
             XdgPoisson3Control R = new XdgPoisson3Control();
 
@@ -650,7 +644,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             C.InitialValues_Evaluators.Add("uEx#B", X => Math.Sin((X[0] + 1.0) * 3) * (1.0 / 9.0));
 
             // Solver Parameters
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             // Discretization Parameters
             C.ViscosityMode = XLaplace_Interface.Mode.SIP;

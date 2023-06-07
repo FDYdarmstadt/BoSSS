@@ -124,16 +124,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         for(int iSpc_agg = 0; iSpc_agg < NoOfSpc_jagg; iSpc_agg++) { // loop over all species in aggregate cell
 
-                            bool emptyCell = false; // true: at least one of the base cells which form 
+                            bool partiallyEmptyCell = false; // true: at least one of the base cells which form 
                             //                         aggregate cell 'jagg' is empty with respect to the 'iSpc_agg'--th species.
                             //                         => this will alter the projection operator.
                             for(int k = 0; k < K; k++) {
                                 if(sim[iSpc_agg, k] < 0) {
-                                    emptyCell = true;
+                                    partiallyEmptyCell = true;
                                     break;
                                 }
                             }
-#if DEBUG
+//#if DEBUG
                             {
                                 bool NonEmpty = false;
                                 for(int k = 0; k < K; k++) {
@@ -142,15 +142,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                         break;
                                     }
                                 }
-                                Debug.Assert(NonEmpty); // there should be at least one non-empty base cell (for species 'iSpc_agg')
-                                //                         in aggregate cell 'jagg'
+                                //Debug.Assert(NonEmpty); // there should be at least one non-empty base cell (for species 'iSpc_agg')
+                                ////                         in aggregate cell 'jagg'
+                                if(partiallyEmptyCell) {
+                                    if (NonEmpty == false) {
+                                        string simTxt = sim.GetRow(iSpc_agg).Take(K).ToConcatString("[", ", ", "]");
+                                        throw new ArithmeticException($" there should be at least one non-empty base cell (for species no. {iSpc_agg}) in aggregate cell {jagg}; Species Index Mapping: {simTxt}.");
+                                    }
+                                }
                             }
-#endif
+//#endif
 
                             if(this.XCompositeBasis[jagg] == null || (this.XCompositeBasis[jagg].Length != NoOfSpc_jagg))
                                 this.XCompositeBasis[jagg] = new MultidimensionalArray[NoOfSpc_jagg];
 
-                            if(emptyCell) {
+                            if(partiallyEmptyCell) {
 
                                 // compute mass matrix in aggregate cell 'jagg' for species index 'iSpc_agg'
                                 // -------------------------------------------------------------------------
@@ -168,8 +174,57 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 // change to orthonormal basis
                                 // ---------------------------
                                 MultidimensionalArray B = MultidimensionalArray.Create(N, N);
-                                AggCellMMb4Ortho.SymmetricLDLInversion(B, default(double[]));
+                                try {
+                                    AggCellMMb4Ortho.SymmetricLDLInversion(B, default(double[]));
+                                } catch (ArithmeticException ae) {
+                                    Console.Error.WriteLine(ae.GetType() + ": " + ae.Message);
+                                    Console.Error.WriteLine("Mesh level: " + AggGrid.MgLevel);
+                                    Console.Error.WriteLine("Aggregate cell " + jagg);
+                                    Console.Error.WriteLine("Species Index: " + iSpc_agg);
+                                    Console.Error.WriteLine("Species Index Mapping: " + sim.GetRow(iSpc_agg).Take(K).ToConcatString("{", ",", "}"));
 
+                                    int[] parts = (AggGrid.iLogicalCells?.AggregateCellToParts[jagg]) ?? new int[0];
+                                    Console.Error.WriteLine("Aggregate Cell: " + parts.ToConcatString("{", ",", "}"));
+                                    var LevSet0 = LsTrk.LevelSets[0] as LevelSet;
+                                    var Marker = new SinglePhaseField(new Basis(LevSet0.GridDat, 0), "marker");
+                                    BitArray ba = new BitArray(Marker.GridDat.iLogicalCells.NoOfLocalUpdatedCells);
+                                    foreach (var j in parts) {
+                                        Marker.SetMeanValue(j, 1.0);
+                                        ba[j] = true;
+                                    }
+                                    var cm = new Foundation.Grid.CellMask(Marker.GridDat, ba);
+                                    cm.SaveToTextFile("trouble.csv", false);
+
+                                    //Tecplot.Tecplot.PlotFields(new DGField[] { LevSet0, Marker }, "TroublePlot", 0.0, 2);
+
+                                    
+                                    for (int k = 0; k < K; k++) { // loop over the base cells in the aggregate cell
+                                        if (sim[iSpc_agg, k] >= 0) {
+
+                                            var ExPolMtx = base.GetCompositeBasis(jagg).ExtractSubArrayShallow(k, -1, -1);
+                                            ExPolMtx.SaveToTextFile("Expol-" + k + ".txt");
+                                            var Mama = MultidimensionalArray.Create(ExPolMtx.NoOfRows, ExPolMtx.NoOfCols);
+                                            Mama.Multiply(1.0, ExPolMtx, ExPolMtx, 1.0, "lm", "im", "il");
+
+
+
+                                            bool IsPosDef;
+                                            try {
+                                                Mama.Cholesky();
+                                                IsPosDef = true;
+                                            } catch(ArithmeticException) {
+                                                IsPosDef = false;
+                                            }
+
+                                            Console.Error.WriteLine($"Part {k}: posdef? {IsPosDef}");
+                                        }
+                                    }
+                                    
+
+                                    AggCellMMb4Ortho.SaveToTextFile("indef.txt");
+
+                                    throw ae;
+                                }
 
                                 if(this.XCompositeBasis[jagg][iSpc_agg] == null)
                                     this.XCompositeBasis[jagg][iSpc_agg] = MultidimensionalArray.Create(K, N, N);
@@ -365,7 +420,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Number of species present (i.e. with non-zero measure) per composite cell; 
+        /// Number of species present (i.e. with non-zero measure, i.e. any species with a zero volume is excluded) per composite cell; 
         ///  - index: composite cell index;
         /// </summary>
         int[] NoOfSpecies;
@@ -424,6 +479,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// Number of species in composite/aggregate cell <paramref name="jAgg"/>.
+        /// Only species with non-zero measure are counted, i.e. any species with a zero volume is excluded.
         /// </summary>
         override public int GetNoOfSpecies(int jAgg) {
             return NoOfSpecies[jAgg];

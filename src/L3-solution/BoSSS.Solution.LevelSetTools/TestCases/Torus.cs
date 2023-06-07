@@ -41,6 +41,16 @@ namespace BoSSS.Solution.LevelSetTools.TestCases {
             return Math.Sqrt(X[2] * X[2] + (Math.Sqrt(X[0].Pow2() + X[1].Pow2()) - bigR).Pow2()) - smallR;
         }
 
+
+        /// <summary>
+        /// Signed-Distance 2D Level-Set Function for a Torus
+        /// </summary>
+        /// <param name="X">Cartesian Coordinates</param>
+        /// <returns>Level-Set Value at X</returns>
+        public double SignedDistance2D(double[] X) {
+            return Math.Sqrt((Math.Sqrt(X[0].Pow2() + X[1].Pow2()) - bigR).Pow2()) - smallR;
+        }
+
         public double ExtensionAnalytical(double[] X, Func<double[],double> initial) {
             double[] R = CartesianToTorus(X);
             // project onto Surface , i.e. set small Radius to the value on the surface

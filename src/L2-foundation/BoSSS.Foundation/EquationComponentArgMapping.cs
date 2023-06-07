@@ -28,7 +28,7 @@ namespace BoSSS.Foundation.Quadrature.FluxQuadCommon {
 
 
     /// <summary>
-    /// used by the spatial operator (see <see cref="BoSSS.Foundation.SpatialOperator.GetArgMapping{T}"/>)
+    /// used by the spatial operator (see <see cref="EquationComponentArgMapping{T}.GetArgMapping"/>)
     /// to give a collection of all equation components 
     /// of a certain type (<typeparamref name="T"/>)
     /// </summary>

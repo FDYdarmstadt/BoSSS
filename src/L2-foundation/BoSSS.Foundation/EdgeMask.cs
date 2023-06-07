@@ -64,8 +64,8 @@ namespace BoSSS.Foundation.Grid {
                 double[] X = new double[D];
                 Debug.Assert(GlobalCoord.Dimension == 3);
                 Debug.Assert(GlobalCoord.GetLength(0) == 1);
-                Debug.Assert(GlobalCoord.GetLength(0) == 1);
-                Debug.Assert(GlobalCoord.GetLength(0) == D);
+                Debug.Assert(GlobalCoord.GetLength(1) == 1);
+                Debug.Assert(GlobalCoord.GetLength(2) == D);
 
                 for(int d = 0; d < D; d++) {
                     X[d] = GlobalCoord[0, 0, d];
@@ -122,6 +122,7 @@ namespace BoSSS.Foundation.Grid {
         /// <param name="grddat">
         /// the grid that this mask will be associated with;
         /// </param>
+        /// <param name="mt"></param>
         public EdgeMask(IGridData grddat, Chunk part, MaskType mt = MaskType.Logical)
             : this(grddat, new Chunk[] { part }, mt) {
         }
@@ -334,7 +335,7 @@ namespace BoSSS.Foundation.Grid {
                             GridData.iGeomEdges.Edge2CellTrafos[iTrafo].Transform(localCenterEdge, localCenterVolume);
 
                             MultidimensionalArray globalCenter = MultidimensionalArray.Create(1, 1, D);
-                            GridData.TransformLocal2Global(new NodeSet(KrefCell, localCenterVolume), cell, 1, globalCenter, 0);
+                            GridData.TransformLocal2Global(new NodeSet(KrefCell, localCenterVolume, false), cell, 1, globalCenter, 0);
 
                             file.Write(chunk.i0 + i);
                             for (int d = 0; d < D; d++) {

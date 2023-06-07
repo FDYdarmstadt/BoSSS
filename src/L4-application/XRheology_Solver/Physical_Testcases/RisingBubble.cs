@@ -321,7 +321,7 @@ namespace BoSSS.Application.XRheology_Solver {
             //C.EnforceLevelSetConservation = true;
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.StressBlockPrecondMode = MultigridOperator.Mode.LeftInverse_DiagBlock;
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
             C.LevelSet_ConvergenceCriterion = 1e-6;
 
@@ -622,7 +622,7 @@ namespace BoSSS.Application.XRheology_Solver {
             C.VelocityBlockPrecondMode = MultigridOperator.Mode.SymPart_DiagBlockEquilib;
             C.StressBlockPrecondMode = MultigridOperator.Mode.LeftInverse_DiagBlock;
 
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             //C.NonLinearSolver.UsePresRefPoint = false;
@@ -1144,7 +1144,7 @@ namespace BoSSS.Application.XRheology_Solver {
             // ====================
             #region solver
 
-            C.LinearSolver = LinearSolverCode.classic_mumps.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
             //C.AdvancedDiscretizationOptions.PenaltySafety = 40;

@@ -53,8 +53,7 @@ namespace BoSSS.Solution.Control {
     }
 
     /// <summary>
-    /// Abstract class for defining a 'BoundAttribute'. Implemented by
-    /// <see cref="LowerBoundAttribute"/> and <see cref="UpperBoundAttribute"/>.
+    /// Abstract class for defining a lower or upper limit for some control object parameter.
     /// </summary>
     abstract public class BoundAttribute : ControlOptionRequirementAttribute {
 

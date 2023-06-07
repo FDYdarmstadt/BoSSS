@@ -93,7 +93,6 @@ namespace ilPSP {
             }
 
             txt.Flush();
-
         }
 
 
@@ -415,7 +414,18 @@ namespace ilPSP {
             return Dmin;
         }
 
-        static unsafe void CopyToUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
+        /// <summary>
+        /// From matrix <paramref name="M"/> to <paramref name="buffer"/>
+        /// </summary>
+        /// <param name="M">input matrix</param>
+        /// <param name="buffer">
+        /// output;
+        /// </param>
+        /// <param name="BufferInFortranOrder">
+        /// - true:  <paramref name="buffer"/> will be written in FORTRAN order (column-wise)
+        /// - false:  <paramref name="buffer"/> will be written in C order (row-wise)
+        /// </param>
+        internal static unsafe void CopyToUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
 #if DEBUG
             if(M.GetType().IsValueType)
                 throw new NotSupportedException("CopyTo value type -- probably not the expected result! (Using vector struct in CopyTo(...) - operation?)");
@@ -440,7 +450,18 @@ namespace ilPSP {
             }
         }
 
-        static unsafe void CopyFromUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
+        /// <summary>
+        /// From <paramref name="buffer"/> to matrix <paramref name="M"/>
+        /// </summary>
+        /// <param name="M">output matrix</param>
+        /// <param name="buffer">
+        /// output;
+        /// </param>
+        /// <param name="BufferInFortranOrder">
+        /// - true: <paramref name="buffer"/> will be read in FORTRAN order (column-wise)
+        /// - false: <paramref name="buffer"/> will be read in C order (row-wise)
+        /// </param>
+        internal static unsafe void CopyFromUnsafeBuffer<T>(T M, double* buffer, bool BufferInFortranOrder) where T : IMatrix {
             int I = M.NoOfRows, J = M.NoOfCols;
 
             if (BufferInFortranOrder) {
@@ -613,6 +634,7 @@ namespace ilPSP {
                 // optimized version
                 // +++++++++++++++++
 
+
                 MultidimensionalArray mdaM = M as MultidimensionalArray;
                 if (mdaM.Dimension != 2)
                     throw new ArgumentException("Multidimensional Array must have 2 dimensions to be a matrix.");
@@ -627,6 +649,7 @@ namespace ilPSP {
                 else
                     _x = x.ToArray();
 
+                //double[] yCeck = y.ToArray();
 
                 if (SD == 1 && m_NoOfCols * m_NoOfRows >= 32) {
                     // ++++++++++++++++
@@ -636,21 +659,24 @@ namespace ilPSP {
 
                     double[] _y;
                     bool backCopy = false;
-                    if (typeof(VectorType1) == typeof(double[]))
+                    if (typeof(VectorType1) == typeof(double[])) {
                         _y = y as double[];
-                    else {
+                    } else {
                         _y = y.ToArray();
                         backCopy = true;
                     }
 
+
                     unsafe {
                         fixed (double* _pmdaM = mdaM.Storage, px = _x, py = _y) {
                             double* pmdaM = _pmdaM + off;
-
+                            // because of FORTRAN-vs-C arrays, the transpose passed to BLAS is inverted:
                             BLAS.dgemv(transpose ? 'N' : 'T', m_NoOfCols, m_NoOfRows, xScaling, pmdaM, LD, px, 1, yScaling, py, 1);
 
                         }
                     }
+
+                    
 
                     if (backCopy) {
                         int I = _y.Length;
@@ -658,6 +684,40 @@ namespace ilPSP {
                             y[i] = _y[i];
                         }
                     }
+
+                    /*
+                    {
+
+
+                        if (!transpose) {
+
+                            for (int i = 0; i < m_NoOfRows; i++) {
+                                double yi = 0;
+
+                                for (int j = 0; j < m_NoOfCols; j++)
+                                    yi += M[i, j] * x[j];
+
+                                yCeck[i] = yCeck[i] * yScaling + yi * xScaling;
+                            }
+
+                        } else {
+
+                            for (int i = 0; i < m_NoOfCols; i++) {
+                                double yi = 0;
+
+                                for (int j = 0; j < m_NoOfRows; j++)
+                                    yi += M[j, i] * x[j];
+
+                                yCeck[i] = yCeck[i] * yScaling + yi * xScaling;
+                            }
+                        }
+
+                        double Rel = Math.Max(y.L2Norm(), yCeck.L2Norm())*1e-7;
+
+                        if (yCeck.L2Distance(y) / Rel > 1.0e-7)
+                            throw new ArithmeticException("BLAS GEMV is fucked.");
+                    }
+                    */
 
                 } else {
                     // ++++++++++++++++++++++++++++++++++++++++++++
@@ -703,11 +763,48 @@ namespace ilPSP {
                             }
                         }
                     }
+
+                    /*
+                    {
+
+
+                        if (!transpose) {
+
+                            for (int i = 0; i < m_NoOfRows; i++) {
+                                double yi = 0;
+
+                                for (int j = 0; j < m_NoOfCols; j++)
+                                    yi += M[i, j] * x[j];
+
+                                yCeck[i] = yCeck[i] * yScaling + yi * xScaling;
+                            }
+
+                        } else {
+
+                            for (int i = 0; i < m_NoOfCols; i++) {
+                                double yi = 0;
+
+                                for (int j = 0; j < m_NoOfRows; j++)
+                                    yi += M[j, i] * x[j];
+
+                                yCeck[i] = yCeck[i] * yScaling + yi * xScaling;
+                            }
+                        }
+
+                        double Rel = Math.Max(y.L2Norm(), yCeck.L2Norm()) * 1e-7;
+
+                        if (yCeck.L2Distance(y) / Rel > 1.0e-7)
+                            throw new ArithmeticException("own GEMV is fucked.");
+                    }
+                    */
                 }
             } else {
                 // +++++++++++++++++
                 // Reference version
                 // +++++++++++++++++
+
+
+                
 
                 if (!transpose) {
                     
@@ -754,7 +851,20 @@ namespace ilPSP {
         {
             M.GEMV(xScaling, x, yScaling, y, transpose);
         }
-        
+
+        /// <summary>
+        /// Alias for <see cref="GEMV"/>
+        /// </summary>
+        static public double[] MatVecMul<MatrixType, VectorType1>(this MatrixType M, double xScaling, VectorType1 x, bool transpose = false)
+            where MatrixType : IMatrix
+            where VectorType1 : IList<double>//
+        {
+            double[] y = new double[transpose ? M.NoOfCols : M.NoOfRows];
+            M.GEMV(xScaling, x, 0.0, y, transpose);
+            return y;
+        }
+
+
         /// <summary>
         /// Alias for <see cref="GEMV"/>
         /// </summary>
@@ -796,135 +906,246 @@ namespace ilPSP {
             return GEMM(GEMM(A, B), C);
         }
 
-        static MultidimensionalArray.MultiplyProgram GEMM_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ik", "kj");
+        static MultidimensionalArray.MultiplyProgram GEMMnn_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ik", "kj"); // A*B
+        static MultidimensionalArray.MultiplyProgram GEMMtn_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ki", "kj"); // A^T * B
+        static MultidimensionalArray.MultiplyProgram GEMMnt_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ik", "jk"); // A   * B^T
+        static MultidimensionalArray.MultiplyProgram GEMMtt_Prog = MultidimensionalArray.MultiplyProgram.Compile("ij", "ki", "jk"); // A^T * B^T
 
         /// <summary>
         /// General matrix/matrix multiplication:
-        /// <paramref name="M"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="M"/>;
+        /// 
+        /// <paramref name="C"/> = <paramref name="alpha"/>*<paramref name="A"/>^x*<paramref name="B"/>^y + <paramref name="beta"/>*<paramref name="C"/>,
+        /// 
+        /// where x and y are either T (transpose) or 1, depending on <paramref name="transA"/> and <paramref name="transB"/>, respectively.
         /// </summary>
-        static public void GEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 M, double alpha, Matrix2 A, Matrix3 B, double beta)
+        static public void GEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 C, double alpha, Matrix2 A, Matrix3 B, double beta, bool transA = false, bool transB = false)
             where Matrix1 : IMatrix
             where Matrix2 : IMatrix
             where Matrix3 : IMatrix //
         {
-            if (A.NoOfCols != B.NoOfRows)
-                throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
-            if (A.NoOfRows != M.NoOfRows)
-                throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
-            if (B.NoOfCols != M.NoOfCols)
-                throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
-            if(object.ReferenceEquals(M, A))
-                throw new ArgumentException("in-place GEMM is not supported");
-            if(object.ReferenceEquals(M, A))
-                throw new ArgumentException("in-place GEMM is not supported");
 
-            if (A is MultidimensionalArray && B is MultidimensionalArray && M is MultidimensionalArray) {
-                MultidimensionalArray _A = A as MultidimensionalArray;
-                MultidimensionalArray _B = B as MultidimensionalArray;
-                MultidimensionalArray _M = M as MultidimensionalArray;
-                _M.Multiply(alpha, _A, _B, beta, ref GEMM_Prog);
-            } else {
-
-                int K = A.NoOfCols;
-
-                for (int i = M.NoOfRows - 1; i >= 0; i--) {
-                    for (int j = M.NoOfCols - 1; j >= 0; j--) {
-                        double r = 0;
-
-
-                        for (int k = K - 1; k >= 0; k--)
-                            r += A[i, k] * B[k, j];
-
-                        r *= alpha;
-                        M[i, j] = M[i, j] * beta + r;
-                    }
-
-                }
-            }
-        }
-
-        /// <summary>
-        /// General matrix/matrix multiplication, 
-        /// based on Level 3 Blas routine `dgemm`:
-        /// 
-        /// <paramref name="C"/> = <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/> + <paramref name="beta"/>*<paramref name="C"/>;
-        /// 
-        /// Matrix A or B should be used as transpose by setting <paramref name="transA"/> and <paramref name="transB"/>
-        /// </summary>
-        static public void DGEMM<Matrix1, Matrix2, Matrix3>(this Matrix1 C, double alpha, Matrix2 A, Matrix3 B, double beta, bool transA = false, bool transB = false) 
-            where Matrix1 : IMatrix
-            where Matrix2 : IMatrix
-            where Matrix3 : IMatrix
-        {
-            if (!transA && !transB)
-            {
+            if (!transA && !transB) {
                 if (A.NoOfCols != B.NoOfRows)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
                 if (A.NoOfRows != C.NoOfRows)
-                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                    throw new ArgumentException("A.NoOfRows != M.NoOfRows", "A,M");
                 if (B.NoOfCols != C.NoOfCols)
-                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
-            }
-            else if (transA && !transB)
-            {
+                    throw new ArgumentException("B.NoOfCols != M.NoOfCols", "B,M");
+                if (A.NoOfCols == 0)
+                    return;
+            } else if (transA && !transB) {
                 if (A.NoOfRows != B.NoOfRows)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
                 if (A.NoOfCols != C.NoOfRows)
-                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                    throw new ArgumentException("A.NoOfRows != M.NoOfRows", "A,M");
                 if (B.NoOfCols != C.NoOfCols)
-                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
-            }
-            else if (!transA && transB)
-            {
+                    throw new ArgumentException("B.NoOfCols != M.NoOfCols", "B,M");
+                if (A.NoOfRows == 0)
+                    return;
+            } else if (!transA && transB) {
                 if (A.NoOfCols != B.NoOfCols)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
                 if (A.NoOfRows != C.NoOfRows)
-                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                    throw new ArgumentException("A.NoOfRows != M.NoOfRows", "A,M");
                 if (B.NoOfRows != C.NoOfCols)
-                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
-            }
-            else if (transA && transB)
-            {
+                    throw new ArgumentException("B.NoOfCols != M.NoOfCols", "B,M");
+                if (A.NoOfCols == 0)
+                    return;
+            } else if (transA && transB) {
                 if (A.NoOfRows != B.NoOfCols)
                     throw new ArgumentException("A.NoOfCols != B.NoOfRows", "A,B");
                 if (A.NoOfCols != C.NoOfRows)
-                    throw new ArgumentException("A.NoOfRows != C.NoOfRows", "A,C");
+                    throw new ArgumentException("A.NoOfRows != M.NoOfRows", "A,M");
                 if (B.NoOfRows != C.NoOfCols)
-                    throw new ArgumentException("B.NoOfCols != C.NoOfCols", "B,C");
+                    throw new ArgumentException("B.NoOfCols != M.NoOfCols", "B,M");
+                if (A.NoOfRows == 0)
+                    return;
             }
 
-            unsafe 
-            {                
-                int TRANSA = transA ? 't' : 'n';
-                int TRANSB = transB ? 't' : 'n';
+            bool inPlace = false;
+            if (object.ReferenceEquals(C, A))
+                inPlace = true;
+            if (object.ReferenceEquals(C, B))
+                inPlace = true;
+            if (C.NoOfCols == 0 || C.NoOfRows == 0)
+                return;
+             
 
-                int M = transA ? A.NoOfCols : A.NoOfRows;
-                int N = transB ? B.NoOfRows : B.NoOfCols;
-                int K = transA ? A.NoOfRows : A.NoOfCols;
+            if (!inPlace && A is MultidimensionalArray _A && B is MultidimensionalArray _B && C is MultidimensionalArray _C) {
+                int a00 = _A.Index(0, 0);
+                int b00 = _B.Index(0, 0);
+                int c00 = _C.Index(0, 0);
 
-                int LDA = transA ? Math.Max(1, K) : Math.Max(1, M);
-                int LDB = transB ? Math.Max(1, N) : Math.Max(1, K);
-                int LDC = Math.Max(1, M);
+                if (_A.NoOfCols > 1 && (_A.Index(0, 1) - a00 == 1) && _B.NoOfCols > 1 && (_B.Index(0, 1) - b00 == 1) && _C.NoOfCols > 1 && (_C.Index(0, 1) - c00 == 1)) {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // Data layout is suitable to use BLAS DGEMM
+                    // directly on MultidimenasionalArray storage.
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-                int i0, i1, i2;
-                double[] __A = TempBuffer.GetTempBuffer(out i0, M * K);
-                double[] __B = TempBuffer.GetTempBuffer(out i1, N * K);
-                double[] __C = TempBuffer.GetTempBuffer(out i2, M * N);
-                fixed (double* _A = __A, _B = __B, _C = __C)
-                {
-                    CopyToUnsafeBuffer(A, _A, true);
-                    CopyToUnsafeBuffer(B, _B, true);
-                    CopyToUnsafeBuffer(C, _C, true);
+                    /*
+                    var __C = _C.CloneAs();
+                    if (!transA && !transB) {
+                        __C.Multiply(alpha, _A, _B, beta, ref GEMMnn_Prog);
+                    } else if (transA && !transB) {
+                        __C.Multiply(alpha, _A, _B, beta, ref GEMMtn_Prog);
+                    } else if (!transA && transB) {
+                        __C.Multiply(alpha, _A, _B, beta, ref GEMMnt_Prog);
+                    } else if (transA && transB) {
+                        __C.Multiply(alpha, _A, _B, beta, ref GEMMtt_Prog);
+                    }
+                    */
 
-                    BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, _A, LDA, _B, LDB, beta, _C, LDC);
+                    unsafe {
+                        fixed(double* _pA = _A.Storage, _pB = _B.Storage, _pC = _C.Storage) {
+                            double* pA = _pA + a00, pB = _pB + b00, pC = _pC + c00;
 
-                    CopyFromUnsafeBuffer(C, _C, true);
+                            // C-order vs. FORTRAN-order
+                            // Note that we are using FORTRAN BLAS, while BoSSS stores in C-order;
+                            // therefore, we have to trick with A, B and the transposition
+
+                           
+                            int TRANSA = transB ? 't' : 'n';
+                            int TRANSB = transA ? 't' : 'n';
+
+                            int M = !transB ? _B.NoOfCols : _B.NoOfRows;
+                            int N = !transA ? _A.NoOfRows : _A.NoOfCols;
+                            int K = !transB ? _B.NoOfRows : _B.NoOfCols;
+
+   
+                            int LDA = (TRANSA == 'n') ? Math.Max(1, M) : Math.Max(1, K);
+                            int LDB = (TRANSB == 'n') ? Math.Max(1, K) : Math.Max(1, N);
+                            int LDC = Math.Max(1, M);
+
+
+                            BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, pB, _B.GetCycle(0), pA, _A.GetCycle(0), beta, pC, _C.GetCycle(0));
+
+                        }
+                    }
+
+                    /*
+                    var ERR = _C.CloneAs();
+                    ERR.Acc(-1.0, __C);
+                    double gemmErr = ERR.L2Norm();
+                    double denom = __C.L2Norm();
+                    if (gemmErr > 1e-6) {
+                        Console.WriteLine("gemm error " + gemmErr + ",  denom = " + denom + ", rel = " + (gemmErr / denom));
+
+                        A.SaveToTextFile("A.txt");
+                        B.SaveToTextFile("B.txt");
+                        _C.SaveToTextFile("C1.txt");
+                        __C.SaveToTextFile("C2.txt");
+
+                        unsafe {
+                            fixed (double* _pA = _A.Storage, _pB = _B.Storage, _pC = _C.Storage) {
+                                double* pA = _pA + a00, pB = _pB + b00, pC = _pC + c00;
+
+                                // C-order vs. FORTRAN-order
+                                // Note that we are using FORTRAN BLAS, while BoSSS stores in C-order;
+                                // therefore, we have to trick with A, B and the transposition
+
+
+                                int TRANSA = transB ? 't' : 'n';
+                                int TRANSB = transA ? 't' : 'n';
+                                
+                                int M = !transB ? _B.NoOfCols : _B.NoOfRows;
+                                int N = !transA ? _A.NoOfRows : _A.NoOfCols;
+                                int K = !transB ? _B.NoOfRows : _B.NoOfCols;
+
+                                //int M = transA ? A.NoOfCols : A.NoOfRows;
+                                //int N = transB ? B.NoOfRows : B.NoOfCols;
+                                //int K = transA ? A.NoOfRows : A.NoOfCols;
+
+                                int LDA = transB ? Math.Max(1, K) : Math.Max(1, M);
+                                int LDB = transA ? Math.Max(1, N) : Math.Max(1, K);
+
+                                int _LDA = (TRANSA == 'n') ? Math.Max(1, M) : Math.Max(1, K);
+                                int _LDB = (TRANSB == 'n') ? Math.Max(1, K) : Math.Max(1, N);
+
+                                int LDC = Math.Max(1, M);
+
+
+                                BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, pB, _B.GetCycle(0), pA, _A.GetCycle(0), beta, pC, _C.GetCycle(0));
+
+                            }
+                        }
+
+                    }
+                    _C.Set(__C);
+                    */
+
+                    return;
+                } else if(_C.NoOfRows*_C.NoOfCols <= 512 && _A.NoOfRows * _A.NoOfCols <= 512 && _B.NoOfRows * _B.NoOfCols <= 512) {
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                    // Multidimensional array are not suitable for direst use of BLAS DGEMM
+                    // ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+                    // Note: (fk, 04jul22)
+                    // simple test shows, below 512 entries (for nearly quadratic matrix C), the overhead from copying data 
+                    // out-weights the performance gain from BLAS DGEMM
+                    // Obviously, this is processor-dependent and also might be different for very tall or shallow matrix shapes,
+                    // but this is good enough for BoSSS;
+                    //
+
+                    // probably, the 'multiply'-program is faster than 'BLAS-DGEMM + copy overhead'?
+
+                    if (!transA && !transB) {
+                        _C.Multiply(alpha, _A, _B, beta, ref GEMMnn_Prog);
+                    } else if (transA && !transB) {
+                        _C.Multiply(alpha, _A, _B, beta, ref GEMMtn_Prog);
+                    } else if (!transA && transB) {
+                        _C.Multiply(alpha, _A, _B, beta, ref GEMMnt_Prog);
+                    } else if (transA && transB) {
+                        _C.Multiply(alpha, _A, _B, beta, ref GEMMtt_Prog);
+                    }
+
+                    return;
                 }
-                TempBuffer.FreeTempBuffer(i0);
-                TempBuffer.FreeTempBuffer(i1);
-                TempBuffer.FreeTempBuffer(i2);                             
+            }
+
+
+            {
+                // +++++++++++++++++++++++++++++++++++++++++++++++++
+                // not returned yet;
+                // data must be copied before we can use BLAS DGEMM
+                // +++++++++++++++++++++++++++++++++++++++++++++++++
+
+                
+                unsafe {
+                    int TRANSA = transA ? 't' : 'n';
+                    int TRANSB = transB ? 't' : 'n';
+
+                    int M = transA ? A.NoOfCols : A.NoOfRows;
+                    int N = transB ? B.NoOfRows : B.NoOfCols;
+                    int K = transA ? A.NoOfRows : A.NoOfCols;
+
+                    int LDA = transA ? Math.Max(1, K) : Math.Max(1, M);
+                    int LDB = transB ? Math.Max(1, N) : Math.Max(1, K);
+                    int LDC = Math.Max(1, M);
+
+                    int i0, i1, i2;
+                    double[] __A = TempBuffer.GetTempBuffer(out i0, A.NoOfRows * A.NoOfCols);
+                    double[] __B = TempBuffer.GetTempBuffer(out i1, B.NoOfRows * B.NoOfCols);
+                    double[] __C = TempBuffer.GetTempBuffer(out i2, C.NoOfRows * C.NoOfCols);
+                    fixed (double* pA = __A, pB = __B, pC = __C) {
+                        CopyToUnsafeBuffer(A, pA, true);
+                        CopyToUnsafeBuffer(B, pB, true);
+                        CopyToUnsafeBuffer(C, pC, true);
+
+                        BLAS.dgemm(TRANSA, TRANSB, M, N, K, alpha, pA, LDA, pB, LDB, beta, pC, LDC);
+
+                        CopyFromUnsafeBuffer(C, pC, true);
+                    }
+                    TempBuffer.FreeTempBuffer(i0);
+                    TempBuffer.FreeTempBuffer(i1);
+                    TempBuffer.FreeTempBuffer(i2);
+                }
             }
         }
+
+       
+
+        
+
 
         /// <summary>
         /// total absolute sum of all entries
@@ -1345,6 +1566,7 @@ namespace ilPSP {
         /// <paramref name="M"/> is symmetrical and positive definite, by using
         /// a Cholesky factorization.
         /// </summary>
+        /// <param name="M">input/output</param>
         static public void InvertSymmetrical<T>(this T M) where T : IMatrix {
             if (M.NoOfCols != M.NoOfRows)
                 throw new NotSupportedException("can't invert non-square matrix.");
@@ -1586,9 +1808,23 @@ namespace ilPSP {
             }
         }
 
-        static private void GramSchmidt<FullMatrix1, FullMatrix2>(FullMatrix1 Mtx, FullMatrix2 B, double[] Diag)
+        /// <summary>
+        /// Performs a Gram-Schmidt orthonormalization on a matrix <paramref name="Mtx"/>
+        /// </summary>
+        /// <param name="Mtx"></param>
+        /// <param name="B">
+        /// on exit, an upper triangular matrix so that 
+        /// <paramref name="B"/>^T * <paramref name="Mtx"/> * <paramref name="B"/> is an identity matrix.
+        /// </param>
+        /// <param name="Diag">
+        /// Not used, if Gram-Schmid performs as normal, i.e. if <paramref name="Mtx"/> is positive definite,
+        /// If the algorithm runs into some trouble, i.e. if the matrix is positive definite or close to indefinitenes, 
+        /// a negative norm may occur; 
+        /// </param>
+        static public void GramSchmidt<FullMatrix1, FullMatrix2>(this FullMatrix1 Mtx, FullMatrix2 B, double[] Diag)
             where FullMatrix1 : IMatrix
-            where FullMatrix2 : IMatrix {
+            where FullMatrix2 : IMatrix //
+        {
             B.Clear();
             int N = B.NoOfRows;
 
@@ -2182,6 +2418,11 @@ namespace ilPSP {
 
         //static public Stopwatch DGETRF_stopwatch;// = new Stopwatch();
 
+        /// <summary>
+        /// Solves the linear equation system:
+        /// 
+        /// <paramref name="M"/>*<paramref name="x"/> = <paramref name="b"/>.
+        /// </summary>
         static public double[] Solve<T,W>(this T M, W b)
             where T : IMatrix
             where W : IList<double> //
@@ -2202,7 +2443,7 @@ namespace ilPSP {
         static public void Solve<T,V,W>(this T M, V x, W b) 
             where T : IMatrix
             where V : IList<double>
-            where W : IList<double>
+            where W : IList<double> //
         {
             if (M.NoOfRows != M.NoOfCols)
                 throw new ApplicationException("Cannot solve nonquadratic matrix.");
@@ -2223,7 +2464,7 @@ namespace ilPSP {
                 int* ipiv = stackalloc int[L];
                 int i0;
                 double[] _this_Entries = TempBuffer.GetTempBuffer(out i0, L * L);
-                fixed (double* this_Entries = _this_Entries) {
+                fixed (double* this_Entries = _this_Entries, p_x = _x) {
 
                     CopyToUnsafeBuffer(M, this_Entries, true);
 
@@ -2236,8 +2477,7 @@ namespace ilPSP {
                             infostring = String.Format("the {0}-th argument had an illegal value", info);
                         }
                         else {
-                            infostring = "U("+info+@""","""+info+
-                                ") is exactly zero. The factorization \n has been completed, but the factor U is exactly \n singular, and division by zero will occur if it is used \n to solve a system of equations.";
+                            infostring = "U(" + info + @""",""" + info + ") is exactly zero. The factorization \n has been completed, but the factor U is exactly \n singular, and division by zero will occur if it is used \n to solve a system of equations.";
                         }
 
                         throw new ArithmeticException("LAPACK dgetrf info: " + infostring);
@@ -2245,7 +2485,7 @@ namespace ilPSP {
                     //         TRANS, N, NRHS, A,            LDA, IPIV, B, LDB
                     char transp = 'N';
                     int eins = 1;
-                    LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, _x, ref L, out info);
+                    LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, p_x, ref L, out info);
                     if(info != 0) {
                         TempBuffer.FreeTempBuffer(i0);
                         throw new ArithmeticException("LAPACK dgetrs info: " + info);
@@ -2257,6 +2497,74 @@ namespace ilPSP {
                     x.SetV(_x);
             }
         }
+        
+
+        /// <summary>
+        /// Solves the linear equation system with multiple right-hand-sides:
+        /// 
+        /// <paramref name="M"/>*<paramref name="X"/> = <paramref name="B"/>.
+        /// </summary>
+        /// <param name="x">On exit, the solution of the equation system; each column is the solution for one right-hand-side</param>
+        /// <param name="B">Matrix of right-hand-sides; each column is a independent right-hand-side.</param>
+        /// <param name="M">General quadratic, non-singular matrix.</param>
+        static public void SolveEx<T, V, W>(this T M, V x, W b)
+            where T : IMatrix
+            where V : IMatrix
+            where W : IMatrix //
+        {
+            if (M.NoOfRows != M.NoOfCols)
+                throw new ApplicationException("Cannot solve non-quadratic matrix.");
+            if (x.NoOfCols != b.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (x.NoOfRows != M.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (b.NoOfRows != M.NoOfRows)
+                throw new ArgumentException("number of rows in b must be equal to number of rows in M");
+            unsafe {
+
+                int L = M.NoOfCols;
+
+                int NoRhs = b.NoOfCols;
+
+                int* ipiv = stackalloc int[L];
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out int i0, L * L);
+                double[] _xRhs_Entries = TempBuffer.GetTempBuffer(out int i1, L * NoRhs);
+                fixed (double* this_Entries = _this_Entries, xrhs_Entries = _xRhs_Entries) {
+
+                    CopyToUnsafeBuffer(M, this_Entries, true);
+                    CopyToUnsafeBuffer(b, xrhs_Entries, true);
+
+                    int info;
+                    LAPACK.F77_LAPACK.DGETRF(ref L, ref L, this_Entries, ref L, ipiv, out info);
+                    if (info != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
+                        string infostring;
+                        if (info < 0) {
+                            infostring = String.Format("the {0}-th argument had an illegal value", info);
+                        } else {
+                            infostring = "U(" + info + @""",""" + info + ") is exactly zero. The factorization \n has been completed, but the factor U is exactly \n singular, and division by zero will occur if it is used \n to solve a system of equations.";
+                        }
+
+                        throw new ArithmeticException("LAPACK dgetrf info: " + infostring);
+                    }
+                    //         TRANS, N, NRHS, A,            LDA, IPIV, B, LDB
+                    char transp = 'N';
+                    
+                    LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref NoRhs, this_Entries, ref L, ipiv, xrhs_Entries, ref L, out info);
+                    if (info != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
+                        throw new ArithmeticException("LAPACK dgetrs info: " + info);
+                    }
+
+                    CopyFromUnsafeBuffer(x, xrhs_Entries, true);
+                }
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
+            }
+        }
+        
 
         /// <summary>
         /// Solves the linear equation system:
@@ -2273,7 +2581,8 @@ namespace ilPSP {
         /// <param name="c">Right-hand-side of the side equation system.</param>
         /// <param name="N">General matrix.</param>
         /// The second system is used to solve
-        static public void SolveWithCondition<T>(this T M, double[] x, double[] b, T N, double[] c) where T : IMatrix
+        static public void SolveWithCondition<T>(this T M, double[] x, double[] b, T N, double[] c) 
+            where T : IMatrix //
         {
             if (M.NoOfCols != N.NoOfCols)
                 throw new ApplicationException("Solutionspace of both systems has to be of equal dimension");
@@ -2287,8 +2596,7 @@ namespace ilPSP {
             // compute the nullspace of M
             //MultidimensionalArray SRREF = M.GetSolutionSpace();
             MultidimensionalArray S = M.GetSolutionSpaceSVD();
-            if (S == null)
-            {
+            if (S == null) {
                 throw new ApplicationException("Something went wrong");
             }
 
@@ -2379,30 +2687,40 @@ namespace ilPSP {
             int L = M.NoOfCols;
             unsafe {
                 int iBuf;
-                double[] _this_Entries;
-                int BufOffset;
-                if (M is MultidimensionalArray) {
-                    var Mda = (M as MultidimensionalArray);
-                    _this_Entries = Mda.Storage;
-                    iBuf = -1;
-                    BufOffset = Mda.Index(0, 0);
-                } else {
-                    _this_Entries = TempBuffer.GetTempBuffer(out iBuf, L * L);
-                    BufOffset = 0;
-                }
 
-                Array.Copy(b, x, x.Length);
+                //double[] _this_Entries;
+                //int BufOffset;
+                //if (M is MultidimensionalArray Mda && Mda.IsContinious) {
+                //    _this_Entries = Mda.Storage; // fk, 06apr22: does not work, because MultidimensionalArray is in C-order
+                //    iBuf = -1;
+                //    BufOffset = Mda.Index(0, 0);
+                //} else {
+                //    _this_Entries = TempBuffer.GetTempBuffer(out iBuf, L * L);
+                //    BufOffset = 0;
+                //}
 
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out iBuf, L * L);
+                int BufOffset = 0;
+
+               
                 fixed (int* ipiv = _ipiv) {
+
+                    double* xx = stackalloc double[L + 2];
+                    for (int i = 0; i < L; i++) {
+                        xx[i + 1] = b[i];
+                    }
+                    xx[0] = 123.456;
+                    xx[L + 1] = -987.76;
+
                     fixed (double* __this_Entries = _this_Entries) {
 
                         double* this_Entries = __this_Entries + BufOffset;
                         if(iBuf >= 0)
-                            CopyFromUnsafeBuffer(M, this_Entries, true);
+                            CopyToUnsafeBuffer(M, this_Entries, true);
 
                         char transp = 'N';
                         int eins = 1;
-                        LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, x, ref L, out int info);
+                        LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref eins, this_Entries, ref L, ipiv, xx + 1, ref L, out int info);
                         if (info != 0) {
                             if(iBuf >= 0)
                                 TempBuffer.FreeTempBuffer(iBuf);
@@ -2410,12 +2728,88 @@ namespace ilPSP {
                         }
 
                     }
+
+
+                    if (xx[0] != 123.456 || xx[L + 1] != -987.76)
+                        throw new MemberAccessException("LAPACK.DGETRS accessed memory that it should not touch");
+                    for (int i = 0; i < L; i++) {
+                        x[i] = xx[i + 1];
+                    }
+
                 }
+
 
                 if (iBuf >= 0)
                     TempBuffer.FreeTempBuffer(iBuf);
             }
         }
+
+
+        /// <summary>
+        /// Performs the backward substitution which has been obtained through <see cref="FactorizeLU{T}(T, int[])"/>
+        /// for multiple right-hand-sides
+        /// </summary>
+        static public void BacksubsLU<T, V, W>(this T M, int[] _ipiv, V x, W b)
+            where T : IMatrix
+            where V : IMatrix
+            where W : IMatrix //
+        {
+            if (M.NoOfRows != M.NoOfCols)
+                throw new ApplicationException("Cannot solve non-quadratic matrix.");
+            if (x.NoOfCols != b.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (x.NoOfRows != M.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (b.NoOfRows != M.NoOfRows)
+                throw new ArgumentException("number of rows in b must be equal to number of rows in M");
+            if (_ipiv.Length != M.NoOfCols)
+                throw new ArgumentException("length of ipiv must be equal to number of columns");
+            unsafe {
+
+                int L = M.NoOfCols;
+
+                int NoRhs = b.NoOfCols;
+
+
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out int i0, L * L);
+                double[] _xRhs_Entries = TempBuffer.GetTempBuffer(out int i1, L * NoRhs);
+                fixed (double* this_Entries = _this_Entries, xrhs_Entries = _xRhs_Entries) {
+                    fixed (int* ipiv = _ipiv) {
+                        CopyToUnsafeBuffer(M, this_Entries, true);
+                        CopyToUnsafeBuffer(b, xrhs_Entries, true);
+
+                        int info;
+                        /*
+                        LAPACK.F77_LAPACK.DGETRF(ref L, ref L, this_Entries, ref L, ipiv, out info);
+                        if (info != 0) {
+                            TempBuffer.FreeTempBuffer(i0);
+                            TempBuffer.FreeTempBuffer(i1);
+                            string infostring;
+                            if (info < 0) {
+                                infostring = String.Format("the {0}-th argument had an illegal value", info);
+                            } else {
+                                infostring = "U(" + info + @""",""" + info + ") is exactly zero. The factorization \n has been completed, but the factor U is exactly \n singular, and division by zero will occur if it is used \n to solve a system of equations.";
+                            }
+
+                            throw new ArithmeticException("LAPACK dgetrf info: " + infostring);
+                        }*/
+                        //         TRANS, N, NRHS, A,            LDA, IPIV, B, LDB
+                        char transp = 'N';
+                        LAPACK.F77_LAPACK.DGETRS(ref transp, ref L, ref NoRhs, this_Entries, ref L, ipiv, xrhs_Entries, ref L, out info);
+                        if (info != 0) {
+                            TempBuffer.FreeTempBuffer(i0);
+                            TempBuffer.FreeTempBuffer(i1);
+                            throw new ArithmeticException("LAPACK dgetrs info: " + info);
+                        }
+
+                        CopyFromUnsafeBuffer(x, xrhs_Entries, true);
+                    }
+                }
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
+            }
+        }
+
 
 
         /// <summary>
@@ -2455,6 +2849,54 @@ namespace ilPSP {
                     }
                 }
                 TempBuffer.FreeTempBuffer(i0);
+            }
+        }
+
+        /// <summary>
+        /// Solves the symmetric, positive definite linear equation system with multiple right-hand-sides:
+        /// 
+        /// <paramref name="M"/>*<paramref name="X"/> = <paramref name="B"/>.
+        /// </summary>
+        /// <param name="x">On exit, the solution of the equation system; each column is the solution for one right-hand-side</param>
+        /// <param name="B">Matrix of right-hand-sides; each column is a independent right-hand-side.</param>
+        /// <param name="M">General quadratic, non-singular matrix.</param>
+        static public void SolveSymmetricEx<T,TX,TB>(this T M, TX x, TB b)
+            where T : IMatrix 
+            where TX : IMatrix 
+            where TB : IMatrix //
+        {
+            if (M.NoOfRows != M.NoOfCols)
+                throw new ApplicationException("Cannot solve nonquadratic matrix.");
+            if (x.NoOfCols != b.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (x.NoOfRows != M.NoOfCols)
+                throw new ArgumentException("mismatch between number of columns in x and b");
+            if (b.NoOfRows != M.NoOfRows)
+                throw new ArgumentException("number of rows in b must be equal to number of rows in M");
+            unsafe {
+
+                int L = M.NoOfCols;
+                int NoRhs = b.NoOfCols;
+               
+                int* ipiv = stackalloc int[L];
+                double[] _this_Entries = TempBuffer.GetTempBuffer(out int i0, L * L);
+                double[] _xrhs_Entries = TempBuffer.GetTempBuffer(out int i1, L * L);
+                fixed (double* this_Entries = _this_Entries, xrhs_Entries = _xrhs_Entries) {
+                    CopyToUnsafeBuffer(M, this_Entries, true);
+                    CopyToUnsafeBuffer(b, xrhs_Entries, true);
+
+                    int uplo = 'U', info;
+                    LAPACK.F77_LAPACK.DPOSV_(ref uplo, ref L, ref NoRhs, this_Entries, ref L, xrhs_Entries, ref L, out info);
+                    if (info != 0) {
+                        TempBuffer.FreeTempBuffer(i0);
+                        TempBuffer.FreeTempBuffer(i1);
+                        throw new ArithmeticException("LAPACK dposv info: " + info);
+                    }
+
+                    CopyFromUnsafeBuffer(x, xrhs_Entries, true);
+                }
+                TempBuffer.FreeTempBuffer(i0);
+                TempBuffer.FreeTempBuffer(i1);
             }
         }
 
@@ -2544,7 +2986,7 @@ namespace ilPSP {
             unsafe {
                 int i0;
                 double[] _M = TempBuffer.GetTempBuffer(out i0, N * N);
-                fixed (double* pM = _M, pTAU = &TAU[0]) {
+                fixed (double* pM = _M, pTAU = TAU) {
                     CopyToUnsafeBuffer(M, pM, true);
 
                     LAPACK.F77_LAPACK.DGEQRF(ref N, ref N, pM, ref N, pTAU);
@@ -2617,8 +3059,8 @@ namespace ilPSP {
             unsafe {
                 int i0;
                 double[] _M = TempBuffer.GetTempBuffer(out i0, N * N);
-                fixed (double* pM = _M, pTAU = &TAU[0]) {
-                    fixed (int* pP = &P[0]) {
+                fixed (double* pM = _M, pTAU = TAU) {
+                    fixed (int* pP = P) {
                         CopyToUnsafeBuffer(M, pM, true);
 
                         LAPACK.F77_LAPACK.DGEQP3(ref N, ref N, pM, ref N, pP, pTAU);

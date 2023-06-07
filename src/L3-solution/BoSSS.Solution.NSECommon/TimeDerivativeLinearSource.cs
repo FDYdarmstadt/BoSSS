@@ -172,6 +172,30 @@ namespace BoSSS.Solution.NSECommon {
         int j;
 
 
+
+        /// <summary>
+        /// Ctor for variable density flows based on the mixture fraction approach
+        /// </summary> 
+        /// <param name="EoS">The material law</param>
+        /// <param name="energy">Set conti: true for the energy equation</param>
+        /// <param name="varname"></param>
+        /// <param name="TimeStepSize"></param>
+        public MassMatrixLowMachComponent(MaterialLaw EoS, string varname, int spatDim) {
+            this.EoS = EoS;
+            this.m_SpatialDimension = spatDim;
+            m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(spatDim), VariableNames.Pressure,VariableNames.MixtureFraction);
+            this.j = m_ArgumentOrdering.IndexOf(varname);
+
+            if (varname == VariableNames.Pressure && j != 2)
+                throw new Exception("!!!");
+     
+
+            if (EoS == null)
+                throw new ApplicationException("EoS has to be given for Low-Mach flows to calculate density.");
+            else
+                this.EoS = EoS;
+        }
+
         /// <summary>
         /// Ctor for variable density flows
         /// </summary> 
@@ -213,8 +237,17 @@ namespace BoSSS.Solution.NSECommon {
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            double[] DensityArgumentsIn = U.GetSubVector(m_SpatialDimension + 1, NumberOfReactants + 1);
-            double rho = EoS.GetDensity(DensityArgumentsIn);
+
+            double rho;
+            if(EoS is MaterialLawMixtureFractionNew) {
+                //double[] DensityArgumentsIn = U.GetSubVector(m_SpatialDimension + 1,1);
+                rho = EoS.getDensityFromZ(U[3]);              
+
+            } else {
+                double[] DensityArgumentsIn = U.GetSubVector(m_SpatialDimension + 1, NumberOfReactants + 1);
+                rho = EoS.GetDensity(DensityArgumentsIn);
+            }
+            
             double ret = rho * U[j] * V;
 
             if (j == 2)

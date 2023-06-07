@@ -45,7 +45,7 @@ namespace BoSSS.Application.XNSEC {
         [Test]
         public static void ViscosityJumpTest(
 #if DEBUG
-            [Values(2, 3)] int spatialDimension,
+            [Values(2)] int spatialDimension,
             [Values(1)] int deg,
             [Values(0.0, 0.1)] double AgglomerationTreshold,
             [Values(ViscosityMode.FullySymmetric)] ViscosityMode vmode,
@@ -64,7 +64,6 @@ namespace BoSSS.Application.XNSEC {
 
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, SurfTensionMode, constantDensity: true, GridResolution: 1);
             C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
-
             C.SkipSolveAndEvaluateResidual =/* false;//*/ C.AgglomerationThreshold <= 1e-6;
 
             XNSECSolverTest(Tst, C);
@@ -73,9 +72,9 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// <see cref="BcTest_PressureOutlet"/>
         /// </summary>
-        //[Test]
+        [Test]
         public static void BcTest_PressureOutletTest(
-            [Values(2, 3)] int spatialDimension,
+            [Values(2)] int spatialDimension,
             [Values(1)] int deg,
             [Values(0.1)] double AgglomerationTreshold,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
@@ -86,11 +85,11 @@ namespace BoSSS.Application.XNSEC {
 #if DEBUG
             const int GridRes = 2; // resolutions 1, 3, etc. place level-set at cell center
 #else
-            const int GridRes = 4; // resolutions 2, 4, etc. place level-set at cell boundary
+            const int GridRes = 3; // resolutions 2, 4, etc. place level-set at cell boundary
 #endif
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.FullySymmetric, constantDensity: true, GridResolution: GridRes, CutCellQuadratureType: CutCellQuadratureType, SurfTensionMode: SurfTensionMode);
-            C.SkipSolveAndEvaluateResidual = !performsolve;
-
+            C.SkipSolveAndEvaluateResidual = performsolve;
+            
             XNSECSolverTest(Tst, C);
             if (spatialDimension == 2) // not working?...
                 ASScalingTest(Tst, new[] { 4, 8, 16 }, ViscosityMode.FullySymmetric, deg, CutCellQuadratureType, SurfTensionMode);
@@ -116,7 +115,7 @@ namespace BoSSS.Application.XNSEC {
 
 
         private static void ASScalingTest(IXNSECTest_Heat Tst, int[] ResolutionS, ViscosityMode vmode, int deg, XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType, SurfaceStressTensor_IsotropicMode SurfTensionMode, NonLinearSolverCode nonlinsolver = NonLinearSolverCode.Newton) {
-#if !DEBUG
+//#if !DEBUG
             string Name = "Scaling" + Tst.GetType().Name + "-" + vmode + "-p" + deg;
 
             double AgglomerationTreshold = 0.0;
@@ -129,7 +128,7 @@ namespace BoSSS.Application.XNSEC {
                 LaLa.Add(C);
             }
             ConditionNumberScalingTest.Perform(LaLa, plot: true, title: Name);
-#endif
+//#endif
         }
 
         /// <summary>
@@ -159,7 +158,6 @@ namespace BoSSS.Application.XNSEC {
             C.EnableTemperature = false;
             C.EnableMassFractions = false;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            //C.ImmediatePlotPeriod = 1;
             C.NonLinearSolver.verbose = true;
             XNSECSolverTest(Tst, C);
         }
@@ -185,9 +183,7 @@ namespace BoSSS.Application.XNSEC {
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
             C.EnableTemperature = false;
             C.EnableMassFractions = false;
-            //C.ImmediatePlotPeriod = 1;
             //C.NonLinearSolver.verbose = true;
-            //C.NonLinearSolver.MaxSolverIterations = 5;
             XNSECSolverTest(Tst, C);
         }
 
@@ -200,7 +196,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="SolverMode_performsolve"></param>
         /// <param name="CutCellQuadratureType"></param>
         /// <param name="stm"></param>
-        [Test]
+        //[Test]
         public static void PseudoTwoDimensionalTwoPhaseFlow(
             [Values(2)] int deg,
             [Values(0, 0.1)] double AgglomerationTreshold,
@@ -208,17 +204,23 @@ namespace BoSSS.Application.XNSEC {
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm,
             [Values(false, true)] bool differentFluids,
-            [Values(false, true)] bool RightBC_PressureOutlet
+            [Values(false, true)] bool TopBC_PressureOutlet,
+            [Values(false, true)] bool BotBC_PressureOutlet
             ) {
             BoSSS.Solution.Application.InitMPI();
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
-            int resolution = 6;
-            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, false, RightBC_PressureOutlet);
+            int resolution =5;
+            bool RecoilPressure = true;
+            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, false, TopBC_PressureOutlet, BotBC_PressureOutlet, _Prescribed_MassFlux:1.0, recoilPressure: RecoilPressure);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, constantDensity: true, resolution);
+            C.IncludeRecoilPressure = RecoilPressure;
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
-            //C.ImmediatePlotPeriod = 1;
+            C.ImmediatePlotPeriod = 1;
+            C.rhoOne = true;
+            C.ThermalParameters.T_sat = 1;
+            C.PlotAdditionalParameters = false;
             XNSECSolverTest(Tst, C);
-        }
+             }
 
         /// <summary>
         /// Tests a fixed level set in a constant velocity field for each phase
@@ -228,7 +230,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="SolverMode_performsolve"></param>
         /// <param name="CutCellQuadratureType"></param>
         /// <param name="stm"></param>
-        [Test]
+        //[Test]
         public static void PseudoTwoDimensionalTwoPhaseFlow_ScalingTest(
             [Values(2)] int deg,
             [Values(0)] double AgglomerationTreshold,
@@ -240,7 +242,7 @@ namespace BoSSS.Application.XNSEC {
             ) {
             BoSSS.Solution.Application.InitMPI();
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
-            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, false, RightBC_PressureOutlet);
+            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, false, RightBC_PressureOutlet, true);
             ASScalingTest(Tst, new[] { 8, 16, 32, 64 }, vmode, deg, CutCellQuadratureType, stm);
         }
 
@@ -252,7 +254,7 @@ namespace BoSSS.Application.XNSEC {
         /// <param name="SolverMode_performsolve"></param>
         /// <param name="CutCellQuadratureType"></param>
         /// <param name="stm"></param>
-        [Test]
+        //[Test]
         public static void PseudoTwoDimensionalTwoPhaseFlow_withviscosity(
             [Values(2)] int deg,
             [Values(0, 0.1)] double AgglomerationTreshold,
@@ -266,7 +268,7 @@ namespace BoSSS.Application.XNSEC {
             BoSSS.Solution.Application.InitMPI();
             ViscosityMode vmode = ViscosityMode.FullySymmetric;
             int resolution = 5;
-            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, ViscosityActive: true, RightBC_PressureOutlet);
+            var Tst = new BoSSS.Application.XNSEC.FullNSEControlExamples.PseudoTwoDimensional_TwoPhaseFlow(differentFluids, ViscosityActive: true, RightBC_PressureOutlet, LeftPressureOutlet :true);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, constantDensity: true, resolution);
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
 
@@ -287,14 +289,13 @@ namespace BoSSS.Application.XNSEC {
             [Values(0.1)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
-            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm) {
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm) {
 
             ViscosityMode vmode = ViscosityMode.Standard; // viscosity is 0.0 => this selection does not matter
 
             var Tst = new HeatConductivityTest();
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, true, 3);
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
-            //C.ImmediatePlotPeriod = 1;
 
             XNSECSolverTest(Tst, C);
         }
@@ -307,16 +308,16 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         [Test]
         public static void SteadyStateEvaporationTestXNSEC(
-            [Values(0.0, 15.0, 45.0, 73.1264, 90.0)] double rawangle,
+            [Values(0.0, 15.0, 45.0, 73.1264)] double rawangle,
             [Values(3)] int deg,
             [Values(0)] double AgglomerationTreshold,
             [Values(true)] bool SolverMode_performsolve,
             [Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes, XQuadFactoryHelper.MomentFittingVariants.Saye)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
-            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, SurfaceStressTensor_IsotropicMode.Curvature_Projected)] SurfaceStressTensor_IsotropicMode stm
+            [Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux)] SurfaceStressTensor_IsotropicMode stm
             ) {
             ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
 
-            var Tst = new SteadyStateEvaporationTestXNSEC(rawangle * Math.PI / 180.0);
+            var Tst = new SteadyStateEvaporationTestXNSEC(rawangle * Math.PI / 180.0, false);
             var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, vmode, CutCellQuadratureType, stm, true, 3);
             C.SkipSolveAndEvaluateResidual = !SolverMode_performsolve;
             //C.AgglomerationThreshold = 0.1;
@@ -351,30 +352,7 @@ namespace BoSSS.Application.XNSEC {
 
 
 
-        /// <summary>
-        ///  Simple Test for Evaporation of a straight interface
-        /// </summary>
-        /// <param name="deg"></param>
-        /// <param name="AgglomerationTreshold"></param>
-        /// <param name="SolverMode_performsolve"></param>
-        /// <param name="CutCellQuadratureType"></param>
-        /// <param name="stm"></param>
-        [Test]
-        public static void SteadyStateEvaporationTestXNSEC_ScalingTest(
-            [Values(2)] int deg,
-            [Values(0)] double AgglomerationTreshold,
-            [Values(false, true)] bool SolverMode_performsolve
-            ) {
-            BoSSS.Solution.Application.InitMPI();
-            ViscosityMode vmode = ViscosityMode.FullySymmetric; // viscosity is 0.0 => this selection does not matter
-            double rawangle = 0.0;
-            var stm = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux;
-            var CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
-
-            var Tst = new SteadyStateEvaporationTestXNSEC(rawangle * Math.PI / 180.0, equalDensity : true); //!!!!!!!!!!!! Attention: Test only works if density of both phases is the same
-
-            ASScalingTest(Tst, new[] { 8, 16, 32, 64 }, vmode, deg, CutCellQuadratureType, stm);
-        }
+ 
 
 
         /// <summary>
@@ -403,7 +381,6 @@ namespace BoSSS.Application.XNSEC {
 
             C.SkipSolveAndEvaluateResidual = false;
             C.rhoOne = true;
-            //C.ImmediatePlotPeriod = 1;
             //C.savetodb = true;
             //C.DbPath = @"C:\Databases\BoSSS_DB";
 

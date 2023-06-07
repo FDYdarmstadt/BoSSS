@@ -18,7 +18,7 @@ namespace BoSSS.Foundation.XDG {
         /// but it's only locally (on this processor) valid.
         /// </summary>
         /// <param name="find">
-        /// the field or basis index (see <see cref="BasisS"/>);
+        /// the field or basis index (see <see cref="UnsetteledCoordinateMapping.BasisS"/>);
         /// </param>
         /// <param name="j">local cell index</param>
         /// <param name="n">DG mode index</param>
@@ -27,7 +27,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="spc">species</param>
         /// <returns>
         /// A (MPI-) local index in the update range 
-        /// (between 0 and smaller than <see cref="UnsetteledCoordinateMapping.NUpdate"/>, which equals <see cref="ilPSP.IPartitioning.LocalLength"/>).
+        /// (between 0 and smaller than <see cref="ilPSP.IPartitioning.LocalLength"/>).
         /// It can be converted into 
         /// a (MPI-) global index by adding <see cref="ilPSP.IPartitioning.i0"/>.
         /// </returns>
@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.XDG {
         /// Number of DG modes for a specific variable, cell and species.
         /// </summary>
         /// <param name="find">
-        /// the field or basis index (see <see cref="BasisS"/>);
+        /// the field or basis index (see <see cref="UnsetteledCoordinateMapping.BasisS"/>);
         /// </param>
         /// <param name="j">local cell index</param>
         /// <param name="lsTrk"></param>
@@ -51,12 +51,12 @@ namespace BoSSS.Foundation.XDG {
             int spcIdx = lsTrk.Regions.GetSpeciesIndex(spc, j);
             return GetNumberOfModes(map, lsTrk, find, j, spcIdx);
         }
-        
+
         /// <summary>
         /// Number of DG modes for a specific variable, cell and species.
         /// </summary>
         /// <param name="find">
-        /// the field or basis index (see <see cref="BasisS"/>);
+        /// the field or basis index (see <see cref="UnsetteledCoordinateMapping.BasisS"/>);
         /// </param>
         /// <param name="j">local cell index</param>
         /// <param name="lsTrk"></param>
@@ -83,7 +83,7 @@ namespace BoSSS.Foundation.XDG {
         /// but it's only locally (on this processor) valid.
         /// </summary>
         /// <param name="find">
-        /// the field or basis index (see <see cref="BasisS"/>);
+        /// the field or basis index (see <see cref="UnsetteledCoordinateMapping.BasisS"/>);
         /// </param>
         /// <param name="j">local cell index</param>
         /// <param name="n">DG mode index</param>
@@ -92,7 +92,7 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="spcIdx">species index</param>
         /// <returns>
         /// A (MPI-) local index in the update range 
-        /// (between 0 and smaller than <see cref="UnsetteledCoordinateMapping.NUpdate"/>, which equals <see cref="ilPSP.IPartitioning.LocalLength"/>).
+        /// (between 0 and smaller than <see cref="ilPSP.IPartitioning.LocalLength"/>).
         /// It can be converted into 
         /// a (MPI-) global index by adding <see cref="ilPSP.IPartitioning.i0"/>.
         /// </returns>

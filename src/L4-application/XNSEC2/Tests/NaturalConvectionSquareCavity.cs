@@ -59,6 +59,7 @@ namespace BoSSS.Application.XNSEC {
             C.timeDerivativeEnergyp0_OK = false;
             C.timeDerivativeConti_OK = false;
             C.PhysicalParameters.IncludeConvection = true;
+            C.ImmediatePlotPeriod = 1;
             return C;
         } 
 
@@ -150,7 +151,7 @@ namespace BoSSS.Application.XNSEC {
             C.DbPath = @"C:\Databases\NatConvectionP0Study";
             IEnumerable<double> RayleighHomotopyArray = new double[] { 1, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 2e6, 3e6, 4e6, 5e6, 6e6, 7e6, 8e6, 9e6, 1e7 };
 
-            C.ReynoldsHomotopyValues = RayleighHomotopyArray.Select(x => Math.Sqrt(x)).ToArray();
+            C.HomotopyArray = RayleighHomotopyArray.Select(x => Math.Sqrt(x)).ToArray();
             C.HomotopyApproach = XNSEC_Control.HomotopyType.Manual;
             C.NoOfTimesteps = RayleighHomotopyArray.ToArray().Length;
             return C;
@@ -214,7 +215,7 @@ namespace BoSSS.Application.XNSEC {
             C.SetDGdegree(DGp);
 
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.NonLinearSolver.ConvergenceCriterion = 1e-11;
             C.NonLinearSolver.verbose = true;
             C.NonLinearSolver.MaxSolverIterations = 50;

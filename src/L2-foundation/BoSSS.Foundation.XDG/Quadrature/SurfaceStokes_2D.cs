@@ -251,7 +251,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         var Nodes1D = GenericBlas.Linspace(-1, 1, K);
 
-                        var _NodeSet = new NodeSet(this.RefElement, K * K, 2);
+                        var _NodeSet = new NodeSet(this.RefElement, K * K, 2, true);
                         int n = 0;
                         for (int i = 0; i < K /*&& n <= NoOfEq*1.1*/; i++) {
                             for (int j = 0; j < K /*&& n <= NoOfEq*1.1*/; j++) {
@@ -448,7 +448,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 //LevSet.EvaluateGradient(j, 1, Nodes, LevSetGrad);
 
 
-                m_Context.TransformLocal2Global(new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)), j, 1, x0_i_Global, 0);
+                m_Context.TransformLocal2Global(new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), false), j, 1, x0_i_Global, 0);
 
                 for (int nn = 0; nn < NN; nn++) {
 
@@ -472,7 +472,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 // next iter: x0_i <- x0_{i+1}
                 x0_i_Local.Set(x0_ip1_Local);
-                Nodes = (new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)));
+                Nodes = (new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), true));
             }
 
             return Nodes;
@@ -826,7 +826,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                         var Nodes1D = GenericBlas.Linspace(-1, 1, K);
 
-                        var _NodeSet = new NodeSet(this.RefElement, K * K, 2);
+                        var _NodeSet = new NodeSet(this.RefElement, K * K, 2, true);
                         int n = 0;
                         for (int i = 0; i < K /*&& n <= NoOfEq*1.1*/; i++) {
                             for (int j = 0; j < K /*&& n <= NoOfEq*1.1*/; j++) {
@@ -1015,7 +1015,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
                 LevSetGrad = this.LevelSetData.GetLevelSetGradients(Nodes, j, 1);
 
 
-                m_Context.TransformLocal2Global(new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)), j, 1, x0_i_Global, 0);
+                m_Context.TransformLocal2Global(new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), false), j, 1, x0_i_Global, 0);
 
                 for (int nn = 0; nn < NN; nn++) {
 
@@ -1039,7 +1039,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.HMF {
 
                 // next iter: x0_i <- x0_{i+1}
                 x0_i_Local.Set(x0_ip1_Local);
-                Nodes = (new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1)));
+                Nodes = (new NodeSet(this.RefElement, x0_i_Local.ExtractSubArrayShallow(0, -1, -1), true));
             }
 
             return Nodes;

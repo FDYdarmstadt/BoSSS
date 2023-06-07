@@ -45,7 +45,6 @@ namespace BoSSS.Solution {
         /// <summary>
         /// ctor
         /// </summary>
-        /// <param name="gridData"></param>
         public TimeStepConstraint(IGridData gridData, double dtMin, double dtMax, double dtFraction, double Endtime) {
             this.gridData = gridData;
             this.dtMin = dtMin;
@@ -69,7 +68,7 @@ namespace BoSSS.Solution {
                         var Kref = KrefS[i];
                         int N = Kref.NoOfVertices + 1;
 
-                        NodeSet vertices = new NodeSet(Kref, N, D);
+                        NodeSet vertices = new NodeSet(Kref, N, D, true);
                         vertices.SetSubArray(
                             Kref.Vertices,
                             new int[] { 0, 0 },

@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
@@ -259,7 +259,24 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 CellMask Near1 = Tracker.Regions.GetSpeciesRestrictedNearMask4LevSet(phaseInterface.LevelSetIndex, 1);
                 CellMask PosFF = Tracker.Regions.GetLevelSetWing(phaseInterface.LevelSetIndex, +1).VolumeMask;
 
-                enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+                //enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, Near1, PosFF);
+
+                ContinuityProjection preEnforcer = new ContinuityProjection(
+                    phaseInterface.CGLevelSet.Basis,
+                    phaseInterface.DGLevelSet.Basis,
+                    Tracker.GridDat,
+                    ContinuityProjectionOption.None);
+                LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
+                preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
+                LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
+                preTracker.UpdateTracker(0.0);
+
+                CellMask CC = preTracker.Regions.GetCutCellMask4LevSet(0);
+                CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
+                PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
+
+                enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
+                preTracker.Dispose();
             }
 
 

@@ -293,7 +293,7 @@ namespace BoSSS.Application.Rheology
             double L2StressXYFine = (double)solver.QueryHandler.QueryResults["L2err_StressXY"];
             double L2StressYYFine = (double)solver.QueryHandler.QueryResults["L2err_StressYY"];
 
-            //Debugger.Launch();
+            // dbg_launch();
 
             double rateL2VelX = (Math.Log(L2VelXCoarse) - Math.Log(L2VelXFine)) / Math.Log(2);
             double rateL2VelY = (Math.Log(L2VelYCoarse) - Math.Log(L2VelYFine)) / Math.Log(2);

@@ -670,6 +670,7 @@ namespace BoSSS.Application.ExternalBinding.CodeGen {
         public static void Main(string[] args) {
             // check input
             // ===========
+
             if(args.Length != 1 || !Directory.Exists(args[0])) {
                 Console.WriteLine("BoSSS - Code generator for C++ bindings.");
                 Console.WriteLine("usage: ");

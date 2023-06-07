@@ -44,7 +44,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// Constructor: initializes this node set as a (non-shallow) clone of the array <paramref name="nds"/>.
         /// </summary>
-        public NodeSet(RefElement r, MultidimensionalArray nds)
+        public NodeSet(RefElement r, MultidimensionalArray nds, bool useCaching)
             : base(2) //
         {
         
@@ -57,31 +57,39 @@ namespace BoSSS.Foundation {
             base.LockForever();
             this.RefElement = r;
             lock(syncRoot) {
-                this.Reference = RefCounter;
-                if(RefCounter >= int.MaxValue)
-                    throw new ApplicationException("NodeSet ref-counter overflow.");
-                RefCounter++;
+                if(useCaching) {
+                    this.Reference = RefCounter;
+                    if(RefCounter >= int.MaxValue)
+                        throw new ApplicationException("NodeSet ref-counter overflow.");
+                    RefCounter++;
+                } else {
+                    this.Reference = 0;
+                }
             }
         }
 
         /// <summary>
         /// Constructor: initializes this node set as a (non-shallow) clone of the array <paramref name="nds"/>.
         /// </summary>
-        public NodeSet(RefElement r, double[,] nds)
+        public NodeSet(RefElement r, double[,] nds, bool useCaching)
             : base(2) //
         {
 
-            if(nds.GetLength(1) > 3)
+            if (nds.GetLength(1) > 3)
                 throw new ArgumentException("Spatial dimension is expected to be lower or equal to 3.");
             base.Allocate(nds.GetLength(0), nds.GetLength(1));
             base.Set2DArray(nds);
             base.LockForever();
             this.RefElement = r;
-            lock(syncRoot) {
-                this.Reference = RefCounter;
-                if(RefCounter >= int.MaxValue)
-                    throw new ApplicationException("NodeSet ref-counter overflow.");
-                RefCounter++;
+            lock (syncRoot) {
+                if(useCaching) {
+                    this.Reference = RefCounter;
+                    if(RefCounter >= int.MaxValue)
+                        throw new ApplicationException("NodeSet ref-counter overflow.");
+                    RefCounter++;
+                } else {
+                    this.Reference = 0;
+                }
             }
         }
 
@@ -89,7 +97,7 @@ namespace BoSSS.Foundation {
         /// Constructor: initializes this node set
         /// containing only one point <paramref name="point"/>.
         /// </summary>
-        public NodeSet(RefElement r, double[] point)
+        public NodeSet(RefElement r, double[] point, bool useCaching)
             : base(2) //
         {
             if(point.Length > 3)
@@ -99,10 +107,14 @@ namespace BoSSS.Foundation {
             base.LockForever();
             this.RefElement = r;
             lock(syncRoot) {
-                this.Reference = RefCounter;
-                if(RefCounter >= int.MaxValue)
-                    throw new ApplicationException("NodeSet ref-counter overflow.");
-                RefCounter++;
+                if(useCaching) {
+                    this.Reference = RefCounter;
+                    if(RefCounter >= int.MaxValue)
+                        throw new ApplicationException("NodeSet ref-counter overflow.");
+                    RefCounter++;
+                } else {
+                    this.Reference = 0;
+                }
             }
         }
 
@@ -110,7 +122,7 @@ namespace BoSSS.Foundation {
         /// Constructor: initializes this node set
         /// containing only one point <paramref name="point"/>.
         /// </summary>
-        public NodeSet(RefElement r, Vector point)
+        public NodeSet(RefElement r, Vector point, bool useCaching)
             : base(2) //
         {
             if(point.Dim > 3)
@@ -120,10 +132,14 @@ namespace BoSSS.Foundation {
             base.LockForever();
             this.RefElement = r;
             lock(syncRoot) {
-                this.Reference = RefCounter;
-                if(RefCounter >= int.MaxValue)
-                    throw new ApplicationException("NodeSet ref-counter overflow.");
-                RefCounter++;
+                if(useCaching) {
+                    this.Reference = RefCounter;
+                    if(RefCounter >= int.MaxValue)
+                        throw new ApplicationException("NodeSet ref-counter overflow.");
+                    RefCounter++;
+                } else {
+                    this.Reference = 0;
+                }
             }
         }
 
@@ -133,22 +149,27 @@ namespace BoSSS.Foundation {
         /// Use this constructor with care!
         /// Note that this node set is in an invalid state until <see cref="MultidimensionalArray.LockForever"/> is called.
         /// </summary>
-        public NodeSet(RefElement r, int NoOfNodes, int D)
+        public NodeSet(RefElement r, int NoOfNodes, int D, bool useCaching)
             : base(2) //
         {
             base.Allocate(NoOfNodes, D);
             this.RefElement = r;
             lock(syncRoot) {
-                this.Reference = RefCounter;
-                if(RefCounter >= int.MaxValue)
-                    throw new ApplicationException("NodeSet ref-counter overflow.");
-                RefCounter++;
+                if(useCaching) {
+                    this.Reference = RefCounter;
+                    if(RefCounter >= int.MaxValue)
+                        throw new ApplicationException("NodeSet ref-counter overflow.");
+                    RefCounter++;
+                } else {
+                    this.Reference = 0;
+                }
             }
         }
 
 
         /// <summary>
-        /// unique refenence number for the node set.
+        /// unique reference number for the node set;
+        /// 0 indicates a temporary node set
         /// </summary>
         public int Reference {
             get;
@@ -162,7 +183,7 @@ namespace BoSSS.Foundation {
             if(!base.IsLocked)
                 throw new NotSupportedException("NodeSet must be locked before first usage.");
 
-            var R = new NodeSet(this.RefElement, this.GetLength(0), this.GetLength(1));
+            var R = new NodeSet(this.RefElement, this.GetLength(0), this.GetLength(1), this.Reference > 0);
             R.Set(this);
             R.LockForever();
             return R;
@@ -252,8 +273,9 @@ namespace BoSSS.Foundation {
         /// The transformation index (from edge to cell coordinate system), i.e. an index into <see cref="GridData.EdgeData.Edge2CellTrafos"/>,
         /// see also <see cref="GridData.EdgeData.Edge2CellTrafoIndex"/>.
         /// </param>
+        /// <param name="useCaching"></param>
         /// <returns></returns>
-        public NodeSet GetVolumeNodeSet(IGridData g, int Edge2CellTrafoIndex) {
+        public NodeSet GetVolumeNodeSet(IGridData g, int Edge2CellTrafoIndex, bool useCaching) {
             if(!base.IsLocked)
                 throw new NotSupportedException("NodeSet must be locked before first usage.");
             Debug.Assert((base.GetLength(1) == this.RefElement.SpatialDimension) || (base.GetLength(1) == 1 && this.RefElement.SpatialDimension == 0), "Mismatch between number of spatial directions in node set and reference element.");
@@ -285,7 +307,7 @@ namespace BoSSS.Foundation {
                 AffineTrafo Trafo = g.iGeomEdges.Edge2CellTrafos[Edge2CellTrafoIndex];
                 int iKref = g.iGeomEdges.Edge2CellTrafosRefElementIndices[Edge2CellTrafoIndex];
 
-                NodeSet volNS = new NodeSet(g.iGeomCells.RefElements[iKref], NN, D);
+                NodeSet volNS = new NodeSet(g.iGeomCells.RefElements[iKref], NN, D, useCaching);
                 Trafo.Transform(this, volNS);
                 volNS.LockForever();
 

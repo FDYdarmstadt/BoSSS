@@ -39,7 +39,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private void CreateVolumeNodes() {
-            volumeNodes = new NodeSet(Square.Instance, xTics.Length * yTics.Length, 2);
+            volumeNodes = new NodeSet(Square.Instance, xTics.Length * yTics.Length, 2, true);
             for (int i = 0; i < xTics.Length; ++i) {
                 for (int j = 0; j < yTics.Length; ++j) {
                     volumeNodes[VolumeNodeIndice(i, j), 0] = xTics[i];
@@ -111,7 +111,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private void CreateInnerEdgeNodes() {
-            verticalEdgeNodes = new NodeSet(Square.Instance, xTics.Length * (yTics.Length - 1), 2);
+            verticalEdgeNodes = new NodeSet(Square.Instance, xTics.Length * (yTics.Length - 1), 2, false);
             for (int i = 0; i < xTics.Length - 1; ++i) {
                 for (int j = 0; j < yTics.Length; ++j) {
                     verticalEdgeNodes[i * yTics.Length + j, 0] = (xTics[i] + xTics[i + 1]) / 2;
@@ -119,7 +119,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
                 }
             }
             verticalEdgeNodes.LockForever();
-            horizontalEdgeNodes = new NodeSet(Square.Instance, (xTics.Length - 1) * yTics.Length, 2);
+            horizontalEdgeNodes = new NodeSet(Square.Instance, (xTics.Length - 1) * yTics.Length, 2, false);
             for (int i = 0; i < xTics.Length; ++i) {
                 for (int j = 0; j < yTics.Length - 1; ++j) {
                     horizontalEdgeNodes[i * (yTics.Length - 1) + j, 0] = xTics[i];
@@ -200,7 +200,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private QuadRule ExtractQuadRule(BitArray nodeMap, int count) {
-            QuadRule rule = QuadRule.CreateEmpty(Square.Instance, count, 2);
+            QuadRule rule = QuadRule.CreateEmpty(Square.Instance, count, 2, true);
             int j = 0;
             for (int i = 0; i < nodeMap.Length; ++i) {
                 if (nodeMap[i]) {
@@ -320,7 +320,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private QuadRule ExtractVerticalQuadRule(BitArray nodeMap, int count, NodeSet nodes) {
-            QuadRule rule = QuadRule.CreateEmpty(Square.Instance, count, 2);
+            QuadRule rule = QuadRule.CreateEmpty(Square.Instance, count, 2, true);
             int j = 0;
             for (int i = 0; i < nodeMap.Length; ++i) {
                 if (nodeMap[i]) {
@@ -346,7 +346,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private QuadRule ExtractHorizontalQuadRule(BitArray nodeMap, int count, NodeSet nodes) {
-            QuadRule rule = QuadRule.CreateEmpty(Square.Instance, count, 2);
+            QuadRule rule = QuadRule.CreateEmpty(Square.Instance, count, 2, true);
             int j = 0;
             for (int i = 0; i < nodeMap.Length; ++i) {
                 if (nodeMap[i]) {
@@ -437,7 +437,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private void CreateEdgeNodes(int resolution) {
-            edgeNodes = new NodeSet(Line.Instance, resolution, 1);
+            edgeNodes = new NodeSet(Line.Instance, resolution, 1, true);
             double increment = 2.0 / resolution;
             double first = increment / 2 - 1.0;
             for (int i = 0; i < resolution; ++i) {
@@ -472,7 +472,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private QuadRule ExtractQuadRule(BitArray nodeMap, int count) {
-            QuadRule rule = QuadRule.CreateEmpty(ReferenceElement, count, 1);
+            QuadRule rule = QuadRule.CreateEmpty(ReferenceElement, count, 1, true);
             int j = 0;
             for (int i = 0; i < nodeMap.Length; ++i) {
                 if (nodeMap[i]) {
@@ -514,7 +514,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private void CreateEdgeNodes(int resolution) {
-            edgeNodes = new NodeSet(Line.Instance, resolution, 1);
+            edgeNodes = new NodeSet(Line.Instance, resolution, 1, true);
             double increment = 2.0 / (resolution - 1);
             double first = - 1.0;
             for (int i = 0; i < resolution; ++i) {
@@ -538,7 +538,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
             int numberOfEdgeNodes = 0;
             for (int i = 0; i < nodeMap.Length - 1; ++i) {
                 if (phiValuesIn[0, i] * phiValuesIn[0, i+1] < 0) {
-                    NodeSet edgeNodes1 = new NodeSet(Line.Instance, 1, 1);
+                    NodeSet edgeNodes1 = new NodeSet(Line.Instance, 1, 1, false);
                     edgeNodes1[0] = edgeNodes[i];
                     edgeNodes1.LockForever();
                     phi1(edge, edgeNodes1, phiValuesIn1, phiValuesOut1);
@@ -560,7 +560,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private QuadRule ExtractQuadRule(BitArray nodeMap, int count, double weight) {
-            QuadRule rule = QuadRule.CreateEmpty(ReferenceElement, count, 1);
+            QuadRule rule = QuadRule.CreateEmpty(ReferenceElement, count, 1, true);
             int j = 0;
             for (int i = 0; i < nodeMap.Length; ++i) {
                 if (nodeMap[i]) {
@@ -669,7 +669,7 @@ namespace BoSSS.Foundation.XDG.Quadrature {
         }
 
         private QuadRule ExtractQuadRule(BitArray nodeMap, int count, double weight) {
-            QuadRule rule = QuadRule.CreateEmpty(Square.Instance, count, 2);
+            QuadRule rule = QuadRule.CreateEmpty(Square.Instance, count, 2, true);
             int j = 0;
             for (int i = 0; i < nodeMap.Length; ++i) {
                 if (nodeMap[i]) {

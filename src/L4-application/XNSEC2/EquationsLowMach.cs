@@ -8,6 +8,7 @@ using BoSSS.Solution.XheatCommon;
 using ilPSP;
 using ilPSP.Utils;
 using System;
+using System.Linq;
 
 namespace BoSSS.Solution.XNSECommon {
 
@@ -36,50 +37,27 @@ namespace BoSSS.Solution.XNSECommon {
 
             speciesName = spcName;
 
-
             //Temporal term contribution:
             //Implicit Euler:  d(rho) / dt = (rho ^ n_t - rho_(t - 1)) / delta t, n: newton iteration counter
             if (!config.isSteady && config.timeDerivativeConti_OK) {
                 var drho_dt = new BoSSS.Solution.XNSECommon.LowMach_TimeDerivativeConti(spcName, EoS, dt, NoOfChemicalSpecies);
                 AddComponent(drho_dt);
                 AddParameter("Density_t0");
+                AddParameter("Density_t00");
             }
 
             // Divergence term
             // \/ . (\rho \vec{u})
-            if (NonLinSolverCode == NonLinearSolverCode.Newton) {
-                for (int d = 0; d < D; ++d) {
-                    var contiNewton = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifferenceNewton(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
-                    AddComponent(contiNewton);
-                }
-            } else if (NonLinSolverCode == NonLinearSolverCode.Picard) {
-                for (int d = 0; d < D; ++d) {
-                    var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifference(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
-                    AddComponent(conti);
-                }
-                AddParameter(BoSSS.Solution.NSECommon.VariableNames.Temperature0);
-                AddParameter(BoSSS.Solution.NSECommon.VariableNames.MassFraction0_0);
-            } else {
-                throw new NotImplementedException("Not implemented non linear solver");
+            for (int d = 0; d < D; ++d) {
+                var contiNewton = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifferenceNewton(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
+                AddComponent(contiNewton);
             }
-
-            //for (int d = 0; d < D; ++d) {
-            //    if (NonLinSolverCode == NonLinearSolverCode.Newton) {
-            //        var contiNewton = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifferenceNewton(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
-            //        AddComponent(contiNewton);
-            //    } else if (NonLinSolverCode == NonLinearSolverCode.Picard) {
-            //        var conti = new Solution.XNSECommon.Operator.Continuity.DivergenceInSpeciesBulk_CentralDifference(spcName, d, BcMap, D, EoS, NoOfChemicalSpecies);
-            //        AddComponent(conti);
-            //    }
-            //}
 
             // manufactured solution
             if (config.manSolSource_OK) {
                 var MS_conti = new BoSSS.Solution.XNSECommon.LowMach_ManSolution(spcName, ManSol);
                 AddComponent(MS_conti);
             }
-
-       
         }
 
         public override string SpeciesName => speciesName;
@@ -97,7 +75,6 @@ namespace BoSSS.Solution.XNSECommon {
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
 
             PhysicalParameters physParams = config.getPhysParams;
-            //DoNotTouchParameters dntParams = config.getDntParams;
 
             // set species arguments
             double rhoA = physParams.rho_A;
@@ -132,8 +109,67 @@ namespace BoSSS.Solution.XNSECommon {
     }
 
     /// <summary>
+    /// same as <see cref="InterfaceContinuity_Evaporation"/> but using Newton solver compatible components
+    /// </summary>
+    public class InterfaceContinuity_Evaporation_Newton_LowMach_MF : InterfaceContinuity_Evaporation {
+
+        public InterfaceContinuity_Evaporation_Newton_LowMach_MF(string phaseA,
+            string phaseB,
+            int dimension,
+            XNSFE_OperatorConfiguration config) : base(phaseA, phaseB, dimension, config) {
+        }
+
+        protected override void AddInterfaceContinuity_Evaporation(int D, XNSFE_OperatorConfiguration config) {
+            AddComponent(new DivergenceAtLevelSet_Evaporation_StrongCoupling_LowMach_MF(D, -1, false, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+        }
+    }
+
+    public class InterfaceNSE_Evaporation_MF : SurfaceEquation {
+        private string codomainName;
+        private string phaseA, phaseB;
+
+        public InterfaceNSE_Evaporation_MF(string phaseA,
+            string phaseB,
+            int dimension,
+            int d,
+            XNSFE_OperatorConfiguration config) : base() {
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+            int D = dimension;
+            codomainName = EquationNames.MomentumEquationComponent(d);
+
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            if (config.isTransport) {
+                // the following terms decode the condition at the interface (consider the similarity to the rankine hugoniot condition)
+                AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton_MF(d, D, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+                AddComponent(new ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton_MF(d, D, -1, false, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+            }
+
+            if (config.isRecoilPressure) {
+                AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling_MF(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+            }
+
+            if (config.isViscous) {
+                AddComponent(new ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling_MF(dntParams.PenaltySafety, d, D, config.getThermParams, physParams, FirstSpeciesName, SecondSpeciesName));
+            }
+
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d));
+            if (config.prescribedMassflux != null)
+                AddCoefficient("PrescribedMassFlux");
+        }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
+    }
+
+    /// <summary>
     /// LowMach, Newtonian momentum equation, (fluid/fluid) interface part;
-    /// This provides coupling of two phases/components of a multiphase flow, the bulk phases are defines through <see cref="NavierStokes"/>.
+    /// This provides coupling of two phases/components of a multiphase flow, the bulk phases are defined through <see cref="NavierStokes"/>.
     /// </summary>
     public class NSEInterface_LowMach : SurfaceEquation {
         private string codomainName;
@@ -154,27 +190,6 @@ namespace BoSSS.Solution.XNSECommon {
             this.phaseB = phaseB;
 
             codomainName = EquationNames.MomentumEquationComponent(d);
-            AddInterfaceNSE_LowMach(dimension, d, boundaryMap, config, isMovingMesh, EoS_A, EoS_B);
-            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
-            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
-            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.MassFractions(config.NoOfChemicalSpecies));
-        }
-
-        public override string FirstSpeciesName => phaseA;
-
-        public override string SecondSpeciesName => phaseB;
-
-        public override string CodomainName => codomainName;
-
-        private void AddInterfaceNSE_LowMach(
-            int dimension,
-            int d,
-            IncompressibleBoundaryCondMap boundaryMap,
-            XNSEC_OperatorConfiguration config,
-            bool isMovingMesh,
-            MaterialLaw EoS_A,
-            MaterialLaw EoS_B
-            ) {
             PhysicalParameters physParams = config.getPhysParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 
@@ -190,13 +205,8 @@ namespace BoSSS.Solution.XNSECommon {
             // convective operator
             // ===================
             if (physParams.IncludeConvection && config.isTransport) {
-                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton_LowMach(d, dimension, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName, EoS_A, EoS_B, NoOfChemicalSpecies);
+                var conv = new Solution.XNSECommon.Operator.Convection.ConvectionAtLevelSet_LLF_Newton_LowMach(d, dimension, rhoA, rhoB, LFFA, LFFB, physParams.Material, boundaryMap, FirstSpeciesName, SecondSpeciesName, EoS_A, EoS_B, NoOfChemicalSpecies);
                 AddComponent(conv);
-            }
-            if (isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
-                // if Moving mesh, we need the interface transport term somehow
-
-                throw new NotImplementedException("Something missing here.");
             }
 
             // pressure gradient
@@ -227,7 +237,67 @@ namespace BoSSS.Solution.XNSECommon {
                         throw new NotImplementedException();
                 }
             }
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(dimension).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.MassFractions(config.NoOfChemicalSpecies));
         }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
+    }
+
+    public class InterfaceNSE_Evaporation_LowMach : SurfaceEquation {
+        private string codomainName;
+        private string phaseA, phaseB;
+
+        public InterfaceNSE_Evaporation_LowMach(string phaseA,
+            string phaseB,
+            int dimension,
+            int d,
+            XNSFE_OperatorConfiguration config) : base() {
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            codomainName = EquationNames.MomentumEquationComponent(d);
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+            int D = dimension;
+
+            if (config.isTransport) {
+                    // the following terms decode the condition at the interface (consider the similarity to the rankine hugoniot condition)
+                    
+                    if (config.isRecoilPressure) {
+                        AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                    }
+                    AddComponent(new ConvectionAtLevelSet_nonMaterialLLF_Evaporation_StrongCoupling_Newton(d, D, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+                    AddComponent(new ConvectionAtLevelSet_Consistency_Evaporation_StrongCoupling_Newton(d, D, -1, false, config.getThermParams, FirstSpeciesName, SecondSpeciesName));
+                 
+            } else {
+                //  ... and when the convective terms are turned off we still need the contribution below
+                if (config.isRecoilPressure) {
+                    AddComponent(new MassFluxAtLevelSet_Evaporation_StrongCoupling(d, D, config.getThermParams, config.isMovingMesh, FirstSpeciesName, SecondSpeciesName));
+                }
+            }
+
+            if (config.isViscous) {
+                AddComponent(new ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling_LowMach(dntParams.PenaltySafety, d, D, config.getThermParams, physParams, FirstSpeciesName, SecondSpeciesName));
+            } 
+
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Velocity_d(d));
+            if (config.prescribedMassflux != null)
+                AddCoefficient("PrescribedMassFlux");
+        }
+
+      
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
     }
 
     /// <summary>
@@ -420,7 +490,7 @@ namespace BoSSS.Solution.XNSECommon {
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // Convection
-            if (config.getPhysParams.IncludeConvection) {
+            if (config.physParams.IncludeConvection) {
                 var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustion_ScalarConvectionInSpeciesBulk_LLF(spcName, D, NoOfChemicalSpecies, boundaryMap, EoS, 0);
                 AddComponent(conv);
             }
@@ -430,7 +500,8 @@ namespace BoSSS.Solution.XNSECommon {
             AddComponent(heatConduction);
 
             if (config.includeReactionTerms) {
-                var ReactionTerm = new BoSSS.Solution.XNSECommon.LowMach_HeatSource(spcName, HeatReleaseFactor, ReactionRateConstants, MolarMasses, EoS, TRef, cpRef, config.VariableReactionRateParameters);
+                Console.WriteLine("including reactive terms!!!!");
+                var ReactionTerm = new BoSSS.Solution.XNSECommon.LowMach_HeatSource(spcName, HeatReleaseFactor, ReactionRateConstants, MolarMasses, EoS, TRef, cpRef, config.VariableReactionRateParameters, config.NoOfChemicalSpecies);
                 AddComponent(ReactionTerm);
                 AddParameter("kReact");
             }
@@ -451,7 +522,6 @@ namespace BoSSS.Solution.XNSECommon {
             if (config.manSolSource_OK) {
                 double Schmidt = Prandtl;
                 double[] StoichiometricCoefficients = null;
-                //var MS_Energy = new BoSSS.Solution.XNSECommon.LowMach_ScalarManSolution(spcName, HeatReleaseFactor, Reynolds, Prandtl, Schmidt, StoichiometricCoefficients, ReactionRateConstants, MolarMasses, EoS, "Temperature", PhysicsMode.Combustion);
                 var MS_Energy = new BoSSS.Solution.XNSECommon.LowMach_ManSolution(spcName, ManSol);
                 AddComponent(MS_Energy);
             }
@@ -474,27 +544,13 @@ namespace BoSSS.Solution.XNSECommon {
             string phaseB,
             int dimension,
             IncompressibleBoundaryCondMap boundaryMap,
-            IXHeat_Configuration config) : base() {
+            IXHeat_Configuration config,
+            MaterialLaw EoS_A,
+            MaterialLaw EoS_B, double Reynolds, double Prandtl) : base() {
             this.phaseA = phaseA;
             this.phaseB = phaseB;
 
             codomainName = EquationNames.HeatEquation;
-            AddInterfaceHeatEq(dimension, boundaryMap, config);
-            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
-            //AddCoefficient("EvapMicroRegion");
-        }
-
-        public override string FirstSpeciesName => phaseA;
-
-        public override string SecondSpeciesName => phaseB;
-
-        public override string CodomainName => codomainName;
-
-        //Methode aus der XNSF_OperatorFactory
-        private void AddInterfaceHeatEq(
-            int dimension,
-            IncompressibleBoundaryCondMap boundaryMap,
-            IXHeat_Configuration config) {
             ThermalParameters thermParams = config.getThermParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 
@@ -521,10 +577,17 @@ namespace BoSSS.Solution.XNSECommon {
 
             double penalty = dntParams.PenaltySafety;
 
-            //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
             var Visc = new ConductivityAtLevelSet_material(dimension, kA, kB, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName);
-            AddComponent(Visc);
+                //var Visc = new Interface_EnergyConduction_LowMach(dimension, EoS_A, EoS_B, Reynolds, Prandtl, penalty, Tsat, FirstSpeciesName, SecondSpeciesName);
+                AddComponent(Visc); AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+            //AddCoefficient("EvapMicroRegion");
         }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
 
         protected virtual void DefineConvective(int dimension, double capA, double capB, double LFFA, double LFFB, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
             //AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0Vector(dimension));
@@ -533,6 +596,122 @@ namespace BoSSS.Solution.XNSECommon {
             //AddComponent(new HeatConvectionAtLevelSet_LLF_material(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh));
             //AddComponent(new HeatConvectionAtLevelSet_LLF_material_Newton_Hamiltonian(dimension, capA, capB, LFFA, LFFB, boundaryMap, isMovingMesh, FirstSpeciesName, SecondSpeciesName));
         }
+    }
+
+    public class HeatInterface_Evaporation_LowMach : SurfaceEquation {
+        private string codomainName;
+        private string phaseA, phaseB;
+
+        public HeatInterface_Evaporation_LowMach(
+            string phaseA,
+            string phaseB,
+            int dimension,
+            ThermalMultiphaseBoundaryCondMap boundaryMap,
+            XNSFE_OperatorConfiguration config, MaterialLaw EoS_A, MaterialLaw EoS_B, double Reynolds, double Prandtl, double ValueAtInterface) : base() {
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            codomainName = EquationNames.HeatEquation;
+            PhysicalParameters physParams = config.getPhysParams;
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double capA = thermParams.rho_A * thermParams.c_A;
+            double LFFA = dntParams.LFFA;
+            double kA = thermParams.k_A;
+
+            double capB = thermParams.rho_B * thermParams.c_B;
+            double LFFB = dntParams.LFFB;
+            double kB = thermParams.k_B;
+
+            // convective part
+            // ================
+            if (thermParams.IncludeConvection) {
+                AddComponent(new HeatConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian_LowMach(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, ValueAtInterface, thermParams, FirstSpeciesName, SecondSpeciesName));
+            }
+            // viscous operator (laplace)
+            // ==========================
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                double penalty = dntParams.PenaltySafety;
+                //var Visc = new ConductivityAtLevelSet_withMassflux(dimension, kA, kB, penalty * 1.0, Tsat, config.isMaterialAtContactLine);
+                var Visc = new Interface_EnergyConduction_LowMach(dimension, EoS_A, EoS_B, Reynolds, Prandtl, penalty, ValueAtInterface, FirstSpeciesName, SecondSpeciesName);
+
+                AddComponent(Visc);
+            } else {
+                throw new NotImplementedException();
+            }
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+
+            AddCoefficient("EvapMicroRegion");
+        }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
+    }
+
+    public class SpeciesMassTransferInterface_Evaporation_LowMach : SurfaceEquation {
+        private string codomainName;
+        private string phaseA, phaseB;
+
+        public SpeciesMassTransferInterface_Evaporation_LowMach(
+            string phaseA,
+            string phaseB,
+            int dimension,
+            ThermalMultiphaseBoundaryCondMap boundaryMap,
+            XNSFE_OperatorConfiguration config,
+            MaterialLaw EoS_A,
+            MaterialLaw EoS_B,
+            double Reynolds,
+            double Prandtl
+            , double ValueAtInterface,
+            int Y_component) : base() {
+            this.phaseA = phaseA;
+            this.phaseB = phaseB;
+
+            codomainName = EquationNames.SpeciesMassBalanceName(Y_component);
+            PhysicalParameters physParams = config.getPhysParams;
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double capA = thermParams.rho_A * thermParams.c_A;
+            double LFFA = dntParams.LFFA;
+            double kA = thermParams.k_A;
+
+            double capB = thermParams.rho_B * thermParams.c_B;
+            double LFFB = dntParams.LFFB;
+            double kB = thermParams.k_B;
+
+            // convective part
+            // ================
+            if (thermParams.IncludeConvection) {
+                AddComponent(new SpeciesConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, ValueAtInterface, thermParams, FirstSpeciesName, SecondSpeciesName, Y_component));
+            }
+
+            // viscous operator (laplace)
+            // ==========================
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                double penalty = dntParams.PenaltySafety;
+                var Visc = new Interface_MassDiffusion_LowMach(dimension, EoS_A, EoS_B, Reynolds, Prandtl, penalty, ValueAtInterface, FirstSpeciesName, SecondSpeciesName, Y_component);
+                AddComponent(Visc);
+            } else {
+                throw new NotImplementedException();
+            }
+
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.MassFraction_n(Y_component));
+
+            AddCoefficient("EvapMicroRegion");
+        }
+
+        public override string FirstSpeciesName => phaseA;
+
+        public override string SecondSpeciesName => phaseB;
+
+        public override string CodomainName => codomainName;
     }
 
     /// <summary>
@@ -594,6 +773,7 @@ namespace BoSSS.Solution.XNSECommon {
             // Mass source/sink term of species i
             //===================================
             if (config.includeReactionTerms) {
+
                 var massReaction_i = new BoSSS.Solution.XNSECommon.LowMach_MassFractionSource(spcName, ReactionRateConstants, StoichiometricCoefficients, MolarMasses, EoS, NoOfChemicalSpecies, ChemicalSpeciesCounter, 300, 1.0, config.VariableReactionRateParameters);
                 AddComponent(massReaction_i);
             }
@@ -631,60 +811,401 @@ namespace BoSSS.Solution.XNSECommon {
         public override string CodomainName => codomainName;
     }
 
-    public class MassFractionInterface_Evaporation : SurfaceEquation {
-        private string codomainName;
-        private string phaseA, phaseB;
+    //public class MassFractionInterface_Evaporation : SurfaceEquation {
+    //    private string codomainName;
+    //    private string phaseA, phaseB;
 
-        public MassFractionInterface_Evaporation(
+    //    public MassFractionInterface_Evaporation(
+    //        string phaseA,
+    //        string phaseB,
+    //        int dimension,
+    //        int chemicalComponentIndex,
+    //        XNSFE_OperatorConfiguration config) : base() {
+    //        this.phaseA = phaseA;
+    //        this.phaseB = phaseB;
+
+    //        codomainName = EquationNames.SpeciesMassBalanceName(chemicalComponentIndex);
+    //        PhysicalParameters physParams = config.getPhysParams;
+    //        ThermalParameters thermParams = config.getThermParams;
+    //        DoNotTouchParameters dntParams = config.getDntParams;
+
+    //        // set species arguments
+    //        double capA = thermParams.rho_A;
+    //        double LFFA = dntParams.LFFA;
+    //        double rhoD_A = thermParams.k_A;
+
+    //        double capB = thermParams.rho_B;
+    //        double LFFB = dntParams.LFFB;
+    //        double rhoD_B = thermParams.k_B;
+
+    //        double InterfaceMassFraction = chemicalComponentIndex == 0 ? 1.0 : 0.0;  //TODO!!!!
+
+    //        // convective part
+    //        // ================
+    //        if (thermParams.IncludeConvection) {
+    //            AddComponent(new SpeciesConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, InterfaceMassFraction, thermParams, FirstSpeciesName, SecondSpeciesName, chemicalComponentIndex));
+    //        }
+
+    //        // viscous operator (laplace)
+    //        // ==========================
+    //        if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+    //            double penalty = dntParams.PenaltySafety;
+    //            var Visc = new Interface_MassDiffusion_LowMach(dimension, rhoD_A, rhoD_B, penalty, InterfaceMassFraction, chemicalComponentIndex, config.isMaterialAtContactLine);
+    //            AddComponent(Visc);
+    //        } else {
+    //            throw new NotImplementedException();
+    //        }
+
+    //        AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.MassFraction_n(chemicalComponentIndex));
+
+    //        AddCoefficient("EvapMicroRegion");
+    //    }
+
+    //    public override string FirstSpeciesName => phaseA;
+
+    //    public override string SecondSpeciesName => phaseB;
+
+    //    public override string CodomainName => codomainName;
+    //}
+
+    public class NSEimmersedBoundary_Newton_LowMach : SurfaceEquation {
+        protected string m_codomainName;
+        protected string m_fluidPhase;
+        protected string m_solidPhase;
+        protected int m_iLevSet;
+
+        //Methode aus der XNSF_OperatorFactory
+        public NSEimmersedBoundary_Newton_LowMach(
+            string fluidPhase,
+            string solidPhase,
+            int iLevSet,
+            int d,
+            int D,
+            IncompressibleBoundaryCondMap boundaryMap,
+            XNSEC_OperatorConfiguration config,
+                        MaterialLaw EoS,
+            bool isMovingMesh,
+            PhysicsMode physicsMode) : base() //
+        {
+            m_fluidPhase = fluidPhase;
+            m_solidPhase = solidPhase;
+            m_iLevSet = iLevSet;
+            m_codomainName = EquationNames.MomentumEquationComponent(d);
+            AddInterfaceNSE(D, d, boundaryMap, config, EoS, isMovingMesh, physicsMode);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D).Cat(BoSSS.Solution.NSECommon.VariableNames.Pressure));
+
+            AddParameter(NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(m_iLevSet), NSECommon.VariableNames.VelocityVector(D)).ToArray());
+        }
+
+        private void AddInterfaceNSE(
+            int D,
+            int d,
+            IncompressibleBoundaryCondMap boundaryMap,
+            XNSEC_OperatorConfiguration config,
+                        MaterialLaw EoS,
+            bool isMovingMesh,
+            PhysicsMode physicsMode) {
+            PhysicalParameters physParams = config.getPhysParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double rho, LFF, mu;
+            switch (this.m_fluidPhase) {
+                case "A":
+                    rho = physParams.rho_A;
+                    LFF = dntParams.LFFA;
+                    mu = physParams.mu_A;
+                    break;
+
+                case "B":
+                    rho = physParams.rho_B;
+                    LFF = dntParams.LFFB;
+                    mu = physParams.mu_B;
+                    break;
+
+                default: throw new NotSupportedException($"Unknown fluid species: {this.m_fluidPhase}");
+            }
+
+            // convective operator
+            // ===================
+            if (physParams.IncludeConvection && config.isTransport) {
+                var ConvIB = new BoSSS.Solution.NSECommon.Operator.Convection.ConvectionAtIB_Newton(
+                           d, D, LFF, boundaryMap, rho, isMovingMesh,
+                           m_iLevSet, m_fluidPhase, m_solidPhase, true);
+
+                AddComponent(ConvIB);
+            }
+
+            // pressure gradient
+            // =================
+            if (config.isPressureGradient) {
+                var presLs = new BoSSS.Solution.NSECommon.Operator.Pressure.PressureFormAtIB(d, D, m_iLevSet, m_fluidPhase, m_solidPhase);
+                AddComponent(presLs);
+            }
+
+            // viscous operator
+            // ================
+            if (config.isViscous && (mu != 0.0)) {
+                double penalty = dntParams.PenaltySafety;
+                if (dntParams.IBM_BoundaryType == IBM_BoundaryType.NoSlip) {
+                    switch (dntParams.ViscosityMode) {
+                        case ViscosityMode.Standard:
+                        case ViscosityMode.TransposeTermMissing:
+                            //AddComponent(new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB(d, D, penalty, mu, m_iLevSet, m_fluidPhase, m_solidPhase, true));
+                            break;
+
+                        case ViscosityMode.FullySymmetric:
+                            //throw new NotImplementedException("todo");
+                            var viscOption = ViscosityOption.VariableViscosityDimensionless;
+
+                            AddComponent(new BoSSS.Solution.NSECommon.Operator.Viscosity.ViscosityAtIB_FullySymmetric_LowMach(d, D, penalty, viscOption, physicsMode, mu, config.Reynolds, EoS, m_iLevSet, m_fluidPhase, m_solidPhase, true));
+                            break;
+
+                        case ViscosityMode.Viscoelastic:
+                            throw new NotImplementedException("todo");
+
+                        default:
+                            throw new NotImplementedException();
+                    }
+                } else {
+                    throw new NotImplementedException();
+                }
+            }
+        }
+
+        public override string FirstSpeciesName {
+            get { return m_fluidPhase; }
+        }
+
+        public override string SecondSpeciesName {
+            get { return m_solidPhase; }
+        }
+
+        public override string CodomainName {
+            get {
+                return m_codomainName;
+            }
+        }
+    }
+
+    public class ImmersedBoundaryContinuity_LowMach : SurfaceEquation {
+        private string codomainName;
+
+        /// <summary>
+        ///
+        /// </summary>
+        public ImmersedBoundaryContinuity_LowMach(string fluidPhase, string solidPhase, int iLevSet, INSE_Configuration config, int D) {
+            codomainName = EquationNames.ContinuityEquation;
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
+
+            m_FirstSpeciesName = fluidPhase;
+            m_SecondSpeciesName = solidPhase;
+
+            // set components
+            var divPen = new BoSSS.Solution.NSECommon.Operator.Continuity.DivergenceAtIB_LowMach(D, iLevSet, FirstSpeciesName, SecondSpeciesName, true, -1);
+
+            AddComponent(divPen);
+            AddParameter(NSECommon.VariableNames.AsLevelSetVariable(NSECommon.VariableNames.LevelSetCGidx(iLevSet), NSECommon.VariableNames.VelocityVector(D)).ToArray());
+        }
+
+        private string m_FirstSpeciesName;
+        private string m_SecondSpeciesName;
+
+        public override string FirstSpeciesName {
+            get {
+                return m_FirstSpeciesName;
+            }
+        }
+
+        public override string SecondSpeciesName {
+            get {
+                return m_SecondSpeciesName;
+            }
+        }
+
+        public override string CodomainName => codomainName;
+    }
+
+    public class ImmersedBoundaryHeat_LowMach : SurfaceEquation {
+        private string codomainName;
+        private string fluidPhase, solidPhase;
+
+        //Methode aus der XNSF_OperatorFactory
+        public ImmersedBoundaryHeat_LowMach(
             string phaseA,
             string phaseB,
+            int iLevSet,
             int dimension,
-            int chemicalComponentIndex,
-            XNSFE_OperatorConfiguration config) : base() {
-            this.phaseA = phaseA;
-            this.phaseB = phaseB;
+            XNSEC_OperatorConfiguration config,
+            MaterialLaw EoS) : base() {
+            this.fluidPhase = phaseA;
+            this.solidPhase = phaseB;
 
-            codomainName = EquationNames.SpeciesMassBalanceName(chemicalComponentIndex);
-            PhysicalParameters physParams = config.getPhysParams;
+            codomainName = EquationNames.HeatEquation;
+            AddInterfaceHeatEq(iLevSet, dimension, config, EoS);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.Temperature);
+            AddCoefficient("EvapMicroRegion");
+        }
+
+        public override string FirstSpeciesName => fluidPhase;
+
+        public override string SecondSpeciesName => solidPhase;
+
+        public override string CodomainName => codomainName;
+
+        //Methode aus der XNSF_OperatorFactory
+        private void AddInterfaceHeatEq(
+            int iLevSet,
+            int dimension,
+            XNSEC_OperatorConfiguration config,
+               MaterialLaw EoS) {
             ThermalParameters thermParams = config.getThermParams;
             DoNotTouchParameters dntParams = config.getDntParams;
 
             // set species arguments
-            double capA = thermParams.rho_A;
-            double LFFA = dntParams.LFFA;
-            double rhoD_A = thermParams.k_A;
+            double kF;
+            switch (fluidPhase) {
+                case "A": { kF = thermParams.k_A; break; }
+                case "B": { kF = thermParams.k_B; break; }
+                default: throw new ArgumentException("Unknown species.");
+            }
 
-            double capB = thermParams.rho_B;
-            double LFFB = dntParams.LFFB;
-            double rhoD_B = thermParams.k_B;
+            double kS = thermParams.k_C;
+            double Tboundary = thermParams.T_sat;
 
-            double InterfaceMassFraction = chemicalComponentIndex == 0 ? 1.0 : 0.0;  //TODO!!!!
+            // viscous operator (laplace)
+            // ==========================
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                double penalty = dntParams.PenaltySafety;
 
-            // convective part
-            // ================
-            if (thermParams.IncludeConvection) {
-                AddComponent(new SpeciesConvectionAtLevelSet_LLF_Evaporation_StrongCoupling_Hamiltonian(dimension, capA, capB, LFFA, LFFB, config.isMovingMesh, InterfaceMassFraction, thermParams, FirstSpeciesName, SecondSpeciesName, chemicalComponentIndex));
+                var Visc = new ConductivityAt_ImmersedBoundary_LowMach(dimension, EoS, config.Reynolds, config.Prandtl, penalty * 1.0, Tboundary, FirstSpeciesName, SecondSpeciesName, iLevSet: iLevSet);
+                AddComponent(Visc);
+            } else {
+                throw new NotImplementedException();
+            }
+        }
+    }
+
+    public class ImmersedBoundaryMF_LowMach : SurfaceEquation {
+        private string codomainName;
+        private string fluidPhase, solidPhase;
+
+        public ImmersedBoundaryMF_LowMach(
+            string phaseA,
+            string phaseB,
+            int iLevSet,
+            int dimension,
+            XNSEC_OperatorConfiguration config,
+            MaterialLaw EoS,
+            int mfComp,
+            int noOfSpecies) : base() {
+            this.fluidPhase = phaseA;
+            this.solidPhase = phaseB;
+
+            codomainName = EquationNames.SpeciesMassBalanceName(mfComp);
+            AddInterfaceMFEq(iLevSet, dimension, config, EoS, mfComp, noOfSpecies);
+            AddVariableNames(NSECommon.VariableNames.Temperature);
+            AddVariableNames(NSECommon.VariableNames.MassFractions(noOfSpecies));
+
+            AddCoefficient("EvapMicroRegion");
+        }
+
+        public override string FirstSpeciesName => fluidPhase;
+
+        public override string SecondSpeciesName => solidPhase;
+
+        public override string CodomainName => codomainName;
+
+        //Methode aus der XNSF_OperatorFactory
+        private void AddInterfaceMFEq(
+            int iLevSet,
+            int dimension,
+            XNSEC_OperatorConfiguration config,
+               MaterialLaw EoS,
+               int mfComp,
+              int noOfSpecies) {
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double kF;
+            switch (fluidPhase) {
+                case "A": { kF = thermParams.k_A; break; }
+                case "B": { kF = thermParams.k_B; break; }
+                default: throw new ArgumentException("Unknown species.");
+            }
+
+            double kS = thermParams.k_C;
+            double Tboundary = thermParams.T_sat;
+
+            // viscous operator (laplace)
+            // ==========================
+            if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
+                double penalty = dntParams.PenaltySafety;
+
+                double[] Le = new double[] { 1.0, 1.0, 1.0, 1.0, 1.0 };
+                var Visc = new SpeciesMassDiffusivity_AtLevelSet_material_LowMach(dimension, EoS, config.Reynolds, config.Prandtl, Le, mfComp, noOfSpecies, penalty, 1.0, FirstSpeciesName, SecondSpeciesName, iLevSet: iLevSet);
+                AddComponent(Visc);
+            } else {
+                throw new NotImplementedException();
+            }
+        }
+    }
+
+    public class ImmersedBoundaryMixtureFraction_LowMach : SurfaceEquation {
+        private string codomainName;
+        private string fluidPhase, solidPhase;
+
+        //Methode aus der XNSF_OperatorFactory
+        public ImmersedBoundaryMixtureFraction_LowMach(
+            string phaseA,
+            string phaseB,
+            int iLevSet,
+            int dimension,
+            XNSEC_OperatorConfiguration config,
+            MaterialLaw EoS) : base() {
+            this.fluidPhase = phaseA;
+            this.solidPhase = phaseB;
+
+            codomainName = EquationNames.MixtureFractionEquation;
+            AddMixtureFractionImmersedBoundaryEq(iLevSet, dimension, config, EoS);
+            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.MixtureFraction);
+            AddCoefficient("EvapMicroRegion");
+        }
+
+        public override string FirstSpeciesName => fluidPhase;
+
+        public override string SecondSpeciesName => solidPhase;
+
+        public override string CodomainName => codomainName;
+
+        //Methode aus der XNSF_OperatorFactory
+        private void AddMixtureFractionImmersedBoundaryEq(
+            int iLevSet,
+            int dimension,
+            XNSEC_OperatorConfiguration config,
+               MaterialLaw EoS) {
+            ThermalParameters thermParams = config.getThermParams;
+            DoNotTouchParameters dntParams = config.getDntParams;
+
+            // set species arguments
+            double kF;
+            switch (fluidPhase) {
+                case "A": { kF = thermParams.k_A; break; }
+                case "B": { kF = thermParams.k_B; break; }
+                default: throw new ArgumentException("Unknown species.");
             }
 
             // viscous operator (laplace)
             // ==========================
             if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 double penalty = dntParams.PenaltySafety;
-                var Visc = new MassDifusivityAtLevelSet_withMassflux(dimension, rhoD_A, rhoD_B, penalty, InterfaceMassFraction, chemicalComponentIndex, config.isMaterialAtContactLine);
+
+                var Visc = new MixtureFractionDiffusivity_AtLevelSet_material_LowMach(dimension, EoS, config.Reynolds, config.Prandtl, penalty, FirstSpeciesName, SecondSpeciesName, iLevSet: iLevSet);
                 AddComponent(Visc);
             } else {
                 throw new NotImplementedException();
             }
-
-            AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.MassFraction_n(chemicalComponentIndex));
-
-            AddCoefficient("EvapMicroRegion");
         }
-
-        public override string FirstSpeciesName => phaseA;
-
-        public override string SecondSpeciesName => phaseB;
-
-        public override string CodomainName => codomainName;
     }
 }

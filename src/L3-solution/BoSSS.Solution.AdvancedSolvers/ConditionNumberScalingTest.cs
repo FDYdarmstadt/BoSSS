@@ -108,6 +108,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             gp.Cmd("set key t l");
 
             var fmt = new PlotFormat("rx-");
+            fmt.LineWidth = 4;
+            fmt.PointSize = 2.0;
+
             int Kount = 1;
 
             foreach (var ttt in ExpectedSlopes) {
@@ -124,6 +127,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     Kount++;
                 }
             }
+
                        
 
             return gp;

@@ -61,9 +61,9 @@ namespace BoSSS.Application.XdgPoisson3 {
         static void Main(string[] args) {
             //InitMPI();
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_Kcycle_schwarz);
-            //BoSSS.Application.XdgPoisson3.Tests.ScalingCircle2D(3);
+            //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6);
             //throw new Exception("remove me");
-
+                        
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
             });
@@ -146,7 +146,7 @@ namespace BoSSS.Application.XdgPoisson3 {
                 throw new ApplicationException();
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
 
             if(L != null)
                 throw new NotSupportedException();
@@ -179,7 +179,8 @@ namespace BoSSS.Application.XdgPoisson3 {
             Op.Commit();
 
         }
-       
+     
+
 
         XSpatialOperatorMk2 Op;
 

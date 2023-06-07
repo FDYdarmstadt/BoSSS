@@ -31,7 +31,9 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SubBlocking.LocalTests.SubMatrixExtractionWithCoupling(XDGusage.all, 2, MatrixShape.diagonal);
             //AdvancedSolverTests.Solver.mklILU.CompareFactorization();
             //AdvancedSolverTests.SolverChooser.ConfigTest.TestLinearSolverConfigurations();
-            AdvancedSolverTests.Solver.mklILUtest.CompareFactorization();
+            //AdvancedSolverTests.Solver.mklILUtest.CompareFactorization();
+            //AdvancedSolverTests.SubBlocking.LocalTests.SubSelection(SelectionType.all_combined);
+            AdvancedSolverTests.SolverChooser.ConfigTest.TestNonLinearSolverConfigurations();
         }
 
     }

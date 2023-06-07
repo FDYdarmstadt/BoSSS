@@ -58,7 +58,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             // define vertices
             // ===============
 
-            m_Vertices = new NodeSet(this, 1, 1);
+            m_Vertices = new NodeSet(this, 1, 1, false);
             m_Vertices[0, 0] = 0.0;
             m_Vertices.LockForever();
 
@@ -101,7 +101,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
 
             QuadRule qr = new QuadRule();
             qr.OrderOfPrecision = int.MaxValue;
-            qr.Nodes = new NodeSet(this, 1, 1); 
+            qr.Nodes = new NodeSet(this, 1, 1, false); 
             qr.Nodes[0, 0] = 0.0;
             qr.Nodes.LockForever();
             qr.Weights = MultidimensionalArray.Create(1);

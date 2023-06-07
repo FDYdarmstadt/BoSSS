@@ -45,7 +45,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor.
         /// </summary>
-        public MassMatrixFactory(XDGSpaceMetrics __XDGSpaceMetrics) {
+        internal MassMatrixFactory(XDGSpaceMetrics __XDGSpaceMetrics) {
             XDGSpaceMetrics = __XDGSpaceMetrics;
             //this.MaxBasis = new Basis(XDGSpaceMetrics.GridDat, XDGSpaceMetrics.CutCellQuadOrder / 2); // bad choice;
             this.MaxBasis = new Basis(XDGSpaceMetrics.GridDat, 1);
@@ -123,9 +123,6 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="inverse">
         /// Return the inverse mass matrix.
         /// </param>
-        /// <param name="agg">
-        /// Required if an agglomerated Mass matrix is requested.
-        /// </param>
         public BlockMsrMatrix GetMassMatrix(UnsetteledCoordinateMapping mapping, IDictionary<SpeciesId, IEnumerable<double>> alpha = null, bool inverse = false) {
             if (alpha == null) {
                 int NoVar = mapping.NoOfVariables;
@@ -200,10 +197,9 @@ namespace BoSSS.Foundation.XDG {
         /// don't mess with those values
         /// </returns>
         public MassMatrixBlockContainer GetMassMatrixBlocks(Basis b, SpeciesId spc) {
+            UpdateBlocks(b.Degree, new SpeciesId[] { spc });
             if (!b.IsSubBasis(this.MaxBasis))
                 throw new NotSupportedException("requested basis exceeds maximally supported basis.");
-
-            UpdateBlocks(b.Degree, new SpeciesId[] { spc });
 
             var MMB = this.MassBlocks[spc];
 //#if DEBUG
@@ -787,7 +783,7 @@ namespace BoSSS.Foundation.XDG {
 
 #endif
                             } catch (ArithmeticException) {
-                                Console.WriteLine("WARNING: indefinite mass matrix.");
+                                //Console.WriteLine("WARNING: indefinite mass matrix.");
                                 blk.InvertTo(inv_Blk);
 #if DEBUG
                                 for (int n = 0; n < N; n++)

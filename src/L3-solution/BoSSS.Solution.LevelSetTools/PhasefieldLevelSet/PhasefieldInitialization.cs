@@ -58,7 +58,8 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 Control.TimeSteppingScheme,
                 MultigridOperatorConfig,
                 MultigridSequence,
-                Control.LinearSolver, Control.NonLinearSolver);
+                Control.LinearSolver, Control.NonLinearSolver, 
+                queryHandler:this.QueryHandler);
 
             LsTrk = solver.LsTrk; // register the dummy tracker which the solver created internally for the DG case
 
@@ -68,11 +69,9 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L)
-        {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
 
-            if (L == null)
-            {
+            if(L == null) {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
                 // Creation of time-integrator (initial, no balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -80,9 +79,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
                 InitSolver();
                 Timestepping.RegisterResidualLogger(new ResidualLogger(this.MPIRank, this.DatabaseDriver, new Guid()));
 
-            }
-            else
-            {
+            } else {
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // restore BDF time-stepper after grid redistribution (dynamic load balancing)
                 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -93,8 +90,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet
         /// <summary>
         /// Locally refine p-Order in Cutcells
         /// </summary>
-        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid)
-        {
+        protected override void AdaptMesh(int TimestepNo, out GridCommons newGrid, out GridCorrelation old2NewGrid) {
 
             throw new NotImplementedException();
         }

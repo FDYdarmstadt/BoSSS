@@ -103,7 +103,7 @@ namespace ilPSP {
                         Console.Error.WriteLine("Call stack:");
                         Console.Error.WriteLine(st.ToString());
                         //System.Environment.Exit(-666);
-                        //Debugger.Launch();
+                        // dbg_launch();
                         WaitTime += 10.0;
                     }
                 }

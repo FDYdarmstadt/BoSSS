@@ -1,29 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="log4net">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.CSharp, Version=4.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="nunitlite">
-      <HintPath>..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunitlite.dll</HintPath>
-    </Reference>
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP\ilPSP.csproj" />
@@ -43,9 +26,8 @@
     <ProjectReference Include="..\ElementTests\ElementTests.csproj" />
     <ProjectReference Include="..\ExternalBinding.CodeGen\ExternalBinding.CodeGen.csproj" />
     <ProjectReference Include="..\ExternalBinding\ExternalBinding.csproj" />
-    <ProjectReference Include="..\FSI_Solver\FSI_Solver.csproj" />
+    <ProjectReference Include="..\HangingNodesTests\HangingNodesTests.csproj" />
     <ProjectReference Include="..\HilbertTest\HilbertTest.csproj" />
-    <ProjectReference Include="..\IBM_Solver\IBM_Solver.csproj" />
     <ProjectReference Include="..\ipPoisson\ipPoisson.csproj" />
     <ProjectReference Include="..\ipViscosity\ipViscosity.csproj" />
     <ProjectReference Include="..\LoadBalancingTest\LoadBalancingTest.csproj" />

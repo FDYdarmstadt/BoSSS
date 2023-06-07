@@ -304,6 +304,11 @@ namespace BoSSS.Foundation.Grid {
         /// </list>
         /// </param>
         /// <param name="jCell">local cell index of the cell to transform</param>
+        /// <param name="NewtonConvergence">
+        /// in the case of curved cells/isoparametic elements, where a Newton algorithm has to be used for the inverse transformation, 
+        /// diagnostic information whether the Newton algorithm has converged or not.
+        /// The index correlates with the vertex index in <paramref name="GlobalVerticesIn"/>.
+        /// </param>        
         void TransformGlobal2Local(MultidimensionalArray GlobalVerticesIn, MultidimensionalArray LocalVerticesOut, int jCell, bool[] NewtonConvergence);
 
 
@@ -377,8 +382,7 @@ namespace BoSSS.Foundation.Grid {
         /// the absolute value of the (Jacobi) determinant of the 
         /// transformation from local cell coordinate system to global
         /// coordinate system.
-        /// (see <see cref="EvaluateJacobian(NodeSet, int, int, MultidimensionalArray)"/>
-        /// 1st index: local cell index;
+        /// - 1st index: local geometrical cell index;
         /// </summary>
         MultidimensionalArray JacobiDet {
             get;
@@ -465,9 +469,8 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Returns the volume (to be more exact: the
-        /// <see cref="SpatialDimension"/> - dimensional measure) of the
-        /// cell <paramref name="j"/>;
+        /// Returns the volume (to be more exact: the <see cref="BoSSS.Foundation.IO.IGridInfo.SpatialDimension"/> - dimensional measure) 
+        /// of the cell <paramref name="j"/>;
         /// </summary>
         /// <param name="j">local cell index</param>
         /// <returns></returns>
@@ -525,7 +528,7 @@ namespace BoSSS.Foundation.Grid {
         CellMask GetCells4Refelement(RefElement Kref);
 
         /// <summary>
-        /// Mapping form geometrical to logical cells
+        /// Mapping form geometrical to logical cells; this is the inverse to <see cref="ILogicalCellData.AggregateCellToParts"/>
         /// </summary>
         int[] GeomCell2LogicalCell {
             get;
@@ -594,6 +597,7 @@ namespace BoSSS.Foundation.Grid {
         /// Mapping from logical cells to geometrical cells; only required if geometrical and logical cells are not identical, *otherwise null*.
         /// - 1st index: local (logical) cell index
         /// - 2nd index: enumeration of geometrical cells (parts)
+        /// This is the inverse to <see cref="IGeometricalCellsData.GeomCell2LogicalCell"/>.
         /// </summary>
         int[][] AggregateCellToParts {
             get;
@@ -703,7 +707,7 @@ namespace BoSSS.Foundation.Grid {
         }
 
         /// <summary>
-        /// Square-root of the Gramian determinat for each transformation in <see cref="Edge2CellTrafos"/>, i.e.
+        /// Square-root of the Gramian determinant for each transformation in <see cref="Edge2CellTrafos"/>, i.e.
         /// if \f$ \myMatrix{M} \f$ 
         /// is the matrix of the transformation, this number is 
         /// \f$ \sqrt{ \operatorname{det} ( \myMatrix{M}^T \cdot \myMatrix{M} ) } \f$.

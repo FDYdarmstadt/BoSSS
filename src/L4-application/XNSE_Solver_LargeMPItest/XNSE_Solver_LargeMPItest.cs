@@ -34,7 +34,6 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Foundation.XDG;
 using System.Linq;
-using BoSSS.Application.XNSE_Solver.LoadBalancing;
 
 namespace BoSSS.Application.XNSE_Solver {
 

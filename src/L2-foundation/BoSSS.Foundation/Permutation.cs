@@ -547,6 +547,9 @@ namespace BoSSS.Foundation.Comm {
         /// <param name="output">
         /// On exit, <paramref name="output"/>[<see cref="Values"/>[j]] = <paramref name="input"/>[j]
         /// </param>
+        /// <param name="outputPartitioning">
+        /// partitioning of <paramref name="output"/> over MPI processes
+        /// </param>
         public void ApplyToVector<I>(IList<I> input, IList<I> output, IPartitioning outputPartitioning) {
             using(new FuncTrace()) {
                 if(input.Count != this.LocalLength)

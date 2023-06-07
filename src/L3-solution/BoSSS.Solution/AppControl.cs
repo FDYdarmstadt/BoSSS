@@ -32,6 +32,7 @@ using System.Collections;
 using BoSSS.Solution.Utils;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
+using BoSSS.Solution.LoadBalancing;
 
 namespace BoSSS.Solution.Control {
 
@@ -87,7 +88,7 @@ namespace BoSSS.Solution.Control {
             this.Tags = new List<string>();
             this.m_InitialValues_Evaluators = new Dictionary<string, (ScalarFunctionTimeDep vec, Func<double[], double, double> scalar)>();
             this.m_InitialValues = new Dictionary<string, IBoundaryAndInitialData>();
-            this.NoOfMultigridLevels = 0;
+            //this.NoOfMultigridLevels = 0;
         }
 
         [Serializable]
@@ -101,7 +102,7 @@ namespace BoSSS.Solution.Control {
             }
         }
 
-
+        
         /// <summary>
         /// Number of aggregation multi-grid levels, <see cref="Application{T}.MultigridSequence"/>.
         /// </summary>
@@ -110,6 +111,7 @@ namespace BoSSS.Solution.Control {
             get;
             set;
         }
+        
 
 
         /// <summary>
@@ -969,6 +971,12 @@ namespace BoSSS.Solution.Control {
         public string TracingNamespaces = null;
 
         /// <summary>
+        /// Activate/Deactivate memory allocation logging
+        /// </summary>
+        [DataMember]
+        public ilPSP.Tracing.MemoryInstrumentationLevel MemoryInstrumentationLevel = ilPSP.Tracing.MemoryInstrumentationLevel.None;
+
+        /// <summary>
         /// File system path to database.
         /// </summary>
         [DataMember]
@@ -1031,9 +1039,8 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
-        [JsonIgnore]
-        public List<Func<IApplication, int, ICellCostEstimator>> DynamicLoadBalancing_CellCostEstimatorFactories =
-            new List<Func<IApplication, int, ICellCostEstimator>>();
+        [DataMember]
+        public List<ICellCostEstimator> DynamicLoadBalancing_CellCostEstimators = new List<ICellCostEstimator>();
 
         /// <summary>
         /// Number of time-steps, after which dynamic load balancing is performed; if negative, dynamic load balancing is turned off.
@@ -1069,9 +1076,6 @@ namespace BoSSS.Solution.Control {
         [DataMember]
         public int AMR_startUpSweeps = 1;
 
-
-
-
         /// <summary>
         /// Actual type of cut cell quadrature to use; If no XDG, is used, resp. no cut cells are present,
         /// this setting has no effect.
@@ -1092,6 +1096,15 @@ namespace BoSSS.Solution.Control {
         /// </summary>
         [DataMember]
         public List<InSituPostProcessingModule> PostprocessingModules = new List<InSituPostProcessingModule>();
+
+
+        /// <summary>
+        /// Serialization into a text file 
+        /// </summary>
+        public void SaveToFile(string path, FileMode fm = FileMode.Create) {
+            var code = this.Serialize();
+            File.WriteAllText(path, code);
+        }
 
 
         /// <summary>
@@ -1142,7 +1155,7 @@ namespace BoSSS.Solution.Control {
         /// Used for control objects in work-flow management, 
         /// re-loads  an object from memory.
         /// </summary>
-        public static AppControl Deserialize(string Str, SerializationBinder binder) {
+        public static AppControl Deserialize(string Str, Newtonsoft.Json.Serialization.ISerializationBinder binder) {
             JsonSerializer formatter = new JsonSerializer() {
                 NullValueHandling = NullValueHandling.Ignore,
                 TypeNameHandling = TypeNameHandling.Auto,
@@ -1157,9 +1170,9 @@ namespace BoSSS.Solution.Control {
                 Type ControlObjectType = Type.GetType(typeName);
 
                 if(binder != null)
-                    formatter.Binder = binder;
+                    formatter.SerializationBinder = binder;
                 else
-                    formatter.Binder = new KnownTypesBinder(ControlObjectType);
+                    formatter.SerializationBinder = new KnownTypesBinder(ControlObjectType);
 
 
                 using(JsonReader reader = new JsonTextReader(tr)) {
@@ -1185,7 +1198,7 @@ namespace BoSSS.Solution.Control {
             */
         }
 
-        class KnownTypesBinder : System.Runtime.Serialization.SerializationBinder {
+        class KnownTypesBinder : Newtonsoft.Json.Serialization.DefaultSerializationBinder {
 
             internal KnownTypesBinder(Type entry) {
 
@@ -1226,6 +1239,15 @@ namespace BoSSS.Solution.Control {
                     try {
                         na = Assembly.Load(b);
                     } catch(FileNotFoundException) {
+                        //string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
+                        //if(AssiFiles.Length != 1) {
+                        //    //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
+                        //    Console.WriteLine("Skipping: " + b.Name);
+                        //    continue;
+                        //}
+                        //na = Assembly.LoadFile(AssiFiles[0]);
+                        continue;
+                    } catch (FileLoadException) {
                         //string[] AssiFiles = ArrayTools.Cat(Directory.GetFiles(SearchPath, b.Name + ".dll"), Directory.GetFiles(SearchPath, b.Name + ".exe"));
                         //if(AssiFiles.Length != 1) {
                         //    //throw new FileNotFoundException("Unable to locate assembly '" + b.Name + "'.");
@@ -1390,6 +1412,7 @@ namespace BoSSS.Solution.Control {
 
             var scriptOptions = ScriptOptions.Default;
             scriptOptions = scriptOptions.AddReferences(allAssis);
+            // Console.WriteLine("Evaluating : {0}", Script);
             object controlObj = CSharpScript.EvaluateAsync(Script, scriptOptions).Result;
 
             if(controlObj == null) {
@@ -1471,9 +1494,9 @@ namespace BoSSS.Solution.Control {
             if((this.RestartInfo != null) != (oCtr.RestartInfo != null))
                 return false;
             if(this.RestartInfo != null) {
-                if(!this.RestartInfo.Item1.Equals(this.RestartInfo.Item1))
+                if(!this.RestartInfo.Item1.Equals(oCtr.RestartInfo.Item1))
                     return false;
-                if(!this.RestartInfo.Item2.Equals(this.RestartInfo.Item2))
+                if(!this.RestartInfo.Item2.Equals(oCtr.RestartInfo.Item2))
                     return false;
             }
 

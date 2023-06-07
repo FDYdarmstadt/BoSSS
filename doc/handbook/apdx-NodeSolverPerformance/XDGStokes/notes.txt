@@ -1,3 +1,0 @@
-SolverRuns--2020-10-8 : kcycle(Schwarz w. pTG) vs Pardiso, steady
-SolverRuns--2020-11-9 : kcycle(Schwarz) vs Pardiso, single TS (dt=1e-4)
-SolverRuns--2020-11-10 : kcycle(Schwarz) vs Pardiso, steady

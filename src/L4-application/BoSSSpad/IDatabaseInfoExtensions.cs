@@ -232,7 +232,7 @@ namespace BoSSS.Foundation.IO {
             }
 
             if (projectName == null) {
-                dummySession.ProjectName = InteractiveShell.WorkflowMgm.CurrentProject;
+                dummySession.ProjectName = BoSSSshell.WorkflowMgm.CurrentProject;
             } else {
                 dummySession.ProjectName = projectName;
             }

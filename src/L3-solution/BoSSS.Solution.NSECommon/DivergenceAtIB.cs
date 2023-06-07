@@ -56,7 +56,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
             double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
 
             double uBxN;
-            if(m_UseLevelSetVelocityParameter) {
+            if (m_UseLevelSetVelocityParameter) {
                 uBxN = cp.Normal.InnerProd(cp.Parameters_IN);
             } else {
                 uBxN = 0.0;
@@ -77,7 +77,7 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
 
         public IList<string> ParameterOrdering {
             get {
-                if(m_UseLevelSetVelocityParameter)
+                if (m_UseLevelSetVelocityParameter)
                     return VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(LevelSetIndex), VariableNames.VelocityVector(D));
                 else
                     return null;
@@ -113,4 +113,99 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
         }
 
     }
+
+    /// <summary>
+    /// velocity jump penalty for the divergence operator, on the level set
+    /// </summary>
+    public class DivergenceAtIB_LowMach : ILevelSetForm, ISupportsJacobianComponent {
+
+        //LevelSetTracker m_LsTrk;
+
+        public DivergenceAtIB_LowMach(int _D, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, double _vorZeichen = 1.0) {
+            this.D = _D;
+            //this.m_LsTrk = lsTrk;
+            this.LevelSetIndex = iLevSet;
+            this.PositiveSpecies = SolidSpecies;
+            this.NegativeSpecies = FluidSpc;
+            this.m_UseLevelSetVelocityParameter = UseLevelSetVelocityParameter;
+            this.scale = _vorZeichen;
+        }
+
+        int D;
+        bool m_UseLevelSetVelocityParameter;
+        // this scale is important! E.g. the XNSE multiplies the whole continuity equation by -1. this scale has to be set accordingly.
+        double scale = 1.0;
+
+        /// <summary>
+        /// the penalty flux
+        /// </summary>
+        static double DirichletFlux(double UxN_in, double UxN_out) {
+            return (UxN_in - UxN_out);
+        }
+
+        public double InnerEdgeForm(ref CommonParams cp, double[] U_Neg, double[] U_Pos, double[,] Grad_uA, double[,] Grad_uB, double v_Neg, double v_Pos, double[] Grad_vA, double[] Grad_vB) {
+            double uAxN = GenericBlas.InnerProd(U_Neg, cp.Normal);
+
+            double uBxN;
+            if (m_UseLevelSetVelocityParameter) {
+                uBxN = cp.Normal.InnerProd(cp.Parameters_IN);
+            } else {
+                uBxN = 0.0;
+            }
+
+            //if(cp.Parameters_IN.L2Norm() > 1.0e-10)
+            //    throw new Exception("nonzero vel at ib");
+
+            double FlxNeg = -DirichletFlux(uAxN, uBxN); // flux on A-side
+            return scale * FlxNeg * v_Neg;
+        }
+
+        public IList<string> ArgumentOrdering {
+            get {
+                return VariableNames.VelocityVector(this.D);
+            }
+        }
+
+        public IList<string> ParameterOrdering {
+            get {
+                if (m_UseLevelSetVelocityParameter)
+                    return VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(LevelSetIndex), VariableNames.VelocityVector(D));
+                else
+                    return null;
+            }
+        }
+
+        public int LevelSetIndex {
+            get;
+            private set;
+        }
+
+        public string PositiveSpecies {
+            get;
+            private set;
+        }
+
+        public string NegativeSpecies {
+            get;
+            private set;
+        }
+
+        public TermActivationFlags LevelSetTerms {
+            get {
+                return TermActivationFlags.V | TermActivationFlags.UxV;
+            }
+        }
+
+        /// <summary>
+        /// Linear component - returns this object itself.
+        /// </summary>
+        virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
+            return new IEquationComponent[] { this };
+        }
+
+    }
+
+
+
+
 }

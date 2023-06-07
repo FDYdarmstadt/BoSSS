@@ -358,6 +358,12 @@ namespace BoSSS.Solution {
             }
         }
 
+        public int LineCounter {
+            get {
+                return m_LineCounter;
+            }
+        }
+
         int m_IterationCounter = 0;
         int m_LineCounter = 0;
 

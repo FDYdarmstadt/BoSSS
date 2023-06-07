@@ -252,11 +252,13 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Ctor.
         /// </summary>
-        /// <param name="GravityDirection">Unit vector for spatial direction of gravity.</param>
-        /// <param name="SpatialComponent">Spatial component of source.</param>
-        /// <param name="Froude">Dimensionless Froude number.</param>
-        /// <param name="physicsMode"></param>
-        /// <param name="EoS">Equation of state for calculating density.</param>
+        public DummyParameter(double dummy) {
+            this.m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.Rho};
+            this.m_ArgumentOrdering = new string[] { };
+        }
+        /// <summary>
+        /// Ctor.
+        /// </summary>
         public DummyParameter() {
             this.m_ParameterOrdering = new string[] { VariableNames.ThermodynamicPressure, VariableNames.Rho, VariableNames.Mu, VariableNames.cp };
             this.m_ArgumentOrdering = new string[] { };

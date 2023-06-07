@@ -16,8 +16,11 @@ limitations under the License.
 
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using ilPSP;
 using ilPSP.Connectors.Matlab;
 using MPI.Wrappers;
@@ -29,6 +32,36 @@ namespace BoSSS.Application.TutorialTests {
     static class TutorialTestsMain {
 
         static int Main(string[] args) {
+            /*
+            BoSSS.Solution.Application.InitMPI(new string[0]);
+
+            Task<int>[] legion = new Task<int>[100];
+
+            string fileName = "CsharpAndBoSSSpad.ipynb";
+            string file = File.ReadAllText(fileName);
+
+            for (int iTask = 0; iTask < legion.Length; iTask++) {
+                string fileName_i = $"CsharpAndBoSSSpad{iTask}.ipynb";
+                File.WriteAllText(fileName_i, file);
+
+                int Taskfunc() {
+                    var runner = new NotebookRunner(fileName_i, "", true);
+                    return runner.ErrCount;
+                }
+
+                legion[iTask] = Task.Run(Taskfunc); 
+            }
+
+            Task.WaitAll(legion);
+
+            int SuccCount = legion.Where(task => task.Result == 0).Count(), Failcount = legion.Where(task => task.Result != 0).Count();
+            Console.WriteLine($"Executed {legion.Length} worksheets: {SuccCount} successes, {Failcount} fails.");
+            
+            csMPI.Raw.mpiFinalize();
+            return legion.Sum(task => Math.Abs(task.Result));
+            */
+            
+
             AllUpTest.DirectoryOffset = Path.Combine("..", "..", "..", ".." ,"..", ".." , "doc", "handbook");
             
             if(!Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), AllUpTest.DirectoryOffset)))
@@ -46,9 +79,7 @@ namespace BoSSS.Application.TutorialTests {
 
             BoSSS.Solution.Application.InitMPI(new string[0]);
 
-            AllUpTest.Run__MetaJobManager();
-            return 0;
-            
+              
             // start the minibatchprocessor which is used internally
             //bool iStartedThisShit = AllUpTest.OneTimeSetUp();
 
@@ -60,40 +91,13 @@ namespace BoSSS.Application.TutorialTests {
                 //Console.WriteLine($"{i} : {s}");
                 i++;
             }
-
             
 
-            
-            //var tr = new TextRunner(typeof(TutorialTestsMain).Assembly);
-            
-            //int r = tr.Execute(new[] { "--result=result-TutorialTests.xml"
-            //    //, "--test=BoSSS.Application.TutorialTests.AllUpTest.Run__BoundaryAndInitialData" 
-            //});
-            
-/*
-            int r = 0;
-            AllUpTest.Run__BoundaryAndInitialData();
-            AllUpTest.Run__InitialValues();
-            AllUpTest.Run__channel();
-            AllUpTest.Run__GridGeneration();
-            AllUpTest.Run__IsentropicVortex();
-            AllUpTest.Run__MetaJobManager();
-            AllUpTest.Run__tutorialMatlab();
-            AllUpTest.Run__ue2Basics();
-#if !DEBUG
-            AllUpTest.Run__CsharpAndBoSSSpad();
-            AllUpTest.Run__convStudy();
-            AllUpTest.Run__Poisson();
-            AllUpTest.Run__sip();
-            AllUpTest.Run__StokesEq();
-            AllUpTest.Run__SpatialOperatorNexpTimeInt();
-            AllUpTest.Run__ue6ScalarConvStability();
-            AllUpTest.Run__ue5NumFluxConv();
-#endif
-*/
             //AllUpTest.OneTimeTearDown(iStartedThisShit);
             csMPI.Raw.mpiFinalize();
             return r;
+
+            
         }
 
 

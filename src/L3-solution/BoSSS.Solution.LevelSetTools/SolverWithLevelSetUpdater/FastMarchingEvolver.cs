@@ -7,7 +7,6 @@ using BoSSS.Solution.LevelSetTools.Advection;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
-using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using ilPSP;
 using ilPSP.Utils;
 using System;
@@ -59,7 +58,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public IList<string> ParameterNames => parameters;
 
-        // reinitilization
+        // reinitialization
         public Action<DualLevelSet, double, double, bool, IReadOnlyDictionary<string, DGField>, IReadOnlyDictionary<string, DGField>> AfterMovePhaseInterface => Reinitialize;
 
         /// <summary>

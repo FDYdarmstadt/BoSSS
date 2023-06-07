@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <RootNamespace>BoSSS.Application.XNSE_Solver</RootNamespace>
     <IsWebBootstrapper>false</IsWebBootstrapper>
@@ -33,17 +33,6 @@
   <ItemGroup>
     <Reference Include="CommandLine">
       <HintPath>..\..\..\libs\libcmdline-1.8-stable-bin\libcmdline\bin\Release\CommandLine.dll</HintPath>
-    </Reference>
-    <Reference Include="MathNet.Numerics, Version=4.9.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

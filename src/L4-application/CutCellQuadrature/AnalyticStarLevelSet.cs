@@ -76,12 +76,12 @@ namespace CutCellQuadrature {
             MultidimensionalArray levelSetValue = MultidimensionalArray.Create(1, 1);
 
             double[] point = lineSegment.GetPointOnSegment(left);
-            NodeSet pointAsArray = new NodeSet(gridData.Cells.GetRefElement(element), point);
+            NodeSet pointAsArray = new NodeSet(gridData.Cells.GetRefElement(element), point, false);
             Evaluate(element, 1, pointAsArray, levelSetValue);
             double valueLeft = levelSetValue[0, 0];
 
             point = lineSegment.GetPointOnSegment(right);
-            pointAsArray = new NodeSet(gridData.Cells.GetRefElement(element), point);
+            pointAsArray = new NodeSet(gridData.Cells.GetRefElement(element), point, false);
             Evaluate(element, 1, pointAsArray, levelSetValue);
             double valueRight = levelSetValue[0, 0];
 
@@ -101,7 +101,7 @@ namespace CutCellQuadrature {
             while (true) {
                 double center = 0.5 * (left + right);
                 point = lineSegment.GetPointOnSegment(center);
-                pointAsArray = new NodeSet(gridData.Cells.GetRefElement(element), point);
+                pointAsArray = new NodeSet(gridData.Cells.GetRefElement(element), point, false);
             
                 Evaluate(element, 1, pointAsArray, levelSetValue);
 

@@ -294,7 +294,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
                     default: throw new NotImplementedException();
                 }
                 foreach(int res in ResS) {
-                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.direct_pardiso, deg: dgDeg);
                     //C.TracingNamespaces = "*";
                     C.savetodb = false;
                     Controls.Add(C);
@@ -326,7 +326,7 @@ namespace BoSSS.Application.SipPoisson.Tests {
                     default: throw new NotImplementedException();
                 }
                 foreach(int res in ResS) {
-                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.classic_pardiso, deg: dgDeg);
+                    var C = SipHardcodedControl.TestCartesian2(res, 3, solver_name: SolverCodes.direct_pardiso, deg: dgDeg);
                     //C.TracingNamespaces = "*";
                     C.savetodb = false;
                     Controls.Add(C);

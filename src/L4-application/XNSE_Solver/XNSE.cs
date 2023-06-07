@@ -26,6 +26,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Reflection;
+using ilPSP.LinSolvers;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -72,14 +73,46 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+
+            
             //InitMPI();
             //DeleteOldPlotFiles();
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest(2, Tests.TaylorCouette.Mode.TestIBM, SurfaceStressTensor_IsotropicMode.Curvature_Projected, false, NonLinearSolverCode.Newton);
-            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
-            //csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out int mpiSize);
-            //NUnit.Framework.Assert.IsTrue(false, "remove me"); //*/
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
+            //NUnit.Framework.Assert.IsTrue(false, "remove me");
 
-            //using(Tmeas.Memtrace = new System.IO.StreamWriter("memory.r" + mpiRank + ".p" + mpiSize + ".csv")) 
+
+            /*
+            var mtxa = IMatrixExtensions.LoadFromTextFile(@"..\..\..\bin\release\net5.0\weirdo\indef.txt");
+
+            for (int NN = 10; NN <= mtxa.NoOfRows; NN++) {
+                Console.WriteLine("NN = " + NN);
+                var mtx = mtxa.ExtractSubArrayShallow(new int[] { 0, 0 }, new int[] { NN - 1, NN - 1 }).CloneAs();
+
+                var UpTri = MultidimensionalArray.Create(NN, NN);
+                var UpTri2 = MultidimensionalArray.Create(NN, NN);
+                mtx.SymmetricLDLInversion(UpTri, null);
+                mtx.GramSchmidt(UpTri2, null);
+
+
+                Console.WriteLine("UpTri vs. LDL " + UpTri2.Storage.L2Dist(UpTri.Storage));
+
+                var LoTri = UpTri.TransposeTo();
+                var Eye = LoTri.GEMM(mtx, UpTri);
+                var LoTri2 = UpTri2.TransposeTo();
+                var Eye2 = LoTri2.GEMM(mtx, UpTri2);
+                //L.SaveToTextFile(@"..\..\..\bin\release\net5.0\weirdo\GS.txt");
+                //Eye.SaveToTextFile(@"..\..\..\bin\release\net5.0\weirdo\ID.txt");
+                Eye.AccEye(-1.0);
+                Eye2.AccEye(-1.0);
+                Console.WriteLine("Ortho Error: " + Eye.InfNorm() + "    " + Eye2.InfNorm());
+
+            }
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(3, 0.0d, ViscosityMode.Standard, 1.0471975511965976d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton);
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.TaylorCouetteConvergenceTest_2Phase_Curvature_Proj_Soff_p2(NonLinearSolverCode.Picard);
+            NUnit.Framework.Assert.IsTrue(false, "remove me"); 
+            */
+
             {
                 XNSE._Main(args, false, delegate () {
                     var p = new XNSE();
@@ -89,9 +122,10 @@ namespace BoSSS.Application.XNSE_Solver {
                 //Tmeas.Memtrace.Flush();
                 //Tmeas.Memtrace.Close();
             }
+            //*/
+            ilPSP.LinSolvers.BlockMsrMatrix.PrintPerfStat();
 
-
-
+            
         }
     }
 
@@ -101,10 +135,12 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
         public override void Init(AppControl control) {
+
+
             base.Init(control);
             var ctrl = (control as XNSE_Control);
-            if(ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count()<=0)
-                ctrl.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+
+
             if (ctrl.Rigidbody.IsInitialized())
                 ctrl.Rigidbody.ArrangeAll(ctrl);
         }
@@ -139,7 +175,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 //See remarks
                 quadOrder *= 2;
                 quadOrder += 1;
-            }
+            } 
 
             return quadOrder;
         }
@@ -281,57 +317,64 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /*
+        /// <summary>
         /// Cell-performance classes:
         /// cell performance class equals number of species present in that cell
         /// </summary>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
-            (NoOfClasses,CellPerfomanceClasses)=CellClassifier.ClassifyCells(this,this.Control.DynamicLoadbalancing_ClassifierType);
+            (NoOfClasses, CellPerfomanceClasses) = CellClassifier.ClassifyCells(this, this.Control.DynamicLoadbalancing_ClassifierType);
         }
+        */
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
-            int pVel = VelocityDegree();
-            int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
-            int D = this.GridData.SpatialDimension;
+            using (var tr = new FuncTrace()) {
+                int pVel = VelocityDegree();
+                int pPrs = this.Control.FieldOptions[BoSSS.Solution.NSECommon.VariableNames.Pressure].Degree;
+                int D = this.GridData.SpatialDimension;
+
+                if (this.Control.UseSchurBlockPrec) {
+                    tr.Info($"pre-precond, level {iLevel}: using {MultigridOperator.Mode.SchurComplement}");
 
 
-            if (this.Control.UseSchurBlockPrec) {
-                // using a Schur complement for velocity & pressure
-                var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
-                for (int d = 0; d < D; d++) {
-                    d.AddToArray(ref confMomConti.VarIndex);
-                    //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                    pVel.AddToArray(ref confMomConti.DegreeS);
-                }
-                D.AddToArray(ref confMomConti.VarIndex);
-                //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
-                pPrs.AddToArray(ref confMomConti.DegreeS);
+                    // using a Schur complement for velocity & pressure
+                    var confMomConti = new MultigridOperator.ChangeOfBasisConfig();
+                    for (int d = 0; d < D; d++) {
+                        d.AddToArray(ref confMomConti.VarIndex);
+                        //Math.Max(1, pVel - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                        pVel.AddToArray(ref confMomConti.DegreeS);
+                    }
+                    D.AddToArray(ref confMomConti.VarIndex);
+                    //Math.Max(0, pPrs - iLevel).AddToArray(ref confMomConti.DegreeS); // global p-multi-grid
+                    pPrs.AddToArray(ref confMomConti.DegreeS);
 
-                confMomConti.mode = MultigridOperator.Mode.SchurComplement;
+                    confMomConti.mode = MultigridOperator.Mode.SchurComplement;
 
-                configsLevel.Add(confMomConti);
-            } else {
-                
-                // configurations for velocity
-                for (int d = 0; d < D; d++) {
-                    var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
-                        DegreeS = new int[] { pVel },
-                        //DegreeS = new int[] { Math.Max(1, pVel - iLevel) }, // p-multigrid reduction
-                        mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
-                        VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
+                    configsLevel.Add(confMomConti);
+                } else {
+                    tr.Info($"pre-precond, level {iLevel}: using {MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite} and {MultigridOperator.Mode.IdMass_DropIndefinite}");
+
+
+                    // configurations for velocity
+                    for (int d = 0; d < D; d++) {
+                        var configVel_d = new MultigridOperator.ChangeOfBasisConfig() {
+                            DegreeS = new int[] { pVel },
+                            mode = MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite,
+                            VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.VelocityVector(D)[d]) }
+                        };
+                        configsLevel.Add(configVel_d);
+                    }
+                    // configuration for pressure
+                    var configPres = new MultigridOperator.ChangeOfBasisConfig() {
+                        DegreeS = new int[] { pPrs },
+                        //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) }, // p-multigrid reduction
+                        mode = MultigridOperator.Mode.IdMass_DropIndefinite,
+                        VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
                     };
-                    configsLevel.Add(configVel_d);
+                    configsLevel.Add(configPres);
                 }
-                // configuration for pressure
-                var configPres = new MultigridOperator.ChangeOfBasisConfig() {
-                    DegreeS = new int[] { pPrs },
-                    //DegreeS = new int[] { Math.Max(0, pPrs - iLevel) }, // p-multigrid reduction
-                    mode = MultigridOperator.Mode.IdMass_DropIndefinite,
-                    VarIndex = new int[] { this.XOperator.DomainVar.IndexOf(VariableNames.Pressure) }
-                };
-                configsLevel.Add(configPres);
             }
         }
-
         /// <summary>
         /// Operator/equation assembly
         /// </summary>
@@ -354,28 +397,62 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Misc adjustments to the spatial operator before calling <see cref="ISpatialOperator.Commit"/>
         /// </summary>
-        /// <param name="XOP"></param>
         protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
-            XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
-            XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
-            XOP.LinearizationHint = XOP.IsLinear == true ? LinearizationHint.AdHoc : this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator;
-            XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
+                XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
+                XOP.IsLinear = !(this.Control.PhysicalParameters.IncludeConvection || Control.NonlinearCouplingSolidFluid);
+                XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;
+                tr.Info("Going with agglomeration threshold: " + XOP.AgglomerationThreshold);
 
 
-            // elementary checks on operator
-            if(XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation) != D)
-                throw new ApplicationException("Operator configuration messed up.");
-            if(XOP.DomainVar.IndexOf(VariableNames.Pressure) != D)
-                throw new ApplicationException("Operator configuration messed up.");
-            for(int d = 0; d < D; d++) {
-                if(XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationComponent(d)) != d)
+                if (XOP.IsLinear == true) {
+                    XOP.LinearizationHint = LinearizationHint.AdHoc;
+                } else {
+                    if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                        if (UseAdHocLinearization)
+                            XOP.LinearizationHint = LinearizationHint.AdHoc;
+                        else
+                            XOP.LinearizationHint = LinearizationHint.GetJacobiOperator;
+                        //XOP.LinearizationHint = LinearizationHint.FDJacobi;
+                    } else {
+                        XOP.LinearizationHint = LinearizationHint.AdHoc;
+                    }
+
+                    //(UseAdHocLinearization ? LinearizationHint.AdHoc : LinearizationHint.GetJacobiOperator);
+                }
+                tr.Info("Linearization hint: " + XOP.LinearizationHint);
+
+                // elementary checks on operator
+                if (XOP.CodomainVar.IndexOf(EquationNames.ContinuityEquation) != D)
                     throw new ApplicationException("Operator configuration messed up.");
-                if(XOP.DomainVar.IndexOf(VariableNames.Velocity_d(d)) != d)
+                if (XOP.DomainVar.IndexOf(VariableNames.Pressure) != D)
                     throw new ApplicationException("Operator configuration messed up.");
+                for (int d = 0; d < D; d++) {
+                    if (XOP.CodomainVar.IndexOf(EquationNames.MomentumEquationComponent(d)) != d)
+                        throw new ApplicationException("Operator configuration messed up.");
+                    if (XOP.DomainVar.IndexOf(VariableNames.Velocity_d(d)) != d)
+                        throw new ApplicationException("Operator configuration messed up.");
+                }
+
+                PrintConfiguration();
             }
-
-            PrintConfiguration();
         }
+
+        bool UseAdHocLinearization {
+            get {
+                //return true;
+
+                
+                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard)
+                    return true;
+                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton)
+                    return false;
+                throw new ArgumentException("unkonwn Nonlinear solver: " + this.Control.NonLinearSolver.SolverCode);
+                //*/
+            }
+        }
+
 
         /// <summary>
         /// Setup of the incompressible two-phase Navier-Stokes equation
@@ -415,7 +492,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // === additional parameters === //
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if ((config.physParams.IncludeConvection && config.isTransport) & this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+            if ((config.physParams.IncludeConvection && config.isTransport) && UseAdHocLinearization) {
                 opFactory.AddParameter(new Velocity0(D));
                 opFactory.AddParameter(v0Mean);
             }
@@ -481,7 +558,7 @@ namespace BoSSS.Application.XNSE_Solver {
         virtual protected void DefineMomentumEquation(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int d, int D) {
 
             // === linearized or parameter free variants, difference only in convective term === //
-            if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+            if (UseAdHocLinearization) {
                 opFactory.AddEquation(new NavierStokes("A", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NavierStokes("B", d, D, boundaryMap, config));
                 opFactory.AddEquation(new NSEInterface("A", "B", d, D, boundaryMap, config, config.isMovingMesh));
@@ -515,19 +592,16 @@ namespace BoSSS.Application.XNSE_Solver {
         protected virtual void DefineSystemImmersedBoundary(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
             XNSE_OperatorConfiguration config = new XNSE_OperatorConfiguration(this.Control);
 
-            // testcode: delete if in master
-            //Console.WriteLine("!!!!!!!!!!!!!!!!! skipping IBM");
-            //return;
-
+           
             if (this.Control.AdvancedDiscretizationOptions.DoubleCutSpecialQuadrature) 
                 BoSSS.Foundation.XDG.Quadrature.BruteForceSettingsOverride.doubleCutCellOverride = true;
 
             for (int d = 0; d < D; ++d) {
                 // so far only no slip!
-                if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard) {
+                if (UseAdHocLinearization) {
                     opFactory.AddEquation(new NSEimmersedBoundary("A", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                     opFactory.AddEquation(new NSEimmersedBoundary("B", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
-                } else if (this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Newton) {
+                } else {
                     opFactory.AddEquation(new NSEimmersedBoundary_Newton("A", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                     opFactory.AddEquation(new NSEimmersedBoundary_Newton("B", "C", 1, d, D, boundaryMap, config, config.isMovingMesh));
                 }
@@ -556,6 +630,8 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        public List<(double, double)> ImbalanceTrack;
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (var f = new FuncTrace()) {
                 if ((int)this.Control.TimeSteppingScheme >= 100) {
@@ -571,7 +647,25 @@ namespace BoSSS.Application.XNSE_Solver {
                     // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
                     dt = base.GetTimestep();
                 }
-               
+
+                int NoOfCutCells = this.LsTrk.Regions.GetNearFieldMask(1).NoOfItemsLocally;
+                int NoOfCells = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int NoOfCutCells_Min = NoOfCutCells.MPIMin();
+                int NoOfCutCells_Max = NoOfCutCells.MPIMax();
+                int NoOfCells_Min = NoOfCells.MPIMin();
+                int NoOfCells_Max = NoOfCells.MPIMax();
+                int NoOfCutCellsTot = NoOfCutCells.MPISum();
+                long NoOfCellsTot = this.GridData.CellPartitioning.TotalLength;
+                double AvgCutCells = NoOfCutCellsTot / (double)this.MPISize;
+                double AvgCells = NoOfCellsTot / (double)this.MPISize;
+                double RelCellsInbalance = (double)(NoOfCells_Max - NoOfCells_Min) / NoOfCells_Max;
+                double RelCutCellsInbalance = (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
+
+                Console.WriteLine($"All Cells: min={NoOfCells_Min} max={NoOfCells_Max} avg={AvgCells:G5} inb={RelCellsInbalance:G4} tot={NoOfCellsTot}");
+                Console.WriteLine($"Cut Cells: min={NoOfCutCells_Min} max={NoOfCutCells_Max} avg={AvgCutCells:G5} inb={RelCutCellsInbalance:G4}, tot={NoOfCutCellsTot}");
+
+                if (ImbalanceTrack != null) ImbalanceTrack.Add((RelCellsInbalance, RelCutCellsInbalance));
+
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
@@ -746,6 +840,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 Console.WriteLine("     {0,-30}:{1}", "Globalization", this.Control.NonLinearSolver.Globalization);
                 Console.WriteLine("     {0,-30}:{1}", "Minsolver Iterations", this.Control.NonLinearSolver.MinSolverIterations);
                 Console.WriteLine("     {0,-30}:{1}", "Maxsolver Iterations", this.Control.NonLinearSolver.MaxSolverIterations);
+                Console.WriteLine("==============={0}===============", "========================");
 
 
             }

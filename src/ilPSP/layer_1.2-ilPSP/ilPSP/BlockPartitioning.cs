@@ -30,9 +30,56 @@ namespace ilPSP {
     /// </summary>
     public class BlockPartitioning : Partitioning, IBlockPartitioning {
 
+        /// <summary>
+        /// Instantiates this partitioning as a clone of some other partitioning <paramref name="othrPart"/>.
+        /// </summary>
+        public BlockPartitioning(IBlockPartitioning othrPart)
+            : base(othrPart.LocalLength, othrPart.MPI_Comm) //
+        {
+
+            int LocalNoOfBlocks = othrPart.LocalNoOfBlocks;
+
+            int FrameBlockSize;
+
+
+            int[] _BlockType = new int[LocalNoOfBlocks];
+            long firstBlock = othrPart.FirstBlock;
+            int NoOfBlockTypes = -1;
+            for(int iBlockLoc = 0; iBlockLoc < LocalNoOfBlocks; iBlockLoc++) {
+                long globBlock = iBlockLoc + firstBlock;
+                int blockType = othrPart.GetBlockType(globBlock);
+                NoOfBlockTypes = Math.Max(NoOfBlockTypes, blockType);
+                _BlockType[iBlockLoc] = blockType;
+            }
+            NoOfBlockTypes++;
+
+            int[][] _Subblk_i0 = new int[NoOfBlockTypes][];
+            int[][] _SubblkLen = new int[NoOfBlockTypes][];
+            for(int blockType = 0; blockType < NoOfBlockTypes; blockType++) {
+                _Subblk_i0[blockType] = othrPart.GetSubblk_i0(blockType).CloneAs();
+                _SubblkLen[blockType] = othrPart.GetSubblkLen(blockType).CloneAs();
+            }
+            
+
+            if(othrPart.AllBlockSizesEqual) {
+                if(othrPart.LocalNoOfBlocks > 0)
+                    FrameBlockSize = checked((int)(othrPart.GetBlockI0(firstBlock + 1) - othrPart.GetBlockI0(firstBlock)));
+                else
+                    FrameBlockSize = 0; // phatologic case, somehow
+            } else {
+                FrameBlockSize = -2356675;
+            }
+            int FrameBlockSize_g = FrameBlockSize.MPIMax(othrPart.MPI_Comm);
+
+            ConstructorCommon(FrameBlockSize_g, _Subblk_i0, _SubblkLen, _BlockType, othrPart.MPI_Comm); 
+
+        }
+
 
  
-        public BlockPartitioning(int LocalLength, IEnumerable<long> BlockI0, IEnumerable<int> BlockLen, MPI_Comm MpiComm, bool i0isLocal = false) : base(LocalLength, MpiComm) {
+        public BlockPartitioning(int LocalLength, IEnumerable<long> BlockI0, IEnumerable<int> BlockLen, MPI_Comm MpiComm, bool i0isLocal = false) 
+            : base(LocalLength, MpiComm) //
+        {
 
             //var enu_I0 = BlockI0.GetEnumerator();
             //var enuLen = BlockLen.GetEnumerator();
@@ -166,12 +213,14 @@ namespace ilPSP {
             int FrameBlockSize,
             int[][] _Subblk_i0, int[][] _SubblkLen,
             int[] _BlockType,
-            MPI_Comm MpiComm) : base(LocalLength, MpiComm) {
+            MPI_Comm MpiComm) 
+            : base(LocalLength, MpiComm) //
+        {
             ConstructorCommon(FrameBlockSize, _Subblk_i0, _SubblkLen, _BlockType, MpiComm);
         }
 
         /// <summary>
-        /// Creates a local clone of this object, which lives only on the MPI_SELF communicator.
+        /// Creates a local clone of this object, which lives only on the <see cref="IMPI_CommConstants.SELF"/> communicator.
         /// </summary>
         public BlockPartitioning GetLocalBlockPartitioning() {
 
@@ -560,6 +609,14 @@ namespace ilPSP {
             }
         }
 
+        public override String ToString() {
+            string st = "";
+            var ListOfProperties = this.GetType().GetProperties();
+            foreach (var Prop in ListOfProperties)
+                st += $"{Prop.Name}: {Prop.GetValue(this)} ({Prop.PropertyType}) \n";
+
+            return st;
+        }
         public bool AllBlockSizesEqual {
             get {
                 Debug.Assert(m_FrameBlockSize != 0);

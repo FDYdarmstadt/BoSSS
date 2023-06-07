@@ -31,6 +31,8 @@ using BoSSS.Solution.AdvancedSolvers;
 using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid;
 using MPI.Wrappers;
+using BoSSS.Solution.Queries;
+using ilPSP.Tracing;
 
 namespace BoSSS.Solution.XdgTimestepping {
 
@@ -560,76 +562,94 @@ namespace BoSSS.Solution.XdgTimestepping {
         }
 
         private bool RKstageImplicit(double PhysTime, double dt, double[][] k, int s, BlockMsrMatrix[] Mass, CoordinateVector u0, double ActualLevSetRelTime, double[] RK_as, double RelTime) {
-            Debug.Assert(s < m_RKscheme.Stages);
-            Debug.Assert(m_RKscheme.c[s] > 0);
-            Debug.Assert(RK_as[s] != 0);
+            using (var ft = new FuncTrace()) {
+                Debug.Assert(s < m_RKscheme.Stages);
+                Debug.Assert(m_RKscheme.c[s] > 0);
+                Debug.Assert(RK_as[s] != 0);
 
-            int Ndof = m_CurrentState.Count;
+                int Ndof = m_CurrentState.Count;
 
-            // =========
-            // RHS setup
-            // =========
+                // =========
+                // RHS setup
+                // =========
 
-            m_ImplStParams = new ImplicitStage_AssiParams() {
-                m_CurrentDt = dt,
-                m_CurrentPhystime = PhysTime,
-                m_IterationCounter = 0,
-                m_ActualLevSetRelTime = ActualLevSetRelTime,
-                m_RelTime = RelTime,
-                m_k = k,
-                m_u0 = u0,
-                m_Mass = Mass,
-                m_RK_as = RK_as,
-                m_s = s
-            };
-
-
-            // ================
-            // solve the system
-            // ================
+                m_ImplStParams = new ImplicitStage_AssiParams() {
+                    m_CurrentDt = dt,
+                    m_CurrentPhystime = PhysTime,
+                    m_IterationCounter = 0,
+                    m_ActualLevSetRelTime = ActualLevSetRelTime,
+                    m_RelTime = RelTime,
+                    m_k = k,
+                    m_u0 = u0,
+                    m_Mass = Mass,
+                    m_RK_as = RK_as,
+                    m_s = s
+                };
 
 
-            bool success;
-            if (RequiresNonlinearSolver) {
-
-                // Nonlinear Solver (Navier-Stokes)
-                // --------------------------------
-                var nonlinSolver = GetNonlinSolver();
-                success = nonlinSolver.SolverDriver(m_CurrentState, default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
-
-            } else {
-                // Linear Solver (Stokes)
-                // ----------------------
+                // ================
+                // solve the system
+                // ================
 
 
-                // build the saddle-point matrix
-                BlockMsrMatrix System, MaMa;
-                double[] RHS;
-                this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
-                RHS.ScaleV(-1);
+                bool success;
+                if (RequiresNonlinearSolver) {
 
-                // update the multigrid operator
-                MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
-                    System, MaMa,
-                    this.Config_MultigridOperator,
-                    opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
+                    // Nonlinear Solver (Navier-Stokes)
+                    // --------------------------------
+                    var nonlinSolver = GetNonlinSolver();
+                    success = nonlinSolver.SolverDriver(m_CurrentState, default(double[])); // Note: the RHS is passed as the affine part via 'this.SolverCallback'
 
-                // init linear solver
-                using(var linearSolver = GetLinearSolver(mgOperator)) {
-                    // try to solve the saddle-point system.
-                    mgOperator.UseSolver(linearSolver, m_CurrentState, RHS);
-                    success = linearSolver.Converged;
+                    if (base.QueryHandler != null) {
+                        base.QueryHandler.ValueQuery(QueryHandler.Conv, success ? 1.0 : 0.0, true);
+                        base.QueryHandler.ValueQuery(QueryHandler.NonLinIter, nonlinSolver.NoOfNonlinearIter, true);
+                        base.QueryHandler.ValueQuery(QueryHandler.NoOfCells, this.m_LsTrk.GridDat.CellPartitioning.TotalLength, true);
+                        base.QueryHandler.ValueQuery(QueryHandler.DOFs, nonlinSolver.EssentialDOFs, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
+                    }
+
+                } else {
+                    // Linear Solver (Stokes)
+                    // ----------------------
+
+
+                    // build the saddle-point matrix
+                    BlockMsrMatrix System, MaMa;
+                    double[] RHS;
+                    this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
+                    RHS.ScaleV(-1);
+
+                    // update the multigrid operator
+                    MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
+                        System, MaMa,
+                        this.Config_MultigridOperator,
+                        opi);
+
+                    // init linear solver
+                    using (var linearSolver = GetLinearSolver(mgOperator)) {
+                        // try to solve the saddle-point system.
+                        using (new BlockTrace("Solver_Run", ft)) {
+                            mgOperator.UseSolver(linearSolver, m_CurrentState, RHS);
+                        }
+                        success = linearSolver.Converged;
+
+                        if (base.QueryHandler != null) {
+                            base.QueryHandler.ValueQuery(QueryHandler.Conv, linearSolver.Converged ? 1.0 : 0.0, true);
+                            base.QueryHandler.ValueQuery(QueryHandler.NoIter, linearSolver.ThisLevelIterations, true);
+                            base.QueryHandler.ValueQuery(QueryHandler.NoOfCells, this.m_LsTrk.GridDat.CellPartitioning.TotalLength, true);
+                            base.QueryHandler.ValueQuery(QueryHandler.DOFs, mgOperator.Mapping.TotalLength, true); // 'essential' DOF, in the XDG case less than cordinate mapping length 
+                        }
+                    }
+
+                    // 'revert' agglomeration
+                    m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
                 }
 
-                // 'revert' agglomeration
-                m_CurrentAgglomeration.Extrapolate(CurrentStateMapping);
+                // ================
+                // reset
+                // ================
+                m_ImplStParams = null;
+                return success;
             }
-
-            // ================
-            // reset
-            // ================
-            m_ImplStParams = null;
-            return success;
         }
 
         ImplicitStage_AssiParams m_ImplStParams = null;

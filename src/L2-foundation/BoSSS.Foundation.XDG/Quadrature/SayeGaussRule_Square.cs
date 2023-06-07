@@ -276,14 +276,19 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         protected override SayeQuadRule SetLowOrderQuadratureNodes(SayeSquare arg)
         {
-            throw new NotImplementedException();
+            return SetGaussQuadratureNodes(arg, 1);
         }
 
-        protected override SayeQuadRule SetGaussQuadratureNodes(SayeSquare arg)
-        {
+        protected override SayeQuadRule SetGaussQuadratureNodes(SayeSquare arg) {
+            //Console.WriteLine($"Low order Quadrature required in cell: {cell}, " +
+            //    $"center: {lsData.GridDat.Cells.CellCenter[cell, 0]}, {lsData.GridDat.Cells.CellCenter[cell, 1]}");
+            return SetGaussQuadratureNodes(arg, order);
+        }
+
+        SayeQuadRule SetGaussQuadratureNodes(SayeSquare arg, int gaussOrder) {
             //Aquire needed data
             //------------------------------------------------------------------------------------------------------------
-            QuadRule gaussRule_2D = Square.Instance.GetQuadratureRule(order);
+            QuadRule gaussRule_2D = Square.Instance.GetQuadratureRule(gaussOrder);
             MultidimensionalArray nodes_GaussRule_2D = ((MultidimensionalArray)gaussRule_2D.Nodes).CloneAs();
             MultidimensionalArray weights_GaussRule_2D = gaussRule_2D.Weights.CloneAs();
 
@@ -294,15 +299,14 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //AffineTransformation of nodes, scale weights
             //------------------------------------------------------------------------------------------------------------
             //Scale Nodes
-            for(int i = 0; i < 2; ++i){
+            for (int i = 0; i < 2; ++i) {
                 nodes_GaussRule_2D.ColScale(i, diameters[i]);
             }
             //Scale Weights
             weights_GaussRule_2D.Scale(jacobian);
             //Move Nodes
             int[] index = new int[] { 0, -1 };
-            for (int i = 0; i < gaussRule_2D.NoOfNodes; ++i)
-            {
+            for (int i = 0; i < gaussRule_2D.NoOfNodes; ++i) {
                 index[0] = i;
                 nodes_GaussRule_2D.AccSubArray(1, centerArr, index);
             }
@@ -367,7 +371,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
 
         protected override SayeQuadRule BuildSurfaceQuadRule(MultidimensionalArray X, double X_weight, int heightDirection, int cell) {
-            NodeSet node = new NodeSet(RefElement, X.To2DArray());
+            NodeSet node = new NodeSet(RefElement, X.To2DArray(), true);
             MultidimensionalArray jacobian = grid.Jacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
             MultidimensionalArray inverseJacobian = grid.InverseJacobian.GetValue_Cell(node, cell, 1).ExtractSubArrayShallow(0, 0, -1, -1);
 
@@ -419,7 +423,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             MultidimensionalArray nodeArr = X.CloneAs();
             nodeArr[0, direction] += distance;
-            NodeSet node = new NodeSet(RefElement, nodeArr);
+            NodeSet node = new NodeSet(RefElement, nodeArr, true);
             return node;
         }
 
@@ -504,7 +508,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             double[] centerArr = new double[2];
             centerArr[0] = ( boundaries[0][0] + boundaries[0][1] ) / 2.0;
             centerArr[1] = ( boundaries[1][0] + boundaries[1][1] ) / 2.0;
-            this.center = new NodeSet(refElement, centerArr);
+            this.center = new NodeSet(refElement, centerArr, false);
             this.center.LockForever();
         }
 

@@ -102,6 +102,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
             m_Mapping = new UnsetteledCoordinateMapping(b);
             m_Coordinates = new double[m_Mapping.LocalLength];
             this.internalProjection = new SinglePhaseField(m_Basis, "internalProjection");
+            this.initialProjection0 = new SinglePhaseField(m_Basis, "initialProjection0");
 
             if(__domainLimit == null)
                 __domainLimit = CellMask.GetFullMask(b.GridDat);
@@ -149,25 +150,30 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         protected double[] m_Coordinates;
 
         /// <summary>
-        /// DG coordinates of original discontinuous representation
-        /// </summary>
-        protected double[] m_Coordinates0;
-
-
-        /// <summary>
         /// DG representation of the current solution
         /// </summary>
         protected readonly SinglePhaseField internalProjection;
 
         /// <summary>
         /// DG representation of the current solution;
-        /// <see cref="CheckLocalProjection(CellMask, bool)"/> computes jump norms from this field
+        /// <see cref="CheckLocalProjection(out SinglePhaseField, CellMask, bool)"/> computes jump norms from this field
         /// </summary>
         public SinglePhaseField InternalDGfield {
             get {
                 return internalProjection;
             }
         }
+
+        /// <summary>
+        /// DG coordinates of original discontinuous representation
+        /// </summary>
+        protected double[] m_Coordinates0;
+
+        /// <summary>
+        /// DG representation of the initial (discontinuous) solution
+        /// </summary>
+        protected readonly SinglePhaseField initialProjection0;
+
 
         /// <summary>
         /// hard-coded switch to turn some console output on/off (BAD PRACTICE)
@@ -202,10 +208,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             m_Coordinates0 = m_Coordinates.CloneAs();
             m_Coordinates.ClearEntries();
-
-
-            var initialVal = new SinglePhaseField(m_Basis, "initial");
-            initialVal.CoordinateVector.Acc(1.0, m_Coordinates0);
+            initialProjection0.CoordinateVector.Acc(1.0, m_Coordinates0);
 
             UpdateInternalProjection(csMPI.Raw._COMM.WORLD);
             //ProjectionSnapshots.Add(initialVal);
@@ -500,8 +503,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     l2_change = l2_change.MPISum(comm).Sqrt();
 
 
-
-                    double jumpNorm = owner.CheckLocalProjection(this.comm, this.Patch, true);
+                    SinglePhaseField errorField;
+                    (double jumpNorm, double L2err) = owner.CheckLocalProjection(this.comm, out errorField, this.Patch, true);
                     //if(owner.diagnosticOutput)
                     //    Console.WriteLine("L2 jump norm on mask: {0}", jumpNorm);
                     //if(jumpNorm > 1e-11) {
@@ -618,7 +621,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                 m_grd.TransformGlobal2Local(vertCoord_glb, vertCoord_loc, jCell, 1, 0);
                 double[] vertCellCoord1 = vertCoord_loc.ExtractSubArrayShallow(0, 0, -1).To1DArray();
 
-                return new NodeSet(m_grd.Cells.RefElements[0], vertCellCoord1);
+                return new NodeSet(m_grd.Cells.RefElements[0], vertCellCoord1, false);
 
             }
 
@@ -740,9 +743,19 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
         /// <summary>
         /// Computes the norm of jumps on the interior edges of the <paramref name="mask"/>
+        /// L2-error norm of the projected field against the initial discontinuous field 
+        /// </summary>
+        public (double jumpNorm, double L2err) CheckLocalProjection(out SinglePhaseField errField, CellMask mask = null, bool onInterProc = false) {
+            return CheckLocalProjection(csMPI.Raw._COMM.WORLD, out errField, mask, onInterProc);
+        }
+
+        /// <summary>
+        /// Computes the norm of jumps on the interior edges of the <paramref name="mask"/>
         /// </summary>
         public double CheckLocalProjection(CellMask mask = null, bool onInterProc = false) {
-            return CheckLocalProjection(csMPI.Raw._COMM.WORLD, mask, onInterProc);
+            SinglePhaseField errField;
+            (double jumpNorm, double L2err) = CheckLocalProjection(csMPI.Raw._COMM.WORLD, out errField, mask, onInterProc);
+            return jumpNorm;
         }
 
         /// <summary>
@@ -764,7 +777,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
         /// <summary>
         /// Computes the norm of jumps on the interior edges of the <paramref name="mask"/>
         /// </summary>
-        protected double CheckLocalProjection(MPI_Comm comm, CellMask mask = null, bool onInterProc = false) {
+        protected (double jumpNorm, double L2err) CheckLocalProjection(MPI_Comm comm, out SinglePhaseField errField, CellMask mask = null, bool onInterProc = false) {
             MPICollectiveWatchDog.Watch(comm);
 
             bool IsLocal = IsMPIself(comm);
@@ -781,6 +794,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             UpdateInternalProjection(comm);
 
+            // check jump norm on interior edges
             double Unorm = 0;
 
             EdgeQuadrature.GetQuadrature(
@@ -809,8 +823,8 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                             MultidimensionalArray uIN = MultidimensionalArray.Create(1, NoOfNodes);
                             MultidimensionalArray uOT = MultidimensionalArray.Create(1, NoOfNodes);
 
-                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN);
-                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT);
+                            NodeSet NS_IN = NS.GetVolumeNodeSet(m_grd, iTrafo_IN, false);
+                            NodeSet NS_OT = NS.GetVolumeNodeSet(m_grd, iTrafo_OT, false);
 
                             internalProjection.Evaluate(jCell_IN, 1, NS_IN, uIN);
                             internalProjection.Evaluate(jCell_OT, 1, NS_OT, uOT);
@@ -833,7 +847,24 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
             Unorm = Unorm.MPISum(comm);
 
-            return Unorm.Sqrt();
+            // check projection against initial projection
+            errField = initialProjection0.CloneAs();
+            errField.AccLaidBack(-1.0, internalProjection, mask);
+
+            double L2err = errField.L2Norm(mask);
+
+            // check the single cells within the projection (Debugging)
+            //foreach(int cell in mask.ItemEnum) {
+            //    BitArray oneBA = new BitArray(m_Basis.GridDat.Grid.NumberOfCells);
+            //    oneBA[cell] = true;
+            //    CellMask oneCM = new CellMask(m_Basis.GridDat, oneBA);
+            //    double oneErr = errField.L2Norm(oneCM);
+            //    if(oneErr > 1e-4)
+            //        Console.WriteLine("cell {0}: error norm = {1}", cell, oneErr);
+            //}
+
+
+            return (Unorm.Sqrt(), L2err);
 
         }
 

@@ -222,7 +222,7 @@ namespace CutCellQuadrature {
         protected override void SetInitial(double t) {
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
         }
 
 
@@ -770,7 +770,7 @@ namespace CutCellQuadrature {
 
                     NodeSet volumeVertices = new NodeSet(
                         GridData.iGeomCells.GetRefElement(cell),
-                        rule.NoOfNodes, Grid.SpatialDimension);
+                        rule.NoOfNodes, Grid.SpatialDimension, false);
                     Grid.RefElements[0].TransformFaceCoordinates(
                         GridData.iGeomEdges.FaceIndices[edge, 0], rule.Nodes, volumeVertices);
                     volumeVertices.LockForever();

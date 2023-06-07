@@ -335,12 +335,13 @@ namespace MPI.Wrappers {
                 fixed (void* argv = &(argsAnsi[0])) {
                     void* _argv = argv;
                     int argc = args.Length;
-					if (dirrtyMpiInitHack == 1)
-						MPIException.CheckReturnCode(OpenMPI_MPI_Init1(&argc, (byte***)(&_argv)));
-					else if (dirrtyMpiInitHack == 2)
-					    MPIException.CheckReturnCode(OpenMPI_MPI_Init2(&argc, (byte***)(&_argv)));
-					else
+                    if (dirrtyMpiInitHack == 1)
+                        MPIException.CheckReturnCode(OpenMPI_MPI_Init1(&argc, (byte***)(&_argv)));
+                    else if (dirrtyMpiInitHack == 2)
+                        MPIException.CheckReturnCode(OpenMPI_MPI_Init2(&argc, (byte***)(&_argv)));
+                    else {
                         MPIException.CheckReturnCode(MPI_Init(&argc, (byte***)(&_argv)));
+                    }
                 }
             }
 

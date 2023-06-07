@@ -27,7 +27,7 @@ namespace BoSSS.Foundation {
     public partial class Basis {
 
         /// <summary>
-        /// Basis transformation between adjacent cells, required e.g. for cell agglomeration
+        /// Basis transformation between cells, required e.g. for cell agglomeration
         /// </summary>
         /// <param name="CellPairs">
         /// - 1st index: list of cells 
@@ -86,13 +86,16 @@ namespace BoSSS.Foundation {
                     throw new ArgumentException();
             }
 
-            MultidimensionalArray NodesGlobal = new MultidimensionalArray(3);
-            MultidimensionalArray Minv_tmp = MultidimensionalArray.Create(N, N);
-            MultidimensionalArray M_tmp = MultidimensionalArray.Create(N, N);
+            //MultidimensionalArray NodesGlobal = new MultidimensionalArray(3);
+            //MultidimensionalArray Minv_tmp = MultidimensionalArray.Create(N, N);
+            //MultidimensionalArray M_tmp = MultidimensionalArray.Create(N, N);
+            //QuadRule basicQr = null;
 
-       
+            MultidimensionalArray _NodesGlobal = new MultidimensionalArray(3);
+            MultidimensionalArray _Minv_tmp = MultidimensionalArray.Create(N, N);
+            MultidimensionalArray _M_tmp = MultidimensionalArray.Create(N, N);
+            QuadRule _basicQr = null;
 
-            QuadRule basicQr = null;
             for (int esub = 0; esub < Esub; esub++) { // loop over the cell pairs...
 
                 int jCell0 = CellPairs[esub, 0];
@@ -101,9 +104,11 @@ namespace BoSSS.Foundation {
                     throw new ArgumentOutOfRangeException("Cell index out of range.");
                 if (jCell1 < 0 || jCell1 >= JE)
                     throw new ArgumentOutOfRangeException("Cell index out of range.");
+                if(jCell0 >= J && jCell1 >= J)
+                    throw new ArgumentOutOfRangeException("At least one of the two cells must be locally updated.");
 
                 bool swap;
-                if (jCell0 >= J) {
+                if (jCell1 >= J) {
                     //if(true) {
                     swap = true;
                     int a = jCell0;
@@ -113,74 +118,137 @@ namespace BoSSS.Foundation {
                     swap = false;
                 }
 
-
                 if (!m_Context.iGeomCells.IsCellAffineLinear(jCell0))
                     throw new NotSupportedException("Currently not supported for curved cells.");
                 if (!m_Context.iGeomCells.IsCellAffineLinear(jCell1))
                     throw new NotSupportedException("Currently not supported for curved cells.");
 
-                Debug.Assert(jCell0 < J);
+
 
                 //Scales very badly:
                 //var cellMask = new CellMask(m_Context, new[] { new Chunk() { i0 = jCell0, Len = 1 } }, MaskType.Geometrical);
                 //var QuadRule = (new CellQuadratureScheme(true, cellMask)).Compile(m_Context, this.Degree * 2);
 
-                // compile a quadrature rule:
-                // -----------------------------------------------
-                // Don't use the CellQuadratureScheme, because to date this costs in the order of number of cells
-                // due to cell mask operations. 
-                // For the construction of the aggregation grid basis, this causes a quadratic runtime behavior.
-                var quadRule = new CompositeQuadRule<QuadRule>();
-                var Kref0 = GridDat.iGeomCells.GetRefElement(jCell0);
-                if(basicQr == null || !object.ReferenceEquals(basicQr.Nodes.RefElement, Kref0))
-                    basicQr = Kref0.GetQuadratureRule(2 * this.Degree);
-                quadRule.chunkRulePairs.Add(new ChunkRulePair<QuadRule>(
-                    Chunk.GetSingleElementChunk(jCell0),
-                    basicQr));
+                /*{
+                    Debug.Assert(jCell0 < J);
+                  
+                    // compile a quadrature rule:
+                    // -----------------------------------------------
+                    // Don't use the CellQuadratureScheme, because to date this costs in the order of number of cells
+                    // due to cell mask operations. 
+                    // For the construction of the aggregation grid basis, this causes a quadratic runtime behavior.
+                    var quadRule = new CompositeQuadRule<QuadRule>();
+                    var Kref0 = GridDat.iGeomCells.GetRefElement(jCell0);
+                    if (basicQr == null || !object.ReferenceEquals(basicQr.Nodes.RefElement, Kref0))
+                        basicQr = Kref0.GetQuadratureRule(2 * this.Degree);
+                    quadRule.chunkRulePairs.Add(new ChunkRulePair<QuadRule>(
+                        Chunk.GetSingleElementChunk(jCell0),
+                        basicQr));
 
-                // we project the basis function from 'jCell1' onto 'jCell0'
-                CellQuadrature.GetQuadrature(new int[2] { N, N }, m_Context,
-                    quadRule, // integrate over target cell
-                    delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
-                        NodeSet nodes_Cell0 = QR.Nodes;
-                        Debug.Assert(Length == 1);
+                    // we project the basis function from 'jCell1' onto 'jCell0'
+                    CellQuadrature.GetQuadrature(new int[2] { N, N }, m_Context,
+                        quadRule, // integrate over target cell
+                        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
+                            NodeSet nodes_Cell0 = QR.Nodes;
+                            Debug.Assert(Length == 1);
 
-                        NodesGlobal.Allocate(1, nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1));
-                        m_Context.TransformLocal2Global(nodes_Cell0, jCell0, 1, NodesGlobal, 0);
-                        var nodes_Cell1 = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell1), nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1));
-                        m_Context.TransformGlobal2Local(NodesGlobal.ExtractSubArrayShallow(0, -1, -1), nodes_Cell1, jCell1, null);
-                        nodes_Cell1.LockForever();
+                            NodesGlobal.Allocate(1, nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1));
+                            m_Context.TransformLocal2Global(nodes_Cell0, jCell0, 1, NodesGlobal, 0);
+                            var nodes_Cell1 = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell1), nodes_Cell0.GetLength(0), nodes_Cell0.GetLength(1));
+                            m_Context.TransformGlobal2Local(NodesGlobal.ExtractSubArrayShallow(0, -1, -1), nodes_Cell1, jCell1, null);
+                            nodes_Cell1.LockForever();
 
 
-                        var phi_0 = this.CellEval(nodes_Cell0, jCell0, 1).ExtractSubArrayShallow(0, -1, -1);
-                        var phi_1 = this.CellEval(nodes_Cell1, jCell1, 1).ExtractSubArrayShallow(0, -1, -1);
+                            var phi_0 = this.CellEval(nodes_Cell0, jCell0, 1).ExtractSubArrayShallow(0, -1, -1);
+                            var phi_1 = this.CellEval(nodes_Cell1, jCell1, 1).ExtractSubArrayShallow(0, -1, -1);
 
-                        var EvalResult = _EvalResult.ExtractSubArrayShallow(0, -1, -1, -1);
+                            var EvalResult = _EvalResult.ExtractSubArrayShallow(0, -1, -1, -1);
 
-                        EvalResult.Multiply(1.0, phi_1, phi_0, 0.0, "kmn", "kn", "km");
-                    },
-                    /*_SaveIntegrationResults:*/ 
-                    delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                        Debug.Assert(Length == 1);
+                            EvalResult.Multiply(1.0, phi_1, phi_0, 0.0, "kmn", "kn", "km");
+                        },
+                        //_SaveIntegrationResults:
+                        delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                            Debug.Assert(Length == 1);
 
-                        var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
-                        Minv_tmp.Clear();
-                        Minv_tmp.Acc(1.0, res);
-                    }).Execute();
+                            var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
+                            Minv_tmp.Clear();
+                            Minv_tmp.Acc(1.0, res);
+                        }).Execute();
 
-                // compute the inverse
-                Minv_tmp.InvertTo(M_tmp);
+                    // compute the inverse
+                    Minv_tmp.InvertTo(M_tmp);
+                }*/
+
+                {
+                    Debug.Assert(jCell1 < J);
+
+                    // compile a quadrature rule:
+                    // -----------------------------------------------
+                    // Don't use the CellQuadratureScheme, because to date this costs in the order of number of cells
+                    // due to cell mask operations. 
+                    // For the construction of the aggregation grid basis, this causes a quadratic runtime behavior.
+                    var _quadRule = new CompositeQuadRule<QuadRule>();
+                    var Kref1 = GridDat.iGeomCells.GetRefElement(jCell1);
+                    if (_basicQr == null || !object.ReferenceEquals(_basicQr.Nodes.RefElement, Kref1))
+                        _basicQr = Kref1.GetQuadratureRule(2 * this.Degree);
+                    _quadRule.chunkRulePairs.Add(new ChunkRulePair<QuadRule>(
+                        Chunk.GetSingleElementChunk(jCell1),
+                        _basicQr));
+
+                    // we project the basis function from 'jCell0' onto 'jCell1'
+                    CellQuadrature.GetQuadrature(new int[2] { N, N }, m_Context,
+                        _quadRule, // integrate over target cell
+                        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray _EvalResult) {
+                            NodeSet nodes_Cell1 = QR.Nodes;
+                            Debug.Assert(Length == 1);
+
+                            _NodesGlobal.Allocate(1, nodes_Cell1.GetLength(0), nodes_Cell1.GetLength(1));
+                            m_Context.TransformLocal2Global(nodes_Cell1, jCell1, 1, _NodesGlobal, 0);
+                            var nodes_Cell0 = new NodeSet(GridDat.iGeomCells.GetRefElement(jCell1), nodes_Cell1.GetLength(0), nodes_Cell1.GetLength(1), false);
+                            m_Context.TransformGlobal2Local(_NodesGlobal.ExtractSubArrayShallow(0, -1, -1), nodes_Cell0, jCell0, null);
+                            nodes_Cell0.LockForever();
+
+
+                            var phi_0 = this.CellEval(nodes_Cell0, jCell0, 1).ExtractSubArrayShallow(0, -1, -1);
+                            var phi_1 = this.CellEval(nodes_Cell1, jCell1, 1).ExtractSubArrayShallow(0, -1, -1);
+
+                            var EvalResult = _EvalResult.ExtractSubArrayShallow(0, -1, -1, -1);
+
+                            EvalResult.Multiply(1.0, phi_0, phi_1, 0.0, "kmn", "kn", "km");
+                        },
+                        /*_SaveIntegrationResults:*/
+                        delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                            Debug.Assert(Length == 1);
+
+                            var res = ResultsOfIntegration.ExtractSubArrayShallow(0, -1, -1);
+                            _M_tmp.Clear();
+                            _M_tmp.Acc(1.0, res);
+                        }).Execute();
+
+                    //// compute the inverse
+                    //_M_tmp.InvertTo(_Minv_tmp);
+
+
+                    //double _M_tmpErr = _M_tmp.Storage.L2Dist(M_tmp.Storage);
+                    //double _Minv_tmpErr = _Minv_tmp.Storage.L2Dist(Minv_tmp.Storage);
+                    //Console.WriteLine(_M_tmpErr + "\t" + _Minv_tmpErr);
+                }
+
+
+
 
                 // store
                 if (!swap) {
-                    M.ExtractSubArrayShallow(esub, -1, -1).AccMatrix(1.0, M_tmp);
+                    M.ExtractSubArrayShallow(esub, -1, -1).AccMatrix(1.0, _M_tmp);
                     if (Minv != null) {
-                        Minv.ExtractSubArrayShallow(esub, -1, -1).AccMatrix(1.0, Minv_tmp);
+                        _M_tmp.InvertTo(_Minv_tmp);
+                        Minv.ExtractSubArrayShallow(esub, -1, -1).AccMatrix(1.0, _Minv_tmp);
                     }
                 } else {
-                    M.ExtractSubArrayShallow(esub, -1, -1).AccMatrix(1.0, Minv_tmp);
+                    _M_tmp.InvertTo(_Minv_tmp);
+                    M.ExtractSubArrayShallow(esub, -1, -1).AccMatrix(1.0, _Minv_tmp);
                     if (Minv != null) {
-                        Minv.ExtractSubArrayShallow(esub, -1, -1).AccMatrix(1.0, M_tmp);
+                        Minv.ExtractSubArrayShallow(esub, -1, -1).AccMatrix(1.0, _M_tmp);
                     }
                 }
 

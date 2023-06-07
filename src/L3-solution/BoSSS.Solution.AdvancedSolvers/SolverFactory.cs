@@ -118,7 +118,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //maxKrylovDim = lc.MaxKrylovDim,
                         MaxIter = nc.MaxSolverIterations,
                         MinIter = nc.MinSolverIterations,
-                        printLambda = nc.verbose,
                         Globalization = nc.Globalization,
                         ApproxJac = Newton.ApproxInvJacobianOptions.ExternalSolver,
                         PrecondConfig = lc,

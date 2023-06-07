@@ -205,8 +205,6 @@ namespace BoSSS.Foundation.XDG {
             /// <summary>
             /// 
             /// </summary>
-            /// <param name="other"></param>
-            /// <returns></returns>
             public bool Equals(AgglomerationInfo other) {
                 if (other == null) {
                     return false;
@@ -216,6 +214,19 @@ namespace BoSSS.Foundation.XDG {
 
                 bool result = (this.AgglomerationPairs.SequenceEqual(other.AgglomerationPairs));
                 return result;
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            public override string ToString() {
+                using (var stw = new StringWriter()) {
+                    foreach (var p in AgglomerationPairs) {
+                        stw.WriteLine(p.ToString());
+                    }
+
+                    return stw.ToString();
+                }
             }
         }
 
@@ -253,11 +264,11 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="g"></param>
         /// <param name="AgglomerationPairs">
         /// Each tuple represents one agglomeration operation:
-        ///  - 1st entry: source cell index, i.e. cell which will be removed due to agglomeration; must be in the range of locally updated cells.<br/>
+        ///  - 1st entry: source cell index, i.e. cell which will be removed due to agglomeration; must be in the range of locally updated cells.
         ///  - 2nd entry: target cell index, i.e. cell which will be enlarged due to agglomeration
         /// </param>
         /// <remarks>
-        /// The cell agglomerator eliminates (resp. tries to elimintate ;) cycles in the agglomeration graph, since 
+        /// The cell agglomerator eliminates (resp. tries to eliminate ;) cycles in the agglomeration graph, since 
         /// it cannot be guaranteed that the <see cref="AgglomerationAlgorithm"/> provides cycle-free agglomeration graphs.
         /// </remarks>
         public CellAgglomerator(GridData g, IEnumerable<(int jSource, int jTarget)> AgglomerationPairs) {
@@ -277,16 +288,16 @@ namespace BoSSS.Foundation.XDG {
                 // check cell index validity
                 {
                     BitArray sourceUnique = new BitArray(J);
-                    foreach (var AggPair in AgglomerationPairs) {
+                    foreach(var AggPair in AgglomerationPairs) {
                         int jAggTarget = AggPair.Item2;
                         int jAggSource = AggPair.Item1;
 
-                        if (jAggSource < 0 || jAggSource >= J)
+                        if(jAggSource < 0 || jAggSource >= J)
                             throw new IndexOutOfRangeException($"Agglomeration source cell (cell index {jAggSource}) must be in the range of locally updated cells.");
-                        if (jAggTarget < 0 || jAggTarget >= JE)
+                        if(jAggTarget < 0 || jAggTarget >= JE)
                             throw new IndexOutOfRangeException($"Agglomeration target (cell index {jAggTarget}) is not a valid cell index.");
 
-                        if (sourceUnique[jAggSource])
+                        if(sourceUnique[jAggSource])
                             throw new ArgumentException("Illegal agglomeration graph: Local cell " + jAggSource + " is occurring in at least two agglomeration pairs as source.");
                         sourceUnique[jAggSource] = true;
 
@@ -296,7 +307,7 @@ namespace BoSSS.Foundation.XDG {
                 List<(int jSource, int jTarget)> AggPairs = new List<(int, int)>(AgglomerationPairs);
                 AgglomerationPairs = null;
 
-                
+
 
 
 
@@ -308,83 +319,12 @@ namespace BoSSS.Foundation.XDG {
                 // to the respective processor
                 // I.e., some pairs are not unique anymore, but may co-exist on more than one processor.
 
-                int InterProcessAgglomeration = 0; // used as boolean
+                int InterProcessAgglomeration; // used as boolean
                 List<int> TargetCellMpiRank; // index: correlates with `AggPairs`
                 List<int> SourceCellMpiRank; // index: correlates with `AggPairs`
-                {
-                    Partitioning CellPart = g.CellPartitioning;
-                    long j0 = CellPart.i0;
+                InterProcessAgglomeration = DoAggPairsMPIexchange(g, AggPairs, out TargetCellMpiRank, out SourceCellMpiRank);
 
-                    long[] GidxExt = g.Parallel.GlobalIndicesExternalCells;
 
-                    TargetCellMpiRank = new List<int>(Math.Max(1, (int)Math.Round(((double)(AggPairs.Count)) * 1.03)));
-                    SourceCellMpiRank = new List<int>(TargetCellMpiRank.Capacity);
-
-                    Dictionary<int, List<(long jGlbSrc, long jGlbTarg)>> _SendData = new Dictionary<int, List<(long, long)>>();
-                    foreach (var AggPair in AggPairs) {
-                        // determine all agglomeration pairs which have their target cell on an other processor
-
-                        int jAggTarget = AggPair.Item2;
-                        int jAggSource = AggPair.Item1;
-
-                        if (jAggTarget >= J) {
-                            // target cell on different MPI process
-                            InterProcessAgglomeration = 1;
-
-                            long jGlbTarg = (GidxExt[jAggTarget - J]);
-                            int targRank = CellPart.FindProcess(jGlbTarg);
-
-                            TargetCellMpiRank.Add(targRank);
-
-                            List<(long, long)> SendTo;
-                            if (!_SendData.TryGetValue(targRank, out SendTo)) {
-                                SendTo = new List<(long, long)>();
-                                _SendData.Add(targRank, SendTo);
-                            }
-
-                            SendTo.Add((j0 + jAggSource, jGlbTarg));
-
-                        } else {
-                            TargetCellMpiRank.Add(mpiRank);
-                        }
-
-                        SourceCellMpiRank.Add(mpiRank);
-                    }
-
-                    Dictionary<int, (long jGlbSrc, long jGlbTarg)[]> SendData = new Dictionary<int, (long, long)[]>();
-                    foreach (var kv in _SendData) {
-                        SendData.Add(kv.Key, kv.Value.ToArray());
-                    }
-                    _SendData = null;
-
-                    InterProcessAgglomeration = MPIExtensions.MPIMax(InterProcessAgglomeration);
-                    var RcvData = SerialisationMessenger.ExchangeData(SendData);
-
-                    foreach (var kv in RcvData) {
-                        int rcvMpiRank = kv.Key;
-                        var ReceivedAggPairs = kv.Value;
-
-                        foreach (var rap in ReceivedAggPairs) {
-                            // receive pairs and convert back to local coordinates...
-                            long jGlbAggTarget = rap.jGlbTarg;
-                            long jGlbAggSource = rap.jGlbSrc;
-
-                            Debug.Assert(CellPart.IsInLocalRange(jGlbAggTarget), "Agglomeration target is expected to be in local cell range.");
-                            int jAggTarget = checked((int)(jGlbAggTarget - j0));
-                            Debug.Assert(jAggTarget >= 0 && jAggTarget < J);
-
-                            Debug.Assert(!CellPart.IsInLocalRange(jGlbAggSource), "Agglomeration source is expected to be outside of the local cell range.");
-
-                            int jAggSource = g.Parallel.Global2LocalIdx[jGlbAggSource];
-
-                            AggPairs.Add((jAggSource, jAggTarget));
-                            TargetCellMpiRank.Add(mpiRank);
-                            SourceCellMpiRank.Add(rcvMpiRank);
-                        }
-                    }
-                }
-
-                
 
 
                 // mark and check all edges which are used for agglomeration
@@ -394,12 +334,12 @@ namespace BoSSS.Foundation.XDG {
                 int[,] E2C = g.Edges.CellIndices;
                 int[][] C2E = g.Cells.Cells2Edges;
                 {
-                    foreach (var pair in AggPairs) {
-                        int j1 = pair.Item1;
-                        int j2 = pair.Item2;
+                    foreach(var pair in AggPairs) {
+                        int j1 = pair.jSource;
+                        int j2 = pair.jTarget;
 
                         Debug.Assert(j1 < J || j2 < J);
-                        if (j1 >= J) {
+                        if(j1 >= J) {
                             int a = j2;
                             j2 = j1;
                             j1 = a;
@@ -409,9 +349,9 @@ namespace BoSSS.Foundation.XDG {
                             int i = C2E[j1].Single(delegate (int k) {
                                 int iEdge = Math.Abs(k) - 1;
                                 //                          => E2C[Math.Abs(k) - 1, 0] == jAggSrc &&
-                                if (k > 0)
+                                if(k > 0)
                                     return (E2C[iEdge, 0] == j1 && E2C[iEdge, 1] == j2);
-                                else if (k < 0)
+                                else if(k < 0)
                                     return (E2C[iEdge, 1] == j1 && E2C[iEdge, 0] == j2);
                                 else
                                     throw new ApplicationException();
@@ -419,7 +359,7 @@ namespace BoSSS.Foundation.XDG {
                             });
 
                             AgglomerationEdgesBitMask[Math.Abs(i) - 1] = true;
-                        } catch (InvalidOperationException) {
+                        } catch(InvalidOperationException) {
                             throw new ArgumentException("Found agglomeration pair which are not neighbor cells.");
                         }
                     }
@@ -441,15 +381,47 @@ namespace BoSSS.Foundation.XDG {
                     // cell index -> agglomeration pair index.
                     int[] Cells2Aggpairs = new int[JE];
                     Cells2Aggpairs.SetAll(-1);
-                    for (int i = 0; i < AggPairs.Count; i++) {
+                    for(int i = 0; i < AggPairs.Count; i++) {
                         int jAggSrc = AggPairs[i].Item1;
-                        if (Cells2Aggpairs[jAggSrc] >= 0)
+                        if(Cells2Aggpairs[jAggSrc] >= 0)
                             throw new ArgumentException("Error in agglomeration graph: a source cell '" + jAggSrc + "' appears twice.");
 
                         Cells2Aggpairs[jAggSrc] = i;
                     }
 
+                    void check_Cells2Aggpairs(string inf) {
+                        for(int iPair = 0; iPair < AggPairs.Count; iPair++) {
+                            if(AggPairs[iPair].jSource >= 0) { // ... pair is **not** marked for deletion
+                                if(Cells2Aggpairs[AggPairs[iPair].jSource] != iPair)
+                                    throw new ApplicationException($"internal data structure corrupted (Cells2Aggpairs, 1, {inf}): iPair = {iPair}, pair = {AggPairs[iPair]}, Cells2Aggpairs[{AggPairs[iPair].jSource}] = {Cells2Aggpairs[AggPairs[iPair].jSource]}");
+                            }
+                        }
+
+                        for(int j = 0; j < JE; j++) {
+                            if(Cells2Aggpairs[j] >= 0) {
+                                int iPair = Cells2Aggpairs[j];
+                                if(AggPairs[iPair].jSource != j) 
+                                    throw new ApplicationException($"internal data structure corrupted (Cells2Aggpairs, 2, {inf}): j = {j}, Cells2Aggpairs[{j}] = {iPair}, pair = {AggPairs[iPair]}");
+                            }
+                        }
+                    }
+
+                    check_Cells2Aggpairs("init");
+
                     BitArray CycleDetection = new BitArray(JE, false);
+                    BitArray MustDeletePair = new BitArray(JE, false);
+                    var CycleDetection_sets = new List<int>();
+
+                    void clear_CycleDetection() { // allows O(1) clearing
+                        foreach(int i in CycleDetection_sets)
+                            CycleDetection[i] = false;
+                        CycleDetection_sets.Clear();
+                    }
+                    void set_CycleDetection(int z) {
+                        CycleDetection_sets.Add(z);
+                        CycleDetection[z] = true;
+                    }
+
 
 
                     // reduce agglomeration levels locally
@@ -459,75 +431,103 @@ namespace BoSSS.Foundation.XDG {
                     // (123 -> 234), (234 -> 32), which form an agglomeration chain,
                     // we can replace that by (123 -> 32), (234 ->32) and avoid an agglomeration level, which is expensive.
                     // Thus, agglomeration levels are only necessary, if agglomeration chains cross processor boundaries.
-                    
 
-                    for (int iPair = 0; iPair < AggPairs.Count; iPair++) { // loop over pairs...
+
+                    for(int iPair = 0; iPair < AggPairs.Count; iPair++) { // loop over pairs...
                         int jSource = AggPairs[iPair].Item1;
                         int jTarget = AggPairs[iPair].Item2;
-                        if (jSource < 0 || jTarget < 0)
+                        if(jSource < 0 || jTarget < 0)
                             continue; // pair has been filtered
 
-                        if (jSource >= J)
+                        if(jSource >= J)
                             // do not reduce over MPI boundaries...
                             // only tricky w.r.t. Extrapolate( ... ), the other stuff would work, however...
                             continue;
 
-                        if (jTarget < J && Cells2Aggpairs[jTarget] >= 0)
-                            CycleDetection.SetAll(false);
+                        if(jTarget < J && Cells2Aggpairs[jTarget] >= 0)
+                            clear_CycleDetection();
 
-                        //bool cycle = false;
-                        while (jTarget < J && Cells2Aggpairs[jTarget] >= 0) { // traverse the agglomeration chain to find its end...
-                            if (CycleDetection[jTarget] == true) {
-                                /*
-                                BitArray localCycleMask = new BitArray(CycleDetection.ToBoolArray().GetSubVector(0, J));
-                                CellMask localCycle = new CellMask(this.GridDat, localCycleMask);
-                                localCycle.SaveToTextFile("DetectedCycle-" + mpiRank + ".csv");
-
-                                Console.WriteLine("input pairs: " + input);
-                                Console.WriteLine("processed   : " + IEnumerableExtensions.ToConcatString(AggPairs, "", " ", ""));
-
-
-                                // kill it
-                                throw new ArgumentException("Cycle in agglomeration graph (1).");
-                                */
+                        while(jTarget < J && Cells2Aggpairs[jTarget] >= 0) { // traverse the agglomeration chain to find its end...
+                            //                                                  ... but only as long as the target cell is a local one.
+                            if(CycleDetection[jTarget] == true) {
 
                                 // the pair `Cells2Aggpairs[jTarget]` should be removed
                                 int currentPair = Cells2Aggpairs[jTarget];
-                                
-                                Cells2Aggpairs[jTarget] = -1;
 
+                                // mark as invalid, i.e. set members to illegal values; The pair will be removed later;
+                                Cells2Aggpairs[jTarget] = -1;
                                 AggPairs[currentPair] = (int.MinValue, int.MinValue);
                                 SourceCellMpiRank[currentPair] = -1;
                                 TargetCellMpiRank[currentPair] = -1;
 
-                                
+                                MustDeletePair[jTarget] = true;
+
+                                //int jAggSrcGlob = (int)GridDat.Parallel.GetGlobalCellIndex(jSource);
+                                //int jAggTrgGlob = (int)GridDat.Parallel.GetGlobalCellIndex(jTarget);
+                                //Console.WriteLine($"Reduced level for CurrentPair={currentPair}, jAggSrc={jSource}, jAggTrg={jTarget}, jAggSrcGlob={jAggSrcGlob}, jAggTrgGlob={jAggTrgGlob}, rank={mpiRank} offset={g.CellPartitioning.GetI0Offest(mpiRank)}");
+
                                 break;
                             } else {
-                                CycleDetection[jTarget] = true;
+                                set_CycleDetection(jTarget);
                                 int nextPair = Cells2Aggpairs[jTarget];
 
                                 jTarget = AggPairs[nextPair].Item2;
                             }
                         }
-                        
-                        
 
-                        if (jTarget >= J)
+                        if(jTarget >= J)
                             // do not reduce over MPI boundaries...
                             // only tricky w.r.t. Extrapolate( ... ), the other stuff would work, however...
                             continue;
 
-                        if (jTarget != AggPairs[iPair].jTarget) {
+                        if(jTarget != AggPairs[iPair].jTarget) {
                             // any local agglomeration chain can be skipped:
                             // we do this by redefining the target.
                             AggPairs[iPair] = (jSource, jTarget);
                         }
                     }
 
+
+
+                    void ClearExternalPairs() {
+                        MustDeletePair.MPIExchange(g);
+
+                        for(int j = 0; j < J; j++) {
+                            if(MustDeletePair[j]) {
+                                int currentPair = Cells2Aggpairs[j];
+                                if (currentPair >=0 )
+                                    if(AggPairs[currentPair].jSource >= 0 || AggPairs[currentPair].jTarget >= 0)
+                                        throw new ApplicationException($"Error in Algorithm: " + AggPairs[currentPair].ToString());
+                            }
+                        }
+
+
+                        for(int j = J; j < JE; j++) {
+                            if(MustDeletePair[j]) {
+                                // the pair `Cells2Aggpairs[j]` should be removed
+                                int currentPair = Cells2Aggpairs[j];
+
+                                if (currentPair >=0) { // is already assigned as illegal (can happen in other processors)
+                                                       // mark as invalid, i.e. set members to illegal values; The pair will be removed later;
+                                    //Console.WriteLine($"Queried for CurrentPair={currentPair}, j={j},  AggPairs[currentPair]: ({AggPairs[currentPair].jSource} , {AggPairs[currentPair].jTarget}) on rank viz. ({SourceCellMpiRank[currentPair]} , {TargetCellMpiRank[currentPair]} )  rank={mpiRank} offset={g.CellPartitioning.GetI0Offest(mpiRank)}");
+
+                                    Cells2Aggpairs[j] = -1;
+                                    AggPairs[currentPair] = (int.MinValue, int.MinValue);
+                                    SourceCellMpiRank[currentPair] = -1;
+                                    TargetCellMpiRank[currentPair] = -1;
+                                } 
+                            }
+                        }
+                        MustDeletePair.SetAll(false);
+                    }
+
+                    ClearExternalPairs();
+                    check_Cells2Aggpairs("loc");
+
                     // init
                     // ----
                     Level = new List<int>(AggPairs.Count);
-                    for (int i = 0; i < AggPairs.Count; i++)
+                    for(int i = 0; i < AggPairs.Count; i++)
                         Level.Add(-1);
                     //Level.SetAll(-1);
 
@@ -538,49 +538,58 @@ namespace BoSSS.Foundation.XDG {
                     // --------------------------------------------------------------------
 
                     int Updates = 1;
-                    while (Updates != 0) { // due to MPI paralellization, we have to do multiple sweeps
-                                           //                    until nothing changes anymore...
+                    int Sweep = 0;
+                    while(Updates != 0) { // due to MPI parallelization, we have to do multiple sweeps
+                                          //                    until nothing changes anymore...
                         Updates = 0; // used like a bool
 
-                        for (int iPair = 0; iPair < AggPairs.Count; iPair++) { // loop over pairs...
+                        for(int iPair = 0; iPair < AggPairs.Count; iPair++) { // loop over pairs...
                             int CurrentPairIndex = iPair;
                             int CurrentLevel = -1;
 
-                            if (AggPairs[iPair].jSource < 0 || AggPairs[iPair].jTarget < 0)
+                            if(AggPairs[iPair].jSource < 0 || AggPairs[iPair].jTarget < 0)
                                 continue; // pair has been deleted
 
-                            CycleDetection.SetAll(false);
+                            clear_CycleDetection();
 
-                            while (CurrentPairIndex >= 0) { // traverse the agglomeration chain...
+                            while(CurrentPairIndex >= 0) { // traverse the agglomeration chain...
                                 var CurrentPair = AggPairs[CurrentPairIndex];
                                 int jAggSrc = CurrentPair.jSource;
                                 int jAggTrg = CurrentPair.jTarget;
-
-                                if (CycleDetection[jAggSrc] == true) {
+                                
+                                if(CycleDetection[jAggSrc] == true) {
                                     // the pair `Cells2Aggpairs[jAggTrg]` should be removed
                                     int currentPair = Cells2Aggpairs[jAggTrg];
 
+                                    //int jAggSrcGlob = (int)GridDat.Parallel.GetGlobalCellIndex(jAggSrc);
+                                    //int jAggTrgGlob = (int)GridDat.Parallel.GetGlobalCellIndex(jAggTrg);
+                                    //Console.WriteLine($"Cycle detected for CurrentPair={currentPair}, jAggSrc={jAggSrc}, jAggTrg={jAggTrg}, jAggSrcGlob={jAggSrcGlob}, jAggTrgGlob={jAggTrgGlob} rank={mpiRank} offset={g.CellPartitioning.GetI0Offest(mpiRank)}");
+
+                                    // mark as invalid, i.e. set members to illegal values; The pair will be removed later;
                                     Cells2Aggpairs[jAggTrg] = -1;
                                     SourceCellMpiRank[currentPair] = -1;
                                     TargetCellMpiRank[currentPair] = -1;
                                     AggPairs[currentPair] = (int.MinValue, int.MinValue);
                                     Level[currentPair] = -1;
 
+                                    MustDeletePair[jAggTrg] = true;
+
                                     break;
 
                                     //throw new ArgumentException("Cycle in agglomeration graph (2).");
                                 } else {
-                                    CycleDetection[jAggSrc] = true;
+                                    set_CycleDetection(jAggSrc);
 
                                     // update level index
                                     int NextLevel = Math.Max(CurrentLevel + 1, LevelAtCells[jAggSrc]);
-                                    if (NextLevel <= Level[CurrentPairIndex]) {
+                                    if(NextLevel <= Level[CurrentPairIndex]) {
                                         // no need to further traverse this branch
                                         break;
                                     } else {
                                         Updates++; // something changed in this sweep
                                     }
                                     Level[CurrentPairIndex] = NextLevel;
+                                    LevelAtCells[jAggSrc] = NextLevel;
 
                                     // move to next pair in chain
                                     CurrentPairIndex = Cells2Aggpairs[jAggTrg];
@@ -590,7 +599,10 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         VectorTransceiver_Ext.MPIExchange<int[], int>(LevelAtCells, g);
+                        ClearExternalPairs();
+                        check_Cells2Aggpairs("MPI sweep " + Sweep);
                         Updates = MPIExtensions.MPIMax(Updates);
+                        Sweep++;
                     }
 
                     MaxLevel = Level.Count() > 0 ? Level.Max() : 0;
@@ -606,16 +618,16 @@ namespace BoSSS.Foundation.XDG {
                     ai.MaxLevel = MaxLevel;
 
                     BitArray SourceCellBitMask = new BitArray(J);
-                    foreach (var pair in AggPairs) {
+                    foreach(var pair in AggPairs) {
                         int jAggSrc = pair.Item1;
-                        if (jAggSrc < J && jAggSrc >= 0)
+                        if(jAggSrc < J && jAggSrc >= 0)
                             SourceCellBitMask[jAggSrc] = true;
                     }
                     ai.SourceCells = new CellMask(g, SourceCellBitMask);
 
                     BitArray SourceCellsEdgesBitMask = new BitArray(g.Edges.Count);
-                    foreach (int jCell in ai.SourceCells.ItemEnum) {
-                        foreach (int i in C2E[jCell]) {
+                    foreach(int jCell in ai.SourceCells.ItemEnum) {
+                        foreach(int i in C2E[jCell]) {
                             int iEdg = Math.Abs(i) - 1;
                             SourceCellsEdgesBitMask[iEdg] = true;
                         }
@@ -632,8 +644,8 @@ namespace BoSSS.Foundation.XDG {
                     int ii = 0;
                     int NoOfLocalPairs = 0;
                     int myMpiRank = g.MpiRank;
-                    for (int i = 0; i < AggPairs.Count; i++) {
-                        if (AggPairs[i].jSource >= 0 && AggPairs[i].jTarget >= 0) { // only take non-deleted pairs
+                    for(int i = 0; i < AggPairs.Count; i++) {
+                        if(AggPairs[i].jSource >= 0 && AggPairs[i].jTarget >= 0) { // only take non-deleted pairs
                             ai.AgglomerationPairs[ii].jCellSource = AggPairs[i].Item1;
                             ai.AgglomerationPairs[ii].jCellTarget = AggPairs[i].Item2;
                             ai.AgglomerationPairs[ii].OwnerRank4Target = TargetCellMpiRank[i];
@@ -641,7 +653,7 @@ namespace BoSSS.Foundation.XDG {
                             ai.AgglomerationPairs[ii].AgglomerationLevel = Level[i];
 
 
-                            if (SourceCellMpiRank[ii] == myMpiRank)
+                            if(SourceCellMpiRank[ii] == myMpiRank)
                                 NoOfLocalPairs++;
 
                             ii++;
@@ -651,14 +663,92 @@ namespace BoSSS.Foundation.XDG {
                     // at this point, because jAggSource must be local, the agglomerations are unique over all MPI processors.
                     this.TotalNumberOfAgglomerations = NoOfLocalPairs.MPISum();
 
-                    if (ii < AggPairs.Count)
+                    if(ii < AggPairs.Count)
                         Array.Resize(ref ai.AgglomerationPairs, ii);
 
                 }
             }
         }
 
+        private static int DoAggPairsMPIexchange(GridData g, List<(int jSource, int jTarget)> AggPairs, out List<int> TargetCellMpiRank, out List<int> SourceCellMpiRank) {
 
+            int InterProcessAgglomeration = 0;
+            int J = g.iLogicalCells.NoOfLocalUpdatedCells;
+            Partitioning CellPart = g.CellPartitioning;
+            long j0 = CellPart.i0;
+            int mpiRank = g.MpiRank;
+
+            long[] GidxExt = g.Parallel.GlobalIndicesExternalCells;
+
+            TargetCellMpiRank = new List<int>(Math.Max(1, (int)Math.Round(((double)(AggPairs.Count)) * 1.03)));
+            SourceCellMpiRank = new List<int>(TargetCellMpiRank.Capacity);
+
+            Dictionary<int, List<(long jGlbSrc, long jGlbTarg)>> _SendData = new Dictionary<int, List<(long, long)>>();
+            foreach(var AggPair in AggPairs) {
+                // determine all agglomeration pairs which have their target cell on an other processor
+
+                int jAggTarget = AggPair.Item2;
+                int jAggSource = AggPair.Item1;
+
+                if(jAggTarget >= J) {
+                    // target cell on different MPI process
+                    InterProcessAgglomeration = 1;
+
+                    long jGlbTarg = (GidxExt[jAggTarget - J]);
+                    int targRank = CellPart.FindProcess(jGlbTarg);
+
+                    TargetCellMpiRank.Add(targRank);
+
+                    List<(long, long)> SendTo;
+                    if(!_SendData.TryGetValue(targRank, out SendTo)) {
+                        SendTo = new List<(long, long)>();
+                        _SendData.Add(targRank, SendTo);
+                    }
+
+                    SendTo.Add((j0 + jAggSource, jGlbTarg));
+
+                } else {
+                    TargetCellMpiRank.Add(mpiRank);
+                }
+
+                SourceCellMpiRank.Add(mpiRank);
+            }
+
+            Dictionary<int, (long jGlbSrc, long jGlbTarg)[]> SendData = new Dictionary<int, (long, long)[]>();
+            foreach(var kv in _SendData) {
+                SendData.Add(kv.Key, kv.Value.ToArray());
+            }
+            _SendData = null;
+
+            InterProcessAgglomeration = MPIExtensions.MPIMax(InterProcessAgglomeration);
+            var RcvData = SerialisationMessenger.ExchangeData(SendData);
+
+            foreach(var kv in RcvData) {
+                int rcvMpiRank = kv.Key;
+                var ReceivedAggPairs = kv.Value;
+
+                foreach(var rap in ReceivedAggPairs) {
+                    // receive pairs and convert back to local coordinates...
+                    long jGlbAggTarget = rap.jGlbTarg;
+                    long jGlbAggSource = rap.jGlbSrc;
+
+                    Debug.Assert(CellPart.IsInLocalRange(jGlbAggTarget), "Agglomeration target is expected to be in local cell range.");
+                    int jAggTarget = checked((int)(jGlbAggTarget - j0));
+                    Debug.Assert(jAggTarget >= 0 && jAggTarget < J);
+
+                    Debug.Assert(!CellPart.IsInLocalRange(jGlbAggSource), "Agglomeration source is expected to be outside of the local cell range.");
+
+                    int jAggSource = g.Parallel.Global2LocalIdx[jGlbAggSource];
+
+                    AggPairs.Add((jAggSource, jAggTarget));
+                    TargetCellMpiRank.Add(mpiRank);
+                    SourceCellMpiRank.Add(rcvMpiRank);
+                }
+            }
+
+
+            return InterProcessAgglomeration;
+        }
 
         void InitCouplingMatrices(int maxDeg) {
 
@@ -682,30 +772,25 @@ namespace BoSSS.Foundation.XDG {
 
             int N = MaxBasis.Length;
 
-            MultidimensionalArray Minv = MultidimensionalArray.Create(Esub, N, N);
+            //MultidimensionalArray Minv = MultidimensionalArray.Create(Esub, N, N);
             MultidimensionalArray M = MultidimensionalArray.Create(Esub, N, N);
             CouplingMtx = M;
-            CouplingMtx_inv = Minv;
+            //CouplingMtx_inv = Minv;
 
-            MaxBasis.GetExtrapolationMatrices(CP, M, Minv);
+            MaxBasis.GetExtrapolationMatrices(CP, M);
         }
 
 
         int CouplingMtxDegree = -1;
 
-        /// <summary>
-        /// Inverse of coupling matrix.<br/>
-        /// 1st index: agglomeration edge index, i.e. index into the items of <see cref="m_EdgeAgg"/>; <br/>
-        /// 2nd index: row index. <br/>
-        /// 3rd index: column index. <br/>
-        /// </summary>
-        MultidimensionalArray CouplingMtx_inv;
+        
+        
 
         /// <summary>
         /// coupling matrix.<br/>
-        /// 1st index: agglomeration edge index, i.e. index into the items of <see cref="m_EdgeAgg"/>; <br/>
-        /// 2nd index: row index. <br/>
-        /// 3rd index: column index. <br/>
+        /// - 1st index: agglomeration edge index, i.e. index into the items of <see cref="AgglomerationInfo.AgglomerationEdges"/>; 
+        /// - 2nd index: row index. 
+        /// - 3rd index: column index. 
         /// </summary>
         MultidimensionalArray CouplingMtx;
 
@@ -736,6 +821,10 @@ namespace BoSSS.Foundation.XDG {
             bool MakeInPlace, CellMask cm) {
             using(new FuncTrace()) {
 
+                if(!object.ReferenceEquals(map.GridDat, this.GridDat)) {
+                    throw new ArgumentException("grid object mismatch.");
+                }
+
                 int J = this.GridDat.Cells.NoOfLocalUpdatedCells;
                 int mpiRank = this.GridDat.CellPartitioning.MpiRank;
 
@@ -744,6 +833,7 @@ namespace BoSSS.Foundation.XDG {
                 BlockMsrMatrix CompleteMtx = null;
                 for(int AggLevel = 0; AggLevel <= this.AggInfo.MaxLevel; AggLevel++) { // loop over agglomeration level...
 
+                    
                     // alloc matrix for the current agglomeration level
                     // ------------------------------------------------
 
@@ -757,11 +847,13 @@ namespace BoSSS.Foundation.XDG {
                             cm = CellMask.GetFullMask(this.GridDat);
 
                         foreach(int j in cm.ItemEnum) { // loop over cells...
+
+                            
                             for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
                                 int N = NjFunc(j, gamma);
                                 long i0 = i0Func(j, gamma);
 
-                                for(int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
+                                for(int n = 0; n < N; n++) { // loop over DOFs for variable 'gamma' in cell 'j'...
                                     LevelMtx[i0 + n, i0 + n] = 1.0;
                                 }
                             }
@@ -774,6 +866,9 @@ namespace BoSSS.Foundation.XDG {
                     int iPair = -1;
                     foreach(var pair in this.AggInfo.AgglomerationPairs) {
                         iPair++;
+
+                        //if(pair.AgglomerationLevel == AggLevel)
+                        //    Console.Error.WriteLine($"Rk {mpiRank}, Spc {SpeciesName}, Lv {AggLevel}of{this.AggInfo.MaxLevel}: {this.GridDat.iLogicalCells.GetGlobalID(pair.jCellSource)}->{this.GridDat.iLogicalCells.GetGlobalID(pair.jCellTarget)}");
 
                         if(pair.OwnerRank4Target == mpiRank) {
                             var Aj = this.CouplingMtx.ExtractSubArrayShallow(iPair, -1, -1);
@@ -791,23 +886,25 @@ namespace BoSSS.Foundation.XDG {
                                 long i0_Row = i0Func(pair.jCellTarget, gamma);
                                 long i0_Col = i0Func(pair.jCellSource, gamma);
 
-                                for(int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
+                                for(int n = 0; n < N; n++) { // loop over DOFs for variable 'gamma' in cell 'j'...
                                     for(int m = 0; m < N; m++) {
                                         LevelMtx[i0_Row + n, i0_Col + m] = Aj[m, n];
                                     }
                                 }
                             }
-
                         }
 
                         if(pair.OwnerRank4Source == mpiRank) {
                             // clear agglomeration source
 
+                            if(pair.AgglomerationLevel != AggLevel)
+                                continue;
+
                             for(int gamma = 0; gamma < NoOfVars; gamma++) { // loop over DG fields...
                                 int N = NjFunc(pair.jCellSource, gamma);
                                 long i0 = i0Func(pair.jCellSource, gamma);
 
-                                for(int n = 0; n < N; n++) { // loop over DOFs for variabe 'gamma' in cell 'j'...
+                                for(int n = 0; n < N; n++) { // loop over DOFs for variable 'gamma' in cell 'j'...
                                     if(MakeInPlace)
                                         LevelMtx[i0 + n, i0 + n] = -1.0;
                                     else
@@ -919,7 +1016,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// In a vector <paramref name="V"/>, this method performs a
+        /// For a list of DG fields, this method performs a
         /// polynomial extrapolation from agglomeration target cells to agglomeration source cells.
         /// </summary>
         public void Extrapolate(CoordinateMapping DgFields) {

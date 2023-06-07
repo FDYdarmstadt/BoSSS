@@ -351,7 +351,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
 
 
         double ProjectDGField_SinglePass() {
-            double kryCh = 0;
+            //double kryCh = 0;
             double GlbChange = 0.0, LocChange = 0.0;
             if(globalSeaming != null) {
                 GlbChange += globalSeaming.PerformProjection().Pow2();

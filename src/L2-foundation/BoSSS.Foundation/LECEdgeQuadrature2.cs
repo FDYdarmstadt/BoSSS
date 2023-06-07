@@ -1376,7 +1376,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
                 EdgeEvalSomething(i0, Length, NS.NoOfNodes, new MultidimensionalArray[] { m_ParameterFieldsValues_IN[np], m_ParameterFieldsValues_OUT[np] },
                     delegate(int jCell, int nodeSetIdx, MultidimensionalArray buf) {
                         if (m_ParameterFields[np] != null)
-                            m_ParameterFields[np].Evaluate(jCell, 1, NS.GetVolumeNodeSet(this.m_GridDat, nodeSetIdx), buf);
+                            m_ParameterFields[np].Evaluate(jCell, 1, NS.GetVolumeNodeSet(this.m_GridDat, nodeSetIdx, false), buf);
                         else
                             buf.Clear();
                     });

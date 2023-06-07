@@ -58,15 +58,15 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Number of domain fields
         /// </summary>
-        int DELTA; 
-        
+        int DELTA;
+
         /// <summary>
-        /// Switch, whether the evaluation (the field value) of <see cref="m_DomainAndParamFields"/> is actually necessary.
+        /// Switch, whether the evaluation (the field value) of <see cref="m_DomainAndParamFieldsA"/>, <see cref="m_DomainAndParamFieldsB"/> is actually necessary.
         /// </summary>
         bool[] m_ValueRequired;
 
         /// <summary>
-        /// Switch, whether the evaluation (the gradient value) of <see cref="m_DomainAndParamFields"/> is actually necessary.
+        /// Switch, whether the evaluation (the gradient value) of <see cref="m_DomainAndParamFieldsA"/>, <see cref="m_DomainAndParamFieldsB"/> is actually necessary.
         /// </summary>
         bool[] m_GradientRequired;
         
@@ -288,44 +288,36 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// values of domain and parameter fields, positive side of level Set 
-        /// <list type="bullet">
-        ///   <item>1st index: parameter index, correlates with <see cref="m_DomainAndParamFields"/></item>
-        ///   <item>2nd index: cell index, plus some offset</item>
-        ///   <item>3rd index: node index</item>
-        /// </list>
+        /// - 1st index: parameter index, correlates with <see cref="m_DomainAndParamFieldsA"/>, <see cref="m_DomainAndParamFieldsB"/>
+        /// - 2nd index: cell index, plus some offset
+        /// - 3rd index: node index
         /// </summary>
         MultidimensionalArray[] m_FieldValuesPos;
-        
+
         /// <summary>
         /// values of domain and parameter fields, positive side of level Set
-        /// <list type="bullet">
-        ///   <item>1st index: parameter index, correlates with <see cref="m_DomainAndParamFields"/></item>
-        ///   <item>2nd index: cell index, plus some offset</item>
-        ///   <item>3rd index: node index</item>
-        /// </list>
+        /// - 1st index: parameter index, correlates with <see cref="m_DomainAndParamFieldsA"/>, <see cref="m_DomainAndParamFieldsB"/>
+        /// - 2nd index: cell index, plus some offset
+        /// - 3rd index: node index
         /// </summary>
         MultidimensionalArray[] m_FieldValuesNeg;
 
 
         /// <summary>
         /// values of domain and parameter fields, positive side of level Set 
-        /// <list type="bullet">
-        ///   <item>1st index: parameter index, correlates with <see cref="m_DomainAndParamFields"/></item>
-        ///   <item>2nd index: cell index, plus some offset</item>
-        ///   <item>3rd index: node index</item>
-        ///   <item>4th index: spatial direction</item>
-        /// </list>
+        /// - 1st index: parameter index, correlates with <see cref="m_DomainAndParamFieldsA"/>, <see cref="m_DomainAndParamFieldsB"/>
+        /// - 2nd index: cell index, plus some offset
+        /// - 3rd index: node index
+        /// - 4th index: spatial direction
         /// </summary>
         MultidimensionalArray[] m_FieldGradientValuesPos;
-        
+
         /// <summary>
         /// values of domain and parameter fields, positive side of level Set
-        /// <list type="bullet">
-        ///   <item>1st index: parameter index, correlates with <see cref="m_DomainAndParamFields"/></item>
-        ///   <item>2nd index: cell index, plus some offset</item>
-        ///   <item>3rd index: node index</item>
-        ///   <item>4th index: spatial direction</item>
-        /// </list>
+        /// - 1st index: parameter index, correlates with <see cref="m_DomainAndParamFieldsA"/>, <see cref="m_DomainAndParamFieldsB"/>
+        /// - 2nd index: cell index, plus some offset
+        /// - 3rd index: node index
+        /// - 4th index: spatial direction
         /// </summary>
         MultidimensionalArray[] m_FieldGradientValuesNeg;
 
@@ -334,13 +326,13 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// result buffers for <see cref="m_NonlinLsForm_V"/>,
-        /// 1st index: codomain variable/test function
+        /// - 1st index: codomain variable/test function
         /// </summary>
         MultidimensionalArray[] Koeff_V;
 
         /// <summary>
         /// result buffers for <see cref="m_NonlinLsForm_GradV"/>, 
-        /// 1st index: codomain variable/test function
+        /// - 1st index: codomain variable/test function
         /// </summary>
         MultidimensionalArray[] Koeff_GradV;
 

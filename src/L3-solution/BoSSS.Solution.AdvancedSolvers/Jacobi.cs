@@ -27,11 +27,19 @@ using BoSSS.Platform.Utils;
 using ilPSP.Tracing;
 
 namespace BoSSS.Solution.AdvancedSolvers {
-    public class Jacobi : ISolverSmootherTemplate, ISolverWithCallback {
+    public class Jacobi : ISubsystemSolver {
 
-        MultigridOperator m_mgop;
+        IOperatorMappingPair m_mgop;
+
+
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
 
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+        void InitImpl(IOperatorMappingPair op) {
             using(new FuncTrace()) {
                 if(object.ReferenceEquals(op, m_mgop))
                     return; // already initialized
@@ -39,12 +47,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose();
 
                 var M = op.OperatorMatrix;
-                var MgMap = op.Mapping;
+                var MgMap = op.DgMapping;
                 this.m_mgop = op;
 
-                if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if(!M.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if(!M.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 Mtx = M;
@@ -59,10 +67,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public Action<int, double[], double[], MultigridOperator> IterationCallback {
-            get;
-            set;
-        }
+        //public Action<int, double[], double[], MultigridOperator> IterationCallback {
+        //    get;
+        //    set;
+        //}
 
         BlockMsrMatrix Mtx;
         double[] diag;
@@ -102,12 +110,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     xl[i] = omega * ((ql[i] + diag[i] * xl[i]) / diag[i]) + (1.0 - omega) * xl[i];
                 }
 
-                if(this.IterationCallback != null) {
-                    double[] _xl = xl.ToArray();
-                    double[] _bl = bl.ToArray();
-                    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
-                    this.IterationCallback(iIter, _xl, _bl, this.m_mgop);
-                }
+                //if(this.IterationCallback != null) {
+                //    double[] _xl = xl.ToArray();
+                //    double[] _bl = bl.ToArray();
+                //    Mtx.SpMV(-1.0, _xl, 1.0, _bl);
+                //    this.IterationCallback(iIter, _xl, _bl, this.m_mgop);
+                //}
             }
         }
 

@@ -533,22 +533,22 @@ namespace BoSSS.Solution.GridImport.Gambit {
                         if (bcset.elementType[i] == ElementType.Brick) {
                             switch (iEdge_Gambit) {
                                 case 1:
-                                    iEdge_BoSSS = (int)Cube.Edge.Bottom;
+                                    iEdge_BoSSS = (int)Cube.Faces.Bottom;
                                     break;
                                 case 2:
-                                    iEdge_BoSSS = (int)Cube.Edge.Right;
+                                    iEdge_BoSSS = (int)Cube.Faces.Right;
                                     break;
                                 case 3:
-                                    iEdge_BoSSS = (int)Cube.Edge.Top;
+                                    iEdge_BoSSS = (int)Cube.Faces.Top;
                                     break;
                                 case 4:
-                                    iEdge_BoSSS = (int)Cube.Edge.Left;
+                                    iEdge_BoSSS = (int)Cube.Faces.Left;
                                     break;
                                 case 5:
-                                    iEdge_BoSSS = (int)Cube.Edge.Back;
+                                    iEdge_BoSSS = (int)Cube.Faces.Back;
                                     break;
                                 case 6:
-                                    iEdge_BoSSS = (int)Cube.Edge.Front;
+                                    iEdge_BoSSS = (int)Cube.Faces.Front;
                                     break;
                                 default:
                                     throw new ApplicationException("unknow face number for Gambit Brick: " + iEdge_Gambit + ";");
@@ -556,16 +556,16 @@ namespace BoSSS.Solution.GridImport.Gambit {
                         } else if (bcset.elementType[i] == ElementType.Quadrilateral) {
                             switch (iEdge_Gambit) {
                                 case 1:
-                                    iEdge_BoSSS = (int)Square.Edge.Bottom;
+                                    iEdge_BoSSS = (int)Square.Faces.Bottom;
                                     break;
                                 case 2:
-                                    iEdge_BoSSS = (int)Square.Edge.Right;
+                                    iEdge_BoSSS = (int)Square.Faces.Right;
                                     break;
                                 case 3:
-                                    iEdge_BoSSS = (int)Square.Edge.Top;
+                                    iEdge_BoSSS = (int)Square.Faces.Top;
                                     break;
                                 case 4:
-                                    iEdge_BoSSS = (int)Square.Edge.Left;
+                                    iEdge_BoSSS = (int)Square.Faces.Left;
                                     break;
                                 default:
                                     throw new ApplicationException("unknow face number for Gambit Quadliteral: " + iEdge_Gambit + ";");
@@ -645,22 +645,22 @@ namespace BoSSS.Solution.GridImport.Gambit {
                     neigh = new int[6];
 
                     // Neighbour at Top (= between Vertex 7,5,2,4)
-                    neigh[(int)Cube.Edge.Top] = NeighInd(j, points2cells[nodes[7]], points2cells[nodes[5]], points2cells[nodes[2]], points2cells[nodes[4]]);
+                    neigh[(int)Cube.Faces.Top] = NeighInd(j, points2cells[nodes[7]], points2cells[nodes[5]], points2cells[nodes[2]], points2cells[nodes[4]]);
 
                     // Neighbour at Bottom (= between Vertex 0,1,3,6)
-                    neigh[(int)Cube.Edge.Bottom] = NeighInd(j, points2cells[nodes[0]], points2cells[nodes[1]], points2cells[nodes[3]], points2cells[nodes[6]]);
+                    neigh[(int)Cube.Faces.Bottom] = NeighInd(j, points2cells[nodes[0]], points2cells[nodes[1]], points2cells[nodes[3]], points2cells[nodes[6]]);
 
                     // Neighbour at Left (= between Vertex 0,2,3,7)
-                    neigh[(int)Cube.Edge.Left] = NeighInd(j, points2cells[nodes[0]], points2cells[nodes[2]], points2cells[nodes[3]], points2cells[nodes[7]]);
+                    neigh[(int)Cube.Faces.Left] = NeighInd(j, points2cells[nodes[0]], points2cells[nodes[2]], points2cells[nodes[3]], points2cells[nodes[7]]);
 
                     // Neighbour at Right (= between Vertex 1,4,5,6)
-                    neigh[(int)Cube.Edge.Right] = NeighInd(j, points2cells[nodes[1]], points2cells[nodes[4]], points2cells[nodes[5]], points2cells[nodes[6]]);
+                    neigh[(int)Cube.Faces.Right] = NeighInd(j, points2cells[nodes[1]], points2cells[nodes[4]], points2cells[nodes[5]], points2cells[nodes[6]]);
 
                     // Neighbour at Front (= between Vertex 3,6,5,7)
-                    neigh[(int)Cube.Edge.Front] = NeighInd(j, points2cells[nodes[3]], points2cells[nodes[6]], points2cells[nodes[5]], points2cells[nodes[7]]);
+                    neigh[(int)Cube.Faces.Front] = NeighInd(j, points2cells[nodes[3]], points2cells[nodes[6]], points2cells[nodes[5]], points2cells[nodes[7]]);
 
                     // Neighbour at Back (= between Vertex 0,1,2,4)
-                    neigh[(int)Cube.Edge.Back] = NeighInd(j, points2cells[nodes[0]], points2cells[nodes[1]], points2cells[nodes[2]], points2cells[nodes[4]]);
+                    neigh[(int)Cube.Faces.Back] = NeighInd(j, points2cells[nodes[0]], points2cells[nodes[1]], points2cells[nodes[2]], points2cells[nodes[4]]);
 
 
 
@@ -668,16 +668,16 @@ namespace BoSSS.Solution.GridImport.Gambit {
                     neigh = new int[4];
 
                     // Neighbour at Top (= between Vertex 2 and 3)
-                    neigh[(int)Square.Edge.Top] = NeighInd(j, points2cells[nodes[2]], points2cells[nodes[3]]);
+                    neigh[(int)Square.Faces.Top] = NeighInd(j, points2cells[nodes[2]], points2cells[nodes[3]]);
 
                     // Neighbour at Bottom (= between Vertex 0 and 1)
-                    neigh[(int)Square.Edge.Bottom] = NeighInd(j, points2cells[nodes[0]], points2cells[nodes[1]]);
+                    neigh[(int)Square.Faces.Bottom] = NeighInd(j, points2cells[nodes[0]], points2cells[nodes[1]]);
 
                     // Neighbour at Left (= between Vertex 0 and 2)
-                    neigh[(int)Square.Edge.Left] = NeighInd(j, points2cells[nodes[0]], points2cells[nodes[2]]);
+                    neigh[(int)Square.Faces.Left] = NeighInd(j, points2cells[nodes[0]], points2cells[nodes[2]]);
 
                     // Neighbour at Right (= between Vertex 1 and 3)
-                    neigh[(int)Square.Edge.Right] = NeighInd(j, points2cells[nodes[1]], points2cells[nodes[3]]);
+                    neigh[(int)Square.Faces.Right] = NeighInd(j, points2cells[nodes[1]], points2cells[nodes[3]]);
 
                 } else if (elements_cells_4.NTYPE_ElementType[j] == ElementType.Tetrahedron) {
                     neigh = new int[4];

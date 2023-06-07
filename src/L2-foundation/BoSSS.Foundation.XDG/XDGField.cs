@@ -27,6 +27,8 @@ using ilPSP.Tracing;
 using ilPSP.Utils;
 using ilPSP;
 using MPI.Wrappers;
+using BoSSS.Foundation.Voronoi;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -63,7 +65,7 @@ namespace BoSSS.Foundation.XDG {
     public partial class XDGField : DGField, IObserver<LevelSetTracker.LevelSetRegions> {
 
         /// <summary>
-        /// an implementation of <see cref="FieldFactory{T}"/> that creates <see cref="XDGField"/>-DG-fields.
+        /// a factory that creates <see cref="XDGField"/>-DG-fields.
         /// </summary>
         /// <param name="__Basis">
         /// The basis that is used for this field;
@@ -906,7 +908,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// performs the projection of <paramref name="func"/> for each species.
+        /// performs the projection of <paramref name="f"/> for each species.
         /// </summary>
         public override void ProjectFunction(double alpha, Func<Vector, double[], int, double> f, CellQuadratureScheme scheme, params DGField[] U) {
             
@@ -932,8 +934,6 @@ namespace BoSSS.Foundation.XDG {
 
 
 
-
-
         /// <summary>
         /// Add a constant to this field
         /// </summary>
@@ -944,90 +944,6 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-
-        /*
-
-        /// <summary>
-        /// used by <see cref="Field.ProjectField(double,ScalarFunction,CellMask,QuadRule)"/>;
-        /// </summary>
-        /// <param name="alpha"></param>
-        /// <param name="func"></param>
-        /// <param name="qr">quad. rule to be used</param>
-        /// <returns></returns>
-        protected override ProjectionQuadrature GetProjectionQuadrature(double alpha, ScalarFunction func, ICompositeQuadRule<QuadRule> qr) {
-            return new CutCellProjectionQuadrature(this, alpha, func, qr);
-        }
-
-
-        /// <summary>
-        /// used by <see cref="Field.ProjectField(double,ScalarFunction,CellMask,QuadRule)"/>;
-        /// </summary>
-        /// <param name="alpha"></param>
-        /// <param name="func"></param>
-        /// <param name="qr">quad. rule to be used</param>
-        /// <returns></returns>
-        override protected ProjectionQuadrature GetProjectionQuadrature(double alpha, ScalarFunction2 func, ICompositeQuadRule<QuadRule> qr) {
-            return new CutCellProjectionQuadrature(this, alpha, func, qr);
-        }
-
-        /// <summary>
-        /// Projection quadrature for fields with cut cells. The main
-        /// difference compared to <see cref="Field.ProjectionQuadrature"/> is the
-        /// integration results are stored in the coordinates of _all_ species.
-        /// Besides of that, the results should be identical.
-        /// </summary>
-        private class CutCellProjectionQuadrature : ProjectionQuadrature {
-
-            /// <summary>
-            /// <see cref="Field.ProjectionQuadrature(Field, double, ScalarFunction, QuadRule)"/>
-            /// </summary>
-            public CutCellProjectionQuadrature(XDGField f, double alpha, ScalarFunction func, ICompositeQuadRule<QuadRule> qr)
-                : base(f, alpha, func, qr) {
-            }
-
-            /// <summary>
-            /// <see cref="Field.ProjectionQuadrature(Field, double, ScalarFunction2, QuadRule)"/>
-            /// </summary>
-            public CutCellProjectionQuadrature(XDGField f, double alpha, ScalarFunction2 func, ICompositeQuadRule<QuadRule> qr)
-                : base(f, alpha, func, qr) {
-            }
-
-            /// <summary>
-            /// In contrast to
-            /// <see cref="Field.ProjectionQuadrature.SaveIntegrationResults"/>,
-            /// saves the integration for all species.
-            /// </summary>
-            /// <param name="i0">
-            /// <see cref="Field.ProjectionQuadrature.SaveIntegrationResults"/>
-            /// </param>
-            /// <param name="Length">
-            /// <see cref="Field.ProjectionQuadrature.SaveIntegrationResults"/>
-            /// </param>
-            /// <param name="ResultsOfIntegration">
-            /// <see cref="Field.ProjectionQuadrature.SaveIntegrationResults"/>
-            /// </param>
-            protected override void SaveIntegrationResults(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-                int N = m_Owner.Basis.Polynomials.Length; // number of integrals per Cell
-                if (N != ResultsOfIntegration.GetLength(1))
-                    throw new ApplicationException("internal error.");
-                XDGBasis cb = (XDGBasis)m_Owner.Basis;
-                int NSep = cb.DOFperSpeciesPerCell;
-
-                for (int j = 0; j < Length; j++) {
-                    ReducedRegionCode rrc;
-                    int NoOfSpecies = cb.Tracker.GetNoOfSpecies(j + i0, out rrc);
-
-                    for (int iSpecies = 0; iSpecies < NoOfSpecies; iSpecies++) {
-                        int n0 = cb.GetSpeciesI0(iSpecies);
-
-                        for (int n = 0; n < NSep; n++) {
-                            m_Owner.Coordinates[j + i0, n + n0] += m_alpha * ResultsOfIntegration[j, n];
-                        }
-                    }
-                }
-            }
-        }
-         */
 
         /// <summary>
         /// symbolic derivation, cell by cell and species by species;
@@ -1047,8 +963,9 @@ namespace BoSSS.Foundation.XDG {
         /// An optional restriction to the domain in which the derivative is computed (it may, e.g.
         /// be only required in boundary cells, so a computation over the whole domain 
         /// would be a waste of computation power. A proper execution mask for this case would be e.g. 
-        /// <see cref="BoSSS.Foundation.Grid.GridData.BoundaryCells"/>.)<br/>
-        /// if null, the computation is carried out in the whole domain
+        /// <see cref="BoSSS.Foundation.Grid.Classic.GridData.BoundaryCells"/>.)
+        /// 
+        /// if null, the computation is carried out in the whole domain;
         /// </param>
         /// <remarks>
         /// The derivative is calculated by a cell-by-cell (symbolic) derivation of the DG polynomials, therefore the
@@ -1302,6 +1219,137 @@ namespace BoSSS.Foundation.XDG {
                 this.Evaluate,
                 CQS);
             return FieldReturn;
+        }
+
+
+        public double L2NormAllSpecies(CellMask cm = null) {
+            
+
+            double acc = 0;
+            foreach (SpeciesId spc in this.Basis.Tracker.SpeciesIdS) {
+                acc += L2NormSpecies(spc, cm).Pow2();
+            }
+
+            return acc.Sqrt();
+        }
+
+
+        /// <summary>
+        /// <see cref="L2NormSpecies(SpeciesId, CellMask)"/>
+        /// </summary>
+        public double L2NormSpecies(string spcNmn, CellMask cm = null) {
+            SpeciesId spc = this.Basis.Tracker.GetSpeciesId(spcNmn);
+            return L2NormSpecies(spc);
+        }
+
+        /// <summary>
+        /// Canonical L2 Norm in the XDG space, i.e.
+        /// ```math
+        ///   \left( \int_{\Omega \cap \mathfrak{ s} \cap \text{ CM} }
+        ///        u(\vec{ x})
+        ///   \text{dV} \right)^{1/2},
+        /// ```
+        /// where 
+        /// $`\mathfrak{s}`$ denotes the domain of species <paramref name="spc"/> and
+        /// $`\text{ CM} }`$ denotes the optional cell mask <paramref name="cm"/>. 
+        /// </summary>
+        /// <remarks>
+        /// The foundation for computing the L2-norm in cut cells is the following relation:
+        /// For any arbitrary (i.e. non-orthonormal) DG or XDG basis,
+        /// the norm of a Field 
+        /// $`u = sum_{j} \phi_{j} \tilde{u}_{j}`$ is given as:
+        /// ```math
+        ///         \left\| u \right\|_{L^2}^2 =
+        ///         (u, u) = 
+        ///     \int_\Omega 
+        ///         \left( \sum_{j} \phi_{j} \tilde{u}_{j} \right) 
+        ///         \left( \sum_{l} \phi_{l} \tilde{u}_{l} \right) 
+        ///     dV = 
+        ///     \sum_{j l} \tilde{u}_{j} \tilde{u}_{l} ( \phi_{j}, \phi_{l} )
+        ///     =
+        ///       \tilde{u}^T M \tilde{u},
+        /// ```
+        /// where $`M `$ denotes the mass matrix ($` M_{j l} = ( \phi_ { j}, \phi_ { l} )  `$).
+        /// </remarks>
+        public double L2NormSpecies(SpeciesId spc, CellMask cm = null) {
+            int deg = this.Basis.Degree;
+            var trk = this.Basis.Tracker;
+            int N = this.Basis.NonX_Basis.Length; // DOFs per cell per species.
+            double acc = 0; // accumulator for the norm
+
+            if (cm == null)
+                cm = trk.Regions.GetSpeciesMask(spc);
+            
+            if (cm.MaskType != MaskType.Logical)
+                throw new ArgumentException();
+
+
+            double[] GetCoords(int j) {
+                int iSpc = trk.Regions.GetSpeciesIndex(spc, j);
+                if (iSpc < 0)
+                    return null;
+                else
+                    return this.Coordinates.GetRowPart(j, iSpc * N, N);
+            }
+
+
+            // obtain the mass matrix required for the non-orthonormal cells
+            // =============================================================
+
+            var AvailOrders = trk.GetCachedOrders().Where(order => order >= 2 * deg);
+            int order2Pick = AvailOrders.Any() ? AvailOrders.Min() : 2 * deg;
+
+            //Console.WriteLine(this.Identification + ": available XDG quad orders: " + AvailOrders.ToConcatString("", ",", ";") + " using order: " + order2Pick);
+
+            var MMF = trk.GetXDGSpaceMetrics(spc, order2Pick).MassMatrixFactory;
+            var MMblox = MMF.GetMassMatrixBlocks(this.Basis.NonX_Basis, spc);
+
+
+
+            // 1st, do all the cut cells with non-id mass matrix
+            // =================================================
+
+            BitArray cmMask = cm.GetBitMask().CloneAs(); // we need to modify the mask
+            double[] tmp = new double[N];
+
+            for (int iSub = 0; iSub < MMblox.jSub2jCell.Length; iSub++) {
+                int jCell = MMblox.jSub2jCell[iSub];
+                if (cmMask[jCell] == false)
+                    continue; // not in mask
+                
+                double[] Coords = GetCoords(jCell);
+                if (Coords == null)
+                    continue; // species not present in cell; no contribution.
+
+                var MM_j = MMblox.MassMatrixBlocks.ExtractSubArrayShallow(new int[] { iSub, 0, 0 }, new int[] { iSub - 1, N - 1, N - 1 });
+
+                MM_j.GEMV(1.0, Coords, 0.0, tmp);
+                double res_j = Coords.InnerProd(tmp);
+                acc += res_j;
+
+                cmMask[jCell] = false; // mark that we have taken care of this cell
+            }
+
+            // 2nd pass, do all normal cells
+            // =============================
+
+            foreach(int jCell in cm.ItemEnum) {
+                if (cmMask[jCell] == false)
+                    continue; // already done.
+
+                double[] Coords = GetCoords(jCell);
+
+                // in this cell, we have an orthonormal basis, i.e. the mass matrix is the identity
+
+                acc += Coords.L2NormPow2();
+            }
+
+
+            // return
+            // ======
+
+            acc = acc.MPISum().Sqrt();
+            return acc;
         }
 
 

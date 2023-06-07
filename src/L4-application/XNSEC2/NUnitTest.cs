@@ -29,6 +29,7 @@ using MPI.Wrappers;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 
@@ -58,7 +59,35 @@ namespace BoSSS.Application.XNSEC {
         [Test]
         public static void IncompressibleSteadyPoiseuilleFlowTest() {
             using (var p = new XNSEC()) {
-                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.ChannelFlowTest_NUnit();
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.ChannelFlowTest_NUnit(false);
+                p.Init(c);
+                p.RunSolverMode();
+                //p.OperatorAnalysis();
+                // p.CheckJacobian();
+                double err_u = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityX];
+                double err_v = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityY];
+                double err_p = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.Pressure];
+                double thres_u = 5.1e-6;
+                double thres_v = 2.8e-6;
+                double thres_p = 1.6e-5;
+
+                Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
+                Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
+                Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
+
+                Assert.Less(err_u, thres_u, "L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
+                Assert.Less(err_v, thres_v, "L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
+                Assert.Less(err_p, thres_p, "L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
+            }
+        }
+
+        /// <summary>
+        /// Tests the steady 2D-Channel flow using the 'Steady_SIMPLE' algorithm.***
+        /// </summary>
+        [Test]
+        public static void IncompressibleSteadyPoiseuilleFlowTest_WithImmersedBoundary() {
+            using (var p = new XNSEC()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.ChannelFlowTest_NUnit(true);     
                 p.Init(c);
                 p.RunSolverMode();
                 //p.OperatorAnalysis();
@@ -82,33 +111,56 @@ namespace BoSSS.Application.XNSEC {
 
 
 
-        ///// <summary>
-        ///// Tests the steady 2D-Channel flow using the 'Steady_SIMPLE' algorithm.***
-        ///// </summary>
+   
+
+        /// <summary>
+        /// 
+        /// </summary>
         //[Test]
-        //public static void BackwardFacingStep() {
-        //    using (var p = new XNSEC()) {
-        //        var c = BoSSS.Application.XNSEC.FullNSEControlExamples.BackwardFacingStep();
-        //        p.Init(c);
-        //        p.RunSolverMode();
-        //        //p.OperatorAnalysis();
-        //        // p.CheckJacobian();
-        //        double err_u = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityX];
-        //        double err_v = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityY];
-        //        double err_p = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.Pressure];
-        //        double thres_u = 5.1e-6;
-        //        double thres_v = 2.8e-6;
-        //        double thres_p = 1.6e-5;
+        public static void ImmersedBoundaryTest_MixtureFraction_DropletCombustion() {
 
-        //        Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
-        //        Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
-        //        Console.WriteLine("L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
+            string path = Path.Combine(basepath, "default_bosss_db_comb23");
 
-        //        Assert.Less(err_u, thres_u, "L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
-        //        Assert.Less(err_v, thres_v, "L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
-        //        Assert.Less(err_p, thres_p, "L2 Error of solution p: " + err_p + " (threshold is " + thres_p + ")");
-        //    }
-        //}
+            bool alreadyExists = Directory.Exists(path);
+            var db = DatabaseInfo.CreateOrOpen(path);
+
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+
+            if (rank == 0 && alreadyExists) {
+                db.Controller.ClearDatabase();
+            }
+
+            //using (var p = new XNSEC_MixtureFraction()) {
+            //    var c =  BoSSS.Application.XNSEC.FullNSEControlExamples.NuNit_Droplet_ImmersedBoundary_MixtureFraction( db.Path);                
+            //    c.ImmediatePlotPeriod = 1;
+            //    c.SuperSampling = 2;
+            //    p.Init(c);
+            //    p.RunSolverMode();
+            //}
+
+            Console.WriteLine("Flame sheet calculation done.");
+            //using (var p = new XNSEC()) {
+            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_DropletFlame(2, 10,  db.Path);
+            //    c.ImmediatePlotPeriod = 1;
+            //    c.SuperSampling = 2;
+            //    p.Init(c);
+            //    p.RunSolverMode();
+
+            //    var temperatureXdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
+            //    var temp = temperatureXdg.ProjectToSinglePhaseField(4);
+            //    double minT; double maxT;
+            //    temp.GetExtremalValues(out minT, out maxT);
+            //    Console.WriteLine("Maximum reached temperature is {0}K", maxT);
+            //}
+            //Console.WriteLine("Full calculation done.");
+
+        }
 
 
         /// <summary>
@@ -230,15 +282,15 @@ namespace BoSSS.Application.XNSEC {
                 var c = BoSSS.Application.XNSEC.FullNSEControlExamples.NUnitSteadyCouetteFlowWithTemperatureGradient();
                 p.Init(c);
                 p.RunSolverMode();
-                //p.OperatorAnalysis();
+                //p.OperatorAna<lysis();
                 double err_u = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityX];
                 double err_v = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.VelocityY];
                 double err_p = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.Pressure];
                 double err_T = (double)p.QueryHandler.QueryResults["Err_" + VariableNames.Temperature];
-                double thres_u = 9e-6;
-                double thres_v = 6e-5;
+                double thres_u = 2e-5;
+                double thres_v = 3e-5;
                 double thres_p = 0.09;
-                double thres_T = 6e-6;
+                double thres_T = 6e-5;
 
                 Console.WriteLine("L2 Error of solution u: " + err_u + " (threshold is " + thres_u + ")");
                 Console.WriteLine("L2 Error of solution v: " + err_v + " (threshold is " + thres_v + ")");
@@ -287,7 +339,6 @@ namespace BoSSS.Application.XNSEC {
                 Console.WriteLine("aaaaaaaaaaaa"+Math.Abs(ThermPressureCalculated - p0Reference));
                 if (Math.Abs(ThermPressureCalculated - p0Reference) > 1e-2) { 
                     throw new Exception("Error on calculation of the thermodynamic pressure. End value is not the correct one");
-                    Console.WriteLine("BLAAAAAABLAAAAAABLAAAAAABLAAAAAA");
 
                 }
                 Console.WriteLine("The test passed! ");
@@ -491,7 +542,7 @@ namespace BoSSS.Application.XNSEC {
             XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
             SurfaceStressTensor_IsotropicMode SurfTensionMode,
             bool constantDensity,
-            int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.classic_pardiso) {
+            int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {
             XNSEC_Control C = new XNSEC_Control();
             int D = tst.SpatialDimension;
             int NoChemSpc = tst.NumberOfChemicalComponents;
@@ -532,6 +583,7 @@ namespace BoSSS.Application.XNSEC {
             C.ThermalParameters.rho_B = tst.rho_B;
 
             C.PhysicalParameters.Sigma = tst.Sigma;
+            C.PhysicalParameters.IncludeConvection = tst.IncludeConvection;
             C.PhysicalParameters.IncludeConvection = tst.IncludeConvection;
 
             C.prescribedMassflux_Evaluator = (tst is IPrescribedMass ? (tst as IPrescribedMass).GetPrescribedMassflux_Evaluator() : null);
@@ -627,11 +679,116 @@ namespace BoSSS.Application.XNSEC {
             return C;
         }
 
+
+        private static (string Name, double slope, double Intercept)[] XNSECSolverConvergenceTest(IXNSETest Tst, XNSEC_Control[] CS, bool useExactSolution, (string Name, double Slope, double intercept, double interceptTol)[] RegResults) {
+            int D = Tst.SpatialDimension;
+            int NoOfMeshes = CS.Length;
+            if (RegResults.Length != D + 1)
+                throw new ArgumentException("Expecting slopes for velocity and pressure.");
+
+            var Ret = new List<(string Name, double slope, double Intercept)>();
+
+            if (useExactSolution) {
+                if (NoOfMeshes < 2)
+                    throw new ArgumentException("At least two meshes required for convergence against exact solution.");
+
+                MultidimensionalArray errorS = null;
+                string[] Names = null;
+
+                double[] hS = new double[NoOfMeshes];
+                XNSEC[] solvers = new XNSEC[NoOfMeshes];
+
+                for (int k = 0; k < CS.Length; k++) {
+
+                    var C = CS[k];
+                    //using(var solver = new XNSEC()) {
+                    var solver = new XNSEC();
+                    solvers[k] = solver;
+                    {
+                        Console.WriteLine("Warning! - enabled immediate plotting");
+                        C.ImmediatePlotPeriod = 1;
+                        C.SuperSampling = 3;
+
+                        solver.Init(C);
+                        solver.RunSolverMode();
+
+                        //-------------------Evaluate Error ---------------------------------------- 
+                        var evaluator = new XNSEErrorEvaluator<XNSEC_Control>(solver);
+                        double[] LastErrors = evaluator.ComputeL2Error(Tst.steady ? 0.0 : Tst.dt, C);
+                        double[] ErrThresh = Tst.AcceptableL2Error;
+
+
+                        if (k == 0) {
+                            errorS = MultidimensionalArray.Create(NoOfMeshes, LastErrors.Length);
+                            Names = new string[LastErrors.Length];
+                            if (RegResults.Length != Names.Length)
+                                throw new ArgumentOutOfRangeException();
+                        } else {
+                            if (LastErrors.Length != Names.Length)
+                                throw new ApplicationException();
+                        }
+
+                        if (LastErrors.Length != ErrThresh.Length)
+                            throw new ApplicationException();
+                        for (int i = 0; i < ErrThresh.Length; i++) {
+                            Console.WriteLine($"L2 error, '{solver.Operator.DomainVar[i]}': \t{LastErrors[i]}");
+                            Names[i] = solver.Operator.DomainVar[i];
+                        }
+
+                        errorS.SetRow(k, LastErrors);
+                        hS[k] = evaluator.GetGrid_h();
+                    }
+
+                }
+
+                for (int i = 0; i < errorS.GetLength(1); i++) {
+                    var RegModel = hS.LogLogRegression(errorS.GetColumn(i));
+                    var RegRef = RegResults.Single(ttt => ttt.Name == Names[i]);
+                    Console.WriteLine($"Convergence slope for Error of '{Names[i]}': \t{RegModel.Slope}\tIntercept: \t{RegModel.Intercept}\t(Expecting: {RegRef.Slope}, {RegRef.intercept}+/-{RegRef.interceptTol})");
+                    Ret.Add((Names[i], RegModel.Slope, RegModel.Intercept));
+                }
+
+                for (int i = 0; i < errorS.GetLength(1); i++) {
+                    var RegModel = hS.LogLogRegression(errorS.GetColumn(i));
+                    var RegRef = RegResults.Single(ttt => ttt.Name == Names[i]);
+
+
+                    Assert.GreaterOrEqual(RegModel.Slope, RegRef.Slope, $"Convergence Slope of {Names[i]} is degenerate.");
+                    Assert.GreaterOrEqual(RegModel.Intercept, RegRef.intercept - RegRef.interceptTol, $"Convergence Intercept of {Names[i]} is degenerate.");
+                    Assert.LessOrEqual(RegModel.Intercept, RegRef.intercept + RegRef.interceptTol, $"Convergence Intercept of {Names[i]} overshoot.");
+                }
+
+                foreach (var s in solvers) {
+                    s.Dispose();
+                }
+            } else {
+                if (NoOfMeshes < 3)
+                    throw new ArgumentException("At least three meshes required for convergence if finest solution is assumed to be exact.");
+
+
+
+                BoSSS.Solution.Statistic.ConvergenceTest.SolverConvergenceTest_Experimental(
+                    CS,
+                    "Experimental Convergence",
+                    (D + 1).ForLoop(iVar => (iVar < D ? VariableNames.Velocity_d(iVar) : VariableNames.Pressure,
+                                             iVar < D ? BoSSS.Solution.Statistic.NormType.L2_approximate : BoSSS.Solution.Statistic.NormType.L2noMean_approximate,
+                                             RegResults[iVar].Slope,
+                                             RegResults[iVar].intercept, RegResults[iVar].interceptTol)));
+
+            }
+
+
+
+            return Ret.ToArray();
+
+
+        }
+
         private static XNSEC_Control TstObj2CtrlObj(IXNSECTest_Heat tst, int FlowSolverDegree, double AgglomerationTreshold, ViscosityMode vmode,
         XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
         SurfaceStressTensor_IsotropicMode SurfTensionMode,
         bool constantDensity,
-        int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.classic_pardiso) {
+        int GridResolution = 1, LinearSolverCode solvercode = LinearSolverCode.direct_pardiso) {
             XNSEC_Control C = new XNSEC_Control();
             int D = tst.SpatialDimension;
             int NoChemSpc = tst.NumberOfChemicalComponents;
@@ -784,9 +941,10 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public static void COMBUSTION_TEST() {
-            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, "default_bosss_db_comb23");
 
             bool alreadyExists = Directory.Exists(path);
@@ -821,6 +979,282 @@ namespace BoSSS.Application.XNSEC {
             }
             Console.WriteLine("Full calculation done.");
         }
+        /// <summary>
+        /// pseudo 1D combustion test
+        /// </summary>
+        /// <param name="dg"></param>
+        /// <param name="ncells"></param>
+        [Test]
+        public static void XDG_PSEUDO1D_COMBUSTION_TEST([Values(3)] int dg = 3, [Values(4)] int ncells = 4) {
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
+            string path = Path.Combine(basepath, "default_bosss_db_comb23");
+
+            bool alreadyExists = Directory.Exists(path);
+            var db = DatabaseInfo.CreateOrOpen(path);
+
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+
+            if (rank == 0 && alreadyExists) {
+                db.Controller.ClearDatabase();
+            }
+
+            // activate for combustion calculation, if deactivated, only evaporation
+            using (var p = new XNSEC_MixtureFraction()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dCombustion(dg, ncells, db.Path);
+
+                p.Init(c);
+                p.RunSolverMode();
+            }
+
+            Console.WriteLine("Flame sheet calculation done.");
+            using (var p = new XNSEC()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dCombustion(dg, ncells, db.Path);
+                p.Init(c);
+                p.RunSolverMode();
+
+                var temperatureXdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
+                var massFraction0Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction0).SingleOrDefault());
+                var massFraction1Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction1).SingleOrDefault());
+
+                var temp = temperatureXdg.ProjectToSinglePhaseField(4);
+                var mF0 = massFraction0Xdg.ProjectToSinglePhaseField(4);
+                var mF1 = massFraction1Xdg.ProjectToSinglePhaseField(4);
+
+                double minT; double maxT;
+                double minMF0; double maxMF0;
+                double minMF1; double maxMF1;
+                temp.GetExtremalValues(out minT, out maxT);
+                mF0.GetExtremalValues(out minMF0, out maxMF0);
+                mF1.GetExtremalValues(out minMF1, out maxMF1);
+
+                Console.WriteLine("Maximum reached temperature is {0}K", maxT);
+                Console.WriteLine("Maximum reached massfraction0 is {0}", maxMF0);
+                Console.WriteLine("Maximum reached massfraction1 is {0}", maxMF1);
+
+                Assert.Greater(maxT, 2.6, "Maximum temperature is smaller than expected");
+                Assert.Less(maxT, 2.75, "Maximum temperature is higher than expected");
+
+                Assert.Greater(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
+                Assert.Less(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
+
+                Assert.Greater(maxMF1, 0.95, "Maximum massfraction1 is smaller than expected");
+                Assert.Less(maxMF1, 1.05, "Maximum massfraction1 is higher than expected");
+
+            }
+            Console.WriteLine("Full calculation done.");
+        }
+        /// <summary>
+        /// 2D droplet combustion test with fixed mass flux
+        /// </summary>
+        /// <param name="dg"></param>
+        /// <param name="ncells"></param>
+        //[Test]
+        public static void XDG_DROPLET_COMBUSTION_TEST(int dg = 2, int ncells = 6) {
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
+            string path = Path.Combine(basepath, "default_bosss_db_comb23");
+
+            bool alreadyExists = Directory.Exists(path);
+            var db = DatabaseInfo.CreateOrOpen(path);
+
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+
+            if (rank == 0 && alreadyExists) {
+                db.Controller.ClearDatabase();
+            }
+
+            // activate for combustion calculation, if deactivated, only evaporation
+            using (var p = new XNSEC_MixtureFraction()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_Droplet_2dCombustion(3, 7, db.Path);
+                //c.SkipSolveAndEvaluateResidual = true;
+                p.Init(c);
+                p.RunSolverMode();
+            }
+
+            Console.WriteLine("Flame sheet calculation done.");
+            using (var p = new XNSEC()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_Droplet_2dCombustion(3, 7, db.Path);
+                p.Init(c);
+                p.RunSolverMode();
+
+
+                var temperatureXdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
+                var massFraction0Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction0).SingleOrDefault());
+                var massFraction1Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction1).SingleOrDefault());
+
+                var temp = temperatureXdg.ProjectToSinglePhaseField(4);
+                var mF0 = massFraction0Xdg.ProjectToSinglePhaseField(4);
+                var mF1 = massFraction1Xdg.ProjectToSinglePhaseField(4);
+
+                double minT; double maxT;
+                double minMF0; double maxMF0;
+                double minMF1; double maxMF1;
+                temp.GetExtremalValues(out minT, out maxT);
+                mF0.GetExtremalValues(out minMF0, out maxMF0);
+                mF1.GetExtremalValues(out minMF1, out maxMF1);
+
+                Console.WriteLine("Maximum reached temperature is {0}K", maxT);
+                Console.WriteLine("Maximum reached massfraction0 is {0}", maxMF0);
+                Console.WriteLine("Maximum reached massfraction1 is {0}", maxMF1);
+
+                Assert.Greater(maxT, 1.7, "Maximum temperature is smaller than expected");
+                Assert.Less(maxT, 1.8, "Maximum temperature is higher than expected");
+
+                Assert.Greater(maxMF0, 0.9, "Maximum massfraction0 is smaller than expected");
+                Assert.Less(maxMF0, 1.1, "Maximum massfraction0 is higher than expected");
+
+                Assert.Greater(maxMF1, 0.15, "Maximum massfraction1 is smaller than expected");
+                Assert.Less(maxMF1, 0.3, "Maximum massfraction1 is higher than expected");
+
+            }
+            Console.WriteLine("Full calculation done.");
+        }
+
+
+        /// <summary>
+        /// pseudo 1D evaporation test with fixed mass flux
+        /// </summary>
+        /// <param name="dg"></param>
+        /// <param name="ncells"></param>
+        [Test]
+        public static void XDG_PSEUDO1D_EVAPORATION_TEST([Values(3)] int dg = 3, [Values(4)] int ncells = 4) {
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
+            string path = Path.Combine(basepath, "default_bosss_db_comb23");
+
+            bool alreadyExists = Directory.Exists(path);
+            var db = DatabaseInfo.CreateOrOpen(path);
+
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+
+            if (rank == 0 && alreadyExists) {
+                db.Controller.ClearDatabase();
+            }
+
+            // activate for combustion calculation, if deactivated, only evaporation
+            //using (var p = new XNSEC_MixtureFraction()) {
+            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_pseudo2dEvaporation(dg, ncells, db.Path);
+
+            //    p.Init(c);
+            //    p.RunSolverMode();
+            //}
+
+            Console.WriteLine("Flame sheet calculation done.");
+            using (var p = new XNSEC()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_pseudo2dEvaporation(dg, ncells, db.Path);
+                p.Init(c);
+                p.RunSolverMode();
+
+                var temperatureXdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
+                var massFraction0Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction0).SingleOrDefault());
+                var massFraction1Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction1).SingleOrDefault());
+
+                var temp = temperatureXdg.ProjectToSinglePhaseField(4);
+                var mF0 = massFraction0Xdg.ProjectToSinglePhaseField(4);
+                var mF1 = massFraction1Xdg.ProjectToSinglePhaseField(4);
+
+                double minT; double maxT;
+                double minMF0; double maxMF0;
+                double minMF1; double maxMF1;
+                temp.GetExtremalValues(out minT, out maxT);
+                mF0.GetExtremalValues(out minMF0, out maxMF0);
+                mF1.GetExtremalValues(out minMF1, out maxMF1);
+
+                Console.WriteLine("Maximum reached temperature is {0}K", maxT);
+
+
+                Assert.Greater(maxT, 0.95, "Maximum temperature is smaller than expected");
+                Assert.Less(maxT, 1.05, "Maximum temperature is higher than expected");
+
+                Assert.Greater(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
+                Assert.Less(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
+
+                Assert.Greater(maxMF1, 0.95, "Maximum massfraction1 is smaller than expected");
+                Assert.Less(maxMF1, 1.05, "Maximum massfraction1 is higher than expected");
+            }
+            Console.WriteLine("Full calculation done.");
+        }
+
+        /// <summary>
+        /// 2D droplet evaporation test wit fixed mass flux
+        /// </summary>
+        /// <param name="dg"></param>
+        /// <param name="ncells"></param>
+        [Test]
+        public static void XDG_DROPLET_EVAPORATION_TEST([Values(2)] int dg = 2, [Values(6)] int ncells = 6) {
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
+            string path = Path.Combine(basepath, "default_bosss_db_comb23");
+
+            bool alreadyExists = Directory.Exists(path);
+            var db = DatabaseInfo.CreateOrOpen(path);
+
+            int rank;
+            var comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out rank);
+
+            if (rank == 0 && alreadyExists) {
+                db.Controller.ClearDatabase();
+            }
+
+            // activate for combustion calculation, if deactivated, only evaporation
+            //using (var p = new XNSEC_MixtureFraction()) {
+            //    var c = BoSSS.Application.XNSEC.FullNSEControlExamples.FS_XDG_Droplet_2dEvaporation(3, 7, db.Path);
+            //    //c.SkipSolveAndEvaluateResidual = true;
+            //    p.Init(c);
+            //    p.RunSolverMode();
+            //}
+
+            Console.WriteLine("Flame sheet calculation done.");
+            using (var p = new XNSEC()) {
+                var c = BoSSS.Application.XNSEC.FullNSEControlExamples.Full_XDG_Droplet_2dEvaporation(3, 7, db.Path);
+                p.Init(c);
+                p.RunSolverMode();
+
+                var temperatureXdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.Temperature).SingleOrDefault());
+                var massFraction0Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction0).SingleOrDefault());
+                var massFraction1Xdg = (XDGField)(p.CurrentStateVector.Fields.Where(f => f.Identification == VariableNames.MassFraction1).SingleOrDefault());
+
+                var temp = temperatureXdg.ProjectToSinglePhaseField(4);
+                var mF0 = massFraction0Xdg.ProjectToSinglePhaseField(4);
+                var mF1 = massFraction1Xdg.ProjectToSinglePhaseField(4);
+
+                double minT; double maxT;
+                double minMF0; double maxMF0;
+                double minMF1; double maxMF1;
+                temp.GetExtremalValues(out minT, out maxT);
+                mF0.GetExtremalValues(out minMF0, out maxMF0);
+                mF1.GetExtremalValues(out minMF1, out maxMF1);
+
+                Console.WriteLine("Maximum reached temperature is {0}K", maxT);
+
+                Assert.Greater(maxT, 0.95, "Maximum temperature is smaller than expected");
+                Assert.Less(maxT, 1.05, "Maximum temperature is higher than expected");
+
+                Assert.Greater(maxMF0, 0.95, "Maximum massfraction0 is smaller than expected");
+                Assert.Less(maxMF0, 1.05, "Maximum massfraction0 is higher than expected");
+
+                Assert.Greater(maxMF1, 0.15, "Maximum massfraction1 is smaller than expected");
+                Assert.Less(maxMF1, 0.3, "Maximum massfraction1 is higher than expected");
+
+            }
+            Console.WriteLine("Full calculation done.");
+        }
 
         /// <summary>
         /// This test checks if the solution obtained with an homotopy strategy for increasing
@@ -830,9 +1264,10 @@ namespace BoSSS.Application.XNSEC {
         /// </summary>
         //[Test]
         public static void CounterDiffFlameHomotopy_TEST() {
-            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, @"default_bosss_db_comb23");
 
             bool alreadyExists = Directory.Exists(path);
@@ -890,10 +1325,10 @@ namespace BoSSS.Application.XNSEC {
         }
 
         public static void COMBUSTION_CoFlowFlame_TEST() {
-            string basepath = null;
-            basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
-            if (basepath.IsEmptyOrWhite())
-                basepath = System.Environment.GetEnvironmentVariable("HOME");
+            //string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            //if (basepath.IsEmptyOrWhite())
+            //    basepath = System.Environment.GetEnvironmentVariable("HOME");
+            string basepath = Directory.GetCurrentDirectory();
             string path = Path.Combine(basepath, "default_bosss_db_CoFlowcombustion");
 
             bool alreadyExists = Directory.Exists(path);

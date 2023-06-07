@@ -4,6 +4,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
 namespace BoSSS.Application.ExternalBinding {
 
@@ -13,6 +14,8 @@ namespace BoSSS.Application.ExternalBinding {
     /// </summary>
     [TestFixture]
     static public class GridImportTest {
+
+        
         internal static int[][] faces = new int[][] {
             new int[] {1, 5, 21, 17},
             new int[] {4, 20, 21, 5},
@@ -153,11 +156,165 @@ namespace BoSSS.Application.ExternalBinding {
              {0.1,0.1,0.01}
             };
 
-        public static void Main() {
+        internal static string[] names = new string[] {"left", "right", "empty"};
+        internal static int[] patchIDs = new int[] {0,
+                                                       1,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2,
+                                                       2
+        };
+        
+
+        /*
+        internal static int[][] faces = new int[][] {
+            new int[] {1, 6 ,16 ,11 },
+            new int[] {2, 7, 17, 12 },
+            new int[] {3, 8, 18, 13 },
+            new int[] {0, 10, 15, 5 },
+            new int[] {4, 9, 19, 14 },
+            new int[] {0, 1, 11, 10 },
+            new int[] {1, 2, 12, 11 },
+            new int[] {2, 3, 13, 12 },
+            new int[] {3, 4, 14, 13 },
+            new int[] {5, 15, 16, 6 },
+            new int[] {6, 16, 17, 7 },
+            new int[] {7, 17, 18, 8 },
+            new int[] {8, 18, 19, 9 },
+            new int[] {0, 5, 6, 1 },
+            new int[] {1, 6, 7, 2 },
+            new int[] {2, 7, 8, 3 },
+            new int[] {3, 8, 9, 4 },
+            new int[] {10, 11, 16, 15 },
+            new int[] {11, 12, 17, 16 },
+            new int[] {12, 13, 18, 17 },
+            new int[] {13, 14, 19, 18 },
+        };
+
+        internal static double[,] points = new double[,] {
+            { 0, 0, 0 },
+            { 1.25, 0, 0  },
+            { 2.5, 0, 0  },
+            { 3.75, 0, 0  },
+            { 5, 0, 0  },
+            { 0, 1, 0  },
+            { 1.25, 1, 0  },
+            { 2.5, 1, 0  },
+            { 3.75, 1, 0  },
+            { 5, 1, 0  },
+            { 0, 0, 1  },
+            { 1.25, 0, 1  },
+            { 2.5, 0, 1  },
+            { 3.75, 0, 1  },
+            { 5, 0, 1  },
+            { 0, 1, 1  },
+            { 1.25, 1, 1  },
+            { 2.5, 1, 1  },
+            { 3.75, 1 ,1  },
+            { 5, 1, 1  }
+        };
+
+        internal static int[] owner = new int[] {
+            0,
+            1,
+            2,
+            0,
+            3,
+            0,
+            1,
+            2,
+            3,
+            0,
+            1,
+            2,
+            3,
+            0,
+            1,
+            2,
+            3,
+            0,
+            1,
+            2,
+            3 
+        };
+
+
+        internal static int[] neighbour = new int[] {
+            1,
+            2,
+            3
+        };
+
+        internal static string[] names = new string[] { "left", "right", "empty" };
+        internal static int[] patchIDs = new int[] { 0,
+            1,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2 
+        };
+        */
+
+        public static void GridImportMain() {
             
-            int nPoints = points.GetLength(0);
-            int nFaces = owner.Length;
-            int nInternalFaces = neighbour.Length;
+            //int nPoints = points.GetLength(0);
+            //int nFaces = owner.Length;
+            //int nInternalFaces = neighbour.Length;
 
 
             Init();
@@ -166,17 +323,34 @@ namespace BoSSS.Application.ExternalBinding {
 
         }
 
+        static int Max(int a, int b) {
+            if (a > b)
+            {
+                return a;
+            } else {
+                return b;
+            }
+        }
         /// <summary>
         /// test for <see cref="OpenFOAMGrid"/>
         /// </summary>
         [Test]
         public static void ConvertFOAMGrid() {
-            int nCells = 9;
-            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points);
+
+            int nCells = Max(owner.Max(), neighbour.Max()) + 1;
+            var g = GenerateFOAMGrid();
 
             Assert.AreEqual(g.GridData.iLogicalCells.Count, nCells, "Mismatch in expected number of cells.");
         }
-        
+
+        public static OpenFOAMGrid GenerateFOAMGrid() {
+
+            int nCells = Max(owner.Max(), neighbour.Max()) + 1;
+            var g = new OpenFOAMGrid(nCells, faces, neighbour, owner, points, names, patchIDs, -1);
+
+            return g;
+        }
+
         static Initializer MyInit;
 
         /// <summary>
@@ -185,6 +359,7 @@ namespace BoSSS.Application.ExternalBinding {
         [OneTimeSetUp]
         public static void Init() {
             MyInit = new Initializer();
+            Console.WriteLine("Test");
             MyInit.BoSSSInitialize();
         }
 

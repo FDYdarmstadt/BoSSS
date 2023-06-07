@@ -125,7 +125,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // ==============
                 GenericBlas.dswap(L, x, 1, P, 1);
                 m_Matrix.SpMV(-1.0, P, 1.0, R);
-                IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), R.CloneAs(), this.m_MgOp);
+                IterationCallback?.Invoke(NoOfIterations, P.CloneAs(), R.CloneAs(), this.m_MgOp as MultigridOperator);
 
                 GenericBlas.dswap(L, x, 1, P, 1);
                 if (Precond != null) {
@@ -178,7 +178,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     R.AccV(-lambda, V);
 
                     if (IterationCallback != null) {
-                        IterationCallback(NoOfIterations, x.CloneAs(), R.CloneAs(), this.m_MgOp);
+                        IterationCallback(NoOfIterations, x.CloneAs(), R.CloneAs(), this.m_MgOp as MultigridOperator);
                     }
 
                     if (Precond != null) {
@@ -209,8 +209,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        MultigridOperator m_MgOp;
-        BlockMsrMatrix m_Matrix;
+        IOperatorMappingPair m_MgOp;
+        BlockMsrMatrix m_Matrix => m_MgOp.OperatorMatrix;
 
 
         /// <summary>
@@ -225,15 +225,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         this.Dispose(); // must re-initialize
 
                     var M = op.OperatorMatrix;
-                    var MgMap = op.Mapping;
+                    var MgMap = op.DgMapping;
                     this.m_MgOp = op;
 
-                    if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                    if(!M.RowPartitioning.EqualsPartition(MgMap))
                         throw new ArgumentException("Row partitioning mismatch.");
-                    if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
+                    if(!M.ColPartition.EqualsPartition(MgMap))
                         throw new ArgumentException("Column partitioning mismatch.");
 
-                    this.m_Matrix = M;
+                    //this.m_Matrix = M;
                     /*
                     int n = m_Matrix.RowPartitioning.LocalLength;
                     if(n > 50000) {

@@ -341,6 +341,28 @@ namespace BoSSS.Foundation.XDG {
             return new FDJacobianBuilder(xeval, ParamUpdate);
         }
 
+        /// <summary>
+        /// Clone Method
+        /// </summary>
+        /// <returns></returns>
+        public XSpatialOperatorMk2 CloneAs()
+        {
+            var ret = new XSpatialOperatorMk2(this.DomainVar, this.CodomainVar, this.QuadOrderFunction, this.Species);
+
+            foreach(string var in this.CodomainVar)
+            {
+                foreach(IEquationComponent comp in this.EquationComponents[var])
+                {
+                    ret.EquationComponents[var].Add(comp);
+                }
+            }
+            ret.AgglomerationThreshold= this.AgglomerationThreshold;    
+            ret.LinearizationHint=this.LinearizationHint;
+            ret.IsLinear= this.IsLinear;
+            ret.TemporalOperator= this.TemporalOperator;    
+            return ret;
+        }
+
 
         /// <summary>
         /// This class acts as a frame for some other vector, and presents only those entries which are associated with a given species.
@@ -1131,11 +1153,11 @@ namespace BoSSS.Foundation.XDG {
         /// Can be called only once in the lifetime of this object.
         /// After calling this method, no adding/removing of equation components is possible.
         /// </summary>
-        public virtual void Commit() {
+        public virtual void Commit( bool allowVarAddition = true) {
              if(AgglomerationThreshold < 0 || AgglomerationThreshold > 1.0)
                     throw new ArgumentOutOfRangeException($"Agglomeration threshold must be between 0 and 1 (set as {AgglomerationThreshold}).");
 
-            this.Verify();
+            this.Verify(allowVarAddition);
 
             if(m_IsCommitted)
                 throw new ApplicationException("'Commit' has already been called - it can be called only once in the lifetime of this object.");
@@ -1391,7 +1413,7 @@ namespace BoSSS.Foundation.XDG {
             JacobianOp.m_HomotopyUpdate.AddRange(this.m_HomotopyUpdate);
             JacobianOp.m_CurrentHomotopyValue = this.m_CurrentHomotopyValue;
 
-            JacobianOp.Commit();
+            JacobianOp.Commit(false);
             return JacobianOp;
         }
 
@@ -1728,9 +1750,41 @@ namespace BoSSS.Foundation.XDG {
 
 
 
+      
+
+        /// <summary>
+        /// <see cref="ISpatialOperator.IsValidDomainDegreeCombination"/>
+        /// </summary>
+        public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable) {
+            if (!this.IsCommitted)
+                throw new InvalidOperationException("Invalid prior to calling Commit().");
+
+            if (DomainDegreesPerVariable.Length != this.DomainVar.Count)
+                throw new ArgumentException("Mismatch between length of input and number of domain variables.");
+            if (CodomainDegreesPerVariable.Length != this.CodomainVar.Count)
+                throw new ArgumentException("Mismatch between length of input and number of codomain variables.");
+
+            int i = 0;
+            foreach (var cod in this.CodomainVar) {
+                foreach (var comp in this.EquationComponents[cod]) {
+                    if (comp is IDGdegreeConstraint dgconstr) {
+                        int[] argDegrees;
+                        if (comp.ArgumentOrdering != null)
+                            argDegrees = comp.ArgumentOrdering.Select(argName => DomainDegreesPerVariable[this.DomainVar.IndexWhere(domName => domName == argName)]).ToArray();
+                        else
+                            argDegrees = new int[0];
+
+                        if (dgconstr.IsValidDomainDegreeCombination(argDegrees, CodomainDegreesPerVariable[i]) == false)
+                            return false;
+                    }
+                }
+
+                i++;
+            }
 
 
-
+            return true;
+        }
 
 
 
@@ -1749,33 +1803,40 @@ namespace BoSSS.Foundation.XDG {
         /// if a component has an illegal configuration (e.g. it's arguments
         /// (<see cref="BoSSS.Foundation.IEquationComponent.ArgumentOrdering"/>) are not contained
         /// in the domain variable list (<see cref="DomainVar"/>)), an 
-        /// exception is thrown;
+        /// exception is thrown, if <paramref name="allowVarAddition"/> is set true, see also <see cref="ISpatialOperator.Commit(bool)"/>
         /// </remarks>
-        internal protected void Verify() {
+        internal protected void Verify(bool allowVarAddition) {
             //if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
             //    throw new NotSupportedException("Configuration Error: for a supposedly linear operator, the linearization hint must be " + LinearizationHint.AdHoc);
 
-            foreach(var comps in m_EquationComponents.Values) {
-                foreach(IEquationComponent c in comps) {
-                    foreach(string varname in c.ArgumentOrdering) {
-                        if(Array.IndexOf<string>(m_DomainVar, varname) < 0) {
-                            //throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on variable \""
-                            //    + varname
-                            //    + "\", but this name is not a member of the domain variable list.");
+            foreach (var comps in m_EquationComponents.Values) {
+                foreach (IEquationComponent c in comps) {
+                    foreach (string varname in c.ArgumentOrdering) {
+                        if (Array.IndexOf<string>(m_DomainVar, varname) < 0) {
 
-                            m_DomainVar = m_DomainVar.Cat(varname);
+                            if (allowVarAddition)
+                                m_DomainVar = m_DomainVar.Cat(varname);
+                            else {
+                                throw new ApplicationException("configuration error in spatial differential operator; equation component " + c.ToString() + " depends on variable \""
+                                    + varname
+                                    + "\", but this name is not a member of the domain variable list: "
+                                    + m_DomainVar.ToConcatString("[", ", ", "]"));
+                            }
 
                         }
                     }
 
-                    if(c.ParameterOrdering != null) {
-                        foreach(string varname in c.ParameterOrdering) {
-                            if(Array.IndexOf<string>(m_ParameterVar, varname) < 0) {
-                                //throw new ApplicationException("configuration error in spatial differential operator; some equation component depends on (parameter) variable \""
-                                //    + varname
-                                //    + "\", but this name is not a member of the parameter variable list.");
-
-                                m_ParameterVar = m_ParameterVar.Cat(varname);
+                    if (c.ParameterOrdering != null) {
+                        foreach (string varname in c.ParameterOrdering) {
+                            if (Array.IndexOf<string>(m_ParameterVar, varname) < 0) {
+                                if (allowVarAddition)
+                                    m_ParameterVar = m_ParameterVar.Cat(varname);
+                                else {
+                                    throw new ApplicationException("configuration error in spatial differential operator; equation component " + c.ToString() + " depends on (parameter) variable \""
+                                        + varname
+                                        + "\", but this name is not a member of the parameter variable list: "
+                                        + m_ParameterVar.ToConcatString("[", ", ", "]"));
+                                }
                             }
                         }
                     }
@@ -1783,13 +1844,13 @@ namespace BoSSS.Foundation.XDG {
             }
 
 
-            foreach(var comps in m_EquationComponents.Values) {
-                foreach(IEquationComponent c in comps) {
-                    if(c.ParameterOrdering != null) {
-                        foreach(string varname in c.ParameterOrdering) {
-                            
-                            
-                            if(this.m_DomainVar.Contains(varname))
+            foreach (var comps in m_EquationComponents.Values) {
+                foreach (IEquationComponent c in comps) {
+                    if (c.ParameterOrdering != null) {
+                        foreach (string varname in c.ParameterOrdering) {
+
+
+                            if (this.m_DomainVar.Contains(varname))
                                 throw new ApplicationException("configuration error in spatial differential operator; some equation component contains variable \""
                                     + varname
                                     + "\" in parameter and argument list; this is not allowed.");
@@ -1848,7 +1909,7 @@ namespace BoSSS.Foundation.XDG {
                 throw new ArgumentException("the provided variable name \""
                     + CodomVar
                     + "\" is not a member of the Codomain variable list of this spatial differential operator");
-            Verify();
+            Verify(false);
 
             var comps = m_EquationComponents[CodomVar];
             List<string> ret = new List<string>();

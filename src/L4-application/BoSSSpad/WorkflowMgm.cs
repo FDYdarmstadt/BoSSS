@@ -249,16 +249,21 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Defines the name of the current project; also creates a default database
         /// </summary>
-        public void Init(string ProjectName) {
+        public void Init(string ProjectName, BatchProcessorClient ExecutionQueue = null) {
             if ((m_CurrentProject == null) || (!m_CurrentProject.Equals(ProjectName)))
                 InvalidateCaches();
             m_CurrentProject = ProjectName;
             Console.WriteLine("Project name is set to '{0}'.", ProjectName);
 
+            if (ExecutionQueue == null) {
+                ExecutionQueue = BoSSSshell.GetDefaultQueue();
+                Console.WriteLine("Default Execution queue is chosen for the database.");
+            }
+
             //if(InteractiveShell.ExecutionQueues.Any(Q => Q is MiniBatchProcessorClient))
             //    MiniBatchProcessor.Server.StartIfNotRunning();
             try {
-                DefaultDatabase = BoSSSshell.GetDefaultQueue().CreateOrOpenCompatibleDatabase(ProjectName);
+                DefaultDatabase = ExecutionQueue.CreateOrOpenCompatibleDatabase(ProjectName);
             } catch (Exception e) {
                 Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of default database: {e.Message}.");
             }
@@ -378,8 +383,8 @@ namespace BoSSS.Application.BoSSSpad {
                 {
                     List<ISessionInfo> ret = new List<ISessionInfo>();
 
-                    if (InteractiveShell.databases != null) {
-                        foreach (var db in InteractiveShell.databases) {
+                    if (BoSSSshell.databases != null) {
+                        foreach (var db in BoSSSshell.databases) {
                             var SS = db.Sessions.Where(delegate( ISessionInfo si) {
                                 //#if DEBUG 
                                 //                                return si.ProjectName.Equals(this.CurrentProject);
@@ -456,8 +461,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // Fill with values
                 { 
-                    if (InteractiveShell.databases != null) {
-                        foreach (var db in InteractiveShell.databases) {
+                    if (BoSSSshell.databases != null) {
+                        foreach (var db in BoSSSshell.databases) {
                             foreach(var si in db.Sessions) {
                                 DataRow[] foundProject = m_Projects.Select("Name = '"+si.ProjectName+"'");
                                 if (foundProject.Length != 0) {
@@ -647,13 +652,13 @@ namespace BoSSS.Application.BoSSSpad {
                         }
                     }
 
-                    //Debugger.Launch();
+                    // dbg_launch();
 
                     bool terminate = true;
                     foreach(var J in this.AllJobs) {
                         var s = J.Value.Status;
                         tr.Info("Testing job: " + J);
-                        if(s != JobStatus.FailedOrCanceled && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation) {
+                        if(s != JobStatus.FailedOrCanceled && s != JobStatus.FinishedSuccessful && s != JobStatus.PreActivation && s != JobStatus.Unknown) {
                             tr.Info("not terminating because of job: " + J);
                             terminate = false;
                             break;

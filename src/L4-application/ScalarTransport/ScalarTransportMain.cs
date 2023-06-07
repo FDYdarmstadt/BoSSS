@@ -132,7 +132,7 @@ namespace BoSSS.Application.ScalarTransport {
         /// <summary>
         /// 
         /// </summary>
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             diffOp = new SpatialOperator(new string[] { "u" },
                 Solution.NSECommon.VariableNames.VelocityVector(this.GridData.SpatialDimension),
                 new string[] { "codom1" },
@@ -260,7 +260,7 @@ namespace BoSSS.Application.ScalarTransport {
                 R0Cells = R0Cells.MPISum();
                 R1Cells = R1Cells.MPISum();
                 Console.WriteLine("Redist: rank 0 {0} cells, rank 1 {1} cells.", R0Cells, R1Cells);
-                //Debugger.Launch();
+                // dbg_launch();
 
                 return part;
 

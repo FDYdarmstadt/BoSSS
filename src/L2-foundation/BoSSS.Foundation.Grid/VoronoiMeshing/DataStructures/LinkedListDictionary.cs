@@ -8,7 +8,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.DataStructures
     /// <summary>
     /// LinkedList implementation of Dictionary. Needs minimal ammount of memory, 
     /// but has O(n) complexity for Contains Key/Value and TryGetValue.
-    /// Should be used for very small (<10) dictionary.Count. 
+    /// Should be used for very small (less than 10) dictionary.Count. 
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>

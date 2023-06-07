@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
 using System;
 using System.Collections.Generic;
 using MPI.Wrappers.Utils;
@@ -300,8 +301,9 @@ namespace ilPSP.Utils {
         /// <summary>
         /// <see cref="BLAS.MachineEps"/>
         /// </summary>
-        static double MachineEps {
+        public static double MachineEps {
             get {
+                //Console.WriteLine(typeof(System.Configuration.ApplicationSettingsBase));
                 return BLAS.MachineEps;
             }    
         }
@@ -313,10 +315,12 @@ namespace ilPSP.Utils {
         /// <param name="a">minimum</param>
         /// <param name="b">maximum</param>
         /// <param name="n">number of nodes desired</param>
-        /// <returns>an array of length <paramref name="n"/>,
+        /// <returns>
+        /// an array of length <paramref name="n"/>,
         /// with first entry equal to <paramref name="a"/>, 
         /// last entry equal to <paramref name="b"/>, and 
-        /// all other points linear interpolated in between.</returns>
+        /// all other points linear interpolated in between. 
+        /// </returns>
         public static double[] Linspace(double a, double b, int n) {
             if (a >= b)
                 throw new ArgumentException("minimum >= maximum");
@@ -593,8 +597,6 @@ namespace ilPSP.Utils {
         /// clear all entries.
         /// </summary>
         static public void ClearEntries<T>(this T a) where T : IList<double> {
-            if (a.Count == 0)
-                throw new Exception("anfksdfnalfnyf");
             int L = a.Count;
             if(a is Array) {
                 // optimized for arrays
@@ -772,17 +774,19 @@ namespace ilPSP.Utils {
         /// checks all entries for infinity or NAN - values, and
         /// throws an <see cref="ArithmeticException"/> if found;
         /// </summary>
-        static public void CheckForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true, string messageprefix = null)
+        static public int CheckForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true, bool ExceptionIfFound = true, string messageprefix = null)
             where T: IEnumerable<double> //
         {
             if(messageprefix == null)
                 messageprefix = "";
 
             int cnt = 0;
+            int troubles = 0;
             foreach (double a in v) {
                 
                 if (CheckForNan)
                     if (double.IsNaN(a)) {
+                        troubles++;
                         if(ExceptionIfFound) {
                             throw new ArithmeticException($"{messageprefix}: NaN found at {cnt}-th entry.");
                         } else {
@@ -792,6 +796,7 @@ namespace ilPSP.Utils {
 
                 if (CheckForInf)
                     if (double.IsInfinity(a)) {
+                        troubles++;
                         if(ExceptionIfFound) {
                             throw new ArithmeticException($"{messageprefix}: Inf found at {cnt}-th entry.");
                         } else {
@@ -801,6 +806,32 @@ namespace ilPSP.Utils {
 
                 cnt++;
             }
+
+            return troubles;
+        }
+
+
+        /// <summary>
+        /// checks all entries for infinity or NAN - values, and
+        /// throws an <see cref="ArithmeticException"/> if found;
+        /// </summary>
+        static public bool ContainsForNanOrInfV<T>(this T v, bool CheckForInf = true, bool CheckForNan = true)
+            where T : IEnumerable<double> //
+        {
+
+            foreach (double a in v) {
+
+                if (CheckForNan)
+                    if (double.IsNaN(a)) {
+                        return true;
+                    }
+
+                if (CheckForInf)
+                    if (double.IsInfinity(a)) {
+                        return true;
+                    }
+            }
+            return false;
         }
 
         /// <summary>
@@ -855,9 +886,9 @@ namespace ilPSP.Utils {
 
         }
 
-         /// <summary>
+        /// <summary>
         /// accumulation of subvectors
-        /// this[<paramref name="acc_index"/>[i]] = this[<paramref name="acc_index"/>[i] + <paramref name="acc_index_shift"/>] + <paramref name="alpha"/>*<paramref name="b"/>[<paramref name="b_index"/>[i] + <paramref name="acc_index_shift"/>]
+        /// this[<paramref name="acc_index"/>[i] + <paramref name="acc_index_shift"/>] = this[<paramref name="acc_index"/>[i] + <paramref name="acc_index_shift"/>] + <paramref name="alpha"/>*<paramref name="b"/>[<paramref name="b_index"/>[i] + <paramref name="acc_index_shift"/>]
         /// </summary>
         static public void AccVi64<T, V, R, S>(this T acc, double alpha, V b, R acc_index, S b_index, long acc_index_shift = 0, long b_index_shift = 0)
             where T : IList<double>
@@ -1050,7 +1081,7 @@ namespace ilPSP.Utils {
         /// ctor
         /// </summary>
         public UnsafeDBLAS() :
-            base(new string[] { "BLAS_LAPACK.dll","libBoSSSnative_seq.so", "libacml.so", "libatlas.so", "libblas.so", "libopenblas.so" },
+            base(new string[] { "BLAS_LAPACK.dll", "libBoSSSnative_seq.so", "libacml.so", "libatlas.so", "libblas.so", "libopenblas.so" },
                   new string[6][][], 
                   new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
                   Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
@@ -1066,7 +1097,9 @@ namespace ilPSP.Utils {
         _DNRM2  dnrm2;
         _DSWAP  dswap;
         _DGEMM  dgemm;
-        _DGEMV  dgemv;
+        _SGEMM  sgemm;
+        _DGEMV dgemv;
+        _SGEMV  sgemv;
         _DAXPY  daxpy;
         _DSCAL  dscal;
 #pragma warning restore 649
@@ -1100,6 +1133,20 @@ namespace ilPSP.Utils {
             get { return dgemm; }
         }
 
+        /// <summary> FORTRAN BLAS routine </summary>
+        public unsafe delegate void _SGEMM(ref int TRANSA, ref int TRANSB,
+                                           ref int M, ref int N, ref int K,
+                                           ref float ALPHA,
+                                           float* A, ref int LDA,
+                                           float* B, ref int LDB,
+                                           ref float BETA,
+                                           float* C, ref int LDC);
+
+        /// <summary> FORTRAN BLAS routine </summary>
+        public unsafe _SGEMM SGEMM {
+            get { return sgemm; }
+        }
+
 
         /// <summary> FORTRAN BLAS routine </summary>
         public unsafe delegate void _DGEMV(ref int TRANSA,
@@ -1114,6 +1161,21 @@ namespace ilPSP.Utils {
         /// <summary> FORTRAN BLAS routine </summary>
         public unsafe _DGEMV DGEMV {
             get { return dgemv; }
+        }
+
+        /// <summary> FORTRAN BLAS routine </summary>
+        public unsafe delegate void _SGEMV(ref int TRANSA,
+                                           ref int M, ref int N,
+                                           ref float ALPHA,
+                                           float* A, ref int LDA,
+                                           float* X, ref int INCX,
+                                           ref float BETA,
+                                           float* Y, ref int INCY);
+
+
+        /// <summary> FORTRAN BLAS routine </summary>
+        public unsafe _SGEMV SGEMV {
+            get { return sgemv; }
         }
 
 
@@ -1186,7 +1248,7 @@ namespace ilPSP.Utils {
         /// <summary> FORTRAN-Style BLAS routine </summary>
         static public double DDOT(ref int N, double[] DX, ref int INCX, double[] DY, ref int INCY) {
             unsafe {
-                fixed (double* pDX = &DX[0], pDY = &DY[0]) {
+                fixed (double* pDX = DX, pDY = DY) {
                     return m_BLAS.DDOT(ref N, pDX, ref INCX, pDY, ref INCY);
                 }
             }
@@ -1205,7 +1267,7 @@ namespace ilPSP.Utils {
         /// <summary> FORTRAN-Style BLAS routine </summary>
         static public void DSWAP(ref int N, double[] DX, ref int INCX, double[] DY, ref int INCY) {
             unsafe {
-                fixed (double* pDX = &DX[0], pDY = &DY[0]) {
+                fixed (double* pDX = DX, pDY = DY) {
                     m_BLAS.DSWAP(ref N, pDX, ref INCX, pDY, ref INCY);
                 }
             }
@@ -1231,7 +1293,7 @@ namespace ilPSP.Utils {
                                  ref double BETA,
                                  double[] C, ref int LDC) {
             unsafe {
-                fixed (double* pA = &A[0], pB = &B[0], pC = &C[0]) {
+                fixed (double* pA = A, pB = B, pC = C) {
                     m_BLAS.DGEMM(ref TRANSA, ref TRANSB,
                                  ref M, ref N, ref K,
                                  ref ALPHA,
@@ -1279,6 +1341,28 @@ namespace ilPSP.Utils {
             unsafe {
                 m_BLAS.DGEMV(ref TRANSA,
                              ref M, ref N, 
+                             ref ALPHA,
+                             A, ref LDA,
+                             X, ref INCX,
+                             ref BETA,
+                             Y, ref INCY);
+            }
+        }
+
+        /// <summary>
+        /// native blas in C-stype
+        /// (matrices are still in FORTRAN order)
+        /// </summary>
+        unsafe static public void sgemv(int TRANSA,
+                                        int M, int N,
+                                        float ALPHA,
+                                        float* A, int LDA,
+                                        float* X, int INCX,
+                                        float BETA,
+                                        float* Y, int INCY) {
+            unsafe {
+                m_BLAS.SGEMV(ref TRANSA,
+                             ref M, ref N,
                              ref ALPHA,
                              A, ref LDA,
                              X, ref INCX,
@@ -1337,7 +1421,7 @@ namespace ilPSP.Utils {
                                  ref double DA, double[] DX, ref int INCX,
                                  double[] DY, ref int INCY) {
             unsafe {
-                fixed (double* pDX = &DX[0], pDY = &DY[0]) {
+                fixed (double* pDX = DX, pDY = DY) {
                     m_BLAS.DAXPY(ref N, ref DA, pDX, ref INCX, pDY, ref INCY);
                 }
             }
@@ -1349,7 +1433,7 @@ namespace ilPSP.Utils {
         /// </summary>
         static public void DSCAL(ref int n, ref double a, double[] x, ref int incx) {
             unsafe {
-                fixed (double* px = &x[0]) {
+                fixed (double* px = x) {
                     m_BLAS.DSCAL(ref n, ref a, px, ref incx);
                 }
             }
@@ -1361,7 +1445,7 @@ namespace ilPSP.Utils {
         /// </summary>
         static public double DNRM2(ref int n, double[] x, ref int incx) {
             unsafe {
-                fixed (double* px = &x[0]) {
+                fixed (double* px = x) {
                     return m_BLAS.DNRM2(ref n, px, ref incx);
                 }
             }

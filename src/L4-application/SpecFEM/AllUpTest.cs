@@ -32,13 +32,15 @@ namespace BoSSS.Application.SpecFEM {
         /// </summary>
         [Test]
         public void AllUp([Values(false, true)] bool perX,
-                          [Values(false, true)] bool perY
+                          [Values(false, true)] bool perY,
+                          [Values(2, 3, 4)] int NodesPerEdge
             ) {
 
             SpecFEMMain p = null;
 
             BoSSS.Solution.Application._Main(new string[0], true, delegate () {
                 p = new SpecFEMMain();
+                p.NodesPerEdge = NodesPerEdge;
                 p.m_periodicX = perX;
                 p.m_periodicY = perY;
                 return p;

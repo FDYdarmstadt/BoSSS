@@ -14,24 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Application.XNSEC;
-using BoSSS.Foundation.IO;
 using BoSSS.Platform;
 using Microsoft.DotNet.Interactive.Documents;
 using Microsoft.DotNet.Interactive.Documents.Jupyter;
-using MPI.Wrappers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Bson;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using ilPSP;
+using System.IO.Pipes;
+using System.Threading.Tasks;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -44,22 +39,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Modes of operation of BoSSSpad
         /// </summary>
         private enum Modes {
-
-            ///// <summary>
-            ///// Classic worksheet mode (with a GUI)
-            ///// </summary>
-            //Worksheet,
-
-            ///// <summary>
-            ///// Interactive console mode (without a GUI)
-            ///// </summary>
-            //Console,
-
-            ///// <summary>
-            ///// Simplified interactive console mode (for embedding into other terminals, experimental)
-            ///// </summary>
-            //SimpleConsole,
-
             /// <summary>
             /// Batch execution of .bws files
             /// </summary>
@@ -80,6 +59,7 @@ namespace BoSSS.Application.BoSSSpad {
             /// to Jupyter notebooks (`ipnb`)
             /// </summary>
             OldFileUpgrade,
+
 
             /// <summary>
             /// Executing a notebook in batch mode
@@ -120,7 +100,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             }
         }
-   */
+        */
 
 
         /// <summary>
@@ -128,26 +108,40 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         //[STAThread]
         public static int Main(string[] args) {
-
-            /*
-            string path = @"c:\Users\flori\AppData\Local\BoSSS-LocalJobs\Demo_BoundaryAndInitialData-ipPoisson2021Juni10_083737\control.obj";
-            string text = File.ReadAllText(path);
-            var obj = Solution.Control.AppControl.Deserialize(text, new KnownTypesBinder(null));
-            Console.WriteLine("desez: " + obj.GetType());
-            /*
-            SshClient_exp ssh = new SshClient_exp("lcluster3.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
-
-            var rr1 = ssh.RunCommand("ls");
-            Console.WriteLine(rr1.stdout);
-            var rr2 = ssh.RunCommand("ls -l");
-            Console.WriteLine(rr2.stdout);
-            ssh.Final();
-            return 0;
-            //*/
             int errCount = 0;
             
-            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            //string path = @"\\fdygitrunner\ValidationTests\LinslvPerfPar-temp\sessions\eb58bc08-a44f-4beb-99fc-4267567b1353"; 
+            //new SessionMemtrace(new DirectoryInfo(path));
+
+            /*
+            void w(ValueTuple<string,string> tt) {
+                Console.BackgroundColor = ConsoleColor.Blue;
+                Console.WriteLine(tt.Item1);
+                Console.ResetColor();
+            }
+
+            SingleSessionSshClinet ssh = new SingleSessionSshClinet("lcluster19.hrz.tu-darmstadt.de", "fk69umer", new PrivateKeyFile("C:\\Users\\flori\\.ssh\\id_rsa"));
+
+            var rr = ssh.RunCommand("ls"); w(rr);
+            rr = ssh.RunCommand("cd mono"); w(rr);
+            rr = ssh.RunCommand("ls"); w(rr);
+
+            Console.WriteLine("Now Waiting.");
+            Thread.Sleep(20 * 1000);
+            rr = ssh.RunCommand("cd /"); w(rr);
+            rr = ssh.RunCommand("cd home"); w(rr);
+            rr = ssh.RunCommand("ls"); w(rr);
+
+
+            bool gracefull = ssh.Disconnect(false);
+            Console.WriteLine("gracefull exit? " + gracefull);
+            return 0;
+            */
+
+            Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+            
             // interpretation of command line options
             // ======================================
             Modes mode;
@@ -220,7 +214,7 @@ namespace BoSSS.Application.BoSSSpad {
                     case Modes.JupyterBatch: {
                         string fileToOpen;
                         if (args.Length != 2) { 
-                            Console.Error.WriteLine($"Expecting exactly two aruments, but got {args.Length} (which are {args.ToConcatString("", ",", "")}");
+                            Console.Error.WriteLine($"Expecting exactly two arguments, but got {args.Length} (which are {args.ToConcatString("", ",", "")}");
                             PrintUsage();
                             return int.MinValue;
                         }
@@ -264,7 +258,7 @@ namespace BoSSS.Application.BoSSSpad {
                     throw new NotImplementedException();
                 }
             } catch (Exception e) {
-                Console.WriteLine(e.GetType().Name + ": " + e.Message);
+                Console.Error.WriteLine(e.GetType().Name + ": " + e.Message);
                 errCount = -666;
                 //throw new AggregateException(e);
             }
@@ -274,13 +268,30 @@ namespace BoSSS.Application.BoSSSpad {
                 BoSSS.Solution.Application.FinalizeMPI();
 
             return errCount;
+
+            //*/
         }
 
+        /// <summary>
+        /// When worksheets are executed in batch mode, this 
+        /// should prevent race-condition for a port during startup up dotnet-interactive.
+        /// Jupyter worksheets can be batch-processed in parallel (using `jupyter nbconvert` or `papermill`), but
+        /// during startup we might run into an exception 
+        /// `System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.`
+        /// 
+        /// Therefore, this mutex is used, in combination with a named pipe named <see cref="BoSSSpadInitDone_PipeName"/> to prevent BoSSSpad from 
+        /// starting another Jupyter instance before the port is acquired.
+        /// </summary>
+        static Mutex JupyterMutex = new Mutex(false, "JupyterMutex");
 
-        private static Mutex JupyterMutex = new Mutex(false, "JupyterMutex");
+        /// <summary>
+        /// Name used for a synchronization pipe
+        /// </summary>
+        internal static string BoSSSpadInitDone_PipeName => "BoSSSpadInitDone" + System.Environment.UserName;
+
 
         private static int RunJupyter(string fileToOpen) {
-            return RunPapermill(fileToOpen);
+            return RunPapermillAndNbconvert(fileToOpen);
             
             
             //int RetVal = RunJupyter(fileToOpen, false); // first try, don't allow errors
@@ -355,85 +366,153 @@ namespace BoSSS.Application.BoSSSpad {
         }
         */
 
+
         static bool UseAnacondaPython() {
             if(System.Environment.MachineName.Contains("hpccluster", StringComparison.InvariantCultureIgnoreCase))
+                return false;
+            if (System.Environment.MachineName.Contains("SHUBNIGGURATH", StringComparison.InvariantCultureIgnoreCase))
                 return false;
 
             return System.OperatingSystem.IsWindows();
         }
 
-        private static int RunPapermill(string fileToOpen) {
+        const bool UseMutexOnPapermill = true;
+        const bool UseMutexOnNbconvert = true;
+
+       
+        private static int RunPapermillAndNbconvert(string fileToOpen) {
+       
             string fileToOpen_out = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + "_out.ipynb");
 
             string htmlResult = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + ".html");
             string htmlResult_out = Path.Combine(Path.GetDirectoryName(fileToOpen), Path.GetFileNameWithoutExtension(fileToOpen) + "_out.html");
 
 
-            //psi.RedirectStandardOutput = true;
-            //psi.RedirectStandardError = true;
-
-            bool MutexReleased = false;
+            bool MutexReleased = true;
+            Random rnd = new Random();
+            //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
             try {
-                Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
-                JupyterMutex.WaitOne();
-                Console.WriteLine("Mutex obtained!");
 
 
-                Random rnd = new Random();
-                Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
+
+                void GetMutex() {
+                    if (MutexReleased) {
+                        Console.WriteLine("Waiting for Jupyter mutex, " + DateTime.Now +" (can only start one Jupyter notebook at time) ...");
+                        JupyterMutex.WaitOne();
+                        Console.WriteLine("Mutex obtained at " + DateTime.Now + ".");
+                        MutexReleased = false;
+                    }
+                }
+
+                void ReleaseMutex() {
+                    //Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
+                    Console.WriteLine("Releasing Jupyter mutex @ " + DateTime.Now + " ...");
+                    if (!MutexReleased)
+                        JupyterMutex.ReleaseMutex();
+                    Console.WriteLine("Mutex released at " + DateTime.Now + ".");
+                    MutexReleased = true;
+                }
 
                 int papermill_exit, nbconvert_exit;
                 if (UseAnacondaPython()) {
                     
 
 
-                    int RunAnacondaShell(string command) {
-                        if(MutexReleased) {
-                            Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
-                            JupyterMutex.WaitOne();
-                            Console.WriteLine("Mutex obtained!");
-                            MutexReleased = false;
-                        }
+                    int RunAnacondaShell(string command, bool useMutex, bool startupMutex) {
+                        if (useMutex)
+                            GetMutex();
 
                         ProcessStartInfo psi = new ProcessStartInfo();
                         psi.WorkingDirectory = Directory.GetCurrentDirectory();
                         psi.RedirectStandardInput = true;
                         psi.FileName = @"C:\Windows\System32\cmd.exe";
 
+                        var tempguid = Guid.NewGuid().ToString();
+                        Console.WriteLine("Temp GUID = " + tempguid);
+                        psi.EnvironmentVariables.Add(BoSSSpadInitDone_PipeName, tempguid);
+
                         // wait here a bit to avoid a port conflict...
                         // when two notebooks are started simultaneously, we might run into the following:
                         //  ---> System.IO.IOException: Failed to bind to address http://192.168.56.1:1004: address already in use.
+                       
                         Process p = Process.Start(psi);
-                        Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
-
-                        //p.StandardInput.WriteLine("dir");
                         p.StandardInput.WriteLine(@"C:\ProgramData\Anaconda3\Scripts\activate.bat");
                         p.StandardInput.WriteLine(command);// "jupyter.exe nbconvert \"" + fileToOpen + "\" --to html ");
-                        p.StandardInput.WriteLine("exit");
+                        p.StandardInput.Flush();
 
-                        // wait here a bit more...
-                        Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
-                        if(!MutexReleased)
-                            JupyterMutex.ReleaseMutex();
-                        MutexReleased = true;
+                        if (startupMutex == true) {
+                            // wait here a bit more...
+                            //{ 
+                            try {
+
+
+                                // Miss-used pipe for inter-process synchronization.
+                                // An `EventWaitHandle` would be much nicer, but that works only on Windows-machines.
+                                //static internal EventWaitHandle BoSSSpadInitDone = new EventWaitHandle(false, EventResetMode.ManualReset, "MyUniqueEventName");
+                                using (NamedPipeClientStream BoSSSpadInitDone = new NamedPipeClientStream(".", tempguid, PipeDirection.InOut)) {
+                                    Console.WriteLine("Waiting for BoSSSpad to start up at " + DateTime.Now + ".");
+                                    BoSSSpadInitDone.Connect(3 * 60 * 1000);
+                                    Console.WriteLine("BoSSSpad connected at " + DateTime.Now + "; now waiting for signal...");
+
+                                    using (var cts = new CancellationTokenSource()) {
+                                        Task t = new Task(delegate () {
+                                            Console.WriteLine($" waiting for signal {DateTime.Now} ...");
+                                            int str = BoSSSpadInitDone.ReadByte();
+                                            while (str != 1) {
+                                                Console.WriteLine($" received signal {DateTime.Now}, got {str}");
+                                                str = BoSSSpadInitDone.ReadByte();
+                                            }
+                                            Console.WriteLine($" Finally received: {DateTime.Now}" + str);
+                                        }, cts.Token);
+
+                                        t.Start();
+
+                                        try {
+                                            //{ 
+                                            if (t.Wait(60 * 1000) == false) {
+                                                cts.Cancel();
+                                                Console.Error.WriteLine("Timeout waiting for Cancellation token pipe. " + DateTime.Now);
+                                            }
+                                        } catch (Exception e) {
+                                            Console.Error.WriteLine("Exception " + DateTime.Now + " while waiting for Cancellation token pipe: " + e);
+
+                                        }
+                                    }
+                                }
+                            } catch (Exception e) {
+                                Console.Error.WriteLine("Exception " + DateTime.Now + " while waiting for pipe connection: " + e);
+                                throw new AggregateException(e);
+                            }
+
+                            // received a signal from worksheet that it is up and running, 
+                            // so we can release the mutex **before** the external process exits
+                            if (useMutex)
+                                ReleaseMutex(); 
+                        }
+
+                        p.StandardInput.WriteLine("exit");
                         p.WaitForExit();
+
+                        if(startupMutex == false) {
+                            // the mutex should block the entire call to the external process.
+                            if (useMutex)
+                                ReleaseMutex();
+                        }
 
                         return p.ExitCode;
                     }
 
-                    papermill_exit = RunAnacondaShell($"papermill {fileToOpen} {fileToOpen_out}");
-                    nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html ");
-
+                    papermill_exit = RunAnacondaShell($"papermill {fileToOpen} {fileToOpen_out}", UseMutexOnPapermill, true);
+                    nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html ", UseMutexOnNbconvert, false);
+                    
+                    //nbconvert_exit = RunAnacondaShell("jupyter.exe nbconvert \"" + fileToOpen_out + "\" --to html --execute");
+                    //papermill_exit = nbconvert_exit;
                 } else {
 
 
-                    int RunExt(string executable, string arguments) {
-                        if (MutexReleased) {
-                            Console.WriteLine("Waiting for Jupyter mutex (can only use one Jupyter notebook at time) ...");
-                            JupyterMutex.WaitOne();
-                            Console.WriteLine("Mutex obtained!");
-                            MutexReleased = false;
-                        }
+                    int RunExt(string executable, string arguments, bool useMutex) {
+                        if(useMutex)
+                            GetMutex();
 
                         ProcessStartInfo psi = new ProcessStartInfo();
                         psi.WorkingDirectory = Directory.GetCurrentDirectory();
@@ -445,17 +524,18 @@ namespace BoSSS.Application.BoSSSpad {
                         Process p = Process.Start(psi);
 
                         // wait here a bit more...
-                        Thread.Sleep(rnd.Next(1000, 5000) + Math.Abs(fileToOpen.GetHashCode() % 2217));
-                        if(!MutexReleased)
-                            JupyterMutex.ReleaseMutex();
-                        MutexReleased = true;
-
+                        if(useMutex)
+                            ReleaseMutex();
+                        
                         p.WaitForExit();
+
                         return p.ExitCode;
                     }
 
-                    papermill_exit = RunExt($"papermill", $"{fileToOpen} {fileToOpen_out}");
-                    nbconvert_exit = RunExt("jupyter", "nbconvert \"" + fileToOpen_out + "\" --to html ");
+                    papermill_exit = RunExt($"papermill", $"{fileToOpen} {fileToOpen_out}", UseMutexOnPapermill);
+                    nbconvert_exit = RunExt("jupyter", "nbconvert \"" + fileToOpen_out + "\" --to html ", UseMutexOnNbconvert);
+                    //nbconvert_exit = RunExt("jupyter.exe", "nbconvert \"" + fileToOpen_out + "\" --to html --execute");
+                    //papermill_exit = nbconvert_exit;
 
                 }
                 Console.WriteLine("--------------------------------");
@@ -468,9 +548,8 @@ namespace BoSSS.Application.BoSSSpad {
                     File.Move(htmlResult_out, htmlResult, true);
                 }
 
+
                 return papermill_exit;
-            
-            
             } finally {
                 if (!MutexReleased)
                     JupyterMutex.ReleaseMutex();
@@ -621,8 +700,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public static void LinkEnforcer() {
             // If you remove these lines, this may break some worksheets and tutorials.
-            Console.WriteLine(typeof(CNS.Program).FullName);
-            Console.WriteLine(typeof(IBM_Solver.IBM_SolverMain).FullName);
+            Console.WriteLine(typeof(CNS.CNSProgram).FullName);
             Console.WriteLine(typeof(XNSE_Solver.XNSE).FullName);
             Console.WriteLine(typeof(XNSFE_Solver.XNSFE).FullName);
             Console.WriteLine(typeof(XNSERO_Solver.XNSERO).FullName);

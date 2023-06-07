@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Solution;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LoadBalancing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
@@ -44,23 +45,27 @@ namespace CNS.LoadBalancing {
             this.selectedCellType = selectedCellType;
         }
 
-        public double EstimatedLocalCost {
-            get;
-            private set;
+
+
+        public void Init(IApplication app) {
         }
 
-        public int CurrentPerformanceClassCount {
-            get;
-            private set;
+        public void UpdateEstimates(IApplication app) {
+            var cls = new IBMCellClassifier();
+            int[] CellClasses = cls.ClassifyCells(app);
+            UpdateEstimates(CellClasses);
         }
 
-        public int[] GetEstimatedCellCosts() {
-            return cellToCostMap;
+        int[][] ICellCostEstimator.GetEstimatedCellCosts() {
+            return new[] { cellToCostMap };
         }
 
-        public void UpdateEstimates(int performanceClassCount, int[] cellToPerformanceClassMap) {
-            CurrentPerformanceClassCount = performanceClassCount;
+        public object Clone() {
+            throw new NotImplementedException();
+        }
 
+        void UpdateEstimates(int[] cellToPerformanceClassMap) {
+           
             // One balance constraint per cluster
             cellToCostMap = new int[cellToPerformanceClassMap.Length];
             cellToCostMap.SetAll(1);
@@ -69,8 +74,6 @@ namespace CNS.LoadBalancing {
                     cellToCostMap[j] = 10;
                 }
             }
-
-            EstimatedLocalCost = cellToCostMap.Sum();
         }
 
         public static Func<IApplication, int, ICellCostEstimator> GetStaticCostBasedEstimator() {
@@ -85,5 +88,6 @@ namespace CNS.LoadBalancing {
                 yield return (app, classCount) => new IBMCellCostEstimator(temp);
             }
         }
+
     }
 }

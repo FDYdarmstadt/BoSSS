@@ -25,14 +25,14 @@ namespace MPI.Wrappers {
         /// <summary>
         /// Static instance of the Fortran MPI Driver
         /// </summary>
-        static IMPIdriver m_Raw = new FortranMPIdriver();
+        static IMPIdriver m_Raw1 = new FortranMPIdriver();
 
         /// <summary>
         /// Access to raw/unsafe MPI commands
         /// </summary>
         public static IMPIdriver Raw {
             get {
-                return m_Raw;
+                return m_Raw1;
             }
         }
     }

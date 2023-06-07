@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <RootNamespace>BoSSS.Application.AdaptiveMeshRefinementTest</RootNamespace>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
@@ -16,14 +16,6 @@
     <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <DocumentationFile>bin\Release\AdaptiveMeshRefinementTest.xml</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="log4net">
-      <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
-    </Reference>
-  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.HYPRE\ilPSP.LinSolvers.HYPRE.csproj" />

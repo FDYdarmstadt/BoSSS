@@ -600,6 +600,8 @@ namespace ilPSP {
         /// <returns>(x|y)</returns>
         public override string ToString() {
             switch(this.Dim) {
+                case 0:
+                return "null";
                 case 1:
                 return ("(" + x + ")");
                 case 2:
@@ -690,7 +692,7 @@ namespace ilPSP {
             }
 
             if (length > 3 || length < 1) {
-                throw new ArgumentException("Length can only be 0, 1 or 2", "length");
+                throw new ArgumentException("Length can only be 1, 2 or 3, not " + length, "length");
             }
 
             for (int i = 0; i < length; i++) {
@@ -711,7 +713,8 @@ namespace ilPSP {
             }
 
             if (length > 3 || length < 1) {
-                throw new ArgumentException("Length can only be 0, 1 or 2", "length");
+                // throw new ArgumentException("Length can only be 0, 1 or 2", "length");
+                throw new ArgumentException("Length can only be 1, 2 or 3, not " + length, "length");
             }
 
             if (destinationIndex < 0) {

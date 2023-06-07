@@ -252,7 +252,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         } else {
                             stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
-                            this.Control.AgglomerationThreshold, this.GridData);
+                            this.Control.AgglomerationThreshold, this.GridData,
+                            ReInitPeriod: Control.ReInitPeriod);
                         }
                         lsUpdater.AddEvolver(LevelSetCG, stokesExtEvo);
                         break;
@@ -306,6 +307,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             return lsUpdater;
         }
 
+        /*
         /// <summary>
         /// Cell-performance classes:
         /// cell performance class equals number of species present in that cell
@@ -320,6 +322,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 //Console.WriteLine("No of Species in cell {0} : {1}", j, CellPerfomanceClasses[j]);
             }
         }
+        */
 
         /// <summary>
         /// Corresponding to <see cref="LevelSetEvolution"/> initialization of LevelSetDG
@@ -505,7 +508,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         }
 
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             base.CreateEquationsAndSolvers(L);
 
             // Level Set Parameters
@@ -610,7 +613,9 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         allfields.Add(f);
                 }
 
-                Tecplot.Tecplot.PlotFields(allfields, "AgglomerationKatastrophe", 0.0, 3);
+                Tecplot.Tecplot.PlotFields(allfields, "AgglomerationKatastrophe", 0.0, 0);
+                Tecplot.Tecplot.PlotFields(allfields, "AgglomerationKatastrophe_HighRes", 0.0, 2);
+
             }
             AgglomerationAlgorithm.Katastrophenplot = KatastrophenPlot;
 

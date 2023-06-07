@@ -39,25 +39,25 @@ namespace BoSSS.Foundation.XDG {
     /// the memory management of cut-cell fields, i.e. <see cref="XDGField"/> and <see cref="XDGBasis"/>
     /// </summary>
     /// <remarks>
-    /// After changing one ore more level sets, the <see cref="UpdateTracker()"/>-method must be
+    /// After changing one ore more level sets, the <see cref="UpdateTracker"/>-method must be
     /// called.
     /// </remarks>
     public partial class LevelSetTracker : IObservable<LevelSetTracker.LevelSetRegions>, IDisposable {
 
         /// <summary>
-        /// Region code (see <see cref="m_LevSetRegions"/>) indicating that all level set values in a cell are in
+        /// Region code (see <see cref="LevelSetRegions.m_LevSetRegions"/>) indicating that all level set values in a cell are in
         /// the positive far region
         /// </summary>
         public const ushort AllFARplus = 0xffff;
 
         /// <summary>
-        /// Region code (see <see cref="m_LevSetRegions"/>) indicating that all level set values in a cell are in
+        /// Region code (see <see cref="LevelSetRegions.m_LevSetRegions"/>) indicating that all level set values in a cell are in
         /// the negative far region
         /// </summary>
         public const ushort AllFARminus = 0x1111;
 
         /// <summary>
-        /// Region code (see <see cref="m_LevSetRegions"/>) indicating that all level sets cut the actual cell 
+        /// Region code (see <see cref="LevelSetRegions.m_LevSetRegions"/>) indicating that all level sets cut the actual cell 
         /// </summary>
         public const ushort AllCut = 0x8888;
 
@@ -77,24 +77,7 @@ namespace BoSSS.Foundation.XDG {
             ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levSet1);
         }
 
-        /// <summary>
-        /// Creates a level set tracker for just one level set.
-        /// </summary>
-        /// <param name="BackgroundGrid"></param>
-        /// <param name="_SpeciesTable">The species table, see <see cref="SpeciesTable"/>;</param>
-        /// <param name="levSet1"></param>
-        /// <param name="__NearRegionWidth">
-        /// width of near region, in number of cells
-        /// </param>
-        /// <param name="BruteForceDivisions"></param>
-        /// <param name="BruteForceOrder"></param>
-        /// <param name="cutCellquadType">
-        /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
-        /// </param>
-        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, string[] _SpeciesTable, ILevelSet levSet1) {
-            ConstructorCommon(BackgroundGrid, __NearRegionWidth, BruteForceOrder, BruteForceDivisions, _SpeciesTable, cutCellquadType, levSet1);
-        }
-
+       
         /// <summary>
         /// Creates a level set tracker for two level sets.
         /// </summary>
@@ -149,9 +132,9 @@ namespace BoSSS.Foundation.XDG {
             ConstructorCommon(BackgroundGrid, cutCellquadType, __NearRegionWidth, _SpeciesTable, levSet1, levSet2, levSet3, levSet4);
         }
 
+        
         /// <summary>
-        /// Implementation of the constructor with default values for the brute
-        /// force quadrature (see <see cref="SetBruteForceQuadratureRules"/>).
+        /// 
         /// </summary>
         /// <param name="BackgroundGrid"></param>
         /// <param name="__NearRegionWidth"></param>
@@ -160,17 +143,15 @@ namespace BoSSS.Foundation.XDG {
         /// <param name="cutCellquadType">
         /// the type of integration in cut-cells; if more than one type is required within a single application, two <see cref="LevelSetTracker"/>'s should be used.
         /// </param>       
-        private LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
-            ConstructorCommon(BackgroundGrid, __NearRegionWidth, 5, 2, SpeciesTable, cutCellquadType, levSets);
+        public LevelSetTracker(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
+            ConstructorCommon(BackgroundGrid, __NearRegionWidth, SpeciesTable, cutCellquadType, levSets);
         }
 
-        /// <summary>
-        /// Implementation of the constructor with default values for the brute
-        /// force quadrature (see <see cref="SetBruteForceQuadratureRules"/>).
-        /// </summary>
+        
         private void ConstructorCommon(GridData BackgroundGrid, XQuadFactoryHelper.MomentFittingVariants cutCellquadType, int __NearRegionWidth, Array SpeciesTable, params ILevelSet[] levSets) {
-            ConstructorCommon(BackgroundGrid, __NearRegionWidth, 5, 2, SpeciesTable, cutCellquadType, levSets);
+            ConstructorCommon(BackgroundGrid, __NearRegionWidth, SpeciesTable, cutCellquadType, levSets);
         }
+        
 
         /// <summary>
         /// Increases <see cref="HistoryLength"/> to <paramref name="ReqLeng"/>, if the latter is smaler.
@@ -266,7 +247,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Implementation of the constructor;
         /// </summary>
-        private void ConstructorCommon(GridData griData, int __NearRegionWidth, int BruteForceDivisions, int BruteForceOrder, Array SpeciesTable, XQuadFactoryHelper.MomentFittingVariants cutCellQuadratureType, params ILevelSet[] levSets) {
+        private void ConstructorCommon(GridData griData, int __NearRegionWidth, Array SpeciesTable, XQuadFactoryHelper.MomentFittingVariants cutCellQuadratureType, params ILevelSet[] levSets) {
             // check args, init members
             // ========================
             m_gDat = griData;
@@ -832,7 +813,7 @@ namespace BoSSS.Foundation.XDG {
         int m_NearRegionWidth = 1;
 
         /// <summary>
-        /// Width, in Number of cells, of the near field (set as an argument of <see cref="UpdateTracker()"/>);
+        /// Width, in Number of cells, of the near field (set as an argument of <see cref="UpdateTracker"/>);
         /// </summary>
         public int NearRegionWidth {
             get {
@@ -1032,17 +1013,15 @@ namespace BoSSS.Foundation.XDG {
         /// on exit, the reduced region code for <paramref name="RegionCode"/>
         /// in an 3-adic representation; This number 
         /// is later on required as an input for
-        /// <see cref="GetSpeciesIndex(SpeciesId,int)"/>;
+        /// <see cref="GetSpeciesIndex(ReducedRegionCode, SpeciesId)"/>;
         /// The reduced region code in 3-adic representation;
         /// </param>
         /// <returns></returns>
         /// <remarks>
         /// Here, three states (the reduced region) for each of the for level sets are considered:
-        /// <list type="bullet">
-        ///   <item>positive far (FAR+)</item>
-        ///   <item>negative far (FAR-)</item>
-        ///   <item>positive near, negative near or cut</item>
-        /// </list>
+        /// - positive far (FAR+)
+        /// - negative far (FAR-)
+        /// - positive near, negative near or cut
         /// This implies, that also for cells in the near region, memory is allocated for more than one
         /// species.
         /// </remarks>
@@ -1058,14 +1037,11 @@ namespace BoSSS.Foundation.XDG {
         /// This array, which contains exactly 3<sup>4</sup> = 81 entries, stores the number of
         /// species for each possible combination of level sets; <br/>
         /// For each level set, in each cell, we distinct between three different states:
-        /// <list type="bullet">
-        ///   <item>the cell if in the positive FAR region: <i>distance</i> == 7, i.e. the <i>code</i> is 0xf</item>
-        ///   <item>the cell if in the negative FAR region: <i>distance</i> == -1, i.e the <i>code</i> is 0x1</item>
-        ///   <item>the cell is cutted or in the near reagion: -6 &lt; <i>distance</i> &lt; 6</item>
-        /// </list>
+        /// - the cell if in the positive FAR region: <i>distance</i> == 7, i.e. the <i>code</i> is 0xf
+        /// - the cell if in the negative FAR region: <i>distance</i> == -1, i.e the <i>code</i> is 0x1
+        /// - the cell is cut or in the near region: -6 &lt; <i>distance</i> &lt; 6
         /// So, there are in total 3*4 states for some cell (for 4 level sets);
         /// </remarks>
-        /// <see cref="GetNoOfSpecies"/>
         int[] m_NoOfSpecies = new int[81];
 
         /// <summary>
@@ -1134,7 +1110,7 @@ namespace BoSSS.Foundation.XDG {
         /// and the region <paramref name="rrc"/>.
         /// </summary>
         /// <param name="rrc">
-        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpecies"/>;
+        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpeciesByRegionCode(ushort, out ReducedRegionCode)"/>;
         /// </param>
         /// <param name="LevelSetSignBytecode"></param>
         /// <returns></returns>
@@ -1145,10 +1121,10 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// this function is the inverse to <see cref="GetSpeciesIndex(SpeciesId,int)"/>;
+        /// this function is the inverse to <see cref="GetSpeciesIndex(ReducedRegionCode, LevelSetSignCode)"/>;
         /// </summary>
         /// <param name="_ReducedRegionCode">
-        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpecies"/>;
+        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpeciesByRegionCode(ushort, out ReducedRegionCode)"/>;
         /// </param>
         /// <param name="SpeciesIndex"></param>
         /// <returns></returns>
@@ -1167,7 +1143,7 @@ namespace BoSSS.Foundation.XDG {
         /// depends on the reduced region code <paramref name="_ReducedRegionCode"/>;
         /// </summary>
         /// <param name="_ReducedRegionCode">
-        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpecies"/>;
+        /// the value returned by the 2nd parameter of <see cref="GetNoOfSpeciesByRegionCode(ushort, out ReducedRegionCode)"/>;
         /// </param>
         /// <param name="_SpeciesId"></param>
         /// <returns>
@@ -1219,7 +1195,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Extracts the distance layer index for level-set <paramref name="levSetInd"/>
-        /// from the code <paramref name="code"/> (see <see cref="LevelSetRegionsInfo.LevelSetRegions"/>).
+        /// from the code <paramref name="code"/> (see <see cref="LevelSetRegions.m_LevSetRegions"/>).
         /// </summary>
         /// <param name="code"></param>
         /// <param name="levSetInd"></param>
@@ -1237,7 +1213,7 @@ namespace BoSSS.Foundation.XDG {
 
         /// <summary>
         /// Encodes the distance layer index <paramref name="dist"/> for level-set <paramref name="levSetInd"/>
-        /// int the code <paramref name="code"/> (<see cref="LevelSetRegionsInfo.LevelSetRegions"/>).
+        /// int the code <paramref name="code"/> (<see cref="LevelSetRegions.m_LevSetRegions"/>).
         /// </summary>
         static public void EncodeLevelSetDist(ref ushort code, int dist, int levSetInd) {
             Debug.Assert(-7 <= dist);
@@ -1287,8 +1263,9 @@ namespace BoSSS.Foundation.XDG {
                 if (m_TestTransformer == null) {
                     m_TestTransformer = new BernsteinTransformator[this.LevelSets.Count];
                     for(int i = 0; i< this.LevelSets.Count; i++ ) {
-                        if (this.LevelSets[i] is LevelSet ls)
-                            m_TestTransformer[i] = new BernsteinTransformator(ls.Basis, 0.005); 
+                        if (this.LevelSets[i] is LevelSet ls) {
+                            m_TestTransformer[i] = new BernsteinTransformator(ls.Basis, 0.005);
+                        }
                     }
                 }
                 return m_TestTransformer;
@@ -1356,7 +1333,7 @@ namespace BoSSS.Foundation.XDG {
 
                     // allocate memory form test node set 
                     int TotNumberOfNodes = NoOfFaces * (corners.NoOfNodes + GaussRule.NoOfNodes + BruteRule.NoOfNodes);
-                    NodeSet TstVtx = new NodeSet(Kref, TotNumberOfNodes, D);
+                    NodeSet TstVtx = new NodeSet(Kref, TotNumberOfNodes, D, true);
                     int offset = 0;
 
 
@@ -1388,8 +1365,7 @@ namespace BoSSS.Foundation.XDG {
 
 
         /// <summary>
-        /// a counter that is increased every time when <see cref="UpdateTracker()"/>
-        /// is called;
+        /// a counter that is increased every time when <see cref="UpdateTracker"/> is called;
         /// </summary>
         public int VersionCnt {
             get {
@@ -1687,7 +1663,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// Must be called after changing the level-set;
         /// Invoking this method updates the state of cells (e.g. cut, -near, +near, etc.), <see cref="Regions"/>.
-        /// After this update, for every <see cref="XDGField"/> the method <see cref="XDGField.UpdateMemory"/> must be invoked;
+        /// After this update, for every <see cref="XDGField"/> the method <see cref="XDGField.OnNext"/> must be invoked;
         /// </summary>
         /// <param name="__NearRegionWith">
         /// new width of near region; if smaller than 0, unchanged
@@ -1763,6 +1739,9 @@ namespace BoSSS.Foundation.XDG {
                 ushort[,] VertexMarkerExternal;
                 (int iLevSet, int iFace)[][] _LevSetCoincidingFaces = null;
 
+                
+
+
                 // init & first time calls
                 // =======================
                 #region UpdateTracker_INIT
@@ -1807,6 +1786,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 #endregion
 
+
                 // evaluate level sets / find cut cells
                 // ====================================
                 #region UpdateTracker_FIND_CUT_CELLS
@@ -1843,6 +1823,7 @@ namespace BoSSS.Foundation.XDG {
                     MaxVecLen = Math.Max(1, MaxVecLen);
                     var eps = BLAS.MachineEps*10;
 
+
                     var Gchnks = SearchMask.GetGeometricCellChunks(MaxVecLen, CellInfo.RefElementIndex_Mask | CellInfo.CellType_Mask);
                     foreach (var t_j0_Len in Gchnks) { // loop over all cells in the search mask...
                         int j = t_j0_Len.Item1;
@@ -1859,10 +1840,14 @@ namespace BoSSS.Foundation.XDG {
                         // loop over level sets ...
                         for (int levSetind = NoOfLevSets - 1; levSetind >= 0; levSetind--) {
                             var TempCutCellsBitmask = TempCutCellsBitmaskS[levSetind];
-                            // Use the accelerated bernstein cut cell finding technique for dg levelsets
+
+
                             if (this.m_DataHistories[levSetind].Current.LevelSet is LevelSet ls) {
+                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                // Use the accelerated bernstein cut cell finding technique for dg levelsets
+                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
                                 var data = this.m_DataHistories[levSetind].Current;
-                                NodeSet EdgeNodes = new NodeSet(Kref, this.TestNodes[iKref].ExtractSubArrayShallow(new int[] {0 , 0}, new int[] { _TestNodesPerFace.Sum() - 1, D - 1})); // only use edge nodes
+                                NodeSet EdgeNodes = new NodeSet(Kref, this.TestNodes[iKref].ExtractSubArrayShallow(new int[] {0 , 0}, new int[] { _TestNodesPerFace.Sum() - 1, D - 1}), false); // only use edge nodes
                                 MultidimensionalArray levSetVal = data.GetLevSetValues(EdgeNodes, j, VecLen);
 
                                 // loop over all cells in this chunk
@@ -1872,6 +1857,7 @@ namespace BoSSS.Foundation.XDG {
                                     bool Pos = false;
                                     bool Neg = false;
 
+                                    
                                     #region edges  
                                     // loop over nodes on edges...
                                     int nodeIndex = 0;
@@ -1906,6 +1892,7 @@ namespace BoSSS.Foundation.XDG {
 
                                     } // end of edges loop
                                     #endregion
+                                    
 
                                     /* Seems to be not robust enough... using the "old" procedure for now
                                     // loop over nodes on edges...
@@ -1958,6 +1945,8 @@ namespace BoSSS.Foundation.XDG {
                                     if (Pos && Neg || (!Pos && !Neg)) {
                                         // cell jj is cut by level set
                                         // code cell:
+
+                                        
                                         EncodeLevelSetDist(ref LevSetRegionsUnsigned[jj], 0, levSetind);
                                         TempCutCellsBitmask[jj] = true;
                                     }
@@ -1970,7 +1959,13 @@ namespace BoSSS.Foundation.XDG {
                                     }
                                     
                                 }
-                            } else { 
+                            } else {
+                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+                                // Use the old cut-cell detection,
+                                // which just evaluates the level-set at certain points in the cell.
+                                // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
                                 var data = this.m_DataHistories[levSetind].Current;
                                 MultidimensionalArray levSetVal = data.GetLevSetValues(this.TestNodes[iKref], j, VecLen);
 
@@ -2045,15 +2040,16 @@ namespace BoSSS.Foundation.XDG {
                             }
                         }
                         j += VecLen;
+
                     }
+                    
 
-
-                    if(_LevSetCoincidingFaces != null)
+                    if (_LevSetCoincidingFaces != null)
                         Regions.m_LevSetCoincidingFaces = _LevSetCoincidingFaces;
-
-                   
-
                 }
+
+                //test.AddVector()
+
 
                 using (new BlockTrace("CELL_SWEEPS", tr)) {
 
@@ -2220,11 +2216,13 @@ namespace BoSSS.Foundation.XDG {
                             MPIUpdate(LevSetRegionsUnsigned, m_gDat);
                             MPIUpdateVertex(VertexMarker, VertexMarkerExternal, m_gDat, NoOfLevSets);
 
+
+
                             NumberOfChanges = NumberOfChanges.MPISum();
                         }
+                        
                     }
                 }
-
 
                 // set the sign
                 // ============
@@ -2255,6 +2253,39 @@ namespace BoSSS.Foundation.XDG {
                 // ==========================================
                 this.m_QuadFactoryHelpersHistory.Current.Clear();
                 this.m_XDGSpaceMetricsHistory.Current.Clear();
+
+                // Check Level-Set Topology
+                // ========================
+                var TopologyProblems = new List<(int iLevSet, int j, int Neigh, int dist_j, int dist_neigh)>();
+                using (new BlockTrace("TOPOLOGY_CHECK", tr)) {
+                    int[][] Neighbours = m_gDat.iLogicalCells.CellNeighbours;
+
+
+                    for (int levSetInd = 0; levSetInd < NoOfLevSets; levSetInd++) {
+                        for (int j = 0; j < J; j++) {
+                            int dist = DecodeLevelSetDist(LevSetRegions[j], levSetInd);
+                            //Console.WriteLine($"dist[{j}] = {dist}");
+                            int distSign = Math.Sign(dist);
+
+                            if (Math.Abs(distSign) > 0) {
+                                int[] Neighs = Neighbours[j];
+                                foreach (var jNeigh in Neighs) {
+                                    int distNeigh = DecodeLevelSetDist(LevSetRegions[jNeigh], levSetInd); //lsTrk.Regions.GetLevelSetDistance(0, jNeigh);
+
+                                    int distNeighSign = Math.Sign(distNeigh);
+
+                                    if (Math.Abs(distNeighSign) != 0 && distNeighSign != distSign) {
+                                        TopologyProblems.Add((levSetInd, j, jNeigh, dist, distNeigh));
+                                        //Console.WriteLine($"Topology error in Cell {j}; contact of purly positive/negative domain across an edge without a cut cell in between. distance of cell {j} is {dist}, distance of neighbour cell {jNeigh} is {distNeigh}.");
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                   
+
+                }
 
                 // check the LevelSet CFL
                 // ======================
@@ -2289,8 +2320,8 @@ namespace BoSSS.Foundation.XDG {
                     ObserverUpdate(null);
                 }
 
-                // throw exception, if levelset CFL violated
-                // =========================================
+                // throw exceptions, if levelset topology/CFL violated
+                // ===================================================
 
                 //
                 // Ein schöner Gruß von Florian
@@ -2307,6 +2338,17 @@ namespace BoSSS.Foundation.XDG {
                 //
 
 
+                if (TopologyProblems.Count > 0) {
+                    LevelSetTopologyException exception = new LevelSetTopologyException(TopologyProblems);
+                    foreach (var reference in m_Observers) {
+                        IObserver<LevelSetRegions> observer = reference.Target;
+                        if (observer != null) {
+                            observer.OnError(exception);
+                        }
+                    }
+                    throw exception;
+                }
+
                 if (throwCFL) {
                     LevelSetCFLException exception = new LevelSetCFLException(fail);
                     foreach(var reference in m_Observers) {
@@ -2317,6 +2359,8 @@ namespace BoSSS.Foundation.XDG {
                     }
                     throw exception;
                 }
+
+
             }
         }
 

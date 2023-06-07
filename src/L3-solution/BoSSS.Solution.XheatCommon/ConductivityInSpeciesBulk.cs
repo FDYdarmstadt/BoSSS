@@ -70,8 +70,8 @@ namespace BoSSS.Solution.XheatCommon {
                 default: throw new ArgumentException("Unknown species.");
             }
 
-            double muFactor = Math.Max(currentk, complementk) / currentk;
-            base.m_penalty_base = penalty * muFactor;
+            //double muFactor = Math.Max(currentk, complementk) / currentk;
+            //base.m_penalty_base = penalty * muFactor;
 
             base.tempFunction = this.m_bcMap.bndFunction[VariableNames.Temperature + "#" + spcName];
             base.fluxFunction = D.ForLoop(d => bcMap.bndFunction[VariableNames.HeatFluxVectorComponent(d) + "#" + spcName]);

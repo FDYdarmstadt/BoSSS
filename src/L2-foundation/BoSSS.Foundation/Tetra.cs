@@ -109,7 +109,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
                 //{ -1.0, (-1.0/3.0)  *Math.Sqrt(3), (-1.0/6.0) *Math.Sqrt(3) *Math.Sqrt(2) },
                 //{ 1.0,  (-1.0/3.0)  *Math.Sqrt(3), (-1.0/6.0) *Math.Sqrt(3) *Math.Sqrt(2) }
             };
-            this.m_Vertices = new NodeSet(this, 4, 3);
+            this.m_Vertices = new NodeSet(this, 4, 3, false);
             this.m_Vertices.InitializeFrom(_Vertices);
             this.m_Vertices.LockForever();
 
@@ -130,7 +130,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             {
                 var qrTemp = QuadRuleResource.DecodeFromBase64(Resource.TetraQuadRules_bin);
                 foreach(var q in qrTemp) {
-                    var realQr = QuadRule.CreateEmpty(this, q.Item2.GetLength(0), this.SpatialDimension);
+                    var realQr = QuadRule.CreateEmpty(this, q.Item2.GetLength(0), this.SpatialDimension, true);
                     realQr.Nodes.Set2DArray(q.Item2);
                     realQr.Weights.SetVector(q.Item3);
                     realQr.OrderOfPrecision = q.Item1;
@@ -143,7 +143,7 @@ namespace BoSSS.Foundation.Grid.RefElements {
             /*
             #region QUADRULE_DEF
 
-            //Keast quadrature rules imported from
+            //Least quadrature rules imported from
             //http://people.sc.fsu.edu/~burkardt/datasets/quadrature_rules_tet/quadrature_rules_tet.html
             //The rules with orders 6 and 8 have been sorted out because of
             //insufficient accuracy.

@@ -109,6 +109,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
         double scale = double.NaN;
     }
 
+    /*
     /// <summary>
     /// volume term for the Divergence / Continuity equation
     /// </summary>
@@ -144,7 +145,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Continuity {
 
         double scale = double.NaN;
     }
-
+    */
     
 
     /// <summary>

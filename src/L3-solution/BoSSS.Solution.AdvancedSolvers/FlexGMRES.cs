@@ -57,12 +57,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose();
 
                 var M = op.OperatorMatrix;
-                var MgMap = op.Mapping;
+                var MgMap = op.DgMapping;
                 this.m_mgop = op;
 
-                if(!M.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if(!M.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!M.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if(!M.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
 
                 foreach(var pc in PrecondS) {

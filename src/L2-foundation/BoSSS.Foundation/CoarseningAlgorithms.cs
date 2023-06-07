@@ -158,7 +158,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
 
         /// <summary>
-        /// creates an initial aggregated grid which is in fact equivalent to <paramref name="g"/>
+        /// creates an initial aggregated grid which is in fact equivalent to <paramref name="gd"/>
         /// </summary>
         public static AggregationGridData ZeroAggregation(IGridData gd) {
             var g = gd.Grid;
@@ -196,103 +196,12 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </param>
         public static AggregationGridData Coarsen(IGridData ag, int AggCellCount) {
             using (new FuncTrace()) {
-                int[][] Coarsened_ComositeCells = AggregationKernel(ag, AggCellCount);
-                return new AggregationGridData(ag, Coarsened_ComositeCells);
+                var g = Coarsen(ag.Grid, AggCellCount);
+                if (!object.ReferenceEquals(g.GridData.Grid, g))
+                    throw new ApplicationException("internal error in mesh coarsening");
+                return g.GridData;
             }
         }
-        /*
-        public static AggregationGridData Coarsen_hardcoded(IGridData ag, int AggCellCount)
-        {
-            using (new FuncTrace())
-            {
-                int[][] Coarsened_ComositeCells = AggregationKernel_hardcoded(ag, AggCellCount);
-                return new AggregationGridData(ag, Coarsened_ComositeCells);
-            }
-        }
-
-        private static int[][] AggregationKernel_hardcoded(IGridData ag, int AggCellCount)
-        {
-            int Jloc = ag.iLogicalCells.NoOfLocalUpdatedCells;
-            int D = ag.SpatialDimension;
-            if (AggCellCount < 2)
-                throw new ArgumentOutOfRangeException();
-
-            int[] Perm = Jloc.ForLoop(j => j).ToArray();
-            BitArray UsedCellMarker = new BitArray(Jloc);
-
-            List<int[]> Coarsened_ComositeCells = new List<int[]>();
-            List<int> NeighCandidates = new List<int>();
-            //
-            List<int> aggCell = new List<int>();
-            int[][] Neighbourship = ag.iLogicalCells.CellNeighbours;
-            for (int i = 0; i < Jloc; i++)
-            {
-                int jCell = Perm[i];
-                if (!UsedCellMarker[jCell])
-                {
-                    aggCell.Clear();
-                    aggCell.Add(jCell);
-                    UsedCellMarker[jCell] = true;
-
-                    NeighCandidates.Clear();
-
-                    foreach (int jNeigh in Neighbourship[jCell])
-                    {
-                        if (jNeigh >= Jloc)
-                            continue;
-                        if (UsedCellMarker[jNeigh] == true)
-                            continue;
-                        Debug.Assert(aggCell.Contains(jNeigh) == false); // for all cells which are already in 'aggCell', the marker should be true
-                        if (!NeighCandidates.Contains(jNeigh))
-                        {
-                            NeighCandidates.Add(jNeigh);
-                            
-                        }
-                    }
-
-                    List<int> kabumm = new List<int>();
-                    foreach (var NC in NeighCandidates)
-                    {
-                        kabumm.AddRange(Neighbourship[NC].ToList<int>());
-                    }
-                    int[] intkabumm = kabumm.ToArray();
-                    Array.Sort(intkabumm);
-                    for (int ikabumm = 0; ikabumm < intkabumm.Length - 1; ikabumm++) {
-                        if (intkabumm[ikabumm] == jCell)
-                            continue;
-                        if (intkabumm[ikabumm] == intkabumm[ikabumm + 1]) {
-                            NeighCandidates.Add(intkabumm[ikabumm]);
-                            break;
-                        }
-                    }
-
-                    aggCell.AddRange(NeighCandidates);
-                    NeighCandidates.ForEach(nc => UsedCellMarker.Set(nc,true));
-
-                    {
-                        int[] aggCell_Fix = aggCell.ToArray();
-#if DEBUG
-                        foreach (int j in aggCell_Fix) {
-                            Debug.Assert(j >= 0);
-                            Debug.Assert(j < Jloc);
-                            Debug.Assert(UsedCellMarker[j] == true);
-                        }
-
-#endif
-                        Coarsened_ComositeCells.Add(aggCell_Fix);
-                    }
-                }
-                else
-                {
-                    // cell already done.
-                    continue;
-                }
-            }
-            Debug.Assert(UsedCellMarker.ToBoolArray().Where(b => !b).Count() == 0, "some cell was not processed.");
-            return Coarsened_ComositeCells.ToArray();
-        }
-        */
-
 
         /// <summary>
         /// coarsens level <paramref name="ag"/> (aggregation of grid objects)
@@ -308,12 +217,99 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
                 IGridData pGridData = ag.iGridData;
                 int[][] Coarsened_ComositeCells = AggregationKernel(pGridData, AggCellCount);
-                return new AggregationGrid(ag, Coarsened_ComositeCells);
+
+               
+                // Cuthill-McKey sorting should theoretically help iterative and direct solvers
+                //Coarsened_ComositeCells = RandomSorting(Coarsened_ComositeCells);
+                //Coarsened_ComositeCells = CuthillMcKey(ag, Coarsened_ComositeCells, true);
+
+                var g = new AggregationGrid(ag, Coarsened_ComositeCells);
+                return g;
             }
         }
 
+        static int[][] RandomSorting(int[][] __Coarsened_ComositeCells) {
+            // random permute of aggregation cells
+            int JC = __Coarsened_ComositeCells.Length;
+            int[][] Coarsened_ComositeCells = new int[JC][];
+            Random rnd = new Random();
+            //Console.Write(" perm: ");
+            for (int jc = 0; jc < JC; jc++) {
+                int jDest = rnd.Next(JC);
+                while (Coarsened_ComositeCells[jDest] != null) {
+                    jDest = (jDest + 1) % JC;
+                }
+
+                //Console.Write($" {jc}>{jDest}");
+                Coarsened_ComositeCells[jDest] = __Coarsened_ComositeCells[jc];
+            }
+            //Console.WriteLine();
+
+            return Coarsened_ComositeCells;
+        }
 
 
+        static int[][] CuthillMcKey(IGrid parrent, int[][] AggCells, bool reverse) {
+
+            var gTemp = new AggregationGrid(parrent, AggCells);
+            int JC = AggCells.Length;
+            if (JC != gTemp.iGridData.iLogicalCells.NoOfLocalUpdatedCells)
+                throw new ApplicationException();
+
+            BitArray added = new BitArray(JC);
+            int[] AdjRest(int jc) {
+                return gTemp.GridData.iLogicalCells.CellNeighbours[jc].Where(jneigh => jneigh < JC && !added[jneigh]).ToArray();
+            }
+
+            int Degree(int jc) {
+                return gTemp.GridData.iLogicalCells.CellNeighbours[jc].Where(jneigh => jneigh < JC).Count();
+            }
+
+            List<int> R = new List<int>(new int[] { 0 }); added[0] = true;
+            for(int i = 0; R.Count < JC; i++) {
+                int Ri = R[i];
+
+                int[] Ai = AdjRest(Ri);
+                Debug.Assert(Ai.Where(a => added[a]).Count() == 0);
+                if (Ai.Length > 0) {
+                    int[] Degs = Ai.Select(a => Degree(a)).ToArray();
+
+                    Array.Sort(Degs, Ai);
+
+                    R.AddRange(Ai);
+                    foreach (var k in Ai)
+                        added[k] = true;
+                }
+            }
+
+            if (R.Count != JC)
+                throw new ApplicationException("Cuthill-McKey internal error.");
+
+
+            int[][] ret = new int[JC][];
+            for(int j = 0; j < JC; j++) {
+                if(reverse)
+                    ret[JC - j - 1] = AggCells[R[j]];
+                else
+                    ret[j] = AggCells[R[j]];
+            }
+            return ret;
+        }
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ag">
+        /// mesh which should be coarsened
+        /// </param>
+        /// <param name="AggCellCount">
+        /// number of cells from the grid <paramref name="ag"/> that should be aggregated in each aggregate cell
+        /// </param>
+        /// <returns>
+        /// - 1st index: local cell mesh of the aggregate mesh
+        /// - 2nd index: enumeration of cell parts
+        /// </returns>
         private static int[][] AggregationKernel(IGridData ag, int AggCellCount) {
             int Jloc = ag.iLogicalCells.NoOfLocalUpdatedCells;
             int D = ag.SpatialDimension;

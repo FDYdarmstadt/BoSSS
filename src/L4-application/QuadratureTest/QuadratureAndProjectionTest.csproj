@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <PublishUrl>publish\</PublishUrl>
@@ -29,11 +29,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\QuadratureAndProjectionTest.XML</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
-    </Reference>
-  </ItemGroup>
   <ItemGroup>
     <!--BootstrapperPackage Include="Microsoft.Net.Client.3.5">
       <Visible>False</Visible>

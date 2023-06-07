@@ -155,7 +155,10 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         [JsonIgnore]
         AggCell[] AggCells;
 
-        public AggCell[] AggregationCells{ get => AggCells; set => AggCells = value; }
+        public AggCell[] AggregationCells{ 
+            get => AggCells; 
+            set => AggCells = value; 
+        }
 
         /// <summary>
         /// a string to store some user-information about the grid;
@@ -407,10 +410,11 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </summary>
         public AggregationGridData GridData {
             get {
-                if (m_GridData == null)
-                {
+                if (m_GridData == null) {
                     InitGridData();
                 }
+                if (!object.ReferenceEquals(m_GridData.Grid, this))
+                    throw new ApplicationException("internal error in Grid-GridData pairing.");
                 return m_GridData;
             }
         }
@@ -500,8 +504,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// Returns the current GlobalID - permutation of this grid,
         /// i.e. a mapping from the global index to the global ID.
         /// </summary>
-        public Foundation.Comm.Permutation CurrentGlobalIdPermutation()
-        {
+        public Foundation.Comm.Permutation CurrentGlobalIdPermutation() {
             ilPSP.MPICollectiveWatchDog.Watch();
             int NumberOfLocalMPICells = AggCells.Length;
 
@@ -509,8 +512,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
 
             long[] gid = new long[NumberOfLocalMPICells];
 
-            for (int j = 0; j < NumberOfLocalMPICells; j++)
-            {
+            for (int j = 0; j < NumberOfLocalMPICells; j++) {
                 if (AggCells[j].GlobalID < 0 || AggCells[j].GlobalID >= NoOfCells)
                     throw new NotSupportedException("Found illegal GlobalID for cell;");
 
@@ -526,8 +528,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
         /// </summary>
         /// <remarks>
         /// indices into this list are the
-        /// <see cref="GridData.EdgeData.EdgeTags"/> minus
-        /// <see cref="FIRST_PERIODIC_BC_TAG"/>
+        /// <see cref="IGeometricalEdgeData.EdgeTags"/> minus <see cref="Classic.GridCommons.FIRST_PERIODIC_BC_TAG"/>
         /// </remarks>
         public IList<AffineTrafo> PeriodicTrafo {
             get {

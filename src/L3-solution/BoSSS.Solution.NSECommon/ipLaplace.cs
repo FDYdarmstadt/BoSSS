@@ -27,7 +27,7 @@ namespace BoSSS.Solution.NSECommon {
     /// Symmetric Interior Penalty - discetization of the (positive) Laplace operator,
     /// i.e. \f$ + \text{div}( \nu \nabla u ) \f$.
     /// </summary>
-    abstract public class SIPLaplace : BoSSS.Foundation.IEdgeForm, BoSSS.Foundation.IVolumeForm, BoSSS.Foundation.IEquationComponentCoefficient, ISupportsJacobianComponent {
+    abstract public class SIPLaplace : IEdgeForm, IVolumeForm, IEquationComponentCoefficient, ISupportsJacobianComponent, IDGdegreeConstraint {
 
         /// <summary>
         /// no parameters in default implementation
@@ -133,7 +133,7 @@ namespace BoSSS.Solution.NSECommon {
             
             double mu = m_penalty_base*m_penalty_deg * cj_in;
             if(jCellOut >= 0) {
-                double cj_out = LengthScales[jCellOut];
+                double cj_out = 1.0/LengthScales[jCellOut];
                 mu = Math.Max(mu, m_penalty_base*m_penalty_deg * cj_out);
             }
             if(mu.IsNaNorInf())
@@ -180,7 +180,7 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Volume integrand of the SIP
         /// </summary>
-        public double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
+        public virtual double VolumeForm(ref Foundation.CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
             double acc = 0;
             for(int d = 0; d < cpv.D; d++)
                 acc -= GradU[0, d] * GradV[d] * this.Nu(cpv.Xglobal, cpv.Parameters, cpv.jCell);
@@ -253,6 +253,18 @@ namespace BoSSS.Solution.NSECommon {
         /// </summary>
         virtual public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new[] { this };
+        }
+
+        /// <summary>
+        /// checks that we have at least DG degree 1
+        /// </summary>
+        public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int CodomainDegree) {
+            if (DomainDegreesPerVariable.Min() < 1)
+                return false;
+            if (CodomainDegree < 1)
+                return false;
+            
+            return true;
         }
     }
 

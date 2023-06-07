@@ -37,10 +37,11 @@ namespace BoSSS.Foundation.Quadrature {
         /// <param name="noOfNodes"></param>
         /// <param name="D">spatial dimension</param>
         /// <param name="Kref">reference element for which this quadrature rule is valid</param>
+        /// <param name="useNodeSetCaching">switching on the caching for the associated Nodes (<see cref="NodeSet"/>)</param>
         /// <returns>an empty (i.e. all weights are 0.0) quadrature rule</returns>
-        public static QuadRule CreateEmpty(RefElement Kref, int noOfNodes, int D) {
+        public static QuadRule CreateEmpty(RefElement Kref, int noOfNodes, int D, bool useNodeSetCaching = false) {
             QuadRule ret = new QuadRule();
-            ret.Nodes = new NodeSet(Kref, noOfNodes, D);
+            ret.Nodes = new NodeSet(Kref, noOfNodes, D, useNodeSetCaching);
             ret.Weights = MultidimensionalArray.Create(noOfNodes);
             ret.OrderOfPrecision = 0;
             return ret;

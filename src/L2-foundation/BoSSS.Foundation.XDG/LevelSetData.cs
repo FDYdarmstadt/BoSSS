@@ -26,6 +26,7 @@ using System.Linq;
 using BoSSS.Foundation.Comm;
 using ilPSP.Utils;
 using MPI.Wrappers;
+using log4net.Core;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -78,12 +79,9 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// returns the distance layer index for level-set <paramref name="levSetInd"/>,
+            /// returns the distance layer index for level-set <paramref name="levSetIdx"/>,
             /// see also <see cref="DecodeLevelSetDist(ushort, int)"/>, <see cref="RegionsCode"/>.
             /// </summary>
-            /// <param name="levSetIdx"></param>
-            /// <param name="jCell"></param>
-            /// <returns></returns>
             public int GetLevelSetDistance(int levSetIdx, int jCell) {
                 if(levSetIdx < 0 || levSetIdx >= this.m_owner.NoOfLevelSets)
                     throw new IndexOutOfRangeException();
@@ -265,7 +263,7 @@ namespace BoSSS.Foundation.XDG {
 
                         if (!ColorsOfAllParts.Add(Color)) {
                             
-                            //Debugger.Launch();
+                            // dbg_launch();
                             //using (var stw = new System.IO.StreamWriter("verdammte-zelle.csv")) {
                             //    for (int i = 0; i < Je; i++) {
                             //        var cen = gdat.GlobalNodes.GetValue_Cell(Grid.RefElements.Square.Instance.Center, i, 1);
@@ -791,7 +789,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                         MultiphaseCellAgglomerator.Katastrophenplot(new DGField[] { (SinglePhaseField)(this.m_owner.LevelSets[0]), farbe1, farbe0 });
-                        Debugger.Launch();
+                         dbg_launch();
                     }
                     */
 
@@ -1172,6 +1170,14 @@ namespace BoSSS.Foundation.XDG {
             /// - entry: if null, there is no face on the cell which coincides with any level-set 
             /// - contains tuples, which level-set coincides with which face (if any)
             /// </summary>
+            /// <remarks>
+            /// This member enables stable treatment of the special case when 
+            /// the level set is on some cell boundary.
+            /// There, the normal rules behave unstably, e.g.
+            /// - the Level set is recognized in both cells
+            /// - the Level set is not recognized in any cell.
+            /// Therefore, this case is already intercepted in the tracker beforehand, see <see cref="Quadrature.LevelSetOnEdgeRule"/>
+            /// </remarks>
             internal (int iLevSet, int iFace)[][] m_LevSetCoincidingFaces;
 
             /// <summary>
@@ -1277,7 +1283,7 @@ namespace BoSSS.Foundation.XDG {
             }
 
             /// <summary>
-            /// For each level-set, a mask cotaining all edges that coincide with the level-set itself.
+            /// For each level-set, a mask containing all edges that coincide with the level-set itself.
             /// Return value can be null, if there are no such edges.
             /// </summary>
             public EdgeMask GetZeroSetEdges(int LevSetIdx) {

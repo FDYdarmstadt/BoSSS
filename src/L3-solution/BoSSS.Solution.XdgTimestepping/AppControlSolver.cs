@@ -16,7 +16,8 @@ namespace BoSSS.Solution.Control {
     /// </summary>
     [Serializable]
     [DataContract]
-    public class AppControlSolver : AppControl {
+    public class AppControlSolver : AppControl
+    {
 
         /// <summary>
         /// ctor
@@ -78,9 +79,9 @@ namespace BoSSS.Solution.Control {
             }
             set {
                 base.TimesteppingMode = value;
-                if(value == _TimesteppingMode.Steady) {
+                if (value == _TimesteppingMode.Steady) {
                     TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
-                    
+
                 }
             }
         }

@@ -37,7 +37,7 @@ namespace BoSSS.Foundation.IO {
         bool PathMatch(string otherPath);
         
         /// <summary>
-        /// Alternative paths to access the database, if <see cref="DbPath"/> is not present on a given machine.
+        /// Alternative paths to access the database, if <see cref="Path"/> is not present on a given machine.
         /// This allows to use the same control file or object on different machines, where the database is located in a different path.
         /// - 1st entry: path into the local file system
         /// - 2nd entry: optional machine name filter

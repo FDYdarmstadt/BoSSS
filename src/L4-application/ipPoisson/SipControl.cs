@@ -38,7 +38,7 @@ namespace BoSSS.Application.SipPoisson {
         /// Ctor.
         /// </summary>
         public SipControl() : base() {
-            base.NoOfMultigridLevels = 1;
+            base.NoOfMultigridLevels = 1000000;
             base.TimesteppingMode = _TimesteppingMode.Steady;
             base.NoOfTimesteps = 1;
         }

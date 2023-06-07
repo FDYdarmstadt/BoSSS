@@ -400,7 +400,7 @@ namespace BoSSS.Foundation {
         /// computed (it may, e.g. be only required in boundary cells, so a
         /// computation over the whole domain  would be a waste of
         /// computational power. A proper execution mask for this case would be
-        /// e.g. <see cref="BoSSS.Foundation.Grid.GridData.BoundaryCells"/>.)
+        /// e.g. <see cref="BoSSS.Foundation.Grid.Classic.GridData.BoundaryCells"/>.)
         /// <br/>if null, the computation is carried out in the whole domain
         /// </param>
         /// <remarks>
@@ -439,7 +439,7 @@ namespace BoSSS.Foundation {
         /// computed (it may, e.g. be only required in boundary cells, so a
         /// computation over the whole domain would be a waste of computational
         /// power. A proper execution mask would be see e.g. 
-        /// <see cref="Grid.GridData.BoundaryCells"/>.)
+        /// <see cref="BoSSS.Foundation.Grid.Classic.GridData.BoundaryCells"/>.)
         /// <br/> if null, the computation is carried out in the whole domain.
         /// </param>
         /// <param name="bndMode"></param>
@@ -503,7 +503,7 @@ namespace BoSSS.Foundation {
         /// computed (it may, e.g. be only required in boundary cells, so a
         /// computation over the whole domain would be a waste of computational
         /// power. A proper execution mask would be see e.g. 
-        /// <see cref="Grid.GridData.BoundaryCells"/>.)
+        /// <see cref="BoSSS.Foundation.Grid.Classic.GridData.BoundaryCells"/>.)
         /// <br/>
         /// if null, the computation is carried out in the whole domain.
         /// </param>

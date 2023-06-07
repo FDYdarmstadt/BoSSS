@@ -47,7 +47,7 @@ namespace AdvancedSolverTests.SubBlocking
                 stw.Start();
                 var mask = new BlockMask(selector, null);
                 stw.Stop();
-                long[] GlobalIdxMask_loc = mask.GlobalIList_Internal.ToArray();
+                long[] GlobalIdxMask_loc = mask.GlobalIndices_Internal.ToArray();
 
                 //Assert --- Idx lists are of same length
                 Assert.IsTrue(GlobalIdxMap_loc.Length == GlobalIdxMask_loc.Length);
@@ -81,7 +81,7 @@ namespace AdvancedSolverTests.SubBlocking
 
                 //Act --- Create Mapping from mask
                 stw.Start();
-                var submatrix = mask.GetSubBlockMatrix(MGOp.OperatorMatrix);
+                var submatrix = mask.GetSubBlockMatrix_MpiSelf(MGOp.OperatorMatrix);
                 stw.Stop();
                 var rowpart = submatrix._RowPartitioning;
                 var colpart = submatrix._ColPartitioning;
@@ -209,7 +209,7 @@ namespace AdvancedSolverTests.SubBlocking
                 //var extractOnes = mask.GetSubBlockMatrix(Ones, false, coup[0], coup[1]);
                 var Mext = mask.GetSubBlockMatrix(M, false, coup[0], coup[1]);
                 stw.Stop();
-                var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(), true);
+                var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIndices_Internal.ToArray(), true);
                 Mext.Acc(-1.0, Mquad);
 
                 //Assert --- Mext conains only diagonal blocks of M
@@ -243,10 +243,10 @@ namespace AdvancedSolverTests.SubBlocking
 
                 //Act --- establish submatrix
                 stw.Start();
-                var Mext = mask.GetSubBlockMatrix(M);
+                var Mext = mask.GetSubBlockMatrix_MpiSelf(M);
                 stw.Stop();
 
-                var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIList_Internal.ToArray(), true);
+                var Mquad = M.ConvertToQuadraticBMsr(mask.GlobalIndices_Internal.ToArray(), true);
                 Mext.Acc(-1.0, Mquad);
 
                 //Assert --- Mext conains only diagonal blocks of M
@@ -451,8 +451,8 @@ namespace AdvancedSolverTests.SubBlocking
 
                 //Act --- get subblocks
                 stw.Start();
-                BlockMsrMatrix subA = maskA.GetSubBlockMatrix(mgo.OperatorMatrix);
-                BlockMsrMatrix subB = maskB.GetSubBlockMatrix(mgo.OperatorMatrix);
+                BlockMsrMatrix subA = maskA.GetSubBlockMatrix_MpiSelf(mgo.OperatorMatrix);
+                BlockMsrMatrix subB = maskB.GetSubBlockMatrix_MpiSelf(mgo.OperatorMatrix);
                 stw.Stop();
 
                 //Assert --- compare masking of single spec cell

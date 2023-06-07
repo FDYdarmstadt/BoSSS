@@ -123,7 +123,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
                         noOfNodes += leafRule.NoOfNodes;
                     }
 
-                    QuadRule rule = QuadRule.CreateEmpty(RefElement, noOfNodes, RefElement.SpatialDimension);
+                    QuadRule rule = QuadRule.CreateEmpty(RefElement, noOfNodes, RefElement.SpatialDimension, true);
                     int offset = 0;
                     for (int k = 0; k < nodeList.Count; k++) {
                         QuadRule leaveRule = quadRules[k];

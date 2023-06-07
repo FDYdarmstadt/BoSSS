@@ -56,8 +56,8 @@ namespace BoSSS.Foundation.XDG {
         /// If true, <see cref="GetEdgeGhostScheme(SpeciesId, EdgeMask)"/> is supported, otherwise not.
         /// </summary>
         /// <remarks>
-        /// Currently (april2016), nobody is using this feature (<see cref="XSpatialOperator.GhostEdgesOperator"/>),
-        /// therefore this is hardcoded to false.
+        /// Currently (april2016), nobody is using this feature,
+        /// therefore this is hard-coded to false.
         /// </remarks>
         public bool GhostSupport {
             get {
@@ -605,7 +605,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// Quadrature scheme which is used for the penalty components in <see cref="XSpatialOperator.GhostEdgesOperator"/>, for species <paramref name="sp"/>.
+        /// Quadrature scheme which is used for the penalty components on ghost edges, for species <paramref name="sp"/>.
         /// </summary>
         public EdgeQuadratureScheme GetEdgeGhostScheme(SpeciesId sp, EdgeMask IntegrationDomainRestriction = null) {
             if (!this.SpeciesList.Contains(sp))
@@ -838,7 +838,7 @@ namespace BoSSS.Foundation.XDG {
                             var jmpA = IdentifyWingA(jLevSet, spA);
                             //Debug.Assert(jmpA == IdentifyWing(jLevSet, spB));
                             IQuadRuleFactory<QuadRule> backupFactory;
-                            if(iLevSet == 1)
+                            if (iLevSet == 1)
                                 backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetEdgeRuleFactory(jLevSet, jmpA, Kref);
                             else
                                 backupFactory = this.XDGSpaceMetrics.XQuadFactoryHelper.GetSurfaceFactory(iLevSet, Kref);

@@ -202,7 +202,7 @@ namespace BoSSS.Application.XNSE_Solver {
     /// <summary>
     /// Level set velocity, i.e. parameters with name <see cref="BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(string, IList{string})"/>
     /// </summary>
-    class ExplicitLevelSetVelocity :  ParameterS, ILevelSetParameter {
+    public class ExplicitLevelSetVelocity :  ParameterS, ILevelSetParameter {
 
         string[] m_ParameterNames;
 

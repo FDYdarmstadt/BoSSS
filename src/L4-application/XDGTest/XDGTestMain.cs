@@ -44,6 +44,7 @@ namespace BoSSS.Application.XDGTest {
         /// 
         /// </summary>
         public XDGTestControl() {
+            //base.MemoryInstrumentationLevel = MemoryInstrumentationLevel.None;
             SetDGdegree(2);
         }
 
@@ -65,10 +66,10 @@ namespace BoSSS.Application.XDGTest {
     class XDGTestMain : BoSSS.Solution.Application<XDGTestControl> {
         static void Main(string[] args) {
             InitMPI();
-            DeleteOldPlotFiles();
+            //DeleteOldPlotFiles();
             //VariousTests.MultipleTrackerUpdateCalls(1);
-            //UnitTest.AllUp();
-            UnitTest.RestartTest();
+            UnitTest.AllUp();
+            //UnitTest.RestartTest();
             FinalizeMPI();
 
             /*
@@ -135,7 +136,7 @@ namespace BoSSS.Application.XDGTest {
 
         protected override int BurstSave => 2;
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
         }
 
         internal double AutoExtrapolationErr = double.MinValue;

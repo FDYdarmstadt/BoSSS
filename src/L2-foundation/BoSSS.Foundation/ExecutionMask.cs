@@ -24,7 +24,8 @@ using System.Linq;
 namespace BoSSS.Foundation.Grid {
 
     /// <summary>
-    /// One chunk of a execution mask (see <see cref="ExecutionMask"/>);
+    /// A single range of <see cref="Len"/> items, (cells or edges) starting at <see cref="i0"/>.
+    /// Used for the definition of a execution mask (see <see cref="ExecutionMask"/>);
     /// </summary>
     public struct Chunk : IEquatable<Chunk> {
 
@@ -729,7 +730,7 @@ namespace BoSSS.Foundation.Grid {
         protected abstract int GetUpperIndexBound(IGridData gridData);
 
         /// <summary>
-        /// used by <see cref="ToTxtFile"/>
+        /// used by <see cref="SaveToTextFile(string, bool, ItemInfo[])"/>
         /// </summary>
         /// <param name="CoordGlobal">
         /// edge or cell center, in global/physical coordinates

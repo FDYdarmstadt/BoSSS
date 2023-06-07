@@ -39,18 +39,18 @@ namespace BoSSS.Solution.Control {
         /// <summary>
         /// Direct solver (<see cref="ilPSP.LinSolvers.MUMPS"/>) without any pre-processing of the matrix.
         /// </summary>
-        classic_mumps = 1,
+        direct_mumps = 1,
 
         /// <summary>
         /// Direct solver (<see cref="ilPSP.LinSolvers.PARDISO.PARDISOSolver"/>) without any pre-processing of the matrix.
         /// </summary>
-        classic_pardiso = 2,
+        direct_pardiso = 2,
 
         
-        /// <summary>
-        /// Conjugate gradient (from monkey library) without any preconditioning (<see cref="AdvancedSolvers.MonkeySolver.Config"/>
-        /// </summary>
-        classic_cg = 40,
+        ///// <summary>
+        ///// Conjugate gradient (from monkey library) without any preconditioning (<see cref="AdvancedSolvers.MonkeySolver.Config"/>
+        ///// </summary>
+        //cg = 40,
 
         /// <summary>
         /// Multiple levels of additive Schwarz, in a Krylov multi-grid cycle.
@@ -59,14 +59,21 @@ namespace BoSSS.Solution.Control {
 
 
         /// <summary>
-        /// GMRES with p-multigrid on the same mesh level; direct solver is used for 
+        /// GMRES with p-multigrid on the same mesh level; direct solver is used for lowest polynomial level
         /// </summary>
         exp_gmres_levelpmg = 47,
 
+        
         /// <summary>
         /// a k-cycle (i.e. a tree of <see cref="AdvancedSolvers.OrthonormalizationMultigrid"/> solvers), with ILU-preconditioner (<see cref="AdvancedSolvers.CellILU"/>) at each level
         /// </summary>
         exp_Kcycle_ILU = 54,
+
+        /// <summary>
+        /// p-Multigrid (i.e. multigrid over DG polynomial degree), <see cref="AdvancedSolvers.PmgConfig"/>
+        /// </summary>
+        pMultigrid = 61,
+        
     }
     
 
@@ -83,10 +90,10 @@ namespace BoSSS.Solution.Control {
 
             switch(config) {
                 case LinearSolverCode.automatic:
-                case LinearSolverCode.classic_pardiso:
+                case LinearSolverCode.direct_pardiso:
                 return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.PARDISO };
 
-                case LinearSolverCode.classic_mumps:
+                case LinearSolverCode.direct_mumps:
                 return new AdvancedSolvers.DirectSolver.Config() { WhichSolver = AdvancedSolvers.DirectSolver._whichSolver.MUMPS };
 
                 case LinearSolverCode.exp_Kcycle_schwarz:
@@ -95,12 +102,13 @@ namespace BoSSS.Solution.Control {
                 case LinearSolverCode.exp_gmres_levelpmg:
                 return new AdvancedSolvers.PTGconfig();
 
+                
                 case LinearSolverCode.exp_Kcycle_ILU:
                 return new AdvancedSolvers.OrthoMGILUconfig();
                 
-                case LinearSolverCode.classic_cg:
-                return new AdvancedSolvers.MonkeySolver.Config() { WhichSolver = AdvancedSolvers.MonkeySolver._whichSolver.CG };
-
+                case LinearSolverCode.pMultigrid:
+                return new AdvancedSolvers.PmgConfig();
+                
                 default:
                 throw new NotImplementedException("todo: " + config);
             }

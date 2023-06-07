@@ -30,8 +30,7 @@ namespace BoSSS.Foundation {
     public class SinglePhaseField : ConventionalDGField {
 
         /// <summary>
-        /// an implementation of <see cref="FieldFactory{T}"/> that creates
-        /// <see cref="SinglePhaseField"/>-DG-fields.
+        /// a factory for <see cref="SinglePhaseField"/>
         /// </summary>
         /// <param name="__Basis">The basis that is used for this field</param>
         /// <param name="__Identification">
@@ -125,7 +124,7 @@ namespace BoSSS.Foundation {
         ///   </item>
         /// </list>
         /// </param>
-        /// <param name="ValueOUT">
+        /// <param name="ValueOT">
         /// Same as <paramref name="ValueIN"/>.
         /// </param>
         /// <param name="MeanValueIN">
@@ -170,7 +169,7 @@ namespace BoSSS.Foundation {
         /// Same as <paramref name="GradientIN"/>.
         /// </param>
         /// <param name="ResultPreScale">
-        /// Scaling that is applied to <paramref name="ValueIN"/> and <paramref name="ValueOUT"/> before
+        /// Scaling that is applied to <paramref name="ValueIN"/> and <paramref name="ValueOT"/> before
         /// the field evaluation is added
         /// </param>
         public override void EvaluateEdge(int e0, int Len, NodeSet NS,
@@ -315,13 +314,13 @@ namespace BoSSS.Foundation {
         /// <param name="result">
         /// <list type="bullet">
         ///   <item>1st index: cell index <em>j</em></item>
-        ///   <item>2nd index: node index <em>m</em> into nodeset #<paramref name="NodeSetIndex"/></item>
+        ///   <item>2nd index: node index <em>m</em> into nodeset <paramref name="NS"/></item>
         ///   <item>3rd index: spatial direction of 1st derivation, <em>k</em></item>
         ///   <item>4th index: spatial direction of 2nd derivation, <em>l</em></item>
         /// </list>
         /// So, the entry [j,m,k,l] = \f$ \frac{\partial}{\partial x_k} \frac{\partial}{\partial x_l} \varphi (\vec{\xi}_m)\f$ 
         /// where \f$ \vec{xi}_m\f$  is the <em>m</em>-th
-        /// vector in the node set #<paramref name="NodeSetIndex"/>, in the
+        /// vector in the node set <paramref name="NS"/>, in the
         /// <em>j</em>-th cell.
         /// </param>
         /// <remarks>
@@ -624,7 +623,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// guess what?
         /// </summary>
-        new public SinglePhaseField CloneAs() {
+        new public virtual SinglePhaseField CloneAs() {
             return (SinglePhaseField)Clone();
         }
 

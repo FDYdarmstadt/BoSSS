@@ -72,12 +72,11 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
         /// simplex remains undivided.
         /// </summary>
         /// <param name="refElement">
-        /// The simplex to subdivide.
+        /// The reference element to subdivide.
         /// </param>
-        /// <param name="tracker">
-        /// The level set tracker. Allows for the check if a simplex ist cut.
+        /// <param name="levelSetData">
+        /// Allows for the check if a cell is cut.
         /// </param>
-        /// <param name="levSetIndex">Index of the level set</param>
         /// <param name="maxDivisions">
         /// The maximum number of subdivisions of the simplex
         /// </param>
@@ -230,7 +229,7 @@ namespace BoSSS.Foundation.XDG.Quadrature.Subdivision {
                 vertices = volumeVertices;
             }
 
-            return new NodeSet(this.gridData.Cells.GetRefElement(cell), vertices);
+            return new NodeSet(this.gridData.Cells.GetRefElement(cell), vertices, false);
         }
 
         #region ISubdivisionStrategy Members

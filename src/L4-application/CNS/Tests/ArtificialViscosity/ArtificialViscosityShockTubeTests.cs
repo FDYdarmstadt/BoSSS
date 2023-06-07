@@ -68,7 +68,7 @@ namespace CNS.Tests.ArtificialViscosity {
             c.ProjectName = "Artificial viscosity, shock tube, Toro test 1";
             c.ProjectDescription = "Toro 2009, p. 129, table 4.1, test 1";
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 

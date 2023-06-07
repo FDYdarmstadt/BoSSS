@@ -29,7 +29,7 @@ namespace BoSSS.Solution.Utils {
     
     /// <summary>
     /// mapping from edge tags
-    /// (<see cref="Foundation.Grid.GridData.EdgeData.EdgeTags"/>) to boundary
+    /// (<see cref="Foundation.Grid.IGeometricalEdgeData.EdgeTags"/>) to boundary
     /// condition types (defined in the enumeration <typeparamref name="BCType"/>) 
     /// and respective boundary values (<see cref="IBoundaryAndInitialData"/>)
     /// </summary>
@@ -38,7 +38,7 @@ namespace BoSSS.Solution.Utils {
     /// wall, moving wall,...) are identified by numbers (edge tags) which are
     /// assigned to the grid edges on the boundary. These numbers are small, in
     /// the region of 1 (including) to
-    /// <see cref="BoSSS.Foundation.Grid.GridCommons.FIRST_PERIODIC_BC_TAG"/>;<br/>
+    /// <see cref="BoSSS.Foundation.Grid.Classic.GridCommons.FIRST_PERIODIC_BC_TAG"/>;<br/>
     /// This edge-tag -- numbers can be used as <em>indices</em> into the 
     /// - array/list <see cref="EdgeTag2Type"/>
     /// - array/list <see cref="bndFunction"/>

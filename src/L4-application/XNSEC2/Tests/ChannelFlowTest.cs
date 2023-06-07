@@ -20,22 +20,21 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// NUnit test
         /// </summary>
-        static public XNSEC_Control ChannelFlowTest_NUnit() {
-            var C = ChannelFlowTest(DGp: 2, nCellsMult: 3, checkConsistency: false);
+        static public XNSEC_Control ChannelFlowTest_NUnit(bool immersedBoundary) {
+            var C = ChannelFlowTest(DGp: 2, nCellsMult:3 , checkConsistency: false, immersedBoundary);
             C.NoOfMultigridLevels = 1;
             C.savetodb = false;
             C.DbPath = null;
             //C.savetodb = true;
             //C.DbPath = @"C:\Databases\BoSSS_DB";
             C.ChemicalReactionActive = false;
-            //C.ImmediatePlotPeriod = 1;
             return C;
         }
 
         /// <summary>
         /// Channel flow
         /// </summary>
-        static public XNSEC_Control ChannelFlowTest(int DGp = 1, int nCellsMult = 3, bool checkConsistency = false) {
+        static public XNSEC_Control ChannelFlowTest(int DGp = 1, int nCellsMult = 3, bool checkConsistency = false, bool immersedBoundary = false) {
             XNSEC_Control C = new XNSEC_Control();
             Console.WriteLine("////////////////////////////////////////////////////////////////////////////////////");
             Console.WriteLine("ChannelFlowTest");
@@ -45,10 +44,6 @@ namespace BoSSS.Application.XNSEC {
             // ==============
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
-            //C.dtFixed = 0.1;
-            //C.NoOfTimesteps = 100;
-            //C.Endtime = 10000;
-
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.verbose = true;
             C.DbPath = null;
@@ -73,8 +68,20 @@ namespace BoSSS.Application.XNSEC {
             C.Reynolds = 100.0;
             C.Prandtl = 1.0;
             C.Schmidt = 1.0;
-            C.PenaltyViscMomentum = 4.0;
-            C.PenaltyHeatConduction = 4.0;
+            C.PenaltyViscMomentum = 1.0;
+            C.PenaltyHeatConduction = 1.0;
+
+            C.UseImmersedBoundary = immersedBoundary;
+            C.ImmediatePlotPeriod = 1;
+            double L = 1.0;
+            
+            if (immersedBoundary) {
+                L = 0.75;
+                Func<double[], double, double> PhiFunc2 = (X, t) => (X[1] - L);
+                C.InitialValues_Evaluators_TimeDep.Add("Phi2", PhiFunc2);
+                C.ThermalParameters.T_sat = 2; // boundary temperature
+            }
+
 
             //C.ImmediatePlotPeriod = 1;
             // Grid declaration
@@ -102,11 +109,11 @@ namespace BoSSS.Application.XNSEC {
                     return 2;
 
                 //Outlet
-                if(Math.Abs(x - 10) < 1e-8)
+                if(Math.Abs(x - 5) < 1e-8)
                     return 3;
 
                 //lower Wall
-                if(Math.Abs(y + 1) < 1e-8)
+                if(Math.Abs(y + 0) < 1e-8)
                     return 2;
                 else throw new ArgumentOutOfRangeException();
             };
@@ -114,8 +121,8 @@ namespace BoSSS.Application.XNSEC {
             bool periodic = false;
 
             C.GridFunc = delegate {
-                var _xNodes = GenericBlas.Linspace(0, 10, cells2 + 1);
-                var _yNodes = GenericBlas.Linspace(-1, 1, (cells2 / 4) + 1);
+                var _xNodes = GenericBlas.Linspace(0, 5, cells2 *5+ 1);
+                var _yNodes = GenericBlas.Linspace(0, 1, (cells2) + 1);
                 //var _xNodes = GenericBlas.Linspace(0, 10, 2+ 1);
                 //var _yNodes = GenericBlas.Linspace(-1, 1, 2+ 1);
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes, periodicX: periodic);
@@ -133,9 +140,16 @@ namespace BoSSS.Application.XNSEC {
 
             // Analytic solutions
             // ===================
-            C.AnalyticPressure = X => -2.0 / 100.0 * X[0] + 0.2;
-            C.AnalyticVelocityX = X => 1.0 - 1 * Math.Pow(X[1], 2);
-            C.AnalyticVelocityY = X => 0.0;
+            //C.AnalyticPressure = X => -2.0 / 100.0 * X[0] + 0.2;
+            //C.AnalyticVelocityX = X => -4 * (X[1] / L) * ((X[1] / L) - 1.0);
+            double beta = 1.0; //??
+            double h1 = 0.0;
+            double h2 = L;
+
+            C.AnalyticVelocityX = X =>  (X[1] >= h1 && X[1] <= h2) ? -beta * C.Reynolds / 2 * (X[1] * X[1] - (h1 + h2) * X[1] + h1 * h2): 0.0;
+
+            C.AnalyticVelocityY = X => 0.0; // OK
+            C.AnalyticPressure = X => (X[1] >= h1 && X[1] <= h2) ? -beta * X[0]+5: 0.0;
 
             // Analytical / manufactured solutions
             // ==============
@@ -164,9 +178,9 @@ namespace BoSSS.Application.XNSEC {
 
             C.AddBoundaryValue("wall", VariableNames.Temperature + "#A", (X, t) => 1.0);
             C.AddBoundaryValue("wall", VariableNames.MassFraction0 + "#A", (X, t) => 1.0);
-
+            
             if(!periodic) {
-                C.AddBoundaryValue("Velocity_Inlet", VariableNames.Velocity_d(0) + "#A", (X, t) => 1.0 - Math.Pow(X[1], 2));
+                C.AddBoundaryValue("Velocity_Inlet", VariableNames.Velocity_d(0) + "#A", C.AnalyticVelocityX);
                 C.AddBoundaryValue("Velocity_Inlet", VariableNames.Velocity_d(1) + "#A", (X, t) => 0.0);
                 C.AddBoundaryValue("Velocity_Inlet", VariableNames.Temperature + "#A", (X, t) => 1.0);
                 C.AddBoundaryValue("Velocity_Inlet", VariableNames.MassFraction0 + "#A", (X, t) => 1.0);
@@ -584,7 +598,7 @@ namespace BoSSS.Application.XNSEC {
 
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.0;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.LevelSet_ConvergenceCriterion = 1e-6;
 

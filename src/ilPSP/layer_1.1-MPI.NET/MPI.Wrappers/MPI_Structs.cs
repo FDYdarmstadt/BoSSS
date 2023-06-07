@@ -204,7 +204,7 @@ namespace MPI.Wrappers {
         /// <param name="obj"></param>
         /// <returns></returns>
         public override bool Equals(object obj) {
-            if (obj.GetType() != typeof(MPI_Comm))
+            if (obj == null || obj.GetType() != typeof(MPI_Comm))
                 return false;
             MPI_Comm other = (MPI_Comm)obj;
             return (other.m1 == this.m1);

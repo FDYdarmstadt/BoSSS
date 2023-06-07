@@ -6,3 +6,13 @@ runtimes/
 *.deps.json
 *.runtimeconfig.json
 *.dll.config
+build.txt
+build.out
+# HTML output of batch-runs
+*.html
+#
+build.txt
+profiling_bin.*.txt
+profiling_summary.*.txt
+queryResults.txt
+trace.*.txt

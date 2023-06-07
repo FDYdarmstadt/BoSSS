@@ -33,7 +33,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// <summary>
     /// Standard preconditioned GMRES.
     /// </summary>
-    public class SoftGMRES : ISolverSmootherTemplate, ISolverWithCallback, IProgrammableTermination {
+    public class SoftGMRES : ISubsystemSolver, ISolverWithCallback, IProgrammableTermination {
 
         Func<int, double, double, (bool bNotTerminate, bool bSuccess)> m_TerminationCriterion;
 
@@ -58,10 +58,22 @@ namespace BoSSS.Solution.AdvancedSolvers {
             };
         }
 
+
+        /// <summary>
+        /// ~
+        /// </summary>
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
+
         /// <summary>
         /// ~
         /// </summary>
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+        void InitImpl(IOperatorMappingPair op) {
             using(new FuncTrace()) {
                 if(object.ReferenceEquals(op, this.m_mgop))
                     return; // already initialized
@@ -69,26 +81,52 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose(); // must re-initialize
 
                 var Mtx = op.OperatorMatrix;
-                var MgMap = op.Mapping;
+                var MgMap = op.DgMapping;
                 this.m_mgop = op;
 
-                if(!Mtx.RowPartitioning.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.RowPartitioning.EqualsPartition(MgMap))
                     throw new ArgumentException("Row partitioning mismatch.");
-                if(!Mtx.ColPartition.EqualsPartition(MgMap.Partitioning))
+                if(!Mtx.ColPartition.EqualsPartition(MgMap))
                     throw new ArgumentException("Column partitioning mismatch.");
-                this.Matrix = Mtx;
                 if(Precond != null) {
-                    Precond.Init(op);
+                    if(Precond is ISubsystemSolver sssol) {
+                        sssol.Init(m_mgop);
+                    } else if(m_mgop is MultigridOperator mgOp) {
+                        Precond.Init(mgOp);
+                    } else {
+                        throw new NotSupportedException($"Unable to initialize preconditioner if it is not a {typeof(ISubsystemSolver)} and operator is not a {typeof(MultigridOperator)}");
+                    }
                 }
             }
         }
 
 
-        MultigridOperator m_mgop;
+        IOperatorMappingPair m_mgop;
 
         public ISolverSmootherTemplate Precond;
 
-        BlockMsrMatrix Matrix;
+
+        /*
+        ISparseMatrix m_Matrix;
+
+        ISparseMatrix Matrix {
+            get {
+                if(m_Matrix == null) {
+                    m_Matrix = m_mgop.OperatorMatrix; // activate for BlockMatrixSpMV
+
+                    //var hypreMtx = new ilPSP.LinSolvers.HYPRE.IJMatrix(m_mgop.OperatorMatrix); // HYPRE
+                    //m_Matrix = hypreMtx;
+
+                    //var monkeyMtx = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(m_mgop.OperatorMatrix.ToMsrMatrix()); // Monkey
+                    //m_Matrix = monkeyMtx;
+
+                }
+                return m_Matrix; 
+            }
+        }
+        */
+
+        BlockMsrMatrix Matrix => m_mgop.OperatorMatrix;
 
         public string m_SessionPath;
 
@@ -155,7 +193,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
 
-                double bnrm2 = B.MPI_L2Norm();
+                double bnrm2 = B.MPI_L2Norm(Matrix.MPI_Comm);
                 if(bnrm2 == 0.0) {
                     bnrm2 = 1.0;
                 }
@@ -169,7 +207,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //r = M \ ( b-A*x );, where M is the precond
                 z.SetV(B);
                 Matrix.SpMV(-1.0, X, 1.0, z);
-                IterationCallback?.Invoke(0, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                IterationCallback?.Invoke(0, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
                 if(this.Precond != null) {
                     r.Clear();
@@ -179,10 +217,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 // Inserted for real residual
-                double error2 = z.MPI_L2Norm();
+                double error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
                 double iter0_error2 = error2;
 
-                double error = (r.L2NormPow2().MPISum().Sqrt()) / bnrm2;
+                double error = (r.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt()) / bnrm2;
                 var term0 = TerminationCriterion(0, error2, error2);
                 if(!term0.bNotTerminate) {
 
@@ -218,7 +256,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
 
-                    error2 = z.MPI_L2Norm();
+                    error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
 
                     if(this.Precond != null) {
                         r.Clear();
@@ -228,7 +266,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     // V(:,1) = r / norm( r );
-                    double norm_r = r.MPI_L2Norm();
+                    double norm_r = r.MPI_L2Norm(Matrix.MPI_Comm);
                     V[0].SetV(r, alpha: (1.0 / norm_r));
 
                     //s = norm( r )*e1;
@@ -252,16 +290,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
 
                         for(int k = 1; k <= i; k++) {
-                            H[k - 1, i - 1] = GenericBlas.InnerProd(w, V[k - 1]).MPISum();
+                            H[k - 1, i - 1] = GenericBlas.InnerProd(w, V[k - 1]).MPISum(Matrix.MPI_Comm);
                             //w = w - H(k,i)*V(:,k);
                             w.AccV(-H[k - 1, i - 1], V[k - 1]);
                         }
 
-                        double norm_w = w.L2NormPow2().MPISum().Sqrt();
+                        double norm_w = w.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
                         H[i + 1 - 1, i - 1] = norm_w; // the +1-1 actually makes me sure I haven't forgotten to subtract -1 when porting the code
                                                       //V(:,i+1) = w / H(i+1,i);
                         V[i + 1 - 1].SetV(w, alpha: (1.0 / norm_w));
-
                         #endregion
 
                         #region Givens rotation
@@ -340,8 +377,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     // compute residual: r = M \ ( b-A*x )     
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
-                    error2 = z.MPI_L2Norm();
-                    IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                    error2 = z.MPI_L2Norm(Matrix.MPI_Comm);
+                    IterationCallback?.Invoke(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
 
 
                     if(this.Precond != null) {
@@ -351,7 +388,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         r.SetV(z);
                     }
 
-                    norm_r = r.MPI_L2Norm();
+                    norm_r = r.MPI_L2Norm(Matrix.MPI_Comm);
                     s[i + 1 - 1] = norm_r;
                     error = s[i + 1 - 1] / bnrm2;        // % check convergence
                                                          //  if (error2 <= m_Tolerance) Check for error not error2
@@ -361,13 +398,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 if(IterationCallback != null) {
                     z.SetV(B);
                     Matrix.SpMV(-1.0, X, 1.0, z);
-                    IterationCallback(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop);
+                    IterationCallback(totIterCounter, X.CloneAs(), z.CloneAs(), this.m_mgop as MultigridOperator);
                 }
 
 
                 if(!object.ReferenceEquals(_X, X))
                     _X.SetV(X);
-                B.SetV(z);
+                //B.SetV(z);
 
                 // Disposing should not be done here, 
                 // otherwise the Precond must be initialized very often.
@@ -430,7 +467,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public long UsedMemory() {
-            throw new NotImplementedException();
+            long Memory = 0;
+            if(Precond != null)
+                Memory += Precond.UsedMemory();
+            return Memory;
         }
     }
 }

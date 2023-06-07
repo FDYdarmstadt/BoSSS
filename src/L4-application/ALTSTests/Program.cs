@@ -96,7 +96,7 @@ namespace ALTSTests {
         }
 
         protected override void CreateFields() {
-            //Debugger.Launch();
+            // dbg_launch();
 
             Basis cBasis = new Basis(this.GridData, dgDegree);
             c = new SinglePhaseField(cBasis, "c");
@@ -106,7 +106,7 @@ namespace ALTSTests {
             m_IOFields.Add(c);
         }
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             diffOp = new SpatialOperator(
                 new string[] { "c" },
                 new string[] { "viscosity", "VelocityX", "VelocityY" },

@@ -153,7 +153,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <summary>
             /// global indices of cell neighbors;
             /// </summary>
-            internal IEnumerable<GridCommons.Neighbour>[] CellNeighbours_global_tmp;
+            internal GridCommons.Neighbour[][] CellNeighbours_global_tmp;
 
             
             /// <summary>
@@ -239,7 +239,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 this.GetRefElement(j).ClosestPoint(pt_Loc, closestPoint_local);
 
                 MultidimensionalArray _closestPoint_global = AllocHelper(ref closestPoint_global, D);
-                m_owner.TransformLocal2Global(new NodeSet(this.GetRefElement(j), closestPoint_local), _closestPoint_global, j);
+                m_owner.TransformLocal2Global(new NodeSet(this.GetRefElement(j), closestPoint_local, false), _closestPoint_global, j);
 
                 return GenericBlas.L2Dist(closestPoint_global, pt);
             }
@@ -773,7 +773,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
             
             /// <summary>
-            /// Cell type for cell <paramref name="jCell"/>.
+            /// Cell type for cell <paramref name="j"/>.
             /// </summary>
             public CellType GetCellType(int j) {
                 int iType = (((int)(InfoFlags[j])) & ((int)(CellInfo.CellType_Mask))) >> 8;

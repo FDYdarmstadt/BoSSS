@@ -273,7 +273,7 @@ namespace CNS.Tests.IBMTests {
         private static Dictionary<string, object> Setup_IBMAVTimeStepperTest(int explicitScheme, int explicitOrder) {
             IBMControl c = IBMAVTimeStepperTest_ShockTube(explicitScheme, explicitOrder);
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 

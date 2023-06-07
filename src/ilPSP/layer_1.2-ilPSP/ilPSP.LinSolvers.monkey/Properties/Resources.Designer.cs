@@ -19,7 +19,7 @@ namespace ilPSP.LinSolvers.monkey.Properties {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -70,8 +70,7 @@ namespace ilPSP.LinSolvers.monkey.Properties {
         ///	// Compiling C:/Users/kummer/AppData/Local/Temp/tmpxft_00001bb0_00000000-11_CudaMatrixKernelDP.cpp3.i (C:/Users/kummer/AppData/Local/Temp/ccBI#.a05632)
         ///	//-----------------------------------------------------------
         ///
-        ///	//-----------------------------------------------------------
-        ///	 [rest of string was truncated]&quot;;.
+        ///	//---------------------------------------------------- [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string CudaMatrixKernelDP {
             get {
@@ -89,8 +88,7 @@ namespace ilPSP.LinSolvers.monkey.Properties {
         ///	// Compiling C:/Users/kummer/AppData/Local/Temp/tmpxft_000008d4_00000000-11_CudaVectorKernelDP.cpp3.i (C:/Users/kummer/AppData/Local/Temp/ccBI#.a05692)
         ///	//-----------------------------------------------------------
         ///
-        ///	//-----------------------------------------------------------
-        ///	 [rest of string was truncated]&quot;;.
+        ///	//---------------------------------------------------- [rest of string was truncated]&quot;;.
         /// </summary>
         internal static string CudaVectorKernelDP {
             get {

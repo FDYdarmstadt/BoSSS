@@ -39,7 +39,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// For each aggregation grid level, this mapping defines a bijection between variable index,
     /// DG mode and aggregation cell index and a unique index.
     /// </summary>
-    public class MultigridMapping : IBlockPartitioning {
+    public class MultigridMapping : IBlockPartitioning, ICoordinateMapping {
 
         /// <summary>
         /// Base grid on which the problem is defined.
@@ -55,7 +55,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public UnsetteledCoordinateMapping ProblemMapping {
             get;
-            private set;
+            //private set;
         }
 
 
@@ -64,7 +64,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public AggregationGridBasis[] AggBasis {
             get;
-            private set;
+            //private set;
         }
 
         /// <summary>
@@ -104,9 +104,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <summary>
         /// Partitioning of the vector among MPI processes.
         /// </summary>
-        public Partitioning Partitioning {
+        public IPartitioning Partitioning {
             get;
-            private set;
         }
 
         /// <summary>
@@ -226,10 +225,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                         BlockLen.Add(S);
                     }
-                    Partitioning = new Partitioning(LL);
+                    this.Partitioning = new Partitioning(LL);
                     long i0Part = Partitioning.i0;
                     m_i0 = new int[JAGGtot + 1];
-                    for (int jag = 0; jag < JAGGloc; jag++) {
+                    for (int jag = 0; jag < JAGGloc; jag++) { // loop over local cells
                         m_i0[jag] = (int)__i0Tmp[jag]; // store local i0 index
                         __i0Tmp[jag] += i0Part; // convert to global index
                     }
@@ -263,17 +262,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         type++;
                     }
 
-#if DEBUG
-                    for (int jag = JAGGloc; jag < JAGGtot; jag++) {
-                        Debug.Assert(Partitioning.IsInLocalRange(m_i0_ExtGlob[jag - JAGGloc]) == false);
+//#if DEBUG
+                    for (int jag = JAGGloc; jag < JAGGtot; jag++) { // loop over external cells
+                        int S = 0;
+                        for (int i = 0; i < m_DgDegree.Length; i++) {
+                            S += this.AggBasis[i].GetLength(jag, m_DgDegree[i]);
+                        }
+
+                        if (S > 0 && Partitioning.IsInLocalRange(m_i0_ExtGlob[jag - JAGGloc]) == true)
+                            throw new ApplicationException($"Multigrid level {this.AggGrid.MgLevel}: 'm_i0_ExtGlob[{jag - JAGGloc}]' seems to be in local range: got {m_i0_ExtGlob[jag - JAGGloc]}, must be outside of {Partitioning.i0}--{Partitioning.iE}; number of locally updated cells is {JAGGloc}, total number is {JAGGtot}");
                     }
-#endif
+//#endif
 
                 } else {
                     m_Subblk_i0 = new int[][] { new int[] { 0 } };
                     m_SubblkLen = new int[][] { new int[] { this.MaximalLength } };
 
-                    Partitioning = new Partitioning(this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells * this.MaximalLength);
+                    this.Partitioning = new Partitioning(this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells * this.MaximalLength);
                 }
 
 
@@ -396,6 +401,30 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
+        public int NoOfExternalCells {
+            get {
+                return AggGrid.iLogicalCells.NoOfExternalCells;
+            }
+        }
+
+        public int SpatialDimension {
+            get {
+                return AggGrid.SpatialDimension;
+            }
+        }
+
+        public int NoOfLocalUpdatedCells {
+            get {
+                return AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
+            }
+        }
+
+        public int LocalCellCount {
+            get {
+                return NoOfLocalUpdatedCells + NoOfExternalCells;
+            }
+        }
+
         public int LocalUniqueIndex(int ifld, int jCell, int n) {
             Debug.Assert(ifld >= 0 && ifld < this.m_DgDegree.Length);
             Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));
@@ -420,7 +449,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return S;
         }
 
-        public int LocalUniqueIndex(int ifld, int jCell, int jSpec ,int n) {
+        public int LocalUniqueIndex(int ifld, int jCell, int jSpec, int n) {
             int Np_tot = this.AggBasis[ifld].GetLength(jCell, this.m_DgDegree[ifld]);
             int NoOfSpec = AggBasis[ifld].GetNoOfSpecies(jCell);
             int Np_Spec = Np_tot / NoOfSpec;
@@ -778,21 +807,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return R.ToArray();
         }
 
-        /// <summary>
-        /// Gets DOF of ghost cells available on this proc
-        /// </summary>
-        /// <returns>DOF of ghost cells available on this proc</returns>
-        public int GetLocalLength_Ext() {
-            int Locoffset = this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-            int[] LocCellIdxExt = this.AggGrid.iLogicalCells.NoOfExternalCells.ForLoop(i => i + Locoffset);
-            int Len = 0;
-            foreach (int jCell in LocCellIdxExt) {
-                for (int fld = 0; fld < NoOfVariables; fld++) {
-                    Len += this.AggBasis[fld].GetLength(jCell, this.DgDegree[fld]);
-                }
-            }
-            return Len;
-        }
+        
 
         /// <summary>
         /// Gets index vecor of all ghost cells available on this proc
@@ -1031,6 +1046,53 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public int Global2Local(long i) {
             return checked((int)(i - this.i0));
+        }
+
+        public bool IsXDGvariable(int iVar) {
+            return AggBasis[iVar] is XdgAggregationBasis;
+        }
+
+        public int GetSpeciesIndex(int jCell, SpeciesId SId) {
+            for(int iVar = 0; iVar < NoOfVariables; iVar++) {
+                if(AggBasis[iVar] is XdgAggregationBasis xb)
+                    return xb.GetSpeciesIndex(jCell, SId);
+            }
+            throw new NotSupportedException("Only DG variables; no species defined.");
+        }
+
+        public int GetNoOfSpecies(int jCell) {
+            for(int iVar = 0; iVar < NoOfVariables; iVar++) {
+                if(AggBasis[iVar] is XdgAggregationBasis xb)
+                    return xb.GetNoOfSpecies(jCell);
+            }
+            return 1;
+            //if(AggBasis[0] is XdgAggregationBasis xb)
+            //    return xb.GetNoOfSpecies(jCell);
+            //else
+            //    return 1;
+        }
+
+        /// <summary>
+        /// All used XDG species.
+        /// Index: enumeration over species.
+        /// </summary>
+        public SpeciesId[] UsedSpecies {
+            get {
+                SpeciesId[] ret = null;
+                for(int iVar = 0; iVar < NoOfVariables; iVar++) {
+                    if(IsXDGvariable(iVar)) {
+                        if(ret == null) {
+                            ret = ((XdgAggregationBasis)AggBasis[iVar]).UsedSpecies.CloneAs();
+                        } else {
+                            if(!ret.SetEquals(((XdgAggregationBasis)AggBasis[iVar]).UsedSpecies))
+                                throw new NotSupportedException("Different Variables seem to be defined for different species; not supported yet.");
+                        }
+
+                    }
+
+                }
+                return ret;
+            }
         }
     }
 }

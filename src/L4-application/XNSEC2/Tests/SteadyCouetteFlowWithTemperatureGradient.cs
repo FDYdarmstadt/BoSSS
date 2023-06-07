@@ -16,11 +16,11 @@ namespace BoSSS.Application.XNSEC {
 
 
         static public XNSEC_Control NUnitSteadyCouetteFlowWithTemperatureGradient() {
-            var C = SteadyCouetteFlowWithTemperatureGradient(DGp: 2, resolutions:5 );
+            var C = SteadyCouetteFlowWithTemperatureGradient(DGp: 2, nCells:16 );
             C.Timestepper_LevelSetHandling = Solution.XdgTimestepping.LevelSetHandling.None;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             //C.rhoOne = true;
-
+            C.ImmediatePlotPeriod = 1;
 
             return C;
         }
@@ -52,15 +52,15 @@ namespace BoSSS.Application.XNSEC {
         /// <summary>
         /// SteadyCouetteFlowWithTemperatureGradient
         /// </summary>
-        static public XNSEC_Control SteadyCouetteFlowWithTemperatureGradient(int DGp = 2, int resolutions = 5, string dbpath = null) {
+        static public XNSEC_Control SteadyCouetteFlowWithTemperatureGradient(int DGp = 2, int nCells = 5, string dbpath = null, bool powerLaw = true) {
             XNSEC_Control C = new XNSEC_Control();
             //Console.WriteLine("SteadyCouetteFlowWithTemperatureGradient");
             C.NumberOfChemicalSpecies = 1;
             C.SetDGdegree(DGp);
             // Solver configuration
             // ==============
-            C.DbPath = dbpath; // "D:\\bosss_db";
-            C.ProjectName = "CouetteFlowTempGrad_DG" + DGp + "K" + resolutions;
+            C.DbPath = dbpath; // "D:\\bosss_db"; 
+            C.ProjectName = "CouetteFlowTempGrad_DG" + DGp + "K" + nCells;
             C.ProjectDescription = "Steady Low Mach couette flow with temperature gradient";
             C.savetodb = dbpath == null ? false : true;
             C.AnalyticsolutionSwitch = true;
@@ -68,17 +68,20 @@ namespace BoSSS.Application.XNSEC {
             C.NonLinearSolver.verbose = true;
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.PhysicalParameters.IncludeConvection = false;
-            C.MatParamsMode = MaterialParamsMode.Constant;
+            if (powerLaw) { 
+            C.MatParamsMode = MaterialParamsMode.PowerLaw;
+            } else {
+                C.MatParamsMode = MaterialParamsMode.Constant;
+            }
             C.ChemicalReactionActive = false;
             C.EnableMassFractions = false;
 
 
-            double h = Math.Pow(2, -resolutions + 1); // cell length
-            double cells = 1 / h;
-            int cells2 = (int)cells;
-
+            //double h = Math.Pow(2, -resolutions + 1); // cell length
+            //double cells = 1 / h;
+            //int cells2 = (int)cells;
             // Grid declaration
             // ===============
 
@@ -113,8 +116,8 @@ namespace BoSSS.Application.XNSEC {
             C.GridFunc = delegate {
                 //var _xNodes = GenericBlas.Linspace(0, 1, nCells + 1);
                 //var _yNodes = GenericBlas.Linspace(0, 1, nCells + 1);
-                var _xNodes = GenericBlas.Linspace(0, 1, cells2 + 1);
-                var _yNodes = GenericBlas.Linspace(0, 1, (cells2) + 1);
+                var _xNodes = GenericBlas.Linspace(0, 1, nCells + 1);
+                var _yNodes = GenericBlas.Linspace(0, 1, (nCells) + 1);
                 var grd = Grid2D.Cartesian2DGrid(_xNodes, _yNodes);
                 //grd.EdgeTagNames.Add(1, "wall_bottom");
                 grd.EdgeTagNames.Add(1, "velocity_inlet_bottom");

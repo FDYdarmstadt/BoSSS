@@ -243,15 +243,11 @@ namespace BoSSS.Foundation.Quadrature {
         /// </summary>
         public ICompositeQuadRule<TQuadRule> Compile(IGridData gridData, int order) {
             using (var tr = new FuncTrace()) {
-                ilPSP.MPICollectiveWatchDog.Watch();
+               
                 // set domain
                 TDomain baseDomain = Domain ?? GetDefaultDomain(gridData);
                 Debug.Assert(baseDomain.MaskType == MaskType.Geometrical);
 
-#if TEST
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            tr.Info("Checkpoint C.1");
-#endif
                 // identify the reference elements
                 // ===============================
 
@@ -259,10 +255,6 @@ namespace BoSSS.Foundation.Quadrature {
                 //ID
                 RefElements = GetRefElements(gridData);
 
-#if TEST
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            tr.Info("Checkpoint C.2");
-#endif
 
                 // define standard factories, if necessary
                 // =======================================
@@ -282,10 +274,6 @@ namespace BoSSS.Foundation.Quadrature {
                     factoryDomainPairs = FactoryChain;
                 }
 
-#if TEST
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            tr.Info("Checkpoint C.3");
-#endif
 
                 // apply factories
                 // ---------------
@@ -303,11 +291,6 @@ namespace BoSSS.Foundation.Quadrature {
                         Debug.Assert(currentDomain.Except(GetDomainForRefElement(RefElm, gridData)).NoOfItemsLocally <= 0);
                     }
 
-#if TEST
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            tr.Info("Checkpoint C.4");
-#endif
-
                     // check the type of factory
                     if (!RefElements.Contains(factoryDomainPair.RuleFactory.RefElement)) {
                         string simplexNames = "";
@@ -323,11 +306,6 @@ namespace BoSSS.Foundation.Quadrature {
                             + factoryDomainPair.RuleFactory.RefElement.GetType().ToString() + "'-elements.");
                     }
 
-#if TEST
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            tr.Info("Checkpoint C.5");
-#endif
-
                     // Causes parallel issues for classic HMF
                     // -> deactivated by Björn until classic HMF is fixed
                     if (gridData.MpiSize > 1) {
@@ -336,29 +314,12 @@ namespace BoSSS.Foundation.Quadrature {
                             throw new NotSupportedException("there is still an MPI BUG in the classic HMF");
                     }
 
-#if TEST
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            tr.Info("Checkpoint C.6");
-#endif
-
                     if (currentDomain != null && currentDomain.NoOfItemsLocally <= 0) {
                         continue;
                     }
 
-
-#if TEST
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            tr.Info("Checkpoint C.7");
-#endif
-
-                        CompositeQuadRule<TQuadRule> currentRule = CompositeQuadRule<TQuadRule>.Create(
+                    CompositeQuadRule<TQuadRule> currentRule = CompositeQuadRule<TQuadRule>.Create(
                             factoryDomainPair.RuleFactory, factoryDomainPair.Order ?? order, currentDomain);
-
-
-#if TEST
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            tr.Info("Checkpoint C.8");
-#endif
 
                     int prevIE = -1;
                     foreach (var CRP in currentRule) {
@@ -370,10 +331,6 @@ namespace BoSSS.Foundation.Quadrature {
                         prevIE = CRP.Chunk.JE;
                     }
 
-#if TEST
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            tr.Info("Checkpoint C.9");
-#endif
 
 #if DEBUG
                 //// Check removed since there are situations where it is valid _not_
@@ -415,10 +372,6 @@ namespace BoSSS.Foundation.Quadrature {
                         }
                     }
 
-#if TEST
-            csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
-            tr.Info("Checkpoint C.10");
-#endif
                 }
 
                 //// Check removed since there are situations where it is valid _not_
@@ -865,7 +818,7 @@ namespace BoSSS.Foundation.Quadrature {
         /// simplex.
         /// </returns>
         /// <param name="Kref">
-        /// an edge reference element, must be one of <see cref="BoSSS.Foundation.Grid.GridData.EdgeData.EdgeRefElements"/>.
+        /// an edge reference element, must be one of <see cref="BoSSS.Foundation.Grid.IGeometricalEdgeData.EdgeRefElements"/>.
         /// </param>
         protected override IQuadRuleFactory<QuadRule> GetDefaultRuleFactory(IGridData gridData, RefElement Kref) {
             return new StandardQuadRuleFactory(Kref);

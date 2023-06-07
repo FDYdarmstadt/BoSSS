@@ -31,7 +31,7 @@ namespace BoSSS.Platform {
     public class BlockDiagonalMatrix : IMutableMatrixEx, ICloneable, ISparseMatrix {
 
         /// <summary>
-        /// ctor. The size of the block-diagonals is determined by <paramref name="RowBlkSz"/>*<paramref name="ColBlkSz"/>
+        /// Constructor, the size of the block-diagonals is determined by <paramref name="RowBlkSz"/>*<paramref name="ColBlkSz"/>
         /// </summary>
         public BlockDiagonalMatrix(IPartitioning _RowPartition, IPartitioning ColPart, int RowBlkSz, int ColBlkSz) {
             if (_RowPartition.MPI_Comm != ColPart.MPI_Comm)

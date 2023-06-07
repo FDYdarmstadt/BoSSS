@@ -19,6 +19,53 @@ namespace BoSSS.Application.XNSEC {
         public override Type GetSolverType() {
             return typeof(XNSEC_MixtureFraction);
         }
+
+
+        /// <summary>
+        /// Sets the DG polynomial degree
+        /// </summary>
+        /// <param name="DGp">Degree for velocity; pressure  will be one order lower.</param>
+        public override void SetDGdegree(int DGp) {
+            if (DGp < 1)
+                throw new ArgumentOutOfRangeException("DG polynomial degree must be at least 1.");
+
+            base.FieldOptions.Clear();
+            //base.SetDGdegree(DGp);
+
+
+            FieldOptions.Add("Velocity*", new FieldOpts() {
+                Degree = DGp,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.Pressure, new FieldOpts() {
+                Degree = DGp - 1,
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+
+            FieldOptions.Add(VariableNames.LevelSetDG, new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetCG, new FieldOpts() {
+                Degree = Math.Max(2, DGp),
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetDGidx(1), new FieldOpts() {
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            FieldOptions.Add(VariableNames.LevelSetCGidx(1), new FieldOpts() {
+                Degree = Math.Max(2, DGp),
+                SaveToDB = FieldOpts.SaveToDBOpt.TRUE
+            });
+            //FieldOptions.Add(VariableNames.Curvature, new FieldOpts() {
+            //    Degree = Math.Max(2, p) * 2,
+            //    SaveToDB = SaveCurvature
+            //});
+
+            FieldOptions.Add(VariableNames.MixtureFraction, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add(VariableNames.Rho, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+            FieldOptions.Add(VariableNames.cp, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+        }
+
     }
 
     /// <summary>
@@ -53,7 +100,7 @@ namespace BoSSS.Application.XNSEC {
             base.NonLinearSolver.ConvergenceCriterion = 1e-8;
             base.NonLinearSolver.verbose = true;
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
-            base.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            base.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             base.NonLinearSolver.MaxSolverIterations = 20;
             //base.NoOfTimesteps = int.MaxValue;
             this.BDFOrder = 1;
@@ -177,10 +224,16 @@ namespace BoSSS.Application.XNSEC {
 
             FieldOptions.Add(VariableNames.ThermodynamicPressure, new FieldOpts() { Degree = 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             var bla = this.EnableTemperature ? DGp : 0;
-            FieldOptions[VariableNames.Temperature] = new FieldOpts() { Degree = this.EnableTemperature ? DGp : 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE };
+            FieldOptions[VariableNames.Temperature] = new FieldOpts() { Degree = this.EnableTemperature ? DGp : 0, SaveToDB = FieldOpts.SaveToDBOpt.TRUE };
             for (int i = 0; i < this.NumberOfChemicalSpecies; i++) {
-                FieldOptions.Add(VariableNames.MassFraction_n(i), new FieldOpts() { Degree = this.EnableTemperature ? DGp : 1, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
+                FieldOptions.Add(VariableNames.MassFraction_n(i), new FieldOpts() { Degree = this.EnableMassFractions? DGp : 0, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             }
+
+
+
+
+
+
 
             FieldOptions.Add(VariableNames.MixtureFraction, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
             FieldOptions.Add(VariableNames.Rho, new FieldOpts() { Degree = DGp, SaveToDB = FieldOpts.SaveToDBOpt.TRUE });
@@ -575,11 +628,28 @@ namespace BoSSS.Application.XNSEC {
         public Dictionary<string, Tuple<double, double>> VariableBounds = null;
 
         /// <summary>
-        /// Reynolds homotopy values
+        /// Homotopy values
         /// Allows gradual increase of the Reynolds number to improve convergence
         /// </summary>
         [DataMember]
-        public double[] ReynoldsHomotopyValues;
+        public double[] SelfDefinedHomotopyArray;
+
+
+ 
+
+        public double[] HomotopyArray {
+            get {
+                //if (m_HomotopyArray == null && this.HomotopyApproach == HomotopyType.Manual) {
+                //    SelfDefinedHomotopyArray
+                //}
+                return SelfDefinedHomotopyArray;
+            }
+            set {
+                SelfDefinedHomotopyArray = value;
+                this.NoOfTimesteps = SelfDefinedHomotopyArray.Length;
+            }
+        }
+
 
         [DataMember]
         public string NameFieldForSensor;

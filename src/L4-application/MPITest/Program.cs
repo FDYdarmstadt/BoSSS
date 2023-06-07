@@ -33,8 +33,7 @@ namespace MPITest {
 
         public static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
-            TestAllreduce();
-            TestLapack();
+            Test();
             MPI.Wrappers.csMPI.Raw.mpiFinalize(); 
         }
 

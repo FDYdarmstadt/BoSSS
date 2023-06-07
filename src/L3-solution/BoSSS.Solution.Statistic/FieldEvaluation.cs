@@ -80,7 +80,7 @@ namespace BoSSS.Solution.Statistic {
             }
             int j = cellIdx[0];
 
-            NodeSet ns = new NodeSet(gdat.iGeomCells.GetRefElement(j), 1, D);
+            NodeSet ns = new NodeSet(gdat.iGeomCells.GetRefElement(j), 1, D, false);
             bool[] NewtonConvergence = new bool[1];
             gdat.TransformGlobal2Local(_Point, ns, j, NewtonConvergence);
             if(NewtonConvergence[0] == false) {
@@ -495,7 +495,7 @@ namespace BoSSS.Solution.Statistic {
                     continue;
 
                 // collect all vertices that are really in cell j
-                vertLocal = new NodeSet(m_Context.Cells.GetRefElement(j), Z, D);
+                vertLocal = new NodeSet(m_Context.Cells.GetRefElement(j), Z, D, false);
                 int z = 0;
                 for (int n = 0; n < Len; n++) {
                     if (!tatsaechlich[n])

@@ -396,9 +396,9 @@ namespace BoSSS.Foundation.XDG {
                         int jCell1 = E2C[iEdge, 1];
 
                         NodeSet NSvol0, NSvol1;
-                        NSvol0 = NS.GetVolumeNodeSet(gdat, TrfIdx[iEdge, 0]);
+                        NSvol0 = NS.GetVolumeNodeSet(gdat, TrfIdx[iEdge, 0], false);
                         if (jCell1 >= 0)
-                            NSvol1 = NS.GetVolumeNodeSet(gdat, TrfIdx[iEdge, 1]);
+                            NSvol1 = NS.GetVolumeNodeSet(gdat, TrfIdx[iEdge, 1], false);
                         else
                             NSvol1 = null;
                         

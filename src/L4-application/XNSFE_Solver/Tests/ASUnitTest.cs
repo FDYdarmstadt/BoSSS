@@ -579,7 +579,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             }
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-9;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             // return
             // ======
@@ -755,7 +755,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             }
 
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.NonLinearSolver.SolverCode = nonlinsolver;
 
             // return

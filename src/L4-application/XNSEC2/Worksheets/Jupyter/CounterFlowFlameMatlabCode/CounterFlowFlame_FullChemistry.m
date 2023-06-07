@@ -138,7 +138,7 @@ Sxint = deval(sol, xint);
             U2; ... %Mom
             (lambda + rho_ * v * U2 + rho_ * U1^2 - mu_p * U2) * 1.0 / mu_; ... %Mom
             T2; ... .%Energy
-            ( rho_ * v * T2 - k_cp_p * T2 - Q * omega/cp) / (k_cp); ... %Energy
+            ( rho_ * vss * T2 - k_cp_p * T2 - Q * omega/cp) / (k_cp); ... %Energy
             Y1_2; ... .%MassFraction1
             (rho_ * v * Y1_2 - rhoD1_p * Y1_2 - omega * Coef_Stoic(1) * MM(1)) / (rhoD1); ... %MassFraction1
             Y2_2; ... .%MassFraction2

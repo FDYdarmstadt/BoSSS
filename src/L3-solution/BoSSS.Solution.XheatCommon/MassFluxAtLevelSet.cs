@@ -387,39 +387,53 @@ namespace BoSSS.Solution.XheatCommon {
             if (M == 0.0)
                 return 0.0;
 
-            double uAxN = -M * (1 / m_rhoA);
-            double uBxN = -M * (1 / m_rhoB);
+            //double uAxN = -M * (1 / m_rhoA);
+            //double uBxN = -M * (1 / m_rhoB);
 
-            // transform from species B to A: we call this the "A-fictitious" value
-            double uAxN_fict;
-            //uAxN_fict = (1 / rhoA) * (rhoB * uBxN);
-            uAxN_fict = uBxN;
+            //// transform from species B to A: we call this the "A-fictitious" value
+            //double uAxN_fict;
+            ////uAxN_fict = (1 / rhoA) * (rhoB * uBxN);
+            //uAxN_fict = uBxN;
 
-            // transform from species A to B: we call this the "B-fictitious" value
-            double uBxN_fict;
-            //uBxN_fict = (1 / rhoB) * (rhoA * uAxN);
-            uBxN_fict = uAxN;
+            //// transform from species A to B: we call this the "B-fictitious" value
+            //double uBxN_fict;
+            ////uBxN_fict = (1 / rhoB) * (rhoA * uAxN);
+            //uBxN_fict = uAxN;
 
 
-            // compute the fluxes: note that for the continuity equation, we use not a real flux,
-            // but some kind of penalization, therefore the fluxes have opposite signs!
-            double FlxNeg = -Flux(uAxN, uAxN_fict) * -1 * m_rhoA; // flux on A-side
-            double FlxPos = +Flux(uBxN_fict, uBxN) * -1 * m_rhoB;  // flux on B-side
+            //// compute the fluxes: note that for the continuity equation, we use not a real flux,
+            //// but some kind of penalization, therefore the fluxes have opposite signs!
+            //double FlxNeg = +Flux(uAxN, uAxN_fict) * m_rhoA; // flux on A-side
+            //double FlxPos = -Flux(uBxN_fict, uBxN) * m_rhoB;  // flux on B-side
 
-            FlxNeg *= scaleA;
-            FlxPos *= scaleB;
+            //FlxNeg *= scaleA;
+            //FlxPos *= scaleB;
 
-           double Ret = FlxNeg * vA - FlxPos * vB;
-   
+            //double Ret = FlxNeg * vA - FlxPos * vB;
 
-            return Ret;
+
+
+
+
+
+            double uAxN = GenericBlas.InnerProd(U_Neg.GetSubVector(1, m_D), cp.Normal);
+            double uBxN = GenericBlas.InnerProd(U_Pos.GetSubVector(1, m_D), cp.Normal);
+            double res2 = 0.5 * (m_rhoA* uAxN + m_rhoB* uBxN) * (vA - vB); // This is correct WITH mass evaporation flux
+
+            double Ret = -(M * 0.5 * (1.0 / m_rhoA + 1.0 / m_rhoB) * (m_rhoA - m_rhoB) - (m_rhoA - m_rhoB) * 0.5 * (uAxN + uBxN)) * 0.5 * (vA + vB);
+            //double Ret = -(M * (1.0 / m_rhoA) * (m_rhoA - m_rhoB) - (m_rhoA - m_rhoB) * (uAxN)) * 0.5 * (vA + vB);
+            return Ret+res2;
         }
 
         public override TermActivationFlags LevelSetTerms {
-            get { return TermActivationFlags.GradUxV | TermActivationFlags.V; }
-            
+            get { return TermActivationFlags.AllOn; }
+            //get { return TermActivationFlags.GradUxV | TermActivationFlags.V; }
+
 
         }
+        public override IList<string> ArgumentOrdering => base.ArgumentOrdering.Cat(VariableNames.VelocityVector(m_D));
+
+
         /// <summary>
         /// the penalty flux
         /// </summary>
@@ -575,10 +589,21 @@ namespace BoSSS.Solution.XheatCommon {
         }
     }
 
-    /// <summary>
-    /// Correction terms at level set for a non material interface, for the viscous terms.
-    /// </summary>
-    public class ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
+        public class ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling_LowMach : ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling {
+
+            public ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling_LowMach(double _penalty, int _component, int D,
+            ThermalParameters thermalParameters, PhysicalParameters physicalParameters, string phaseA, string phaseB)
+            : base(_penalty,_component, D, thermalParameters,physicalParameters,phaseA,phaseB) {
+            }
+
+        public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.GradUxGradV | TermActivationFlags.V | TermActivationFlags.GradV; //  TermActivationFlags.V | TermActivationFlags.GradV; terms are necesary if the massflux is prescribed
+
+    }
+
+        /// <summary>
+        /// Correction terms at level set for a non material interface, for the viscous terms.
+        /// </summary>
+        public class ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling : MassFluxAtLevelSet_StrongCoupling {
 
 
         public ViscosityAtLevelSet_FullySymmetric_Evaporation_StrongCoupling(double _penalty, int _component, int D,
@@ -714,16 +739,9 @@ namespace BoSSS.Solution.XheatCommon {
             PosLengthScaleS = csB.CellLengthScales;
         }
 
-        public override TermActivationFlags LevelSetTerms {
-            get {
-                var terms = base.LevelSetTerms | TermActivationFlags.GradUxGradV;
-                if (MEvapIsPrescribd)                    
-                    terms |= TermActivationFlags.V;
-                return terms;
 
-            }
-        }
         //public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.GradUxGradV /*|TermActivationFlags.V*/;
+        public override TermActivationFlags LevelSetTerms => base.LevelSetTerms | TermActivationFlags.GradUxGradV;
 
     }
 

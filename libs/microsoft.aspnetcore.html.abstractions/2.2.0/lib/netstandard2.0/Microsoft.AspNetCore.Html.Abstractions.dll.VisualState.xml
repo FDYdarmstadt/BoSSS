@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<VisualState xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" ShowCheckBoxes="false">
-  <TopNode>[0-1000]C:\Users\flori\.nuget\packages\microsoft.aspnetcore.html.abstractions\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Html.Abstractions.dll</TopNode>
-  <SelectedNode>[0-1000]C:\Users\flori\.nuget\packages\microsoft.aspnetcore.html.abstractions\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Html.Abstractions.dll</SelectedNode>
-  <ExcludeCategories>false</ExcludeCategories>
-  <Nodes />
-</VisualState>

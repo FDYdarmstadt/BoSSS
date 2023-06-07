@@ -1,10 +1,12 @@
 ﻿using BoSSS.Foundation.Grid;
 using ilPSP;
+using ilPSP.Connectors.Matlab;
 using ilPSP.LinSolvers;
 using ilPSP.Tracing;
 using ilPSP.Utils;
 using MPI.Wrappers;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -17,7 +19,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
     /// Incomplete LU decomposition on a cell-level
     /// 
     /// </summary>
-    public class CellILU : ISolverSmootherTemplate {
+    public class CellILU : ISubsystemSolver {
         
         /// <summary>
         /// always 0, no sub-calls here
@@ -58,17 +60,32 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// 
         /// </summary>
         public void Dispose() {
-            m_BlockL = null;
-            m_BlockU = null;
-            m_ILUp_pattern = null;
+            m_backSubs = null;
+            m_op = null;
         }
 
-        MultigridOperator m_op;
+        IOperatorMappingPair m_op;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void Init(IOperatorMappingPair op) {
+            InitImpl(op);
+        }
 
         /// <summary>
         /// 
         /// </summary>
         public void Init(MultigridOperator op) {
+            InitImpl(op);
+        }
+
+        public string id;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public void InitImpl(IOperatorMappingPair op) {
             using(new FuncTrace()) {
                 if(object.ReferenceEquals(op, m_op))
                     return; // already initialized
@@ -76,11 +93,28 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.Dispose();
 
                 m_op = op;
-                Console.WriteLine($"CellILU, MG level {op.LevelIndex}...");
-                UpdateILU();
+
+                //(this.m_BlockL, this.m_BlockL_compressed, this.m_BlockL_OccupiedBlockColumnsPerRow,
+                //    this.m_BlockU, this.m_BlockU_OccupiedBlockColumnsPerRow,
+                //    this.m_BlockU_lublks, this.m_BlockU_luipiv) = ComputeILU(this.ILU_level, op.OperatorMatrix);
                 //CheckILU();
+
+
+                //m_Perm = GetPermMatrix(op.OperatorMatrix, true);
+                //m_PermT = m_Perm.Transpose();
+                //var op_perm = BlockMsrMatrix.Multiply(m_PermT, BlockMsrMatrix.Multiply(op.OperatorMatrix, m_Perm));
+                //var ILU = ComputeILU(this.ILU_level, op_perm);
+
+                
             }
         }
+
+
+
+        //BlockMsrMatrix m_Perm;
+        //BlockMsrMatrix m_PermT;
+
+        BackSubs m_backSubs;
 
         /// <summary>
         /// 
@@ -90,49 +124,135 @@ namespace BoSSS.Solution.AdvancedSolvers {
             Converged = false;
         }
 
+        //bool written = true;
+
+        
+        public static void Verify(string _iD) {
+            var Blocks = VectorIO.LoadFromTextFile("part" + _iD + ".txt").Select(d => (int)d).ToArray();
+            int J = Blocks.Length;
+            long[] i0 = new long[J];
+            for (int j = 1; j < J; j++) {
+                i0[j] = i0[j - 1] + Blocks[j - 1];
+            }
+            var part = new BlockPartitioning(checked((int)(i0[J - 1] + Blocks[J - 1])), i0, Blocks, csMPI.Raw._COMM.SELF);
+
+
+            var opMtx_tmp = MsrMatrix.LoadFromFile("M" + _iD + ".mtx", csMPI.Raw._COMM.SELF, part, part);
+            var L_tmp = MsrMatrix.LoadFromFile("L" + _iD + ".mtx", csMPI.Raw._COMM.SELF, part, part);
+            var U_tmp = MsrMatrix.LoadFromFile("U" + _iD + ".mtx", csMPI.Raw._COMM.SELF, part, part);
+
+            var opMtx = new BlockMsrMatrix(part); opMtx.Acc(1.0, opMtx_tmp);
+            var L = new BlockMsrMatrix(part); L.Acc(1.0, L_tmp);
+            var U = new BlockMsrMatrix(part); U.Acc(1.0, U_tmp);
+
+
+            for (int i = 0; i < 1; i++) {
+                Console.WriteLine("pass " + i + " on " + _iD +  " ...");
+                var test1 = new BackSubs_Reference(ComputeILU(0, opMtx));
+                var test2 = new BackSubs_Reference(ComputeILU(0, opMtx));
+                var (test_L1, test_U1) = (test1.BlockL, test1.BlockU);
+                var (test_L2, test_U2) = (test2.BlockL, test2.BlockU);
+
+                //double cond_Matlab = opMtx.condest();
+                //double cond_Arnold = opMtx.condestArnoldi();
+
+                double LErr1 = L.MatrixDist(test_L1);
+                double UErr1 = U.MatrixDist(test_U1);
+                double LErr2 = L.MatrixDist(test_L2);
+                double UErr2 = U.MatrixDist(test_U2);
+                double LErr12 = test_L1.MatrixDist(test_L2);
+                double UErr12 = test_U1.MatrixDist(test_U2);
+
+                var LDiff = test_L1.Minus(test_L2);
+                var UDiff = test_U1.Minus(test_U2);
+                
+
+                Console.WriteLine($" {LErr1}, {UErr1}");
+                Console.WriteLine($" {LErr2}, {UErr2}");
+                Console.WriteLine($" {LErr12}, {UErr12}");
+            }
+
+            //Console.WriteLine($"ID: {_iD}: LErr = {LErr}, UErr = {UErr}; cond = {cond_Matlab} (Matlab), {cond_Arnold} (BoSSS Arnoldi)");
+
+        }
+
+
+        //BackSubs m_backSubsRef;
+
         public void Solve<U, V>(U X, V B)
             where U : IList<double>
             where V : IList<double>  //
         {
+            if(m_backSubs == null) {
+                var ILU = ComputeILU(this.ILU_level, m_op.OperatorMatrix);
+                m_backSubs = new BackSubs_Optimized_SinglePrec(ILU);
+                //m_backSubs = new BackSubs_Optimized(ILU);
+                //m_backSubsRef = new BackSubs_Reference(ILU);
+            }
+ 
+            /*
+            if (!written) {
+                
+                var part = m_op.OperatorMatrix._RowPartitioning;
+                if (part.MpiSize != 1)
+                    throw new NotSupportedException();
+                if (part.LocalNoOfBlocks != part.TotalNoOfBlocks)
+                    throw new NotSupportedException();
+
+                int NoOfBlocks = part.LocalNoOfBlocks;
+                int[] BL = NoOfBlocks.ForLoop(iblk => part.GetBlockLen(iblk));
+                BL.SaveToTextFile("part" + id + ".txt", part.MPI_Comm);
+
+                var ILU = ComputeILU(this.ILU_level, BlockMsrMatrix.Multiply(m_PermT, BlockMsrMatrix.Multiply(m_op.OperatorMatrix, m_Perm)));
+                var test = new BackSubs_Reference(ILU);
 
 
+                m_op.OperatorMatrix.SaveToTextFileSparse("M" + id + ".txt");
+                test.BlockL.SaveToTextFileSparse("L" + id + ".txt");
+                test.BlockU.SaveToTextFileSparse("U" + id + ".txt");
+                m_Perm.SaveToTextFileSparse("P" + id + ".txt");
+
+                m_op.OperatorMatrix.ToMsrMatrix().SaveToFile("M" + id + ".mtx");
+                test.BlockL.ToMsrMatrix().SaveToFile("L" + id + ".mtx");
+                test.BlockU.ToMsrMatrix().SaveToFile("U" + id + ".mtx");
+
+                written = true;
+                Console.Error.WriteLine("Written: " + id);
+                
+            }*/
             int L = X.Count;
 
-            //double[] _B;
-            //if(B.GetType() == typeof(double[]))
-            //    _B = B as double[];
-            //else
-            //    _B = B.ToArray();
+            //double[] _B = new double[B.Count];
+            //m_PermT.SpMV(1.0, B, 0.0, _B);
 
 
             double[] y = new double[L];
+            
             //double[] yref = new double[L];
-            //m_BlockL.Solve_Direct(yref, B.ToArray().CloneAs());
-            LoTriDiagonalSolve(m_BlockL, y, B, true);
+            //m_backSubsRef.LoTriDiagonalSolve(yref, B.ToArray().CloneAs());
+            m_backSubs.LoTriDiagonalSolve(y, B);
+            //var ERR = yref.Minus(y);
             //double check1 = GenericBlas.L2Dist(yref, y);
-            //Console.WriteLine("Check value (lo solve) is: " + check1);
+            //Console.Error.WriteLine("Check value (lo solve) is: " + check1);
 
 
             //double[] Xref = new double[y.Length];
-            //m_BlockU.Solve_Direct(Xref, y.CloneAs());
-            UpTriDiagonalSolve(m_BlockU, X, y, false);
+            //m_backSubsRef.UpTriDiagonalSolve(Xref, y.CloneAs());
+            m_backSubs.UpTriDiagonalSolve(X, y);
             //double check2 = GenericBlas.L2Dist(Xref, X);
-            //Console.WriteLine("Check value (hi solve) is: " + check2);
+            //Console.Error.WriteLine("Check value (hi solve) is: " + check2);
 
             
             m_ThisLevelIterations += 1;
             Converged = true;
         }
 
-        BlockMsrMatrix m_BlockL;
-
-        BlockMsrMatrix m_BlockU;
-
+        
         /// <summary>
         /// 
         /// </summary>
         public long UsedMemory() {
-            return (m_BlockL?.UsedMemory ?? 0L) + (m_BlockU?.UsedMemory ?? 0L);
+            return m_backSubs?.UsedMemory() ?? 0;
         }
 
         /*
@@ -236,92 +356,60 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
         */
 
-        /// <summary>
-        /// ILU, in-place version, after book of Saad (p 303)
-        /// </summary>
-        void UpdateILU() {
-            using(var ft = new FuncTrace()) {
-                if(m_op.Mapping.MpiSize > 1)
-                    throw new NotImplementedException();
+        abstract class BackSubs {
 
-                var grd = m_op.Mapping.GridData;
-                var Mtx = m_op.OperatorMatrix;
-                IBlockPartitioning part = m_op.Mapping;
-                Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
-                Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
+            public BackSubs(BlockMsrMatrix LUdecomp) {
+
+            }
+
+            public abstract void UpTriDiagonalSolve<U, V>(U X, V B)
+                where U : IList<double>
+                where V : IList<double>;
+        
+
+            public abstract void LoTriDiagonalSolve<U, V>(U X, V B)
+                where U : IList<double>
+                where V : IList<double>;
+
+            abstract public long UsedMemory();
+        }
+
+
+        class BackSubs_Reference : BackSubs {
+
+            IBlockPartitioning part;
+
+            public BackSubs_Reference(BlockMsrMatrix A) : base(A) {
+                part = A._RowPartitioning;
+                if (!A._ColPartitioning.EqualsPartition(part))
+                    throw new ArgumentException();
+                
+                
+
+                BlockU = new BlockMsrMatrix(part, part);
+                BlockL = new BlockMsrMatrix(part, part);
+                BlockL.AccEyeSp(1.0);
+
                 long cell0 = part.FirstBlock;
                 int J = part.LocalNoOfBlocks;
-
-
-                var A = Mtx.CloneAs();
-
-
-                var ILUp = GetPattern(out int Occupied);
-                var ILUpT = m_ILUp_pattern.Transpose();
-                double occupancy = (double)Occupied / (double)(J * J);
-                ft.Info($"CellILU, lv {m_op.LevelIndex}, ILU-{ILU_level}, occupancy = {Math.Round(occupancy * 100)}%.");
-
-                for(long k = cell0; k < (cell0 + J - 1); k++) { // Iteration over matrix (rows and columns)
-                    int sz_k = part.GetBlockLen(k);
-                    if(sz_k <= 0)
-                        continue; // cell i is empty
-
-                    var invAkk = A.GetBlock(k, k);
-                    invAkk.InvertInPlace();
-
-                    long[] occColumn_k = ILUpT.GetOccupiedColumnIndices(k);
-                    foreach(long i in occColumn_k) { 
-                    //for(long i = k + 1; i < (cell0 + J); i++) {
-                    //    Debug.Assert(i > k);
-                    //    if(P1[i, k]) {
-                        if(i >= k + 1) { 
-                            //if(!occColumn_k.Contains(i))
-                            //    throw new Exception($"fuck: P1[{i},{k}] = {P1[i, k]} //  {ILUpT[i, k]}  {m_ILUp_pattern[i, k]} ");
-
-                            var Aik = A.GetBlock(i, k);
-                            Aik = Aik.GEMM(invAkk);
-                            A.SetBlock(Aik, i, k);
-
-                            long[] occRow_i = m_ILUp_pattern.GetOccupiedColumnIndices(i);
-                            //for(long j = k + 1; j < (cell0 + J); j++) {
-                            //    if(P1[i, j] != occRow_i.Contains(j))
-                            //        throw new Exception("fuck 2");
-                            //    if(P1[i, j]) {
-                            foreach(long j in occRow_i) { 
-                                if(j >= k + 1) { 
-                                    var Aij = A.GetBlock(i, j);
-                                    var Akj = A.GetBlock(k, j);
-                                    Aij.GEMM(-1, Aik, Akj, 1.0);
-                                    A.SetBlock(Aij, i, j);
-                                }
-                            }
-
-                            // L(Bk,Bi) = U(Bk,Bi)*invUii
-                        } else {
-                            //if(occColumn_k.Contains(i))
-                            //    throw new Exception($"fuck: P1[{i},{k}] = {P1[i, k]} //  {ILUpT[i, k]}  {m_ILUp_pattern[i, k]} ");
-                        }
-                    }
-                }
-
-
-                m_BlockU = new BlockMsrMatrix(part, part);
-                m_BlockL = new BlockMsrMatrix(part, part);
-                m_BlockL.AccEyeSp(1.0);
-
-                for(long j = cell0; j < J + cell0; j++) {
+                for (long j = cell0; j < J + cell0; j++) {
                     //for(long i = cell0; i < J + cell0; i++) {
                     //    if(P1[i, j]) {
-                    long[] occRow_j = ILUp.GetOccupiedColumnIndices(j);
-                    foreach(long i in occRow_j) {
+                    long[] occRow_j = A.GetOccupiedRowBlockIndices(j);
+
+                   
+
+
+                    foreach (long i in occRow_j) {
                         {
                             var Aji = A.GetBlock(j, i);
-                            if(j > i) {
+                            if (j > i) {
                                 // lower tri
-                                m_BlockL.SetBlock(Aji, j, i);
+                                BlockL.SetBlock(Aji, j, i);
+
                             } else {
                                 // upper tri
-                                m_BlockU.SetBlock(Aji, j, i);
+                                BlockU.SetBlock(Aji, j, i);
                             }
                         }
                         //} else {
@@ -331,95 +419,1086 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         //        throw new ArithmeticException();
                         //}
                     }
-                }
 
-                //m_BlockL.SaveToTextFileSparse("L.txt");
-                //m_BlockU.SaveToTextFileSparse("U.txt");
+                    //L_OccupiedBlockColumnsPerRow[j - cell0] = BlockL.GetOccupiedRowBlockIndices(j);
+                    //U_OccupiedBlockColumnsPerRow[j - cell0] = BlockU.GetOccupiedRowBlockIndices(j);
+                }
+            }
+
+            /*
+            /// <summary>
+            /// Global Column indices of non-zero blocks in the L-factor
+            /// - 1st index: local block-row/cell index
+            /// - 2nd index: enumeration
+            /// </summary>
+            long[][] L_OccupiedBlockColumnsPerRow;
+
+            /// <summary>
+            /// Global Column indices of non-zero blocks in the U-factor
+            /// - 1st index: local block-row/cell index
+            /// - 2nd index: enumeration
+            /// </summary>
+            long[][] U_OccupiedBlockColumnsPerRow;
+            */
+
+            /// <summary>
+            /// L-factor of the ILU decomposition
+            /// </summary>
+            internal BlockMsrMatrix BlockL;
+
+            /// <summary>
+            /// U-factor of the ILU decomposition
+            /// </summary>
+            internal BlockMsrMatrix BlockU;
+
+            public override void UpTriDiagonalSolve<U, V>(U X, V B) {
+                using (new FuncTrace()) {
+                    var Mtx = BlockU;
+
+                    var rowPart = Mtx._RowPartitioning;
+                    var colPart = Mtx._ColPartitioning;
+                    long i0 = rowPart.FirstBlock;
+                    long J = rowPart.LocalNoOfBlocks;
+                    long i0Idx = rowPart.i0;
+                    long j0Idx = colPart.i0;
+
+                   
+                    for (long i = i0 + J - 1; i >= i0; i--) {
+                        int sz_i = rowPart.GetBlockLen(i);
+                        if (sz_i <= 0)
+                            continue; // empty cell;
+
+                        if (colPart.GetBlockLen(i) <= 0)
+                            throw new NotSupportedException("cannot do (upper) trigonal solve on non-quadratic zero diagonal block");
+
+                        long iIdx = rowPart.GetBlockI0(i);
+                        int iIdxLoc = checked((int)(iIdx - i0Idx));
+
+                        double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
+
+                        long[] jS = Mtx.GetOccupiedRowBlockIndices(i);
+                        foreach (long j in jS) {
+                            if (j <= i) // ignore everything below the diagonal
+                                continue;
+                            int sz_j = colPart.GetBlockLen(j);
+                            if (sz_j <= 0)
+                                continue;
+
+                            long jIdx = colPart.GetBlockI0(j);
+                            int jIdxLoc = checked((int)(jIdx - j0Idx));
+
+                            double[] Xj = X.GetSubVector(jIdxLoc, sz_j);
+                            var Mtx_ij = Mtx.GetBlock(i, j);
+
+                            Mtx_ij.GEMV(-1.0, Xj, 1.0, Bi);
+                        }
+
+                        //if (diagEye) {
+                        //    X.SetSubVector<double, U, double[]>(Bi, iIdxLoc, sz_i);
+                        //} else 
+                        {
+                            double[] Xi = new double[sz_i];
+                            var Mtx_ii = Mtx.GetBlock(i, i);
+                            Mtx_ii.Solve(Xi, Bi);
+                            //Mtx_lublks[i - i0].BacksubsLU(Mtx_luipiv[i - i0], Xi, Bi);
+                            //X.SetSubVector<double, U, double[]>(Xi, iIdxLoc, sz_i);
+                        }
+                    }
+                }
+            }
+
+            public override void LoTriDiagonalSolve<U, V>(U X, V B) {
+                using (new FuncTrace()) {
+                    var Mtx = BlockL;
+
+                    var rowPart = Mtx._RowPartitioning;
+                    var colPart = Mtx._ColPartitioning;
+                    long i0 = rowPart.FirstBlock;
+                    long J = rowPart.LocalNoOfBlocks;
+                    long i0Idx = rowPart.i0;
+                    long j0Idx = colPart.i0;
+
+
+                    for (long i = i0; i < i0 + J; i++) {
+                        int sz_i = rowPart.GetBlockLen(i);
+                        if (sz_i <= 0)
+                            continue; // empty cell;
+
+                        if (colPart.GetBlockLen(i) <= 0)
+                            throw new NotSupportedException("cannot do (lower) trigonal solve on non-quadratic zero diagonal block");
+
+                        long iIdx = rowPart.GetBlockI0(i);
+                        int iIdxLoc = checked((int)(iIdx - i0Idx));
+
+                        double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
+
+                        long[] jS = Mtx.GetOccupiedRowBlockIndices(i);
+                        foreach (long j in jS) {
+                            if (j >= i) // ignore everything above the diagonal
+                                continue;
+                            int sz_j = colPart.GetBlockLen(j);
+                            if (sz_j <= 0)
+                                continue;
+
+                            long jIdx = colPart.GetBlockI0(j);
+                            int jIdxLoc = checked((int)(jIdx - j0Idx));
+
+                            double[] Xj = X.GetSubVector(jIdxLoc, sz_j);
+                            var Mtx_ij = Mtx.GetBlock(i, j);
+
+                            Mtx_ij.GEMV(-1.0, Xj, 1.0, Bi);
+                        }
+
+                        //if (diagEye) {
+                        X.SetSubVector<double, U, double[]>(Bi, iIdxLoc, sz_i);
+                        //} else {
+                        //    double[] Xi = new double[sz_i];
+                        //    var Mtx_ii = Mtx.GetBlock(i, i);
+                        //    Mtx_ii.Solve(Xi, Bi);
+                        //    X.SetSubVector<double, U, double[]>(Xi, iIdxLoc, sz_i);
+                        //}
+                    }
+                }
+            }
+
+            public override long UsedMemory() {
+                return BlockU.UsedMemory + BlockL.UsedMemory;
             }
         }
 
-        /*
+
+        class BackSubs_Optimized : BackSubs {
+
+            IBlockPartitioning part;
+
+            public BackSubs_Optimized(BlockMsrMatrix A) : base(A) {
+                part = A._RowPartitioning;
+                if (!A._ColPartitioning.EqualsPartition(part))
+                    throw new ArgumentException();
+
+                int J = part.LocalNoOfBlocks;
+                this.m_BlockU_compressed = new MultidimensionalArray[J];
+                this.m_BlockL_compressed = new MultidimensionalArray[J];
+
+                this.Udiag_lublks = new MultidimensionalArray[J];
+                this.Udiag_inverse = new MultidimensionalArray[J];
+                this.Udiag_luipiv = new int[J][];
+                this.L_OccupiedBlockColumnsPerRow = new long[J][];
+                this.U_OccupiedBlockColumnsPerRow = new long[J][];
+
+                long cell0 = part.FirstBlock;
+                for (long j = cell0; j < J + cell0; j++) {
+                    //for(long i = cell0; i < J + cell0; i++) {
+                    //    if(P1[i, j]) {
+                    long[] occRow_j = A.GetOccupiedRowBlockIndices(j);
+
+                    int Szj = part.GetBlockLen(j);
+                    if (Szj > 0) {
+                        int lenL = 0, lenU = 0, zzL = 0, zzU = 0;
+                        for (int zz = 0; zz < occRow_j.Length; zz++) {
+                            long i = occRow_j[zz];
+                            if (zz > 0 && occRow_j[zz - 1] >= occRow_j[zz])
+                                throw new ApplicationException("expecting strictly increasing data");
+
+                            int Szi = part.GetBlockLen(i);
+                            if (j > i) {
+                                // lower tri
+                                lenL += Szi;
+                                zzL++;
+                            }
+                            if (i > j) {
+                                // upper tri
+                                lenU += Szi;
+                                zzU++;
+                            }
+                        }
+                        MultidimensionalArray BlockL_compressed_j = null;
+                        MultidimensionalArray BlockU_compressed_j = null;
+                        if (lenU > 0) {
+                            BlockU_compressed_j = MultidimensionalArray.Create(Szj, lenU);
+                            this.m_BlockU_compressed[j - cell0] = BlockU_compressed_j;
+                        }
+                        if (lenL > 0) {
+                            BlockL_compressed_j = MultidimensionalArray.Create(Szj, lenL);
+                            m_BlockL_compressed[j - cell0] = BlockL_compressed_j;
+                        }
+                        long[] BlockL_GetOccupiedRowBlockIndices = new long[zzL];
+                        long[] BlockU_GetOccupiedRowBlockIndices = new long[zzU];
+
+                        int oL = 0, oU = 0;
+                        zzL = 0; zzU = 0;
+                        long j0 = part.GetBlockI0(j);
+                        for (int zz = 0; zz < occRow_j.Length; zz++) {
+                            long i = occRow_j[zz];
+                            int Szi = part.GetBlockLen(i);
+                            long i0 = part.GetBlockI0(i);
+                            if (Szi > 0) {
+                                if (j > i) {
+                                    A.ReadBlock(j0, i0, BlockL_compressed_j.ExtractSubArrayShallow(new int[] { 0, oL }, new int[] { Szj - 1, oL + Szi - 1 }));
+                                    oL += Szi;
+                                    BlockL_GetOccupiedRowBlockIndices[zzL] = i; zzL++;
+                                }
+                                if (i > j) {
+                                    A.ReadBlock(j0, i0, BlockU_compressed_j.ExtractSubArrayShallow(new int[] { 0, oU }, new int[] { Szj - 1, oU + Szi - 1 }));
+                                    oU += Szi;
+                                    BlockU_GetOccupiedRowBlockIndices[zzU] = i; zzU++;
+                                }
+                            }
+                        }
+                        Debug.Assert(oL == (BlockL_compressed_j?.NoOfCols ?? 0));
+                        Debug.Assert(oU == (BlockU_compressed_j?.NoOfCols ?? 0));
+
+
+                        L_OccupiedBlockColumnsPerRow[j - cell0] = BlockL_GetOccupiedRowBlockIndices;
+                        U_OccupiedBlockColumnsPerRow[j - cell0] = BlockU_GetOccupiedRowBlockIndices;
+
+
+                        {
+
+                            var Ajj = A.GetBlock(j, j);
+                            this.Udiag_inverse[j - cell0] = Ajj.CloneAs();
+                            this.Udiag_inverse[j - cell0].InvertInPlace();
+
+                            int[] ipiv = new int[Ajj.NoOfRows];
+                            Ajj.FactorizeLU(ipiv);
+                            this.Udiag_lublks[j - cell0] = Ajj;
+                            this.Udiag_luipiv[j - cell0] = ipiv;
+                            
+
+                        }
+                    }
+
+                }
+            }
+
+            /// <summary>
+            /// Concatenation of all upper diagonal parts of the U-factor for each block row
+            /// </summary>
+            internal MultidimensionalArray[] m_BlockU_compressed;
+
+            /// <summary>
+            /// Concatenation of all lower diagonal parts of the L-factor for each block row
+            /// </summary>
+            internal MultidimensionalArray[] m_BlockL_compressed;
+
+            /// <summary>
+            /// Global Column indices of non-zero blocks in the L-factor
+            /// - 1st index: local block-row/cell index
+            /// - 2nd index: enumeration
+            /// </summary>
+            long[][] L_OccupiedBlockColumnsPerRow;
+
+            /// <summary>
+            /// Global Column indices of non-zero blocks in the U-factor
+            /// - 1st index: local block-row/cell index
+            /// - 2nd index: enumeration
+            /// </summary>
+            long[][] U_OccupiedBlockColumnsPerRow;
+
+            /// <summary>
+            /// LU-decompositions for each diagonal block in the U-factor (upper triangle)
+            /// </summary>
+            MultidimensionalArray[] Udiag_lublks;
+
+            /// <summary>
+            /// inverse for each diagonal block in the U-factor (upper triangle)
+            /// </summary>
+            MultidimensionalArray[] Udiag_inverse;
+
+            /// <summary>
+            /// pivot indices corresponding with <see cref="Udiag_lublks"/>
+            /// </summary>
+            int[][] Udiag_luipiv;
+
+
+            public override long UsedMemory() {
+                long ret = 0;
+                int J = part.LocalNoOfBlocks;
+                for(int j = 0; j < J; j++) {
+                    ret += (m_BlockU_compressed[j]?.Length ?? 0) * sizeof(double);
+                    ret += (m_BlockL_compressed[j]?.Length ?? 0) * sizeof(double);
+
+                    ret += (L_OccupiedBlockColumnsPerRow[j]?.Length ?? 0) * sizeof(long);
+                    ret += (U_OccupiedBlockColumnsPerRow[j]?.Length ?? 0) * sizeof(long);
+
+                    ret += (Udiag_lublks[j]?.Length ?? 0) * sizeof(double);
+                    ret += (Udiag_luipiv[j]?.Length ?? 0) * sizeof(int);
+                }
+
+
+                return ret;
+            }
+
+
+            public override void UpTriDiagonalSolve<U, V>(U X, V B) {
+                using (new FuncTrace()) {
+                    var rowPart = part;
+                    var colPart = part;
+                    long i0 = rowPart.FirstBlock;
+                    long J = rowPart.LocalNoOfBlocks;
+                    long i0Idx = rowPart.i0;
+                    long j0Idx = colPart.i0;
+
+
+                    double[] Xtemp = null;
+
+                    for (long i = i0 + J - 1; i >= i0; i--) { // reverse loop over block-rows
+                        int sz_i = rowPart.GetBlockLen(i);
+                        if (sz_i <= 0)
+                            continue; // empty cell;
+
+                        long iIdx = rowPart.GetBlockI0(i); // global matrix row index
+                        int iIdxLoc = checked((int)(iIdx - i0Idx)); // local row index
+
+                        long[] occBlk_i = U_OccupiedBlockColumnsPerRow[i - i0];
+                        int NB = occBlk_i.Length;
+
+                        double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
+
+                        if (NB > 0) {
+                            var Ucompr = m_BlockU_compressed[i - i0];
+                            int K = Ucompr?.NoOfCols ?? 0;
+                            if (K > 0) {
+                                if (Xtemp == null || Xtemp.Length != K)
+                                    Array.Resize(ref Xtemp, K);
+                                int oj = 0;
+                                for (int jx = 0; jx < NB; jx++) {
+                                    long j = occBlk_i[jx];
+                                    if (j != i) {
+                                        long jIdx = colPart.GetBlockI0(j);
+                                        int jIdxLoc = checked((int)(jIdx - j0Idx));
+                                        int Szj = colPart.GetBlockLen(j);
+
+                                        for (int k = 0; k < Szj; k++)
+                                            Xtemp[oj + k] = X[jIdxLoc + k];
+                                        oj += Szj;
+                                    }
+                                }
+
+                                
+                                m_BlockU_compressed[i - i0].GEMV(-1.0, Xtemp, 1.0, Bi);
+                                
+
+                                
+                                //// testcode for single precision
+                                //{
+                                //    var MTX = m_BlockU_compressed[i - i0];
+                                //    int N = MTX.NoOfRows;
+                                //    int M = MTX.NoOfCols;
+                                //    if (M != Xtemp.Length)
+                                //        throw new ArgumentException();
+
+                                //    for(int n = 0; n < N; n++) {
+                                //        float acc = 0;
+                                //        for(int m = 0; m < M; m++) {
+                                //            float MTX_nm = (float)MTX[n, m];
+                                //            float X_m = (float) Xtemp[m];
+                                //            acc += MTX_nm * X_m;
+                                //        }
+
+                                //        Bi[n] += (-1.0) * acc;
+                                //    }
+                                //}
+
+                            }
+                        }
+
+
+                        {
+                            double[] Xi = new double[sz_i];
+                            //var Mtx_ii = Mtx.GetBlock(i, i);
+                            //Mtx_ii.Solve(Xi, Bi);
+                            //this.Udiag_lublks[i - i0].BacksubsLU(this.Udiag_luipiv[i - i0], Xi, Bi);
+
+                            if (Bi.CheckForNanOrInfV(ExceptionIfFound: false) > 0) {
+                                Console.Error.WriteLine("ILU breakdown in U1 slove");
+                                return;
+                            }
+
+                            this.Udiag_inverse[i - i0].GEMV(1.0, Bi, 1.0, Xi);
+
+                            if (Xi.CheckForNanOrInfV(ExceptionIfFound: false) > 0) {
+                                Console.Error.WriteLine("ILU breakdown in U2 slove");
+                                return;
+                            }
+
+                            X.SetSubVector<double, U, double[]>(Xi, iIdxLoc, sz_i);
+                        }
+
+                    }
+                }
+            }
+
+            public override void LoTriDiagonalSolve<U, V>(U X, V B) {
+                using (new FuncTrace()) {
+                    var rowPart = part;
+                    var colPart = part;
+                    long i0 = rowPart.FirstBlock;
+                    long J = rowPart.LocalNoOfBlocks;
+                    long i0Idx = rowPart.i0;
+                    long j0Idx = colPart.i0;
+
+
+                    double[] Xtemp = null;
+
+                    for (long i = i0; i < i0 + J; i++) { // loop over block-rows
+                        int sz_i = rowPart.GetBlockLen(i);
+                        if (sz_i <= 0)
+                            continue; // empty cell;
+
+                        long iIdx = rowPart.GetBlockI0(i); // global matrix row index
+                        int iIdxLoc = checked((int)(iIdx - i0Idx)); // local row index
+
+                        long[] occBlk_i = L_OccupiedBlockColumnsPerRow[i - i0];
+                        int NB = occBlk_i.Length;
+
+                        double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
+
+                        if (NB > 0) {
+                            var Lcompr = m_BlockL_compressed[i - i0];
+                            int K = Lcompr?.NoOfCols ?? 0;
+                            if (K > 0) {
+                                if (Xtemp == null || Xtemp.Length != K)
+                                    Array.Resize(ref Xtemp, K);
+                                int oj = 0;
+                                for (int jx = 0; jx < NB; jx++) {
+                                    long j = occBlk_i[jx];
+                                    if (j != i) {
+                                        long jIdx = colPart.GetBlockI0(j);
+                                        int jIdxLoc = checked((int)(jIdx - j0Idx));
+                                        int Szj = colPart.GetBlockLen(j);
+
+                                        for (int k = 0; k < Szj; k++)
+                                            Xtemp[oj + k] = X[jIdxLoc + k];
+                                        oj += Szj;
+                                    }
+                                }
+
+                                m_BlockL_compressed[i - i0].GEMV(-1.0, Xtemp, 1.0, Bi);
+
+                                
+                                //// testcode for single precision
+                                //{
+                                //    var MTX = m_BlockL_compressed[i - i0];
+                                //    int N = MTX.NoOfRows;
+                                //    int M = MTX.NoOfCols;
+                                //    if (M != Xtemp.Length)
+                                //        throw new ArgumentException();
+
+                                //    for (int n = 0; n < N; n++) {
+                                //        float acc = 0;
+                                //        for (int m = 0; m < M; m++) {
+                                //            float MTX_nm = (float)MTX[n, m];
+                                //            float X_m = (float)Xtemp[m];
+                                //            acc += MTX_nm * X_m;
+                                //        }
+
+                                //        Bi[n] += (-1.0) * acc;
+                                //    }
+                                //}
+                            }
+                        }
+
+                        if (Bi.CheckForNanOrInfV(ExceptionIfFound:false) > 0) {
+                            Console.Error.WriteLine("ILU breakdown in L slove");
+                            return;
+                        }
+                        X.SetSubVector<double, U, double[]>(Bi, iIdxLoc, sz_i);
+                        
+                    }
+                }
+            }
+        }
+
+
+        class BackSubs_Optimized_SinglePrec : BackSubs {
+
+            IBlockPartitioning part;
+
+            //BackSubs_Optimized m_backSubsRef;
+
+            public BackSubs_Optimized_SinglePrec(BlockMsrMatrix A) : base(A) {
+                part = A._RowPartitioning;
+                if (!A._ColPartitioning.EqualsPartition(part))
+                    throw new ArgumentException();
+                //m_backSubsRef = new BackSubs_Optimized(A.CloneAs());
+
+                int J = part.LocalNoOfBlocks;
+                this.m_BlockU_compressed = new float[J][,];
+                this.m_BlockL_compressed = new float[J][,];
+
+                this.Udiag_inverse = new float[J][,];
+                this.L_OccupiedBlockColumnsPerRow = new long[J][];
+                this.U_OccupiedBlockColumnsPerRow = new long[J][];
+
+                MultidimensionalArray tempAji = null;
+                max_sz_i = 0;
+                max_row = 0;
+
+                long cell0 = part.FirstBlock;
+                for (long j = cell0; j < J + cell0; j++) {
+                    //for(long i = cell0; i < J + cell0; i++) {
+                    //    if(P1[i, j]) {
+                    long[] occRow_j = A.GetOccupiedRowBlockIndices(j);
+
+                    int Szj = part.GetBlockLen(j);
+                    max_sz_i = Math.Max(max_sz_i, Szj);
+                    if (Szj > 0) {
+                        int lenL = 0, lenU = 0, zzL = 0, zzU = 0;
+                        for (int zz = 0; zz < occRow_j.Length; zz++) {
+                            long i = occRow_j[zz];
+                            if (zz > 0 && occRow_j[zz - 1] >= occRow_j[zz])
+                                throw new ApplicationException("expecting strictly increasing data");
+
+                            int Szi = part.GetBlockLen(i);
+                            if (j > i) {
+                                // lower tri
+                                lenL += Szi;
+                                zzL++;
+                            }
+                            if (i > j) {
+                                // upper tri
+                                lenU += Szi;
+                                zzU++;
+                            }
+                        }
+                        float[,] BlockL_compressed_j = null;
+                        float[,] BlockU_compressed_j = null;
+                        if (lenU > 0) {
+                            BlockU_compressed_j = new float[Szj, lenU];
+                            this.m_BlockU_compressed[j - cell0] = BlockU_compressed_j;
+                        }
+                        if (lenL > 0) {
+                            BlockL_compressed_j = new float[Szj, lenL];
+                            m_BlockL_compressed[j - cell0] = BlockL_compressed_j;
+                        }
+                        max_row = Math.Max(max_row, lenU);
+                        max_row = Math.Max(max_row, lenL);
+                        long[] BlockL_GetOccupiedRowBlockIndices = new long[zzL];
+                        long[] BlockU_GetOccupiedRowBlockIndices = new long[zzU];
+
+                        int oL = 0, oU = 0;
+                        zzL = 0; zzU = 0;
+                        long j0 = part.GetBlockI0(j);
+                        for (int zz = 0; zz < occRow_j.Length; zz++) {
+                            long i = occRow_j[zz];
+                            int Szi = part.GetBlockLen(i);
+                            long i0 = part.GetBlockI0(i);
+                            if (Szi > 0) {
+                                if (j > i) {
+                                    tempAji = tempAji.ReuseTemp(Szj, Szi);
+                                    //A.ReadBlock(j0, i0, BlockL_compressed_j.ExtractSubArrayShallow(new int[] { 0, oL }, new int[] { Szj - 1, oL + Szi - 1 }));
+                                    A.ReadBlock(j0, i0, tempAji);
+                                    for (int n = 0; n < Szj; n++)
+                                        for (int m = 0; m < Szi; m++)
+                                            BlockL_compressed_j[n, m + oL] = (float)tempAji[n, m];
+                                    oL += Szi;
+                                    BlockL_GetOccupiedRowBlockIndices[zzL] = i; zzL++;
+                                }
+                                if (i > j) {
+                                    tempAji = tempAji.ReuseTemp(Szj, Szi);
+                                    //A.ReadBlock(j0, i0, BlockU_compressed_j.ExtractSubArrayShallow(new int[] { 0, oU }, new int[] { Szj - 1, oU + Szi - 1 }));
+                                    A.ReadBlock(j0, i0, tempAji);
+                                    for (int n = 0; n < Szj; n++)
+                                        for (int m = 0; m < Szi; m++)
+                                            BlockU_compressed_j[n, m + oU] = (float)tempAji[n, m];
+                                    oU += Szi;
+                                    BlockU_GetOccupiedRowBlockIndices[zzU] = i; zzU++;
+                                }
+                            }
+                        }
+                        Debug.Assert(oL == (BlockL_compressed_j?.GetLength(1) ?? 0));
+                        Debug.Assert(oU == (BlockU_compressed_j?.GetLength(1) ?? 0));
+
+
+                        L_OccupiedBlockColumnsPerRow[j - cell0] = BlockL_GetOccupiedRowBlockIndices;
+                        U_OccupiedBlockColumnsPerRow[j - cell0] = BlockU_GetOccupiedRowBlockIndices;
+
+                        {
+
+                            var invAjj = A.GetBlock(j, j);
+                            invAjj.InvertInPlace();
+                            Debug.Assert(invAjj.NoOfRows == Szj);
+                            Debug.Assert(invAjj.NoOfCols == Szj);
+                            float[,] invAjjf = new float[Szj, Szj];
+                            this.Udiag_inverse[j - cell0] = invAjjf;
+                            for (int n = 0; n < Szj; n++)
+                                for (int m = 0; m < Szj; m++)
+                                    invAjjf[n, m] = (float)invAjj[n, m];
+
+                            //int[] ipiv = new int[Ajj.NoOfRows];
+                            //Ajj.FactorizeLU(ipiv);
+                            //this.Udiag_lublks[j - cell0] = Ajj;
+                            //this.Udiag_luipiv[j - cell0] = ipiv;
+
+
+                        }
+                    }
+
+                }
+            }
+
+            /// <summary>
+            /// Concatenation of all upper diagonal parts of the U-factor for each block row
+            /// </summary>
+            float[][,] m_BlockU_compressed;
+
+            /// <summary>
+            /// Concatenation of all lower diagonal parts of the L-factor for each block row
+            /// </summary>
+            float[][,] m_BlockL_compressed;
+
+            /// <summary>
+            /// Global Column indices of non-zero blocks in the L-factor
+            /// - 1st index: local block-row/cell index
+            /// - 2nd index: enumeration
+            /// </summary>
+            long[][] L_OccupiedBlockColumnsPerRow;
+
+            /// <summary>
+            /// Global Column indices of non-zero blocks in the U-factor
+            /// - 1st index: local block-row/cell index
+            /// - 2nd index: enumeration
+            /// </summary>
+            long[][] U_OccupiedBlockColumnsPerRow;
+
+            /// <summary>
+            /// inverse for each diagonal block in the U-factor (upper triangle)
+            /// </summary>
+            float[][,] Udiag_inverse;
+
+
+
+            public override long UsedMemory() {
+                long ret = 0;
+                int J = part.LocalNoOfBlocks;
+                for (int j = 0; j < J; j++) {
+                    ret += (m_BlockU_compressed[j]?.Length ?? 0) * sizeof(double);
+                    ret += (m_BlockL_compressed[j]?.Length ?? 0) * sizeof(double);
+
+                    ret += (L_OccupiedBlockColumnsPerRow[j]?.Length ?? 0) * sizeof(long);
+                    ret += (U_OccupiedBlockColumnsPerRow[j]?.Length ?? 0) * sizeof(long);
+
+
+                }
+
+
+                return ret;
+            }
+
+            int max_sz_i;
+            int max_row;
+
+            public override void UpTriDiagonalSolve<U, V>(U X, V B) {
+                using (new FuncTrace()) {
+                    var rowPart = part;
+                    var colPart = part;
+                    long i0 = rowPart.FirstBlock;
+                    long J = rowPart.LocalNoOfBlocks;
+                    long i0Idx = rowPart.i0;
+                    long j0Idx = colPart.i0;
+
+                    unsafe {
+                        float* Xi = stackalloc float[max_sz_i];
+                        float* Bi = stackalloc float[max_sz_i];
+                        float* Xtemp = stackalloc float[max_row];
+
+                        for (long i = i0 + J - 1; i >= i0; i--) { // reverse loop over block-rows
+                            int sz_i = rowPart.GetBlockLen(i);
+                            if (sz_i <= 0)
+                                continue; // empty cell;
+
+                            long iIdx = rowPart.GetBlockI0(i); // global matrix row index
+                            int iIdxLoc = checked((int)(iIdx - i0Idx)); // local row index
+
+                            long[] occBlk_i = U_OccupiedBlockColumnsPerRow[i - i0];
+                            int NB = occBlk_i.Length;
+
+                            for (int n = 0; n < sz_i; n++)
+                                Bi[n] = (float)B[iIdxLoc + n];
+
+                            if (NB > 0) {
+                                var Ucompr = m_BlockU_compressed[i - i0];
+                                int K = Ucompr?.GetLength(1) ?? 0;
+                                if (K > 0) {
+
+                                    int oj = 0;
+                                    for (int jx = 0; jx < NB; jx++) {
+                                        long j = occBlk_i[jx];
+                                        if (j != i) {
+                                            long jIdx = colPart.GetBlockI0(j);
+                                            int jIdxLoc = checked((int)(jIdx - j0Idx));
+                                            int Szj = colPart.GetBlockLen(j);
+
+                                            for (int k = 0; k < Szj; k++)
+                                                Xtemp[oj + k] = (float)X[jIdxLoc + k];
+                                            oj += Szj;
+                                        }
+                                    }
+
+
+                                    fixed (float* pMtx = Ucompr) {
+                                        BLAS.sgemv('T', K, sz_i, -1.0f, pMtx, K, Xtemp, 1, 1.0f, Bi, 1);
+                                    }    
+                                }
+                            }
+
+
+
+                            Debug.Assert(this.Udiag_inverse[i - i0].GetLength(0) == sz_i);
+                            Debug.Assert(this.Udiag_inverse[i - i0].GetLength(1) == sz_i);
+                            fixed (float* pInvUdiag = this.Udiag_inverse[i - i0]) {
+                                BLAS.sgemv('T', sz_i, sz_i, 1.0f, pInvUdiag, sz_i, Bi, 1, 0.0f, Xi, 1);
+                            }
+
+                            for (int n = 0; n < sz_i; n++)
+                                X[iIdxLoc + n] = Xi[n];
+
+
+                        }
+                    }
+                }
+            }
+
+          
+            public override void LoTriDiagonalSolve<U, V>(U X, V B) {
+                using (new FuncTrace()) {
+                    var rowPart = part;
+                    var colPart = part;
+                    long i0 = rowPart.FirstBlock;
+                    long J = rowPart.LocalNoOfBlocks;
+                    long i0Idx = rowPart.i0;
+                    long j0Idx = colPart.i0;
+
+                    unsafe {
+                        float* Xtemp = stackalloc float[max_row];
+                        float* Bi = stackalloc float[max_sz_i];
+
+                        for (long i = i0; i < i0 + J; i++) { // loop over block-rows
+                            int sz_i = rowPart.GetBlockLen(i);
+                            if (sz_i <= 0)
+                                continue; // empty cell;
+
+                            long iIdx = rowPart.GetBlockI0(i); // global matrix row index
+                            int iIdxLoc = checked((int)(iIdx - i0Idx)); // local row index
+
+                            long[] occBlk_i = L_OccupiedBlockColumnsPerRow[i - i0];
+                            int NB = occBlk_i.Length;
+
+                            for (int n = 0; n < sz_i; n++)
+                                Bi[n] = (float)B[iIdxLoc + n];
+
+                            if (NB > 0) {
+                                var Lcompr = m_BlockL_compressed[i - i0];
+                                //var Lcompr_Ref = m_backSubsRef.m_BlockL_compressed[i - i0];
+                                int K = Lcompr?.GetLength(1) ?? 0;
+                                if (K > 0) {
+                                    //if (Xtemp == null || Xtemp.Length != K)
+                                    //    Array.Resize(ref Xtemp, K);
+                                    int oj = 0;
+                                    for (int jx = 0; jx < NB; jx++) {
+                                        long j = occBlk_i[jx];
+                                        if (j != i) {
+                                            long jIdx = colPart.GetBlockI0(j);
+                                            int jIdxLoc = checked((int)(jIdx - j0Idx));
+                                            int Szj = colPart.GetBlockLen(j);
+
+                                            for (int k = 0; k < Szj; k++)
+                                                Xtemp[oj + k] = (float) X[jIdxLoc + k];
+                                            oj += Szj;
+                                        }
+                                    }
+
+                                    fixed (float* pMtx = Lcompr) {
+                                        BLAS.sgemv('T', K, sz_i, -1.0f, pMtx, K, Xtemp, 1, 1.0f, Bi, 1);
+                                    }
+                                }
+                            }
+                            for (int n = 0; n < sz_i; n++)
+                                X[iIdxLoc + n] = Bi[n];
+                        }
+                    }
+                }
+            }
+        }
+
         /// <summary>
-        /// Very slow reference version, probably does not work in the presence of agglomeration
+        /// ILU, in-place version, after book of Saad (p 303);
+        /// This only considers the MPI-local part of the matrix, i.e. the ILU decomposition is MPI-rank diagonal.
         /// </summary>
-        private bool[,] GetPattern_ref() {
-            if(m_op.Mapping.MpiSize > 1)
-                throw new NotImplementedException();
+        static BlockMsrMatrix ComputeILU(int iluLevel, BlockMsrMatrix Mtx) {
+            using(var ft = new FuncTrace()) {
+                IBlockPartitioning part = Mtx._RowPartitioning;
+                Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
+                Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
+                long cell0 = part.FirstBlock;
+                int J = part.LocalNoOfBlocks;
 
-            var grd = m_op.Mapping.GridData;
-            var Mtx = m_op.OperatorMatrix;
-            IBlockPartitioning part = m_op.Mapping;
-            Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
-            Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
-            long cell0 = part.FirstBlock;
-            int J = part.LocalNoOfBlocks;
 
-            bool[,] P1 = new bool[J, J];
-            bool[,] P2 = new bool[J, J];
-            for(int i = 0; i < J; i++) { // loop over block rows
+                var A = Mtx.CloneAs();
 
+                // dbg_launch();
+                var ILUp_pattern = GetPattern(iluLevel, Mtx);
+                csMPI.Raw.Barrier(Mtx.MPI_Comm);
+                var ILUpT = ILUp_pattern.Transpose();
                 
-                //var Neighs_of_j = grd.GetCellNeighboursViaEdges(checked((int)(j - cell0))).Select(ttt => ttt.jCellLoc).ToArray();
-                //var colPattern = ArrayTools.Cat(Neighs_of_j, checked((int)(j - cell0)));
-                //foreach(int i in colPattern)
-                //    P2[j, i] = true;
-                
+                MultidimensionalArray LU_Akk_T = null, 
+                    Aik = null, AikT = null,
+                    Aij = null, Akj = null;
 
-                long[] colBlocks = Mtx.GetOccupiedRowBlockIndices(i);
-                foreach(long j in colBlocks) { // loop over block columns
-                    var Blk = Mtx.GetBlock(j, i);
-                    if(Blk.L2Norm() > 0)
-                        P2[i, j] = true;
-                    else
-                        Console.WriteLine("Mem occupied, but the block is 0");
-                }
+                for (long k = cell0; k < (cell0 + J - 1); k++) { // Iteration over matrix (rows and columns)
+                    int sz_k = part.GetBlockLen(k);
+                    if(sz_k <= 0)
+                        continue; // cell i is empty
 
-
-                for(int j = 0; j < J; j++) { // loop over block columns
-                    long iB = part.GetBlockI0(j);
-                    long jB = part.GetBlockI0(i);
-                    int sz_i = part.GetBlockLen(j);
-                    int sz_j = part.GetBlockLen(i);
-
-                    var Mji = MultidimensionalArray.Create(sz_i, sz_j);
-                    m_op.OperatorMatrix.ReadBlock(jB, iB, Mji);
-                    if(Mji.L2Norm() > 0)
-                        P1[i, j] = true;
+                    //var invAkk = A.GetBlock(k, k);
                     
-                }
-            }
-            
+                    //LU_Akk_T = A.GetBlock(k, k);
+                    int Szk = part.GetBlockLen(k);
+                    long Idxk = part.GetBlockI0(k);
+                    LU_Akk_T = LU_Akk_T.ReuseTemp(Szk, Szk);
+                    A.ReadBlock(Idxk, Idxk, LU_Akk_T);
+                    LU_Akk_T.TransposeInPlace();
 
-            for(int j = 0; j < J; j++) {
-                for(int i = 0; i < J; i++) {
-                    Debug.Assert(P1[i, j] == P2[i, j], "cell neighborship differs from occupancy pattern");
-                    Debug.Assert(P1[i, j] == P1[j, i], "missing structural symmetry");
-                }
-            }
+                    int[] _ipiv = new int[LU_Akk_T.NoOfRows];
+                    try {
+                        //invAkk.InvertInPlace();
 
-            return P1;
+                        LU_Akk_T.FactorizeLU(_ipiv);
+                        LU_Akk_T.CheckForNanOrInf();
+                    } catch(ArithmeticException ae) {
+                        Console.Error.WriteLine(ae.GetType() + ": " + ae.Message);
+                        continue;
+                    }
+
+                    long[] occColumn_k = ILUpT.GetOccupiedColumnIndices(k);
+                    foreach(long i in occColumn_k) { 
+                    //for(long i = k + 1; i < (cell0 + J); i++) {
+                    //    Debug.Assert(i > k);
+                    //    if(P1[i, k]) {
+                        if(i >= k + 1) {
+                            
+                            //Aik = A.GetBlock(i, k);
+                            int Szi = part.GetBlockLen(i);
+                            long Idxi = part.GetBlockI0(i);
+                            Aik = Aik.ReuseTemp(Szi, Szk);
+                            A.ReadBlock(Idxi, Idxk, Aik);
+
+                            // Compute: Aik = Aik*inv(Akk) via LU decomposition
+                            AikT = AikT.ReuseTemp(Szk, Szi);
+                            Aik.TransposeTo(AikT);
+                            LU_Akk_T.BacksubsLU(_ipiv, AikT, AikT);
+                            AikT.TransposeTo(Aik);
+                            Aik.CheckForNanOrInf();
+                            A.SetBlock(Aik, i, k); 
+
+                            long[] occRow_i = ILUp_pattern.GetOccupiedColumnIndices(i);
+                            
+                            // L(Bk,Bi) = U(Bk,Bi)*invUii
+                            foreach(long j in occRow_i) { 
+                                if(j >= k + 1) {
+                                    //Aij = A.GetBlock(i, j);
+                                    //Akj = A.GetBlock(k, j);
+                                    int Szj = part.GetBlockLen(j);
+                                    long Idxj = part.GetBlockI0(j);
+                                    Aij = Aij.ReuseTemp(Szi, Szj);
+                                    Akj = Akj.ReuseTemp(Szk, Szj);
+                                    A.ReadBlock(Idxi, Idxj, Aij);
+                                    A.ReadBlock(Idxk, Idxj, Akj);
+
+                                    Aij.GEMM(-1, Aik, Akj, 1.0);
+                                    A.SetBlock(Aij, i, j);
+                                }
+                            }
+
+                        } else {
+                            //if(occColumn_k.Contains(i))
+                            //    throw new Exception($"fuck: P1[{i},{k}] = {P1[i, k]} //  {ILUpT[i, k]}  {m_ILUp_pattern[i, k]} ");
+                        }
+                    }
+                }
+
+                return A;
+
+                
+            }
         }
-        */
 
+       
 
         public int ILU_level = 1;
 
+
+        static int[] RandomPermute(int JC) {
+            // random permute of aggregation cells
+            int[] R = new int[JC];
+            R.SetAll(-1);
+            Random rnd = new Random();
+            //Console.Write(" perm: ");
+            for (int jc = 0; jc < JC; jc++) {
+                int jDest = rnd.Next(JC);
+                while (R[jDest] >= 0) {
+                    jDest = (jDest + 1) % JC;
+                }
+
+                //Console.Write($" {jc}>{jDest}");
+                R[jDest] = jc;
+            }
+            //Console.WriteLine();
+
+            return R;
+        }
+
+        static private int[] CuthillMcKeyPerm(BlockMsrMatrix Mtx, bool reverse) {
+            if (!Mtx._RowPartitioning.EqualsPartition(Mtx._ColPartitioning))
+                throw new ApplicationException();
+
+            var part = Mtx._RowPartitioning;
+            MsrMatrix Adj = GetPattern(0, Mtx);
+
+            int JC = part.LocalNoOfBlocks;
+
+            BitArray added = new BitArray(JC);
+            int[] AdjRest(int jc) {
+                long i0Adj = Adj.RowPartitioning.i0;
+                long[] ColIdx = null;
+                Adj.GetOccupiedColumnIndices(jc + i0Adj, ref ColIdx);
+
+                return ColIdx.Where(jneigh => jneigh != (jc + i0Adj)  && !added[checked((int)(jneigh - i0Adj))])
+                    .Select(jneigh => checked((int)(jneigh - i0Adj)))
+                    .ToArray();
+            }
+
+            int Degree(int jc) {
+                long i0Adj = Adj.RowPartitioning.i0;
+                return Adj.GetNoOfOffDiagonalNonZerosPerRow(jc + i0Adj);
+            }
+
+            List<int> R = new List<int>(new int[] { 0 }); added[0] = true;
+            for (int i = 0; R.Count < JC; i++) {
+                int Ri = R[i];
+
+                int[] Ai = AdjRest(Ri);
+                Debug.Assert(Ai.Where(a => added[a]).Count() == 0);
+                if (Ai.Length > 0) {
+                    int[] Degs = Ai.Select(a => Degree(a)).ToArray();
+
+                    Array.Sort(Degs, Ai);
+
+                    R.AddRange(Ai);
+                    foreach (var k in Ai)
+                        added[k] = true;
+                }
+            }
+
+            if (R.Count != JC)
+                throw new ApplicationException("Cuthill-McKey internal error.");
+
+            /*
+            int[][] ret = new int[JC][];
+            for (int j = 0; j < JC; j++) {
+                if (reverse)
+                    ret[JC - j - 1] = AggCells[R[j]];
+                else
+                    ret[j] = AggCells[R[j]];
+            }*/
+            if (reverse) {
+                int[] ret = new int[JC];
+                for (int j = 0; j < JC; j++) {
+                    ret[JC - j - 1] = R[j];
+                }
+                return ret;
+            } else {
+                return R.ToArray();
+            }
+        }
+
+
+        static private BlockMsrMatrix GetPermMatrix(BlockMsrMatrix Mtx, bool reverse) {
+            if (!Mtx._RowPartitioning.EqualsPartition(Mtx._ColPartitioning))
+                throw new ApplicationException();
+
+            var part = Mtx._RowPartitioning;
+            int J = Mtx._RowPartitioning.LocalNoOfBlocks;
+
+            int[] perm = CuthillMcKeyPerm(Mtx, reverse);
+            //int[] perm = RandomPermute(J);
+            //perm = J.ForLoop(j => J - j - 1);
+            BitArray check = new BitArray(J);
+            for(int j = 0; j < J; j++) {
+                if (check[perm[j]])
+                    throw new ArgumentException("double");
+                check[perm[j]] = true;
+            }
+            for (int j = 0; j < J; j++) {
+                if (!check[perm[j]])
+                    throw new ArgumentException("missing");
+            }
+
+            BlockMsrMatrix P = new BlockMsrMatrix(part, part);
+
+
+            //perm = J.ForLoop(i => i);
+
+            for(int j = 0; j < J; j++) {
+                int i = perm[j];
+                //long row_idx = part.GetBlockI0(j0 + j);
+                //long col_idx = part.GetBlockI0(j0 + i);
+
+                int NoRow = part.GetBlockLen(j);
+                int NoCol = part.GetBlockLen(i);
+
+                var Eye = MultidimensionalArray.Create(NoRow, NoCol);
+                Eye.AccEye(1.0);
+                P.SetBlock(Eye, j + part.FirstBlock, i + part.FirstBlock);
+            }
+
+            double[] test = new double[part.LocalLength];
+            long partI0 = part.i0;
+            for (int j = 0; j < J; j++) {
+                int NoRow = part.GetBlockLen(j);
+                long BlkI0 = part.GetBlockI0(j);
+                for(int i = 0; i < NoRow; i++) {
+                    test[i + BlkI0 - partI0] = j;
+                }
+            }
+
+            double[] testOut = new double[test.Length];
+            P.SpMV(1.0, test, 0.0, testOut);
+            for (int j = 0; j < J; j++) {
+                int NoRow = part.GetBlockLen(j);
+                long BlkI0 = part.GetBlockI0(j);
+                for (int i = 0; i < NoRow; i++) {
+                    if(testOut[i + BlkI0 - partI0] != perm[j]) {
+                        throw new ArgumentException("perm matrix fubar");
+                    }
+                }
+            }
+
+            return P;
+        }
+
+
+
         /// <summary>
-        /// Optimized version
+        /// Obtain occupancy pattern of a <see cref="BlockMsrMatrix"/>;
+        /// this is also an adjacency matrix.
         /// </summary>
-        private MsrMatrix GetPattern(out int Occupied) {
+        /// <returns>
+        /// A matrix with one entry for each block of the input matrix <paramref name="Mtx"/>
+        /// </returns>
+        static private MsrMatrix GetPattern(int ILU_level, BlockMsrMatrix Mtx) {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
-                if(m_op.Mapping.MpiSize > 1)
-                    throw new NotImplementedException();
+                //tr.InfoToConsole = true;
+
                 if(ILU_level < 0)
                     throw new ArgumentException("ILU-Level must be >= 0, got " + ILU_level);
                 if(ILU_level > Math.Min((int)(byte.MaxValue), 10))
                     throw new ArgumentException("ILU-Level must be <= 10, got " + ILU_level);
 
-                var grd = m_op.Mapping.GridData;
-                var Mtx = m_op.OperatorMatrix;
-                IBlockPartitioning part = m_op.Mapping;
+                //var grd = m_op.Mapping.GridData;
+                //var Mtx = m_op.OperatorMatrix;
+                IBlockPartitioning part = Mtx._RowPartitioning;
                 Debug.Assert(part.EqualsPartition(Mtx._RowPartitioning), "mismatch in row partition");
                 Debug.Assert(part.EqualsPartition(Mtx._ColPartitioning), "mismatch in column partition");
                 long cell0 = part.FirstBlock;
@@ -428,27 +1507,41 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 //byte[,] lev = new byte[J, J];
                 //lev.SetAll(byte.MaxValue);
 
-                // determinte ILU-0 pattern
+                // determine ILU-0 pattern
                 tr.Info("computing ILU(0) pattern...");
-                var p = new Partitioning(J, csMPI.Raw._COMM.SELF);
+                var p = new Partitioning(J, Mtx.MPI_Comm);
                 var ILU0_pattern = new MsrMatrix(p, p);
                 for(long i = cell0; i < (J + cell0); i++) { // loop over block rows
                     //long iB = part.GetBlockI0(i);
                     //int sz_i = part.GetBlockLen(i);
 
-                    long[] colBlocks = Mtx.GetOccupiedRowBlockIndices(i);
+                    long[] colBlocks = Mtx.GetOccupiedRowBlockIndices(i, alsoExternal: false);
                     foreach(long j in colBlocks) { // loop over block columns
-                        var Blk = Mtx.GetBlock(j, i);
-                        if(Blk.L2Norm() > 0) {
+                        var Blk = Mtx.GetBlock(i, j);
+                        if(!Blk.IsZeroValued()) {
                             //lev[i, j] = 0;
                             ILU0_pattern[i, j] = 1;
                         } else {
+                            /*
+                             * seems to happen sometimes in the XDG case
+                             * 
+                             * 
+                            int RowType = Mtx._RowPartitioning.GetBlockType(i);
+                            int ColType = Mtx._ColPartitioning.GetBlockType(j);
+                            int[] rowI0s = Mtx._RowPartitioning.GetSubblk_i0(RowType);
+                            int[] colI0s = Mtx._ColPartitioning.GetSubblk_i0(ColType);
+                            int[] rowLns = Mtx._RowPartitioning.GetSubblkLen(RowType);
+                            int[] colLns = Mtx._ColPartitioning.GetSubblkLen(ColType);
+                            int II = Mtx._RowPartitioning.GetBlockLen(i);
+                            int JJ = Mtx._RowPartitioning.GetBlockLen(j);
+
                             tr.Info("Mem occupied, but the block is 0");
+                            */
                         }
                     }
                 }
                 //ILU0pattern.SaveToTextFileSparse("ILU0.txt");
-                Console.WriteLine("done.");
+
                 MsrMatrix ILUp_pattern = ILU0_pattern;
                 for(int iLevel = 1; iLevel <= ILU_level; iLevel++) {
                     tr.Info($"computing ILU({iLevel}) pattern...");
@@ -471,12 +1564,13 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info("done.");
                 }
 
-                Occupied = 0;
+             
                 //bool[,] ret = new bool[J, J];
-                for(int j = 0; j < J; j++) {
+                /*
+                for(long j = cell0; j < (J + cell0); j++) {
 
                     long[] rowPattern = ILUp_pattern.GetOccupiedColumnIndices(j);
-                    /*
+                    
                     var checkPattern = new List<long>();
 
                     for(int i = 0; i < J; i++) {
@@ -493,30 +1587,33 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(!rowPattern.SetEquals(checkPattern)) {
                         throw new Exception();
                     }
-                    */
+                    
                 }
-
-                m_ILUp_pattern = ILUp_pattern;
-                return m_ILUp_pattern;
+                */
+                //m_ILUp_pattern = ILUp_pattern;
+                return ILUp_pattern;
             }
         }
 
-        MsrMatrix m_ILUp_pattern;
-
-        void CheckILU() {
+        
+        /// <summary>
+        /// Verifies that, within the occupancy pattern of <paramref name="OperatorMatrix"/>,
+        /// the product of <paramref name="m_BlockU"/>*<paramref name="m_BlockL"/> is equal to the <paramref name="OperatorMatrix"/>
+        /// </summary>
+        static void CheckILU(int ILU_level, BlockMsrMatrix OperatorMatrix, BlockMsrMatrix m_BlockU, BlockMsrMatrix m_BlockL) {
             using(new FuncTrace()) {
                 BlockMsrMatrix LxU = BlockMsrMatrix.Multiply(m_BlockL, m_BlockU);
                 BlockMsrMatrix Lc = m_BlockL.CloneAs();
                 BlockMsrMatrix Uc = m_BlockU.CloneAs();
 
 
-                var P1 = GetPattern(out _);
+                var P1 = GetPattern(ILU_level, OperatorMatrix);
 
 
-                var grd = m_op.Mapping.GridData;
+                //var grd = m_op.Mapping.GridData;
 
                 BlockMsrMatrix ErrMtx = LxU.CloneAs();
-                ErrMtx.Acc(-1, m_op.OperatorMatrix);
+                ErrMtx.Acc(-1, OperatorMatrix);
                 double totErr = ErrMtx.InfNorm();
                 Console.WriteLine("|ILU - Mtx| : " + totErr);
 
@@ -549,7 +1646,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             var B = MultidimensionalArray.Create(sz_j, sz_k);
 
                             LxU.ReadBlock(jRow, kRow, A);
-                            m_op.OperatorMatrix.ReadBlock(jRow, kRow, B);
+                            OperatorMatrix.ReadBlock(jRow, kRow, B);
 
                             double dist_kj = A.L2Dist(B);
                             //Console.WriteLine($"dist[{k}, {j}] = {dist_kj}");
@@ -599,115 +1696,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        void LoTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, U X, V B, bool diagEye)
-            where U : IList<double>
-            where V : IList<double>  //
-        {
-            using(new FuncTrace()) {
-                var rowPart = Mtx._RowPartitioning;
-                var colPart = Mtx._ColPartitioning;
-                long i0 = rowPart.FirstBlock;
-                long J = rowPart.LocalNoOfBlocks;
-                long i0Idx = rowPart.i0;
-                long j0Idx = colPart.i0;
+     
 
+        
+   
 
-                for(long i = i0; i < i0 + J; i++) {
-                    int sz_i = rowPart.GetBlockLen(i);
-                    if(sz_i <= 0)
-                        continue; // empty cell;
-
-                    if(colPart.GetBlockLen(i) <= 0)
-                        throw new NotSupportedException("cannot do (lower) trigonal solve on non-quadratic zero diagonal block");
-
-                    long iIdx = rowPart.GetBlockI0(i);
-                    int iIdxLoc = checked((int)(iIdx - i0Idx));
-
-                    double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
-
-                    long[] jS = Mtx.GetOccupiedRowBlockIndices(i);
-                    foreach(long j in jS) {
-                        if(j >= i) // ignore everything above the diagonal
-                            continue;
-                        int sz_j = colPart.GetBlockLen(j);
-                        if(sz_j <= 0)
-                            continue;
-
-                        long jIdx = colPart.GetBlockI0(j);
-                        int jIdxLoc = checked((int)(jIdx - j0Idx));
-
-                        double[] Xj = X.GetSubVector(jIdxLoc, sz_j);
-                        var Mtx_ij = Mtx.GetBlock(i, j);
-
-                        Mtx_ij.GEMV(-1.0, Xj, 1.0, Bi);
-                    }
-
-                    if(diagEye) {
-                        X.SetSubVector<double, U, double[]>(Bi, iIdxLoc, sz_i);
-                    } else {
-                        double[] Xi = new double[sz_i];
-                        var Mtx_ii = Mtx.GetBlock(i, i);
-                        Mtx_ii.Solve(Xi, Bi);
-                        X.SetSubVector<double, U, double[]>(Xi, iIdxLoc, sz_i);
-                    }
-                }
-            }
-        }
-
-
-        void UpTriDiagonalSolve<U, V>(BlockMsrMatrix Mtx, U X, V B, bool diagEye)
-            where U : IList<double>
-            where V : IList<double>  //
-        {
-            using(new FuncTrace()) {
-                var rowPart = Mtx._RowPartitioning;
-                var colPart = Mtx._ColPartitioning;
-                long i0 = rowPart.FirstBlock;
-                long J = rowPart.LocalNoOfBlocks;
-                long i0Idx = rowPart.i0;
-                long j0Idx = colPart.i0;
-
-
-                for(long i = i0 + J - 1; i >= i0; i--) {
-                    int sz_i = rowPart.GetBlockLen(i);
-                    if(sz_i <= 0)
-                        continue; // empty cell;
-
-                    if(colPart.GetBlockLen(i) <= 0)
-                        throw new NotSupportedException("cannot do (upper) trigonal solve on non-quadratic zero diagonal block");
-
-                    long iIdx = rowPart.GetBlockI0(i);
-                    int iIdxLoc = checked((int)(iIdx - i0Idx));
-
-                    double[] Bi = B.GetSubVector(iIdxLoc, sz_i);
-
-                    long[] jS = Mtx.GetOccupiedRowBlockIndices(i);
-                    foreach(long j in jS) {
-                        if(j <= i) // ignore everything below the diagonal
-                            continue;
-                        int sz_j = colPart.GetBlockLen(j);
-                        if(sz_j <= 0)
-                            continue;
-
-                        long jIdx = colPart.GetBlockI0(j);
-                        int jIdxLoc = checked((int)(jIdx - j0Idx));
-
-                        double[] Xj = X.GetSubVector(jIdxLoc, sz_j);
-                        var Mtx_ij = Mtx.GetBlock(i, j);
-
-                        Mtx_ij.GEMV(-1.0, Xj, 1.0, Bi);
-                    }
-
-                    if(diagEye) {
-                        X.SetSubVector<double, U, double[]>(Bi, iIdxLoc, sz_i);
-                    } else {
-                        double[] Xi = new double[sz_i];
-                        var Mtx_ii = Mtx.GetBlock(i, i);
-                        Mtx_ii.Solve(Xi, Bi);
-                        X.SetSubVector<double, U, double[]>(Xi, iIdxLoc, sz_i);
-                    }
-                }
-            }
-        }
     }
 }

@@ -282,7 +282,7 @@ namespace BoSSS.Solution.Gnuplot {
         public bool LogY2;
 
         /// <summary>
-        /// y-range minimum, optional 
+        /// x-range minimum, optional 
         /// </summary>
         [DataMember]
         public double? XrangeMin = null;
@@ -456,22 +456,43 @@ namespace BoSSS.Solution.Gnuplot {
         /// <summary>
         /// Optional Gnuplot left margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? lmargin = null;
 
         /// <summary>
         /// Optional Gnuplot right margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? rmargin = null;
 
         /// <summary>
         /// Optional Gnuplot top margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? tmargin = null;
 
         /// <summary>
         /// Optional Gnuplot bottom margin, units are character heights or widths.
         /// </summary>
+        [DataMember]
         public double? bmargin = null;
+
+        /// <summary>
+        /// Additional gnuplot commands
+        /// </summary>
+        [DataMember]
+        public string[] GnuplotCommandsB4Plotting;
+
+
+        /// <summary>
+        /// Appends <paramref name="cmd"/> to <see cref="GnuplotCommandsB4Plotting"/>
+        /// </summary>
+        public void AddGnuplotCommand(string cmd) {
+            Array.Resize(ref GnuplotCommandsB4Plotting, (GnuplotCommandsB4Plotting?.Length ?? 0) + 1);
+            GnuplotCommandsB4Plotting[GnuplotCommandsB4Plotting.Length - 1] = cmd;
+        }
+
+
 
         /// <summary>
         /// Modify Format, so all lines look distinct
@@ -863,8 +884,8 @@ namespace BoSSS.Solution.Gnuplot {
 
         /// <summary>
         /// Saves two text files: 
-        /// 1) A tabular summary of the stored data, see <see cref="SaveTabular(string)"/>
-        /// 2) A table of the linear regression values, see <see cref="Regression()"/>
+        /// 1) A tabular summary of the stored data, see <see cref="SaveTabular"/>
+        /// 2) A table of the linear regression values, see <see cref="Regression"/>
         /// File name convention:
         /// 1) <paramref name="path"/>+Data.txt
         /// 1) <paramref name="path"/>+Rgrs.txt 
@@ -872,6 +893,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="path">
         /// Path to file
         /// </param>
+        /// <param name="writeGroupName"></param>
         public void SaveTextFileToPublish(string path, bool writeGroupName = true) {
             // writing data
             string pathWithoutExt = System.IO.Path.ChangeExtension(path, null);
@@ -1084,7 +1106,6 @@ namespace BoSSS.Solution.Gnuplot {
         /// groupName2  3   2
         /// </code>
         /// </summary>
-        /// <param name="path">File path</param>
         public void SaveTabular(string path, bool writeGroupName) {
             using (StreamWriter s = new StreamWriter(path)) {
                 if (writeGroupName) {
@@ -1286,9 +1307,9 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowLegend) {
                     gp.Cmd("unset key");
-                    string command= $"set key font \",{this.LegendFont}\" ";
+                    string command = $"set key font \",{this.LegendFont}\" ";
 
-                    if ((this.LegendPosition != null) & (this.LegendAlignment != null))
+                    if ((this.LegendPosition != null) && (this.LegendAlignment != null))
                         System.Console.Error.WriteLine("legend position and legend alignment is set. Choose only one of them! Ignoring alignment ...");
 
                     if (this.LegendPosition != null) {
@@ -1338,7 +1359,7 @@ namespace BoSSS.Solution.Gnuplot {
                     if (this.LegendBox == true)
                         command += "box opaque ";
 
-                    System.Console.WriteLine(command);
+                    //System.Console.WriteLine(command);
                     gp.Cmd(command);
                 } else {
                     gp.Cmd("set key off");
@@ -1351,7 +1372,7 @@ namespace BoSSS.Solution.Gnuplot {
             {
                 if (this.ShowXtics) {
                     if (this.LogX){
-                        gp.Cmd("set xtics format \"$" + this.LogBaseX + "^{%L}$\" ");
+                        gp.Cmd("set xtics format \"" + this.LogBaseX + "^{%L}\" ");
                         gp.Cmd("set xtics offset 0, 0-0.4 font \"sans, 18\" ");
                         gp.Cmd($"set xtics font \"sans, {this.LabelFont}\" ");
                     }
@@ -1363,7 +1384,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowX2tics) {
                     if (this.LogX2)
-                        gp.Cmd("set x2tics format \"$" + this.LogBaseX + "^{%L}$\" ");
+                        gp.Cmd("set x2tics format \"" + this.LogBaseX + "^{%L}\" ");
                     else
                         gp.Cmd("set x2tics ");
                 } else {
@@ -1372,7 +1393,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowYtics) {
                     if (this.LogY){
-                        gp.Cmd("set ytics format \"$" + this.LogBaseY + "^{%L}$\" ");
+                        gp.Cmd("set ytics format \"" + this.LogBaseY + "^{%L}\" ");
                         gp.Cmd($"set ytics font \"sans, {this.LabelFont}\" ");
                     }else
                         gp.Cmd("set ytics ");
@@ -1382,7 +1403,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowY2tics) {
                     if (this.LogY2)
-                        gp.Cmd("set y2tics format \"$" + this.LogBaseY + "^{%L}$\" ");
+                        gp.Cmd("set y2tics format \"" + this.LogBaseY + "^{%L}\" ");
                     else
                         gp.Cmd("set y2tics ");
                 } else {
@@ -1391,8 +1412,18 @@ namespace BoSSS.Solution.Gnuplot {
                 }
             }
 
-
-
+            // ===================
+            // additional commands 
+            // ===================
+            {
+                if(this.GnuplotCommandsB4Plotting != null) {
+                    foreach(var s in this.GnuplotCommandsB4Plotting) {
+                        if (!s.IsEmptyOrWhite())
+                            gp.Cmd(s);
+                    }
+                }
+            }
+                
 
             // =================
             // finally, plotting
@@ -1405,6 +1436,10 @@ namespace BoSSS.Solution.Gnuplot {
                 gp.WriteDeferredPlotCommands();
             }
         }
+
+
+
+        
 
     }
 }

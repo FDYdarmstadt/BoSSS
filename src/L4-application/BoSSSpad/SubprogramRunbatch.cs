@@ -10,6 +10,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Solution.Control;
 using CommandLine;
 using CommandLine.Text;
+using ilPSP;
 
 namespace BoSSS.Application.BoSSSpad {
     
@@ -19,13 +20,13 @@ namespace BoSSS.Application.BoSSSpad {
     static class SubprogramRunbatch {
 
         /// <summary>
-        /// Variables parsed form command line using <see cref="CommandLine.CommandLineParser"/>.
+        /// Variables parsed form command line using <see cref="CommandLine.Parser.ParseArguments{T}(IEnumerable{string})"/>.
         /// </summary>
         [Serializable]
         public sealed class CommandLineOptions {
 
            
-
+            /*
             /// <summary>
             /// help
             /// </summary>
@@ -40,6 +41,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 return help;
             }
+            */
 
             /*
             /// <summary>
@@ -72,54 +74,57 @@ namespace BoSSS.Application.BoSSSpad {
             /// Override for the project name in the control file (<see cref="AppControl.ProjectName"/>), resp. the 
             /// session information (<see cref="ISessionInfo.ProjectName"/>).
             /// </summary>
-            [Option("P", "prjnmn", HelpText = "The project name assigned to the job; this is only an aid for post-processing to better filter for jobs in the workflow management.")]
-            public string ProjectName = null;
+            [Option('P', "prjnmn", HelpText = "The project name assigned to the job; this is only an aid for post-processing to better filter for jobs in the workflow management.")]
+            public string ProjectName { get; set; }
 
 
             /// <summary>
             /// Optional name for a computation, override to <see cref="AppControl.SessionName"/>.
             /// </summary>
-            [Option("N", "sesnmn", HelpText = "optional name for the compute session.")]
-            public string SessionName = null;
+            [Option('N', "sesnmn", HelpText = "optional name for the compute session.")]
+            public string SessionName { get; set; }
 
             /// <summary>
             /// Tracing of all namespaces on.
             /// </summary>
-            [Option(null, "fulltracing", HelpText = "Mainly for debugging purpose, turns tracing of all namespaces on, trace-files will be created.")]
-            public bool fullTracing = false;
-                        
+            [Option('F', "fulltracing", HelpText = "Mainly for debugging purpose, turns tracing of all namespaces on, trace-files will be created.")]
+            public bool fullTracing { get; set; }
+
             /// <summary>
             /// path to control file
             /// </summary>
-            [Option("c", "control", HelpText = "path to control file - or  - when starting with the prefix 'cs:', a single line of C#-code which results in a control object.", Required = true)]
-            public string ControlfilePath = null;
+            [Option('c', "control", HelpText = "path to control file - or  - when starting with the prefix 'cs:', a single line of C#-code which results in a control object.", Required = true)]
+            public string ControlfilePath { get; set; }
 
             /// <summary>
             /// tags which will be added to the session information.
             /// </summary>
-            [Option("t", "tags", HelpText = "tags which will be added to the session information when saved in the database, separated by comma (',').")]
-            public string TagsToAdd = null;
+            [Option('t', "tags", HelpText = "tags which will be added to the session information when saved in the database, separated by comma (',').")]
+            public string TagsToAdd { get; set; }
 
             /// <summary>
             /// no of MPI procs
             /// </summary>
-            [Option("n", "noofMPIprocs", HelpText = "number of MPI processes requested.", Required = true)]
-            public int np = 1;
+            [Option('n', "noofMPIprocs", HelpText = "number of MPI processes requested.", Required = true)]
+            public int np { get; set; }
 
             /// <summary>
             /// <see cref="BatchProcessorClient.Name"/>, <see cref="BoSSSshell.ExecutionQueues"/>
             /// </summary>
-            [Option("q", "queue", HelpText ="Name or (zero-based) index of the requested batch processor in ~/.BoSSS/etc/BatchProcessorConfig.json", Required = true)]
-            public string queue = "";
+            [Option('q', "queue", HelpText ="Name or (zero-based) index of the requested batch processor in ~/.BoSSS/etc/BatchProcessorConfig.json", Required = true)]
+            public string queue { get; set; }
 
             /// <summary>
             /// Name of the solver to run.
             /// </summary>
-            [Option("s", "solver", HelpText = "Name of the solver to run.", Required = true)]
-            public string SolverName = "";
+            [Option('s', "solver", HelpText = "Name of the solver to run.", Required = true)]
+            public string SolverName { get; set; }
         }
-
+        
         static BatchProcessorClient GetQueue(string id) {
+            if(id.IsEmptyOrWhite())
+                return BoSSSshell.GetDefaultQueue();
+
             if(int.TryParse(id, out int idx)) {
                 return BoSSSshell.ExecutionQueues[idx];
 
@@ -131,13 +136,16 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         public static int RunBatch(string[] args) {
-            
 
-            CommandLineOptions opt = new CommandLineOptions();
-            ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-            bool argsParseSuccess = parser.ParseArguments(args, opt);
-            
-            if(!argsParseSuccess) {
+
+            //CommandLineOptions opt = new CommandLineOptions();
+            //ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+            //bool argsParseSuccess = parser.ParseArguments(args, opt);
+            var CmdlineParseRes = Parser.Default.ParseArguments<CommandLineOptions>(args);
+            bool argsParseSuccess = !CmdlineParseRes.Errors.Any();
+            CommandLineOptions opt = CmdlineParseRes.Value;
+
+            if (!argsParseSuccess) {
                 Console.Error.WriteLine("Unable to parse arguments.");
                 return -41;
             }
@@ -148,7 +156,7 @@ namespace BoSSS.Application.BoSSSpad {
             string project = opt.ProjectName ?? "NixProject";
 
 
-            BoSSSshell.WorkflowMgm.Init(project);
+            BoSSSshell.WorkflowMgm.Init(project, queue);
 
             if(opt.np < 1) {
                 throw new ArgumentException("Number of MPI processors must be a positive number (greater or equal than 1).");

@@ -451,7 +451,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int AllreadyFound = FoundPairings[jCell1] == null ?
                         0 : FoundPairings[jCell1].Where(tp => tp.Item1 == jCell2 && tp.Item2 == iFace1).Count();
                     if (AllreadyFound > 1)
-                        throw new ApplicationException("Error in algorithmus.");
+                        throw new ApplicationException("Error in algorithm.");
                     if (AllreadyFound > 0)
                         continue;
 
@@ -480,7 +480,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                             continue;
 
 
-                        NodeSet Ns2 = new NodeSet(Kref_j2, pt);
+                        NodeSet Ns2 = new NodeSet(Kref_j2, pt, false);
                         MultidimensionalArray Normals2 = MultidimensionalArray.Create(1, D);
                         gdat.Edges.GetNormalsForCell(Ns2, jCell2, iFace2, Normals2);
 
