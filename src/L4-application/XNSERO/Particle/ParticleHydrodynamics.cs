@@ -152,7 +152,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="hydrodynamics"></param>
         private double[] HydrodynamicsRelaxation(double[] hydrodynamics, ref double omega) {
             m_ForcesAndTorqueWithoutRelaxation.Insert(0, hydrodynamics.CloneAs());
-            return m_ForcesAndTorqueWithoutRelaxation.Count > 3 ? AitkenRelaxation(hydrodynamics, ref omega) : StaticUnderrelaxation(hydrodynamics);
+            return m_ForcesAndTorqueWithoutRelaxation.Count > 2 ? AitkenRelaxation(hydrodynamics, ref omega) : StaticUnderrelaxation(hydrodynamics);
         }
 
         private double[] StaticUnderrelaxation(double[] variable) {

@@ -339,6 +339,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 CalculateParticlePositionAndAngle(Particles, dt);
                 for (int p = 0; p < Particles.Length; p++) {
                     Console.WriteLine("Position of particle " + p + ": " + Particles[p].Motion.GetPosition(0));
+                    Console.WriteLine("Velocity of particle " + p + ": " + Particles[p].Motion.GetTranslationalVelocity(0));
                 }
                 LogPhysicalData(phystime, TimestepNo);
                 Console.WriteLine($"done with time step {TimestepNo}");
@@ -370,13 +371,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="DetermineOnlyOverlap">
         /// Set true if you are only interested in overlapping particles and not the actual distance between different particles, e.g. as check for the initialization of static particles. 
         /// </param>
-        private void CalculateCollision(Particle[] Particles, double dt, bool DetermineOnlyOverlap = false) {
+        private void CalculateCollision(Particle[] Particles, double dt) {
             using (new FuncTrace()) {
                 int[][] potentialCollisionPartners = new int[Particles.Length][];
                 for (int p = 0; p < Particles.Length; p++) {
                     Particles[p].IsCollided = false;
                 }
-                ParticleCollision Collision = new(MaxGridLength, CoefficientOfRestitution, dt, Control.WallPositionPerDimension, Control.BoundaryIsPeriodic, 0, DetermineOnlyOverlap);
+                ParticleCollision Collision = new(MaxGridLength, CoefficientOfRestitution, dt, Control.WallPositionPerDimension, Control.BoundaryIsPeriodic);
                 Collision.Calculate(Particles, CollisionTree);
             }
         }

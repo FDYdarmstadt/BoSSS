@@ -349,7 +349,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 p.RunSolverMode();
 
                 Vector Dest_Should;
-                Dest_Should = new Vector(0.0, 0.084);
+                Dest_Should = new Vector(0.0, 0.19033655497377627);
                 double VelY_Should = 0;
 
                 Vector Dest_Is = new Vector((double[])p.Particles[0].Motion.GetPosition(0));

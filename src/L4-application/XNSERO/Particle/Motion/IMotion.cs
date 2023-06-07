@@ -204,7 +204,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calls the calculation of the position and angle during the calculation of the collisions.
         /// </summary>
         /// <param name="dt"></param>
-        public void CollisionParticlePositionAndAngle(double collisionDynamicTimestep);
+        public void MoveParticleDuringCollision(double collisionDynamicTimestep);
 
         /// <summary>
         /// Calls the calculation of the velocity.

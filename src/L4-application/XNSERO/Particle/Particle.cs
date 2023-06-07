@@ -184,7 +184,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             BitArray CellArray = AllCutCells.GetBitMask();
             BitArray ContainArray = new(CellArray.Length);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            double h = LsTrk.GridDat.Cells.h_maxGlobal;
+            double h = 1;// LsTrk.GridDat.Cells.h_maxGlobal;
             for (int i = 0; i < CellArray.Length; i++) {
                 if (CellArray[i]) {
                     ContainArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]),h);

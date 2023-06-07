@@ -176,6 +176,62 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
+        public static XNSERO_Control SaffmanForce(int k = 4, double particleLength = 0.5, double aspectRatio = 0.7, double cellsPerUnitLength = 0.5) {
+            XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods", IsRestart: false, PathToOldSessionDir: @"D:\BoSSS_databases\Channel\sessions\a5553a60-868e-44bf-834d-ede0561fd7c6", TimestepNoForRestart: 4960);
+            //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
+            C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
+            //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
+            string ID = "a5553a60-868e-44bf-834d-ede0561fd7c6";
+            Guid SID = new Guid(ID);
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("1"));
+            int timestep = 4960;
+            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
+            string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\a5553a60-868e-44bf-834d-ede0561fd7c6";
+           
+            // Fluid Properties
+            // =============================
+            C.PhysicalParameters.rho_A = 1;
+            C.PhysicalParameters.mu_A = 10;
+            C.PhysicalParameters.rho_B = 1;
+            C.PhysicalParameters.mu_B = 1;
+            C.PhysicalParameters.IncludeConvection = false;
+            C.LS_TrackerWidth = 2;
+            //C.TracingNamespaces = "BoSSS.Foundation";
+
+            // Particle Properties
+            // =============================
+            double particleDensity = C.PhysicalParameters.rho_A * 10;
+            double activeStress = 10;
+            List<string> boundaryValues = new() {
+                "Wall_upper",
+                "Wall_lower",
+                "Pressure_Outlet_right",
+                "Pressure_Outlet_left"
+            };
+            C.AddBoundaryValue("Wall_lower", "VelocityX#A", X => -0.1);
+            C.AddBoundaryValue("Wall_upper", "VelocityX#A", X => 0.1);
+            C.AddInitialValue("VelocityX", new Formula(@"X=>0.1*X[1]/6"));
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid2D(12, 12, cellsPerUnitLength, false, false);
+            C.SetAddaptiveMeshRefinement(4);
+            C.CoefficientOfRestitution = 1;
+            MotionFixedWithVelocity motion = new(particleDensity);
+            List<Particle> particles = new List<Particle> {
+                new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { 0, 0 }, 0, activeStress)
+            };
+            C.InitialiseParticles(particles);
+            C.SetTimesteps(dt: 1e-4, noOfTimesteps: 10000);
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.UseSchurBlockPrec = false;
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
+            C.NonLinearSolver.MinSolverIterations = 3;
+
+            return C;
+        }
+
         public static XNSERO_Control Channel(int k = 2, double particleLength = 0.5, double aspectRatio = 0.4, int cellsPerUnitLength = 10, double noOfParticles = 16) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);

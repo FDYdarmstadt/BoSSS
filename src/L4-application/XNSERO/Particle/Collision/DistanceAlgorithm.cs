@@ -25,7 +25,11 @@ using System.Runtime.Serialization;
 
 namespace BoSSS.Application.XNSERO_Solver {
     class DistanceAlgorithm {
-
+        /// <summary>
+        /// Constructor for  the distance algorithm. Provides the GJK-algorithm to calculate the minimal distance between two particles or a particle and a wall.
+        /// </summary>
+        /// <param name="Particles">An array containing one or two particles.</param>
+        /// <param name="Tolerance">A tolerance parameter</param>
         public DistanceAlgorithm(Particle[] Particles, double Tolerance) {
             this.Particles = Particles;
             this.Tolerance = Tolerance;
@@ -38,7 +42,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// The distance vector.
+        /// The minimal distance vector between two particles or a particle and a wall.
         /// </summary>
         [DataMember]
         public Vector DistanceVector { get; private set; }
@@ -73,8 +77,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                 for (int i = 0; i < Particles[0].NoOfSubParticles; i++) {
                     for (int j = 0; j < Particles[1].NoOfSubParticles; j++) {
                         GJK_DistanceAlgorithm(Particles[0], i, Particles[1], j);
-                        if (Overlapping)
+                        if (Overlapping) {
+                            DistanceVector = new Vector(Particles[0].Motion.GetPosition(0) - Particles[1].Motion.GetPosition(1));
                             return;
+                        }
                     }
                 }
             }
@@ -98,8 +104,10 @@ namespace BoSSS.Application.XNSERO_Solver {
                 particle.ClosestPointOnOtherObjectToThis = new Vector(WallPoint);
                 for (int i = 0; i < particle.NoOfSubParticles; i++) {
                     GJK_DistanceAlgorithm(particle, i, null, 1);
-                    if (Overlapping)
+                    if (Overlapping) {
+                        DistanceVector = new Vector(Particles[0].Motion.GetPosition(0) - WallPoint);
                         return;
+                    }
                 }
             }
         }

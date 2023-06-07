@@ -3,6 +3,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Solution.NSECommon;
 using BoSSS.Solution.XdgTimestepping;
 using BoSSS.Solution.XNSECommon;
@@ -156,6 +157,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 AdaptiveMeshRefinement = true;
                 RefinementLevel = MaxRefinementLevel;
                 AMR_startUpSweeps = MaxRefinementLevel;
+                activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = MaxRefinementLevel });
             }
         }
 
