@@ -71,7 +71,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         public byte EdgeTag {
             set {
                 if(value >= 255)
-                    throw new ArgumentOutOfRangeException("255 is a reserved value");
+                    throw new ArgumentOutOfRangeException("255 or greater is a reserved value");
                 //bool signFlag = PeriodicInverse;
                 //m_SignedEdgeTag = value;
                 //PeriodicInverse = signFlag;
@@ -123,7 +123,14 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
         }
 
-       
+        /// <summary>
+        /// true, if the neighbor cell is reached by a periodic boundary condition
+        /// </summary>
+        public bool IsPeriodicNeighbour {
+            get {
+                return EdgeTag >= GridCommons.FIRST_PERIODIC_BC_TAG;
+            }
+        }
 
 
         [DataMember]

@@ -239,7 +239,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                 // Assemble adjacency lists on rank 0
                 IEnumerable<Neighbour>[] neighboursGlobal = new IEnumerable<Neighbour>[J];
                 {
-                    IEnumerable<Neighbour>[] neighboursLocal = GetCellNeighbourship(IncludeBcCells: false).Take(NoOfUpdateCells).ToArray();
+                    IEnumerable<Neighbour>[] neighboursLocal = GetCellNeighbourship(IncludeBcCells: false, FilterPeriodicDupilities:true).Take(NoOfUpdateCells).ToArray();
                     if (rank == 0) {
                         long localOffset = m_CellPartitioning.GetI0Offest(rank);
                         int localLength = m_CellPartitioning.GetLocalLength(rank);
@@ -809,7 +809,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
                     // Assemble adjacency lists
-                    var CellNeighs = GetCellNeighbourship(IncludeBcCells: false);
+                    var CellNeighs = GetCellNeighbourship(IncludeBcCells: false, FilterPeriodicDupilities:true);
                     int J = NoOfUpdateCells;
                     int[] xadj = new int[J + 1];
                     List<int> adjncyL = new List<int>(J * m_RefElements[0].NoOfFaces);
@@ -945,6 +945,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             return partitioning;
         }*/
 
+        /*
         private double[] GetShortestDistance() {
             int D = this.SpatialDimension;
             IEnumerable<Neighbour>[] bla = this.GetCellNeighbourship(true);
@@ -991,6 +992,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             }
             return ShortestGlobalDistance.MPIMin();
         }
+        */
 
         private BoundingBox GetGridBoundingBox() {
             int D = this.SpatialDimension;
