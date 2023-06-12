@@ -64,9 +64,9 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         [Test]
 #if DEBUG
-        public static void DerivativeTest_BuildInGrid([Range(1, 13)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 15)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024)] int cache_size) {
 #else
-        public static void DerivativeTest_BuildInGrid([Range(1, 19)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 20)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
@@ -181,7 +181,7 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// Switch for the test-case, see implementation of <see cref="CreateOrLoadGrid"/>.
         /// </summary>
-        public static int GRID_CASE = 19;
+        public static int GRID_CASE = 14;
 
         /// <summary>
         /// Testing of the finite-difference Jacobian (<see cref="LinearizationHint.FDJacobi"/>
@@ -210,7 +210,7 @@ namespace BoSSS.Application.DerivativeTest {
 
 
 
-            for(int i = 7; i <= 7; i++) {
+            for(int i = 14; i <= 14; i++) {
                 BoSSS.Solution.Application._Main(args, true, delegate () {
                     var R = new DerivativeTestMain();
                     GRID_CASE = i;
@@ -461,13 +461,22 @@ namespace BoSSS.Application.DerivativeTest {
                 }
 
                 case 14: {
+                    double[] xNodes = GenericBlas.Linspace(-1, 1, 2);
+                    double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
+                    double[] zNodes = GenericBlas.Linspace(-1, 1, 2);
+                    //grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, zNodes, periodicZ: true);
+                    grd = Grid2D.Cartesian2DGrid(xNodes, zNodes, periodicY: true);
+                    break;
+                }
+
+                case 15: {
                     double[] rNodes = GenericBlas.Linspace(1, 4, 13);
                     double[] sNodes = GenericBlas.Linspace(0, 0.5, 25);
                     grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, CellType.Square_16, PeriodicS: false);
                     break;
                 }
 
-                case 15: {
+                case 16: {
                     double[] rNodes = GenericBlas.Linspace(1, 2, 4);
                     double[] sNodes = GenericBlas.Linspace(0, 0.5, 4);
                     double[] zNodes = GenericBlas.Linspace(-1, 1, 5);
@@ -475,17 +484,17 @@ namespace BoSSS.Application.DerivativeTest {
                     break;
                 }
 
-                case 16: {
+                case 17: {
                     grd = Grid2D.Ogrid(0.5, 1, 5, 3, CellType.Square_4);
                     break;
                 }
 
-                case 17: {
+                case 18: {
                     grd = Grid3D.Ogrid(0.5, 1, 3, 3, GenericBlas.Linspace(0, 4, 3));
                     break;
                 }
 
-                case 18: {
+                case 19: {
                     // aggregation grid
                     double[] xNodes = GenericBlas.Linspace(-1, 1, 5);
                     double[] yNodes = GenericBlas.Linspace(-1, 1, 5);
@@ -504,7 +513,7 @@ namespace BoSSS.Application.DerivativeTest {
                     break;
                 }
 
-                case 19: {
+                case 20: {
                     // grid with transformation
                     double[] xNodes = GenericBlas.Linspace(-0.5, 0.5, 8);
                     double[] yNodes = GenericBlas.Linspace(0, 1, 8);
@@ -526,10 +535,10 @@ namespace BoSSS.Application.DerivativeTest {
 
                     grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicX: false, NonlinearGridTrafo: Trafo, type: CellType.Square_25);
 
-                    //Plot2dGridGnuplot(grd as GridCommons);
-
-                    return grd;
+                    break;
                 }
+
+                
 
                 // ++++++++++++++++++++++++++++++++++++++++++++++++++++
                 // more expensive grids (not tested in DEBUG MODE)

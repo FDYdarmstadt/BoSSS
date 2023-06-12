@@ -410,10 +410,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 #endif
 
-                    int mask;
-                    unchecked {
-                        mask = (int)0x80000000;
-                    }
+                    const int mask = unchecked((int)0x80000000);
 
                     //Debug.Assert(false, "break0" + m_owner.MyRank);
 

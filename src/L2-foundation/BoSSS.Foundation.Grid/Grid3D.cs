@@ -106,12 +106,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int nY = yNodes.Length - 1;
                 int nZ = zNodes.Length - 1;
 
-                if (nX < 3 && periodicX)
-                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
-                if (nY < 3 && periodicY)
-                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
-                if (nZ < 3 && periodicZ)
-                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
+                if (nX < 1)
+                    throw new ArithmeticException("At least 2 node are required.");
+                if (nY < 1)
+                    throw new ArithmeticException("At least 2 node are required.");
+                if (nZ < 1)
+                    throw new ArithmeticException("At least 2 node are required.");
 
                 int myrank;
                 int size;

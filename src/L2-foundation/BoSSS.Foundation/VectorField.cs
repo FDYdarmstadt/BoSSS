@@ -32,6 +32,7 @@ namespace BoSSS.Foundation {
     ///// <returns></returns>
     //public delegate T FieldFactory<T>(Basis b, string id) where T : DGField;
 
+
     /// <summary>
     /// A vector field (stage-1 tensor field) as composition
     /// of scalar fields (<see cref="DGField"/>);
