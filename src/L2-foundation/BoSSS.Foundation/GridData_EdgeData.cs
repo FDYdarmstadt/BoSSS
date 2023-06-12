@@ -510,6 +510,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 if (ceh.IsPeriodic) {
                                     if (cn_je.CellFaceTag.PeriodicInverse == cn_je2.CellFaceTag.PeriodicInverse)
                                         throw new ApplicationException("inconsistent specification of periodic boundaries. " + cn_je.CellFaceTag.PeriodicInverse + cn_je2.CellFaceTag.PeriodicInverse);
+                                        //Console.Error.WriteLine("inconsistent specification of periodic boundaries. " + cn_je.CellFaceTag.PeriodicInverse + cn_je2.CellFaceTag.PeriodicInverse);
 
                                     ceh.Cell1_PeriodicTrafoIdx = ((int)cn_je.CellFaceTag.EdgeTag) - GridCommons.FIRST_PERIODIC_BC_TAG;
                                     if (cn_je.CellFaceTag.PeriodicInverse) {
