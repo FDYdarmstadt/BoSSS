@@ -463,7 +463,7 @@ namespace BoSSS.Application.DerivativeTest {
                 case 14: {
                     double[] xNodes = GenericBlas.Linspace(-1, 1, 2);
                     double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
-                    double[] zNodes = GenericBlas.Linspace(-1, 1, 3);
+                    double[] zNodes = GenericBlas.Linspace(-1, 1, 2);
                     //grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, zNodes, periodicZ: true);
                     grd = Grid2D.Cartesian2DGrid(xNodes, zNodes, periodicX: false, periodicY: true);
                     break;
