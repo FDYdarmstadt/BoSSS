@@ -821,6 +821,10 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             cell1_edges.Add(e - skippedEdgesCount);
                             cell2_edges.Add(e - skippedEdgesCount);
+                            //if (j1 != j2) {
+                            //    Debug.Assert(Edge.IsPeriodic); // periodicity with one cell in periodic direction
+                            //    cell2_edges.Add(e - skippedEdgesCount);
+                            //}
                         }
                         
                         {
@@ -2270,11 +2274,28 @@ namespace BoSSS.Foundation.Grid.Classic {
                             int iEdge = Cells2Edges_j[k];
                             var Edge = EdgTmp[iEdge];
 
-                            Debug.Assert((Edge.Cell1 == j) != (Edge.Cell2 == j) || Edge.IsPeriodic); // for periodic edges, with one cell in periodic direction, in- and out-cell might be the same, actually.
+                            if (Edge.Cell1 == Edge.Cell2 && Edge.IsPeriodic) {
+                                // for periodic edges, with one cell in periodic direction, in- and out-cell might be the same, actually.
 
-                            Cells2Edges_j[k]++;
-                            if (Edge.Cell2 == j) {
-                                Cells2Edges_j[k] *= -1;
+                                Debug.Assert((Edge.Cell1 == j) && (Edge.Cell2 == j));
+
+
+                                Cells2Edges_j[k]++;
+                                if (Cells2Edges_j.GetSubVector(k+1, Cells2Edges_j.Length - k - 1).Contains(iEdge + 1)) {
+                                    Cells2Edges_j[k] *= -1;
+                                }
+
+
+
+                            } else {
+                                // all other cases
+
+                                Debug.Assert((Edge.Cell1 == j) != (Edge.Cell2 == j));
+
+                                Cells2Edges_j[k]++;
+                                if (Edge.Cell2 == j) {
+                                    Cells2Edges_j[k] *= -1;
+                                }
                             }
                         }
                     }

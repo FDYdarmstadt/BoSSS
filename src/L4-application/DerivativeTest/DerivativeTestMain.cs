@@ -64,9 +64,9 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         [Test]
 #if DEBUG
-        public static void DerivativeTest_BuildInGrid([Range(1, 15)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 16)] int gridCase, [Values(2, 10000000)] int bulksize_limit, [Values(1024)] int cache_size) {
 #else
-        public static void DerivativeTest_BuildInGrid([Range(1, 20)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
+        public static void DerivativeTest_BuildInGrid([Range(1, 22)] int gridCase, [Values(1, 500, 10000000)] int bulksize_limit, [Values(1024, 1024 * 1024 * 128)] int cache_size) {
 #endif
             DerivativeTestMain.GRID_CASE = gridCase;
             DerivativeTestMain p = null;
@@ -371,7 +371,7 @@ namespace BoSSS.Application.DerivativeTest {
                     // test periodicity
 
                     grd = Grid2D.CurvedSquareGrid(GenericBlas.Linspace(1, 2, 4), GenericBlas.Linspace(0, 0.25, 10), CellType.Square_9, PeriodicS: true);
-                    AltRefSol = true;
+                    AltRefSol = TestSolution.Rotational;
                     break;
                 }
 
@@ -461,22 +461,42 @@ namespace BoSSS.Application.DerivativeTest {
                 }
 
                 case 14: {
-                    double[] xNodes = GenericBlas.Linspace(-1, 1, 2);
+                    // periodic boundary conditions, ONE LAYER of cells in PERIODIC DIRECTION
+                    double[] xNodes = GenericBlas.Linspace(-1, 1, 4);
                     double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
-                    double[] zNodes = GenericBlas.Linspace(-1, 1, 2);
+                    double[] zNodes = GenericBlas.Linspace(-1, 1, 4);
                     //grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, zNodes, periodicZ: true);
-                    grd = Grid2D.Cartesian2DGrid(xNodes, zNodes, periodicX: false, periodicY: true);
+                    grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes, periodicX: false, periodicY: true, periodicZ: false);
+                    AltRefSol = TestSolution.yPeriodic;
                     break;
                 }
 
                 case 15: {
+                    // periodic boundary conditions, TWO CELLS in PERIODIC DIRECTION
+                    double[] xNodes = GenericBlas.Linspace(-1, 1, 2);
+                    double[] yNodes = GenericBlas.Linspace(-1, 1, 3);
+                    grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicY: true);
+                    AltRefSol = TestSolution.yPeriodic;
+                    break;
+                }
+
+                 case 16: {
+                     // periodic boundary conditions, ONE CELLS in PERIODIC DIRECTION
+                     double[] xNodes = GenericBlas.Linspace(-1, 1, 2);
+                     double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
+                     grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, periodicY: true);
+                     AltRefSol = TestSolution.yPeriodic;
+                     break;
+                 }
+
+                case 17: {
                     double[] rNodes = GenericBlas.Linspace(1, 4, 13);
                     double[] sNodes = GenericBlas.Linspace(0, 0.5, 25);
                     grd = Grid2D.CurvedSquareGrid(rNodes, sNodes, CellType.Square_16, PeriodicS: false);
                     break;
                 }
 
-                case 16: {
+                case 18: {
                     double[] rNodes = GenericBlas.Linspace(1, 2, 4);
                     double[] sNodes = GenericBlas.Linspace(0, 0.5, 4);
                     double[] zNodes = GenericBlas.Linspace(-1, 1, 5);
@@ -484,17 +504,17 @@ namespace BoSSS.Application.DerivativeTest {
                     break;
                 }
 
-                case 17: {
+                case 19: {
                     grd = Grid2D.Ogrid(0.5, 1, 5, 3, CellType.Square_4);
                     break;
                 }
 
-                case 18: {
+                case 20: {
                     grd = Grid3D.Ogrid(0.5, 1, 3, 3, GenericBlas.Linspace(0, 4, 3));
                     break;
                 }
 
-                case 19: {
+                case 21: {
                     // aggregation grid
                     double[] xNodes = GenericBlas.Linspace(-1, 1, 5);
                     double[] yNodes = GenericBlas.Linspace(-1, 1, 5);
@@ -513,7 +533,7 @@ namespace BoSSS.Application.DerivativeTest {
                     break;
                 }
 
-                case 20: {
+                case 22: {
                     // grid with transformation
                     double[] xNodes = GenericBlas.Linspace(-0.5, 0.5, 8);
                     double[] yNodes = GenericBlas.Linspace(0, 1, 8);
@@ -581,7 +601,7 @@ namespace BoSSS.Application.DerivativeTest {
                     grd = _grd;
 
                     if(GRID_FILE.Contains("QuadTest3rd") || GRID_FILE.Contains("QuadTest4th") || GRID_FILE.Contains("QuadTest5th")) {
-                        AltRefSol = true;
+                        AltRefSol = TestSolution.Rotational;
                     }
 
                     break;
@@ -648,7 +668,17 @@ namespace BoSSS.Application.DerivativeTest {
         /// <summary>
         /// if true, a solution for the rotation of rotational curved grids is used
         /// </summary>
-        public bool AltRefSol = false;
+        public TestSolution AltRefSol = TestSolution.Default;
+
+        public enum TestSolution {
+            Default,
+
+            Rotational,
+
+            yPeriodic
+
+        }
+
 
 
         /// <summary>
@@ -656,48 +686,94 @@ namespace BoSSS.Application.DerivativeTest {
         /// </summary>
         protected override void SetInitial(double t) {
 
-            if(this.GridData.SpatialDimension == 3) {
+            if (this.GridData.SpatialDimension == 3) {
+                switch (AltRefSol) {
+                    case TestSolution.Default:
+                        f1.ProjectField((x, y, z) => (3 * x + z));
+                        f1Gradient_Analytical[0].ProjectField((x, y, z) => 3.0);
+                        f1Gradient_Analytical[1].ProjectField((x, y, z) => 0.0);
+                        f1Gradient_Analytical[2].ProjectField((x, y, z) => 1.0);
 
-                f1.ProjectField((x, y, z) => (3 * x + z));
-                f1Gradient_Analytical[0].ProjectField((x, y, z) => 3.0);
-                f1Gradient_Analytical[1].ProjectField((x, y, z) => 0.0);
-                f1Gradient_Analytical[2].ProjectField((x, y, z) => 1.0);
+                        f2.ProjectField((x, y, z) => z + 2 * y);
+                        f2Gradient_Analytical[0].ProjectField((x, y, z) => 0.0);
+                        f2Gradient_Analytical[1].ProjectField((x, y, z) => 2.0);
+                        f2Gradient_Analytical[2].ProjectField((x, y, z) => 1.0);
 
-                f2.ProjectField((x, y, z) => z + 2 * y);
-                f2Gradient_Analytical[0].ProjectField((x, y, z) => 0.0);
-                f2Gradient_Analytical[1].ProjectField((x, y, z) => 2.0);
-                f2Gradient_Analytical[2].ProjectField((x, y, z) => 1.0);
+                        Laplace_f1_Analytical.ProjectField((x, y, z) => 0.0);
+                        Laplace_f2_Analytical.ProjectField((x, y, z) => 0.0);
+                        break;
 
-                Laplace_f1_Analytical.ProjectField((x, y, z) => 0.0);
-                Laplace_f2_Analytical.ProjectField((x, y, z) => 0.0);
+                    case TestSolution.yPeriodic:
+                        f1.ProjectField((x, y, z) => (3 * x + z));
+                        f1Gradient_Analytical[0].ProjectField((x, y, z) => 3.0);
+                        f1Gradient_Analytical[1].ProjectField((x, y, z) => 0.0);
+                        f1Gradient_Analytical[2].ProjectField((x, y, z) => 1.0);
 
-            } else if(this.GridData.SpatialDimension == 2) {
-                if(AltRefSol == false) {
-                    f1.ProjectField((x, y) => (3 * x));
-                    f1Gradient_Analytical[0].ProjectField((x, y) => 3);
-                    f1Gradient_Analytical[1].ProjectField((x, y) => 0);
+                        f2.ProjectField((x, y, z) => (3 * x + z));
+                        f2Gradient_Analytical[0].ProjectField((x, y, z) => 3.0);
+                        f2Gradient_Analytical[1].ProjectField((x, y, z) => 0.0);
+                        f2Gradient_Analytical[2].ProjectField((x, y, z) => 1.0);
 
-                    f2.ProjectField((x, y) => x + 2 * y);
-                    f2Gradient_Analytical[0].ProjectField((x, y) => 1.0);
-                    f2Gradient_Analytical[1].ProjectField((x, y) => 2.0);
+                        Laplace_f1_Analytical.ProjectField((x, y, z) => 0.0);
+                        Laplace_f2_Analytical.ProjectField((x, y, z) => 0.0);
+                        break;
 
-                    Laplace_f1_Analytical.ProjectField((x, y) => 0.0);
-                    Laplace_f2_Analytical.ProjectField((x, y) => 0.0);
-                } else {
-                    f1.ProjectField((x, y) => Math.Sin(Math.Atan(y / x) * 4.0));
-                    f1Gradient_Analytical[0].ProjectField((x, y) => (-4 * Math.Cos(4 * Math.Atan(y / x)) * y / (x * x) / (1 + (y * y) / (x * x))));
-                    f1Gradient_Analytical[1].ProjectField((x, y) => (4 * Math.Cos(4 * Math.Atan(y / x)) / x / (1 + (y * y) / (x * x))));
+                    default:
+                        throw new NotImplementedException();
                 }
-            } else if(this.GridData.SpatialDimension == 1) {
-                f1.ProjectField((x) => (3 * x));
-                f1Gradient_Analytical[0].ProjectField((_1D)((x) => 3));
+            } else if (this.GridData.SpatialDimension == 2) {
+                switch (AltRefSol) {
+                    case TestSolution.Default:
+                        f1.ProjectField((x, y) => (3 * x));
+                        f1Gradient_Analytical[0].ProjectField((x, y) => 3);
+                        f1Gradient_Analytical[1].ProjectField((x, y) => 0);
 
-                f2.ProjectField((x) => x * x);
-                f2Gradient_Analytical[0].ProjectField((_1D)((x) => 2 * x));
+                        f2.ProjectField((x, y) => x + 2 * y);
+                        f2Gradient_Analytical[0].ProjectField((x, y) => 1.0);
+                        f2Gradient_Analytical[1].ProjectField((x, y) => 2.0);
 
-                Laplace_f1_Analytical.ProjectField((_1D)((x) => 0.0));
-                Laplace_f2_Analytical.ProjectField((_1D)((x) => 2.0));
+                        Laplace_f1_Analytical.ProjectField((x, y) => 0.0);
+                        Laplace_f2_Analytical.ProjectField((x, y) => 0.0);
+                        break;
 
+                    case TestSolution.yPeriodic:
+                        f1.ProjectField((x, y) => (3 * x));
+                        f1Gradient_Analytical[0].ProjectField((x, y) => 3);
+                        f1Gradient_Analytical[1].ProjectField((x, y) => 0);
+
+                        f2.ProjectField((x, y) => x );
+                        f2Gradient_Analytical[0].ProjectField((x, y) => 1.0);
+                        f2Gradient_Analytical[1].ProjectField((x, y) => 0.0);
+
+                        Laplace_f1_Analytical.ProjectField((x, y) => 0.0);
+                        Laplace_f2_Analytical.ProjectField((x, y) => 0.0);
+                        break;
+
+                    case TestSolution.Rotational:
+                        f1.ProjectField((x, y) => Math.Sin(Math.Atan(y / x) * 4.0));
+                        f1Gradient_Analytical[0].ProjectField((x, y) => (-4 * Math.Cos(4 * Math.Atan(y / x)) * y / (x * x) / (1 + (y * y) / (x * x))));
+                        f1Gradient_Analytical[1].ProjectField((x, y) => (4 * Math.Cos(4 * Math.Atan(y / x)) / x / (1 + (y * y) / (x * x))));
+                        break;
+                    default:
+                        throw new NotImplementedException();
+                }
+            } else if (this.GridData.SpatialDimension == 1) {
+
+                switch (AltRefSol) {
+                    case TestSolution.Default:
+                        f1.ProjectField((x) => (3 * x));
+                        f1Gradient_Analytical[0].ProjectField((_1D)((x) => 3));
+
+                        f2.ProjectField((x) => x * x);
+                        f2Gradient_Analytical[0].ProjectField((_1D)((x) => 2 * x));
+
+                        Laplace_f1_Analytical.ProjectField((_1D)((x) => 0.0));
+                        Laplace_f2_Analytical.ProjectField((_1D)((x) => 2.0));
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
+                }
             } else
                 throw new NotImplementedException();
         }
@@ -882,7 +958,7 @@ namespace BoSSS.Application.DerivativeTest {
                 Console.WriteLine("Broken Derivatives: ");
 
                 double Treshold = 1.0e-10;
-                if(AltRefSol)
+                if(AltRefSol == TestSolution.Rotational)
                     Treshold = 1.0e-4; // not exactly polynomial, therefore a higher threshold
 
                 double err1_dx = Errfield1.L2Norm() / totalVolume;
@@ -920,7 +996,7 @@ namespace BoSSS.Application.DerivativeTest {
                 Console.WriteLine("Flux Derivatives: ");
 
                 double Treshold = 1.0e-10;
-                if(AltRefSol)
+                if(AltRefSol == TestSolution.Rotational)
                     Treshold = 1.0e-4; // not exactly polynomial, therefore a higher threshold
 
                 double err1_dx = Errfield1.L2Norm() / totalVolume;
@@ -957,7 +1033,7 @@ namespace BoSSS.Application.DerivativeTest {
                 Console.WriteLine("Linear Flux Derivatives: ");
 
                 double Treshold = 1.0e-10;
-                if(AltRefSol)
+                if(AltRefSol == TestSolution.Rotational)
                     Treshold = 1.0e-4; // not exactly polynomial, therefore a higher threshold
 
                 double err1_dx = Errfield1.L2Norm() / totalVolume;
@@ -976,7 +1052,7 @@ namespace BoSSS.Application.DerivativeTest {
             // Laplacian, nonlinear
             // ====================
 
-            if(!AltRefSol) {
+            if(AltRefSol != TestSolution.Rotational) {
                 var Laplace = (new ipLaplace()).Operator(1);
 
                 Laplace.Evaluate(new DGField[] { this.f1 }, new DGField[] { this.Laplace_f1_Numerical });
@@ -1008,7 +1084,7 @@ namespace BoSSS.Application.DerivativeTest {
             // Laplacian, linear
             // ====================
 
-            if(!AltRefSol) {
+            if(AltRefSol != TestSolution.Rotational) {
                 var Laplace = (new ipLaplace()).Operator(1);
 
                 var LaplaceMtx = new BlockMsrMatrix(this.f1.Mapping, this.Laplace_f1_Numerical.Mapping);
