@@ -152,7 +152,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Broken 2D Curl, <see cref="DGField.Curl2D{T}"/>
+        /// Broken 2D Curl, <see cref="DGField.Curl2D{T}(double, VectorField{T}, CellMask)"/>
         /// </summary>
         public static T Curl2D<T>(this VectorField<T> Vec, CellMask em = null) where T : DGField {
             T Curl = Vec[0].CloneAs() as T;
@@ -171,14 +171,14 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// Broken 2D Curl, <see cref="DGField.Curl2D{T}"/>
+        /// Broken 2D Curl, <see cref="DGField.Curl2D{T}(double, VectorField{T}, CellMask)"/>
         /// </summary>
         public static T Curl2D<T>(this IEnumerable<T> Vec, CellMask em = null) where T : DGField {
             return (new VectorField<T>(Vec.ToArray())).Curl2D(em);
         }
 
         /// <summary>
-        /// Central Difference Derivative, <see cref="DGField.Derivative"/>
+        /// Central Difference Derivative, <see cref="DGField.Derivative(double, DGField, int, CellMask)"/>
         /// </summary>
         public static T Derivative<T>(this T f, int d, CellMask em = null) where T : DGField {
             var R = f.CloneAs() as T;
