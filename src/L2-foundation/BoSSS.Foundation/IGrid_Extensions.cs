@@ -363,23 +363,24 @@ namespace BoSSS.Foundation.Grid {
 
                     GrdDatTmp.TransformLocal2Global(KRef.GetFaceCenter(iFace), GlobalVerticesOut, jCell);
 
-
+                    bool killEdgeTag = false;
                     if (A1.PointDistance(x).Abs() <= 1.0e-8) {
-                        //(new CellFaceTag() {
-                        //    EdgeTag = edgeTag,
-                        //    PeriodicInverse = false,
-                        //    FaceIndex = iFace,
-                        //    NeighCell_GlobalID = ...,
-                        //}).AddToArray(ref g.Cells[jCell].CellFaceTags);
                         A1centers.Add((jCell, iFace, new Vector(x), g.Cells[jCell].GlobalID));
-
+                        killEdgeTag = true;
                     }
                     if (A2.PointDistance(x).Abs() <= 1.0e-8) {
-                        //(new CellFaceTag() {
-                        //    EdgeTag = edgeTag,
-                        //    PeriodicInverse = true
-                        //}).AddToArray(ref g.Cells[jCell].CellFaceTags);
                         A2centers.Add((jCell, iFace, new Vector(x), g.Cells[jCell].GlobalID));
+                        killEdgeTag = true;
+                    }
+
+                    while (killEdgeTag) {
+                        int idx = g.Cells[jCell].CellFaceTags.FirstIndexWhere((CellFaceTag cft) => cft.FaceIndex == iFace);
+                        if (idx < 0)
+                            break;
+
+                        var newTags = g.Cells[jCell].CellFaceTags.ToList();
+                        newTags.RemoveAt(idx);
+                        g.Cells[jCell].CellFaceTags = newTags.ToArray();
                     }
                 }
             }
@@ -485,6 +486,7 @@ namespace BoSSS.Foundation.Grid {
         /// dimension) to another affine-linear manifold B (the "inlet"). (Note
         /// that the terms "outlet" and "inlet" are exchangeable.)
         /// </summary>
+        /// <param name="g"></param>
         /// <param name="X1">
         /// a single point in manifold A;
         /// </param>
@@ -562,6 +564,7 @@ namespace BoSSS.Foundation.Grid {
         /// dimension) to another affine-linear manifold B (the "inlet"). (Note
         /// that the terms "outlet" and "inlet" are exchangeable.)
         /// </summary>
+        /// <param name="g"></param>
         /// <param name="X1">
         /// D pairwise different vectors, each d-dimensional, that specify the
         /// affine-linear manifold A;

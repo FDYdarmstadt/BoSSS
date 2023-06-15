@@ -466,7 +466,7 @@ namespace BoSSS.Application.DerivativeTest {
                     double[] yNodes = GenericBlas.Linspace(-1, 1, 2);
                     double[] zNodes = GenericBlas.Linspace(-1, 1, 4);
                     //grd = Grid2D.Cartesian2DGrid(xNodes, yNodes, zNodes, periodicZ: true);
-                    grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes, periodicX: false, periodicY: true, periodicZ: false);
+                    //grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes, periodicX: false, periodicY: true, periodicZ: false);
 
                     var grd2 = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes, periodicX: false, periodicY: false, periodicZ: false);
                     grd2.AddPeriodicBoundary(new Vector(0, 1, 0), new Vector(0, 1, 0), new Vector(0, -1, 0), new Vector(0, 1, 0));
