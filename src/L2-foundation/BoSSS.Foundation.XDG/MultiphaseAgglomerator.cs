@@ -901,7 +901,6 @@ namespace BoSSS.Foundation.XDG {
                             //     LengthScales[j] = CellVolume[j] / CellSurface[j];
                             // }
 
-                            //Console.WriteLine($"WARNING: commented out exception");
                         }
 
 
