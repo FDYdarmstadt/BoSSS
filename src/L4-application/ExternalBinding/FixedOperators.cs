@@ -292,8 +292,9 @@ namespace BoSSS.Application.ExternalBinding {
                 // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
 
-
+                /*
                 var RealLevSet = new LevelSet(b, "Levset");
+                */
 
                 int J = b.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
@@ -314,7 +315,7 @@ namespace BoSSS.Application.ExternalBinding {
                     w.Clear();
                     u.ProjectField(UInitFunc());
 
-                    var cP0 = new SinglePhaseField(new Basis(c.GridDat, c.Basis.Degree));
+                    var cP0 = new SinglePhaseField(new Basis(c.GridDat, 0));
                     cP0.ProjectField(func);
                     c.AccLaidBack(1.0, cP0);
 
@@ -370,6 +371,8 @@ namespace BoSSS.Application.ExternalBinding {
 
                     return (domfields, paramfields);
                 };
+
+                /*
                 RealLevSet.Clear();
                 RealLevSet.Acc(1.0, c);
                 LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
@@ -381,6 +384,7 @@ namespace BoSSS.Application.ExternalBinding {
                 // - therefore, the level-set does not need to be strictly continuous.
                 // => ContinuityProjectionOption.None should be ok.
                 lsu.EnforceContinuity();
+                
                 var RealTracker = lsu.Tracker;
                 // mu.Laplacian(-cahn, c);
                 // mu.Acc(-1.0, c);
@@ -396,10 +400,11 @@ namespace BoSSS.Application.ExternalBinding {
                         }
                     }
                 }
-
+                
 
                 RealTracker.UpdateTracker(0);
                 VerifyTrackerState(RealTracker);
+                */
 
                 // SubGrid subgr = RealTracker.Regions.GetNearFieldSubgrid(6);
                 // SubGridBoundaryModes subgrbnd = 0;
@@ -414,23 +419,23 @@ namespace BoSSS.Application.ExternalBinding {
                 // CellMask mask = subgrMask;
                 // SubGrid sgrid = subgr;
 
-                int noOfNarrowBandCells = 0;
-                if (mask != null) {
-                    foreach (bool cellInNarrowBand in mask.GetBitMask()) {
-                        if (cellInNarrowBand) {
-                            noOfNarrowBandCells++;
-                        }
-                    }
-                    if (noOfNarrowBandCells == 0) {
-                        Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
-                        // throw new ApplicationException("No interface found");
-                        // mask = fullMask;
-                        // sgrid = fullSubGrd;
-                        // Console.WriteLine("No narrow band cells detected, solving on the whole domain");
-                    } else {
-                        Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
-                    }
-                }
+                //int noOfNarrowBandCells = 0;
+                //if (mask != null) {
+                //    foreach (bool cellInNarrowBand in mask.GetBitMask()) {
+                //        if (cellInNarrowBand) {
+                //            noOfNarrowBandCells++;
+                //        }
+                //    }
+                //    if (noOfNarrowBandCells == 0) {
+                //        Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
+                //        // throw new ApplicationException("No interface found");
+                //        // mask = fullMask;
+                //        // sgrid = fullSubGrd;
+                //        // Console.WriteLine("No narrow band cells detected, solving on the whole domain");
+                //    } else {
+                //        Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
+                //    }
+                //}
 
                 //System.Collections.BitArray subGridCellMask = mask?.GetBitMask();
 
@@ -505,8 +510,10 @@ namespace BoSSS.Application.ExternalBinding {
                             { "frontAndBack", fbBVC},
                     };
                     // string[] bndFuncName = new string[]{"left", "right", "bottom", "top"};
-                    BCmap = new IncompressibleBoundaryCondMap(RealTracker.GridDat, bcmapcollection, PhysicsMode.Incompressible);
+                    BCmap = new IncompressibleBoundaryCondMap(grd, bcmapcollection, PhysicsMode.Incompressible);
                 }
+
+                
 
                 // perform Stokes Extension
                 // ========================
@@ -515,13 +522,14 @@ namespace BoSSS.Application.ExternalBinding {
                 {
                     stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true);
                     uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
-                    stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
+                  /*  stokesExt.SolveExtension(0, RealTracker, uStokes, velocity); */
                     // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
                 }
 
 
-
+                /*
                 lsu.InitializeParameters(domfields, paramfields);
+                */
 
                 // var tp = new Tecplot(grd.Grid.GridData, 3);
                 // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
@@ -531,8 +539,9 @@ namespace BoSSS.Application.ExternalBinding {
                 u.Identification = VariableNames.VelocityX;
                 v.Identification = VariableNames.VelocityY;
                 w.Identification = VariableNames.VelocityZ;
-                Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
+                Tecplot("plot.1", 0.0, 3, c, mu, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
 
+                
 
                 // Timestepper initialization
                 // ==========================
@@ -563,36 +572,6 @@ namespace BoSSS.Application.ExternalBinding {
                     // nls.MaxSolverIterations = 100;
                     nls.verbose = true;
 
-                    // TODO saye instead of hmf
-                    // XdgSubGridTimestepping TimeStepper = new XdgSubGridTimestepping(op,
-                    //                                          new SinglePhaseField[] { c, mu },
-                    //                                          new SinglePhaseField[] { Res_c, Res_mu },
-                    //                                          // TimeSteppingScheme.ExplicitEuler,
-                    //                                          TimeSteppingScheme.ImplicitEuler,
-                    //                                          sgrid,
-                    //                                          subgrbnd,
-                    //                                          LinearSolver: ls,
-                    //                                          NonLinearSolver: nls,
-                    //                                          _UpdateLevelset: (() => lsu),
-                    //                                          _LevelSetHandling: LevelSetHandling.LieSplitting,
-                    //                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
-                    //                                          _AgglomerationThreshold: 0.0,
-                    //                                          _optTracker: RealTracker
-                    //                                          );
-
-                    // XdgTimestepping TimeStepperNoSG = new XdgTimestepping(opNoSG,
-                    //                                          new SinglePhaseField[]{cNoSG, muNoSG},
-                    //                                          new SinglePhaseField[]{Res_cNoSG, Res_muNoSG},
-                    //                                          // TimeSteppingScheme.ExplicitEuler,
-                    //                                          TimeSteppingScheme.ImplicitEuler,
-                    //                                          LinearSolver: ls,
-                    //                                          NonLinearSolver: nls,
-                    //                                          // _UpdateLevelset: (() => lsu),
-                    //                                          // _LevelSetHandling: LevelSetHandling.LieSplitting,
-                    //                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
-                    //                                          _AgglomerationThreshold: 0.0,
-                    //                                          _optTracker: RealTrackerNoSG
-                    //                                          );
 
                     TimeStepper = new XdgTimestepping(CahnHillOp,
                                                       new SinglePhaseField[] { c, mu },
@@ -602,9 +581,9 @@ namespace BoSSS.Application.ExternalBinding {
                                                       null,
                                                       null,
                                                       LinearSolver: ls,
-                                                      NonLinearSolver: nls,
+                                                      NonLinearSolver: nls
                                                       // RealTracker,
-                                                      lsu: (() => lsu)
+                                                      //lsu: (() => lsu)
                                                       // _LevelSetHandling: LevelSetHandling.LieSplitting,
                                                       // _LevelSetHandling: LevelSetHandling.Coupled_Once,
                                                       // _AgglomerationThreshold: 0.0
@@ -632,10 +611,12 @@ namespace BoSSS.Application.ExternalBinding {
                     while (time < endTime) {
                         // RealLevSet.Clear();
                         // RealLevSet.Acc(1.0, c);
+                        /*
                         RealTracker.UpdateTracker(time);
                         VerifyTrackerState(RealTracker);
                         uStokes = velocity.CloneAs();
                         stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
+                        */
                         // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
                         TimeStepper.Solve(time, dt);
 
@@ -649,7 +630,7 @@ namespace BoSSS.Application.ExternalBinding {
                         Console.WriteLine("relative cMean change compared to starting configuration: " + (cMean - cMean0)/cMean0);
                         Console.WriteLine("cVar: " + cVarVal);
 
-                        Tecplot("plot." + (t + 2), time, 3, c, mu, RealLevSet, u, v, w);
+                        Tecplot("plot." + (t + 2), time, 3, c, mu, u, v, w);
 
                         time += dt;
                         t++;
