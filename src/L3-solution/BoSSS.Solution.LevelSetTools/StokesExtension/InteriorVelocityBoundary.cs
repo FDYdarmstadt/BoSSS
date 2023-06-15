@@ -58,14 +58,15 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             Ret += (uA[m_d] - inp.Parameters_IN[m_d]) * (vA) * pnlty;
             Ret += (uB[m_d] - inp.Parameters_OUT[m_d]) * (vB) * pnlty;
 
+
+
+
             return Ret;
         }
 
         public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
-            //throw new NotImplementedException();
-            Console.WriteLine("ivb parameter " + ParameterOrdering[0] + " " + Parameters[0].L2Norm());
-            Console.WriteLine("ivb parameter " + ParameterOrdering[1] + " " + Parameters[1].L2Norm());
-            Console.WriteLine("ivb parameter " + ParameterOrdering[2] + " " + Parameters[2].L2Norm());
+            throw new NotImplementedException("bug here? pls check");
+            /*
             if(Parameters.Length != 1) {
                 throw new ArgumentException();
             }
@@ -73,11 +74,12 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
                 Parameters[0].Clear();
                 Parameters[0].AccLaidBack(1.0, m_InterfaceVelocityComponent);
             }
-
+            */
         }
 
         public DGField[] MyParameterAlloc(DGField[] Arguments) {
-            return new DGField[] { m_InterfaceVelocityComponent };
+            throw new NotImplementedException("bug here? pls check");
+            //return new DGField[] { m_InterfaceVelocityComponent };
         }
 
         /// <summary>

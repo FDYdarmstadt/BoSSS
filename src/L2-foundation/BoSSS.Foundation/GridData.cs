@@ -1135,11 +1135,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 var Part = m_Grid.CellPartitioning;
                 var BcCellPart = m_Grid.BcCellPartitioning;
                 int MyRank = this.MpiRank;
+                long j0 = Part.i0;
 
                 // compute neighborship info 
                 // =========================
                 
-                GridCommons.Neighbour[][] CNglb = m_Grid.GetCellNeighbourship(true);
+                GridCommons.Neighbour[][] CNglb = m_Grid.GetCellNeighbourship(true, false);
                 Debug.Assert(CNglb.Length == (J + J_BC));
 #if DEBUG
                 for(int j = 0; j < J; j++) {
@@ -1148,11 +1149,28 @@ namespace BoSSS.Foundation.Grid.Classic {
                     for(int n1 = 0; n1 < CNglb_j.Length; n1++) {
                         for (int n2 = 0; n2 < CNglb_j.Length; n2++) {
                             if(n1 != n2) {
-                                if((CNglb_j[n1].Neighbour_GlobalIndex == CNglb_j[n2].Neighbour_GlobalIndex) && (CNglb_j[n1].Neighbour_GlobalIndex >= 0 )  && (CNglb_j[n2].Neighbour_GlobalIndex >= 0 )) {
-                                    long GlId0 = m_Grid.Cells[j].GlobalID;
-                                    
-                                    throw new ApplicationException("Fatal error in cell graph: edge between " + GlId0
-                                            + " and some other cell is defined multiple times.");
+                                if (CNglb_j[n1].Neighbour_GlobalIndex >= 0 && CNglb_j[n2].Neighbour_GlobalIndex >= 0) {
+
+
+                                    if ((CNglb_j[n1].Neighbour_GlobalIndex == CNglb_j[n2].Neighbour_GlobalIndex)) {
+
+                                        if (CNglb_j[n1].IsPeriodicNeighbour != CNglb_j[n2].IsPeriodicNeighbour) {
+                                            // still OK // special case: two cells in periodic direction
+                                        } else if (CNglb_j[n1].IsPeriodicNeighbour && CNglb_j[n2].IsPeriodicNeighbour) {
+                                            // still OK // special case: one cell in periodic direction
+
+                                            if (CNglb_j[n1].CellFaceTag.FaceIndex == CNglb_j[n2].CellFaceTag.FaceIndex)
+                                                throw new ApplicationException("something wrong with face indices of periodic boundary conditions (one cell layer in periodic direction)");
+
+                                        } else {
+                                            // not ok
+
+                                            long GlId0 = m_Grid.Cells[j].GlobalID;
+
+                                            throw new ApplicationException("Fatal error in cell graph: edge between " + GlId0
+                                                    + " and some other cell is defined multiple times.");
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1169,7 +1187,8 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 var BcCNglb = new GridCommons.Neighbour[J_BC][];
                 Array.Copy(CNglb, J, BcCNglb, 0, J_BC);
-
+                CNglb = null; // don't use below!
+                
                 var NeighGlobalIdx = m_Cells.CellNeighbours_global_tmp;
 
                 // define External/ghost cells, sort them according to MPI process rank
@@ -1183,7 +1202,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     var NeighGlobalIdx_j = NeighGlobalIdx[j];
                     int Nj = NeighGlobalIdx_j.Length;
 
-                    for (int n = 0; n < Nj; n++) { // loop over faces
+                    for (int n = 0; n < Nj; n++) { // loop over neighbors....
                         var idx = NeighGlobalIdx_j[n].Neighbour_GlobalIndex;
                         Debug.Assert(idx >= 0);
 
@@ -1191,6 +1210,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                             // link to a boundary cell - not relevant yet
                             continue;
                         }
+
+
 
                         if (!Part.IsInLocalRange(idx)) {
                             // found external cell
@@ -1264,21 +1285,41 @@ namespace BoSSS.Foundation.Grid.Classic {
                 m_Cells.m_CellNeighbours = new int[J][];
                 var ClNg = m_Cells.m_CellNeighbours;
                 for (int j = 0; j < J; j++) {
-                    int Nj = NeighGlobalIdx[j].Count();
-                    ClNg[j] = new int[Nj];
+                    int Nj = NeighGlobalIdx[j].Length;
+                    ClNg[j] = new int[Nj]; // local neighbour indices
+                    long jG = j + j0;
 
                     int cnt = 0;
                     for (int n = 0; n < Nj; n++) {
-                        var cn = NeighGlobalIdx[j].ElementAt(n);
+                        var cn = NeighGlobalIdx[j][n];
                         long idx = cn.Neighbour_GlobalIndex;
 
+                        if(idx == jG) {
+                            // special-case: one layer in periodic direction
 
+                            if (!cn.IsPeriodicNeighbour)
+                                throw new ApplicationException("cell cannot be its own neighbor except for periodic ones");
+                            continue;
+                        }
+
+                        
                         if (idx >= 0 && idx < Jglob) {
+                            int jNloc;
                             if (!Part.IsInLocalRange(idx)) {
-                                ClNg[j][cnt] = Global2LocalIdx[idx];
+                                jNloc = Global2LocalIdx[idx];
                             } else {
-                                ClNg[j][cnt] = Part.TransformIndexToLocal((int)idx);
+
+                                jNloc = Part.TransformIndexToLocal(idx);
                             }
+
+                            if (cn.IsPeriodicNeighbour) {
+                                // periodic b.c. with one or two cells in periodic direction:
+                                // exclude self-neighboring and multiple times the same neighbor
+                                if (ClNg[j].Contains(jNloc))
+                                    continue;
+                            }
+
+                            ClNg[j][cnt] = jNloc;
                             cnt++;
                         } else {
                             //ClNg[j][cnt] = int.MinValue;

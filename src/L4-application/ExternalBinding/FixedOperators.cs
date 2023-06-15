@@ -232,13 +232,25 @@ namespace BoSSS.Application.ExternalBinding {
         }
         // public static bool FirstTimeStep = true;
 
+        static void VerifyTrackerState(LevelSetTracker lsTrk) {
+            var NoOfCells_a = lsTrk.Regions.GetSpeciesMask("a").NoOfItemsLocally.MPISum();
+            var NoOfCells_b = lsTrk.Regions.GetSpeciesMask("a").NoOfItemsLocally.MPISum();
+            var NoOfCells_cut = lsTrk.Regions.GetCutCellMask().NoOfItemsLocally.MPISum();
+
+            if (NoOfCells_a > 0 && NoOfCells_b > 0 && NoOfCells_cut == 0)
+                throw new ArithmeticException("Level-Set yields positive and negative cells, but no cut-cells can be identified; probably the level-set was just polynomial degree 0 (this does not work)");
+        }
+
+        static bool FirstSolve = true;
+
+
         /// <summary>
         /// Solves the Cahn-Hilliard equation
         /// This method also contains arguments that cannot be made available to OpenFOAM due to limitations of the mono-C-interface.
         /// </summary>
         public void CahnHilliardInternal(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction func = null, CahnHilliardParameters chParams = new CahnHilliardParameters()) {
-            try {
-
+            //try {
+            { 
                 _mtx = mtx;
                 _ptch = ptch;
 
@@ -283,8 +295,9 @@ namespace BoSSS.Application.ExternalBinding {
                 // op.LinearizationHint = LinearizationHint.GetJacobiOperator;
 
 
-
+                /*
                 var RealLevSet = new LevelSet(b, "Levset");
+                */
 
                 int J = b.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
 
@@ -296,7 +309,7 @@ namespace BoSSS.Application.ExternalBinding {
                         func = InitFunc();
                     }
                     ScalarFunction UInitFunc() {
-                        return ((_3D)((x, y, z) => y)).Vectorize();
+                        return ((_3D)((x, y, z) => 0.01*z)).Vectorize();
                     }
                     Console.WriteLine("Zero order parameter field encountered - initializing with given function");
                     c.Clear();
@@ -304,7 +317,12 @@ namespace BoSSS.Application.ExternalBinding {
                     v.Clear();
                     w.Clear();
                     u.ProjectField(UInitFunc());
-                    c.ProjectField(func);
+
+                    var cP0 = new SinglePhaseField(new Basis(c.GridDat, 0));
+                    cP0.ProjectField(func);
+                    c.AccLaidBack(1.0, cP0);
+
+                    //c.ProjectField(func);
                 }
                 mu = new SinglePhaseField(b);
                 // for (int j = 0; j < J; j++)
@@ -356,16 +374,20 @@ namespace BoSSS.Application.ExternalBinding {
 
                     return (domfields, paramfields);
                 };
+
+                /*
                 RealLevSet.Clear();
                 RealLevSet.Acc(1.0, c);
                 LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
                                                          2, new string[] { "a", "b" },
                                                          GetNamedInputFields,
-                                                         RealLevSet, "c",
-                                                          ContinuityProjectionOption.ConstrainedDG
-                                                          // ContinuityProjectionOption.None
-                );
+                                                         RealLevSet, "c", ContinuityProjectionOption.ConstrainedDG);
+                // note on continuity projection: 
+                // - For the Stokes Extension, we only require level-set-surface integrals; no cut-edge integrals are required;
+                // - therefore, the level-set does not need to be strictly continuous.
+                // => ContinuityProjectionOption.None should be ok.
                 lsu.EnforceContinuity();
+                
                 var RealTracker = lsu.Tracker;
                 // mu.Laplacian(-cahn, c);
                 // mu.Acc(-1.0, c);
@@ -381,9 +403,11 @@ namespace BoSSS.Application.ExternalBinding {
                         }
                     }
                 }
-
+                
 
                 RealTracker.UpdateTracker(0);
+                VerifyTrackerState(RealTracker);
+                */
 
                 // SubGrid subgr = RealTracker.Regions.GetNearFieldSubgrid(6);
                 // SubGridBoundaryModes subgrbnd = 0;
@@ -398,23 +422,23 @@ namespace BoSSS.Application.ExternalBinding {
                 // CellMask mask = subgrMask;
                 // SubGrid sgrid = subgr;
 
-                int noOfNarrowBandCells = 0;
-                if (mask != null) {
-                    foreach (bool cellInNarrowBand in mask.GetBitMask()) {
-                        if (cellInNarrowBand) {
-                            noOfNarrowBandCells++;
-                        }
-                    }
-                    if (noOfNarrowBandCells == 0) {
-                        Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
-                        // throw new ApplicationException("No interface found");
-                        // mask = fullMask;
-                        // sgrid = fullSubGrd;
-                        // Console.WriteLine("No narrow band cells detected, solving on the whole domain");
-                    } else {
-                        Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
-                    }
-                }
+                //int noOfNarrowBandCells = 0;
+                //if (mask != null) {
+                //    foreach (bool cellInNarrowBand in mask.GetBitMask()) {
+                //        if (cellInNarrowBand) {
+                //            noOfNarrowBandCells++;
+                //        }
+                //    }
+                //    if (noOfNarrowBandCells == 0) {
+                //        Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
+                //        // throw new ApplicationException("No interface found");
+                //        // mask = fullMask;
+                //        // sgrid = fullSubGrd;
+                //        // Console.WriteLine("No narrow band cells detected, solving on the whole domain");
+                //    } else {
+                //        Console.WriteLine("Solving only in a narrow band containing " + noOfNarrowBandCells + " of " + noOfTotalCells + " cells");
+                //    }
+                //}
 
                 //System.Collections.BitArray subGridCellMask = mask?.GetBitMask();
 
@@ -474,10 +498,15 @@ namespace BoSSS.Application.ExternalBinding {
                     rightBVC.type = "Pressure_Outlet";
                     var topBVC = new AppControl.BoundaryValueCollection();
                     topBVC.type = "Wall";
+                    topBVC.Evaluators.Add("VelocityX", (X,t) => 0.01*X[2]);
                     var bottomBVC = new AppControl.BoundaryValueCollection();
                     bottomBVC.type = "Wall";
+                    bottomBVC.Evaluators.Add("VelocityX", (X,t) => 0.01*X[2]);
                     var fbBVC = new AppControl.BoundaryValueCollection();
-                    fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
+                    //fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
+                    //fbBVC.type = IncompressibleBcType.FreeSlip.ToString();
+                    //fbBVC.type = IncompressibleBcType.Pressure_Outlet.ToString();
+                    fbBVC.type = IncompressibleBcType.Wall.ToString();
                     var bcmapcollection = new Dictionary<string, AppControl.BoundaryValueCollection>() {
                             { "left", leftBVC},
                             { "right", rightBVC},
@@ -486,8 +515,10 @@ namespace BoSSS.Application.ExternalBinding {
                             { "frontAndBack", fbBVC},
                     };
                     // string[] bndFuncName = new string[]{"left", "right", "bottom", "top"};
-                    BCmap = new IncompressibleBoundaryCondMap(RealTracker.GridDat, bcmapcollection, PhysicsMode.Incompressible);
+                    BCmap = new IncompressibleBoundaryCondMap(grd, bcmapcollection, PhysicsMode.Incompressible);
                 }
+
+                
 
                 // perform Stokes Extension
                 // ========================
@@ -495,19 +526,27 @@ namespace BoSSS.Application.ExternalBinding {
                 SinglePhaseField[] uStokes;
                 {
                     stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true);
-                    uStokes = velocity.CloneAs();
-                    stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
+                    uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
+                  /*  stokesExt.SolveExtension(0, RealTracker, uStokes, velocity); */
                     // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
                 }
 
 
-
+                /*
                 lsu.InitializeParameters(domfields, paramfields);
+                */
 
                 // var tp = new Tecplot(grd.Grid.GridData, 3);
-                Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
-                // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w);
+                // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
+                uStokes[0].Identification = VariableNames.Velocity0X;
+                uStokes[1].Identification = VariableNames.Velocity0Y;
+                uStokes[2].Identification = VariableNames.Velocity0Z;
+                u.Identification = VariableNames.VelocityX;
+                v.Identification = VariableNames.VelocityY;
+                w.Identification = VariableNames.VelocityZ;
+                Tecplot("plot.1", 0.0, 3, c, mu, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
 
+                
 
                 // Timestepper initialization
                 // ==========================
@@ -538,36 +577,6 @@ namespace BoSSS.Application.ExternalBinding {
                     // nls.MaxSolverIterations = 100;
                     nls.verbose = true;
 
-                    // TODO saye instead of hmf
-                    // XdgSubGridTimestepping TimeStepper = new XdgSubGridTimestepping(op,
-                    //                                          new SinglePhaseField[] { c, mu },
-                    //                                          new SinglePhaseField[] { Res_c, Res_mu },
-                    //                                          // TimeSteppingScheme.ExplicitEuler,
-                    //                                          TimeSteppingScheme.ImplicitEuler,
-                    //                                          sgrid,
-                    //                                          subgrbnd,
-                    //                                          LinearSolver: ls,
-                    //                                          NonLinearSolver: nls,
-                    //                                          _UpdateLevelset: (() => lsu),
-                    //                                          _LevelSetHandling: LevelSetHandling.LieSplitting,
-                    //                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
-                    //                                          _AgglomerationThreshold: 0.0,
-                    //                                          _optTracker: RealTracker
-                    //                                          );
-
-                    // XdgTimestepping TimeStepperNoSG = new XdgTimestepping(opNoSG,
-                    //                                          new SinglePhaseField[]{cNoSG, muNoSG},
-                    //                                          new SinglePhaseField[]{Res_cNoSG, Res_muNoSG},
-                    //                                          // TimeSteppingScheme.ExplicitEuler,
-                    //                                          TimeSteppingScheme.ImplicitEuler,
-                    //                                          LinearSolver: ls,
-                    //                                          NonLinearSolver: nls,
-                    //                                          // _UpdateLevelset: (() => lsu),
-                    //                                          // _LevelSetHandling: LevelSetHandling.LieSplitting,
-                    //                                          // _LevelSetHandling: LevelSetHandling.Coupled_Once,
-                    //                                          _AgglomerationThreshold: 0.0,
-                    //                                          _optTracker: RealTrackerNoSG
-                    //                                          );
 
                     TimeStepper = new XdgTimestepping(CahnHillOp,
                                                       new SinglePhaseField[] { c, mu },
@@ -577,9 +586,9 @@ namespace BoSSS.Application.ExternalBinding {
                                                       null,
                                                       null,
                                                       LinearSolver: ls,
-                                                      NonLinearSolver: nls,
+                                                      NonLinearSolver: nls
                                                       // RealTracker,
-                                                      lsu: (() => lsu)
+                                                      // ,lsu: (() => lsu)
                                                       // _LevelSetHandling: LevelSetHandling.LieSplitting,
                                                       // _LevelSetHandling: LevelSetHandling.Coupled_Once,
                                                       // _AgglomerationThreshold: 0.0
@@ -604,18 +613,52 @@ namespace BoSSS.Application.ExternalBinding {
                     double cVarVal = cVar.IntegralOver(null);
                     Console.WriteLine("cMean: " + cMean0);
                     Console.WriteLine("cVar: " + cVarVal);
-                    TimeStepper.Solve(time, dt);
-                    t++;
-                    time += dt;
+                    if (FirstSolve){
+                        TimeStepper.Solve(time, dt);
+                        t++;
+                        time += dt;
+                        FirstSolve = false;
+                    }
+                    Tecplot("plot." + (t + 2), time, 3, c, mu, u, v, w);
+                    var RealLevSet = new LevelSet(b, "Levset");
+                    RealLevSet.Clear();
+                    RealLevSet.Acc(1.0, c);
+                    LevelSetUpdater lsu;
+                    lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
+                                                             2, new string[] { "a", "b" },
+                                                             GetNamedInputFields,
+                                                             RealLevSet, "c", ContinuityProjectionOption.None);
+                    // note on continuity projection:
+                    // - For the Stokes Extension, we only require level-set-surface integrals; no cut-edge integrals are required;
+                    // - therefore, the level-set does not need to be strictly continuous.
+                    // => ContinuityProjectionOption.None should be ok.
+                    lsu.EnforceContinuity();
+                    lsu.InitializeParameters(domfields, paramfields);
+                    var RealTracker = lsu.Tracker;
+
+                    foreach (var _ls in RealTracker.LevelSets)
+                    {
+                        var _dgls = _ls as LevelSet;
+                        if (_dgls != null)
+                        {
+                            if (_dgls.L2Norm() == 0)
+                            {
+                                throw new ArithmeticException("level-set is exactly zero");
+                            }
+                        }
+                    }
+
+                    RealTracker.UpdateTracker(0);
+                    VerifyTrackerState(RealTracker);
+
                     while (time < endTime) {
-                        // RealLevSet.Clear();
-                        // RealLevSet.Acc(1.0, c);
+                        RealLevSet.Clear();
+                        RealLevSet.Acc(1.0, c);
                         RealTracker.UpdateTracker(time);
-                        uStokes = velocity.CloneAs();
-                        // if (t > 0)
+                        VerifyTrackerState(RealTracker);
+                        uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
                         stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
                         TimeStepper.Solve(time, dt);
-                        // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
 
                         var cMean = c.IntegralOver(null);
                         cVar.Clear();
@@ -627,7 +670,13 @@ namespace BoSSS.Application.ExternalBinding {
                         Console.WriteLine("relative cMean change compared to starting configuration: " + (cMean - cMean0)/cMean0);
                         Console.WriteLine("cVar: " + cVarVal);
 
-                        Tecplot("plot." + (t + 2), time, 3, c, mu, RealLevSet, u, v, w);
+                        try {
+                            Tecplot("plot." + (t + 2), time, 3, c, mu, u, v, w);
+                        } catch (Exception e) {
+                            Int32 timestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(2023, 6, 1))).TotalSeconds;
+                            System.IO.File.Move("plot." + (t + 2), "plot." + (t + 2) + timestamp);
+                            Tecplot("plot." + (t + 2), time, 3, c, mu, u, v, w);
+                        }
 
                         time += dt;
                         t++;
@@ -637,14 +686,14 @@ namespace BoSSS.Application.ExternalBinding {
 
                     }
                 }
-            } catch (Exception e) {
-                Console.WriteLine(e.GetType());
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                Console.WriteLine(e);
-                throw new AggregateException(e);
+            //} catch (Exception e) {
+            //    Console.WriteLine(e.GetType());
+            //    Console.WriteLine(e.Message);
+            //    Console.WriteLine(e.StackTrace);
+            //    Console.WriteLine(e);
+            //    throw new AggregateException(e);
+            //}
             }
-            // }
         }
 
         /// <summary>
@@ -819,7 +868,7 @@ namespace BoSSS.Application.ExternalBinding {
             /// always true
             /// </summary>
             protected override bool IsDirichlet(ref CommonParamsBnd inp) {
-                return _ptch.IsDirichlet(inp.EdgeTag);
+                return _ptch.IsDirichlet(inp.EdgeTag % GridCommons.FIRST_PERIODIC_BC_TAG);
             }
 
             /// <summary>
@@ -829,7 +878,7 @@ namespace BoSSS.Application.ExternalBinding {
                 if (inp.EdgeTag == 0){
                     throw new ApplicationException("Edge Index of a boundary edge should not be zero");
                 }
-                return _ptch.Values[inp.EdgeTag - 1][0];
+                return _ptch.Values[inp.EdgeTag % GridCommons.FIRST_PERIODIC_BC_TAG - 1][0];
             }
 
             /// <summary>
@@ -864,8 +913,8 @@ namespace BoSSS.Application.ExternalBinding {
             protected override bool IsDirichlet(ref CommonParamsBnd inp) {
                 // return !_ptch.IsDirichlet(inp.EdgeTag);
                 // return _ptch.IsDirichlet(inp.EdgeTag);
-                return true;
-                // return false;
+                // return true;
+                return false;
             }
 
             /// <summary>
@@ -898,10 +947,11 @@ namespace BoSSS.Application.ExternalBinding {
                 this._ptch = ptch;
             }
             protected override bool IsDirichlet(ref CommonParamsBnd inp) {
-                return _ptch.IsDirichlet(inp.EdgeTag);
+                // return true;
+                return _ptch.IsDirichlet(inp.EdgeTag % GridCommons.FIRST_PERIODIC_BC_TAG);
             }
             public bool GetIsDiri(int et){
-                return _ptch.IsDirichlet(et);
+                return _ptch.IsDirichlet(et % GridCommons.FIRST_PERIODIC_BC_TAG);
             }
 
             /// <summary>
@@ -913,7 +963,10 @@ namespace BoSSS.Application.ExternalBinding {
                     throw new ApplicationException("Edge Tag of a boundary edge should not be zero");
                 }
                 // Console.WriteLine("diriC " + _ptch.Values[inp.EdgeTag - 1][0]);
-                return _ptch.Values[inp.EdgeTag - 1][0];
+                // Console.WriteLine(_ptch.Values.Count);
+                // Console.WriteLine(inp.EdgeTag % GridCommons.FIRST_PERIODIC_BC_TAG);
+                // Console.WriteLine(inp.EdgeTag);
+                return _ptch.Values[inp.EdgeTag % GridCommons.FIRST_PERIODIC_BC_TAG - 1][0];
                 // return 1.0;
             }
 

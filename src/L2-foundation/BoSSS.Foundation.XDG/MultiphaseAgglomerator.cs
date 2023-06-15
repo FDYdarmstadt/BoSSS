@@ -872,6 +872,8 @@ namespace BoSSS.Foundation.XDG {
                     // Needed, such that all ExternalCells (i.e. Ghost cells) have the correct CellSurface
                     CellLengthScalesMda.Storage.MPIExchange(this.Tracker.GridDat);
 
+                    var uncutLengthScale = Tracker.GridDat.Cells.CellLengthScale;
+
                     for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                         SpeciesId spc = species[iSpc];
                         MultidimensionalArray CellSurface = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 0);
@@ -880,7 +882,7 @@ namespace BoSSS.Foundation.XDG {
                         MultidimensionalArray VolumeFrac = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 2);
 
                         // Loop includes external cells
-                        for (int j = 0; j < JE; j++) {
+                        for(int j = 0; j < JE; j++) {
                             // Note: the following un-guarded division might result in NaN's or Inf's.
                             // (especially in void-cells, the NaN's are desired)
                             // This is intended, since it will create exceptions in the penalty computation when something is wrong with the cut-cell integration domain.
@@ -914,7 +916,7 @@ namespace BoSSS.Foundation.XDG {
                                 double Fraction = VolumeFrac[j];
 
                                 if(Fraction <= 1.0e-10)
-                                    LengthScales[j] = 1e10;
+                                    LengthScales[j] = 1e10*uncutLengthScale[j];
                             }
                         }
                     }

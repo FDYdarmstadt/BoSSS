@@ -43,7 +43,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         public static SinglePhaseField RunDropletTest(string GridPath, string PlotTargetDir = "./plots/", FixedOperators chOp = null) {
             Init();
-            GridImportTest.ConvertFOAMGrid();
+            //GridImportTest.ConvertFOAMGrid();
             Console.WriteLine("Running Cahn-Hilliard Droplet Test");
             if (chOp == null) {
                 chOp = new FixedOperators();
@@ -52,12 +52,12 @@ namespace BoSSS.Application.ExternalBinding {
             OpenFoamDGField f = new OpenFoamDGField(grd, 2, 2);
             OpenFoamMatrix mtx = new OpenFoamMatrix(grd, f);
             OpenFoamPatchField cPtch;
-            int[] safeEts = new int[] { 1, 2, 3 };
-            string[] safeEtyps = new string[] { "neumann", "neumann", "neumann" };
-            double[] safeVals = new double[] { 0.0, 0.0, 0 };
+            int[] safeEts = new int[] { 1, 2, 3, 4, 5 };
+            string[] safeEtyps = new string[] { "neumann", "neumann", "neumann", "neumann", "neumann" };
+            double[] safeVals = new double[] { 0.0, 0.0, 0.0 , 0.0 , 0.0 };
             cPtch = new OpenFoamPatchField(grd, 1, safeEts, safeEtyps, safeVals);
 
-            double[] safeValsU = new double[] { 1.0, -1.0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] safeValsU = new double[] { 0.01*15, 0.01*(-15), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             OpenFoamPatchField uPtch = new OpenFoamPatchField(grd, 3, safeEts, safeEtyps, safeValsU);
             OpenFoamDGField U = new OpenFoamDGField(grd, 2, 3);
 
@@ -69,7 +69,7 @@ namespace BoSSS.Application.ExternalBinding {
             //     return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
             // }
 
-            var _chParams = new CahnHilliardParameters(_cahn: 1.0, _stationary: true);
+            var _chParams = new CahnHilliardParameters(_cahn: 0.1, _diffusion: 0.1, _stationary: false, _dt: 0.2, _endT: 0.2*1.1);
             chOp.CahnHilliardInternal(mtx, null, U, cPtch, uPtch, chParams: _chParams);
 
             var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
@@ -82,7 +82,9 @@ namespace BoSSS.Application.ExternalBinding {
             System.IO.Directory.CreateDirectory(targetPath);
             foreach (var file in files)
             {
-                file.MoveTo(targetPath + "/" + file.Name);
+                try {
+                    file.MoveTo(targetPath + "/" + file.Name);
+                } catch (Exception e){}
             }
             return field;
         }

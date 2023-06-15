@@ -500,11 +500,10 @@ namespace BoSSS.Foundation.XDG {
                                 normRef += refGradients[i, j, d] * refGradients[i, j, d];
                             }
 
-                            if (Math.Abs(normPhys) < 1e-15)
-                                {
-                                    Console.WriteLine($"WARNING: commented out exception");
-                                    normPhys = 1.0;
-                                }
+                            if (Math.Abs(normPhys) < 1e-15) {
+                                Console.WriteLine($"WARNING: commented out exception");
+                                normPhys = 1.0;
+                            }
                             result[i, j] = Math.Sqrt(normRef / normPhys) * sc;
                         }
                     } else {
