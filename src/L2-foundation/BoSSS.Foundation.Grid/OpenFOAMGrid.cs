@@ -305,6 +305,37 @@ namespace BoSSS.Foundation.Grid {
 
             // create BoSSS grid
             FOAMmesh_to_BoSSS(this, nCells, faces, neighbour, owner, points, names, patchIDs, emptyTag);
+            
+            this.GridDataObject = new GridData(this);
+            this.DefineEdgeTags(delegate (double[] X) { // TODO generalize
+                if (Math.Abs(X[0] - (-15)) < 1e-10) {
+                    return "left";
+                }
+                if (Math.Abs(X[0] - 15) < 1e-10) {
+                    return "right";
+                }
+                if (Math.Abs(X[1] - 0) < 1e-10) {
+                    return "frontAndBack";
+                }
+                if (Math.Abs(X[1] - 0.1) < 1e-10) {
+                    return "frontAndBack";
+                }
+                if (Math.Abs(X[2] - (-15)) < 1e-10) {
+                    return "top";
+                }
+                if (Math.Abs(X[2] - 15) < 1e-10) {
+                    return "bottom";
+                }
+                // return 3;
+                Console.WriteLine("Argument out of range!");
+                throw new ArgumentOutOfRangeException();
+            }
+            );
+            this.GridDataObject.Invalidate();
+            this.GridDataObject = null;
+            
+
+           
 
             // create grid data object
             this.GridDataObject = new GridData(this);
@@ -337,7 +368,11 @@ namespace BoSSS.Foundation.Grid {
             private set;
         }
 
-        public override GridData GridData => GridDataObject;
+        public override GridData GridData {
+            get {
+                return GridDataObject;
+            }
+        }
 
 
         /// <summary>

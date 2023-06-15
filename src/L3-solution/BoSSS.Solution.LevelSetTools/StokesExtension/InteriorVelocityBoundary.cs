@@ -63,9 +63,9 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
         public void MyParameterUpdate(DGField[] Arguments, DGField[] Parameters) {
             //throw new NotImplementedException();
-            Console.WriteLine("ivb parameter " + ParameterOrdering[0] + " " + Parameters[0].L2Norm());
-            Console.WriteLine("ivb parameter " + ParameterOrdering[1] + " " + Parameters[1].L2Norm());
-            Console.WriteLine("ivb parameter " + ParameterOrdering[2] + " " + Parameters[2].L2Norm());
+            //Console.WriteLine("ivb parameter " + ParameterOrdering[0] + " " + Parameters[0].L2Norm());
+            //Console.WriteLine("ivb parameter " + ParameterOrdering[1] + " " + Parameters[1].L2Norm());
+            //Console.WriteLine("ivb parameter " + ParameterOrdering[2] + " " + Parameters[2].L2Norm());
             if(Parameters.Length != 1) {
                 throw new ArgumentException();
             }

@@ -43,7 +43,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         public static SinglePhaseField RunDropletTest(string GridPath, string PlotTargetDir = "./plots/", FixedOperators chOp = null) {
             Init();
-            GridImportTest.ConvertFOAMGrid();
+            //GridImportTest.ConvertFOAMGrid();
             Console.WriteLine("Running Cahn-Hilliard Droplet Test");
             if (chOp == null) {
                 chOp = new FixedOperators();

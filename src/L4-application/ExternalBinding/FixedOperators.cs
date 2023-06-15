@@ -489,7 +489,10 @@ namespace BoSSS.Application.ExternalBinding {
                     var bottomBVC = new AppControl.BoundaryValueCollection();
                     bottomBVC.type = "Wall";
                     var fbBVC = new AppControl.BoundaryValueCollection();
-                    fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
+                    //fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
+                    //fbBVC.type = IncompressibleBcType.FreeSlip.ToString();
+                    //fbBVC.type = IncompressibleBcType.Pressure_Outlet.ToString();
+                    fbBVC.type = IncompressibleBcType.Wall.ToString();
                     var bcmapcollection = new Dictionary<string, AppControl.BoundaryValueCollection>() {
                             { "left", leftBVC},
                             { "right", rightBVC},
