@@ -270,6 +270,10 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             (BlockMsrMatrix OpMtx, double[] RHS) = ComputeMatrix(levelSetIndex, lsTrk, ExtenstionSolVec.Mapping, VelocityAtInterface);
 
+            //var RHSdg = new CoordinateVector(DummySolFields.Select(dd => dd.CloneAs()));
+            //RHSdg.SetV(RHS, 1.0);
+            //double[] RHSL2norm = RHSdg.Fields.Select(f => f.L2Norm()).ToArray();
+
             // should be replaced by something more sophisticated
             var Residual = RHS.CloneAs();
             Console.WriteLine("Stokes Extension RHS " + RHS.MPI_L2Norm());

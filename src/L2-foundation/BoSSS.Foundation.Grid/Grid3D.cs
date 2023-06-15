@@ -106,12 +106,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                 int nY = yNodes.Length - 1;
                 int nZ = zNodes.Length - 1;
 
-                if (nX < 3 && periodicX)
-                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
-                if (nY < 3 && periodicY)
-                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
-                if (nZ < 3 && periodicZ)
-                    throw new ArithmeticException("At least 3 Elements are required for Periodic Boundary Condition to work");
+                if (nX < 1)
+                    throw new ArithmeticException("At least 2 node are required.");
+                if (nY < 1)
+                    throw new ArithmeticException("At least 2 node are required.");
+                if (nZ < 1)
+                    throw new ArithmeticException("At least 2 node are required.");
 
                 int myrank;
                 int size;
@@ -157,7 +157,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         new Vector { xNodes[nX], yNodes[nY], zNodes[0] },
                                         new Vector { xNodes[0], yNodes[nY], zNodes[nZ] }
                                         };
-                    grid.ConstructPeriodicEdgeTrafo(Outlet, new double[] { 0, 1.0, 0 }, Inlet, new double[] { 0, 1.00, 0 }, out peryTag);
+                    grid.ConstructPeriodicEdgeTrafo(Outlet, new double[] { 0, 1.0, 0 }, Inlet, new double[] { 0, 1.0, 0 }, out peryTag);
                     grid.EdgeTagNames.Add(peryTag, "Periodic-Y");
                 }
 

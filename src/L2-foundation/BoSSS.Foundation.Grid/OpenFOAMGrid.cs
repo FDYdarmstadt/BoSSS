@@ -331,6 +331,10 @@ namespace BoSSS.Foundation.Grid {
                 throw new ArgumentOutOfRangeException();
             }
             );
+
+            this.AddPeriodicBoundary(new Vector(0, 0.1, 0), new Vector(0, 1, 0), new Vector(0, 0.0, 0), new Vector(0, 1, 0));
+            
+            
             this.GridDataObject.Invalidate();
             this.GridDataObject = null;
             

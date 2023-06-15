@@ -187,10 +187,19 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Computes the neighbor cells globally (i.e. over all MPI processors) for each local cell.
         /// </summary>
-        /// <returns>
         /// <param name="IncludeBcCells">
         /// If true, also the boundary condition cells (<see cref="BcCells"/>) will be included in the output array.
         /// </param>
+        /// <param name="FilterPeriodicDuplicities">
+        /// Relevant in case of periodic boundary conditions with one or two cells in periodic direction;
+        /// In such cases, the following can occur:
+        /// - for one cell in periodic direction: the cell is its own neighbor
+        /// - for two cells in periodic direction: the cell has two edges with the same neigbor, i.e. a normal one and a periodic one
+        /// Both cases violate the definition of a undirected graph, i.e. there can only be one or zero edge between to cells (aka. vertexes in the sense of a ) and any edge must be between two cells.
+        /// 
+        /// If set to true, these suckers will be taken out.
+        /// </param>
+        /// <returns>
         /// Cell-wise neighborship information:
         /// - 1st index: local cell index <em>j</em>, i.e. correlates with <see cref="Cells"/>; if <paramref name="IncludeBcCells"/> is true,
         ///   the information for boundary cells is added after the information for cells.
@@ -198,7 +207,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         ///   is greater or equal than the global number of cells (<see cref="NumberOfCells"/>) the neighbor is a boundary condition cell,
         ///   (<see cref="BcCells"/>).
         /// </returns>
-        public Neighbour[][] GetCellNeighbourship(bool IncludeBcCells) {
+        public Neighbour[][] GetCellNeighbourship(bool IncludeBcCells, bool FilterPeriodicDuplicities) {
             ilPSP.MPICollectiveWatchDog.Watch();
             using (var tr = new FuncTrace()) {
                 //tr.InfoToConsole = true;
@@ -489,14 +498,11 @@ namespace BoSSS.Foundation.Grid.Classic {
                     }
 
 
-
+                    // find neighbor cells connected via grid nodes
+                    // - - - - - - - - - - - - - - - - - - - - - - - 
                     for (int j = 0; j < J + J_BC; j++) { // loop over cells
                         Element Cell_j = GetCell(j);
                         RefElement Kref = GetRefElement(j);
-
-
-                        // find neighbor cells connected via grid nodes
-                        // - - - - - - - - - - - - - - - - - - - - - - - 
 
                         if (j < J) {
                             //normal cells: match faces
@@ -528,9 +534,12 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 AddNeighbor(j, jNeig, 0);
                             }
                         }
+                    }
 
-                        // find neighbor cells connected via CellFaceTag's
-                        // - - - - - - - - - - - - - - - - - - - - - - - - 
+                    // find neighbor cells connected via CellFaceTag's
+                    // - - - - - - - - - - - - - - - - - - - - - - - - 
+                    for (int j = 0; j < J + J_BC; j++) { // loop over cells
+                        Element Cell_j = GetCell(j);
 
                         var otherNeighbours = ftNeigh[j]; // ftNeigh is the result of CellFaceTag-based connectivity
                         if (j < J) {
@@ -541,15 +550,48 @@ namespace BoSSS.Foundation.Grid.Classic {
                                 for (int w = 0; w < otherNeighbours.Length; w++) {
                                     Debug.Assert(_Cell_j.CellFaceTags[w].NeighCell_GlobalID < 0 == otherNeighbours[w] < 0);
                                     if (_Cell_j.CellFaceTags[w].NeighCell_GlobalID >= 0) {
-                                        if (Cell_j_Neighs.Where(neigh => neigh.Neighbour_GlobalIndex == otherNeighbours[w]).Count() <= 0) { // filter duplicates
+                                        // a connection to 
+
+
+                                        bool CompareNeighbors_FilterSelfPeriodiodic(Neighbour neigh) {
+                                            return neigh.Neighbour_GlobalIndex == otherNeighbours[w];
+                                        }
+
+                                        bool CompareNeighbors_IncludeSelfPeriodic(Neighbour neigh) {
+                                            if (neigh.Neighbour_GlobalIndex != otherNeighbours[w])
+                                                return false;
+
+                                            if (neigh.IsPeriodicNeighbour != _Cell_j.CellFaceTags[w].IsPeriodicNeighbour)
+                                                return false;
+
+                                            if (neigh.IsPeriodicNeighbour && _Cell_j.CellFaceTags[w].IsPeriodicNeighbour) {
+                                                if (neigh.CellFaceTag.PeriodicInverse != _Cell_j.CellFaceTags[w].PeriodicInverse)
+                                                    return false;
+                                            }
+
+                                            return true;
+                                        }
+
+                                        Func<Neighbour, bool> CompareNeighbors;
+                                        if (FilterPeriodicDuplicities)
+                                            CompareNeighbors = CompareNeighbors_FilterSelfPeriodiodic;
+                                        else
+                                            CompareNeighbors = CompareNeighbors_IncludeSelfPeriodic;
+
+
+                                        if (Cell_j_Neighs.Where(CompareNeighbors).Count() <= 0) { // filter duplicates
                                             var nCN = new Neighbour() {
                                                 Neighbour_GlobalIndex = otherNeighbours[w],
                                                 CellFaceTag = _Cell_j.CellFaceTags[w],
                                             };
-                                            AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
+                                            
+                                            if(FilterPeriodicDuplicities)
+                                                AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
                                             Cell_j_Neighs.Add(nCN);
 
-                                            
+
+                                        } else {
+                                            Console.WriteLine("some duplicate found");
                                         }
                                     }
                                 }

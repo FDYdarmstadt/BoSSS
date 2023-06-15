@@ -246,8 +246,8 @@ namespace BoSSS.Application.ExternalBinding {
         /// This method also contains arguments that cannot be made available to OpenFOAM due to limitations of the mono-C-interface.
         /// </summary>
         public void CahnHilliardInternal(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction func = null, CahnHilliardParameters chParams = new CahnHilliardParameters()) {
-            try {
-
+            //try {
+            { 
                 _mtx = mtx;
                 _ptch = ptch;
 
@@ -314,7 +314,7 @@ namespace BoSSS.Application.ExternalBinding {
                     w.Clear();
                     u.ProjectField(UInitFunc());
 
-                    var cP0 = new SinglePhaseField(new Basis(c.GridDat, 0));
+                    var cP0 = new SinglePhaseField(new Basis(c.GridDat, c.Basis.Degree));
                     cP0.ProjectField(func);
                     c.AccLaidBack(1.0, cP0);
 
@@ -375,7 +375,11 @@ namespace BoSSS.Application.ExternalBinding {
                 LevelSetUpdater lsu = new LevelSetUpdater(grd, XQuadFactoryHelper.MomentFittingVariants.Classic,
                                                          2, new string[] { "a", "b" },
                                                          GetNamedInputFields,
-                                                         RealLevSet, "c", ContinuityProjectionOption.ConstrainedDG);
+                                                         RealLevSet, "c", ContinuityProjectionOption.None);
+                // note on continuity projection: 
+                // - For the Stokes Extension, we only require level-set-surface integrals; no cut-edge integrals are required;
+                // - therefore, the level-set does not need to be strictly continuous.
+                // => ContinuityProjectionOption.None should be ok.
                 lsu.EnforceContinuity();
                 var RealTracker = lsu.Tracker;
                 // mu.Laplacian(-cahn, c);
@@ -521,6 +525,9 @@ namespace BoSSS.Application.ExternalBinding {
 
                 // var tp = new Tecplot(grd.Grid.GridData, 3);
                 // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
+                u.Identification = VariableNames.VelocityX;
+                v.Identification = VariableNames.VelocityY;
+                w.Identification = VariableNames.VelocityZ;
                 Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w);
 
 
@@ -649,14 +656,14 @@ namespace BoSSS.Application.ExternalBinding {
 
                     }
                 }
-            } catch (Exception e) {
-                Console.WriteLine(e.GetType());
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-                Console.WriteLine(e);
-                throw new AggregateException(e);
+            //} catch (Exception e) {
+            //    Console.WriteLine(e.GetType());
+            //    Console.WriteLine(e.Message);
+            //    Console.WriteLine(e.StackTrace);
+            //    Console.WriteLine(e);
+            //    throw new AggregateException(e);
+            //}
             }
-            // }
         }
 
         /// <summary>

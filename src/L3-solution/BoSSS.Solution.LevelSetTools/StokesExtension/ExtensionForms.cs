@@ -14,9 +14,9 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
         }
 
-        //public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-        //    return 0;
-        //}
+        public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            return 0;
+        }
 
     }
 
@@ -28,9 +28,9 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             this._d = _d;
         }
 
-        //protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
-        //    return 0.0;
-        //}
+        protected override double BorderEdgeFlux(ref CommonParamsBnd inp, double[] Uin) {
+            return 0.0;
+        }
     }
 
     class ExtensionDivergenceFlux : Divergence_DerivativeSource_Flux {
@@ -38,8 +38,8 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             
         }
 
-        //protected override void BorderEdgeFlux_(ref CommonParamsBnd inp, double[] Uin, out double FluxInCell) {
-        //    FluxInCell = 0.0;
-        //}
+        protected override void BorderEdgeFlux_(ref CommonParamsBnd inp, double[] Uin, out double FluxInCell) {
+            FluxInCell = 0.0;
+        }
     }
 }
