@@ -190,12 +190,12 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <param name="IncludeBcCells">
         /// If true, also the boundary condition cells (<see cref="BcCells"/>) will be included in the output array.
         /// </param>
-        /// <param name="FilterPeriodicDupilities">
+        /// <param name="FilterPeriodicDuplicities">
         /// Relevant in case of periodic boundary conditions with one or two cells in periodic direction;
         /// In such cases, the following can occur:
         /// - for one cell in periodic direction: the cell is its own neighbor
         /// - for two cells in periodic direction: the cell has two edges with the same neigbor, i.e. a normal one and a periodic one
-        /// Both cases violate the definition of a undirected graph, i.e. there can only be one or zero edge between to cells (graph verices) and any edge must be between two cells.
+        /// Both cases violate the definition of a undirected graph, i.e. there can only be one or zero edge between to cells (aka. vertexes in the sense of a ) and any edge must be between two cells.
         /// 
         /// If set to true, these suckers will be taken out.
         /// </param>
@@ -207,7 +207,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         ///   is greater or equal than the global number of cells (<see cref="NumberOfCells"/>) the neighbor is a boundary condition cell,
         ///   (<see cref="BcCells"/>).
         /// </returns>
-        public Neighbour[][] GetCellNeighbourship(bool IncludeBcCells, bool FilterPeriodicDupilities) {
+        public Neighbour[][] GetCellNeighbourship(bool IncludeBcCells, bool FilterPeriodicDuplicities) {
             ilPSP.MPICollectiveWatchDog.Watch();
             using (var tr = new FuncTrace()) {
                 //tr.InfoToConsole = true;
@@ -573,7 +573,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         }
 
                                         Func<Neighbour, bool> CompareNeighbors;
-                                        if (FilterPeriodicDupilities)
+                                        if (FilterPeriodicDuplicities)
                                             CompareNeighbors = CompareNeighbors_FilterSelfPeriodiodic;
                                         else
                                             CompareNeighbors = CompareNeighbors_IncludeSelfPeriodic;
@@ -585,7 +585,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                                 CellFaceTag = _Cell_j.CellFaceTags[w],
                                             };
                                             
-                                            if(FilterPeriodicDupilities)
+                                            if(FilterPeriodicDuplicities)
                                                 AssertNeighborUniqueness(j, nCN.Neighbour_GlobalIndex);
                                             Cell_j_Neighs.Add(nCN);
 

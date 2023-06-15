@@ -395,6 +395,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                     int Jup = m_owner.Cells.NoOfLocalUpdatedCells;
                     var CellPart = m_owner.CellPartitioning;
                     long j0 = m_owner.CellPartitioning.i0;
+                    long Jglb = m_owner.CellPartitioning.TotalLength;
                     long[] GlidxExternal = m_owner.Parallel.GlobalIndicesExternalCells;
 
                     if (m_EdgesTmp != null)
@@ -429,8 +430,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                             //    continue; // this edge is already in the list
                             //// we use the most significant bit to mark processed edges
                             if (DoneMarkers[j][e])
+                                // already taken care of the edge by the connection from a lower cell index to this one
                                 continue;
-                            // if we reach this point, we've found a new edge
 
                             //int jNeig = CellNeigh[e];
                             //long jNeigGlob;
@@ -446,6 +447,14 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                             GridCommons.Neighbour cn_je = CellNeighbours_Global[j][e];
                             long jNeigGlob = cn_je.Neighbour_GlobalIndex;
+                            if(cn_je.Neighbour_GlobalIndex >= Jglb) {
+                                // connection to a boundary-condition-cell; skip for now.
+                                continue;
+                            }
+                            
+                            // **if we reach this point, we've found a new edge**
+
+
                             int jNeigh;
                             if(CellPart.IsInLocalRange(jNeigGlob))
                                 jNeigh = CellPart.TransformIndexToLocal(jNeigGlob);
