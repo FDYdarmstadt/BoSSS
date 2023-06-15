@@ -305,7 +305,7 @@ namespace BoSSS.Application.ExternalBinding {
                         func = InitFunc();
                     }
                     ScalarFunction UInitFunc() {
-                        return ((_3D)((x, y, z) => y)).Vectorize();
+                        return ((_3D)((x, y, z) => z)).Vectorize();
                     }
                     Console.WriteLine("Zero order parameter field encountered - initializing with given function");
                     c.Clear();
@@ -514,7 +514,7 @@ namespace BoSSS.Application.ExternalBinding {
                 SinglePhaseField[] uStokes;
                 {
                     stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true);
-                    uStokes = velocity.CloneAs();
+                    uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
                     stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
                     // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
                 }
@@ -525,10 +525,13 @@ namespace BoSSS.Application.ExternalBinding {
 
                 // var tp = new Tecplot(grd.Grid.GridData, 3);
                 // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
+                uStokes[0].Identification = VariableNames.Velocity0X;
+                uStokes[1].Identification = VariableNames.Velocity0Y;
+                uStokes[2].Identification = VariableNames.Velocity0Z;
                 u.Identification = VariableNames.VelocityX;
                 v.Identification = VariableNames.VelocityY;
                 w.Identification = VariableNames.VelocityZ;
-                Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w);
+                Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
 
 
                 // Timestepper initialization
