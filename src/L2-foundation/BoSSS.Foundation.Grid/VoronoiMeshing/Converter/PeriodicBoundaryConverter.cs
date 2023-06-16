@@ -124,7 +124,7 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             byte[] edgeTags,
             IDictionary<int, bool> periodicInverseMap,
             IDictionary<int, Transformation> periodicTransformations)
-            where T : IDictionary<byte, AffineTrafo>, new()
+            where T : IDictionary<byte, AffineTrafo>, new() //
         {
             var periodicTrafos = new T();
             foreach (var indiceInversePair in periodicInverseMap)
@@ -142,20 +142,17 @@ namespace BoSSS.Foundation.Grid.Voronoi.Meshing.Converter
             return periodicTrafos;
         }
 
-        public void RegisterPeriodicBoundariesTo(GridCommons grid)
-        {
+        public void RegisterPeriodicBoundariesTo(GridCommons grid) {
             Debug.Assert(boundaryMap.PeriodicTrafos is SortedList<byte, AffineTrafo>);
             var periodicTrafos = boundaryMap.PeriodicTrafos;
             //Sort by edgeTag
-            foreach (var pair in periodicTrafos)
-            {
+            foreach (var pair in periodicTrafos) {
                 AffineTrafo trafo = pair.Value;
                 byte edgeTag = pair.Key;
                 byte edgeTagInGrid = grid.AddPeriodicEdgeTrafo(trafo);
                 Debug.Assert(edgeTag == edgeTagInGrid);
 
-                if (!grid.EdgeTagNames.ContainsKey(edgeTagInGrid))
-                {
+                if (!grid.EdgeTagNames.ContainsKey(edgeTagInGrid)) {
                     grid.EdgeTagNames.Add(edgeTagInGrid, $"periodic corner {edgeTagInGrid}");
                 }
             }

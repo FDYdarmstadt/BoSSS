@@ -117,7 +117,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// accumulates the divergence of vector field <paramref name="vec"/>
+        /// accumulates the broken divergence of vector field <paramref name="vec"/>
         /// times <paramref name="alpha"/> to this field.
         /// </summary>
         /// <param name="alpha"></param>
@@ -139,7 +139,7 @@ namespace BoSSS.Foundation {
         }
 
         /// <summary>
-        /// accumulates the divergence of vector field <paramref name="vec"/>
+        /// accumulates the central difference divergence of vector field <paramref name="vec"/>
         /// times <paramref name="alpha"/>
         /// to this field.
         /// </summary>
