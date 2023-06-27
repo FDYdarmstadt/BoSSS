@@ -169,46 +169,93 @@ namespace BoSSS.Foundation.Grid {
                 // create grid data object
                 this.GridDataObject = new GridData(this);
 
+                // this.DefineEdgeTags(delegate (double[] X)
+                // { // TODO generalize
+                //     double size = 1;
+                //     double thickness = 0.1;
+                //     if (Math.Abs(X[0] - (-size)) < 1e-10)
+                //     {
+                //         return "left";
+                //     }
+                //     if (Math.Abs(X[0] - size) < 1e-10)
+                //     {
+                //         return "right";
+                //     }
+                //     if (Math.Abs(X[1] - 0) < 1e-10)
+                //     {
+                //         return "frontAndBack";
+                //     }
+                //     if (Math.Abs(X[1] - thickness) < 1e-10)
+                //     {
+                //         return "frontAndBack";
+                //     }
+                //     if (Math.Abs(X[2] - (-size)) < 1e-10)
+                //     {
+                //         return "bottom";
+                //     }
+                //     if (Math.Abs(X[2] - size) < 1e-10)
+                //     {
+                //         return "top";
+                //     }
+                //     Console.WriteLine("Argument out of range!");
+                //     throw new ArgumentOutOfRangeException();
+                // }
+                // );
+
+                Console.WriteLine("Hello!!!!");
+                this.AddPeriodicBoundary(new Vector(0, 0.1, 0), new Vector(0, 1, 0), new Vector(0, 0.0, 0), new Vector(0, 1, 0));
+                Console.WriteLine("Hello!!!!");
+
+
+                this.GridDataObject.Invalidate();
+                this.GridDataObject = null;
+
+
+
+
+                // create grid data object
+                this.GridDataObject = new GridData(this);
+
                 // TODO build correlation between bosss iEdges and OF face indices
-                this.BoSSSiEdgeToOpenFOAMFace = new int[_faces.Length];
-                for (int face = 0; face < _neighbour.Length; face++)
-                {
-                    int inCell = _owner[face];
-                    int outCell = _neighbour[face];
-                    int iEdgeIndex = -1;
-                    bool found = false;
-                    for (int iEdge = 0; iEdge < _faces.Length; iEdge++)
-                    {
-                        if (
-                        (this.GridData.Edges.CellIndices[iEdge, 0] == inCell && this.GridData.Edges.CellIndices[iEdge, 1] == outCell) ||
-                        (this.GridData.Edges.CellIndices[iEdge, 1] == inCell && this.GridData.Edges.CellIndices[iEdge, 0] == outCell) //||
-                        // (this.GridData.Edges.CellIndices[iEdge, 0] == inCell && outCell < 1 && this.GridData.Edges.CellIndices[iEdge, 1] < 1)
-                    )
-                        {
-                            if (found){
-                                Console.WriteLine(inCell);
-                                Console.WriteLine(outCell);
-                                Console.WriteLine(this.GridData.Edges.CellIndices[iEdge, 0]);
-                                Console.WriteLine(this.GridData.Edges.CellIndices[iEdge, 1]);
-                                Console.WriteLine(iEdge);
-                                Console.WriteLine(iEdgeIndex);
-                                throw new ApplicationException("inner face " + face + " already found");
-                            }
-                            iEdgeIndex = iEdge;
-                            found = true;
-                        }
-                    }
-                    if (iEdgeIndex > 0)
-                    {
-                        this.BoSSSiEdgeToOpenFOAMFace[iEdgeIndex] = face;
-                    }
-                    else
-                    {
-                        throw new ApplicationException("inner face " + face + " not found");
-                    }
-                    // var edge = this.GridDataObject.
-                    // BoSSSInCell.
-                }
+                // this.BoSSSiEdgeToOpenFOAMFace = new int[_faces.Length];
+                // for (int face = 0; face < _neighbour.Length; face++)
+                // {
+                //     int inCell = _owner[face];
+                //     int outCell = _neighbour[face];
+                //     int iEdgeIndex = -1;
+                //     bool found = false;
+                //     for (int iEdge = 0; iEdge < _faces.Length; iEdge++)
+                //     {
+                //         if (
+                //         (this.GridData.Edges.CellIndices[iEdge, 0] == inCell && this.GridData.Edges.CellIndices[iEdge, 1] == outCell) ||
+                //         (this.GridData.Edges.CellIndices[iEdge, 1] == inCell && this.GridData.Edges.CellIndices[iEdge, 0] == outCell) //||
+                //         // (this.GridData.Edges.CellIndices[iEdge, 0] == inCell && outCell < 1 && this.GridData.Edges.CellIndices[iEdge, 1] < 1)
+                //     )
+                //         {
+                //             if (found){
+                //                 Console.WriteLine(inCell);
+                //                 Console.WriteLine(outCell);
+                //                 Console.WriteLine(this.GridData.Edges.CellIndices[iEdge, 0]);
+                //                 Console.WriteLine(this.GridData.Edges.CellIndices[iEdge, 1]);
+                //                 Console.WriteLine(iEdge);
+                //                 Console.WriteLine(iEdgeIndex);
+                //                 throw new ApplicationException("inner face " + face + " already found");
+                //             }
+                //             iEdgeIndex = iEdge;
+                //             found = true;
+                //         }
+                //     }
+                //     if (iEdgeIndex > 0)
+                //     {
+                //         this.BoSSSiEdgeToOpenFOAMFace[iEdgeIndex] = face;
+                //     }
+                //     else
+                //     {
+                //         throw new ApplicationException("inner face " + face + " not found");
+                //     }
+                //     // var edge = this.GridDataObject.
+                //     // BoSSSInCell.
+                // }
 
                 // using (var fs = new FileStream("./faces.txt", FileMode.Append))
                 // using (var sw = new StreamWriter(fs))
@@ -333,7 +380,9 @@ namespace BoSSS.Foundation.Grid {
             }
             );
 
+            Console.WriteLine("Hello!!!!");
             this.AddPeriodicBoundary(new Vector(0, 0.1, 0), new Vector(0, 1, 0), new Vector(0, 0.0, 0), new Vector(0, 1, 0));
+            Console.WriteLine("Hello!!!!");
             
             
             this.GridDataObject.Invalidate();

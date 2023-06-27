@@ -282,6 +282,9 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             double[] OutputVelL2 = ExtensionVelocity.Select(vel => vel.L2Norm()).ToArray();
             Console.WriteLine("Stokes Extension, L2-Norm of result velocity PER COMPONENT: " + OutputVelL2.ToConcatString("[", ",", "]") + ", most used bc.: " + map.BCTypeUseCount.ElementAtMax(kv => kv.Value));
+            foreach (var entry in map.BCTypeUseCount){
+                Console.WriteLine(entry.Key + " " + entry.Value);
+            }
             Console.Write("");
 
             /*

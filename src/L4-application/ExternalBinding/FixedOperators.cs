@@ -249,8 +249,8 @@ namespace BoSSS.Application.ExternalBinding {
         /// This method also contains arguments that cannot be made available to OpenFOAM due to limitations of the mono-C-interface.
         /// </summary>
         public void CahnHilliardInternal(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction func = null, CahnHilliardParameters chParams = new CahnHilliardParameters()) {
-            //try {
-            { 
+            try {
+            // {
                 _mtx = mtx;
                 _ptch = ptch;
 
@@ -462,7 +462,7 @@ namespace BoSSS.Application.ExternalBinding {
 
 
                     var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda, mask);
-                    var CHCconv = new CahnHilliardCConv(() => velocity, Flux, mask);
+                    var CHCconv = new CahnHilliardCConv(() => velocity, null, mask);
                     var CHMudiff = new CahnHilliardMuDiff(ptch, penalty_const, cahn, mask);
                     var CHMusource = new CahnHilliardMuSource(mask);
                     CahnHillOp.EquationComponents["Res_c"].Add(CHCdiff);
@@ -498,21 +498,24 @@ namespace BoSSS.Application.ExternalBinding {
                     rightBVC.type = "Pressure_Outlet";
                     var topBVC = new AppControl.BoundaryValueCollection();
                     topBVC.type = "Wall";
-                    topBVC.Evaluators.Add("VelocityX", (X,t) => 0.01*X[2]);
+                    double shearRate = 0.89235;
+                    topBVC.Evaluators.Add("VelocityX", (X,t) => shearRate*X[2]);
                     var bottomBVC = new AppControl.BoundaryValueCollection();
                     bottomBVC.type = "Wall";
-                    bottomBVC.Evaluators.Add("VelocityX", (X,t) => 0.01*X[2]);
+                    bottomBVC.Evaluators.Add("VelocityX", (X,t) => shearRate*X[2]);
                     var fbBVC = new AppControl.BoundaryValueCollection();
-                    //fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
-                    //fbBVC.type = IncompressibleBcType.FreeSlip.ToString();
-                    //fbBVC.type = IncompressibleBcType.Pressure_Outlet.ToString();
-                    fbBVC.type = IncompressibleBcType.Wall.ToString();
+                    // fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
+                    fbBVC.type = IncompressibleBcType.FreeSlip.ToString();
+                    // fbBVC.type = IncompressibleBcType.Pressure_Outlet.ToString(); // leads to y-velocity after 1st timestep
+                    // fbBVC.type = IncompressibleBcType.Wall.ToString();
                     var bcmapcollection = new Dictionary<string, AppControl.BoundaryValueCollection>() {
                             { "left", leftBVC},
                             { "right", rightBVC},
                             { "bottom", bottomBVC},
                             { "top", topBVC },
                             { "frontAndBack", fbBVC},
+                            // { "front", fbBVC},
+                            // { "back", fbBVC},
                     };
                     // string[] bndFuncName = new string[]{"left", "right", "bottom", "top"};
                     BCmap = new IncompressibleBoundaryCondMap(grd, bcmapcollection, PhysicsMode.Incompressible);
@@ -544,7 +547,6 @@ namespace BoSSS.Application.ExternalBinding {
                 u.Identification = VariableNames.VelocityX;
                 v.Identification = VariableNames.VelocityY;
                 w.Identification = VariableNames.VelocityZ;
-                Tecplot("plot.1", 0.0, 3, c, mu, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
 
                 
 
@@ -614,12 +616,12 @@ namespace BoSSS.Application.ExternalBinding {
                     Console.WriteLine("cMean: " + cMean0);
                     Console.WriteLine("cVar: " + cVarVal);
                     if (FirstSolve){
+                        Tecplot("plot.1", 0.0, 3, c, mu, u, v, w);
                         TimeStepper.Solve(time, dt);
                         t++;
                         time += dt;
                         FirstSolve = false;
                     }
-                    Tecplot("plot." + (t + 2), time, 3, c, mu, u, v, w);
                     var RealLevSet = new LevelSet(b, "Levset");
                     RealLevSet.Clear();
                     RealLevSet.Acc(1.0, c);
@@ -657,6 +659,7 @@ namespace BoSSS.Application.ExternalBinding {
                         RealTracker.UpdateTracker(time);
                         VerifyTrackerState(RealTracker);
                         uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
+                        // Tecplot("plotb4." + (t + 2), time, 3, c, mu, u, v, w);
                         stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
                         TimeStepper.Solve(time, dt);
 
@@ -670,30 +673,21 @@ namespace BoSSS.Application.ExternalBinding {
                         Console.WriteLine("relative cMean change compared to starting configuration: " + (cMean - cMean0)/cMean0);
                         Console.WriteLine("cVar: " + cVarVal);
 
-                        try {
-                            Tecplot("plot." + (t + 2), time, 3, c, mu, u, v, w);
-                        } catch (Exception e) {
-                            Int32 timestamp = (Int32)(DateTime.UtcNow.Subtract(new DateTime(2023, 6, 1))).TotalSeconds;
-                            System.IO.File.Move("plot." + (t + 2), "plot." + (t + 2) + timestamp);
-                            Tecplot("plot." + (t + 2), time, 3, c, mu, u, v, w);
-                        }
+                        Tecplot("plot." + (t + 2), time, 3, c, mu, u, v, w);
 
                         time += dt;
                         t++;
-                        // if (time > 2e0)
-                        //     dt *= 10;
-                        // Tecplot("plot." + (t + 2), (t + 1) / timesteps, 3, c, mu, RealLevSet, u, v, w, cNoSG, muNoSG);
 
                     }
                 }
-            //} catch (Exception e) {
-            //    Console.WriteLine(e.GetType());
-            //    Console.WriteLine(e.Message);
-            //    Console.WriteLine(e.StackTrace);
-            //    Console.WriteLine(e);
-            //    throw new AggregateException(e);
-            //}
+            } catch (Exception e) {
+               Console.WriteLine(e.GetType());
+               Console.WriteLine(e.Message);
+               Console.WriteLine(e.StackTrace);
+               Console.WriteLine(e);
+               throw new AggregateException(e);
             }
+            // }
         }
 
         /// <summary>
@@ -981,10 +975,10 @@ namespace BoSSS.Application.ExternalBinding {
         class CahnHilliardCConv : __c_Flux {
             public CahnHilliardCConv(Func<DGField[]> VelocityGetter, OpenFoamSurfaceField Flux, CellMask Subgrid = null)
                 : base(3, VelocityGetter, null){
-                this.m_Flux = Flux;
+                // this.m_Flux = Flux;
             }
 
-            OpenFoamSurfaceField m_Flux;
+            // OpenFoamSurfaceField m_Flux;
 
             // public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
             // {
@@ -1022,44 +1016,44 @@ namespace BoSSS.Application.ExternalBinding {
             //     return phi * UxN * _vIN;
             // }
 
-            public override double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
-            {
-                // double referenceValue = base.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
-                // Console.WriteLine("Test1inner");
-                if (m_Flux == null) {
-                    // Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
-                    return base.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
-                }
-                double UxN = 0.5 * (m_Flux.GetFluxIN(ref inp) + m_Flux.GetFluxOUT(ref inp));
-                // Console.Write("Testinner2");
+            // public override double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
+            // {
+            //     // double referenceValue = base.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            //     // Console.WriteLine("Test1inner");
+            //     if (m_Flux == null) {
+            //         // Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
+            //         return base.InnerEdgeForm(ref inp, _uIN, _uOUT, _Grad_uIN, _Grad_uOUT, _vIN, _vOUT, _Grad_vIN, _Grad_vOUT);
+            //     }
+            //     double UxN = 0.5 * (m_Flux.GetFluxIN(ref inp) + m_Flux.GetFluxOUT(ref inp));
+            //     // Console.Write("Testinner2");
 
-                double UxNReference = 0;
-                for (int d = 0; d < 3; d++)
-                    UxNReference += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
+            //     double UxNReference = 0;
+            //     for (int d = 0; d < 3; d++)
+            //         UxNReference += 0.5 * (inp.Parameters_IN[d] + inp.Parameters_OUT[d]) * inp.Normal[d];
 
-                double phi;
-                if (UxN >= 0)
-                {
-                    // Console.Write("Test3inner");
-                    phi = _uIN[0];
-                }
-                else
-                {
-                    // Console.Write("Test4inner");
-                    phi = _uOUT[0];
-                }
+            //     double phi;
+            //     if (UxN >= 0)
+            //     {
+            //         // Console.Write("Test3inner");
+            //         phi = _uIN[0];
+            //     }
+            //     else
+            //     {
+            //         // Console.Write("Test4inner");
+            //         phi = _uOUT[0];
+            //     }
 
-                using (var fs = new FileStream("./out.txt", FileMode.Append))
-                using (var sw = new StreamWriter(fs))
-                {
-                    // sw.WriteLine("flux: " + (double)(phi * UxN * (_vIN - _vOUT)));
-                    // sw.WriteLine("velocityfield (inner): " + (double)(referenceValue));
-                    sw.WriteLine("flux: " + (double)(UxN));
-                    sw.WriteLine("velocityfield (inner): " + (double)(UxNReference));
-                }
-                // Console.Write("Test5inner");
-                return phi * UxN * (_vIN - _vOUT);
-            }
+            //     using (var fs = new FileStream("./out.txt", FileMode.Append))
+            //     using (var sw = new StreamWriter(fs))
+            //     {
+            //         // sw.WriteLine("flux: " + (double)(phi * UxN * (_vIN - _vOUT)));
+            //         // sw.WriteLine("velocityfield (inner): " + (double)(referenceValue));
+            //         sw.WriteLine("flux: " + (double)(UxN));
+            //         sw.WriteLine("velocityfield (inner): " + (double)(UxNReference));
+            //     }
+            //     // Console.Write("Test5inner");
+            //     return phi * UxN * (_vIN - _vOUT);
+            // }
 
         }
 
