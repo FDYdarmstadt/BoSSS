@@ -477,7 +477,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         */
 
 
-        (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) GetLsUpdaterInputFields(DGField[] domainFields) {
+        protected (IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) GetLsUpdaterInputFields(DGField[] domainFields) {
             var DomainVarsDict = new Dictionary<string, DGField>(domainFields.Length);
             for(int iVar = 0; iVar < domainFields.Length; iVar++) {
                 if(!domainFields[iVar].GridDat.IsAlive())
