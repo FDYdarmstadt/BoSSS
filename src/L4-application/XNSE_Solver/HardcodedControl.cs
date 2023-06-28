@@ -6225,7 +6225,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 C.GridPartType = GridPartType.Predefined;
                 C.GridPartOptions = "testgrid";
             } else
-                C.GridPartType = GridPartType.clusterHilbert;
+                C.GridPartType = GridPartType.METIS;
 
             C.SessionName = "XNSE_rotcube_test";
             C.saveperiod = 1;

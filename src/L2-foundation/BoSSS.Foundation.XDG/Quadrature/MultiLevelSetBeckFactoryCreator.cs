@@ -107,7 +107,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             throw new Exception("Factory not found");
         }
 
-        public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1)
+        public IQuadRuleFactory<QuadRule> GetEdgeRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory)
         {
             CombinedID id = new CombinedID
             {
@@ -119,7 +119,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             LevelSetCombination lscomb = new LevelSetCombination(id,
                 (LevelSet)levelSets[levSetIndex0].LevelSet,
                 (LevelSet)levelSets[levSetIndex1].LevelSet);
-            return new BeckQuadratureFactory(new BeckEdgeScheme(levelSets, lscomb,false), levelSets);
+            return new BeckQuadratureFactory(backupFactory, new BeckEdgeScheme(levelSets, lscomb,false), levelSets,id);
         }
 
         public IQuadRuleFactory<QuadRule> GetSurfaceFactory(int levSetIndex0,
@@ -137,10 +137,10 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 (LevelSet) levelSets[levSetIndex0].LevelSet,
                 (LevelSet) levelSets[levSetIndex1].LevelSet);
             lscomb.sign0 = 0;
-            return new BeckQuadratureFactory(new BeckSurfaceScheme(levelSets, lscomb,true), levelSets);
+            return new BeckQuadratureFactory(backupFactory, new BeckSurfaceScheme(levelSets, lscomb,true), levelSets,id0);
         }
 
-        public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1)
+        public IQuadRuleFactory<QuadRule> GetVolRuleFactory(int levSetIndex0, JumpTypes jmp0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory)
         {
             CombinedID id = new CombinedID
             {
@@ -151,7 +151,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             };
             LevelSetCombination lscomb = FindPhi(id);
 
-            return new BeckQuadratureFactory(new BeckVolumeScheme(levelSets, lscomb,true),levelSets);
+            return new BeckQuadratureFactory(backupFactory, new BeckVolumeScheme(levelSets, lscomb,true),levelSets,id);
         }
 
         public IQuadRuleFactory<QuadRule> GetEdgePointRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, IQuadRuleFactory<QuadRule> backupFactory) {
@@ -169,7 +169,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             throw new NotImplementedException();
         }
 
-        public IQuadRuleFactory<QuadRule> GetIntersectionFactory(int levSetIndex0, int levSetIndex1, IQuadRuleFactory<QuadRule> backupFactory) {
+        public IQuadRuleFactory<QuadRule> GetIntersectionFactory( int levSetIndex0, int levSetIndex1, IQuadRuleFactory<QuadRule> backupFactory) {
 
             //void Phi(int cell, NodeSet nodes, MultidimensionalArray result) {
             //    LevelSet levelSet0 = (LevelSet)levelSets[levSetIndex0].LevelSet;
@@ -190,15 +190,22 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //    return g;
             //}
 
-            //CombinedID id = new CombinedID {
-            //    LevSet0 = levSetIndex0,
-            //    Jmp0 = JumpTypes.Heaviside, // does not matter here, we need the id for the special edge detector
-            //    LevSet1 = levSetIndex1,
-            //    Jmp1 = JumpTypes.Heaviside
-            //};
+            CombinedID id0 = new CombinedID
+            {
+                LevSet0 = levSetIndex0,
+                Jmp0 = JumpTypes.Heaviside, // does not matter here, we need the id for the special edge detector
+                LevSet1 = levSetIndex1,
+                Jmp1 = JumpTypes.Heaviside
+            };
 
+            LevelSetCombination lscomb = new LevelSetCombination(id0,
+                (LevelSet)levelSets[levSetIndex0].LevelSet,
+                (LevelSet)levelSets[levSetIndex1].LevelSet);
+            lscomb.sign0 = 0;
+            lscomb.sign1 = 0;
+            return new BeckQuadratureFactory(backupFactory, new BeckSurfaceScheme(levelSets, lscomb, true), levelSets, id0);
             //var surfaceScheme = new BruteForceZeroScheme(Phi, Det);
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
             //return new BruteForceQuadratureFactory(backupFactory, levelSets, id, surfaceScheme, 400);
         }
 
@@ -219,14 +226,18 @@ namespace BoSSS.Foundation.XDG.Quadrature
     {
         BeckBaseScheme scheme;
 
-        //MultiLevelSetOnEdgeDetector detector;
+        MultiLevelSetOnEdgeDetector detector;
 
         LevelSetData[] data;
 
-        public BeckQuadratureFactory(BeckBaseScheme scheme, LevelSetTracker.LevelSetData[] data)
+        IQuadRuleFactory<QuadRule> fallBackFactory;
+
+        public BeckQuadratureFactory(IQuadRuleFactory<QuadRule> fallBackFactory, BeckBaseScheme scheme, LevelSetTracker.LevelSetData[] data, CombinedID id)
         {
+            this.fallBackFactory = fallBackFactory;
             this.scheme = scheme;
             this.data = data;
+            detector = new MultiLevelSetOnEdgeDetector(data, id);
         }
 
         //public BeckQuadratureFactory(LevelSetTracker.LevelSetData[] data, CombinedID id, BeckBaseScheme scheme) : this(scheme,data)
@@ -243,6 +254,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         public virtual IEnumerable<IChunkRulePair<QuadRule>> GetQuadRuleSet(ExecutionMask mask, int order)
         {
+
             List<ChunkRulePair<QuadRule>> rule = new List<ChunkRulePair<QuadRule>>();
             //adds a quadrature rule for every element in the mask
             foreach (Chunk chunk in mask)
@@ -250,13 +262,229 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 for (int i = chunk.i0; i < chunk.JE; ++i)
                 {
                     Chunk singleChunk = Chunk.GetSingleElementChunk(i);
-                    ChunkRulePair<QuadRule> pair = new ChunkRulePair<QuadRule>(singleChunk, scheme.GetQuadRule(i,order));
+                    if (detector != null)
+                    {
+                        ExecutionMask singleMask;
+                        bool special;
+                        bool active;
+                        if (mask is CellMask cm)
+                        {
+                            special = detector.IsSpecialCell(i);
+                            active = detector.IsActiveCell(i);
+                            singleMask = new CellMask(cm.GridData, singleChunk, MaskType.Geometrical);
+                        }
+                        else
+                        {
+                            EdgeMask em = (EdgeMask)mask;
+                            special = detector.IsSpecialEdge(i);
+                            active = detector.IsActiveEdge(i);
+                            singleMask = new EdgeMask(em.GridData, singleChunk, MaskType.Geometrical);
+                        }
+
+                        // detected a "special" cell, treat differently
+                        if (special)
+                        {
+                            QuadRule specialRule;
+                            specialRule = GetSpecialQuadRule(i, singleMask, order, active);
+
+                            // add to List and jump to next chunk
+                            ChunkRulePair<QuadRule> pairSpecial = new ChunkRulePair<QuadRule>(singleChunk, specialRule);
+                            rule.Add(pairSpecial);
+                            continue;
+                        }
+                    }
+                    ChunkRulePair<QuadRule> pair = new ChunkRulePair<QuadRule>(singleChunk, scheme.GetQuadRule(i, order));
                     rule.Add(pair);
                 }
             }
             return rule;
         }
 
+        private QuadRule GetSpecialQuadRule(int i, ExecutionMask singleMask, int order, bool activeChunk)
+        {
+            QuadRule specialRule;
+
+            switch (scheme)
+            {
+                case BeckZeroScheme b:
+                    // to avoid deadlocks? construct here
+                    specialRule = ConstructSpecialQuadRule(i, singleMask, order);
+
+                    // skip cells not in active phase, could otherwise lead to problems, when there are kinks in the levelset (i.e. different contact angle from right and left)
+                    if (activeChunk)
+                    {
+                        // do nothing, already built
+                    }
+                    else
+                    {
+                        specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                        specialRule.Nodes.LockForever();
+                    }
+                    break;
+                case BeckEdgePointScheme b:
+                    specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
+                    break;
+                case BeckEdgeScheme b:
+                    {
+                        specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
+
+                        // remove edge scheme from "true" coinciding edge
+                        int jCell = ((GridData)singleMask.GridData).Edges.CellIndices[i, 0];
+                        int specialFace = detector.GetSpecialFace(jCell);
+                        int iFace = ((GridData)singleMask.GridData).Edges.FaceIndices[i, 0];
+                        bool coinciding = specialFace == iFace;
+                        if (coinciding)
+                        {
+                            specialRule = QuadRule.CreateEmpty(specialRule.RefElement, 1, specialRule.RefElement.SpatialDimension);
+                            specialRule.Nodes.LockForever();
+                        }
+                        break;
+                    }
+                case BeckSurfaceScheme b:
+                    if (fallBackFactory.RefElement == scheme.GetRefElement())
+                    {
+                        // skip cells not in active phase
+                        if (activeChunk)
+                        {
+                            specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
+                        }
+                        else
+                        {
+                            specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                            specialRule.Nodes.LockForever();
+                        }
+                    }
+                    else
+                    {
+                        int iFace = detector.GetSpecialFace(i);
+                        int iEdge = ((GridData)singleMask.GridData).Cells.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
+
+                        int J = ((GridData)singleMask.GridData).Cells.NoOfLocalUpdatedCells;
+                        int OtherCell = ((GridData)singleMask.GridData).Edges.CellIndices[iEdge, InOrOut == 0 ? 1 : 0];
+                        long ThisCellGlob = i + ((GridData)singleMask.GridData).CellPartitioning.i0;
+                        long OtherCellGlob = OtherCell < J ? OtherCell + ((GridData)singleMask.GridData).CellPartitioning.i0 : ((GridData)singleMask.GridData).Parallel.GlobalIndicesExternalCells[OtherCell - J];
+                        bool ThisConform = InOrOut == 0 ? ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell1(iEdge) : ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell2(iEdge);
+                        bool OtherConform = InOrOut == 0 ? ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell2(iEdge) : ((GridData)singleMask.GridData).Edges.IsEdgeConformalWithCell1(iEdge);
+
+                        // to avoid deadlocks? construct here
+                        specialRule = ConstructSpecialQuadRule(i, singleMask, order);
+
+                        // take conformal cell or that one with globally lower index
+                        if (ThisConform & OtherConform)
+                        {
+                            if (ThisCellGlob < OtherCellGlob)
+                            {
+                                // do nothing, already built
+                            }
+                            else
+                            {
+                                specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                                specialRule.Nodes.LockForever();
+                            }
+                        }
+                        else if (ThisConform & !OtherConform)
+                        {
+                            // do nothing, already built
+                        }
+                        else if (!ThisConform & OtherConform)
+                        {
+                            specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                            specialRule.Nodes.LockForever();
+                        }
+                        else
+                        {
+                            throw new NotSupportedException(String.Format("Error in cell {0}, {1}: Only one cell should have the hanging node.", i, OtherCell));
+                        }
+                    }
+                    break;
+                case BeckVolumeScheme b:
+                    // skip cells not in active phase
+                    if (activeChunk)
+                    {
+                        specialRule = fallBackFactory.GetQuadRuleSet(singleMask, order).Single().Rule;
+                    }
+                    else
+                    {
+                        specialRule = QuadRule.CreateEmpty(b.GetRefElement(), 1, b.GetRefElement().SpatialDimension);
+                        specialRule.Nodes.LockForever();
+                    }
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+            return specialRule;
+        }
+
+        private QuadRule ConstructSpecialQuadRule(int i, ExecutionMask singleMask, int order)
+        {
+            QuadRule specialRule;
+            if (singleMask.GetType() != typeof(CellMask))
+                throw new NotSupportedException();
+
+            // determine face
+            int iFace = detector.GetSpecialFace(i);
+            int iEdge = ((GridData)singleMask.GridData).Cells.GetEdgesForFace(i, iFace, out int InOrOut, out int[] FurtherEdges);
+            // select all edges, relevant in cells with hanging nodes
+            singleMask = new EdgeMask(singleMask.GridData, Chunk.GetSingleElementChunk(iEdge), MaskType.Geometrical);
+            if (FurtherEdges != null)
+            {
+                specialRule = QuadRule.CreateEmpty(scheme.GetRefElement(), 1, scheme.GetRefElement().SpatialDimension);
+                specialRule.Nodes.LockForever();
+
+                foreach (var edg in FurtherEdges)
+                {
+                    singleMask = singleMask.Union(new EdgeMask(singleMask.GridData, Chunk.GetSingleElementChunk(edg), MaskType.Geometrical));
+                }
+            }
+            // construct edgerule
+            var specialRule_t = fallBackFactory.GetQuadRuleSet(singleMask, order);
+            List<NodeSet> specialNodes = new List<NodeSet>();
+            List<MultidimensionalArray> specialWeights = new List<MultidimensionalArray>();
+            int NoOfNodes = 0;
+            foreach (var crp in specialRule_t)
+            {
+                var rule_t = crp.Rule;
+                foreach (int edg in crp.Chunk.Elements)
+                {
+                    int trf;
+                    if (singleMask.GridData.iGeomEdges.CellIndices[edg, 0] == i)
+                    {
+                        trf = singleMask.GridData.iGeomEdges.Edge2CellTrafoIndex[edg, 0];
+                    }
+                    else
+                    {
+                        trf = singleMask.GridData.iGeomEdges.Edge2CellTrafoIndex[edg, 1];
+                    }
+                    // transform edgerule to volume rule
+                    var nodes_t = rule_t.Nodes.GetVolumeNodeSet(singleMask.GridData, trf, false);
+                    var weights_t = rule_t.Weights;
+
+                    // scale accordingly!, for a volume rule generated through an edge rule, this is length of linerefelem / length of edge perpendicular to rule edge
+                    double scale = singleMask.GridData.iGeomCells.GetRefElement(i).Volume / singleMask.GridData.iGeomCells.GetCellVolume(i) * singleMask.GridData.iGeomEdges.SqrtGramian[edg];
+                    weights_t.Scale(scale);
+
+                    specialNodes.Add(nodes_t);
+                    specialWeights.Add(weights_t);
+                    NoOfNodes += nodes_t.NoOfNodes;
+                }
+            }
+            MultidimensionalArray specialNodes_t = MultidimensionalArray.Create(NoOfNodes, singleMask.GridData.SpatialDimension);
+            MultidimensionalArray specialWeights_t = MultidimensionalArray.Create(NoOfNodes);
+            int offset = 0;
+            for (int j = 0; j < specialNodes.Count; j++)
+            {
+                int count = specialNodes[j].Lengths[0];
+                specialNodes_t.ExtractSubArrayShallow(new int[] { offset, 0 }, new int[] { offset + count - 1, singleMask.GridData.SpatialDimension - 1 }).Acc(1.0, specialNodes[j]);
+                specialWeights_t.ExtractSubArrayShallow(new int[] { offset }, new int[] { offset + count - 1 }).Acc(1.0, specialWeights[j]);
+                offset += count;
+            }
+            specialRule = new QuadRule();
+            specialRule.Nodes = new NodeSet(scheme.GetRefElement(), specialNodes_t, true);
+            specialRule.Weights = specialWeights_t;
+
+            return specialRule;
+
+        }
     }
     internal interface ISchemeWO
     {
@@ -273,6 +501,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         public LevelSetCombination lscomb;
         public int D;
         public bool isGlobalMode = false;
+
 
         RefElement ISchemeWO.ReferenceElement => GetRefElement();
 
@@ -774,6 +1003,69 @@ namespace BoSSS.Foundation.XDG.Quadrature
             
         }
     }
+
+    internal class BeckZeroScheme : BeckBaseScheme
+    {
+        public BeckZeroScheme(LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode = false) : base(data, lscomb, isGlobalMode)
+        {
+        }
+
+        public override HyperRectangle GetCell(int j)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override RefElement GetRefElement()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override double GetScaling(int j)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void PointsToNodes(MultidimensionalArray multidimensionalArray, QuadratureNode qNode, int d, int j)
+        {
+            throw new NotImplementedException();
+        }
+    }
+    internal class BeckEdgePointScheme : BeckBaseScheme
+    {
+        public BeckEdgePointScheme(LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode = false) : base(data, lscomb, isGlobalMode)
+        {
+        }
+
+        public override HyperRectangle GetCell(int j)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override (IScalarFunction phi0, IScalarFunction phi1) GetPhiEval(int j)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override RefElement GetRefElement()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override double GetScaling(int j)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void PointsToNodes(MultidimensionalArray multidimensionalArray, QuadratureNode qNode, int d, int j)
+        {
+            throw new NotImplementedException();
+        }
+    }
     internal class lSEvalEdge : IScalarFunction
     {
         //levelSet which is evaluated by this class
@@ -802,7 +1094,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 m_levelSet.EvaluateEdge(j, 1, NS, ev, inp);
             }
-            return ev[0];
+            return ev[0, 0];
         }
 
         (double evaluation, Tensor1 gradient) IScalarFunction.EvaluateAndGradient(Tensor1 x)
@@ -827,7 +1119,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 m_levelSet.EvaluateEdge(j, 1, NS, ev, inp, GradientIN: grad, GradientOT: gradIn);
                 (gradOut, hessOut) = DecideForEntries(grad);
-                return (ev[0], lSEvalUtil.ToTensor1(gradOut));
+                return (ev[0, 0], lSEvalUtil.ToTensor1(gradOut));
             }
             
             
@@ -856,7 +1148,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             {
                 m_levelSet.EvaluateEdge(j, 1, NS, ev, inp, GradientIN: grad, GradientOT: gradIn);
                 (gradOut, hessOut) = DecideForEntries(grad);
-                return (ev[0], lSEvalUtil.ToTensor1(gradOut), lSEvalUtil.ToTensor2(hessOut));
+                return (ev[0, 0], lSEvalUtil.ToTensor1(gradOut), lSEvalUtil.ToTensor2(hessOut));
             }
 
 
@@ -933,7 +1225,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             //Evaluates the LevelSet using the NodeSet and the Cell Number
             var ev = MultidimensionalArray.Create(1, 1);
             m_levelSet.Evaluate(j, 1, NS, ev);
-            return ev[0];
+            return ev[0, 0];
         }
 
         public abstract NodeSet GetNodeSet(Tensor1 x);
@@ -948,7 +1240,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             MultidimensionalArray grad = MultidimensionalArray.Create(1, 1, x.M);
             m_levelSet.EvaluateGradient(j, 1, NS, grad);
 
-            return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
+            return (ev[0, 0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)));
 
         }
 
@@ -966,7 +1258,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             m_levelSet.EvaluateGradient(j, 1, NS, grad);
             m_levelSet.EvaluateHessian(j, 1, NS, hess);
 
-            return (ev[0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)), lSEvalUtil.ToTensor2(hess.ExtractSubArrayShallow(0, 0, -1, -1)));
+            return (ev[0, 0], lSEvalUtil.ToTensor1(grad.ExtractSubArrayShallow(0, 0, -1)), lSEvalUtil.ToTensor2(hess.ExtractSubArrayShallow(0, 0, -1, -1)));
 
         }
     }
