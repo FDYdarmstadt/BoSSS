@@ -130,6 +130,142 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
         /// <summary>
+        /// Return the deformation parameter of the ellipse passing through the points given by coordinates xs and ys. If more than 6 points are given, a least-square fit is performed.
+        /// </summary>
+        double GetDeformParameter(double[] xs, double[] ys){
+            // credit to https://stackoverflow.com/a/48002645, on which this is largely based
+            // fit ellipse passing through given points xs and ys
+            int len = xs.Length;
+            var D = MultidimensionalArray.Create(len, 6);
+            var C = MultidimensionalArray.Create(6, 6);
+            for (int i = 0; i < len; i++){
+                D[i, 0] = xs[i] * xs[i];
+                D[i, 1] = xs[i] * ys[i];
+                D[i, 2] = ys[i] * ys[i];
+                D[i, 3] = xs[i];
+                D[i, 4] = ys[i];
+                D[i, 5] = 1;
+            }
+            for (int i = 0; i < 6; i++){
+                for (int j = 0; j < 6; j++){
+                    C[i,j] = 0.0;
+                }
+            }
+            var DT = D.TransposeTo();
+            var S = DT * D;
+            C[0,2] = 2;
+            C[2,0] = 2;
+            C[1,1] = -1;
+            var SInv = S.InvertTo();
+            var SInvC = SInv * C;
+            (var eigenvals, var eigenvectors) = SInvC.EigenspaceSymm();
+            var n = eigenvals.IndexOfMax();
+            var eigenvec = new double[6];
+            for (int i = 0; i < 6; i++){
+                eigenvec[i] = eigenvectors[i, n];
+            }
+
+            // calculate length of ellipse axes based on its raw parameters
+            double a = eigenvec[0];
+            double b = eigenvec[1]/2.0;
+            double c = eigenvec[2];
+            double d = eigenvec[3]/2.0;
+            double f = eigenvec[4]/2.0;
+            double g = eigenvec[5]/2.0;
+            double num=b*b-a*c;
+            double cx=(c*d-b*f)/num;
+            double cy=(a*f-b*d)/num;
+
+            double angle=0.5*Math.Atan(2*b/(a-c))*180/Math.PI;
+            double up = 2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g);
+            double down1=(b*b-a*c)*( (c-a)*Math.Sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a));
+            double down2=(b*b-a*c)*( (a-c)*Math.Sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a));
+            double longAxisLength = Math.Sqrt(Math.Abs(up/down1));
+            double shortAxisLength = Math.Sqrt(Math.Abs(up/down2));
+            Console.WriteLine("Long Axis: " + longAxisLength);
+            Console.WriteLine("Short Axis: " + shortAxisLength);
+            double deformationParameter = (longAxisLength - shortAxisLength) / (longAxisLength + shortAxisLength);
+            Console.WriteLine("Deformation parameter: " + deformationParameter);
+
+            return deformationParameter;
+        }
+
+        /// <summary>
+        /// 1D-Newton method for finding zeros of Field c.
+        /// </summary>
+        double Newton(SinglePhaseField c, double xRoot, int direction, int axis, double otherCoord = 0, double delta = 1e-5, double tolerance = 1e-15, double trustRegion = 1e-1){
+            int iter = 0;
+            double error = 1e10;
+            double yM = 0.05;
+            direction = Math.Sign(direction);
+            double[] MakeCoord(double loc){
+                if (axis == 0){
+                    return new double[]{loc, yM, otherCoord};
+                } else if (axis == 2){
+                    return new double[]{otherCoord, yM, loc};
+                } else {
+                    throw new ApplicationException("Direction is not supported");
+                }
+            }
+            while (error > tolerance){
+                // Console.WriteLine("Iteration " + iter);
+                // Console.WriteLine(xRoot);
+                double f = c.ProbeAt(MakeCoord(xRoot));
+                double fPlus = c.ProbeAt(MakeCoord(xRoot+delta));
+                double fMinus = c.ProbeAt(MakeCoord(xRoot-delta));
+                double fDiff = (fPlus - fMinus)/(2*delta);
+                double newtonStep;
+                if (Math.Abs(fDiff) < 1e-25){
+                    newtonStep = trustRegion * direction;
+                    Console.WriteLine("Case 1");
+                } else {
+                    newtonStep = -f / fDiff;
+                    if (Math.Abs(newtonStep) > trustRegion) {
+                        newtonStep = trustRegion * Math.Sign(newtonStep);
+                        Console.WriteLine("Case 2");
+                    }
+                }
+                xRoot = xRoot + newtonStep;
+                error = Math.Abs(f);
+                // Console.WriteLine(f);
+                // Console.WriteLine(fDiff);
+                // Console.WriteLine(newtonStep);
+                // Console.WriteLine();
+                iter++;
+            }
+            return xRoot;
+        }
+
+        /// <summary>
+        /// Return the deformation of the ellipse described by the field c (c = 0 isosurface)
+        /// </summary>
+        public double GetDeformParameter(SinglePhaseField c) {
+            double xMax = 1;
+            double xMin = -1;
+            double zMax = 1;
+            double zMin = -1;
+            // find intersection of pos. x axis and levset
+            double xIntersectionPos = xMax*0.7;
+            xIntersectionPos = Newton(c, xIntersectionPos, -1, 0);
+            double xIntersectionNeg = xMin*0.7;
+            xIntersectionNeg = Newton(c, xIntersectionNeg, 1, 0);
+            double zIntersectionPos = zMax*0.7;
+            zIntersectionPos = Newton(c, zIntersectionPos, -1, 2);
+            double zIntersectionNeg = zMin*0.7;
+            zIntersectionNeg = Newton(c, zIntersectionNeg, 1, 2);
+            double xIntersectionPos2 = xMax*0.35;
+            xIntersectionPos2 = Newton(c, xIntersectionPos2, -1, 0, otherCoord: zIntersectionPos/2.0);
+            double zIntersectionNeg2 = zMin*0.35;
+            zIntersectionNeg2 = Newton(c, zIntersectionNeg2, 1, 2, otherCoord: xIntersectionNeg/2.0);
+            Console.WriteLine("intersections of levelset: ");
+            Console.WriteLine("    x = [ " + xIntersectionPos + ", " + xIntersectionNeg + ", " + 0 + ", " + 0 + ", " + xIntersectionPos2 + ", " + xIntersectionNeg/2.0 + " ]");
+            Console.WriteLine("    y = [ " + 0 + ", " + 0 + ", " + zIntersectionPos + ", " + zIntersectionNeg + ", " + zIntersectionPos/2.0 + ", " + zIntersectionNeg2 + " ]");
+            var xs = new double[]{ xIntersectionPos, xIntersectionNeg, 0, 0, xIntersectionPos2, xIntersectionNeg/2.0  };
+            var ys = new double[]{ 0, 0, zIntersectionPos, zIntersectionNeg, zIntersectionPos/2.0, zIntersectionNeg2  };
+            return GetDeformParameter(xs, ys);
+        }
+
+        /// <summary>
         /// Return the norm of the field c
         /// </summary>
         public double Norm(OpenFoamMatrix mtx = null) {
@@ -227,7 +363,7 @@ namespace BoSSS.Application.ExternalBinding {
             // double sigma = 0.063;
             // double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
                                                               // double diff = M * lam;
-            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: 0.1, _stationary: false, _endT: deltaT*1.1);
+            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: 5e-2, _stationary: false, _endT: deltaT*1.1);
             CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, chParams);
         }
         // public static bool FirstTimeStep = true;
@@ -498,7 +634,8 @@ namespace BoSSS.Application.ExternalBinding {
                     rightBVC.type = "Pressure_Outlet";
                     var topBVC = new AppControl.BoundaryValueCollection();
                     topBVC.type = "Wall";
-                    double shearRate = 0.89235;
+                    // double shearRate = 0.89235;
+                    double shearRate = 0.01;
                     topBVC.Evaluators.Add("VelocityX", (X,t) => shearRate*X[2]);
                     var bottomBVC = new AppControl.BoundaryValueCollection();
                     bottomBVC.type = "Wall";
@@ -615,9 +752,12 @@ namespace BoSSS.Application.ExternalBinding {
                     double cVarVal = cVar.IntegralOver(null);
                     Console.WriteLine("cMean: " + cMean0);
                     Console.WriteLine("cVar: " + cVarVal);
+                    double deformParameter;
                     if (FirstSolve){
                         Tecplot("plot.1", 0.0, 3, c, mu, u, v, w);
                         TimeStepper.Solve(time, dt);
+                        deformParameter = GetDeformParameter(c);
+                        Console.WriteLine("Deformation Parameter: " + deformParameter);
                         t++;
                         time += dt;
                         FirstSolve = false;
@@ -663,7 +803,7 @@ namespace BoSSS.Application.ExternalBinding {
                         stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
                         TimeStepper.Solve(time, dt);
 
-                        var cMean = c.IntegralOver(null);
+                        double cMean = c.IntegralOver(null);
                         cVar.Clear();
                         cVar.Acc(1.0, c);
                         cVar.ProjectPow(1.0, cVar, 2.0);
@@ -672,6 +812,8 @@ namespace BoSSS.Application.ExternalBinding {
                         Console.WriteLine("cMean change compared to starting configuration: " + (cMean - cMean0));
                         Console.WriteLine("relative cMean change compared to starting configuration: " + (cMean - cMean0)/cMean0);
                         Console.WriteLine("cVar: " + cVarVal);
+                        deformParameter = GetDeformParameter(c);
+                        Console.WriteLine("Deformation Parameter: " + deformParameter);
 
                         Tecplot("plot." + (t + 2), time, 3, c, mu, u, v, w);
 
@@ -907,8 +1049,8 @@ namespace BoSSS.Application.ExternalBinding {
             protected override bool IsDirichlet(ref CommonParamsBnd inp) {
                 // return !_ptch.IsDirichlet(inp.EdgeTag);
                 // return _ptch.IsDirichlet(inp.EdgeTag);
-                // return true;
-                return false;
+                return true;
+                // return false;
             }
 
             /// <summary>
@@ -956,6 +1098,7 @@ namespace BoSSS.Application.ExternalBinding {
                 if (inp.EdgeTag == 0){
                     throw new ApplicationException("Edge Tag of a boundary edge should not be zero");
                 }
+                throw new Exception("g_diri should not be called");
                 // Console.WriteLine("diriC " + _ptch.Values[inp.EdgeTag - 1][0]);
                 // Console.WriteLine(_ptch.Values.Count);
                 // Console.WriteLine(inp.EdgeTag % GridCommons.FIRST_PERIODIC_BC_TAG);
@@ -980,41 +1123,56 @@ namespace BoSSS.Application.ExternalBinding {
 
             // OpenFoamSurfaceField m_Flux;
 
-            // public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
-            // {
-            //     // expand for treatment of input functions, for now hardcode to -1.0
-            //     double referenceValue = base.BoundaryEdgeForm(ref inp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
-            //     // Console.WriteLine("Test1");
-            //     if (m_Flux == null) {
-            //         Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
-            //         return base.BoundaryEdgeForm(ref inp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
-            //     }
-            //     double UxN = m_Flux.GetFlux(ref inp);
-            //     // Console.Write("Test2");
-            //     // Console.Write(UxN);
+            public override double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN)
+            {
+                // expand for treatment of input functions, for now hardcode to -1.0
+                double UxN = 0;
+                UxN += (inp.Parameters_IN[0]) * inp.Normal[0];
 
-            //     double phi;
-            //     if (UxN >= 0)
-            //     {
-            //     // Console.Write("Test3");
-            //         phi = _uIN[0];
-            //     }
-            //     else
-            //     {
-            //     // Console.Write("Test4");
-            //         phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
-            //     }
+                double phi = -1.0;
+                // if (UxN >= 0)
+                // {
+                //     phi = _uIN[0];
+                // }
+                // else
+                // {
+                //     phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+                // }
 
-            //     using (var fs = new FileStream("./out.txt", FileMode.Append))
-            //     using (var sw = new StreamWriter(fs))
-            //     {
-            //         sw.WriteLine("flux: " + (double)(phi * UxN * (_vIN)));
-            //         sw.WriteLine("velocityfield (boundary): " + (double)(referenceValue));
-            //     }
-            //     // Console.WriteLine("Difference between flux and velocityfield (boundary): " + (double)(phi * UxN * _vIN - referenceValue));
-            //     // Console.Write("Test5");
-            //     return phi * UxN * _vIN;
-            // }
+                return phi * UxN * _vIN;
+                // // expand for treatment of input functions, for now hardcode to -1.0
+                // double referenceValue = base.BoundaryEdgeForm(ref inp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
+                // // Console.WriteLine("Test1");
+                // if (m_Flux == null) {
+                //     Console.WriteLine("Warning: flux not passed to BoSSS - using low-quality velocity field");
+                //     return base.BoundaryEdgeForm(ref inp, _uIN, _Grad_uIN, _vIN, _Grad_vIN);
+                // }
+                // double UxN = m_Flux.GetFlux(ref inp);
+                // // Console.Write("Test2");
+                // // Console.Write(UxN);
+
+                // double phi;
+                // if (UxN >= 0)
+                // {
+                // // Console.Write("Test3");
+                //     phi = _uIN[0];
+                // }
+                // else
+                // {
+                // // Console.Write("Test4");
+                //     phi = -1.0;//m_bndFunc[inp.EdgeTag](inp.X, inp.time);
+                // }
+
+                // using (var fs = new FileStream("./out.txt", FileMode.Append))
+                // using (var sw = new StreamWriter(fs))
+                // {
+                //     sw.WriteLine("flux: " + (double)(phi * UxN * (_vIN)));
+                //     sw.WriteLine("velocityfield (boundary): " + (double)(referenceValue));
+                // }
+                // // Console.WriteLine("Difference between flux and velocityfield (boundary): " + (double)(phi * UxN * _vIN - referenceValue));
+                // // Console.Write("Test5");
+                // return phi * UxN * _vIN;
+            }
 
             // public override double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT)
             // {
