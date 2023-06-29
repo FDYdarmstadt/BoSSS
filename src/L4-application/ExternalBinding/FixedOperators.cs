@@ -12,6 +12,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Numerics;
+using MathNet.Numerics.LinearAlgebra;
+using MathNet.Numerics.LinearAlgebra.Factorization;
 using BoSSS.Solution.Tecplot;
 using BoSSS.Foundation.XDG;
 using BoSSS.Solution.XNSECommon;
@@ -86,7 +89,7 @@ namespace BoSSS.Application.ExternalBinding {
         {
             // double rMin = 2.0e-3 / sqrt(noOfTotalCells) * 3.0 / sqrt(2);
             // double radius = 0.5e-3;
-            double radius = 7;
+            double radius = 15.0/2.0;
             // double radius = rMin * 1.3;
             return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
         }
@@ -158,7 +161,11 @@ namespace BoSSS.Application.ExternalBinding {
             C[1,1] = -1;
             var SInv = S.InvertTo();
             var SInvC = SInv * C;
-            (var eigenvals, var eigenvectors) = SInvC.EigenspaceSymm();
+            double[,] SInvCArr = SInvC.To2DArray();
+            Matrix<double> SInvCMat = Matrix<double>.Build.DenseOfArray(SInvCArr);
+            Evd<double> eigen = SInvCMat.Evd(Symmetricity.Asymmetric);
+            double[] eigenvals = eigen.EigenValues.Real().ToArray();
+            var eigenvectors = eigen.EigenVectors.ToArray();
             var n = eigenvals.IndexOfMax();
             var eigenvec = new double[6];
             for (int i = 0; i < 6; i++){
@@ -171,20 +178,21 @@ namespace BoSSS.Application.ExternalBinding {
             double c = eigenvec[2];
             double d = eigenvec[3]/2.0;
             double f = eigenvec[4]/2.0;
-            double g = eigenvec[5]/2.0;
+            double g = eigenvec[5];
+
             double num=b*b-a*c;
             double cx=(c*d-b*f)/num;
             double cy=(a*f-b*d)/num;
 
             double angle=0.5*Math.Atan(2*b/(a-c))*180/Math.PI;
-            double up = 2*(a*f*f+c*d*d+g*b*b-2*b*d*f-a*c*g);
-            double down1=(b*b-a*c)*( (c-a)*Math.Sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a));
-            double down2=(b*b-a*c)*( (a-c)*Math.Sqrt(1+4*b*b/((a-c)*(a-c)))-(c+a));
+            double up = 2.0*(a*f*f+c*d*d+g*b*b-2.0*b*d*f-a*c*g);
+            double down1=(b*b-a*c)*( (c-a)*Math.Sqrt(1.0+4.0*b*b/((a-c)*(a-c)))-(c+a));
+            double down2=(b*b-a*c)*( (a-c)*Math.Sqrt(1.0+4.0*b*b/((a-c)*(a-c)))-(c+a));
             double longAxisLength = Math.Sqrt(Math.Abs(up/down1));
             double shortAxisLength = Math.Sqrt(Math.Abs(up/down2));
             Console.WriteLine("Long Axis: " + longAxisLength);
             Console.WriteLine("Short Axis: " + shortAxisLength);
-            double deformationParameter = (longAxisLength - shortAxisLength) / (longAxisLength + shortAxisLength);
+            double deformationParameter = Math.Abs((longAxisLength - shortAxisLength) / (longAxisLength + shortAxisLength));
             Console.WriteLine("Deformation parameter: " + deformationParameter);
 
             return deformationParameter;
@@ -193,11 +201,11 @@ namespace BoSSS.Application.ExternalBinding {
         /// <summary>
         /// 1D-Newton method for finding zeros of Field c.
         /// </summary>
-        double Newton(SinglePhaseField c, double xRoot, int direction, int axis, double otherCoord = 0, double delta = 1e-5, double tolerance = 1e-15, double trustRegion = 1e-1){
+        double Newton(SinglePhaseField c, double xRoot, int axis, double otherCoord = 0, double delta = 1e-5, double tolerance = 1e-8, double trustRegion = 1e-1, int maxIter = 1000){
             int iter = 0;
             double error = 1e10;
             double yM = 0.05;
-            direction = Math.Sign(direction);
+            int direction;
             double[] MakeCoord(double loc){
                 if (axis == 0){
                     return new double[]{loc, yM, otherCoord};
@@ -208,6 +216,9 @@ namespace BoSSS.Application.ExternalBinding {
                 }
             }
             while (error > tolerance){
+                if (iter > maxIter){
+                    throw new ApplicationException("Unable to converge in " + maxIter + " iterations");
+                }
                 // Console.WriteLine("Iteration " + iter);
                 // Console.WriteLine(xRoot);
                 double f = c.ProbeAt(MakeCoord(xRoot));
@@ -216,12 +227,15 @@ namespace BoSSS.Application.ExternalBinding {
                 double fDiff = (fPlus - fMinus)/(2*delta);
                 double newtonStep;
                 if (Math.Abs(fDiff) < 1e-25){
+                    direction = Math.Sign(f*xRoot);
                     newtonStep = trustRegion * direction;
                     Console.WriteLine("Case 1");
                 } else {
                     newtonStep = -f / fDiff;
                     if (Math.Abs(newtonStep) > trustRegion) {
-                        newtonStep = trustRegion * Math.Sign(newtonStep);
+                        // direction = Math.Sign(f*xRoot);
+                        direction = Math.Sign(newtonStep);
+                        newtonStep = trustRegion * direction;
                         Console.WriteLine("Case 2");
                     }
                 }
@@ -240,29 +254,34 @@ namespace BoSSS.Application.ExternalBinding {
         /// Return the deformation of the ellipse described by the field c (c = 0 isosurface)
         /// </summary>
         public double GetDeformParameter(SinglePhaseField c) {
-            double xMax = 1;
-            double xMin = -1;
-            double zMax = 1;
-            double zMin = -1;
-            // find intersection of pos. x axis and levset
-            double xIntersectionPos = xMax*0.7;
-            xIntersectionPos = Newton(c, xIntersectionPos, -1, 0);
-            double xIntersectionNeg = xMin*0.7;
-            xIntersectionNeg = Newton(c, xIntersectionNeg, 1, 0);
-            double zIntersectionPos = zMax*0.7;
-            zIntersectionPos = Newton(c, zIntersectionPos, -1, 2);
-            double zIntersectionNeg = zMin*0.7;
-            zIntersectionNeg = Newton(c, zIntersectionNeg, 1, 2);
-            double xIntersectionPos2 = xMax*0.35;
-            xIntersectionPos2 = Newton(c, xIntersectionPos2, -1, 0, otherCoord: zIntersectionPos/2.0);
-            double zIntersectionNeg2 = zMin*0.35;
-            zIntersectionNeg2 = Newton(c, zIntersectionNeg2, 1, 2, otherCoord: xIntersectionNeg/2.0);
-            Console.WriteLine("intersections of levelset: ");
-            Console.WriteLine("    x = [ " + xIntersectionPos + ", " + xIntersectionNeg + ", " + 0 + ", " + 0 + ", " + xIntersectionPos2 + ", " + xIntersectionNeg/2.0 + " ]");
-            Console.WriteLine("    y = [ " + 0 + ", " + 0 + ", " + zIntersectionPos + ", " + zIntersectionNeg + ", " + zIntersectionPos/2.0 + ", " + zIntersectionNeg2 + " ]");
-            var xs = new double[]{ xIntersectionPos, xIntersectionNeg, 0, 0, xIntersectionPos2, xIntersectionNeg/2.0  };
-            var ys = new double[]{ 0, 0, zIntersectionPos, zIntersectionNeg, zIntersectionPos/2.0, zIntersectionNeg2  };
-            return GetDeformParameter(xs, ys);
+            try { // since this is basically post-processing, it should not crash the simulation
+                double xMax = 1;
+                double xMin = -1;
+                double zMax = 1;
+                double zMin = -1;
+                // find intersection of pos. x axis and levset
+                double xIntersectionPos = xMax * 0.5;
+                xIntersectionPos = Newton(c, xIntersectionPos, 0);
+                double xIntersectionNeg = xMin * 0.5;
+                xIntersectionNeg = Newton(c, xIntersectionNeg, 0);
+                double zIntersectionPos = zMax * 0.5;
+                zIntersectionPos = Newton(c, zIntersectionPos, 2);
+                double zIntersectionNeg = zMin * 0.5;
+                zIntersectionNeg = Newton(c, zIntersectionNeg, 2);
+                double xIntersectionPos2 = xMax * 0.25;
+                xIntersectionPos2 = Newton(c, xIntersectionPos2, 0, otherCoord: zIntersectionPos / 2.0);
+                double zIntersectionNeg2 = zMin * 0.25;
+                zIntersectionNeg2 = Newton(c, zIntersectionNeg2, 2, otherCoord: xIntersectionNeg / 2.0);
+                Console.WriteLine("intersections of levelset: ");
+                Console.WriteLine("    x = [ " + xIntersectionPos + ", " + xIntersectionNeg + ", " + 0 + ", " + 0 + ", " + xIntersectionPos2 + ", " + xIntersectionNeg / 2.0 + " ]");
+                Console.WriteLine("    y = [ " + 0 + ", " + 0 + ", " + zIntersectionPos + ", " + zIntersectionNeg + ", " + zIntersectionPos / 2.0 + ", " + zIntersectionNeg2 + " ]");
+                var xs = new double[] { xIntersectionPos, xIntersectionNeg, 0, 0, xIntersectionPos2, xIntersectionNeg / 2.0 };
+                var ys = new double[] { 0, 0, zIntersectionPos, zIntersectionNeg, zIntersectionPos / 2.0, zIntersectionNeg2 };
+                return GetDeformParameter(xs, ys);
+            } catch (Exception e) {
+                    Console.WriteLine(e);
+                    return 0;
+                }
         }
 
         /// <summary>
@@ -454,11 +473,11 @@ namespace BoSSS.Application.ExternalBinding {
                     w.Clear();
                     u.ProjectField(UInitFunc());
 
-                    var cP0 = new SinglePhaseField(new Basis(c.GridDat, 0));
-                    cP0.ProjectField(func);
-                    c.AccLaidBack(1.0, cP0);
+                    // var cP0 = new SinglePhaseField(new Basis(c.GridDat, 0));
+                    // cP0.ProjectField(func);
+                    // c.AccLaidBack(1.0, cP0);
 
-                    //c.ProjectField(func);
+                    c.ProjectField(func);
                 }
                 mu = new SinglePhaseField(b);
                 // for (int j = 0; j < J; j++)
