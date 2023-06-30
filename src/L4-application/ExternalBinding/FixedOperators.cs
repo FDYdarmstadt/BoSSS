@@ -193,7 +193,6 @@ namespace BoSSS.Application.ExternalBinding {
             Console.WriteLine("Long Axis: " + longAxisLength);
             Console.WriteLine("Short Axis: " + shortAxisLength);
             double deformationParameter = Math.Abs((longAxisLength - shortAxisLength) / (longAxisLength + shortAxisLength));
-            Console.WriteLine("Deformation parameter: " + deformationParameter);
 
             return deformationParameter;
         }
@@ -229,14 +228,14 @@ namespace BoSSS.Application.ExternalBinding {
                 if (Math.Abs(fDiff) < 1e-25){
                     direction = Math.Sign(f*xRoot);
                     newtonStep = trustRegion * direction;
-                    Console.WriteLine("Case 1");
+                    // Console.WriteLine("Case 1");
                 } else {
                     newtonStep = -f / fDiff;
                     if (Math.Abs(newtonStep) > trustRegion) {
                         // direction = Math.Sign(f*xRoot);
                         direction = Math.Sign(newtonStep);
                         newtonStep = trustRegion * direction;
-                        Console.WriteLine("Case 2");
+                        // Console.WriteLine("Case 2");
                     }
                 }
                 xRoot = xRoot + newtonStep;
