@@ -1064,6 +1064,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
         {
             throw new NotImplementedException();
         }
+
+        public override void ScaleWeights(QuadRule rule, int j)
+        {
+            throw new NotImplementedException();
+        }
     }
     internal class BeckEdgePointScheme : BeckBaseScheme
     {
@@ -1092,6 +1097,11 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
 
         public override void PointsToNodes(MultidimensionalArray multidimensionalArray, QuadratureNode qNode, int d, int j)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void ScaleWeights(QuadRule rule, int j)
         {
             throw new NotImplementedException();
         }
