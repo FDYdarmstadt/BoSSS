@@ -683,7 +683,7 @@ namespace BoSSS.Application.ExternalBinding {
                 StokesExtension stokesExt;
                 SinglePhaseField[] uStokes;
                 {
-                    stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true);
+                    stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true, useBCMap: true);
                     uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
                   /*  stokesExt.SolveExtension(0, RealTracker, uStokes, velocity); */
                     // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);

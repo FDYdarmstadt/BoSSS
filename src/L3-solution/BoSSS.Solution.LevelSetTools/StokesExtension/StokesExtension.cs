@@ -26,12 +26,13 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// <summary>
         /// ctor
         /// </summary>
-        public StokesExtension(int D, IncompressibleBoundaryCondMap map, int cutCellQuadOrder, double AgglomerationThrshold, bool fullStokes) {
+        public StokesExtension(int D, IncompressibleBoundaryCondMap map, int cutCellQuadOrder, double AgglomerationThrshold, bool fullStokes, bool useBCMap = false) {
             this.D = D;
             this.map = map;
             this.m_CutCellQuadOrder = cutCellQuadOrder;
             this.AgglomerationThreshold = AgglomerationThrshold;
             this.fullStokes = fullStokes;
+            this.m_useBCMap = useBCMap; // if false, Neumann boundary condtions are applied everywhere. If true, the boundary conditions from map are applied.
         }
 
         int D;
@@ -39,6 +40,7 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         IncompressibleBoundaryCondMap map;
         double AgglomerationThreshold;
         bool fullStokes;
+        bool m_useBCMap;
 
         const double penalty_safety = 4.0;
 
@@ -70,21 +72,21 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             {
                 // Momentum, Viscous:
                 for(int d = 0; d < D; d++) {
-                    var visc = new ExtensionSIP(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity);
+                    var visc = new ExtensionSIP(penalty_safety, d, D, map, ViscosityOption.ConstantViscosity, constantViscosityValue: viscosity, useBCMap: m_useBCMap);
                     Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(visc);
                 }
 
                 if (fullStokes) {
                     // Momentum, Pressure gradient:
                     for (int d = 0; d < D; d++) {
-                        var PresDeriv = new ExtensionPressureGradient(d, map);
+                        var PresDeriv = new ExtensionPressureGradient(d, map, useBCMap: m_useBCMap);
                         Op.EquationComponents[EquationNames.MomentumEquationComponent(d)].Add(PresDeriv);
                     }
 
                     // Continuity:
                     for (int d = 0; d < D; d++) {
                         var divVol = new Divergence_DerivativeSource(d, D);
-                        var divEdg = new ExtensionDivergenceFlux(d, map);
+                        var divEdg = new ExtensionDivergenceFlux(d, map, useBCMap: m_useBCMap);
                         Op.EquationComponents[EquationNames.ContinuityEquation].Add(divVol);
                         Op.EquationComponents[EquationNames.ContinuityEquation].Add(divEdg);
                     }
