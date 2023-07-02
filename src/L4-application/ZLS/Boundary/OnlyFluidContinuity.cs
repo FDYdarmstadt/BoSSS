@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 using ZwoLevelSetSolver.SolidPhase;
 
 namespace ZwoLevelSetSolver.Boundary {
-    class OnlyFluidContinuity : SurfaceEquation {
+    class ContinuityBoundary : SurfaceEquation {
 
         string fluidSpecies;
         string solidSpecies;
         string codomainName;
 
-        public OnlyFluidContinuity(string fluidSpecies, string solidSpecies, int D, Solid material) {
+        public ContinuityBoundary(string fluidSpecies, string solidSpecies, int D) {
             codomainName = BoSSS.Solution.NSECommon.EquationNames.ContinuityEquation;
             this.fluidSpecies = fluidSpecies;
             this.solidSpecies = solidSpecies;
@@ -22,7 +22,7 @@ namespace ZwoLevelSetSolver.Boundary {
             for(int i = 0; i < D; ++i) {
                 string velocity = ZwoLevelSetSolver.VariableNames.DisplacementComponent(i);
                 AddVariableNames(velocity);
-                AddComponent(new BoundaryDivergenceDisplacementForm(i, 1, fluidSpecies, solidSpecies, 0.0));
+                AddComponent(new BoundaryDivergenceDisplacementForm(i, 1, fluidSpecies, solidSpecies, 1));
             }
         }
 

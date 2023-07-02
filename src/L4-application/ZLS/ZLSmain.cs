@@ -19,7 +19,7 @@ namespace ZwoLevelSetSolver {
 
             RunSolver(args);
             //ConditionNumberScaling();
-            //Tests.SolidOnlyTests.RotationConvergenceTest(2);
+            //Tests.SolidOnlyTests.RotationConvergenceTest(3);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -38,11 +38,11 @@ namespace ZwoLevelSetSolver {
             ) {
             
             BoSSS.Solution.Application.DeleteOldPlotFiles();
-            List<ZLS_Control> controlFiles = new List<ZLS_Control>();
-
-            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 8));
-            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 16));
-            controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 32));
+            List<ZLS_Control> controlFiles = new List<ZLS_Control> {
+                ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 8),
+                ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 16),
+                ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 32)
+            };
             //controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 64));
 
             foreach(var c in controlFiles) {

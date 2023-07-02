@@ -21,10 +21,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
             this.codomainName = EquationNames.DisplacementEvolutionComponent(d);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
             AddVariableNames(ZwoLevelSetSolver.VariableNames.DisplacementVector(D));
-            var convection = new NonLinearConvectionForm(speciesName,
+            var convection = new SourceConvectionForm(speciesName,
                 ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d],
                 BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D),
-                1.0, boundaryMap);
+                1.0);
             AddComponent(convection);
             var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
             AddComponent(source);

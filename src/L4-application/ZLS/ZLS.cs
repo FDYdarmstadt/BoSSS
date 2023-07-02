@@ -113,19 +113,14 @@ namespace ZwoLevelSetSolver {
             for(int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierCauchyBoundary("A", "C", d, D, Control.Material, config.physParams.rho_A, config.physParams.mu_A));
                 opFactory.AddEquation(new NavierCauchyBoundary("B", "C", d, D, Control.Material, config.physParams.rho_B, config.physParams.mu_B));
-                opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_A, Control.Material));
-                opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_B, Control.Material));
+                //opFactory.AddEquation(new DisplacementBoundary(LsTrk, "A", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_A, Control.Material));
+                //opFactory.AddEquation(new DisplacementBoundary(LsTrk, "B", "C", d, D, Control.ArtificialViscosity, config.physParams.mu_B, Control.Material));
             }
 
-            /*
-            if(false) {
-                opFactory.AddEquation(new FluidSolidContinuity("A", "C", D));
-                opFactory.AddEquation(new FluidSolidContinuity("B", "C", D));
-            } else {
-                opFactory.AddEquation(new OnlyFluidContinuity("A", "C", D, Control.Material));
-                opFactory.AddEquation(new OnlyFluidContinuity("B", "C", D, Control.Material));
-            }
-            //*/
+
+            opFactory.AddEquation(new ContinuityBoundary("A", "C", D));
+            opFactory.AddEquation(new ContinuityBoundary("B", "C", D));
+
 
 
             if(config.dntParams.SST_isotropicMode == BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {

@@ -40,20 +40,23 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddComponent(pressure);
 
             if(material.Lame2 != 0.0) {
-                var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 0);
+                var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 1);
                 AddComponent(eulerAlmansi0);
 
-                var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 0);
+                var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 1);
                 AddComponent(eulerAlmansi1);
             }  
             if(material.Viscosity != 0.0)
             {
-                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 0);
+                var viscosity = new SIPForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1);
                 AddComponent(viscosity);
-                var viscosityT = new SIPTransposeForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 0);
+                var viscosityT = new SIPTransposeForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, material.Viscosity, 1);
                 AddComponent(viscosityT);
+                //AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], material.Viscosity * 2));
             }
-            AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], (material.Lame2+ material.Viscosity) * 1));
+            
+
+
 
 
             string gravity = BoSSS.Solution.NSECommon.VariableNames.GravityVector(D)[d];

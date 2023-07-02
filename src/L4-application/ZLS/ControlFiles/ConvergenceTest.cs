@@ -46,7 +46,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.Material = true;
 
             C.Material = new ConvergenceTest();
-
+            C.Material.Viscosity = 0;
             #endregion
 
 
