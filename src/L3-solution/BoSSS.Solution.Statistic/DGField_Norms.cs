@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Statistic;
 using ilPSP;
 using ilPSP.Tracing;
@@ -10,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -128,6 +130,49 @@ namespace BoSSS.Solution.Statistic {
         }
 
 
+        static public double L2Distance(this XDGField A, XDGField B, string[] speciesNames, bool IgnoreMeanValue = false) {
+            XDGField fine, coarse;
+            if (A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
+                fine = A;
+                coarse = B;
+            } else {
+                fine = B;
+                coarse = A;
+            }
+
+
+            var trackerA = fine.Basis.Tracker;
+            int maxDeg = Math.Max(A.Basis.Degree, B.Basis.Degree);
+            int quadOrder = maxDeg * 3 + 3;
+
+
+
+
+            var schemeFactory = trackerA.GetXDGSpaceMetrics(speciesNames.Select(spc => trackerA.GetSpeciesId(spc)), quadOrder).XQuadSchemeHelper;
+
+            double totNorm = 0;
+            foreach(string spc in speciesNames) {
+            
+                var spc_id = trackerA.GetSpeciesId(spc);
+
+                if (IgnoreMeanValue == true)
+                    throw new NotImplementedException();
+
+                
+                var A_spc = fine.GetSpeciesShadowField(spc);
+                var B_spc = coarse.GetSpeciesShadowField(spc);
+
+                totNorm += A_spc.L2Distance(B_spc, scheme: schemeFactory.GetVolumeQuadScheme(spc_id)).Pow2();
+            }
+
+            totNorm = totNorm.Sqrt();
+            return totNorm;
+
+        }
+
+
+
+
 
         /// <summary>
         /// Approximate L2 distance between two DG fields; this also supports DG fields on different meshes, 
@@ -198,7 +243,8 @@ namespace BoSSS.Solution.Statistic {
                         coarse = A;
                     }
 
-                    var CompQuadRule = scheme.SaveCompile(coarse.GridDat, maxDeg * 3 + 3); // use over-integration
+                    
+                    var CompQuadRule = scheme.SaveCompile(coarse.GridDat, quadOrder); // use over-integration
                     var eval = new FieldEvaluation(GridHelper.ExtractGridData(fine.GridDat));
 
                     void FineEval(MultidimensionalArray input, MultidimensionalArray output) {

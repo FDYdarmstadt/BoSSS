@@ -68,7 +68,7 @@ namespace BoSSS.Foundation.Grid.Classic {
             using(var stw = new System.IO.StringWriter()) {
                 stw.WriteLine("Cell " + GlobalID + " (" + Type + "): ");
                 if(NodeIndices != null) {
-                    stw.Write("Node indices:");
+                    stw.Write("Node indices: ");
                     foreach (long ni in NodeIndices)
                         stw.Write(ni + " ");
                 } else {

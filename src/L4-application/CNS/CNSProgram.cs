@@ -53,7 +53,8 @@ namespace CNS {
 
             //Application.InitMPI(args);
             //DeleteOldPlotFiles();
-            
+            //CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
+
             //CNS.Tests.IBMTests.IBMALTSTest.IBMALTSTest1_4_pos1();
             //CNS.Tests.IBMTests.IBMCylinderTest.IBMCylinder0th();
             //CNS.Tests.Ringleb.RinglebTest.RinglebIdealGasTest();
