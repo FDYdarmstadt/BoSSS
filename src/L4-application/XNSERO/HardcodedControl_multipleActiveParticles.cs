@@ -166,7 +166,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.WallPositionPerDimension[1][1] = domainLength / 2;
             C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.UseSchurBlockPrec = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -222,7 +222,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.InitialiseParticles(particles);
             C.SetTimesteps(dt: 1e-4, noOfTimesteps: 10000);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.UseSchurBlockPrec = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -359,7 +359,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetTimesteps(dt, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             // Coupling Properties
             // =============================
@@ -432,7 +432,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.SetTimesteps(dt, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.2;
-            C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             // Coupling Properties
             // =============================
