@@ -27,7 +27,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
     /// <remarks>
     /// - implemented by MR, jan21
     /// </remarks>
-    public  class PhasefieldEvolver : ILevelSetEvolver {
+    public class PhasefieldEvolver : ILevelSetEvolver {
 
         // <summary>
         /// ctor
