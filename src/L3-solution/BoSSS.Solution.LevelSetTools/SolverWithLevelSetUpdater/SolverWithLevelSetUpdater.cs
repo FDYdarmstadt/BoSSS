@@ -247,7 +247,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.StokesExtension: {
                         ILevelSetEvolver stokesExtEvo;
                         if (LevelSetHandling == LevelSetHandling.Coupled_Iterative) {
-                            stokesExtEvo = new ImplicitStokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
+                            stokesExtEvo = new StokesExtensionEvolver(LevelSetCG, QuadOrder(), D,
                             GetBcMap(),
                             this.Control.AgglomerationThreshold, this.GridData);
                         } else {
