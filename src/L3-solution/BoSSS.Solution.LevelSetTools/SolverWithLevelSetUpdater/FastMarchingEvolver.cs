@@ -7,7 +7,6 @@ using BoSSS.Solution.LevelSetTools.Advection;
 using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using BoSSS.Solution.LevelSetTools.FourierLevelSet;
 using BoSSS.Solution.LevelSetTools.Reinit.FastMarch;
-using BoSSS.Solution.LevelSetTools.EllipticReInit;
 using ilPSP;
 using ilPSP.Utils;
 using System;

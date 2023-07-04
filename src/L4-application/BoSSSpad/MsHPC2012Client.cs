@@ -690,7 +690,7 @@ namespace BoSSS.Application.BoSSSpad {
 
         string WriteJobXML(Job myJob, string DeploymentDirectory) {
 
-            string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
+            string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
             string JobName = myJob.Name;
 
 

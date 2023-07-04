@@ -124,8 +124,8 @@ namespace BoSSS.Application.BoSSSpad {
 
         
         private string GetFullJobName(Job myJob) {
-            string PrjName = InteractiveShell.WorkflowMgm.CurrentProject;
-            if (string.IsNullOrWhiteSpace(InteractiveShell.WorkflowMgm.CurrentProject)) {
+            string PrjName = BoSSSshell.WorkflowMgm.CurrentProject;
+            if (string.IsNullOrWhiteSpace(BoSSSshell.WorkflowMgm.CurrentProject)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
             return PrjName + "__" + myJob.Name;

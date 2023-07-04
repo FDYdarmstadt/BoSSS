@@ -24,6 +24,7 @@ using BoSSS.Foundation.IO;
 using BoSSS.Foundation.XDG;
 using BoSSS.Platform;
 using BoSSS.Solution.Control;
+using BoSSS.Solution.LoadBalancing;
 using BoSSS.Solution.Queries;
 using CommandLine;
 using CommandLine.Text;
@@ -469,101 +470,105 @@ namespace BoSSS.Solution {
             Func<Application<T>> ApplicationFactory) {
 
             m_Logger.Info("Entering _Main routine...");
-            Tracer.MemoryInstrumentationLevel = MemoryInstrumentationLevel.GcAndPrivateMemory;
+            Tracer.MemoryInstrumentationLevel = MemoryInstrumentationLevel.None;
 
             int MPIrank = int.MinValue;
-//#if DEBUG
-//            {
-
-                
-//#else
-//            try {
-//#endif
-                CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
-                CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
-
-                bool _MustFinalizeMPI = InitMPI(args);
-                ReadBatchModeConnectorConfig();
-
-                MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
-
-                // lets see if we have environment variables which override command line arguments
-                // (environment variables are usually more robust w.r.t. e.g. escape characters)
-                args = ArgsFromEnvironmentVars(args);
+            //#if DEBUG
+            //            {
 
 
-                // parse arguments
-                CommandLineOptions opt = new CommandLineOptions();
-                ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
-                bool argsParseSuccess;
-                if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
-                    argsParseSuccess = parser.ParseArguments(args, opt);
-                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-                } else {
-                    argsParseSuccess = false;
-                    argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
-                }
+            //#else
+            //            try {
+            //#endif
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
-                if (!argsParseSuccess) {
-                    MPI.Wrappers.csMPI.Raw.mpiFinalize();
-                    _MustFinalizeMPI = false;
-                    m_Logger.Error("Unable to parse arguments - exiting.");
-                    System.Environment.Exit(-1);
-                }
+            bool _MustFinalizeMPI = InitMPI(args);
+            ReadBatchModeConnectorConfig();
 
-                if (opt.ControlfilePath != null) {
-                    opt.ControlfilePath = opt.ControlfilePath.Trim();
-                }
-                m_Logger.Info("Braodcasting command line options..");
-                opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+            MPIrank = ilPSP.Environment.MPIEnv.MPI_Rank;
+
+            // lets see if we have environment variables which override command line arguments
+            // (environment variables are usually more robust w.r.t. e.g. escape characters)
+            args = ArgsFromEnvironmentVars(args);
+
+
+            // parse arguments
+            CommandLineOptions opt = new CommandLineOptions();
+            //ICommandLineParser parser = new CommandLine.CommandLineParser(new CommandLineParserSettings(Console.Error));
+            
+            bool argsParseSuccess;
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var CmdlineParseRes = Parser.Default.ParseArguments<CommandLineOptions>(args);
+                opt = CmdlineParseRes.Value;
+                argsParseSuccess = CmdlineParseRes.Errors.IsNullOrEmpty();
+                //argsParseSuccess = parser.ParseArguments(args, opt);
+                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+            } else {
+                argsParseSuccess = false;
+                argsParseSuccess = argsParseSuccess.MPIBroadcast<bool>(0, csMPI.Raw._COMM.WORLD);
+            }
+
+            if (!argsParseSuccess) {
+                MPI.Wrappers.csMPI.Raw.mpiFinalize();
+                _MustFinalizeMPI = false;
+                m_Logger.Error("Unable to parse arguments - exiting.");
+                System.Environment.Exit(-1);
+            }
+
+            if (opt.ControlfilePath != null) {
+                opt.ControlfilePath = opt.ControlfilePath.Trim();
+            }
+            m_Logger.Info("Braodcasting command line options..");
+            opt = opt.MPIBroadcast(0, MPI.Wrappers.csMPI.Raw._COMM.WORLD);
+            m_Logger.Info("done.");
+
+            // Delete old plots if requested
+            if (opt.delPlt) {
+                m_Logger.Info("Deletion of old plot files...");
+                DeleteOldPlotFiles();
                 m_Logger.Info("done.");
-
-                // Delete old plots if requested
-                if (opt.delPlt) {
-                    m_Logger.Info("Deletion of old plot files...");
-                    DeleteOldPlotFiles();
-                    m_Logger.Info("done.");
-                }
+            }
 
 
-                // load control file
-                T ctrlV2 = null;
-                T[] ctrlV2_ParameterStudy = null;
-                if (!noControlFile) {
-                    m_Logger.Info("Loading control object...");
-                    LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
-                    m_Logger.Info("done.");
-                } else {
-                    ctrlV2 = new T();
-                    m_Logger.Info("No control Object.");
-                }
+            // load control file
+            T ctrlV2 = null;
+            T[] ctrlV2_ParameterStudy = null;
+            if (!noControlFile) {
+                m_Logger.Info("Loading control object...");
+                LoadControlFile(opt.ControlfilePath, out ctrlV2, out ctrlV2_ParameterStudy);
+                m_Logger.Info("done.");
+            } else {
+                ctrlV2 = new T();
+                m_Logger.Info("No control Object.");
+            }
 
-                AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
+            AppEntry(ApplicationFactory, opt, ctrlV2, ctrlV2_ParameterStudy);
 
-                if (_MustFinalizeMPI)
-                    FinalizeMPI();
+            if (_MustFinalizeMPI)
+                FinalizeMPI();
 
-//#if DEBUG
-//            }
-//#else
-//            } catch (Exception e) {
-//                // handle exception logging, for automated processing in WorkflowMgm etc.
-//                // make sure the exception is appended to the stderr in session directory!
+            //#if DEBUG
+            //            }
+            //#else
+            //            } catch (Exception e) {
+            //                // handle exception logging, for automated processing in WorkflowMgm etc.
+            //                // make sure the exception is appended to the stderr in session directory!
 
-//                Console.Error.WriteLine(e.StackTrace);
-//                Console.Error.WriteLine();
-//                Console.Error.WriteLine();
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
-//                Console.Error.WriteLine(e.Message);
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine("========================================");
-//                Console.Error.WriteLine();
-//                Console.Error.Flush();
-//                //System.Environment.Exit(-1);
-//            }
-//#endif
+            //                Console.Error.WriteLine(e.StackTrace);
+            //                Console.Error.WriteLine();
+            //                Console.Error.WriteLine();
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine($"MPI rank {MPIrank}: {e.GetType().Name } :");
+            //                Console.Error.WriteLine(e.Message);
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine("========================================");
+            //                Console.Error.WriteLine();
+            //                Console.Error.Flush();
+            //                //System.Environment.Exit(-1);
+            //            }
+            //#endif
         }
 
         /// <summary>
@@ -1248,7 +1253,7 @@ namespace BoSSS.Solution {
                 // access the GridData object here, to enforce its creation:
                 ht.Info("loaded grid with " + this.GridData.CellPartitioning.TotalLength + " cells");
 
-
+               
 
                 bool DoDbLogging = !passiveIo
                     && this.Control != null
@@ -1319,9 +1324,7 @@ namespace BoSSS.Solution {
 
                 // kernel setup
                 //====================
-                //RedistributeGrid();
-
-                {
+               {
                     Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
                     if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
@@ -1336,8 +1339,8 @@ namespace BoSSS.Solution {
                         this.MultigridSequence = new AggregationGridData[0];
                     }
                 }
-
-
+                
+               
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
 
                 if (this.CurrentSessionInfo != null) {
@@ -2168,7 +2171,7 @@ namespace BoSSS.Solution {
             SetUpEnvironment(); // remark: tracer is not avail before setup
 
             using (var tr = new FuncTrace()) {
-
+                //tr.InfoToConsole = true;
                 var rollingSavesTsi = new List<Tuple<int, ITimestepInfo>>();
 
                 csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -2215,11 +2218,14 @@ namespace BoSSS.Solution {
 
 
                 // load balancing solo
+                tr.Info("DynamicLoadBalancing_RedistributeAtStartup = " + this.Control.DynamicLoadBalancing_RedistributeAtStartup);
+                tr.Info("AdaptiveMeshRefinement = " + this.Control.AdaptiveMeshRefinement);
                 if (this.Control.DynamicLoadBalancing_RedistributeAtStartup && !this.Control.AdaptiveMeshRefinement) {
                     PlotAndSave(physTime, i0, rollingSavesTsi);
                     MpiRedistributeAndMeshAdaptOnInit(i0.MajorNumber, physTime);
                     PlotAndSave(physTime, i0, rollingSavesTsi);
                 }
+                          
 
                 // load balancing and adaptive mesh refinement
                 if (this.Control.AdaptiveMeshRefinement) {
@@ -2280,7 +2286,6 @@ namespace BoSSS.Solution {
                 var ts0 = SaveToDatabase(i0, physTime); // save the initial value
                 if (this.RollingSave)
                     rollingSavesTsi.Add(Tuple.Create(0, ts0));
-
 
                 // =========================================
                 // Adaptive-Mesh-Refinement on startup
@@ -2488,7 +2493,7 @@ namespace BoSSS.Solution {
             using (new FuncTrace()) {
                 int[] NewPartition = fixedPartition ?? ComputeNewCellDistribution(TimeStepNo, physTime);
                 if (NewPartition == null)
-                    return false; // immidiate quit, because there is nothing to do
+                    return false; // immediate quit, because there is nothing to do
 
                 int JupOld = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
                 int NoOfRedistCells = CheckPartition(NewPartition, JupOld);
@@ -2859,56 +2864,35 @@ namespace BoSSS.Solution {
         /// In the case of one MPI process, this method should always return <c>null</c>.
         /// </returns>
         protected virtual int[] ComputeNewCellDistribution(int TimeStepNo, double physTime) {
-            if (Control == null
-                || !Control.DynamicLoadBalancing_On
-                || (TimeStepNo % Control.DynamicLoadBalancing_Period != 0 && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
-                || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
-                || MPISize <= 1) {
-                return null;
-            }
-
-            // Should only be called when needed
-            GetCellPerformanceClasses(out int performanceClassCount, out int[] cellToPerformanceClassMap, TimeStepNo, physTime);
-            if (cellToPerformanceClassMap.Length != this.Grid.CellPartitioning.LocalLength) {
-                throw new ApplicationException();
-            }
-
-            if (m_Balancer == null) {
-                var estimatorFactories = Control.DynamicLoadBalancing_CellCostEstimatorFactories;
-                if (estimatorFactories.IsNullOrEmpty()) {
-                    estimatorFactories = new List<Func<IApplication, int, ICellCostEstimator>>() {
-                        //CellCostEstimatorLibrary.AllCellsAreEqual
-                    };
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
+                if (Control == null
+                    || !Control.DynamicLoadBalancing_On
+                    || (     TimeStepNo % Control.DynamicLoadBalancing_Period != 0 
+                        && !(Control.DynamicLoadBalancing_RedistributeAtStartup && TimeStepNo == TimeStepNoRestart))  // Variant for single partioning at restart
+                    || (Control.DynamicLoadBalancing_Period < 0 && !Control.DynamicLoadBalancing_RedistributeAtStartup)
+                    || MPISize <= 1) {
+                    return null;
                 }
-                m_Balancer = new LoadBalancer(estimatorFactories);
+
+                
+                if (m_Balancer == null) {
+                    m_Balancer = new LoadBalancer(Control.DynamicLoadBalancing_CellCostEstimators, this);
+
+                    
+                }
+
+                return m_Balancer.GetNewPartitioning(
+                    this,
+                    TimeStepNo,
+                    Control.GridPartType,
+                    Control.GridPartOptions,
+                    Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
+                    Control != null ? Control.DynamicLoadBalancing_Period : 5,
+                    redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
+                    TimestepNoRestart: TimeStepNoRestart);
             }
-
-            return m_Balancer.GetNewPartitioning(
-                this,
-                performanceClassCount,
-                cellToPerformanceClassMap,
-                TimeStepNo,
-                Control.GridPartType,
-                Control.GridPartOptions,
-                Control != null ? Control.DynamicLoadBalancing_ImbalanceThreshold : 0.12,
-                Control != null ? Control.DynamicLoadBalancing_Period : 5,
-                redistributeAtStartup: Control.DynamicLoadBalancing_RedistributeAtStartup,
-                TimestepNoRestart: TimeStepNoRestart);
-        }
-
-
-        /// <summary>
-        /// Provides cell-performance classes for the default implementation of <see cref="ComputeNewCellDistribution(int, double)"/>,
-        /// which is using the algorithms from <see cref="LoadBalancer"/>.
-        /// </summary>
-        /// <param name="NoOfClasses"></param>
-        /// <param name="CellPerfomanceClasses">
-        /// Performance classes for the Cut-Cell-Balancer.
-        /// </param>
-        /// <param name="TimeStepNo"></param>
-        /// <param name="physTime"></param>
-        virtual protected void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
-            throw new NotImplementedException("Must be implemented by user (if he wants to use load balancing).");
+           
         }
 
         /// <summary>

@@ -49,6 +49,7 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             public string InterpreterTextOutput;
 
+#pragma warning disable 649
             /// <summary>
             /// The actual result of the evaluation.
             /// </summary>
@@ -60,41 +61,42 @@ namespace BoSSS.Application.BoSSSpad {
             /// </summary>
             [NonSerialized]
             public Assembly AssemblyProduced;
+#pragma warning restore 649
 
-            /// <summary>
-            /// Evaluates this command and updated <see cref="InterpreterTextOutput"/>.
-            /// </summary>
-            public bool Evaluate() {
-                StringWriter stw = new StringWriter();
-                bool supOut = ilPSP.Environment.StdOut.surpressStream0;
-                //ilPSP.Environment.StdOut.surpressStream0 = true;
-                bool superr = ilPSP.Environment.StdErr.surpressStream0;
-                //ilPSP.Environment.StdErr.surpressStream0 = true;
+            ///// <summary>
+            ///// Evaluates this command and updated <see cref="InterpreterTextOutput"/>.
+            ///// </summary>
+            //public bool Evaluate() {
+            //    StringWriter stw = new StringWriter();
+            //    bool supOut = ilPSP.Environment.StdOut.surpressStream0;
+            //    //ilPSP.Environment.StdOut.surpressStream0 = true;
+            //    bool superr = ilPSP.Environment.StdErr.surpressStream0;
+            //    //ilPSP.Environment.StdErr.surpressStream0 = true;
 
-                ilPSP.Environment.StdOut.WriterS.Add(stw);
-                ilPSP.Environment.StdErr.WriterS.Add(stw);
+            //    ilPSP.Environment.StdOut.WriterS.Add(stw);
+            //    ilPSP.Environment.StdErr.WriterS.Add(stw);
 
-                if (this.Command != null && this.Command.Length > 0) {
-                    this.Result = ReadEvalPrintLoop.EvalPrint(this.Command, out AssemblyProduced);
-                } else {
-                    this.Result = null;
-                }
+            //    if (this.Command != null && this.Command.Length > 0) {
+            //        this.Result = ReadEvalPrintLoop.EvalPrint(this.Command, out AssemblyProduced);
+            //    } else {
+            //        this.Result = null;
+            //    }
 
-                Console.Out.Flush();
-                Console.Error.Flush();
+            //    Console.Out.Flush();
+            //    Console.Error.Flush();
 
-                this.InterpreterTextOutput = stw.ToString();
-                ilPSP.Environment.StdOut.WriterS.Remove(stw);
-                ilPSP.Environment.StdErr.WriterS.Remove(stw);
+            //    this.InterpreterTextOutput = stw.ToString();
+            //    ilPSP.Environment.StdOut.WriterS.Remove(stw);
+            //    ilPSP.Environment.StdErr.WriterS.Remove(stw);
 
-                //ilPSP.Environment.StdOut.surpressStream0 = supOut;
-                //ilPSP.Environment.StdErr.surpressStream0 = superr;
+            //    //ilPSP.Environment.StdOut.surpressStream0 = supOut;
+            //    //ilPSP.Environment.StdErr.surpressStream0 = superr;
 
-                return (InteractiveShell.LastError == null 
-                    && ReadEvalPrintLoop.cmpCont != null // wenn das nix ist eh irgendwas oberfaul
-                    && ReadEvalPrintLoop.cmpCont.Report.Errors == 0);
+            //    return (InteractiveShell.LastError == null 
+            //        && ReadEvalPrintLoop.cmpCont != null // wenn das nix ist eh irgendwas oberfaul
+            //        && ReadEvalPrintLoop.cmpCont.Report.Errors == 0);
 
-            }
+            //}
         }
 
         /// <summary>

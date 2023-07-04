@@ -19,6 +19,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using BoSSS.Solution.LoadBalancing;
 
 namespace BoSSS.Application.LoadBalancingTest {
 
@@ -32,7 +33,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
             //MultiphaseCellAgglomerator.Katastrophenplot = KatastrophenPlot;
             //InitMPI();
-            //// dbg_launch();
+            // dbg_launch();
             //BoSSS.Application.LoadBalancingTest.AllUpTest.RuntimeCostDynamicBalanceTest(1);
             //throw new NotImplementedException("remove me");
 
@@ -192,7 +193,7 @@ namespace BoSSS.Application.LoadBalancingTest {
 
         //XdgBDFTimestepping AltTimeIntegration;
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             int quadorder = this.u.Basis.Degree * 2 + 1;
 
             Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => quadorder, LsTrk.SpeciesNames, "u", "c1");
@@ -288,7 +289,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         
 
 
-        public override void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public override void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
          
             TimeIntegration.DataBackupBeforeBalancing(L);
             //AltTimeIntegration.DataBackupBeforeBalancing(L);
@@ -332,7 +333,7 @@ namespace BoSSS.Application.LoadBalancingTest {
         }
 
 
-        internal Func<IApplication, int, ICellCostEstimator> cellCostEstimatorFactory = CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
+        internal Func<ICellCostEstimator[]> cellCostEstimatorFactory = () => CellCostEstimatorLibrary.OperatorAssemblyAndCutCellQuadrules;
 
 
         /// <summary>
@@ -357,15 +358,11 @@ namespace BoSSS.Application.LoadBalancingTest {
             Console.WriteLine("Number of cut cells: " + NoCutCells);
 
             if (balancer == null) {
-                balancer = new LoadBalancer(
-                    new List<Func<IApplication, int, ICellCostEstimator>>() { cellCostEstimatorFactory }
-                    );
+                balancer = new LoadBalancer(cellCostEstimatorFactory(), this);
             }
 
             NewPart = balancer.GetNewPartitioning(
                 this,
-                2,
-                PerformanceClasses,
                 TimeStepNo,
                 GridPartType.none,
                 "",

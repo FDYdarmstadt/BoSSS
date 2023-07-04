@@ -4,14 +4,12 @@
     <OutputType>Library</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <NoWarn>1701;1702;1591</NoWarn>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <!--CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet-->
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <DocumentationFile>bin\Release\BoSSS.Solution.XML</DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
@@ -24,47 +22,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="MathNet.Numerics">
-      <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Common.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis.CSharp">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis.CSharp.Scripting">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.Scripting.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis.Scripting">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Scripting.Common.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.Scripting.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Collections.Immutable, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\System.Collections.Immutable.5.0.0\lib\netstandard2.0\System.Collections.Immutable.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Reflection.Metadata">
-      <HintPath>..\..\..\libs\System.Reflection.Metadata.5.0.0\lib\netstandard2.0\System.Reflection.Metadata.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Runtime.CompilerServices.Unsafe">
-      <!--SpecificVersion>False</SpecificVersion-->
-      <HintPath>..\..\..\libs\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-    </Reference>
-    <Reference Include="CommandLine">
-      <HintPath>..\..\..\libs\libcmdline-1.8-stable-bin\libcmdline\bin\Release\CommandLine.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Configuration.ConfigurationManager">
-      <HintPath>..\..\..\libs\system.configuration.configurationmanager.4.5.0\lib\netstandard2.0\System.Configuration.ConfigurationManager.dll</HintPath>
-    </Reference> 
-    <!--Reference Include="log4net">
-      <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference-->
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
@@ -93,16 +50,9 @@
     <Compile Remove="OperatorSplitting.cs" />
     <Compile Remove="RungeKuttaSubgrid.cs" />
   </ItemGroup>
-  <!--PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-    <PreBuildEvent>powershell $assemblyInfoPath = \"$(projectDir)Properties\AssemblyInfo.cs\"; $versionText = (git rev-parse HEAD); $assemblyInfoText = (Get-Content -Path $assemblyInfoPath -ReadCount 0); $assemblyInfoText = $assemblyInfoText -replace \"^\[assembly: AssemblyInformationalVersion\(".*"\)\]$\", \"[assembly: AssemblyInformationalVersion(`\"$versionText`\")]\"; Set-Content -Path $assemblyInfoPath -Value $assemblyInfoText</PreBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-    <PostBuildEvent>powershell $assemblyInfoPath = \"$(projectDir)Properties\AssemblyInfo.cs\"; $assemblyInfoText = (Get-Content -Path $assemblyInfoPath -ReadCount 0); $assemblyInfoText = $assemblyInfoText -replace \"^\[assembly: AssemblyInformationalVersion\(".*"\)\]$\", \"[assembly: AssemblyInformationalVersion(`\"`\")]\"; Set-Content -Path $assemblyInfoPath -Value $assemblyInfoText</PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' == 'Unix'">
-    <PreBuildEvent>bash $(projectDir)/updateGitHashPreCommand.sh</PreBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' == 'Unix'">
-    <PostBuildEvent>bash $(projectDir)/updateGitHashPostCommand.sh</PostBuildEvent>
-  </PropertyGroup-->
+  <ItemGroup>
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.5.0" />
+  </ItemGroup>
 </Project>

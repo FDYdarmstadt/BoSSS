@@ -25,6 +25,7 @@
     <DocumentationFile></DocumentationFile>
     <UseVSHostingProcess>true</UseVSHostingProcess>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <NoWarn>1701;1702</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
     <DocumentationFile>bin\Release\BoSSSpad.XML</DocumentationFile>
@@ -41,56 +42,11 @@
     <Compile Remove="WorksheetEntry.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="CommandLine">
-      <HintPath>..\..\..\libs\libcmdline-1.8-stable-bin\libcmdline\bin\Release\CommandLine.dll</HintPath>
-    </Reference>
-    <Reference Include="MathNet.Numerics">
-      <HintPath>..\..\..\libs\mathnet.numerics.4.15.0\lib\netstandard2.0\MathNet.Numerics.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.AspNetCore.Html.Abstractions">
-      <HintPath>..\..\..\libs\microsoft.aspnetcore.html.abstractions\2.2.0\lib\netstandard2.0\Microsoft.AspNetCore.Html.Abstractions.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Common.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis.CSharp">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis.CSharp.Scripting">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.CSharp.Scripting.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.CSharp.Scripting.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.CodeAnalysis.Scripting">
-      <HintPath>..\..\..\libs\Microsoft.CodeAnalysis.Scripting.Common.4.2.0\lib\netstandard2.0\Microsoft.CodeAnalysis.Scripting.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DotNet.Interactive">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DotNet.Interactive.CSharp">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DotNet.Interactive.Documents">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.Documents.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.DotNet.Interactive.Formatting">
-      <HintPath>..\..\..\libs\microsoft.dotnet-interactive.1.0.340501\tools\net6.0\any\Microsoft.DotNet.Interactive.Formatting.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.CSharp">
-      <HintPath>..\..\..\libs\mono\4.5\Mono.CSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
-    </Reference>
-    <!--Reference Include="log4net">
-      <HintPath>..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference-->
-    <Reference Include="System.Configuration.ConfigurationManager">
-      <HintPath>..\..\..\libs\system.configuration.configurationmanager.4.5.0\lib\netstandard2.0\System.Configuration.ConfigurationManager.dll</HintPath>
-    </Reference>
+    <PackageReference Include="Microsoft.AspNetCore.Html.Abstractions" Version="2.2.0" />
+    <!--PackageReference Include="Microsoft.DotNet.Interactive.Documents"  Version="1.0.0-beta.21606.1" /-->
+    <!--PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21606.1" /-->
+    <PackageReference Include="Microsoft.DotNet.Interactive.Documents" Version="1.0.0-beta.21459.1" />
+    <PackageReference Include="Microsoft.DotNet.Interactive.Formatting" Version="1.0.0-beta.21459.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\ilPSP\layer_1.2-ilPSP\ilPSP.LinSolvers.MUMPS\ilPSP.LinSolvers.MUMPS.csproj" />
@@ -98,7 +54,7 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.AdvancedSolvers\BoSSS.Solution.AdvancedSolvers.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.CompressibleFlowCommon\BoSSS.Solution.CompressibleFlowCommon.csproj" />
-	<ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj" />
+  	<ProjectReference Include="..\..\L3-solution\BoSSS.Solution.EnergyCommon\BoSSS.Solution.EnergyCommon.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XheatCommon\BoSSS.Solution.XheatCommon.csproj" />
     <ProjectReference Include="..\..\Utils\btail\btail.csproj" />
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.LevelSetTools\BoSSS.Solution.LevelSetTools.csproj" />

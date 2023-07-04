@@ -35,7 +35,8 @@ test:
     - C#7.0
     - big_server    
   script:
-    - ./PublicTestRunner.exe nunit3 TutorialTests --result=result.xml    
+    -  dir PublicTestRunner*
+    - PublicTestRunner.exe nunit3 TutorialTests --result=result.xml    
   dependencies:
     - build
   needs:

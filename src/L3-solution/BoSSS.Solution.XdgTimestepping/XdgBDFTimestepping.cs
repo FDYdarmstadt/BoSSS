@@ -653,7 +653,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             using (new FuncTrace()) {
                 if (m_PrivateBalancingInfo != null)
                     throw new NotSupportedException("Method has already been called without matching call to `DataRestoreAfterBalancing`");
@@ -731,7 +731,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
         /// status after the grid has been re-distributed.
         /// </summary>
-        public void DataRestoreAfterBalancing(GridUpdateDataVaultBase L,
+        public void DataRestoreAfterBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> Parameters,
             IEnumerable<DGField> IterationResiduals,
@@ -1351,8 +1351,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 throw new NotImplementedException("Interpolation of mass_matrix_stack is not implemented");
 
             int timestepHistory = m_Stack_u.Length;
-            CoordinateVector[] stuetzstelle = m_Stack_u.CloneAs();
-            CoordinateVector[] newStackU = m_Stack_u.CloneAs();
+            CoordinateVector[] stuetzstelle = new CoordinateVector[m_Stack_u.Length];
+            CoordinateVector[] newStackU = new CoordinateVector[m_Stack_u.Length];
+            for (int i = 0; i < m_Stack_u.Length; i++)
+            {
+                stuetzstelle[i] = new CoordinateVector(m_Stack_u[i].Mapping);
+                newStackU[i] = new CoordinateVector(m_Stack_u[i].Mapping);
+                stuetzstelle[i].CopyEntries(m_Stack_u[i]);
+                newStackU[i].CopyEntries(m_Stack_u[i]);
+            }
+
             for (int i = 1; i < timestepHistory; i++) {
                 double currentNewTimestep = -i * newTimestep;
                 double[] langrangePoly = CalculateLangrangePolynom(currentNewTimestep, oldTimestep);

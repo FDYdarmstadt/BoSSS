@@ -49,7 +49,7 @@ namespace CNS.Tests.IBMTests {
             int dgDegree = 0;
             double endTime = 800.723;
             IBMControl control = CylinderControl(dgDegree, endTime);
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(control);
             solver.RunSolverMode();
 
@@ -78,7 +78,7 @@ namespace CNS.Tests.IBMTests {
             int dgDegree = 1;
             double endTime = 800.207;
             IBMControl control = CylinderControl(dgDegree, endTime);
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(control);
             solver.RunSolverMode();
 
@@ -105,7 +105,7 @@ namespace CNS.Tests.IBMTests {
             int dgDegree = 2;
             double endTime = 800.122;
             IBMControl control = CylinderControl(dgDegree, endTime);
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(control);
             solver.RunSolverMode();
 
@@ -133,7 +133,7 @@ namespace CNS.Tests.IBMTests {
             int dgDegree = 3;
             double endTime = 540.817;
             IBMControl control = CylinderControl(dgDegree, endTime);
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(control);
             solver.RunSolverMode();
 

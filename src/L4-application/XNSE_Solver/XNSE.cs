@@ -139,8 +139,8 @@ namespace BoSSS.Application.XNSE_Solver {
 
             base.Init(control);
             var ctrl = (control as XNSE_Control);
-            if(ctrl.DynamicLoadBalancing_CellCostEstimatorFactories.Count()<=0)
-                ctrl.DynamicLoadBalancing_CellCostEstimatorFactories = Loadbalancing.XNSECellCostEstimator.Factory().ToList();
+
+
             if (ctrl.Rigidbody.IsInitialized())
                 ctrl.Rigidbody.ArrangeAll(ctrl);
         }
@@ -317,12 +317,15 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        /*
+        /// <summary>
         /// Cell-performance classes:
         /// cell performance class equals number of species present in that cell
         /// </summary>
         protected override void GetCellPerformanceClasses(out int NoOfClasses, out int[] CellPerfomanceClasses, int TimeStepNo, double physTime) {
-            (NoOfClasses,CellPerfomanceClasses)=CellClassifier.ClassifyCells(this,this.Control.DynamicLoadbalancing_ClassifierType);
+            (NoOfClasses, CellPerfomanceClasses) = CellClassifier.ClassifyCells(this, this.Control.DynamicLoadbalancing_ClassifierType);
         }
+        */
 
         protected override void AddMultigridConfigLevel(List<MultigridOperator.ChangeOfBasisConfig> configsLevel, int iLevel) {
             using (var tr = new FuncTrace()) {
@@ -629,6 +632,8 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+        public List<(double, double)> ImbalanceTrack;
+
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (var f = new FuncTrace()) {
                 if ((int)this.Control.TimeSteppingScheme >= 100 && this.Control.TimesteppingMode != AppControl._TimesteppingMode.Steady) {
@@ -644,7 +649,25 @@ namespace BoSSS.Application.XNSE_Solver {
                     // this is a BDF or non-adaptive scheme, use the base implementation, i.e. the fixed timestep
                     dt = base.GetTimestep();
                 }
-               
+
+                int NoOfCutCells = this.LsTrk.Regions.GetNearFieldMask(1).NoOfItemsLocally;
+                int NoOfCells = this.GridData.iLogicalCells.NoOfLocalUpdatedCells;
+                int NoOfCutCells_Min = NoOfCutCells.MPIMin();
+                int NoOfCutCells_Max = NoOfCutCells.MPIMax();
+                int NoOfCells_Min = NoOfCells.MPIMin();
+                int NoOfCells_Max = NoOfCells.MPIMax();
+                int NoOfCutCellsTot = NoOfCutCells.MPISum();
+                long NoOfCellsTot = this.GridData.CellPartitioning.TotalLength;
+                double AvgCutCells = NoOfCutCellsTot / (double)this.MPISize;
+                double AvgCells = NoOfCellsTot / (double)this.MPISize;
+                double RelCellsInbalance = (double)(NoOfCells_Max - NoOfCells_Min) / NoOfCells_Max;
+                double RelCutCellsInbalance = (double)(NoOfCutCells_Max - NoOfCutCells_Min) / NoOfCutCells_Max;
+
+                Console.WriteLine($"All Cells: min={NoOfCells_Min} max={NoOfCells_Max} avg={AvgCells:G5} inb={RelCellsInbalance:G4} tot={NoOfCellsTot}");
+                Console.WriteLine($"Cut Cells: min={NoOfCutCells_Min} max={NoOfCutCells_Max} avg={AvgCutCells:G5} inb={RelCutCellsInbalance:G4}, tot={NoOfCutCellsTot}");
+
+                if (ImbalanceTrack != null) ImbalanceTrack.Add((RelCellsInbalance, RelCutCellsInbalance));
+
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
@@ -819,6 +842,7 @@ namespace BoSSS.Application.XNSE_Solver {
                 Console.WriteLine("     {0,-30}:{1}", "Globalization", this.Control.NonLinearSolver.Globalization);
                 Console.WriteLine("     {0,-30}:{1}", "Minsolver Iterations", this.Control.NonLinearSolver.MinSolverIterations);
                 Console.WriteLine("     {0,-30}:{1}", "Maxsolver Iterations", this.Control.NonLinearSolver.MaxSolverIterations);
+                Console.WriteLine("==============={0}===============", "========================");
 
 
             }

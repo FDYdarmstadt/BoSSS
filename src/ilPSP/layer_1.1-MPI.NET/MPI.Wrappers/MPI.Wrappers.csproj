@@ -27,58 +27,12 @@
     <WarningLevel>5</WarningLevel>
 	<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <!--PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>True</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>False</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>True</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <DocumentationFile>bin\Release\MPI.Wrappers.XML</DocumentationFile>
-  </PropertyGroup-->
-  <!--ItemGroup>
-    <Compile Include="DynamicLibraries.cs" />
-    <Compile Include="DynLibLoader.cs" />
-    <Compile Include="FortranMPIdriver.cs" />
-    <Compile Include="IMPIdriver.cs" />
-    <Compile Include="MiscConstants.cs" />
-    <Compile Include="MPI.cs" />
-    <Compile Include="MPIException.cs" />
-    <Compile Include="MPIExtensions.cs" />
-    <Compile Include="MPI_Comm.cs" />
-    <Compile Include="MPI_Datatype.cs" />
-    <Compile Include="MPI_Op.cs" />
-    <Compile Include="MPI_Structs.cs" />
-    <Compile Include="NativeMPI.cs" />
-    <Compile Include="OpenMPI.cs" />
-    <Compile Include="OPENMPI_Converter.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup-->
-  <ItemGroup>
-    <!--Reference Include="log4net">
-      <HintPath>..\..\..\..\libs\log4net.2.0.12\lib\netstandard2.0\log4net.dll</HintPath>
-    </Reference-->
-    <Reference Include="Newtonsoft.Json">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\libs\Newtonsoft.Json60r4\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>..\..\..\..\libs\NUnit.Framework-3.13.2\bin\netstandard2.0\nunit.framework.dll</HintPath>
-    </Reference>
-  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="log4net" Version="2.0.15" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Newtonsoft.Json.Bson" Version="1.0.2" />
+    <PackageReference Include="NUnitLite" Version="3.13.3" />
   </ItemGroup> 
   
 </Project>

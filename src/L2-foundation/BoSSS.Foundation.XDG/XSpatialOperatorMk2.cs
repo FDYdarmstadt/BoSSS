@@ -341,6 +341,28 @@ namespace BoSSS.Foundation.XDG {
             return new FDJacobianBuilder(xeval, ParamUpdate);
         }
 
+        /// <summary>
+        /// Clone Method
+        /// </summary>
+        /// <returns></returns>
+        public XSpatialOperatorMk2 CloneAs()
+        {
+            var ret = new XSpatialOperatorMk2(this.DomainVar, this.CodomainVar, this.QuadOrderFunction, this.Species);
+
+            foreach(string var in this.CodomainVar)
+            {
+                foreach(IEquationComponent comp in this.EquationComponents[var])
+                {
+                    ret.EquationComponents[var].Add(comp);
+                }
+            }
+            ret.AgglomerationThreshold= this.AgglomerationThreshold;    
+            ret.LinearizationHint=this.LinearizationHint;
+            ret.IsLinear= this.IsLinear;
+            ret.TemporalOperator= this.TemporalOperator;    
+            return ret;
+        }
+
 
         /// <summary>
         /// This class acts as a frame for some other vector, and presents only those entries which are associated with a given species.

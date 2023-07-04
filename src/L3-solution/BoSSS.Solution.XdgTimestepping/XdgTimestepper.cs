@@ -553,11 +553,10 @@ namespace BoSSS.Solution.XdgTimestepping {
                 lsu = () => new UpdateLevelsetWithNothing(this);
             }
 
-            Console.WriteLine("TODO: lsu is currently ignored for testing purposes");
             ConstructorCommon(op, false,
                 Fields, this.Parameters, IterationResiduals,
                 new[] { spc },
-                () => new UpdateLevelsetWithNothing(this), // TODO change this back later
+                lsu,
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
                 _MultigridSequence,
@@ -941,7 +940,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 2 of 2 for dynamic load balancing: restore this objects 
         /// status after the grid has been re-distributed.
         /// </summary>
-        public void DataRestoreAfterBalancing(GridUpdateDataVaultBase L,
+        public void DataRestoreAfterBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L,
             IEnumerable<DGField> Fields,
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
@@ -982,7 +981,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Step 1 of 2 for dynamic load balancing: creating a backup of this objects 
         /// status in the load-balancing thing <paramref name="L"/>
         /// </summary>
-        public void DataBackupBeforeBalancing(GridUpdateDataVaultBase L) {
+        public void DataBackupBeforeBalancing(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
             
             if(m_BDF_Timestepper != null) {
                 m_BDF_Timestepper.DataBackupBeforeBalancing(L);

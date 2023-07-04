@@ -383,8 +383,8 @@ namespace BoSSS.Application.BoSSSpad {
                 {
                     List<ISessionInfo> ret = new List<ISessionInfo>();
 
-                    if (InteractiveShell.databases != null) {
-                        foreach (var db in InteractiveShell.databases) {
+                    if (BoSSSshell.databases != null) {
+                        foreach (var db in BoSSSshell.databases) {
                             var SS = db.Sessions.Where(delegate( ISessionInfo si) {
                                 //#if DEBUG 
                                 //                                return si.ProjectName.Equals(this.CurrentProject);
@@ -461,8 +461,8 @@ namespace BoSSS.Application.BoSSSpad {
 
                 // Fill with values
                 { 
-                    if (InteractiveShell.databases != null) {
-                        foreach (var db in InteractiveShell.databases) {
+                    if (BoSSSshell.databases != null) {
+                        foreach (var db in BoSSSshell.databases) {
                             foreach(var si in db.Sessions) {
                                 DataRow[] foundProject = m_Projects.Select("Name = '"+si.ProjectName+"'");
                                 if (foundProject.Length != 0) {

@@ -76,7 +76,7 @@ namespace CNS.Tests.ConvectiveFlux {
             c.ProjectDescription = "Toro 2009, p. 334, case 1";
             c.Endtime = 0.2;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -127,7 +127,7 @@ namespace CNS.Tests.ConvectiveFlux {
             c.ProjectDescription = "Toro 2009, p. 334, case 2";
             c.Endtime = 0.15;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -177,7 +177,7 @@ namespace CNS.Tests.ConvectiveFlux {
             c.ProjectDescription = "Toro 2009, p. 334, case 3";
             c.Endtime = 0.012;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -228,7 +228,7 @@ namespace CNS.Tests.ConvectiveFlux {
             c.ProjectDescription = "Toro 2009, p. 334, case 4";
             c.Endtime = 0.035;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 
@@ -279,7 +279,7 @@ namespace CNS.Tests.ConvectiveFlux {
             c.ProjectDescription = "Toro 2009, p. 334, case 5";
             c.Endtime = 0.012;
 
-            var solver = new Program();
+            var solver = new CNSProgram();
             solver.Init(c);
             solver.RunSolverMode();
 

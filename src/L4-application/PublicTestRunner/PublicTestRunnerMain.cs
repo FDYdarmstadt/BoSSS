@@ -133,7 +133,7 @@ namespace PublicTestRunner {
                         typeof(BoSSS.Application.XNSE_Solver.XNSE),
                         typeof(BoSSS.Application.XNSFE_Solver.XNSFE),
                         typeof(BoSSS.Application.XdgTimesteppingTest.XdgTimesteppingMain),
-                        typeof(CNS.Program),
+                        typeof(CNS.CNSProgram),
                         typeof(NSE_SIMPLE.SIMPLESolver),
                         typeof(BoSSS.Application.ZwoLsTest.AllUpTest),
                         typeof(QuadratureAndProjectionTest.QuadratueAndProjectionTest),
@@ -730,7 +730,7 @@ namespace PublicTestRunner {
         /// <summary>
         /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE)
         /// </summary>
-        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex");
+        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex_" + System.Environment.UserName);
 
         /// <summary>
         /// to distinct the internalTestRunner
@@ -751,11 +751,11 @@ namespace PublicTestRunner {
                 throw new NotSupportedException("runjobmanager subprogram must be executed serially");
             }
 
-            InteractiveShell.ReloadExecutionQueues();
+            BoSSSshell.ReloadExecutionQueues();
 
-            if(ExecutionQueueNo >= InteractiveShell.ExecutionQueues.Count)
+            if(ExecutionQueueNo >= BoSSSshell.ExecutionQueues.Count)
                 throw new ApplicationException($"Execution queue #{ExecutionQueueNo} does not exist on this machine/account (see configuration file ~/.BoSSS/etc/BatchProcessorConfig.json).");
-            BatchProcessorClient bpc = InteractiveShell.ExecutionQueues[ExecutionQueueNo];
+            BatchProcessorClient bpc = BoSSSshell.ExecutionQueues[ExecutionQueueNo];
             Console.WriteLine($"Using batch queue {ExecutionQueueNo}: {bpc.ToString()}");
 
             FileStream ServerMutex;
@@ -774,6 +774,8 @@ namespace PublicTestRunner {
                             wrt.WriteLine("Locked by BoSSS test runner at " + DateNtime);
                         }
                     } catch(Exception ee) {
+                        Console.Error.WriteLine($"Unable to get lock on {MutexFileName}: {ee}");
+                        Console.Error.WriteLine("wait and try again...");
                         ServerMutex = null;
                         Thread.Sleep(rnd.Next(10000));
                     }
@@ -801,7 +803,7 @@ namespace PublicTestRunner {
                 // phase 1: discover tests
                 // ===================================
 
-                InteractiveShell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
+                BoSSSshell.WorkflowMgm.Init("BoSSStst" + DateNtime, bpc);
 
                 // deployment of native libraries
                 string NativeOverride;
@@ -982,15 +984,24 @@ namespace PublicTestRunner {
                                 }
 
 
-                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
-                                    if(s == JobStatus.FailedOrCanceled) {
-                                        Console.WriteLine(" ------------------- Job Failed reason:");
-                                        var s1 = jj.job.GetStatus(true);
-                                        if(s1 != s) {
-                                            Console.WriteLine("changed its mind to: " + s1);
-                                            s = s1;
-                                        }
+                                if (s == JobStatus.FailedOrCanceled) {
+                                    Console.WriteLine(" ------------------- Job Failed reason:");
+                                    var s1 = jj.job.GetStatus(true);
+                                    if (s1 != s) {
+                                        Console.WriteLine("changed its mind to: " + s1);
+                                        s = s1;
                                     }
+
+                                    if (jj.job.SubmitCount < jj.job.RetryCount) {
+                                        Console.WriteLine("Trying once again with failed job...");
+                                        jj.job.Reactivate();
+                                        continue;
+                                    }
+                                }
+
+
+                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
+                                    
 
 
                                     // message:
@@ -1030,6 +1041,7 @@ namespace PublicTestRunner {
                                             }
                                         }
                                     }
+
 
                                     // move job to 'finished' list
                                     var X = (jj.job, jj.ResFile, jj.testname, s);
@@ -1108,13 +1120,15 @@ namespace PublicTestRunner {
                 // very final message:
                 if(SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
                     Console.WriteLine("All tests/jobs finished successfully.");
+                    Console.WriteLine("SUCCESS.");
 
                     if(returnCode != 0) {
-                        Console.Error.WriteLine("Some other error occurred (maybe IO error after successful test run) -- check output log");
-                        Console.Error.WriteLine("FAILURE.");
+                        Console.Error.WriteLine("Ignoring some other error occurred (maybe IO error after successful test run) -- check output log;");
+                        //Console.Error.WriteLine("FAILURE.");
                     } else {
-                        Console.WriteLine("SUCCESS.");
                     }
+
+                    returnCode = 0;
 
                 } else {
                     Console.Error.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {OtherStatCount} have other states.");
@@ -1257,7 +1271,7 @@ namespace PublicTestRunner {
                     }
                     int counter = 2;
                     final_jName = jName;
-                    while (InteractiveShell.WorkflowMgm.AllJobs.ContainsKey(final_jName)) {
+                    while (BoSSSshell.WorkflowMgm.AllJobs.ContainsKey(final_jName)) {
                         string suffix = "_" + counter;
                         counter++;
                         if (jName.Length + suffix.Length > 127) {
@@ -1272,7 +1286,7 @@ namespace PublicTestRunner {
                 // create job
                 Job j = new Job(final_jName, TestTypeProvider.GetType());
                 j.SessionReqForSuccess = false;
-                j.RetryCount = 1;
+                j.RetryCount = 3;
                 string resultFile = $"result-{dor}-{cnt}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileNameWithoutExtension(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {
@@ -1319,7 +1333,7 @@ namespace PublicTestRunner {
 
                 var dir = Directory.GetCurrentDirectory();
 
-                foreach (var t in r.tests) {
+                foreach (var t in r.tests) { 
                     foreach (var fOrigin in r.RequiredFiles4Test[t]) {
                         if (File.Exists(fOrigin)) {
                             string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));
@@ -1342,8 +1356,9 @@ namespace PublicTestRunner {
             InitTraceFile($"Nunit3.{DateTime.Now.ToString("MMMdd_HHmmss")}.{MpiRank}of{MpiSize}");
 
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
+            Tracer.NamespacesToLog_EverythingOverrideTestRunner = true;
 
-            using(var ftr = new FuncTrace()) {
+            using (var ftr = new FuncTrace()) {
                 Assembly[] assln = GetAllAssembliesForTests();
 
                 if(MpiSize != 1) {

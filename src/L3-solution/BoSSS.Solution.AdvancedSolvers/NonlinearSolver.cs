@@ -292,9 +292,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 err.AccV(-1.0, OpEvalRaw);
                 double l2_err = err.MPI_L2Norm();
                 double comp = Math.Sqrt(Math.Max(OpEvalRaw.MPI_L2Norm(), Check.MPI_L2Norm()) * BLAS.MachineEps + BLAS.MachineEps);
+                
                 if (l2_err > comp) {
-                    Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err / comp} (comparison value {comp})");
-                }
+                    Console.Error.WriteLine($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: {l2_err}, relative: {l2_err/comp} (comparison value {comp})");
+                    //throw new ArithmeticException($"Mismatch between operator linearization and evaluation: Operator matrix-Jacobian distance: { l2_err }, relative: { l2_err/comp} (comparison value { comp})");
+				}
             }
             EvaluationCounter++;
 

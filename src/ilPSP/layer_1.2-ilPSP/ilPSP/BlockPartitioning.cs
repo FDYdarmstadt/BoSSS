@@ -44,7 +44,7 @@ namespace ilPSP {
 
             int[] _BlockType = new int[LocalNoOfBlocks];
             long firstBlock = othrPart.FirstBlock;
-            int NoOfBlockTypes = 0;
+            int NoOfBlockTypes = -1;
             for(int iBlockLoc = 0; iBlockLoc < LocalNoOfBlocks; iBlockLoc++) {
                 long globBlock = iBlockLoc + firstBlock;
                 int blockType = othrPart.GetBlockType(globBlock);

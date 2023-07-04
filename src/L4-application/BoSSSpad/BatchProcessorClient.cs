@@ -372,7 +372,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             string fullPath = System.IO.Path.Combine(pp.LocalMountPath, dbDir);
 
-            IDatabaseInfo dbi = InteractiveShell.OpenOrCreateDatabase(fullPath);
+            IDatabaseInfo dbi = BoSSSshell.OpenOrCreateDatabase(fullPath);
             
             if(!pp.PathAtRemote.IsEmptyOrWhite()) {
                 string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');

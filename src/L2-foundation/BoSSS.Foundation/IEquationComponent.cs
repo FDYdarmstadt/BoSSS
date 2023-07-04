@@ -630,7 +630,10 @@ namespace BoSSS.Foundation {
         public double[] Parameters_OUT;
 
         /// <summary>
-        /// edge index (local on current MPI rank)
+        /// edge index (local on current MPI rank), i.e. 0th index into <see cref="ILogicalEdgeData.CellIndices"/>;
+        /// - the IN-cell is: <see cref="ILogicalEdgeData.CellIndices"/>[iEdge, 0] == <see cref="jCellIn"/>
+        /// - the OUT-cell is: <see cref="ILogicalEdgeData.CellIndices"/>[iEdge, 1] == <see cref="jCellOut"/>
+        /// - access via <see cref="GridDat"/>, <see cref="IGridData.iLogicalEdges"/>, <see cref="ILogicalEdgeData.CellIndices"/>
         /// </summary>
         public int iEdge;
 

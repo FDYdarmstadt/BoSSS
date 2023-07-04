@@ -919,7 +919,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     Lc = -1;
 
                 double[] Res = new double[L];
-                double[] ResCoarse = Lc > 0 ? new double[Lc] : null;
+                double[] ResCoarse = new double[Lc];
 
 
                 double[] Sol0 = X.CloneAs();

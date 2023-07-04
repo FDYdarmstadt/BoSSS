@@ -597,8 +597,6 @@ namespace ilPSP.Utils {
         /// clear all entries.
         /// </summary>
         static public void ClearEntries<T>(this T a) where T : IList<double> {
-            if (a.Count == 0)
-                throw new Exception("anfksdfnalfnyf");
             int L = a.Count;
             if(a is Array) {
                 // optimized for arrays
@@ -1083,7 +1081,7 @@ namespace ilPSP.Utils {
         /// ctor
         /// </summary>
         public UnsafeDBLAS() :
-            base(new string[] { "BLAS_LAPACK.dll","libBoSSSnative_seq.so", "libacml.so", "libatlas.so", "libblas.so", "libopenblas.so" },
+            base(new string[] { "BLAS_LAPACK.dll", "libBoSSSnative_seq.so", "libacml.so", "libatlas.so", "libblas.so", "libopenblas.so" },
                   new string[6][][], 
                   new GetNameMangling[] { DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.BoSSS_Prefix, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore, DynLibLoader.SmallLetters_TrailingUnderscore },
                   Helper(), //new PlatformID[] { PlatformID.Win32NT, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix, PlatformID.Unix },
@@ -1250,7 +1248,7 @@ namespace ilPSP.Utils {
         /// <summary> FORTRAN-Style BLAS routine </summary>
         static public double DDOT(ref int N, double[] DX, ref int INCX, double[] DY, ref int INCY) {
             unsafe {
-                fixed (double* pDX = &DX[0], pDY = &DY[0]) {
+                fixed (double* pDX = DX, pDY = DY) {
                     return m_BLAS.DDOT(ref N, pDX, ref INCX, pDY, ref INCY);
                 }
             }
@@ -1269,7 +1267,7 @@ namespace ilPSP.Utils {
         /// <summary> FORTRAN-Style BLAS routine </summary>
         static public void DSWAP(ref int N, double[] DX, ref int INCX, double[] DY, ref int INCY) {
             unsafe {
-                fixed (double* pDX = &DX[0], pDY = &DY[0]) {
+                fixed (double* pDX = DX, pDY = DY) {
                     m_BLAS.DSWAP(ref N, pDX, ref INCX, pDY, ref INCY);
                 }
             }
@@ -1295,7 +1293,7 @@ namespace ilPSP.Utils {
                                  ref double BETA,
                                  double[] C, ref int LDC) {
             unsafe {
-                fixed (double* pA = &A[0], pB = &B[0], pC = &C[0]) {
+                fixed (double* pA = A, pB = B, pC = C) {
                     m_BLAS.DGEMM(ref TRANSA, ref TRANSB,
                                  ref M, ref N, ref K,
                                  ref ALPHA,
@@ -1423,7 +1421,7 @@ namespace ilPSP.Utils {
                                  ref double DA, double[] DX, ref int INCX,
                                  double[] DY, ref int INCY) {
             unsafe {
-                fixed (double* pDX = &DX[0], pDY = &DY[0]) {
+                fixed (double* pDX = DX, pDY = DY) {
                     m_BLAS.DAXPY(ref N, ref DA, pDX, ref INCX, pDY, ref INCY);
                 }
             }
@@ -1435,7 +1433,7 @@ namespace ilPSP.Utils {
         /// </summary>
         static public void DSCAL(ref int n, ref double a, double[] x, ref int incx) {
             unsafe {
-                fixed (double* px = &x[0]) {
+                fixed (double* px = x) {
                     m_BLAS.DSCAL(ref n, ref a, px, ref incx);
                 }
             }
@@ -1447,7 +1445,7 @@ namespace ilPSP.Utils {
         /// </summary>
         static public double DNRM2(ref int n, double[] x, ref int incx) {
             unsafe {
-                fixed (double* px = &x[0]) {
+                fixed (double* px = x) {
                     return m_BLAS.DNRM2(ref n, px, ref incx);
                 }
             }

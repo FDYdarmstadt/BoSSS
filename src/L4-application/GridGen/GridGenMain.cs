@@ -269,7 +269,7 @@ namespace BoSSS.Application.GridGen {
         }
 
 
-        protected override void CreateEquationsAndSolvers(GridUpdateDataVaultBase L) {
+        protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
            
         }
 

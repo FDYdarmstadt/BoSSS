@@ -884,8 +884,8 @@ namespace BoSSS.Solution.Gnuplot {
 
         /// <summary>
         /// Saves two text files: 
-        /// 1) A tabular summary of the stored data, see <see cref="SaveTabular(string)"/>
-        /// 2) A table of the linear regression values, see <see cref="Regression()"/>
+        /// 1) A tabular summary of the stored data, see <see cref="SaveTabular"/>
+        /// 2) A table of the linear regression values, see <see cref="Regression"/>
         /// File name convention:
         /// 1) <paramref name="path"/>+Data.txt
         /// 1) <paramref name="path"/>+Rgrs.txt 
@@ -893,6 +893,7 @@ namespace BoSSS.Solution.Gnuplot {
         /// <param name="path">
         /// Path to file
         /// </param>
+        /// <param name="writeGroupName"></param>
         public void SaveTextFileToPublish(string path, bool writeGroupName = true) {
             // writing data
             string pathWithoutExt = System.IO.Path.ChangeExtension(path, null);
@@ -1105,7 +1106,6 @@ namespace BoSSS.Solution.Gnuplot {
         /// groupName2  3   2
         /// </code>
         /// </summary>
-        /// <param name="path">File path</param>
         public void SaveTabular(string path, bool writeGroupName) {
             using (StreamWriter s = new StreamWriter(path)) {
                 if (writeGroupName) {
@@ -1372,7 +1372,7 @@ namespace BoSSS.Solution.Gnuplot {
             {
                 if (this.ShowXtics) {
                     if (this.LogX){
-                        gp.Cmd("set xtics format \"$" + this.LogBaseX + "^{%L}$\" ");
+                        gp.Cmd("set xtics format \"" + this.LogBaseX + "^{%L}\" ");
                         gp.Cmd("set xtics offset 0, 0-0.4 font \"sans, 18\" ");
                         gp.Cmd($"set xtics font \"sans, {this.LabelFont}\" ");
                     }
@@ -1384,7 +1384,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowX2tics) {
                     if (this.LogX2)
-                        gp.Cmd("set x2tics format \"$" + this.LogBaseX + "^{%L}$\" ");
+                        gp.Cmd("set x2tics format \"" + this.LogBaseX + "^{%L}\" ");
                     else
                         gp.Cmd("set x2tics ");
                 } else {
@@ -1393,7 +1393,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowYtics) {
                     if (this.LogY){
-                        gp.Cmd("set ytics format \"$" + this.LogBaseY + "^{%L}$\" ");
+                        gp.Cmd("set ytics format \"" + this.LogBaseY + "^{%L}\" ");
                         gp.Cmd($"set ytics font \"sans, {this.LabelFont}\" ");
                     }else
                         gp.Cmd("set ytics ");
@@ -1403,7 +1403,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowY2tics) {
                     if (this.LogY2)
-                        gp.Cmd("set y2tics format \"$" + this.LogBaseY + "^{%L}$\" ");
+                        gp.Cmd("set y2tics format \"" + this.LogBaseY + "^{%L}\" ");
                     else
                         gp.Cmd("set y2tics ");
                 } else {
