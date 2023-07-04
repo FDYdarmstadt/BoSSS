@@ -583,6 +583,7 @@ namespace BoSSS.Solution.NSECommon {
 
             m_UseBoundaryVelocityParameter = UseBoundaryVelocityParameter;
             //m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0Vector(SpatDim), VariableNames.Velocity0MeanVector(SpatDim));
+            m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0MeanVector(SpatDim));
             if(m_UseBoundaryVelocityParameter)
                 m_ParameterOrdering = ArrayTools.Cat(m_ParameterOrdering, VariableNames.BoundaryVelocityVector(SpatDim));
             m_ArgumentOrdering = VariableNames.VelocityVector(SpatDim); // VelocityX,VelocityY,(VelocityZ) as variables. 
@@ -614,13 +615,13 @@ namespace BoSSS.Solution.NSECommon {
             this.EoS = EoS;
             this.NumberOfReactants = NumberOfComponents;
             idx = _component; // Velocity-i as argument...
-            m_ParameterOrdering = null; // not used
+            m_ParameterOrdering = ArrayTools.Cat(VariableNames.Velocity0MeanVector(SpatDim)); // used for computation of penalties
 
             switch(_bcmap.PhysMode) {
                 case PhysicsMode.MixtureFraction:
                 scalarFunction = m_bcmap.bndFunction[VariableNames.MixtureFraction];
                 m_ArgumentOrdering = ArrayTools.Cat(VariableNames.VelocityVector(SpatDim), VariableNames.MixtureFraction); // VelocityX,VelocityY,(VelocityZ), Temperature as variables. 
-                m_ParameterOrdering = new string[] { /*VariableNames.Rho*/ };
+                m_ParameterOrdering = m_ParameterOrdering.Cat(new string[] { /*VariableNames.Rho*/ });
                 break;
                 case PhysicsMode.LowMach:
                 scalarFunction = m_bcmap.bndFunction[VariableNames.Temperature];
@@ -860,8 +861,8 @@ namespace BoSSS.Solution.NSECommon {
             double[] VelocityMeanIn = new double[m_SpatialDimension];
             double[] VelocityMeanOut = new double[m_SpatialDimension];
             for(int d = 0; d < m_SpatialDimension; d++) {
-                VelocityMeanIn[d] = Uin[d];
-                VelocityMeanOut[d] = Uout[d];
+                VelocityMeanIn[d] = inp.Parameters_IN[d];// Uin[d];
+                VelocityMeanOut[d] = inp.Parameters_OUT[d];// Uout[d];
             }
 
             double LambdaIn;
