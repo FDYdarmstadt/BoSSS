@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver.SolidPhase {
     class Continuity : BulkEquation {
 
-        internal static bool ContinuityStabilization = false;
+        internal static bool ContinuityStabilization = true;
 
         string spcName;
 
@@ -21,7 +21,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 for(int i = 0; i < D; ++i) {
                     string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
                     AddVariableNames(velocity);
-                    var divergence1 = new Divergence(spcName, velocity, i);
+                    var divergence1 = new Divergence(spcName, velocity, i, 1);
                     AddComponent(divergence1);
                 }
                 //var divergence2 = new ConvectionDivergence(spcName, D);
@@ -40,7 +40,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
             if(ContinuityStabilization) {
                 string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
                 AddVariableNames(pressure);
-                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, - 1/ (Material.Lame2 + Material.Viscosity)); // Must scale with viscosity, see Die Pietro
+                //var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -1.0/(Material.Lame2)); // Must scale with viscosity, see Die Pietro
+                var pressurePenalty = new OpenSIPForm(spcName, new string[] { pressure }, 0, -0.000001); // Must scale with viscosity, see Die Pietro
                 AddComponent(pressurePenalty);
             }
         }
@@ -85,9 +86,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public string ValidSpecies => speciesName;
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
+            //return 0;
             double flux = _uA[0] * inp.Normal[d];
             return scale * flux * _vA;
-            //return 0.0;
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {

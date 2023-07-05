@@ -24,7 +24,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
-            get { return TermActivationFlags.UxV; }
+            get { return TermActivationFlags.None; }
         }
 
         public TermActivationFlags InnerEdgeTerms {
@@ -39,10 +39,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             return 0;
-            double flux = _uA[0] * _vA;
-            flux *= scale * Penalty(inp.jCellIn, -1);
-            return flux;
-
         }
 
         MultidimensionalArray cj;
