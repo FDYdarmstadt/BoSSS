@@ -157,7 +157,7 @@ namespace BoSSS.Foundation.Grid.Classic {
                                         new Vector { xNodes[nX], yNodes[nY], zNodes[0] },
                                         new Vector { xNodes[0], yNodes[nY], zNodes[nZ] }
                                         };
-                    grid.ConstructPeriodicEdgeTrafo(Outlet, new double[] { 0, 1.0, 0 }, Inlet, new double[] { 0, 1.00, 0 }, out peryTag);
+                    grid.ConstructPeriodicEdgeTrafo(Outlet, new double[] { 0, 1.0, 0 }, Inlet, new double[] { 0, 1.0, 0 }, out peryTag);
                     grid.EdgeTagNames.Add(peryTag, "Periodic-Y");
                 }
 
