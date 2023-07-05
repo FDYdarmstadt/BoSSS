@@ -30,6 +30,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     static public partial class ASUnitTest {
 
 #if !DEBUG
+        [Test]
         public static void ASTestCapillaryWave()
         {
             var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryWave.CW_Test();
