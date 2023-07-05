@@ -73,6 +73,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+            Debugger.Launch();
 
             
             //InitMPI();

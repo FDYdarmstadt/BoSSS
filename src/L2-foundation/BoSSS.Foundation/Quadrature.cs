@@ -421,10 +421,11 @@ namespace BoSSS.Foundation.Quadrature {
                         Bulkcnt++;
 
                         // limit bulksize 
-                        if ((j + ChunkLength) > ChunkEnd) {
-                            ChunkLength -= (j + ChunkLength - ChunkEnd);
+                        long l_ChunkLength = ChunkLength;
+                        if ((j + l_ChunkLength) > ChunkEnd) {
+                            ChunkLength = checked((int)(l_ChunkLength - (j + l_ChunkLength - ChunkEnd)));
                         }
-                       
+
 
                         // DEBUG check
 #if DEBUG
