@@ -977,10 +977,7 @@ namespace BoSSS.Application.XNSEC {
             return dt;
         }
 
-        protected override void Bye() {
-            // base.PostprocessingModules.Add();
-            base.Bye();
-        }
+       
 
         private int hack_TimestepIndex = 0;
         //private PerssonSensor sensor;

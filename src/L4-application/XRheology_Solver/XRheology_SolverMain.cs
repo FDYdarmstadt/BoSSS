@@ -1718,10 +1718,6 @@ namespace BoSSS.Application.XRheology_Solver {
         }
 
 
-        protected override void Bye() {
-            base.Bye();
-        }
-
 
         // =========================
         // adaptive mesh refinement
