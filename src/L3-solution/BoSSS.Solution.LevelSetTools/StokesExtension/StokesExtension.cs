@@ -254,10 +254,9 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             int deg = ExtensionVelocity[0].Basis.Degree;
 
             double[] InputVelL2 = VelocityAtInterface.Select(vel => vel.L2Norm()).ToArray();
-            Console.WriteLine("Stokes Extension, L2-Norm of input velocity PER COMPONENT: " + InputVelL2.ToConcatString("[", ",", "]"));
 
             
-            Tecplot.Tecplot.PlotFields(ExtensionVelocity.Cat(lsTrk.LevelSets[0] as LevelSet), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
+            // Tecplot.Tecplot.PlotFields(ExtensionVelocity.Cat(lsTrk.LevelSets[0] as LevelSet), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
             m_LatestAgglom = lsTrk.GetAgglomerator(lsTrk.SpeciesIdS.ToArray(), this.m_CutCellQuadOrder, this.AgglomerationThreshold);
 
             int J = gDat.iLogicalCells.NoOfLocalUpdatedCells;
@@ -279,15 +278,9 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
 
             // should be replaced by something more sophisticated
             var Residual = RHS.CloneAs();
-            Console.WriteLine("Stokes Extension RHS " + RHS.MPI_L2Norm());
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
 
             double[] OutputVelL2 = ExtensionVelocity.Select(vel => vel.L2Norm()).ToArray();
-            Console.WriteLine("Stokes Extension, L2-Norm of result velocity PER COMPONENT: " + OutputVelL2.ToConcatString("[", ",", "]") + ", most used bc.: " + map.BCTypeUseCount.ElementAtMax(kv => kv.Value));
-            foreach (var entry in map.BCTypeUseCount){
-                Console.WriteLine(entry.Key + " " + entry.Value);
-            }
-            Console.Write("");
 
             /*
             {

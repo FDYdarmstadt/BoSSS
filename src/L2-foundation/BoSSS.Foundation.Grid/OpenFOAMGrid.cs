@@ -355,7 +355,7 @@ namespace BoSSS.Foundation.Grid {
             
             this.GridDataObject = new GridData(this);
             this.DefineEdgeTags(delegate (double[] X) { // TODO generalize
-                    double size = 1;
+                    double size = 0.75e-3;
                     double thickness = 0.1;
                 if (Math.Abs(X[0] - (-size)) < 1e-10) {
                     return "left";
@@ -380,10 +380,8 @@ namespace BoSSS.Foundation.Grid {
             }
             );
 
-            Console.WriteLine("Hello!!!!");
             this.AddPeriodicBoundary(new Vector(0, 0.1, 0), new Vector(0, 1, 0), new Vector(0, 0.0, 0), new Vector(0, 1, 0));
-            Console.WriteLine("Hello!!!!");
-            
+
             
             this.GridDataObject.Invalidate();
             this.GridDataObject = null;

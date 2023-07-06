@@ -198,14 +198,46 @@ namespace BoSSS.Application.ExternalBinding {
         }
 
         /// <summary>
+        /// 1D-bisection method for finding zeros of Field c.
+        /// </summary>
+        double Bisect(SinglePhaseField c, double xMin, double xMax, int axis, int iter=0, double otherCoord = 0, int iters = 15){
+            double[] MakeCoord(double loc){
+                double yM = 0.05e-3;
+                if (axis == 0){
+                    return new double[]{loc, yM, otherCoord};
+                } else if (axis == 2){
+                    return new double[]{otherCoord, yM, loc};
+                } else {
+                    throw new ApplicationException("Direction is not supported");
+                }
+            }
+            double xInt = (xMin + xMax)/2;
+            double cMin = c.ProbeAt(MakeCoord(xMin));
+            double cMax = c.ProbeAt(MakeCoord(xMax));
+            double cInt = c.ProbeAt(MakeCoord(xInt));
+
+            if (iter > iters){
+                return Newton(c, xInt, axis, otherCoord); // after iters iterations, we should be close enough so that Newton can do the rest
+            }
+            if (cMin * cInt < 0){ // zero lies between xMin and xInt
+                return Bisect(c, xMin, xInt, axis, iter+1, otherCoord, iters);
+            }
+            else if (cMax * cInt < 0){ // zero lies between xMax and xInt
+                return Bisect(c, xInt, xMax, axis, iter+1, otherCoord, iters);
+            } else {
+                throw new ApplicationException("Something went wrong during bisect search");
+            }
+        }
+
+        /// <summary>
         /// 1D-Newton method for finding zeros of Field c.
         /// </summary>
-        double Newton(SinglePhaseField c, double xRoot, int axis, double otherCoord = 0, double delta = 1e-5, double tolerance = 1e-8, double trustRegion = 1e-1, int maxIter = 1000){
+        double Newton(SinglePhaseField c, double xRoot, int axis, double otherCoord = 0, double delta = 1e-8, double tolerance = 1e-8, double trustRegion = 1e-4, int maxIter = 1000){
             int iter = 0;
             double error = 1e10;
-            double yM = 0.05;
             int direction;
             double[] MakeCoord(double loc){
+                double yM = 0.05e-3;
                 if (axis == 0){
                     return new double[]{loc, yM, otherCoord};
                 } else if (axis == 2){
@@ -254,23 +286,30 @@ namespace BoSSS.Application.ExternalBinding {
         /// </summary>
         public double GetDeformParameter(SinglePhaseField c) {
             try { // since this is basically post-processing, it should not crash the simulation
-                double xMax = 1;
-                double xMin = -1;
-                double zMax = 1;
-                double zMin = -1;
+                double xMax = 0.75e-3;
+                double xMin = -0.75e-3;
+                double zMax = 0.75e-3;
+                double zMin = -0.75e-3;
+                double R = xMax/2;
                 // find intersection of pos. x axis and levset
                 double xIntersectionPos = xMax * 0.5;
-                xIntersectionPos = Newton(c, xIntersectionPos, 0);
+                // xIntersectionPos = Newton(c, xIntersectionPos, 0);
+                xIntersectionPos = Bisect(c, 0.0, xMax*0.99, 0);
                 double xIntersectionNeg = xMin * 0.5;
-                xIntersectionNeg = Newton(c, xIntersectionNeg, 0);
+                // xIntersectionNeg = Newton(c, xIntersectionNeg, 0);
+                xIntersectionNeg = Bisect(c, xMin*0.99, 0.0, 0);
                 double zIntersectionPos = zMax * 0.5;
-                zIntersectionPos = Newton(c, zIntersectionPos, 2);
+                // zIntersectionPos = Newton(c, zIntersectionPos, 2);
+                zIntersectionPos = Bisect(c, 0.0, zMax*0.99, 2);
                 double zIntersectionNeg = zMin * 0.5;
-                zIntersectionNeg = Newton(c, zIntersectionNeg, 2);
-                double xIntersectionPos2 = xMax * 0.25;
-                xIntersectionPos2 = Newton(c, xIntersectionPos2, 0, otherCoord: zIntersectionPos / 2.0);
-                double zIntersectionNeg2 = zMin * 0.25;
-                zIntersectionNeg2 = Newton(c, zIntersectionNeg2, 2, otherCoord: xIntersectionNeg / 2.0);
+                // zIntersectionNeg = Newton(c, zIntersectionNeg, 2);
+                zIntersectionNeg = Bisect(c, zMin*0.99, 0.0, 2);
+                double xIntersectionPos2 = Math.Sqrt(R*R - zIntersectionPos*zIntersectionPos); // use a good initial guess
+                // xIntersectionPos2 = Newton(c, xIntersectionPos2, 0, otherCoord: zIntersectionPos / 2.0);
+                xIntersectionPos2 = Bisect(c, 0.0, xMax*0.99, 0, otherCoord: zIntersectionPos / 2.0);
+                double zIntersectionNeg2 = Math.Sqrt(R*R - xIntersectionNeg*xIntersectionNeg); // use a good initial guess
+                // zIntersectionNeg2 = Newton(c, zIntersectionNeg2, 2, otherCoord: xIntersectionNeg / 2.0);
+                zIntersectionNeg2 = Bisect(c, zMin*0.99, 0.0, 2, otherCoord: xIntersectionNeg / 2.0);
                 Console.WriteLine("intersections of levelset: ");
                 Console.WriteLine("    x = [ " + xIntersectionPos + ", " + xIntersectionNeg + ", " + 0 + ", " + 0 + ", " + xIntersectionPos2 + ", " + xIntersectionNeg / 2.0 + " ]");
                 Console.WriteLine("    y = [ " + 0 + ", " + 0 + ", " + zIntersectionPos + ", " + zIntersectionNeg + ", " + zIntersectionPos / 2.0 + ", " + zIntersectionNeg2 + " ]");
@@ -374,14 +413,23 @@ namespace BoSSS.Application.ExternalBinding {
         public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, double deltaT) {
 
             // TODO sync from OpenFOAM
-            //  double epsilon = 1e-5; // capillary width
-            //                        // double cahn = 0.005;
+             double epsilon = 1e-5; // capillary width
+             // double r = 5e-4; // radius
+             double r = 1; // dimensional form
+             double cahn = 1e-3;
+
+             // double shearRate = 8.9235;
+             double shearRate = 89.235;
+             double u = shearRate * r;
+             double kappa = 5e-11;
+             double sigma = 0.063;
+             // double sigma = 1.0;
+             // double diff = 3 * kappa * sigma / (2 * Math.Sqrt(2) * r * u * epsilon);
             //                        // double M = 1; // mobility parameter
-            // double M = Math.Sqrt(epsilon); // mobility parameter
-            // double sigma = 0.063;
-            // double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
-                                                              // double diff = M * lam;
-            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: 5e-2, _stationary: false, _endT: deltaT*1.1);
+            double M = Math.Sqrt(epsilon); // mobility parameter
+            double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
+            double diff = M * lam;
+            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: diff, _cahn: cahn, _stationary: false, _endT: deltaT*1.1);
             CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, chParams);
         }
         // public static bool FirstTimeStep = true;
@@ -774,6 +822,7 @@ namespace BoSSS.Application.ExternalBinding {
                     if (FirstSolve){
                         Tecplot("plot.1", 0.0, 3, c, mu, u, v, w);
                         TimeStepper.Solve(time, dt);
+                        Tecplot("plot.2", 0.0, 3, c, mu, u, v, w);
                         deformParameter = GetDeformParameter(c);
                         Console.WriteLine("Deformation Parameter: " + deformParameter);
                         t++;
