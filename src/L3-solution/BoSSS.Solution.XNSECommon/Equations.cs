@@ -244,6 +244,7 @@ namespace BoSSS.Solution.XNSECommon {
         protected override void DefineConvective(string spcName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double rhoSpc, double LFFSpc) {
             var conv = new Solution.XNSECommon.Operator.Convection.ConvectionInSpeciesBulk_LLF_Newton(D, boundaryMap, spcName, d, rhoSpc, LFFSpc);
             AddComponent(conv);
+            AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]);
         }       
     }
     /// <summary>
@@ -419,7 +420,7 @@ namespace BoSSS.Solution.XNSECommon {
                     AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_Standard(muA, muB, penalty * 1.0, dimension, d, false));
                     break;
                     case ViscosityMode.FullySymmetric:
-                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d, false));
+                    AddComponent(new Solution.XNSECommon.Operator.Viscosity.ViscosityAtLevelSet_FullySymmetric(dimension, muA, muB, penalty, d, false, physParams.slipI));
                     break;
                     case ViscosityMode.Viscoelastic:
                     //comps.Add(new Operator.Viscosity.ViscosityAtLevelSet_Standard(LsTrk, 1 / reynoldsA, 1 / reynoldsB, penalty * 1.0, d, false));
@@ -433,8 +434,6 @@ namespace BoSSS.Solution.XNSECommon {
                     throw new NotImplementedException();
                 }
             }
-
-
         }
 
         protected virtual void DefineConvective(int d, int dimension, double rhoA, double rhoB, double LFFA, double LFFB, bool material, IncompressibleBoundaryCondMap boundaryMap, bool isMovingMesh) {
