@@ -39,10 +39,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
             return 0;
-            double flux = _uA[0] * _vA;
-            flux *= scale * Penalty(inp.jCellIn, -1);
-            return flux;
-
         }
 
         MultidimensionalArray cj;
@@ -57,19 +53,14 @@ namespace ZwoLevelSetSolver.SolidPhase {
             double penalty_deg_tri = (_p + 1) * (_p + D) / D; // formula for triangles/tetras
             double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
             penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
-            cj = cs.CellLengthScales;
+            cj = cs.EdgeLengthScales;
         }
 
-        double Penalty(int jCellIn, int jCellOut) {
-            double penaltySizeFactor_A = 1/cj[jCellIn];
-            double penaltySizeFactor_B = jCellOut >= 0 ? 1/cj[jCellOut] : 0;
+        double Penalty(int jEdge) {
+            double penaltySizeFactor = cj[jEdge];
 
-            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
-
-            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
-            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
-            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
-            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
+            Debug.Assert(!double.IsNaN(penaltySizeFactor));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor));
             Debug.Assert(!double.IsInfinity(penalty));
 
             double µ = penaltySizeFactor;
@@ -80,7 +71,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double flux =  (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT);
-            flux *= scale * Penalty(inp.jCellIn, inp.jCellOut);
+            flux *= scale * Penalty(inp.iEdge);
             return flux;
 
         }

@@ -45,7 +45,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
     }
 
     class HardSiliconeRubber : IncompressibleViscoElastic {
-        public HardSiliconeRubber() : base(19, 1, 3.8) {
+        public HardSiliconeRubber() : base(100, 0.1, 1) {
         }
     }
 

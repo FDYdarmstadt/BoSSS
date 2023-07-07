@@ -435,7 +435,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.PhysicalParameters.rho_B = 0.1;
             C.PhysicalParameters.mu_A = 0.1;
             C.PhysicalParameters.mu_B = 0.1;
-            double sigma = 0.01;
+            double sigma = 0.5;
             C.PhysicalParameters.Sigma = sigma;
 
             C.PhysicalParameters.betaS_A = 0.0;
@@ -519,7 +519,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
 
             //Func<double[], double> Phi1Func = (X => -(X[1] -0.02 + 0.4 * X[0] * X[0]));
-            Func<double[], double> Phi1Func = (X => -( X[1] - 0.000));
+            Func<double[], double> Phi1Func = (X => -( X[1] - 0.001));
             C.InitialValues_Evaluators.Add(VariableNames.SolidLevelSetCG, Phi1Func);
 
             #endregion
@@ -569,8 +569,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.AdvancedDiscretizationOptions.SST_isotropicMode = BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
 
             C.AdaptiveMeshRefinement = true;
-            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 4 });
-            C.AMR_startUpSweeps = 3;
+            C.activeAMRlevelIndicators.Add(new ContactPointRefiner { maxRefinementLevel = 5 });
+            C.AMR_startUpSweeps = 4;
 
             #endregion
 
@@ -587,7 +587,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             
 
             C.TimesteppingMode = compMode;
-            double dt = 1e-3;
+            double dt = 5e-4;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10;

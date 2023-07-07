@@ -122,12 +122,14 @@ namespace ZwoLevelSetSolver {
             opFactory.AddEquation(new ContinuityBoundary("B", "C", D));
 
 
-
+            //*
             if(config.dntParams.SST_isotropicMode == BoSSS.Solution.XNSECommon.SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine) {
                 for(int d = 0; d < D; ++d) {
                     opFactory.AddEquation(new EquilibriumContactLine(d, D, config.physParams.betaL, config.physParams.theta_e));
+                    //opFactory.AddEquation(new EquilibriumContactLine1(d, D, config.physParams.betaL, config.physParams.theta_e));
                 }
             }
+            //*/
             var normalsParameter = new BoSSS.Solution.XNSECommon.Normals(D, ((LevelSet)lsUpdater.Tracker.LevelSets[1]).Basis.Degree, VariableNames.SolidLevelSetCG);
             opFactory.AddParameter(normalsParameter);
             lsUpdater.AddLevelSetParameter(VariableNames.SolidLevelSetCG, normalsParameter);

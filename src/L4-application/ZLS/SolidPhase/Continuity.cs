@@ -40,7 +40,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             if(ContinuityStabilization) {
                 string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
                 AddVariableNames(pressure);
-                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, - 1/ (Material.Lame2 + Material.Viscosity)); // Must scale with viscosity, see Die Pietro
+                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -0.0001); // Must scale with viscosity, see Die Pietro
                 AddComponent(pressurePenalty);
             }
         }
