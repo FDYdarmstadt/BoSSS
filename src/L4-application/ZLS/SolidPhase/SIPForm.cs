@@ -49,7 +49,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         public IList<string> ParameterOrdering => new string[] { };
 
         public TermActivationFlags BoundaryEdgeTerms {
-            get { return (TermActivationFlags.UxV | TermActivationFlags.V | TermActivationFlags.GradUxV | TermActivationFlags.UxGradV | TermActivationFlags.V | TermActivationFlags.GradV); }
+            get { return (TermActivationFlags.UxV | TermActivationFlags.V | TermActivationFlags.GradUxV | TermActivationFlags.UxGradV | TermActivationFlags.GradV); }
         }
 
         public TermActivationFlags InnerEdgeTerms {

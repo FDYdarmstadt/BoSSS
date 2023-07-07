@@ -24,7 +24,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
-            get { return TermActivationFlags.UxV; }
+            get { return TermActivationFlags.None; }
         }
 
         public TermActivationFlags InnerEdgeTerms {

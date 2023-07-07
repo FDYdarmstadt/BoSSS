@@ -45,6 +45,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
                 var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 2);
                 AddComponent(eulerAlmansi1);
+
+                //var nonLinear = new SIPGradUGradUTForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 1);
+                //AddComponent(nonLinear);
             }  
             if(material.Viscosity != 0.0)
             {
