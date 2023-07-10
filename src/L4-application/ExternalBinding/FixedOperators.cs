@@ -291,31 +291,32 @@ namespace BoSSS.Application.ExternalBinding {
                 double zMax = 0.75e-3;
                 double zMin = -0.75e-3;
                 double R = xMax/2;
-                // find intersection of pos. x axis and levset
-                double xIntersectionPos = xMax * 0.5;
-                // xIntersectionPos = Newton(c, xIntersectionPos, 0);
-                xIntersectionPos = Bisect(c, 0.0, xMax*0.99, 0);
-                double xIntersectionNeg = xMin * 0.5;
-                // xIntersectionNeg = Newton(c, xIntersectionNeg, 0);
-                xIntersectionNeg = Bisect(c, xMin*0.99, 0.0, 0);
-                double zIntersectionPos = zMax * 0.5;
-                // zIntersectionPos = Newton(c, zIntersectionPos, 2);
-                zIntersectionPos = Bisect(c, 0.0, zMax*0.99, 2);
-                double zIntersectionNeg = zMin * 0.5;
-                // zIntersectionNeg = Newton(c, zIntersectionNeg, 2);
-                zIntersectionNeg = Bisect(c, zMin*0.99, 0.0, 2);
-                double xIntersectionPos2 = Math.Sqrt(R*R - zIntersectionPos*zIntersectionPos); // use a good initial guess
-                // xIntersectionPos2 = Newton(c, xIntersectionPos2, 0, otherCoord: zIntersectionPos / 2.0);
-                xIntersectionPos2 = Bisect(c, 0.0, xMax*0.99, 0, otherCoord: zIntersectionPos / 2.0);
-                double zIntersectionNeg2 = Math.Sqrt(R*R - xIntersectionNeg*xIntersectionNeg); // use a good initial guess
-                // zIntersectionNeg2 = Newton(c, zIntersectionNeg2, 2, otherCoord: xIntersectionNeg / 2.0);
-                zIntersectionNeg2 = Bisect(c, zMin*0.99, 0.0, 2, otherCoord: xIntersectionNeg / 2.0);
+
+                // find intersections of levelset with some axes
+                double xIntersectionPos = Bisect(c, 0.0, xMax*0.99, 0);
+                double xIntersectionNeg = Bisect(c, xMin*0.99, 0.0, 0);
+                double zIntersectionPos = Bisect(c, 0.0, zMax*0.99, 2);
+                double zIntersectionNeg = Bisect(c, zMin*0.99, 0.0, 2);
+                double xIntersectionPos2 = Bisect(c, 0.0, xMax*0.99, 0, otherCoord: zIntersectionPos / 2.0);
+                double xIntersectionNeg2 = Bisect(c, xMin*0.99, 0.0, 0, otherCoord: zIntersectionPos / 2.0);
+                double zIntersectionNeg2 = Bisect(c, zMin*0.99, 0.0, 2, otherCoord: xIntersectionNeg / 2.0);
+                double zIntersectionPos2 = Bisect(c, 0.0, zMax*0.99, 2, otherCoord: xIntersectionNeg / 2.0);
                 Console.WriteLine("intersections of levelset: ");
-                Console.WriteLine("    x = [ " + xIntersectionPos + ", " + xIntersectionNeg + ", " + 0 + ", " + 0 + ", " + xIntersectionPos2 + ", " + xIntersectionNeg / 2.0 + " ]");
-                Console.WriteLine("    y = [ " + 0 + ", " + 0 + ", " + zIntersectionPos + ", " + zIntersectionNeg + ", " + zIntersectionPos / 2.0 + ", " + zIntersectionNeg2 + " ]");
-                var xs = new double[] { xIntersectionPos, xIntersectionNeg, 0, 0, xIntersectionPos2, xIntersectionNeg / 2.0 };
-                var ys = new double[] { 0, 0, zIntersectionPos, zIntersectionNeg, zIntersectionPos / 2.0, zIntersectionNeg2 };
-                return GetDeformParameter(xs, ys);
+                Console.WriteLine("    x = [ " + xIntersectionPos + ", " + xIntersectionNeg + ", " + 0 + ", " + 0 + ", " + xIntersectionPos2 + ", " + xIntersectionNeg2 + ", " + xIntersectionNeg / 2.0 + ", " + xIntersectionNeg / 2.0 + " ]");
+                Console.WriteLine("    y = [ " + 0 + ", " + 0 + ", " + zIntersectionPos + ", " + zIntersectionNeg + ", " + zIntersectionPos / 2.0 + ", "+ zIntersectionPos / 2.0 + ", " + zIntersectionNeg2 + ", " + zIntersectionPos2 + " ]");
+                var xs = new double[] { xIntersectionPos, xIntersectionNeg, 0, 0, xIntersectionPos2, xIntersectionNeg2, xIntersectionNeg / 2.0 , xIntersectionNeg / 2.0 };
+                var ys = new double[] { 0, 0, zIntersectionPos, zIntersectionNeg,zIntersectionPos / 2.0,  zIntersectionPos / 2.0, zIntersectionNeg2, zIntersectionPos2 };
+                var deformParams = new List<double>();
+                double deformParam = GetDeformParameter(xs, ys);
+                for (int i = 0; i < xs.Length; i++){
+                    var _xs = xs.Where((val, indx) => indx != i).ToArray();
+                    var _ys = ys.Where((val, indx) => indx != i).ToArray();
+                    deformParams.Add(GetDeformParameter(_xs, _ys));
+                }
+                Console.WriteLine("Max deformParam: " + deformParams.Max());
+                Console.WriteLine("Min deformParam: " + deformParams.Min());
+                Console.WriteLine("deformParam relative uncertainty: " + (deformParams.Max() - deformParams.Min()) / deformParam);
+                return deformParam;
             } catch (Exception e) {
                     Console.WriteLine(e);
                     return 0;
@@ -416,10 +417,10 @@ namespace BoSSS.Application.ExternalBinding {
              double epsilon = 1e-5; // capillary width
              // double r = 5e-4; // radius
              double r = 1; // dimensional form
-             double cahn = 1e-3;
+             double cahn = 5e-5;
 
-             // double shearRate = 8.9235;
-             double shearRate = 89.235;
+             double shearRate = 8.9235;
+             // double shearRate = 89.235;
              double u = shearRate * r;
              double kappa = 5e-11;
              double sigma = 0.063;
@@ -428,8 +429,17 @@ namespace BoSSS.Application.ExternalBinding {
             //                        // double M = 1; // mobility parameter
             double M = Math.Sqrt(epsilon); // mobility parameter
             double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
-            double diff = M * lam;
-            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: diff, _cahn: cahn, _stationary: false, _endT: deltaT*1.1);
+            double diff = M * lam * 10;
+
+            bool convection = true;
+            bool stat = false;
+
+            // TODO only for 1D test
+            // cahn = 0.1;
+            // diff = 0.1;
+            // convection = false;
+            // stat = true;
+            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: diff, _cahn: cahn, _stationary: stat, _endT: deltaT*1.1, _convection: convection);
             CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, chParams);
         }
         // public static bool FirstTimeStep = true;
@@ -867,7 +877,9 @@ namespace BoSSS.Application.ExternalBinding {
                         VerifyTrackerState(RealTracker);
                         uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
                         // Tecplot("plotb4." + (t + 2), time, 3, c, mu, u, v, w);
-                        stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
+                        if (chParams.Convection){
+                            stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
+                        }
                         TimeStepper.Solve(time, dt);
 
                         double cMean = c.IntegralOver(null);
