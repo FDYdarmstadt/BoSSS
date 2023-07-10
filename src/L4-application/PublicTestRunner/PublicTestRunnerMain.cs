@@ -1396,6 +1396,12 @@ namespace PublicTestRunner {
                     if(!FilterTestAssembly(a, AssemblyFilter)) {
                         continue;
                     }
+
+                    if(GetTestsInAssembly(a, AssemblyFilter).NoOfTests <= 0) {
+                        Console.WriteLine("Matching Assembly search string, but none of the methods match. (wrong wildcard?)");
+                        continue;
+                    }
+
                     Console.WriteLine("Matching assembly: " + a.Location);
                     ftr.Info("found Assembly #" + count + ": " + a.Location);
                     count++;
@@ -1403,6 +1409,9 @@ namespace PublicTestRunner {
                     if(MpiRank == 0) {
                         MegaMurxPlusPlus(a, AssemblyFilter);
                     }
+
+
+
 
                     Console.WriteLine("Waiting for all processors to catch up BEFORE starting test(s)...");
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
