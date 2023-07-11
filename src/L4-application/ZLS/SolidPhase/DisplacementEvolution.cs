@@ -16,7 +16,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
-        public DisplacementEvolution(string speciesName, int d, int D, double artificialViscosity, IncompressibleMultiphaseBoundaryCondMap boundaryMap) {
+        public DisplacementEvolution(string speciesName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap) {
             this.speciesName = speciesName;
             this.codomainName = EquationNames.DisplacementEvolutionComponent(d);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));

@@ -16,12 +16,6 @@ namespace ZwoLevelSetSolver {
         [DataMember]
         public int Degree { get; private set; }
 
-        public double ArtificialViscosity = 0.000;
-        
-        public double ExtensionArtificialViscosity = 0.000;
-
-        public bool VelocityContinuity = true;
-
         public ZLS_Control() {
             NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             UseImmersedBoundary = true;
@@ -51,8 +45,6 @@ namespace ZwoLevelSetSolver {
             });
 
         }
-
-        //public static int DisplacementDegOffset = 0;
     }
 
 

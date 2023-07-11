@@ -92,12 +92,12 @@ namespace ZwoLevelSetSolver {
 
             for(int d = 0; d < D; ++d) {
                 opFactory.AddEquation(new NavierCauchy("C", Control.Material, d, D, boundaryMap));
-                opFactory.AddEquation(new DisplacementEvolution("C", d, D, Control.ArtificialViscosity, boundaryMap));
+                opFactory.AddEquation(new DisplacementEvolution("C", d, D, boundaryMap));
                 opFactory.AddEquation(new Dummy("A", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
                 opFactory.AddEquation(new Dummy("B", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
                 opFactory.AddParameter(Gravity.CreateFrom("C", d, D, Control, Control.Material.Density, Control.GetGravity("C", d)));
             }
-            var continuityEquation = new SolidPhase.Continuity("C", D, Control.Material, Control.VelocityContinuity);
+            var continuityEquation = new SolidPhase.Continuity("C", D);
             opFactory.AddEquation( continuityEquation);
         }
 
@@ -186,9 +186,8 @@ namespace ZwoLevelSetSolver {
                 varGroup_Diplacement,
                 varGroup_all
             };
-            if(Control.VelocityContinuity) {
-                varGroup_Stokes.AddToArray(ref groups);
-            }
+            
+            varGroup_Stokes.AddToArray(ref groups);
 
             var res = this.Timestepping.OperatorAnalysis(groups);
 

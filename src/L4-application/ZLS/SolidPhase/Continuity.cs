@@ -11,11 +11,9 @@ using System.Threading.Tasks;
 namespace ZwoLevelSetSolver.SolidPhase {
     class Continuity : BulkEquation {
 
-        internal static bool ContinuityStabilization = false;
-
         string spcName;
 
-        public Continuity(string spcName, int D, Solid Material, bool VelocityContinuity) {
+        public Continuity(string spcName, int D) {
             this.spcName = spcName;
             if(true) {
                 for(int i = 0; i < D; ++i) {
@@ -24,8 +22,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
                     var divergence1 = new Divergence(spcName, velocity, i);
                     AddComponent(divergence1);
                 }
-                //var divergence2 = new ConvectionDivergence(spcName, D);
-                //AddComponent(divergence2);
             } else {
                 string[] displacement = ZwoLevelSetSolver.VariableNames.DisplacementVector(D);
                 for(int i = 0; i < D; ++i) {
@@ -33,15 +29,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
                     var divergence = new Divergence(spcName, displacement[i], i, 1.0);
                     AddComponent(divergence);
                 }
-                //var divergence1 = new DisplacementDivergence(spcName, displacement, 1.0);
-                //AddComponent(divergence1);
-            }
-
-            if(ContinuityStabilization) {
-                string pressure = BoSSS.Solution.NSECommon.VariableNames.Pressure;
-                AddVariableNames(pressure);
-                var pressurePenalty = new EdgePenaltyForm(spcName, pressure, -0.0001); // Must scale with viscosity, see Die Pietro
-                AddComponent(pressurePenalty);
             }
         }
 

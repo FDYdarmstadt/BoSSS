@@ -17,9 +17,9 @@ namespace ZwoLevelSetSolver {
             BoSSS.Solution.Application.InitMPI();
             BoSSS.Solution.Application.DeleteOldPlotFiles();
 
-            //RunSolver(args);
+            RunSolver(args);
             //ConditionNumberScaling();
-            Tests.SolidOnlyTests.RotationConvergenceTest(2);
+            //Tests.SolidOnlyTests.RotationConvergenceTest(2);
 
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -46,7 +46,6 @@ namespace ZwoLevelSetSolver {
             //controlFiles.Add(ZwoLevelSetSolver.ControlFiles.Vortex.SteadyVortex(p, 64));
 
             foreach(var c in controlFiles) {
-                c.ArtificialViscosity = 1.0;
                 c.SkipSolveAndEvaluateResidual = true;
                 c.NonLinearSolver.SolverCode = slvCode;
                 if(dt >= 1e10)

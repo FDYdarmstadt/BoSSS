@@ -67,7 +67,6 @@ namespace ZwoLevelSetSolver.Tests {
             C.NonLinearSolver.MaxSolverIterations = 20;
 
             // Displacement - Divergence
-            C.ArtificialViscosity = 0.0;
             SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
             SolidPhase.Continuity.ContinuityStabilization = true;
 

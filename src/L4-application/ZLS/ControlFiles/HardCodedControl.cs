@@ -1092,7 +1092,6 @@ namespace ZwoLevelSetSolver.ControlFiles {
                 Viscosity = 1,
                 Density = 1
             };
-            C.VelocityContinuity = false;
             #endregion
 
 
@@ -1203,7 +1202,6 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.SuperSampling = 3;
             C.AgglomerationThreshold = 0.3;
             C.NoOfMultigridLevels = 1;
-            C.ArtificialViscosity = 0.0;
 
             // basic database options
             // ======================
