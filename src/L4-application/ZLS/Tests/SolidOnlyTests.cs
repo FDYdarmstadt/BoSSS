@@ -68,7 +68,6 @@ namespace ZwoLevelSetSolver.Tests {
 
             // Displacement - Divergence
             SolidPhase.NavierCauchy.EulerAlamansiPenalty = +1.0; // Newton divergence when negative...
-            SolidPhase.Continuity.ContinuityStabilization = true;
 
             ////Velocity - Divergence : this is shit
             //ZLS.displacementViscosity = 0.0;
