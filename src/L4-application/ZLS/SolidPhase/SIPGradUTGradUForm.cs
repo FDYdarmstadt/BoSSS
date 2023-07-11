@@ -17,7 +17,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
     /// <summary>
     /// Viscosity/energy dissipation in the solid phase
     /// </summary>
-    public class SIPGradUGradUTForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
+    public class SIPGradUTGradUForm : IVolumeForm, IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
         protected double viscosity;
         string species;
         protected int d;
@@ -25,18 +25,15 @@ namespace ZwoLevelSetSolver.SolidPhase {
         IncompressibleMultiphaseBoundaryCondMap boundaryMap;
         public double PenaltySafety;
 
-        public SIPGradUGradUTForm(string species, string[] variables, int d, double viscosity, double __PenaltySafety = 4.0) {
+        public SIPGradUTGradUForm(string species, string[] variables, int d, double viscosity, double __PenaltySafety = 4.0) {
             this.species = species;
             this.viscosity = viscosity;
             this.PenaltySafety = __PenaltySafety;
-            if(this.viscosity <= 0.0) {
-                throw new ArgumentException($"Viscosity must be positive, but got a value of {this.viscosity}");
-            }
             this.variableNames = variables;
             this.d = d;
         }
 
-        public SIPGradUGradUTForm(string species, string[] variables, int d, double viscosity, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double __PenaltySafety = 4.0)
+        public SIPGradUTGradUForm(string species, string[] variables, int d, double viscosity, IncompressibleMultiphaseBoundaryCondMap boundaryMap, double __PenaltySafety = 4.0)
             : this(species, variables, d, viscosity, __PenaltySafety) {
             this.boundaryMap = boundaryMap;
         }
@@ -97,9 +94,9 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
             double acc1 = 0.0;
-            Vector uIn = UUT(_Grad_uIN, d, D);
+            Vector gradUTU = UTU(_Grad_uIN, d, D);
 
-            acc1 -= viscosity * uIn * (_vIN) * inp.Normal;
+            acc1 -= viscosity * gradUTU * (_vIN) * inp.Normal;
 
             double penalty = Math.Max(PenaltyIn(inp.jCellIn), -1);
             acc1 += (_uIN[d]) * PenaltySafety * penalty * (_vIN) * viscosity;
@@ -112,8 +109,8 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double acc1 = 0.0;
-            Vector uIn = UUT(_Grad_uIN, d, D);
-            Vector uOut = UUT(_Grad_uOUT, d, D);
+            Vector uIn = UTU(_Grad_uIN, d, D);
+            Vector uOut = UTU(_Grad_uOUT, d, D);
 
             acc1 -= 0.5 * viscosity * (uIn + uOut) * (_vIN - _vOUT) * inp.Normal;
 
@@ -127,18 +124,18 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
 
         public double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            Vector gradUGradU = UUT(GradU, d, D);
+            Vector gradUGradU = UTU(GradU, d, D);
             Vector gradV = new Vector(GradV, 0, D);
             double acc = viscosity * gradUGradU * gradV;
             return acc;
         }
 
-        static Vector UUT(double[,] GradU, int row, int D) {
+        static Vector UTU(double[,] U, int row, int D) {
             Vector u = new Vector(D);
 
             for(int i = 0; i < D; ++i) {
                 for(int j = 0; j < D; ++j) {
-                    u[i] += GradU[row, j] * GradU[row, j];
+                    u[i] += U[j, row] * U[j, row];
                 }
             }
             return u;

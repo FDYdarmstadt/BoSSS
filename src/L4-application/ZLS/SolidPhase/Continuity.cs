@@ -17,7 +17,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public Continuity(string spcName, int D, Solid Material, bool VelocityContinuity) {
             this.spcName = spcName;
-            if(false) {
+            if(true) {
                 for(int i = 0; i < D; ++i) {
                     string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
                     AddVariableNames(velocity);

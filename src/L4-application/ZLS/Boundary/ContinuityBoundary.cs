@@ -22,7 +22,7 @@ namespace ZwoLevelSetSolver.Boundary {
             for(int i = 0; i < D; ++i) {
                 string velocity = ZwoLevelSetSolver.VariableNames.DisplacementComponent(i);
                 AddVariableNames(velocity);
-                AddComponent(new BoundaryDivergenceDisplacementForm(i, 1, fluidSpecies, solidSpecies, 1));
+                AddComponent(new BoundaryDivergenceForm(i, 1, fluidSpecies, solidSpecies, 1));
             }
         }
 

@@ -40,14 +40,18 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddComponent(pressure);
 
             if(material.Lame2 != 0.0) {
-                var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 2);
+                var eulerAlmansi0 = new SIPForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 0.1);
                 AddComponent(eulerAlmansi0);
 
-                var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 2);
+                var eulerAlmansi1 = new SIPTransposeForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 0.1);
                 AddComponent(eulerAlmansi1);
 
-                //var nonLinear = new SIPGradUGradUTForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, material.Lame2, 1);
-                //AddComponent(nonLinear);
+                AddComponent(new SIPGradUTGradUForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D), d, -material.Lame2, -0.1));
+                
+                //var penalty = new NormalJumpPenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D), d, 0);
+                //AddComponent(penalty);
+                
+                //AddComponent(new BoundaryEdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], 1));
             }  
             if(material.Viscosity != 0.0)
             {

@@ -28,9 +28,6 @@ namespace ZwoLevelSetSolver.SolidPhase {
             this.species = species;
             this.viscosity = viscosity;
             this.PenaltySafety = __PenaltySafety;
-            if(this.viscosity <= 0.0) {
-                throw new ArgumentException($"Viscosity must be positive, but got a value of {this.viscosity}");
-            }
             this.variableNames = variables;
             this.d = d;
         }
