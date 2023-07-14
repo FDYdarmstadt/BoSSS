@@ -53,12 +53,14 @@ namespace ZwoLevelSetSolver.SolidPhase {
             double penalty_deg_tri = (_p + 1) * (_p + D) / D; // formula for triangles/tetras
             double penalty_deg_sqr = (_p + 1.0) * (_p + 1.0); // formula for squares/cubes
             penalty = Math.Max(penalty_deg_tri, penalty_deg_sqr); // the conservative choice
-            cj = cs.EdgeLengthScales;
+            cj = cs.CellLengthScales;
         }
 
-        double Penalty(int jEdge) {
-            double penaltySizeFactor = cj[jEdge];
-
+        double Penalty(int jCellIn, int jCellOut) {
+            double penaltySizeFactor = 1/cj[jCellIn];
+            if(jCellOut > -1) {
+                penaltySizeFactor = Math.Max(penaltySizeFactor, 1 / cj[jCellOut]);
+            }
             Debug.Assert(!double.IsNaN(penaltySizeFactor));
             Debug.Assert(!double.IsInfinity(penaltySizeFactor));
             Debug.Assert(!double.IsInfinity(penalty));
@@ -71,7 +73,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
             double flux =  (_uIN[0] - _uOUT[0]) * (_vIN - _vOUT);
-            flux *= scale * Penalty(inp.iEdge);
+            flux *= scale * Penalty(inp.jCellIn, inp.jCellOut);
             return flux;
 
         }

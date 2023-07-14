@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ZwoLevelSetSolver.SolidPhase {
+namespace LSS.Equations.Forms {
 
     class BoundaryEdgePenaltyForm : IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
 
@@ -23,30 +23,21 @@ namespace ZwoLevelSetSolver.SolidPhase {
             this.scale = scale;
         }
 
-        public IList<string> ArgumentOrdering => variables;
-
-        public IList<string> ParameterOrdering => null;
-
-        public string ValidSpecies => speciesName;
-
-        public TermActivationFlags InnerEdgeTerms {
-            get { return TermActivationFlags.None; }
-        }
-
-        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
-            return 0;
-
-        }
-
         public TermActivationFlags BoundaryEdgeTerms {
             get { return TermActivationFlags.UxV; }
         }
 
         public double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uA, double[,] _Grad_uA, double _vA, double[] _Grad_vA) {
-            double flux = (_uA[0]) * (_vA) ;
-            flux *= scale * Penalty(inp.jCellIn);
+            double flux = _uA[0] * _vA;
+            flux *= scale * Penalty(inp.jCellIn, -1);
             return flux;
         }
+
+        public IList<string> ArgumentOrdering => variables;
+
+        public IList<string> ParameterOrdering => null;
+
+        public string ValidSpecies => speciesName;
 
         MultidimensionalArray cj;
 
@@ -63,19 +54,32 @@ namespace ZwoLevelSetSolver.SolidPhase {
             cj = cs.CellLengthScales;
         }
 
-        double Penalty(int jCell) {
-            double penaltySizeFactor = 1/cj[jCell];
+        double Penalty(int jCellIn, int jCellOut) {
+            double penaltySizeFactor_A = 1/cj[jCellIn];
+            double penaltySizeFactor_B = jCellOut >= 0 ? 1/cj[jCellOut] : 0;
 
-            Debug.Assert(!double.IsNaN(penaltySizeFactor));
-            Debug.Assert(!double.IsInfinity(penaltySizeFactor));
+            double penaltySizeFactor = Math.Max(penaltySizeFactor_A, penaltySizeFactor_B);
+
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_A));
+            Debug.Assert(!double.IsNaN(penaltySizeFactor_B));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_A));
+            Debug.Assert(!double.IsInfinity(penaltySizeFactor_B));
             Debug.Assert(!double.IsInfinity(penalty));
 
-            double µ = penaltySizeFactor;
+            double µ = penalty * penaltySizeFactor;
             if (µ.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
             return µ;
         }
 
+        public TermActivationFlags InnerEdgeTerms {
+            get { return TermActivationFlags.None; }
+        }
+
+        public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {
+            return 0;
+
+        }
 
         public IEquationComponent[] GetJacobianComponents(int SpatialDimension) {
             return new IEquationComponent[] { this };
