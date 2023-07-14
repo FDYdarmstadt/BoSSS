@@ -1,4 +1,4 @@
-﻿/* =======================================================================
+/* =======================================================================
 Copyright 2017 Technische Universitaet Darmstadt, Fachgebiet fuer Stroemungsdynamik (chair of fluid dynamics)
 
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -42,7 +42,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         //LevelSetTracker m_LsTrk;
 
         public ViscosityAtLevelSet_FullySymmetric(int SpaceDim, double _muA, double _muB, double _penalty, int _component, 
-            bool _freeSurface = false) {
+            bool _freeSurface = false, double _sI = 0.0) {
             //this.m_LsTrk = lstrk;
             this.muA = _muA;
             this.muB = _muB;
@@ -50,11 +50,14 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             this.component = _component;
             this.m_D = SpaceDim;
             this.freeSurface = _freeSurface;
+            this.sI = _sI;
+            this.beta = sI.IsInfinity() ? 0.0 : (muA + muB)/sI;
         }
 
         double muA;
         double muB;
-
+        double sI;
+        double beta;
         int component;
         int m_D;
 
@@ -103,7 +106,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
             wPenalty = (Math.Abs(muA) > Math.Abs(muB)) ? muA : muB;
 
 
-            if (!freeSurface) {
+            if (!freeSurface && sI == 0.0) {
                 Ret -= (wA * muA * Grad_uA_xN[component] + wB * muB * Grad_uB_xN[component]) * (vA - vB);                           // consistency term
                 Ret -= (wA * muA * Grad_vA_xN + wB * muB * Grad_vB_xN) * (uA[component] - uB[component]);     // symmetry term
                 //Ret += (penalty / hCutCellMin) * (uA[component] - uB[component]) * (vA - vB) * wPenalty; // penalty term
@@ -113,7 +116,50 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
                     Ret -= (wA * muA * Grad_uA[i, component] + wB * muB * Grad_uB[i, component]) * (vA - vB) * N[i];  // consistency term
                     Ret -= (wA * muA * Grad_vA[i] + wB * muB * Grad_vB[i]) * (uA[i] - uB[i]) * N[component];  // symmetry term
                 }
+            } else if(!freeSurface && sI > 0.0){
+                // handle normal and tangential components seperately
 
+                // GradU in normal direction
+                for(int dN = 0; dN < D; dN++) {
+                    for(int dD = 0; dD < D; dD++) {
+                        // consistency
+                        Ret -=  (wA * muA * inp.Normal[dN] * Grad_uA[dN, dD] * inp.Normal[dD] + wB * muB * inp.Normal[dN] * Grad_uB[dN, dD] * inp.Normal[dD]) * ((vA - vB) * inp.Normal[component]);
+                        // symmetry
+                        Ret -= (wA * muA * inp.Normal[component] * Grad_vA[dD] * inp.Normal[dD] + wB * muB * inp.Normal[component] * Grad_vB[dD] * inp.Normal[dD]) * (uA[dN] - uB[dN]) * inp.Normal[dN];
+                    }
+                    // penalty
+                    Ret += ((uA[dN] - uB[dN]) * inp.Normal[dN]) * ((vA - vB) * inp.Normal[component]) * pnlty * wPenalty;
+                }
+
+                // GradU Transpose
+                for(int dN = 0; dN < D; dN++) {
+                    for(int dD = 0; dD < D; dD++) {
+                        // consistency
+                        Ret -= (wA * muA * inp.Normal[dN] * Grad_uA[dD, dN] * inp.Normal[dD] + wB * muB * inp.Normal[dN] * Grad_uB[dD, dN] * inp.Normal[dD]) * ((vA - vB) * inp.Normal[component]);
+                        Ret -= (wA * muA * inp.Normal[dN] * Grad_vA[dN] * inp.Normal[component] + wB * muB * inp.Normal[dN] * Grad_vB[dN] * inp.Normal[component]) * (uA[dD] - uB[dD]) * inp.Normal[dD] ;
+                    }
+                    // penalty
+                    // Ret += ((uA[dN] - uB[dN]) * inp.Normal[dN]) * ((vA - vB) * inp.Normal[component]) * pnlty * wPenalty;
+                }
+
+                double[,] P = new double[D, D];
+                for(int d1 = 0; d1 < D; d1++) {
+                    for(int d2 = 0; d2 < D; d2++) {
+                        double nn = inp.Normal[d1] * inp.Normal[d2];
+                        if(d1 == d2) {
+                            P[d1, d2] = 1 - nn;
+                        } else {
+                            P[d1, d2] = -nn;
+                        }
+                    }
+                }
+
+                // tangential dissipation force term aka slip
+                for(int d1 = 0; d1 < D; d1++) {
+                    for(int d2 = 0; d2 < D; d2++) {
+                        Ret += (beta * P[d1, d2] * (uA[d2] - uB[d2])) * (P[d1, component] * (vA - vB));
+                    }
+                }
             } else {
                 //free slip
                 for (int d = 0; d < D; d++) {
@@ -221,7 +267,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
 
         public TermActivationFlags LevelSetTerms {
             get {
-                return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV;
+                return TermActivationFlags.UxV | TermActivationFlags.UxGradV | TermActivationFlags.GradUxV | TermActivationFlags.GradUxGradV;
             }
         }
 
@@ -230,8 +276,7 @@ namespace BoSSS.Solution.XNSECommon.Operator.Viscosity {
         }
 
      
-    }
-
+    }    
 
     //public class ViscosityAtLevelSet_Slip : BoSSS.Foundation.XDG.ILevelSetForm, ILevelSetEquationComponentCoefficient {
 

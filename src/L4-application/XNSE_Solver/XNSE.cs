@@ -73,6 +73,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
+            Debugger.Launch();
 
 
             //InitMPI();
@@ -494,9 +495,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // === additional parameters === //
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if ((config.physParams.IncludeConvection && config.isTransport) && UseAdHocLinearization) {
-                opFactory.AddParameter(new Velocity0(D));
+            
+            if (config.physParams.IncludeConvection && config.isTransport) {
                 opFactory.AddParameter(v0Mean);
+                if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard)
+                    opFactory.AddParameter(new Velocity0(D));
             }
 
             // === level set related parameters === //
@@ -637,7 +640,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (var f = new FuncTrace()) {
-                if ((int)this.Control.TimeSteppingScheme >= 100) {
+                if ((int)this.Control.TimeSteppingScheme >= 100 && this.Control.TimesteppingMode != AppControl._TimesteppingMode.Steady) {
                     
                     // this is a RK scheme, set here the maximum 
                     dt = this.GetTimestep();

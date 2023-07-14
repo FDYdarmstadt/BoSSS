@@ -2,6 +2,7 @@
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
+using BoSSS.Foundation.XDG;
 using BoSSS.Solution.Statistic;
 using ilPSP;
 using ilPSP.Tracing;
@@ -10,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -25,7 +27,7 @@ namespace BoSSS.Solution.Statistic {
         /// onto the DG field <paramref name="target"/>.
         /// </summary>
         static public void ProjectFromForeignGrid(this ConventionalDGField target, double alpha, ConventionalDGField source, CellQuadratureScheme scheme = null) {
-            using(new FuncTrace()) {
+            using (new FuncTrace()) {
                 //Console.WriteLine(string.Format("Projecting {0} onto {1}... ", source.Identification, target.Identification));
                 int maxDeg = Math.Max(target.Basis.Degree, source.Basis.Degree);
                 var CompQuadRule = scheme.SaveCompile(target.GridDat, maxDeg * 3 + 3); // use over-integration
@@ -33,7 +35,7 @@ namespace BoSSS.Solution.Statistic {
 
 
 
-                if(object.ReferenceEquals(source.GridDat, target.GridDat)) {
+                if (object.ReferenceEquals(source.GridDat, target.GridDat)) {
                     // +++++++++++++++++
                     // equal grid branch
                     // +++++++++++++++++
@@ -45,7 +47,7 @@ namespace BoSSS.Solution.Statistic {
                     // different grid branch
                     // +++++++++++++++++++++
 
-                    if(source.GridDat.SpatialDimension != D) {
+                    if (source.GridDat.SpatialDimension != D) {
                         throw new ArgumentException("Spatial Dimension Mismatch.");
                     }
 
@@ -71,7 +73,7 @@ namespace BoSSS.Solution.Statistic {
                         Debug.Assert(input.Dimension == 2);
                         Debug.Assert(input.NoOfCols == D);
 
-                        if(allNodes == null) {
+                        if (allNodes == null) {
                             allNodes = input.CloneAs();
                         } else {
                             /*
@@ -103,7 +105,7 @@ namespace BoSSS.Solution.Statistic {
                     int NoOfUnlocated = eval.EvaluateParallel(1.0, new DGField[] { source }, allNodes, 0.0, Res);
 
                     int TotalNumberOfUnlocated = NoOfUnlocated.MPISum();
-                    if(TotalNumberOfUnlocated > 0) {
+                    if (TotalNumberOfUnlocated > 0) {
                         Console.Error.WriteLine($"WARNING: {TotalNumberOfUnlocated} unlocalized points in 'ProjectFromForeignGrid(...)'");
                     }
 
@@ -126,6 +128,46 @@ namespace BoSSS.Solution.Statistic {
                 }
             }
         }
+
+
+        static public double L2Distance(this XDGField A, XDGField B, string[] speciesNames, bool IgnoreMeanValue = false) {
+            XDGField fine, coarse;
+            if (A.GridDat.CellPartitioning.TotalLength > B.GridDat.CellPartitioning.TotalLength) {
+                fine = A;
+                coarse = B;
+            } else {
+                fine = B;
+                coarse = A;
+            }
+
+
+
+            var trackerB = coarse.Basis.Tracker;
+            int maxDeg = Math.Max(A.Basis.Degree, B.Basis.Degree);
+            int quadOrder = maxDeg * 3 + 3;
+
+            var schemeFactory = trackerB.GetXDGSpaceMetrics(speciesNames.Select(spc => trackerB.GetSpeciesId(spc)), quadOrder).XQuadSchemeHelper;
+
+            double totNorm = 0;
+            foreach (string spc in speciesNames) {
+
+                var spc_id = trackerB.GetSpeciesId(spc);
+
+                if (IgnoreMeanValue == true)
+                    throw new NotImplementedException();
+
+
+                var A_spc = fine.GetSpeciesShadowField(spc);
+                var B_spc = coarse.GetSpeciesShadowField(spc);
+
+                totNorm += A_spc.L2Distance(B_spc, scheme: schemeFactory.GetVolumeQuadScheme(spc_id)).Pow2();
+            }
+
+            totNorm = totNorm.Sqrt();
+            return totNorm;
+
+        }
+
 
 
 
@@ -198,7 +240,8 @@ namespace BoSSS.Solution.Statistic {
                         coarse = A;
                     }
 
-                    var CompQuadRule = scheme.SaveCompile(coarse.GridDat, maxDeg * 3 + 3); // use over-integration
+
+                    var CompQuadRule = scheme.SaveCompile(coarse.GridDat, quadOrder); // use over-integration
                     var eval = new FieldEvaluation(GridHelper.ExtractGridData(fine.GridDat));
 
                     void FineEval(MultidimensionalArray input, MultidimensionalArray output) {
@@ -249,14 +292,14 @@ namespace BoSSS.Solution.Statistic {
         /// </param>
         /// <returns></returns>
         static public double H1Distance(this ConventionalDGField A, ConventionalDGField B, CellQuadratureScheme scheme = null) {
-            if(A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
+            if (A.GridDat.SpatialDimension != B.GridDat.SpatialDimension)
                 throw new ArgumentException("Both fields must have the same spatial dimension.");
 
             int D = A.GridDat.SpatialDimension;
 
             double Acc = 0.0;
             Acc += L2Distance(A, B, false, scheme).Pow2();
-            for(int d = 0; d < D; d++) {
+            for (int d = 0; d < D; d++) {
                 ConventionalDGField dA_dd = new SinglePhaseField(A.Basis);
                 dA_dd.Derivative(1.0, A, d, scheme != null ? scheme.Domain : null);
 
@@ -284,7 +327,7 @@ namespace BoSSS.Solution.Statistic {
 
             double Acc = 0.0;
             Acc += A.L2Norm();
-            for(int d = 0; d < D; d++) {
+            for (int d = 0; d < D; d++) {
                 DGField dA_dd = A.CloneAs();
                 dA_dd.Clear();
                 dA_dd.Derivative(1.0, A, d, mask);
@@ -306,7 +349,7 @@ namespace BoSSS.Solution.Statistic {
         /// </summary>
         static public double L2Norm_IgnoreMean(this DGField A, CellMask domain = null) {
 
-            if(domain == null)
+            if (domain == null)
                 domain = CellMask.GetFullMask(A.GridDat);
 
             // L2 norm
@@ -314,7 +357,7 @@ namespace BoSSS.Solution.Statistic {
 
             // domain volume
             double Vol = 0;
-            foreach(int j in domain.ItemEnum) {
+            foreach (int j in domain.ItemEnum) {
                 Vol += A.GridDat.iGeomCells.GetCellVolume(j);
             }
             Vol = Vol.MPISum();
