@@ -280,8 +280,11 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
             var Residual = RHS.CloneAs();
             OpMtx.Solve_Direct(ExtenstionSolVec, RHS);
 
+            // Console.WriteLine("StokesExt Vel L2: " + RHS.L2Norm());
+
             double[] OutputVelL2 = ExtensionVelocity.Select(vel => vel.L2Norm()).ToArray();
 
+            // Tecplot.Tecplot.PlotFields(ExtensionVelocity.Cat(lsTrk.LevelSets[0] as LevelSet), this.GetType().ToString().Split('.').Last() + "-" + timestepNo, (double)timestepNo, 2);
             /*
             {
                 double RhsNorm = Residual.L2NormPow2().MPISum().Sqrt();

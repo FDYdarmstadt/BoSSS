@@ -78,6 +78,7 @@ namespace BoSSS.Application.ExternalBinding {
 
         SinglePhaseField c;
         SinglePhaseField[] velocity;
+        SinglePhaseField[] velocityNull;
         SinglePhaseField mu;
         
         
@@ -190,8 +191,8 @@ namespace BoSSS.Application.ExternalBinding {
             double down2=(b*b-a*c)*( (a-c)*Math.Sqrt(1.0+4.0*b*b/((a-c)*(a-c)))-(c+a));
             double longAxisLength = Math.Sqrt(Math.Abs(up/down1));
             double shortAxisLength = Math.Sqrt(Math.Abs(up/down2));
-            Console.WriteLine("Long Axis: " + longAxisLength);
-            Console.WriteLine("Short Axis: " + shortAxisLength);
+            // Console.WriteLine("Long Axis: " + longAxisLength);
+            // Console.WriteLine("Short Axis: " + shortAxisLength);
             double deformationParameter = Math.Abs((longAxisLength - shortAxisLength) / (longAxisLength + shortAxisLength));
 
             return deformationParameter;
@@ -286,10 +287,14 @@ namespace BoSSS.Application.ExternalBinding {
         /// </summary>
         public double GetDeformParameter(SinglePhaseField c) {
             try { // since this is basically post-processing, it should not crash the simulation
-                double xMax = 0.75e-3;
-                double xMin = -0.75e-3;
-                double zMax = 0.75e-3;
-                double zMin = -0.75e-3;
+                double xMax = 0.5e-0;
+                double xMin = -0.5e-0;
+                double zMax = 0.5e-0;
+                double zMin = -0.5e-0;
+                // double xMax = 0.75e-3;
+                // double xMin = -0.75e-3;
+                // double zMax = 0.75e-3;
+                // double zMin = -0.75e-3;
                 double R = xMax/2;
 
                 // find intersections of levelset with some axes
@@ -417,9 +422,12 @@ namespace BoSSS.Application.ExternalBinding {
              double epsilon = 1e-5; // capillary width
              // double r = 5e-4; // radius
              double r = 1; // dimensional form
-             double cahn = 5e-5;
+             // double cahn = 5e-5;
+             double cahn = 1e-1;
+            double diff = 1e-1;
 
-             double shearRate = 8.9235;
+             // double shearRate = 0.89235;
+             double shearRate = 0.01;
              // double shearRate = 89.235;
              double u = shearRate * r;
              double kappa = 5e-11;
@@ -429,7 +437,7 @@ namespace BoSSS.Application.ExternalBinding {
             //                        // double M = 1; // mobility parameter
             double M = Math.Sqrt(epsilon); // mobility parameter
             double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
-            double diff = M * lam * 10;
+            // double diff = M * lam * 10;
 
             bool convection = true;
             bool stat = false;
@@ -439,7 +447,7 @@ namespace BoSSS.Application.ExternalBinding {
             // diff = 0.1;
             // convection = false;
             // stat = true;
-            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: diff, _cahn: cahn, _stationary: stat, _endT: deltaT*1.1, _convection: convection);
+            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: diff, _cahn: cahn, _stationary: stat, _endT: deltaT*0.9, _convection: convection);
             CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, chParams);
         }
         // public static bool FirstTimeStep = true;
@@ -492,7 +500,10 @@ namespace BoSSS.Application.ExternalBinding {
                 var u = U.Fields[0] as SinglePhaseField;
                 var v = U.Fields[1] as SinglePhaseField;
                 var w = U.Fields[2] as SinglePhaseField;
+                var nullField =  new SinglePhaseField(b);
+                nullField.Clear();
                 velocity = new[] { u, v, w };
+                velocityNull = new[] { nullField, nullField, nullField };
                 // u.ProjectField(((_3D)((x, y, z) => 0.05)).Vectorize());
                 // v.ProjectField(((_3D)((x, y, z) => 0.0)).Vectorize());
                 // w.ProjectField(((_3D)((x, y, z) => 0.0)).Vectorize());
@@ -521,7 +532,7 @@ namespace BoSSS.Application.ExternalBinding {
                         func = InitFunc();
                     }
                     ScalarFunction UInitFunc() {
-                        return ((_3D)((x, y, z) => 0.01*z)).Vectorize();
+                        return ((_3D)((x, y, z) => 0.89235*z)).Vectorize();
                     }
                     Console.WriteLine("Zero order parameter field encountered - initializing with given function");
                     c.Clear();
@@ -674,7 +685,8 @@ namespace BoSSS.Application.ExternalBinding {
 
 
                     var CHCdiff = new CahnHilliardCDiff(ptch, penalty_const, diff, lambda, mask);
-                    var CHCconv = new CahnHilliardCConv(() => velocity, null, mask);
+                    var CHCconv = new CahnHilliardCConv(() => FirstSolve ? velocityNull : velocity, null, mask);
+                    // var CHCconv = new CahnHilliardCConv(() => velocity, null, mask);
                     var CHMudiff = new CahnHilliardMuDiff(ptch, penalty_const, cahn, mask);
                     var CHMusource = new CahnHilliardMuSource(mask);
                     CahnHillOp.EquationComponents["Res_c"].Add(CHCdiff);
@@ -830,6 +842,7 @@ namespace BoSSS.Application.ExternalBinding {
                     Console.WriteLine("cVar: " + cVarVal);
                     double deformParameter;
                     if (FirstSolve){
+                        Console.WriteLine("Performing first solve");
                         Tecplot("plot.1", 0.0, 3, c, mu, u, v, w);
                         TimeStepper.Solve(time, dt);
                         Tecplot("plot.2", 0.0, 3, c, mu, u, v, w);
@@ -877,9 +890,11 @@ namespace BoSSS.Application.ExternalBinding {
                         VerifyTrackerState(RealTracker);
                         uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
                         // Tecplot("plotb4." + (t + 2), time, 3, c, mu, u, v, w);
-                        if (chParams.Convection){
-                            stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
-                        }
+                        // if (chParams.Convection){
+                            // Console.WriteLine("solving Stokes extension");
+                            // stokesExt.SolveExtension(0, RealTracker, uStokes, velocity);
+                            // Console.WriteLine("done solving Stokes extension");
+                        // }
                         TimeStepper.Solve(time, dt);
 
                         double cMean = c.IntegralOver(null);

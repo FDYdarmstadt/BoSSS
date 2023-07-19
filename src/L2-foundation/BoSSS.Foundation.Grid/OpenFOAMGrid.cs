@@ -354,31 +354,32 @@ namespace BoSSS.Foundation.Grid {
             FOAMmesh_to_BoSSS(this, nCells, faces, neighbour, owner, points, names, patchIDs, emptyTag);
             
             this.GridDataObject = new GridData(this);
-            // this.DefineEdgeTags(delegate (double[] X) { // TODO generalize
-            //         double size = 0.75e-3;
-            //         double thickness = 0.1;
-            //     if (Math.Abs(X[0] - (-size)) < 1e-10) {
-            //         return "left";
-            //     }
-            //     if (Math.Abs(X[0] - size) < 1e-10) {
-            //         return "right";
-            //     }
-            //     if (Math.Abs(X[1] - 0) < 1e-10) {
-            //         return "frontAndBack";
-            //     }
-            //     if (Math.Abs(X[1] - thickness) < 1e-10) {
-            //         return "frontAndBack";
-            //     }
-            //     if (Math.Abs(X[2] - (-size)) < 1e-10) {
-            //         return "bottom";
-            //     }
-            //     if (Math.Abs(X[2] - size) < 1e-10) {
-            //         return "top";
-            //     }
-            //     Console.WriteLine("Argument out of range!");
-            //     throw new ArgumentOutOfRangeException();
-            // }
-            // );
+            this.DefineEdgeTags(delegate (double[] X) { // TODO generalize
+                    // double size = 0.75e-3;
+                    double size = 0.5e-0;
+                    double thickness = 0.1;
+                if (Math.Abs(X[0] - (-size)) < 1e-10) {
+                    return "left";
+                }
+                if (Math.Abs(X[0] - size) < 1e-10) {
+                    return "right";
+                }
+                if (Math.Abs(X[1] - 0) < 1e-10) {
+                    return "frontAndBack";
+                }
+                if (Math.Abs(X[1] - thickness) < 1e-10) {
+                    return "frontAndBack";
+                }
+                if (Math.Abs(X[2] - (-size)) < 1e-10) {
+                    return "bottom";
+                }
+                if (Math.Abs(X[2] - size) < 1e-10) {
+                    return "top";
+                }
+                Console.WriteLine("Argument out of range!");
+                throw new ArgumentOutOfRangeException();
+            }
+            );
 
             this.AddPeriodicBoundary(new Vector(0, 0.1, 0), new Vector(0, 1, 0), new Vector(0, 0.0, 0), new Vector(0, 1, 0));
 
