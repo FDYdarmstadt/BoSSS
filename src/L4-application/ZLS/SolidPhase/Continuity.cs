@@ -15,7 +15,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public Continuity(string spcName, int D) {
             this.spcName = spcName;
-            if(true) {
+            if(false) {
                 for(int i = 0; i < D; ++i) {
                     string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
                     AddVariableNames(velocity);
@@ -29,6 +29,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
                     var divergence = new Divergence(spcName, displacement[i], i, 1.0);
                     AddComponent(divergence);
                 }
+                //AddComponent(new NonlinearContinuityForm(spcName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)));
             }
         }
 

@@ -98,7 +98,9 @@ namespace ZwoLevelSetSolver {
                 opFactory.AddParameter(Gravity.CreateFrom("C", d, D, Control, Control.Material.Density, Control.GetGravity("C", d)));
             }
             var continuityEquation = new SolidPhase.Continuity("C", D);
+            
             opFactory.AddEquation( continuityEquation);
+
         }
 
         protected override void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
