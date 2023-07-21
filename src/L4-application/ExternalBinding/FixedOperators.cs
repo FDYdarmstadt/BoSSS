@@ -423,7 +423,7 @@ namespace BoSSS.Application.ExternalBinding {
              // double r = 5e-4; // radius
              double r = 1; // dimensional form
              // double cahn = 5e-5;
-             double cahn = 1e-1;
+             double cahn = 5e-2;
             double diff = 1e-1;
 
              // double shearRate = 0.89235;
