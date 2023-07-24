@@ -9,7 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LSS.Equations.Forms {
+namespace ZwoLevelSetSolver.SolidPhase {
 
     class BoundaryEdgePenaltyForm : IEdgeForm, ISpeciesFilter, ISupportsJacobianComponent, IEquationComponentCoefficient {
 
@@ -73,7 +73,7 @@ namespace LSS.Equations.Forms {
         }
 
         public TermActivationFlags InnerEdgeTerms {
-            get { return TermActivationFlags.None; }
+            get { return TermActivationFlags.UxV; }
         }
 
         public double InnerEdgeForm(ref CommonParams inp, double[] _uIN, double[] _uOUT, double[,] _Grad_uIN, double[,] _Grad_uOUT, double _vIN, double _vOUT, double[] _Grad_vIN, double[] _Grad_vOUT) {

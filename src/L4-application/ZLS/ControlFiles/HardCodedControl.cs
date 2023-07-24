@@ -65,6 +65,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.Material = new Beam();
             C.Material.Viscosity = 0.1;
             C.Material.Lame2 = 1000;
+            C.Material.Density = 0.1;
             #endregion
 
             // grid generation

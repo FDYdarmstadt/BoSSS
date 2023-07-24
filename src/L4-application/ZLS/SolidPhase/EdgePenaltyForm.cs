@@ -24,7 +24,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
         }
 
         public TermActivationFlags BoundaryEdgeTerms {
-            get { return TermActivationFlags.None; }
+            get { return TermActivationFlags.UxV; }
         }
 
         public TermActivationFlags InnerEdgeTerms {
@@ -65,7 +65,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             Debug.Assert(!double.IsInfinity(penaltySizeFactor));
             Debug.Assert(!double.IsInfinity(penalty));
 
-            double µ = penaltySizeFactor;
+            double µ = penaltySizeFactor * penalty;
             if (µ.IsNaNorInf())
                 throw new ArithmeticException("Inf/NaN in penalty computation.");
             return µ;

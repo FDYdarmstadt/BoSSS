@@ -29,7 +29,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
                     var divergence = new Divergence(spcName, displacement[i], i, 1.0);
                     AddComponent(divergence);
                 }
-                //AddComponent(new NonlinearContinuityForm(spcName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)));
+                AddComponent(new NonlinearContinuityForm(spcName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)));
             }
         }
 

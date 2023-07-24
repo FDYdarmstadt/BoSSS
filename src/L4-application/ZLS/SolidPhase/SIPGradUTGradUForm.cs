@@ -89,7 +89,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
 
         public TermActivationFlags BoundaryEdgeTerms {
-            get { return (TermActivationFlags.UxV | TermActivationFlags.V | TermActivationFlags.GradUxV | TermActivationFlags.UxGradV | TermActivationFlags.GradV); }
+            get { return (TermActivationFlags.UxV | TermActivationFlags.GradUxV ); }
         }
 
         public virtual double BoundaryEdgeForm(ref CommonParamsBnd inp, double[] _uIN, double[,] _Grad_uIN, double _vIN, double[] _Grad_vIN) {
@@ -98,7 +98,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             acc1 -= viscosity * gradUTU * (_vIN) * inp.Normal;
 
-            double penalty = Math.Max(PenaltyIn(inp.jCellIn), -1);
+            double penalty = PenaltyIn(inp.jCellIn);
             acc1 += (_uIN[d]) * PenaltySafety * penalty * (_vIN) * viscosity;
             return acc1;
         }
