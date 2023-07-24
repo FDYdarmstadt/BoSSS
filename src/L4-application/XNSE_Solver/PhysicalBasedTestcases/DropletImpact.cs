@@ -298,7 +298,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             #region init
 
             double radius = 1.05e-3;
-            double offset = 0.5e-3; // -1.0e-6;
+            double offset = -1.0e-6;
 
             Func<double[], double> PhiFunc = (X => ((X[0]).Pow2() + (X[1] - (radius + offset)).Pow2()).Sqrt() - radius);
             //Func<double[], double> PhiFunc = (X => ((X[0]).Pow2() + (X[1] - (radius + offset)).Pow2()) - radius.Pow2());
@@ -344,7 +344,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
             C.AdaptiveMeshRefinement = true;
             C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 2 });
-            C.activeAMRlevelIndicators.Add(new AMRonBoundary(new byte[] { 3 }) { maxRefinementLevel = 3 });
+            //C.activeAMRlevelIndicators.Add(new AMRonBoundary(new byte[] { 3 }) { maxRefinementLevel = 3 });
             C.AMR_startUpSweeps = 3;
 
             //C.ReInitPeriod = 1;
@@ -364,7 +364,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            double dt = 5e-4;
+            double dt = 5e-6;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
