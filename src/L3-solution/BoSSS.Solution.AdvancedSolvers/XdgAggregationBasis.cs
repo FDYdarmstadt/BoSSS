@@ -195,7 +195,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     var cm = new Foundation.Grid.CellMask(Marker.GridDat, ba);
                                     cm.SaveToTextFile("trouble.csv", false);
 
-                                    //Tecplot.Tecplot.PlotFields(new DGField[] { LevSet0, Marker }, "TroublePlot", 0.0, 2);
+                                    Tecplot.Tecplot.PlotFields(new DGField[] { LevSet0, Marker }, "TroublePlot", 0.0, 2);
 
                                     
                                     for (int k = 0; k < K; k++) { // loop over the base cells in the aggregate cell
