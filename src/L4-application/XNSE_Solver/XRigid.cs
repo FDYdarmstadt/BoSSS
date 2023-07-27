@@ -203,45 +203,95 @@ namespace BoSSS.Application.XNSE_Solver {
             var anglevelocity = m_anglevelocity;
             var SpaceDim = m_SpaceDim;
             var particleRad = m_partRadius;
+            var tiltVector = m_tiltVector;
+            var tiltDegree = m_tiltDegree;
+            var RotationAxis = m_RotationAxis;
+
             m_ctrl.Tags.Add("Cube");
             m_ctrl.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
-            Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+
+            Func<double[], double, double> PhiFunc = delegate (double[] x, double t) {
+                Vector TiltVector = new Vector(tiltVector);
+
                 double angle = -(anglevelocity * t) % (2 * Math.PI);
+
+                Vector rotAxis;
+
+                switch (RotationAxis) {
+                    case "x":
+                        rotAxis = new Vector(1, 0, 0);
+                        break;
+                    case "y":
+                        rotAxis = new Vector(0, 1, 0);
+                        break;
+                    case "z":
+                        rotAxis = new Vector(0, 0, 1);
+                        break;
+                    default:
+                        throw new NotSupportedException();
+                }
+
+                AffineTrafo affineTrafoTilt;
+                if (tiltDegree == 0.0) {
+                    affineTrafoTilt = AffineTrafo.Identity(TiltVector.Dim);
+                } else {
+                    affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, tiltDegree);
+                }
+
+                double[] X = new double[] { 0, 0, 0 };
+
+                var affineTrafoRot = AffineTrafo.Rotation3D(rotAxis, angle);
+                var affineTrafoFinal = affineTrafoRot * affineTrafoTilt;
+
+                X = affineTrafoFinal.Transform(x);
+
+                var CubeObject = new BoSSS.Solution.LevelSetTools.TestCases.Cube(particleRad);
                 switch (SpaceDim) {
                     case 2:
-                    // Inf-Norm square
-                    return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                        Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
-                        + particleRad;
-
+                        return CubeObject.SignedDistance2D(X);
                     case 3:
-                        switch (m_RotationAxis) {
-                        case "x":
-                        return -Math.Max(Math.Abs(X[0] - pos[0]),
-                                    Math.Max(Math.Abs((X[1] - pos[1]) * Math.Cos(angle) - (X[2] - pos[2]) * Math.Sin(angle)),
-                                    Math.Abs((X[1] - pos[1]) * Math.Sin(angle) + (X[2] - pos[2]) * Math.Cos(angle))))
-                                    + particleRad;
-                        case "y":
-                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) + (X[2] - pos[2]) * Math.Sin(angle)),
-                                    Math.Max(Math.Abs(X[1] - pos[1]),
-                                    Math.Abs(-(X[0] - pos[0]) * Math.Sin(angle) + (X[2] - pos[2]) * Math.Cos(angle))))
-                                    + particleRad;
-                        case "z":
-                        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
-                                    Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
-                                    Math.Abs(X[2] - pos[2])))
-                                    + particleRad;
-                        default:
-                            throw new NotSupportedException();
-                        }
-                        
+                        return CubeObject.SignedDistance(X);
+                    //return Math.Pow(particleRad - Math.Sqrt(X[0].Pow2() + X[1].Pow2()), 2) + X[2] * X[2] - ringRad.Pow2();
                     default:
-                    throw new NotImplementedException();
+                        throw new NotImplementedException();
                 }
             };
+            //Func<double[], double, double> PhiFunc = delegate (double[] X, double t) {
+            //    double angle = -(anglevelocity * t) % (2 * Math.PI);
+            //    switch (SpaceDim) {
+            //        case 2:
+            //        // Inf-Norm square
+            //        return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+            //            Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)))
+            //            + particleRad;
+
+            //        case 3:
+            //            switch (m_RotationAxis) {
+            //            case "x":
+            //            return -Math.Max(Math.Abs(X[0] - pos[0]),
+            //                        Math.Max(Math.Abs((X[1] - pos[1]) * Math.Cos(angle) - (X[2] - pos[2]) * Math.Sin(angle)),
+            //                        Math.Abs((X[1] - pos[1]) * Math.Sin(angle) + (X[2] - pos[2]) * Math.Cos(angle))))
+            //                        + particleRad;
+            //            case "y":
+            //            return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) + (X[2] - pos[2]) * Math.Sin(angle)),
+            //                        Math.Max(Math.Abs(X[1] - pos[1]),
+            //                        Math.Abs(-(X[0] - pos[0]) * Math.Sin(angle) + (X[2] - pos[2]) * Math.Cos(angle))))
+            //                        + particleRad;
+            //            case "z":
+            //            return -Math.Max(Math.Abs((X[0] - pos[0]) * Math.Cos(angle) - (X[1] - pos[1]) * Math.Sin(angle)),
+            //                        Math.Max(Math.Abs((X[0] - pos[0]) * Math.Sin(angle) + (X[1] - pos[1]) * Math.Cos(angle)),
+            //                        Math.Abs(X[2] - pos[2])))
+            //                        + particleRad;
+            //            default:
+            //                throw new NotSupportedException();
+            //            }
+
+            //        default:
+            //        throw new NotImplementedException();
+            //    }
+            //};
             SetPhi(PhiFunc);
         }
-        bool here = true;
 
         private void DefineTorus() {
             var pos = m_pos;
@@ -287,16 +337,16 @@ namespace BoSSS.Application.XNSE_Solver {
                 double[] X = new double[] { 0, 0, 0 };
 
                 var affineTrafoRot = AffineTrafo.Rotation3D(rotAxis, angle);
-                var affineTrafoFinal = affineTrafoTilt * affineTrafoRot;
+                var affineTrafoFinal = affineTrafoRot * affineTrafoTilt;
 
                 X = affineTrafoFinal.Transform(x);
 
                 var TorusObject = new BoSSS.Solution.LevelSetTools.TestCases.Torus(particleRad, ringRad);
                 switch (SpaceDim) {
                     case 2:
-                        return TorusObject.SignedDistance2D(X);
+                        return -TorusObject.SignedDistance2D(X);
                     case 3:
-                        return TorusObject.SignedDistance(X);
+                        return -TorusObject.SignedDistance(X);
                         //return Math.Pow(particleRad - Math.Sqrt(X[0].Pow2() + X[1].Pow2()), 2) + X[2] * X[2] - ringRad.Pow2();
                     default:
                         throw new NotImplementedException();
@@ -318,17 +368,17 @@ namespace BoSSS.Application.XNSE_Solver {
                     throw new ArgumentException("check dimension of center of mass");
                 double[] X = x;
 
-                if (tiltDegree != 0.0 && SpaceDim == 3) {
-                    Vector TiltVector = new Vector(tiltVector);
+                //if (tiltDegree != 0.0 && SpaceDim == 3) {
+                //    Vector TiltVector = new Vector(tiltVector);
 
-                    AffineTrafo affineTrafoTilt;
-                    if (tiltDegree == 0.0) {
-                        affineTrafoTilt = AffineTrafo.Identity(TiltVector.Dim);
-                    } else {
-                        affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, -tiltDegree); //to define the rotation around the original axis of the rigid body, reverse the tilt
-                    }
-                    X = affineTrafoTilt.Transform(x);
-                }
+                //    AffineTrafo affineTrafoTilt;
+                //    if (tiltDegree == 0.0) {
+                //        affineTrafoTilt = AffineTrafo.Identity(TiltVector.Dim);
+                //    } else {
+                //        affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, tiltDegree); //to define the rotation around the original axis of the rigid body, reverse the tilt
+                //    }
+                //    X = affineTrafoTilt.Transform(x);
+                //}
 
                 Vector angVelo = new Vector(new double[] { 0, 0, 0 });
                 switch (m_RotationAxis) {
