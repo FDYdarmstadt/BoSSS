@@ -55,7 +55,6 @@ namespace ZwoLevelSetSolver.ControlFiles {
             #region physics
 
             double scale = 1e-4;
-            C.Tags.Add("Reusken");
             C.PhysicalParameters.rho_A = 1 * scale * scale * scale;
             C.PhysicalParameters.rho_B = 1260 * scale * scale * scale;
             C.PhysicalParameters.mu_A = 0.1 * scale ;
