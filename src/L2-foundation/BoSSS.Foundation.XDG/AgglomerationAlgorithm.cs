@@ -1279,6 +1279,7 @@ namespace BoSSS.Foundation.XDG {
                     ChainAgglomerationPairs.AddRange(LoopChainAgglomerationPairs);
                     m_AggPairs.AddRange(LoopChainAgglomerationPairs);
 
+                    ii++;
 
                     ChainCountMax = CellsNeedChainAgglomeration.Count;
                     ChainCountMax = ChainCountMax.MPIMax();
