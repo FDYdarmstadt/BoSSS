@@ -179,7 +179,8 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear:
-                case IncompressibleBcType.Velocity_Inlet: {
+                case IncompressibleBcType.Velocity_Inlet:
+                case IncompressibleBcType.Freestream: {
 
                     // Fluss am Rand: f(u[d]) = n∙v∙u[d]
                     // wobei n der Normalenvektor, v=(v1,v2) resp. v=(v1,v2,v3) der Linearisierungspunkt.

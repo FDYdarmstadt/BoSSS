@@ -717,6 +717,21 @@ namespace BoSSS.Solution.NSECommon {
 
                     break;
                 }
+                case IncompressibleBcType.Freestream: {
+
+                    double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
+
+                        for (int d = 0; d < inp.D; d++) {
+                            double nd = inp.Normal[d];
+                            //Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * nd;
+                            Acc += (muA * _Grad_vA[d]) * (_uA[m_iComp] - g_D) * nd;
+                        }
+                        Acc *= base.m_alpha;
+
+                        Acc -= muA * (_uA[m_iComp] - g_D) * (_vA - 0) * pnlty;
+
+                    break;    
+                }
                 default:
                     throw new NotImplementedException();
             }
@@ -1183,6 +1198,21 @@ namespace BoSSS.Solution.NSECommon {
                         Acc += muA * g_N * _vA;
                     }
                     Acc *= base.m_alpha;
+                    break;
+                }
+                case IncompressibleBcType.Freestream: {
+
+                        for (int i = 0; i < inp.D; i++) {
+                            // consistency
+                            //Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
+                            // symmetry
+                            Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[m_iComp];
+                        }
+                        Acc *= base.m_alpha;
+
+                        // penalty
+                        Acc -= muA * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
+
                     break;
                 }
                 default:

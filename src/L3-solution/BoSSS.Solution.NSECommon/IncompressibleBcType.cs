@@ -92,7 +92,12 @@ namespace BoSSS.Solution.NSECommon {
         /// <summary>
         /// Pressure outlet with Dirichlet values for the scalars.
         /// </summary>
-        ScalarDirichlet_PressureOutlet = 9
+        ScalarDirichlet_PressureOutlet = 9,
+
+        /// <summary>
+        /// freestream B.C. for outer flows (prescribed velocity and zero velocity gradient)
+        /// </summary>
+        Freestream = 10
 
     }
 }

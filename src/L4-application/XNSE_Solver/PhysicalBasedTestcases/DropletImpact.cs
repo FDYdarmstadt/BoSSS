@@ -36,6 +36,7 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Application.XNSE_Solver.Logging;
 using System.Configuration;
 using static BoSSS.Solution.AMRLevelIndicatorLibrary;
+using BoSSS.Solution;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -43,6 +44,251 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
     /// class providing Controls for droplet impact testcases
     /// </summary>
     public static class DropletImpact {
+
+
+        public static XNSE_Control MovingWallBoundaryLayer(int k = 3, int numCells = 4) {
+
+            XNSE_Control C = new XNSE_Control();
+
+            // basic database options
+            // ======================
+            #region db
+
+            C.DbPath = null;
+            C.savetodb = C.DbPath != null;
+            C.ProjectName = "XNSE/MovingWallBundaryLayer";
+            C.ProjectDescription = "test setup for resolving the boundary layer at a moving wall";
+
+            #endregion
+
+
+            // DG degrees
+            // ==========
+            C.SetDGdegree(k);
+
+
+            // physical parameters
+            // ===================
+            #region physics
+
+            //C.Tags.Add("Water at 1atm");
+            //C.PhysicalParameters.rho_A = 1e3;
+            //C.PhysicalParameters.mu_A = 1e-3;
+
+            C.Tags.Add("Air at 1atm");
+            C.PhysicalParameters.rho_A = 1.0;
+            C.PhysicalParameters.mu_A = 1.48e-5;
+
+
+            C.PhysicalParameters.IncludeConvection = true;
+            C.PhysicalParameters.Material = true;
+
+            #endregion
+
+
+            // grid generation
+            // ===============
+            #region grid
+
+            double domainSize = 3.0e-3;
+
+            C.GridFunc = delegate () {
+                double[] Xnodes = GenericBlas.Linspace(0, domainSize, numCells + 1);
+                double[] Ynodes = GenericBlas.Linspace(0, 10 * domainSize, 10 * numCells + 1);
+                var grd = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: true);
+
+                grd.EdgeTagNames.Add(1, "wall_lower");
+                grd.EdgeTagNames.Add(2, "velocity_inlet_upper");
+                //grd.EdgeTagNames.Add(2, "freestream_upper");
+
+                grd.DefineEdgeTags(delegate (double[] X) {
+                    byte et = 0;
+                    //if (Math.Abs(X[0]) <= 1.0e-8)
+                    //    et = 1;
+                    //if (Math.Abs(X[0] - domainSize) <= 1.0e-8)
+                    //    et = 2;
+                    if (Math.Abs(X[1]) <= 1.0e-8)
+                        et = 1;
+                    if (Math.Abs(X[1] - 10 * domainSize) <= 1.0e-8)
+                        et = 2;
+
+                    return et;
+                });
+
+                return grd;
+            };
+
+            #endregion
+
+
+            // initial values
+            // ==============
+            #region init
+
+            Func<double[], double> PhiFunc = X => -1.0;
+
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            //double g = 9.81;
+            //C.InitialValues_Evaluators.Add("GravityY#A", X => -g);
+            //C.InitialValues_Evaluators.Add("GravityY#B", X => -g);
+
+            #endregion
+
+
+            // boundary conditions
+            // ===================
+            #region BC
+
+            double Uwall = -0.1;
+            C.AddBoundaryValue("wall_lower", "VelocityX#A", X => Uwall);
+            C.AddBoundaryValue("velocity_inlet_upper");
+            //C.AddBoundaryValue("freestream_upper");
+
+            #endregion
+
+
+            // misc. solver options
+            // ====================
+            #region solver
+
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+
+            C.AdaptiveMeshRefinement = false;
+            C.activeAMRlevelIndicators.Add(new AMRonBoundary(new byte[] { 1 }) { maxRefinementLevel = 1 });
+            C.AMR_startUpSweeps = 1;
+
+            #endregion
+
+
+            // Timestepping
+            // ============
+            #region time
+
+
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+
+            #endregion
+
+
+            return C;
+
+        }
+
+
+        static public Grid3D RotatingDiskSector_Linearized(double radiusOP, double l_azimuthal, double l_radial, double h_axial, int res_azimuthal, int res_radial, int res_axial) {
+
+            double[] xNodes = GenericBlas.Linspace(-l_azimuthal / 2.0, l_azimuthal / 2.0, res_azimuthal + 1);    // azimuthal direction
+            double[] yNodes = GenericBlas.Linspace(-l_radial / 2.0, l_radial / 2.0, res_radial + 1);    // radial direction
+            double[] zNodes = GenericBlas.Linspace(0.0, h_axial, res_axial + 1);    // axial direction
+
+            var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes, periodicX: true);
+            grd.Name = $"RotatingDiskSector3D_Linearized_{res_azimuthal}x{res_radial}x{res_axial}";
+
+            grd.EdgeTagNames.Add(1, "wall_rotatingDisk");
+            grd.EdgeTagNames.Add(2, "freestream_top");
+            grd.EdgeTagNames.Add(3, "pressure_outlet_front");
+            grd.EdgeTagNames.Add(4, "pressure_outlet_back");
+            // grd.EdgeTagNames.Add(5, "pressure_outlet_upstream");
+            // grd.EdgeTagNames.Add(6, "pressure_outlet_downstream");
+
+            grd.DefineEdgeTags(delegate (Vector X) {
+                byte et = 0;
+                if (X.z.Abs() <= 1e-8)
+                    et = 1;
+                if ((X.z - h_axial).Abs() <= 1e-8)
+                    et = 2;
+                if ((X.y + (l_radial / 2.0)).Abs() <= 1e-8)
+                    et = 3;
+                if ((X.y - (l_radial / 2.0)).Abs() <= 1e-8)
+                    et = 4;
+                // if((X.x + (l_azimuthal / 2.0)).Abs() <= 1e-8)
+                //     et = 5;
+                // if((X.x - (l_azimuthal / 2.0)).Abs() <= 1e-8)
+                //     et = 6;
+
+                return et;
+            });
+
+            return grd;
+        }
+
+
+        public static XNSE_Control RotatingDiskBoundaryLayer(int k = 3, int gridRes = 2) {
+
+            var C = new XNSE_Control();
+
+            C.SetDGdegree(k);
+
+
+            double radiusOP = 100; // operating point -> Re = radiusOp / Lstar
+            double viscosity = 1.0; // kinematic viscosity
+            double omega = 1.0; // rotation rate
+            double Lstar = Math.Sqrt(viscosity / omega);
+
+            double z = 10;
+            double zstar = z * Lstar;
+
+
+            // physical parameters
+            double density = 1.0;
+            C.PhysicalParameters.rho_A = density;
+            C.PhysicalParameters.mu_A = density * viscosity;
+
+            C.PhysicalParameters.IncludeConvection = true;
+
+
+            // set grid
+            double l_azimuthal = zstar / 5.0;
+            double l_radial = zstar / 10.0;
+            double h_axial = zstar;
+
+            int res_azimuthal = 2 * gridRes;
+            int res_radial = 1 * gridRes;
+            int res_axial = 10 * gridRes;
+
+            Grid3D grd = RotatingDiskSector_Linearized(radiusOP, l_azimuthal, l_radial, h_axial, res_azimuthal, res_radial, res_axial);
+            C.GridFunc = delegate () { return grd; };
+
+
+
+            // boundary condition
+            C.AddBoundaryValue("wall_rotatingDisk", "VelocityX#A", X => -(X[1] + radiusOP) * omega);
+
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            // C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            // C.TimeSteppingScheme = TimeSteppingScheme.BDF3;
+            // C.dtFixed = Math.PI * 1.0e-3;
+            // C.NoOfTimesteps = 2000;
+
+            //{
+            //    C.AdaptiveMeshRefinement = true;
+            //    int AMRlevel = 2;
+            //    C.activeAMRlevelIndicators.Add(new AMRLevelIndicatorLibrary.AMRonBoundary(new byte[] { 1 }) { maxRefinementLevel = AMRlevel });
+            //    C.AMR_startUpSweeps = AMRlevel;
+            //}
+
+            Func<double[], double> PhiFunc = X => -1.0;
+            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+
+
+            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            //C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+
+            return C;
+        }
+
 
 
         public static XNSE_Control DropletImpactTest_hydrophilicSurface(int k = 3, int numCells = 8) {
