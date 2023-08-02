@@ -67,11 +67,18 @@ namespace MiniBatchProcessor {
 
 
                 try {
+                    
+
                     if(File.Exists(GetServerMutexPath(__BatchInstructionDir))) {
-                        // try to delete
-
+                        
+                        // try to write exclusively; this should produce an exception in Linux and probably also Windows, if it is opened by any other process)
+                        using(var ServerMutex2 = File.Open(GetServerMutexPath(__BatchInstructionDir), FileMode.Create, FileAccess.Write, FileShare.None)) {
+                            ServerMutex2.WriteByte(1);
+                            ServerMutex2.Close();
+                        }
+                                                
+                        // try to delete; was sufficient to produce an exsption on Windows, (if opened by any other process), but unreliable on Linux
                         File.Delete(GetServerMutexPath(__BatchInstructionDir));
-
 
                         return false;
                     } else {
