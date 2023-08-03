@@ -670,6 +670,7 @@ namespace MiniBatchProcessor {
                             //
                             Server.LogMessage($"Skipping mpirun on {data.exefile} because MPI size is 1 anyway."); 
                             psi.FileName = data.exefile;
+
                         } else {
                             psi.FileName = "mpirun";
                             psi.Arguments = " -np " + data.NoOfProcs + "  " + data.exefile + " ";
