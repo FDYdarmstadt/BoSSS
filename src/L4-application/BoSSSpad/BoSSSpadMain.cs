@@ -414,7 +414,7 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
 
-                void WaitForPipeConnection() {
+                void WaitForPipeConnection(string tempguid) {
                     try {
 
 
@@ -472,7 +472,7 @@ namespace BoSSS.Application.BoSSSpad {
                         psi.FileName = @"C:\Windows\System32\cmd.exe";
 
                         var tempguid = Guid.NewGuid().ToString();
-                        Console.WriteLine("Temp GUID = " + tempguid);
+                        Console.WriteLine("Temp GUID for named pipe = " + tempguid);
                         psi.EnvironmentVariables.Add(BoSSSpadInitDone_PipeName, tempguid);
 
                         // wait here a bit to avoid a port conflict...
@@ -487,7 +487,7 @@ namespace BoSSS.Application.BoSSSpad {
                         if (startupMutex == true) {
                             // wait here a bit more...
                             //{ 
-                            WaitForPipeConnection();
+                            WaitForPipeConnection(tempguid);
 
                             // received a signal from worksheet that it is up and running, 
                             // so we can release the mutex **before** the external process exits
@@ -526,13 +526,17 @@ namespace BoSSS.Application.BoSSSpad {
                         psi.FileName = executable;
                         psi.Arguments = arguments;
 
+                        var tempguid = Guid.NewGuid().ToString();
+                        Console.WriteLine("Temp GUID for named pipe = " + tempguid);
+                        psi.EnvironmentVariables.Add(BoSSSpadInitDone_PipeName, tempguid);
+
                         Process p = Process.Start(psi);
 
                         // wait here a bit more...
                         if (startupMutex == true) {
                             // wait here a bit more...
                             //{ 
-                            WaitForPipeConnection();
+                            WaitForPipeConnection(tempguid);
 
                             // received a signal from worksheet that it is up and running, 
                             // so we can release the mutex **before** the external process exits
