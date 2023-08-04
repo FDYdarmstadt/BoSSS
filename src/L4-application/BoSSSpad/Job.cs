@@ -936,7 +936,8 @@ namespace BoSSS.Application.BoSSSpad {
                     AllDirs = Directory.GetDirectories(this.AssignedBatchProc.DeploymentBaseDirectory, ShortName + "*").Select(str => new DirectoryInfo(str)).ToArray();
                 }
                 try {
-                    tr.Info("got possible deployment directories: " + AllDirs.Select(dir => dir.FullName).ToConcatString("", ", ", ""));
+                    tr.Info("got " + AllDirs.Count() + " possible deployment directories: "
+                        + AllDirs.Take(8).Select(dir => dir.FullName).ToConcatString("", ", ", AllDirs.Count() > 8 ? "..." : ""));
                 } catch (Exception ex) {
                     tr.Warning("Exception during formatting of directory list: " + ex);
                 }
@@ -984,7 +985,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 try {
-                    tr.Info("filtered directories: " + AllDirs.Select(dir => dir.FullName).ToConcatString("", ", ", ""));
+                    tr.Info("remaining with  " + filtDirs.Count() + " deployment directories after filtering "
+                        + AllDirs.Take(8).Select(dir => dir.FullName).ToConcatString("", ", ", filtDirs.Count() > 8 ? "..." : ""));
                 } catch (Exception ex) {
                     tr.Warning("Exception during formatting of directory list: " + ex);
                 }
