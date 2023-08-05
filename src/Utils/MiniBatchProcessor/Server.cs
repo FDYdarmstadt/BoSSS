@@ -469,6 +469,13 @@ namespace MiniBatchProcessor {
 
             string dir = null;
             if(args.Length > 0) {
+                if (args[0].Equals("terminate")) {
+                    Console.WriteLine("sending termination signal.");
+                    SendTerminationSignal(WaitForOtherJobstoFinish:false);
+                    return 0;
+                }
+
+
                 dir = args[0];
                 if(!Directory.Exists(dir)) {
                     throw new IOException("specified batch directory '" + dir + "' does not exist.");

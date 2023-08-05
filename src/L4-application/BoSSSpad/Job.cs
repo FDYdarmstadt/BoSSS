@@ -985,8 +985,8 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
                 try {
-                    tr.Info("remaining with  " + filtDirs.Count() + " deployment directories after filtering "
-                        + AllDirs.Take(8).Select(dir => dir.FullName).ToConcatString("", ", ", filtDirs.Count() > 8 ? "..." : ""));
+                    tr.Info("remaining with " + filtDirs.Count() + " deployment directories after filtering: "
+                        + filtDirs.Take(8).Select(dir => dir.FullName).ToConcatString("", ", ", filtDirs.Count() > 8 ? "..." : ""));
                 } catch (Exception ex) {
                     tr.Warning("Exception during formatting of directory list: " + ex);
                 }
