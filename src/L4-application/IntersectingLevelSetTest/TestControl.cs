@@ -29,6 +29,8 @@ namespace IntersectingLevelSetTest {
 
         public int Dimension = 2;
 
+        public double[] ErrorList = new double[4];
+
     }
 
     //internal class TestControl3D : AppControl {
