@@ -91,6 +91,7 @@ namespace BoSSS.Application.BoSSSpad {
                 try {
                     // compare project name
 
+
                     if (!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
                         return false;
 

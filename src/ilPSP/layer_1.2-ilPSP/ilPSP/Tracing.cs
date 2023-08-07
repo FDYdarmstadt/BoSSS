@@ -809,6 +809,7 @@ namespace ilPSP.Tracing {
         public BlockTrace(string Title, FuncTrace f, bool timeToCout = false) {
             if(!Tracer.InstrumentationSwitch)
                 return;
+            base.DoLogging = f.DoLogging;
             string _name = Title;
             _f = f;
             m_Logger = _f.m_Logger;
