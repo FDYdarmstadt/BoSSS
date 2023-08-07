@@ -129,6 +129,7 @@ namespace BoSSS.Application.ExternalBinding {
 
             for (int j = 0; j < nCells; j++) {
                 Mu0.SetDGcoordinate(0, j, 0, mu.GetMeanValue(j));
+                // Console.WriteLine("Hello from BoSSS, j = " + j + ", mu = " + mu.GetMeanValue(j));
             }
             return Mu0;
         }
@@ -416,38 +417,38 @@ namespace BoSSS.Application.ExternalBinding {
         /// For usage exclusively within BoSSS, the method <see cref="CahnHilliardInternal"/> is generally more convenient.
         /// </summary>
         [CodeGenExport]
-        public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, double deltaT) {
+        public void CahnHilliard(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, double time, double deltaT, double Cahn, double Diff) {
 
             // TODO sync from OpenFOAM
-             double epsilon = 1e-5; // capillary width
-             // double r = 5e-4; // radius
-             double r = 1; // dimensional form
-             // double cahn = 5e-5;
-             double cahn = 5e-2;
-            double diff = 1e-1;
+            //  double epsilon = 1e-5; // capillary width
+            //  // double r = 5e-4; // radius
+            //  double r = 1; // dimensional form
+            //  // double cahn = 5e-5;
+            //  double cahn = 5e-2;
+            // double diff = 1e-1;
 
-             // double shearRate = 0.89235;
-             double shearRate = 0.01;
-             // double shearRate = 89.235;
-             double u = shearRate * r;
-             double kappa = 5e-11;
-             double sigma = 0.063;
-             // double sigma = 1.0;
-             // double diff = 3 * kappa * sigma / (2 * Math.Sqrt(2) * r * u * epsilon);
-            //                        // double M = 1; // mobility parameter
-            double M = Math.Sqrt(epsilon); // mobility parameter
-            double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
-            // double diff = M * lam * 10;
+            //  // double shearRate = 0.89235;
+            //  double shearRate = 0.01;
+            //  // double shearRate = 89.235;
+            //  double u = shearRate * r;
+            //  double kappa = 5e-11;
+            //  double sigma = 0.063;
+            //  // double sigma = 1.0;
+            //  // double diff = 3 * kappa * sigma / (2 * Math.Sqrt(2) * r * u * epsilon);
+            // //                        // double M = 1; // mobility parameter
+            // double M = Math.Sqrt(epsilon); // mobility parameter
+            // double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
+            // // double diff = M * lam * 10;
 
-            bool convection = true;
-            bool stat = false;
+            // bool convection = true;
+            // bool stat = false;
 
             // TODO only for 1D test
             // cahn = 0.1;
             // diff = 0.1;
             // convection = false;
             // stat = true;
-            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: diff, _cahn: cahn, _stationary: stat, _endT: deltaT*0.9, _convection: convection);
+            CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: Diff, _cahn: Cahn, _stationary: false, _endT: deltaT*0.9);
             CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, chParams);
         }
         // public static bool FirstTimeStep = true;
