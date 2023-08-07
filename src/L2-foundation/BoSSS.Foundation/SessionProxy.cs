@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using BoSSS.Platform;
 using System.Diagnostics;
+using ilPSP.Tracing;
 
 namespace BoSSS.Foundation.IO {
 
@@ -47,7 +48,7 @@ namespace BoSSS.Foundation.IO {
         /// Dissing.
         /// </summary>
         public void Dispose() {
-            if(realSessionInfo.IsValueCreated) {
+            if (realSessionInfo.IsValueCreated) {
                 realSessionInfo.Value.Dispose();
             }
         }
@@ -68,13 +69,21 @@ namespace BoSSS.Foundation.IO {
                     // Allow graceful handling when loading faulty sessions
                     try {
                         return database.Controller.DBDriver.LoadSession(sessionID, database);
-                    } catch(Exception e) {
-                        Console.WriteLine(
+                    } catch (Exception e) {
+                        Console.Error.WriteLine(
                             $"Loading session {ID} failed with message '{e.Message}'");
                         return null;
                     }
                 },
-                s => Utils.GetSessionFileWriteTime(s) == s.WriteTime);
+                delegate (SessionInfo s) {
+                    using (var tr = new FuncTrace("isUpToDateFunc_SessionInfo")) {
+                        var fileSysWriteTime = Utils.GetSessionFileWriteTime(s);
+                        bool b = fileSysWriteTime == s.WriteTime;
+                        tr.Info($"Session info {s} expired; file system write time is {fileSysWriteTime} cached write time is {s.WriteTime}");
+                        return b;
+                    }
+                });
+
         }
 
         /// <summary>
