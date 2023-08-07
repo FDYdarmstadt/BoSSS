@@ -22,6 +22,7 @@ using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -1036,55 +1037,61 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         void UpdateDeployments() {
-            
-            // determine all new sessions
-            // ==========================
-            HashSet<Guid> KnownSessionGuids = new HashSet<Guid>();
-            foreach(var dep in m_Deployments) {
-                if(dep.Session != null) {
-                    KnownSessionGuids.Add(dep.Session.ID);
-                }
-            }
-
-            ISessionInfo[] AllNewSessions = BoSSSshell.WorkflowMgm.Sessions
-                .Where(sinf => !KnownSessionGuids.Contains(sinf.ID)) // for performance reasons, filter sessions that we already know
-                .Where(sinf => BoSSSshell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
-
-            // add all new deployment directories
-            // ==================================
-            foreach(DirectoryInfo dirInfo in this.GetAllUnkonwnExistingDeployDirectories()) {
-                m_Deployments.Add(new Deployment(dirInfo, this));
-            }
-
-            // finally, correlate the new sessions to the deployments
-            // ======================================================
-            for(int i = 0; i < AllNewSessions.Length; i++) {
-                var sinf = AllNewSessions[i];
-
-                string RelDeployPath = sinf.DeployPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).Last();
-                
-
-                foreach(var dep in m_Deployments) {
-                    if(dep.RelativeDeploymentDirectory == RelDeployPath) {
-                        // bingo
-                        dep.Session = sinf;
-                        AllNewSessions[i] = null;
+            using (new FuncTrace()) {
+                // determine all new sessions
+                // ==========================
+                HashSet<Guid> KnownSessionGuids = new HashSet<Guid>();
+                foreach (var dep in m_Deployments) {
+                    if (dep.Session != null) {
+                        KnownSessionGuids.Add(dep.Session.ID);
                     }
                 }
-            }
 
-            for(int i = 0; i < AllNewSessions.Length; i++) {
-                var sinf = AllNewSessions[i];
-                if(sinf != null) {
-                    // deployment was deleted, but some session was found in the database.
-                    m_Deployments.Add(new Deployment(sinf, this));
+
+                ISessionInfo[] AllNewSessions = BoSSSshell.WorkflowMgm.Sessions
+                    .Where(sinf => !KnownSessionGuids.Contains(sinf.ID)) // for performance reasons, filter sessions that we already know
+                    .Where(sinf => BoSSSshell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
+
+                // add all new deployment directories
+                // ==================================
+                foreach (DirectoryInfo dirInfo in this.GetAllUnkonwnExistingDeployDirectories()) {
+                    m_Deployments.Add(new Deployment(dirInfo, this));
                 }
+
+                // finally, correlate the new sessions to the deployments
+                // ======================================================
+                for (int i = 0; i < AllNewSessions.Length; i++) {
+                    var sinf = AllNewSessions[i];
+
+                    string RelDeployPath = sinf.DeployPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).Last();
+
+
+                    foreach (var dep in m_Deployments) {
+                        if (dep.RelativeDeploymentDirectory == RelDeployPath) {
+                            // bingo
+                            dep.Session = sinf;
+                            AllNewSessions[i] = null;
+                        }
+                    }
+                }
+
+                for (int i = 0; i < AllNewSessions.Length; i++) {
+                    var sinf = AllNewSessions[i];
+                    if (sinf != null) {
+                        // deployment was deleted, but some session was found in the database.
+                        m_Deployments.Add(new Deployment(sinf, this));
+                    }
+                }
+
+                m_Deployments.Sort(new FuncComparer<Deployment>((A, B) => A.CreationDate.CompareTo(B.CreationDate)));
             }
-
-            m_Deployments.Sort(new FuncComparer<Deployment>((A, B) => A.CreationDate.CompareTo(B.CreationDate)));
-
         }
 
+        /*
+        class DeploymentsCache : IDisposable {
+
+        }
+        */
 
         /// <summary>
         /// All deployments/attempts for this job which can be found in the data sources
@@ -1092,6 +1099,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IReadOnlyList<Deployment> AllDeployments {
             get {
+                //maybe some caching here?
                 UpdateDeployments();
                 return m_Deployments.AsReadOnly();
             }
@@ -1168,12 +1176,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public ISessionInfo[] AllSessions {
             get {
-                List<ISessionInfo> ret = new List<ISessionInfo>();
-                foreach(var dep in AllDeployments) {
-                    if(dep.Session != null)
-                        ret.Add(dep.Session);
+                using (new FuncTrace()) {
+                    List<ISessionInfo> ret = new List<ISessionInfo>();
+                    foreach (var dep in AllDeployments) {
+                        if (dep.Session != null)
+                            ret.Add(dep.Session);
+                    }
+                    return ret.ToArray();
                 }
-                return ret.ToArray();
             }
         }
 

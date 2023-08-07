@@ -372,44 +372,46 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public ISessionInfo[] Sessions {
             get {
-                if (CurrentProject.IsEmptyOrWhite()) {
-                    Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
-                    return new ISessionInfo[0];
-                }
-
-                //if (m_Sessions == null || ((DateTime.Now - m_Sessions_CacheTime) > UpdatePeriod)) {
-                //Console.WriteLine("Updatting Sessions...");
-                DateTime st = DateTime.Now;
-                {
-                    List<ISessionInfo> ret = new List<ISessionInfo>();
-
-                    if (BoSSSshell.databases != null) {
-                        foreach (var db in BoSSSshell.databases) {
-                            var SS = db.Sessions.Where(delegate( ISessionInfo si) {
-                                //#if DEBUG 
-                                //                                return si.ProjectName.Equals(this.CurrentProject);
-                                //#else
-                                Guid g = Guid.Empty;
-                                try {
-                                    g = si.ID;
-                                    return si.ProjectName.Equals(this.CurrentProject);
-                                } catch(Exception e) {
-                                    Console.WriteLine("Warning: " + e.Message + " reading session " + g + ".");
-                                    return false;
-                                }
-                                //#endif
-                            });
-                            ret.AddRange(SS);
-                        }
+                using (new FuncTrace()) {
+                    if (CurrentProject.IsEmptyOrWhite()) {
+                        Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
+                        return new ISessionInfo[0];
                     }
 
-                    m_Sessions = ret.ToArray();
-                    m_Sessions_CacheTime = DateTime.Now;
-                }
-                //TimeSpan duration = DateTime.Now - st;
-                //Console.WriteLine("done. (took " + duration + ")");
+                    //if (m_Sessions == null || ((DateTime.Now - m_Sessions_CacheTime) > UpdatePeriod)) {
+                    //Console.WriteLine("Updatting Sessions...");
+                    DateTime st = DateTime.Now;
+                    {
+                        List<ISessionInfo> ret = new List<ISessionInfo>();
 
-                return m_Sessions;
+                        if (BoSSSshell.databases != null) {
+                            foreach (var db in BoSSSshell.databases) {
+                                var SS = db.Sessions.Where(delegate (ISessionInfo si) {
+                                    //#if DEBUG 
+                                    //                                return si.ProjectName.Equals(this.CurrentProject);
+                                    //#else
+                                    Guid g = Guid.Empty;
+                                    try {
+                                        g = si.ID;
+                                        return si.ProjectName.Equals(this.CurrentProject);
+                                    } catch (Exception e) {
+                                        Console.WriteLine("Warning: " + e.Message + " reading session " + g + ".");
+                                        return false;
+                                    }
+                                    //#endif
+                                });
+                                ret.AddRange(SS);
+                            }
+                        }
+
+                        m_Sessions = ret.ToArray();
+                        m_Sessions_CacheTime = DateTime.Now;
+                    }
+                    //TimeSpan duration = DateTime.Now - st;
+                    //Console.WriteLine("done. (took " + duration + ")");
+
+                    return m_Sessions;
+                }
             }
         }
 
