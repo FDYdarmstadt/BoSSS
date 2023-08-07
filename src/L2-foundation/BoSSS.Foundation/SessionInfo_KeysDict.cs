@@ -22,7 +22,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using Newtonsoft.Json;
 using ilPSP;
-
+using System.Diagnostics;
 
 namespace BoSSS.Foundation.IO {
     public partial class SessionInfo {
@@ -33,6 +33,11 @@ namespace BoSSS.Foundation.IO {
                 this.m_KeysAndQueries = new KeysDict();
             this.m_KeysAndQueries.m_Owner = this;
         }
+
+        [NonSerialized]
+        public static Stopwatch containsKey;
+        [NonSerialized]
+        public static Stopwatch get_this;
 
         /// <summary>
         /// Custom (very-low-performance) dictionary for the <see cref="SessionInfo.KeysAndQueries"/>-property,
@@ -82,15 +87,18 @@ namespace BoSSS.Foundation.IO {
                 }
             }
             
+     
+
+
             public object this[string key] {
                 get {
-                    
+                    get_this.Start();
                     if (key == null)
                         throw new ArgumentNullException();
                     int idx = m_Keys.IndexOf(key,(a, b) => a.Equals(b));
                     if (idx < 0)
                         throw new KeyNotFoundException();
-
+                    get_this.Stop();
                     return m_Values[idx];
                 }
                 set {
@@ -175,7 +183,11 @@ namespace BoSSS.Foundation.IO {
             }
 
             public bool ContainsKey(string key) {
-                return (m_Keys.IndexOf(key, (a, b) => a.Equals(b)) >= 0);
+                containsKey.Start();
+                bool r = (m_Keys.IndexOf(key, (a, b) => a.Equals(b)) >= 0);
+                containsKey.Stop();
+
+                return r;
             }
 
             public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex) {
