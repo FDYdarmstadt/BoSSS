@@ -1037,7 +1037,7 @@ namespace BoSSS.Application.BoSSSpad {
         }
 
         void UpdateDeployments() {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 // determine all new sessions
                 // ==========================
                 HashSet<Guid> KnownSessionGuids = new HashSet<Guid>();
@@ -1048,9 +1048,17 @@ namespace BoSSS.Application.BoSSSpad {
                 }
 
 
-                ISessionInfo[] AllNewSessions = BoSSSshell.WorkflowMgm.Sessions
-                    .Where(sinf => !KnownSessionGuids.Contains(sinf.ID)) // for performance reasons, filter sessions that we already know
-                    .Where(sinf => BoSSSshell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
+                ISessionInfo[] AllNewSessionsTotal;
+                using (new BlockTrace("NewSessionFiltering", tr)) {
+                    AllNewSessionsTotal = BoSSSshell.WorkflowMgm.Sessions
+                        .Where(sinf => !KnownSessionGuids.Contains(sinf.ID)).ToArray(); // for performance reasons, filter sessions that we already know
+                }
+
+                ISessionInfo[] AllNewSessions;
+                using (new BlockTrace("SessionInfoJobCorrelation", tr)) {
+                    AllNewSessions = AllNewSessionsTotal
+                        .Where(sinf => BoSSSshell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
+                }
 
                 // add all new deployment directories
                 // ==================================
