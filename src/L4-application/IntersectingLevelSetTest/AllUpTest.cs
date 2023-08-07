@@ -206,12 +206,13 @@ namespace IntersectingLevelSetTest {
 
             double a = - v1 / v2; //The slope
 
-            Console.WriteLine("error for " + numbersOfCells[0] + " cells: " + errorList[0]);
-            Console.WriteLine("error for " + numbersOfCells[1] + " cells: " + errorList[1]);
-            Console.WriteLine("error for " + numbersOfCells[2] + " cells: " + errorList[2]);
+            // Output the summary
+            for (int j = 0;j < yValues.Length; j++) {
+                Console.WriteLine("error for " + numbersOfCells[j] + " cells: " + errorList[j]);
+            }
             Console.WriteLine("Slope: " + a);
 
-            Assert.IsTrue(Math.Abs(a - DGdegree) < 0.4, "The regression slope is not correct!");
+            Assert.IsTrue(Math.Abs(a - DGdegree) < 0.1, "The regression slope is not correct!");
             Console.WriteLine("Convergence2DTest for DG degree " + DGdegree + " PASSED!");
         }
 

@@ -97,8 +97,10 @@ namespace IntersectingLevelSetTest {
         private SinglePhaseField Cmarker;
 
         protected override void CreateFields() {
-            Phi0 = new LevelSet(new Basis(this.GridData, 3), "Phi_0");
-            Phi1 = new LevelSet(new Basis(this.GridData, 3), "Phi_1");
+            //Phi0 = new LevelSet(new Basis(this.GridData, 3), "Phi_0");
+            //Phi1 = new LevelSet(new Basis(this.GridData, 3), "Phi_1");
+            Phi0 = new LevelSet(new Basis(this.GridData, DEGREE), "Phi_0");
+            Phi1 = new LevelSet(new Basis(this.GridData, DEGREE), "Phi_1");
 
             string[,] speciesTable = new string[2, 2];
             speciesTable[0, 0] = "B"; // Liquid
