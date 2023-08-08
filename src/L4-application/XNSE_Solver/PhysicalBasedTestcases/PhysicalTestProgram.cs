@@ -30,6 +30,10 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
     static public partial class ASUnitTest {
 
 #if !DEBUG
+
+        /// <summary>
+        /// Note: control file currently (05jul23) set to 20000 timesteps, totally unfeasible for the test.
+        /// </summary>
         public static void ASTestCapillaryWave()
         {
             var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.CapillaryWave.CW_Test();
@@ -43,17 +47,15 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <summary>
         /// See <see cref="PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test"/>.
         /// </summary>
-        //[Test]
-        //public static void ASTestRayleighTaylorInstability()
-        //{
+        [Test]
+        public static void ASTestRayleighTaylorInstability() {
 
-        //    var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test();
-        //    using (var solver = new XNSE())
-        //    {
-        //        solver.Init(C);
-        //        solver.RunSolverMode();
-        //    }
-        //}
+            var C = BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases.RayleighTaylorInstability.RT_Test();
+            using (var solver = new XNSE()) {
+                solver.Init(C);
+                solver.RunSolverMode();
+            }
+        }
 
 
         /// <summary>
@@ -81,7 +83,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         //    }
         //}
 
-        
+
 
         /*
         [Test]

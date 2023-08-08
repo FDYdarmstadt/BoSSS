@@ -350,6 +350,7 @@ namespace BoSSS.Solution.XNSECommon {
                 if (NonLinSolverCode == NonLinearSolverCode.Newton) {
                     var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF_Newton(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
                     AddComponent(conv);
+                    AddParameter(BoSSS.Solution.NSECommon.VariableNames.Velocity0MeanVector(D)[d]); // we still use this for penalty computation
                 } else if (NonLinSolverCode == NonLinearSolverCode.Picard) {
                     var conv = new Solution.XNSECommon.Operator.Convection.LowMachCombustionConvectionInSpeciesBulk_LLF(spcName, D, boundaryMap, d, EoS, NoOfChemicalSpecies);
                     AddComponent(conv);

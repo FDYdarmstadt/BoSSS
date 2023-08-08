@@ -122,6 +122,7 @@ namespace BoSSS.Application.XNSFE_Solver {
                 }
             }
             opFactory.AddEquation(new HeatInterface("A", "B", D, boundaryMap, config));
+            opFactory.AddCoefficient(new SlipLengths(config));
             opFactory.AddCoefficient(new EvapMicroRegion());
 
 
