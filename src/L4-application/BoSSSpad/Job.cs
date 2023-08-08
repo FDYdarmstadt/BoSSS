@@ -1038,6 +1038,8 @@ namespace BoSSS.Application.BoSSSpad {
 
         void UpdateDeployments() {
             using (var tr = new FuncTrace()) {
+                
+
                 // determine all new sessions
                 // ==========================
                 HashSet<Guid> KnownSessionGuids = new HashSet<Guid>();
@@ -1047,7 +1049,7 @@ namespace BoSSS.Application.BoSSSpad {
                     }
                 }
 
-
+               
                 ISessionInfo[] AllNewSessionsTotal;
                 using (new BlockTrace("NewSessionFiltering", tr)) {
                     AllNewSessionsTotal = BoSSSshell.WorkflowMgm.Sessions
@@ -1056,14 +1058,10 @@ namespace BoSSS.Application.BoSSSpad {
 
                 ISessionInfo[] AllNewSessions;
                 using (new BlockTrace("SessionInfoJobCorrelation", tr)) {
-                    BoSSS.Foundation.IO.SessionInfo.containsKey.Reset();
-                    BoSSS.Foundation.IO.SessionInfo.get_this.Reset();
                     AllNewSessions = AllNewSessionsTotal
                         .Where(sinf => BoSSSshell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
                 }
-                tr.Info("contains key duration: " + BoSSS.Foundation.IO.SessionInfo.containsKey.Elapsed.TotalSeconds + " sec");
-                tr.Info("get item key duration: " + BoSSS.Foundation.IO.SessionInfo.get_this.Elapsed.TotalSeconds + " sec");
-
+              
                 // add all new deployment directories
                 // ==================================
                 foreach (DirectoryInfo dirInfo in this.GetAllUnkonwnExistingDeployDirectories()) {
@@ -1099,11 +1097,21 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
-        /*
-        class DeploymentsCache : IDisposable {
+        
+        internal class DeploymentsAtomic : IDisposable {
+            public DeploymentsAtomic(Job owner) {
+                m_owner = owner;
+                m_owner.UpdateDeployments();
+            }
 
+            readonly Job m_owner;
+
+            public void Dispose() {
+                m_owner.deploymentsAtomic = null;
+            }
         }
-        */
+
+        DeploymentsAtomic deploymentsAtomic = null;
 
         /// <summary>
         /// All deployments/attempts for this job which can be found in the data sources
@@ -1111,9 +1119,14 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IReadOnlyList<Deployment> AllDeployments {
             get {
-                //maybe some caching here?
-                UpdateDeployments();
-                return m_Deployments.AsReadOnly();
+                if (deploymentsAtomic != null) {
+                    return m_Deployments.AsReadOnly();
+                } else {
+                    //maybe some caching here?
+                    UpdateDeployments();
+                    return m_Deployments.AsReadOnly();
+
+                }
             }
         }
 
@@ -1146,6 +1159,7 @@ namespace BoSSS.Application.BoSSSpad {
 
             m_Deployments.Clear();
         }
+
 
 
 
@@ -1559,137 +1573,126 @@ namespace BoSSS.Application.BoSSSpad {
         /// <returns></returns>
         public JobStatus GetStatus(bool WriteHints = true) {
             using (var tr = new FuncTrace()) {
-                //SubmitCount = 0;
-                //DD = null;
-                if(AssignedBatchProc == null)
-                    return JobStatus.PreActivation;
+                tr.InfoToConsole = WriteHints;
 
-                if(!WriteHints) {
+                if (AssignedBatchProc == null) {
+                    tr.Info($"No batch processor assigned to job jet; therefore, status is {JobStatus.PreActivation}");
+                    return JobStatus.PreActivation;
+                }
+
+                if (!WriteHints) {
                     if (statusCache.HasValue) {
                         tr.Info("returning cached value: " + statusCache.Value);
                         return statusCache.Value;
                     }
                 }
 
-                // ================
-                // identify success
-                // ================
+                using (new DeploymentsAtomic(this)) {
+                    using (BoSSSshell.WorkflowMgm.EnterSessionAtomic()) {
 
-                // we have to evaluate the status NOW, and work with this status in order for this method to work correctly.
-                // otherwise, the loophole describes below might happen!
-                (Deployment Depl, JobStatus fixedStatus)[] DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
-                tr.Info("Deployments so far (" + DeploymentsSoFar.Length + "): " + DeploymentsSoFar.ToConcatString("", ", ", ";"));
 
-                Deployment[] Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
-                tr.Info("Success: " + Success.Length);
-                if(SessionReqForSuccess) {
-                    ISessionInfo[] SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
-                    if(SuccessSessions.Length <= 0) {
-                        // look twice
-                        BoSSSshell.WorkflowMgm.ResetSessionsCache();
-                        DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
-                        Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
-                        SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
-                    }
-                    if(SuccessSessions.Length > 0) {
-                        if(WriteHints)
-                            Console.WriteLine($"Info: Found successful session \"{SuccessSessions.First()}\" -- job is marked as successful, no further action.");
-                        tr.Info($"Info: Found successful session \"{SuccessSessions.First()}\" -- job is marked as successful, no further action.");
-                        this.statusCache = JobStatus.FinishedSuccessful;
-                        return JobStatus.FinishedSuccessful;
-                    }
 
-                    if(Success.Length > 0) {
-                        if(WriteHints)
-                            Console.WriteLine($"Note: found {Success.Length} successful deployment(s), but job is configured to require a successful result session ('this.SessionReqForSuccess' is true), and none is found. {this.AllSessions.Length} sessions correlated to this job fount in total.");
-                        tr.Info($"Note: found {Success.Length} successful deployment(s), but job is configured to require a successful result session ('this.SessionReqForSuccess' is true), and none is found. {this.AllSessions.Length} sessions correlated to this job fount in total.");
-                    }
+                        // ================
+                        // identify success
+                        // ================
 
-                    if(WriteHints) {
-                        var c = this.GetControl();
-                        if(c != null && c.savetodb == false) {
-                            throw new NotSupportedException("Configuration error: this job can never be successful: a successful result session ('this.SessionReqForSuccess' is true) is required, but control object is configured not to save in the database.");
+                        // we have to evaluate the status NOW, and work with this status in order for this method to work correctly.
+                        // otherwise, the loophole describes below might happen!
+                        (Deployment Depl, JobStatus fixedStatus)[] DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
+                        tr.Info("Deployments so far (" + DeploymentsSoFar.Length + "): " + DeploymentsSoFar.ToConcatString("", ", ", ";"));
+
+                        Deployment[] Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
+                        tr.Info("Success: " + Success.Length);
+                        if (SessionReqForSuccess) {
+                            ISessionInfo[] SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
+                            if (SuccessSessions.Length <= 0) {
+                                // look twice
+                                BoSSSshell.WorkflowMgm.ResetSessionsCache();
+                                DeploymentsSoFar = this.AllDeployments.Select(dep => (dep, dep.Status)).ToArray();
+                                Success = DeploymentsSoFar.Where(dep => dep.fixedStatus == JobStatus.FinishedSuccessful).Select(TT => TT.Depl).ToArray();
+                                SuccessSessions = this.AllSessions.Where(si => si.SuccessfulTermination()).OrderByDescending(sess => sess.CreationTime).ToArray();
+                            }
+                            if (SuccessSessions.Length > 0) {
+                                tr.Info($"Info: Found successful session \"{SuccessSessions.First()}\" -- job is marked as successful, no further action.");
+                                this.statusCache = JobStatus.FinishedSuccessful;
+                                return JobStatus.FinishedSuccessful;
+                            }
+
+                            if (Success.Length > 0) {
+                                tr.Info($"Note: found {Success.Length} successful deployment(s), but job is configured to require a successful result session ('this.SessionReqForSuccess' is true), and none is found. {this.AllSessions.Length} sessions correlated to this job fount in total.");
+                            }
+
+                            if (WriteHints) {
+                                var c = this.GetControl();
+                                if (c != null && c.savetodb == false) {
+                                    throw new NotSupportedException("Configuration error: this job can never be successful: a successful result session ('this.SessionReqForSuccess' is true) is required, but control object is configured not to save in the database.");
+                                }
+                            }
+
+                        } else {
+                            if (Success.Length > 0) {
+                                tr.Info($"Info: Found successful deployment and no result session is expected ('this.SessionReqForSuccess' is false):  job is marked as successful, no further action.");
+                                this.statusCache = JobStatus.FinishedSuccessful;
+                                return JobStatus.FinishedSuccessful;
+                            }
                         }
+
+                        // ========================
+                        // identify running/waiting
+                        // ========================
+
+                        // If we would not use the status evaluated at the top of this method, the 
+                        // potential async loophole could happen: job is still 'PendingInExecutionQueue' here...
+                        var inprog = DeploymentsSoFar.Where(dep => (dep.fixedStatus == JobStatus.InProgress)).ToArray();
+                        //tr.Info("inprog length: " + inprog.Length);
+                        if (inprog.Length > 0) {
+                            tr.Info($"Info: Job {inprog[0].Depl.BatchProcessorIdentifierToken} is currently executed on {this.AssignedBatchProc} -- no further action.");
+                            return JobStatus.InProgress;
+                        }
+
+                        // ... but moves to 'InProgress' somewhere in between here ...
+                        var inq = DeploymentsSoFar.Where(dep => (dep.fixedStatus == JobStatus.PendingInExecutionQueue)).ToArray();
+                        //tr.Info("inq length: " + inq.Length);
+                        if (inq.Length > 0) {
+                            tr.Info($"Info: Job {inq[0].Depl.BatchProcessorIdentifierToken} is currently waiting on {this.AssignedBatchProc} -- no further action.");
+                            return JobStatus.PendingInExecutionQueue;
+                        }
+
+                        // ... so we reach this line and receive an error here
+
+                        // =============
+                        // identify fail
+                        // =============
+
+                        // if we pass this point, we want to submit to a batch processor,
+                        // but only if still allowed.
+                        tr.Info("job submit count: " + this.SubmitCount);
+                        if (this.SubmitCount >= this.RetryCount) {
+                            tr.Info($"Note: Job has reached its maximum number of attempts to run ({this.RetryCount}) -- job is marked as fail, no further action.");
+                            tr.Info($"Hint: you might either remove old deployments or increase the 'RetryCount'.");
+
+                            this.statusCache = JobStatus.FailedOrCanceled;
+                            return JobStatus.FailedOrCanceled;
+                        }
+
+                        if (this.SubmitCount > 0 && DeploymentsSoFar.All(dep => dep.fixedStatus == JobStatus.FailedOrCanceled)) {
+                            tr.Info($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed; RetryCount is {this.RetryCount}, so try once more.");
+                            tr.Info($"Hint: want to re-activate the job.");
+
+                            this.statusCache = JobStatus.FailedOrCanceled;
+                            return JobStatus.FailedOrCanceled;
+                        }
+
+                        // ============
+                        // what now?
+                        // ============
+
+                        tr.Error("unable to determine job status - unknown");
+                        return JobStatus.Unknown;
                     }
-
-                } else {
-                    if(Success.Length > 0) {
-                        if(WriteHints)
-                            Console.WriteLine($"Info: Found successful deployment and no result session is expected ('this.SessionReqForSuccess' is false):  job is marked as successful, no further action.");
-                        tr.Info($"Info: Found successful deployment and no result session is expected ('this.SessionReqForSuccess' is false):  job is marked as successful, no further action.");
-                        this.statusCache = JobStatus.FinishedSuccessful;
-                        return JobStatus.FinishedSuccessful;
-                    }
                 }
-
-                // ========================
-                // identify running/waiting
-                // ========================
-
-                // If we would not use the status evaluated at the top of this method, the 
-                // potential async loophole could happen: job is still 'PendingInExecutionQueue' here...
-                var inprog = DeploymentsSoFar.Where(dep => (dep.fixedStatus == JobStatus.InProgress)).ToArray();
-                tr.Info("inprog length: " + inprog.Length);
-                if(inprog.Length > 0) {
-                    if(WriteHints)
-                        Console.WriteLine($"Info: Job {inprog[0].Depl.BatchProcessorIdentifierToken} is currently executed on {this.AssignedBatchProc} -- no further action.");
-                    tr.Info($"Info: Job {inprog[0].Depl.BatchProcessorIdentifierToken} is currently executed on {this.AssignedBatchProc} -- no further action.");
-                    return JobStatus.InProgress;
-                }
-
-                // ... but moves to 'InProgress' somewhere in between here ...
-                var inq = DeploymentsSoFar.Where(dep => (dep.fixedStatus == JobStatus.PendingInExecutionQueue)).ToArray();
-                tr.Info("inq length: " + inq.Length);
-                if(inq.Length > 0) {
-                    if(WriteHints)
-                        Console.WriteLine($"Info: Job {inq[0].Depl.BatchProcessorIdentifierToken} is currently waiting on {this.AssignedBatchProc} -- no further action.");
-                    tr.Info($"Info: Job {inq[0].Depl.BatchProcessorIdentifierToken} is currently waiting on {this.AssignedBatchProc} -- no further action.");
-                    return JobStatus.PendingInExecutionQueue;
-                }
-
-                // ... so we reach this line and receive an error here
-
-                // =============
-                // identify fail
-                // =============
-                              
-                // if we pass this point, we want to submit to a batch processor,
-                // but only if still allowed.
-                tr.Info("job submit count: " + this.SubmitCount);
-                if(this.SubmitCount >= this.RetryCount) {
-                    
-                    if(WriteHints) {
-                        Console.WriteLine($"Note: Job has reached its maximum number of attempts to run ({this.RetryCount}) -- job is marked as fail, no further action.");
-                        Console.WriteLine($"Hint: you might either remove old deployments or increase the 'RetryCount'.");
-                    }
-                    tr.Info($"Note: Job has reached its maximum number of attempts to run ({this.RetryCount}) -- job is marked as fail, no further action.");
-                    tr.Info($"Hint: you might either remove old deployments or increase the 'RetryCount'.");
-
-                    this.statusCache = JobStatus.FailedOrCanceled;
-                    return JobStatus.FailedOrCanceled;
-                }
-
-                if(this.SubmitCount > 0 && DeploymentsSoFar.All(dep => dep.fixedStatus == JobStatus.FailedOrCanceled)) {
-                    if(WriteHints) {
-                        Console.WriteLine($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed; RetryCount is {this.RetryCount}, so try once more.");
-                        Console.WriteLine($"Hint: want to re-activate the job.");
-                    }
-                    tr.Info($"Note: Job was deployed ({this.SubmitCount}) number of times, all failed; RetryCount is {this.RetryCount}, so try once more.");
-                    tr.Info($"Hint: want to re-activate the job.");
-
-                    this.statusCache = JobStatus.FailedOrCanceled;
-                    return JobStatus.FailedOrCanceled;
-                }
-
-                // ============
-                // what now?
-                // ============
-
-                tr.Info("unable to determine job status - unknown");
-                return JobStatus.Unknown;
             }
         }
-
 
         int m_RetryCount = 3;
 
