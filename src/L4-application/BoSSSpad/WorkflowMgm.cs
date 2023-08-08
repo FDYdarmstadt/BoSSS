@@ -91,15 +91,9 @@ namespace BoSSS.Application.BoSSSpad {
             SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
                 //using (var tr = new FuncTrace("NameBasedSessionInfoJobControlCorrelation")) {
                 try {
-                    // compare project name
-
-                    getKeys.Start();
-                    KeyValuePair<string,object>[] kaq_A = sinf.KeysAndQueries.ToArray();
-                    getKeys.Stop();
-
-                    var kaq = new Dictionary<string,object>(kaq_A);
+                    var kaq = new Dictionary<string, object>(sinf.KeysAndQueries); // caching for IO acceleration
                     
-
+                    // compare project name
                     if (!kaq.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
                         return false;
 
@@ -123,18 +117,21 @@ namespace BoSSS.Application.BoSSSpad {
             };
             SessionInfoAppControlCorrelation = delegate (ISessionInfo sinf, AppControl ctrl) {
                 try {
+
+                    var kaq = new Dictionary<string, object>(sinf.KeysAndQueries); // for IO acceleration
+
                     // compare project name
-                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
+                    if (!kaq.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
                         return false;
 
-                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(ctrl.ProjectName))
+                    if(!Convert.ToString(kaq[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(ctrl.ProjectName))
                         return false;
 
                     // compare session name
-                    if(!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
+                    if(!kaq.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
                         return false;
 
-                    if(!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(ctrl.SessionName))
+                    if(!Convert.ToString(kaq[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(ctrl.SessionName))
                         return false;
 
                     // fall tests passed
@@ -211,52 +208,6 @@ namespace BoSSS.Application.BoSSSpad {
         /// Defines, global for the entire workflow management, how jobs in the project correlate to control objects.
         /// </summary>
         public Func<Job, AppControl, bool> JobAppControlCorrelation;
-
-        /*
-        /// <summary>
-        /// deletes old job deployments and databases
-        /// </summary>
-        public void Reset() {
-            if(CurrentProject.IsEmptyOrWhite()) {
-                Console.WriteLine("Workflow management not initialized yet - call Init(...)!");
-                return;
-            }
-
-            // delete old databases
-            // ====================
-            foreach(var q in BoSSSshell.ExecutionQueues) {
-                //var dirsToDelete = new HashSet<DirectoryInfo>();
-                //bool delete = false;
-                foreach(var allowedPath in q.AllowedDatabasesPaths) {
-                    var localBaseDir = new DirectoryInfo(allowedPath.LocalMountPath);
-
-                    var dbDirs = localBaseDir.GetDirectories(Directory, SearchOption.TopDirectoryOnly);
-                    foreach(var db in dbDirs) {
-                        if(db.Exists) {
-                            Console.WriteLine("Deleting database: " + db.FullName);
-                            db.Delete(true);
-                        }
-                    }
-                }
-            }
-
-            // delete old deployment
-            // =====================
-
-            {
-                var deplDirs = (new DirectoryInfo(q.DeploymentBaseDirectory)).GetDirectories(DeployMents, SearchOption.TopDirectoryOnly);
-                foreach(var d in deplDirs) {
-                    
-
-                    if(d.Exists) {
-                        Console.WriteLine("Deleting deployment dir: " + d.FullName);
-                        d.Delete(true);
-                    }
-                }
-            }
-        }
-        */
-       
 
         /// <summary>
         /// Defines the name of the current project; also creates a default database
@@ -368,14 +319,45 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-        DateTime m_Sessions_CacheTime;
+        
         ISessionInfo[] m_Sessions;
+        List<SessionAtomic> m_Atomics = new List<SessionAtomic>();
 
         /// <summary>
         /// Clears the cache for <see cref="Sessions"/> and enforces to re-read the database.
         /// </summary>
         public void ResetSessionsCache() {
             m_Sessions = null;
+        }
+
+        /// <summary>
+        /// Prevents changes (through IO) in <see cref="Sessions"/> as long the atomic is in use;   with the exception of <see cref="ResetSessionsCache"/>
+        /// This also helps IO performance;
+        /// </summary>
+        public class SessionAtomic : IDisposable {
+            
+            internal SessionAtomic(WorkflowMgm owner) {
+                m_owner = owner;
+            }
+
+            internal readonly WorkflowMgm m_owner;
+
+            /// <summary>
+            /// releases the atomic
+            /// </summary>
+            public void Dispose() {
+                m_owner.m_Atomics.Remove(this);
+                if (m_owner.m_Atomics.Count >= 0)
+                    m_owner.ResetSessionsCache();
+            }
+        }
+
+        /// <summary>
+        /// <see cref="SessionAtomic"/>
+        /// </summary>
+        public SessionAtomic EnterSessionAtomic() {
+            m_Atomics.Add(new SessionAtomic(this));
+            return m_Atomics.Last();
         }
 
 
@@ -390,10 +372,11 @@ namespace BoSSS.Application.BoSSSpad {
                         return new ISessionInfo[0];
                     }
 
-                    //if (m_Sessions == null || ((DateTime.Now - m_Sessions_CacheTime) > UpdatePeriod)) {
-                    //Console.WriteLine("Updatting Sessions...");
-                    DateTime st = DateTime.Now;
-                    {
+                    if(m_Atomics.Count > 0 && m_Sessions != null) {
+                        return m_Sessions;
+                    } else { 
+
+                    
                         List<ISessionInfo> ret = new List<ISessionInfo>();
 
                         if (BoSSSshell.databases != null) {
@@ -416,13 +399,15 @@ namespace BoSSS.Application.BoSSSpad {
                             }
                         }
 
-                        m_Sessions = ret.ToArray();
-                        m_Sessions_CacheTime = DateTime.Now;
-                    }
-                    //TimeSpan duration = DateTime.Now - st;
-                    //Console.WriteLine("done. (took " + duration + ")");
+                        if (m_Atomics.Count > 0)
+                            m_Sessions = ret.ToArray();
+                        else
+                            m_Sessions = null;
+                        
 
-                    return m_Sessions;
+                        return ret.ToArray();
+                    }
+
                 }
             }
         }

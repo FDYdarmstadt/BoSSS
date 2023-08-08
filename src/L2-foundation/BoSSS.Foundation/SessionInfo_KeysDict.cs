@@ -34,7 +34,6 @@ namespace BoSSS.Foundation.IO {
             this.m_KeysAndQueries.m_Owner = this;
         }
 
-
         /// <summary>
         /// Custom (very-low-performance) dictionary for the <see cref="SessionInfo.KeysAndQueries"/>-property,
         /// triggers the serialization of the session info if something is changed.
