@@ -82,6 +82,8 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        internal static Stopwatch getKeys = new Stopwatch();
+
         /// <summary>
         /// Correlation of session, job and control object is done by name
         /// </summary>
@@ -91,18 +93,24 @@ namespace BoSSS.Application.BoSSSpad {
                 try {
                     // compare project name
 
+                    getKeys.Start();
+                    KeyValuePair<string,object>[] kaq_A = sinf.KeysAndQueries.ToArray();
+                    getKeys.Stop();
 
-                    if (!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
+                    var kaq = new Dictionary<string,object>(kaq_A);
+                    
+
+                    if (!kaq.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
                         return false;
 
-                    if (!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(this.CurrentProject))
+                    if (!Convert.ToString(kaq[BoSSS.Solution.Application.PROJECTNAME_KEY]).Equals(this.CurrentProject))
                         return false;
 
                     // compare session name
-                    if (!sinf.KeysAndQueries.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
+                    if (!kaq.ContainsKey(BoSSS.Solution.Application.SESSIONNAME_KEY))
                         return false;
 
-                    if (!Convert.ToString(sinf.KeysAndQueries[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(job.Name))
+                    if (!Convert.ToString(kaq[BoSSS.Solution.Application.SESSIONNAME_KEY]).Equals(job.Name))
                         return false;
 
                     // fall tests passed

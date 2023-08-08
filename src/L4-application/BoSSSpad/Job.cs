@@ -1056,13 +1056,12 @@ namespace BoSSS.Application.BoSSSpad {
 
                 ISessionInfo[] AllNewSessions;
                 using (new BlockTrace("SessionInfoJobCorrelation", tr)) {
-                    BoSSS.Foundation.IO.SessionInfo.containsKey.Reset();
-                    BoSSS.Foundation.IO.SessionInfo.get_this.Reset();
+                    WorkflowMgm.getKeys.Reset();
                     AllNewSessions = AllNewSessionsTotal
                         .Where(sinf => BoSSSshell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
                 }
-                tr.Info("contains key duration: " + BoSSS.Foundation.IO.SessionInfo.containsKey.Elapsed.TotalSeconds + " sec");
-                tr.Info("get item key duration: " + BoSSS.Foundation.IO.SessionInfo.get_this.Elapsed.TotalSeconds + " sec");
+                tr.Info("read the dict: " + WorkflowMgm.getKeys.Elapsed.TotalSeconds + " sec");
+
 
                 // add all new deployment directories
                 // ==================================

@@ -76,12 +76,11 @@ namespace BoSSS.Foundation.IO {
                     }
                 },
                 delegate (SessionInfo s) {
-                    using (var tr = new FuncTrace("isUpToDateFunc_SessionInfo")) {
+                    //using (var tr = new FuncTrace("isUpToDateFunc_SessionInfo")) {
                         var fileSysWriteTime = Utils.GetSessionFileWriteTime(s);
                         bool b = fileSysWriteTime == s.WriteTime;
-                        tr.Info($"Session info {s} expired; file system write time is {fileSysWriteTime} cached write time is {s.WriteTime}");
                         return b;
-                    }
+                    //}
                 });
 
         }
