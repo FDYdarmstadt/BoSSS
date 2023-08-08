@@ -82,6 +82,8 @@ namespace BoSSS.Application.BoSSSpad {
             }
         }
 
+        internal static Stopwatch getKeys = new Stopwatch();
+
         /// <summary>
         /// Correlation of session, job and control object is done by name
         /// </summary>
@@ -89,10 +91,9 @@ namespace BoSSS.Application.BoSSSpad {
             SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
                 //using (var tr = new FuncTrace("NameBasedSessionInfoJobControlCorrelation")) {
                 try {
+                    var kaq = new Dictionary<string, object>(sinf.KeysAndQueries); // caching for IO acceleration
+                    
                     // compare project name
-
-                    var kaq = new Dictionary<string, object>(sinf.KeysAndQueries); // for IO acceleration
-
                     if (!kaq.ContainsKey(BoSSS.Solution.Application.PROJECTNAME_KEY))
                         return false;
 

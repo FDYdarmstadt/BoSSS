@@ -1061,7 +1061,7 @@ namespace BoSSS.Application.BoSSSpad {
                     AllNewSessions = AllNewSessionsTotal
                         .Where(sinf => BoSSSshell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
                 }
-              
+
                 // add all new deployment directories
                 // ==================================
                 foreach (DirectoryInfo dirInfo in this.GetAllUnkonwnExistingDeployDirectories()) {

@@ -68,7 +68,6 @@ namespace BoSSS.Foundation.IO {
             realSessionInfo = new ExpirableLazy<SessionInfo>(
                 valueFunc,
                 isUpToDateFunc);
-
         }
 
         readonly Guid m_sessionID;

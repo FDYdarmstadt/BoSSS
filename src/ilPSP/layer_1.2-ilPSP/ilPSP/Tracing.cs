@@ -702,7 +702,7 @@ namespace ilPSP.Tracing {
                 return;
 
             string _name;
-            Type callingType = null;
+            Type callingType;
             {
                 StackFrame fr = new StackFrame(1, true);
 
@@ -792,7 +792,7 @@ namespace ilPSP.Tracing {
     /// </summary>
     public class BlockTrace : Tmeas {
 
-        FuncTrace _f;
+        readonly FuncTrace _f;
 
         /// <summary>
         /// ctor
@@ -817,7 +817,7 @@ namespace ilPSP.Tracing {
             base.EnterMessage("BLKENTER ", _name);
         }
 
-        bool m_timeToCout = false;
+        readonly bool m_timeToCout = false;
 
         /*
         /// <summary>
