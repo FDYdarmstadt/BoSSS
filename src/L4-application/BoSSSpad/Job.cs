@@ -1056,6 +1056,7 @@ namespace BoSSS.Application.BoSSSpad {
 
                 ISessionInfo[] AllNewSessions;
                 using (new BlockTrace("SessionInfoJobCorrelation", tr)) {
+                    Debugger.Launch();
                     AllNewSessions = AllNewSessionsTotal
                         .Where(sinf => BoSSSshell.WorkflowMgm.SessionInfoJobCorrelation(sinf, this)).ToArray();
                 }
