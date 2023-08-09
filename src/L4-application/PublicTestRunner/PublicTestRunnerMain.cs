@@ -1397,6 +1397,12 @@ namespace PublicTestRunner {
                     if(!FilterTestAssembly(a, AssemblyFilter)) {
                         continue;
                     }
+
+                    if(GetTestsInAssembly(a, AssemblyFilter).NoOfTests <= 0) {
+                        Console.WriteLine("Matching Assembly search string, but none of the methods match. (wrong wildcard?)");
+                        continue;
+                    }
+
                     Console.WriteLine("Matching assembly: " + a.Location);
                     ftr.Info("found Assembly #" + count + ": " + a.Location);
                     count++;
@@ -1404,6 +1410,9 @@ namespace PublicTestRunner {
                     if(MpiRank == 0) {
                         MegaMurxPlusPlus(a, AssemblyFilter);
                     }
+
+
+
 
                     Console.WriteLine("Waiting for all processors to catch up BEFORE starting test(s)...");
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -1433,7 +1442,25 @@ namespace PublicTestRunner {
                         for(int rnk = 0; rnk < all_rS.Length; rnk++) {
                             bt.Info($"Rank {rnk}: NUnit returned code " + r);
                         }
-                        
+
+
+                        {
+                            string currentDirectory = Directory.GetCurrentDirectory();
+                            string[] pltFiles = Directory.GetFiles(currentDirectory, "*.plt");
+
+                            long totalSizeBytes = 0;
+
+                            foreach (string pltFile in pltFiles) {
+                                FileInfo fileInfo = new FileInfo(pltFile);
+                                totalSizeBytes += fileInfo.Length;
+                            }
+
+                            double totalSizeGigabytes = totalSizeBytes / (1024.0 * 1024 * 1024);
+
+                            if (totalSizeGigabytes > 2.0)
+                                throw new IOException("Test produced more than 2 Gigabyte of plt-files -- please check!");
+                        }
+
                     }
 
                     ret = ret | (r != 0);

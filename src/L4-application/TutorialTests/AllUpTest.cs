@@ -273,8 +273,10 @@ namespace BoSSS.Application.TutorialTests {
             string TexFileName = NotebookPartialPath.Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries).Last();
             string WorksheetName;
             if (!File.Exists(TexFileName)) {
+                Console.WriteLine($"Must search for file {TexFileName} ({NotebookPartialPath})");
                 WorksheetName = LocateFile(NotebookPartialPath).Single();
             } else {
+                Console.WriteLine($"Found File {TexFileName} ({NotebookPartialPath}) in current directory.");
                 WorksheetName = TexFileName;
             }
 
@@ -327,6 +329,8 @@ namespace BoSSS.Application.TutorialTests {
                 repoRoot = new DirectoryInfo(DirectoryOffset);
             else
                 repoRoot = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+            Console.WriteLine($"Root directory of repository set as: {repoRoot.FullName} (DirectoryOffset = {DirectoryOffset ?? "NULL"})");
 
             // if we get here, we probably have access to the repository root directory.
             string[] r = LocateFileRecursive("", repoRoot, PartialPath);

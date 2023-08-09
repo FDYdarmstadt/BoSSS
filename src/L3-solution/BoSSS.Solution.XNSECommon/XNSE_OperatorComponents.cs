@@ -654,6 +654,11 @@ namespace BoSSS.Solution.XNSECommon {
         /// </summary>
         bool isVolForce { get; }
 
+        /// <summary>
+        /// slip on the fluid-fluid interface
+        /// </summary>
+        bool isInterfaceSlip { get; }
+
     }
 
 

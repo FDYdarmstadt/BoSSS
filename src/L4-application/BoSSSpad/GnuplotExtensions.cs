@@ -74,6 +74,8 @@ namespace BoSSS.Application.BoSSSpad {
         static public Microsoft.AspNetCore.Html.HtmlString PlotSVG(this Gnuplot gp, int xRes = 800, int yRes = 600) {
             string OutfileName = Path.GetTempFileName();
 
+            Console.WriteLine("Note: In a Jupyter Worksheet, you must NOT have a trailing semicolon in order to see the plot on screen; otherwise, the output migth be surpressed.!");
+
             try {
                 gp.SaveToSVG(OutfileName, xRes, yRes);
             } catch (IOException ioe) {

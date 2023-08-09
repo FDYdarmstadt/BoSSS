@@ -338,6 +338,9 @@ namespace BoSSS.Solution {
                     else
                         Console.WriteLine("Running with " + size + " MPI processes ");
 
+                    Console.WriteLine($"Working path: {Directory.GetCurrentDirectory()}");
+                    Console.WriteLine($"Binary path: {Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}");
+
                     Console.WriteLine("User: " + System.Environment.UserName);
 
                     using (var stw = new StringWriter()) {
@@ -703,6 +706,36 @@ namespace BoSSS.Solution {
                 var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
                 Console.Write("rm");
                 foreach (var pltFile in dir.GetFiles("*.txt").Concat(dir.GetFiles("*.csv"))) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
+                }
+                Console.WriteLine(";");
+            }
+        }
+
+        /// <summary>
+        /// On process rank 0, deletes all text and csv files in the current directory
+        /// </summary>
+        public static void DeleteOldTxtFiles() {
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.txt").Concat(dir.GetFiles("*.csv"))) {
+                    Console.Write(" " + pltFile.Name);
+                    pltFile.Delete();
+                }
+                Console.WriteLine(";");
+            }
+        }
+
+        /// <summary>
+        /// On process rank 0, deletes all image files in the current directory
+        /// </summary>
+        public static void DeleteOldImageFiles() {
+            if (ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
+                var dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+                Console.Write("rm");
+                foreach (var pltFile in dir.GetFiles("*.png").Concat(dir.GetFiles("*.jpg")).Concat(dir.GetFiles("*.jpeg")).Concat(dir.GetFiles("*.tiff")).Concat(dir.GetFiles("*.bmp"))) {
                     Console.Write(" " + pltFile.Name);
                     pltFile.Delete();
                 }
@@ -1286,7 +1319,9 @@ namespace BoSSS.Solution {
                     if (DBpath == null)
                         DBpath = "NULL";
                     if (DatabaseDriver.MyRank == 0) {
-                        Console.WriteLine("Session ID: {0}, DB path: '{1}'.", this.CurrentSessionInfo.ID.ToString(), DBpath);
+                        Console.WriteLine($"Session ID: {this.CurrentSessionInfo.ID.ToString()}, DB path: '{DBpath}'");
+                        var sdir = Path.Combine(DBpath, StandardFsDriver.SessionsDir, this.CurrentSessionInfo.ID.ToString());
+                        Console.WriteLine($"Session directory '{sdir}'.");
                     }
                 } else {
                     Console.WriteLine("IO deactivated.");

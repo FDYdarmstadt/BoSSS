@@ -117,6 +117,12 @@ namespace BoSSS.Solution.XheatCommon {
         public double hVap = 0.0;
 
         /// <summary>
+        /// prescribed slip length for Temperature slip
+        /// </summary>
+        [DataMember]
+        public double sliplength = 0.0;
+
+        /// <summary>
         /// enthalpy of vaporization, a.k.a. (latent) heat of vaporization. Is always positive (heat is absorbed by the substance).
         /// The enthalpy of condensation (heat of condensation) is by definition equal to h_vap but with opposite sign (heat is released by the substance).
         /// Therefore the enthalpy of vaporization has to be set according to the liquid phase.
@@ -186,6 +192,7 @@ namespace BoSSS.Solution.XheatCommon {
             cl.fc = this.fc;
             cl.Rc = this.Rc;
             cl.pc = this.pc;
+            cl.sliplength = this.sliplength;
 
             return MemberwiseClone();
         }
@@ -217,6 +224,8 @@ namespace BoSSS.Solution.XheatCommon {
             cl.fc == this.fc &&
             cl.Rc == this.Rc &&
             cl.pc == this.pc;
+            cl.sliplength = this.sliplength;
+
         }
 
         /// <summary>
