@@ -23,7 +23,4 @@
     <ProjectReference Include="..\..\L3-solution\BoSSS.Solution.XNSECommon\BoSSS.Solution.XNSECommon.csproj" />
     <ProjectReference Include="..\XNSE_Solver\XNSE_Solver.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
-  </ItemGroup>
 </Project>
