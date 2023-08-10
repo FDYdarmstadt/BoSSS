@@ -147,7 +147,7 @@ namespace PublicTestRunner {
                         typeof(ZwoLevelSetSolver.ZLS),
                         typeof(HangingNodesTests.HangingNodesTestMain),
                         typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain),
-                        typeof(IntersectingLevelSetTest.AllUpTest)
+                        typeof(IntersectingLevelSetTest.AllUpTest),
                     };
             }
         }

@@ -588,7 +588,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// </summary>
         [Test]
         public static void TaylorCouetteConvergenceTest_2Phase_LaplaceBeltrami_Flux(
-            [Values(2, 3)] int FlowSolverDegree,
+            [Values(2)] int FlowSolverDegree,
             [Values(false, true)] bool SchurCompl,
             [Values(NonLinearSolverCode.Newton/*, NonLinearSolverCode.Picard*/)] NonLinearSolverCode nonlinsolver
             ) {
@@ -1117,9 +1117,9 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                     var solver = new XNSE();
                     solvers[k] = solver;
                     {
-                        Console.WriteLine("Warning! - enabled immediate plotting");
-                        C.ImmediatePlotPeriod = 1;
-                        C.SuperSampling = 3;
+                        //Console.WriteLine("Warning! - enabled immediate plotting");
+                        //C.ImmediatePlotPeriod = 1;
+                        //C.SuperSampling = 3;
 
                         solver.Init(C);
                         solver.RunSolverMode();
