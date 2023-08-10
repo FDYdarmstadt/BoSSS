@@ -796,6 +796,11 @@ namespace PublicTestRunner {
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile("JobManagerRun-" + DateNtime);
 
+            bool I_StartedMinibatch = false;
+            if(bpc is MiniBatchProcessorClient) {
+                I_StartedMinibatch = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: true);
+            }
+
             
             int returnCode = 0;
             using(var tr = new FuncTrace()) {
@@ -1137,6 +1142,10 @@ namespace PublicTestRunner {
                 }
                 Console.WriteLine($"{DateTime.Now}");
             }
+
+
+            if(I_StartedMinibatch)
+                MiniBatchProcessor.Server.SendTerminationSignal(WaitForOtherJobstoFinish: false);
 
             CloseTracing();
 
