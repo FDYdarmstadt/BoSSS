@@ -769,8 +769,8 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 GridResolution: 1,
                 nonlinsolver: nonlinsolver);
             C.NoOfMultigridLevels = 1;
-            C.ImmediatePlotPeriod = 1;
-            C.SuperSampling = 4;
+            //C.ImmediatePlotPeriod = 1;
+            //C.SuperSampling = 4;
             C.SkipSolveAndEvaluateResidual = true;
             XNSESolverTest(Tst, C);
 

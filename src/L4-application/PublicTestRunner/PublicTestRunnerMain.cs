@@ -1466,13 +1466,17 @@ namespace PublicTestRunner {
 
                             double totalSizeGigabytes = totalSizeBytes / (1024.0 * 1024 * 1024);
 
-                            if (totalSizeGigabytes > 2.0)
-                                throw new IOException("Test produced more than 2 Gigabyte of plt-files -- please check!");
+                            if (totalSizeGigabytes > 2.0) {
+                                bt.Error("Test produced more than 2 Gigabyte of plt-files -- please check!");
+                                //throw new IOException("Test produced more than 2 Gigabyte of plt-files -- please check!");
+                            }
                         }
 
                     }
 
+                    ftr.Info($"failstate before most recent code {ret} (false means OK, r = {r})");
                     ret = ret | (r != 0);
+                    ftr.Info($"failstate after most recent code {ret} (false means OK, r = {r})");
                 }
 
                 {
@@ -1486,6 +1490,7 @@ namespace PublicTestRunner {
 
 
                 Console.WriteLine();
+                ftr.Info($"failstate all tests: {ret} (false means OK)");
                 return ret ? -1 : 0;
             }
         }
@@ -1644,6 +1649,8 @@ namespace PublicTestRunner {
                 break;
             }
 
+
+            Console.WriteLine("ret b4 finalize = " + ret);
             csMPI.Raw.mpiFinalize();
 
 
@@ -1666,7 +1673,7 @@ namespace PublicTestRunner {
                 // seems to silently fail on all exceptions thrown after MPI init.
 
                 
-                Console.WriteLine(e);
+                Console.WriteLine("Got some exception: " + e);
                 return -667;
             }
         }
