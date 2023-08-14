@@ -1343,16 +1343,21 @@ namespace PublicTestRunner {
         /// - otherwise (e.g. if tests are deployed to a HPC cluster) it does not copy anything and we hope that all required files are in place.
         /// </remarks>
         static void MegaMurxPlusPlus(Assembly a, string filter) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 var r = GetTestsInAssembly(a, filter);
 
                 var dir = Directory.GetCurrentDirectory();
+                tr.Info("Current dir: " + dir);
 
                 foreach (var t in r.tests) { 
                     foreach (var fOrigin in r.RequiredFiles4Test[t]) {
+                        tr.Info("Origin file: " + fOrigin);
                         if (File.Exists(fOrigin)) {
                             string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));
+                            tr.Info("Destination file: " + fDest);
                             File.Copy(fOrigin, fDest, true);
+                        } else {
+                            tr.Info($"Origin file {fOrigin} NOT FOUND!");
                         }
                     }
                 }
