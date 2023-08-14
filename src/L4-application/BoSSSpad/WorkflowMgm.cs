@@ -270,6 +270,8 @@ namespace BoSSS.Application.BoSSSpad {
                         fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
                         DatabaseInfo.AddAlternateDbPaths(dbDir.FullName, fullPathAtRemote, null);
                     }
+
+                    DefaultDatabase = dbi;
                 }
             }
 
