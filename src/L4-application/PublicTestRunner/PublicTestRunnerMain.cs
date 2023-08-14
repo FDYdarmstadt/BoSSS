@@ -419,7 +419,12 @@ namespace PublicTestRunner {
                                     s.AddRange(LocateFile(someFile));
                                 }
                             }
-                            
+
+                            if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+                                s.Add("BOSSS_RUNTESTFROMBACKUP.txt");
+                            }
+
+
 
                             d.Add(r.Last(), s.ToArray());
                         }
@@ -1566,6 +1571,11 @@ namespace PublicTestRunner {
                 Console.WriteLine("Insufficient number of arguments.");
                 PrintMainUsage();
                 return -7777;
+            }
+
+            if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+                File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Helo, Suckers!");
+                Console.WriteLine("trying to forward the BOSSS_RUNTESTFROMBACKUP hack via additional deployment files...");
             }
 
             BoSSS.Solution.Application.InitMPI();
