@@ -253,21 +253,23 @@ namespace BoSSS.Application.BoSSSpad {
                 var bkupDbs = baseDir.GetDirectories("bkup*." + ProjectName);
                 Console.WriteLine("   Bkup Database dirs: " + bkupDbs.ToConcatString("", ", ", ";"));
 
-                if(bkupDbs.Length <= 0 ) {
-                    throw new IOException("No Backups found; unable to run worksheet from backup database.");
-                }
-                
-                var dbDir = bkupDbs.OrderBy(dir => dir.CreationTime).Last(); // select newest available backup
-                Console.WriteLine("Selecting newest available backup: " + dbDir);
+                if (bkupDbs.Length <= 0) {
+                    Console.Error.WriteLine("No Backups found; unable to run worksheet from backup database.");
 
-                
-                IDatabaseInfo dbi = BoSSSshell.OpenDatabase(dbDir.FullName);
+                } else {
 
-                if (!pp.PathAtRemote.IsEmptyOrWhite()) {
-                    string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
-                    string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
-                    fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
-                    DatabaseInfo.AddAlternateDbPaths(dbDir.FullName, fullPathAtRemote, null);
+                    var dbDir = bkupDbs.OrderBy(dir => dir.CreationTime).Last(); // select newest available backup
+                    Console.WriteLine("Selecting newest available backup: " + dbDir);
+
+
+                    IDatabaseInfo dbi = BoSSSshell.OpenDatabase(dbDir.FullName);
+
+                    if (!pp.PathAtRemote.IsEmptyOrWhite()) {
+                        string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
+                        string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
+                        fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
+                        DatabaseInfo.AddAlternateDbPaths(dbDir.FullName, fullPathAtRemote, null);
+                    }
                 }
             }
 
