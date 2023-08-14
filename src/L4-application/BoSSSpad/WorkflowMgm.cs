@@ -210,7 +210,10 @@ namespace BoSSS.Application.BoSSSpad {
         public Func<Job, AppControl, bool> JobAppControlCorrelation;
 
         internal bool RunWorkflowFromBackup {
-            get => true;
+            get {
+                string runfromBackup = System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP");
+
+            }
         }
 
 
