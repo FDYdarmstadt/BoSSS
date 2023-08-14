@@ -1030,7 +1030,7 @@ namespace PublicTestRunner {
                                             foreach(var orig in sourceFiles) {
                                                 string n = Path.GetFileName(orig);
                                                 string dest = Path.Combine(CurrentDir, n);
-                                                File.Copy(orig, dest);
+                                                File.Copy(orig, dest, true);
                                             }
                                         } catch(IOException ioe) {
                                             Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
