@@ -420,9 +420,9 @@ namespace PublicTestRunner {
                                 }
                             }
 
-                            if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
-                                s.Add("BOSSS_RUNTESTFROMBACKUP.txt");
-                            }
+                            //if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+                            //    s.Add("BOSSS_RUNTESTFROMBACKUP.txt");
+                            //}
 
 
 
@@ -439,7 +439,7 @@ namespace PublicTestRunner {
                 s.AddRange(d[testname]);
                 s.AddRange(g);
 
-                List<string> FileNamesOnly = new List<string>();
+                List<string> FileNamesOnly = new();
                 foreach (string filePath in s) {
                     string fileName = Path.GetFileName(filePath);
                     if (FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
@@ -1307,6 +1307,9 @@ namespace PublicTestRunner {
                 foreach (var f in AdditionalFiles) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
                 }
+                if(BOSSS_RUNTESTFROMBACKUP_ENVVAR) {
+                    j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes("BOSSS_RUNTESTFROMBACKUP.txt"), "BOSSS_RUNTESTFROMBACKUP.txt"));
+                }
                 if (nativeOverride != null) {
                     j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride);
                 }
@@ -1541,6 +1544,9 @@ namespace PublicTestRunner {
         }
 
 
+
+        static public bool BOSSS_RUNTESTFROMBACKUP_ENVVAR = false;
+
         /// <summary>
         /// the real main-function
         /// </summary>
@@ -1579,6 +1585,7 @@ namespace PublicTestRunner {
             }
 
             if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+                BOSSS_RUNTESTFROMBACKUP_ENVVAR = true;
                 File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Helo, Suckers!");
                 Console.WriteLine("trying to forward the BOSSS_RUNTESTFROMBACKUP hack via additional deployment files...");
             }
