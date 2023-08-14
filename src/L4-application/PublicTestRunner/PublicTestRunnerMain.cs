@@ -939,7 +939,7 @@ namespace PublicTestRunner {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                            var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, RelManagedPath, cnt);
+                            var j = SubmitJob(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, RelManagedPath, cnt);
                             if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
@@ -1253,7 +1253,7 @@ namespace PublicTestRunner {
             }
         }
 
-        static public (Job j, string resultFile, string name) JobManagerRun(
+        static public (Job j, string resultFile, string name) SubmitJob(
             Assembly a,
             string TestName, string Shortname,
             BatchProcessorClient bpc,

@@ -308,7 +308,7 @@ namespace BoSSS.Application.TutorialTests {
                 Console.WriteLine("TutorialTests.exe: finished '{0}', error count is {1}.", WorksheetName, ErrCount);
                 if(!allowErrors)
                     Assert.LessOrEqual(ErrCount, 0, "Found " + ErrCount + " errors in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
-                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.).");
+                Assert.IsTrue(ErrCount >= 0, "Fatal return code: " + ErrCount + " in worksheet: " + WorksheetName + " (negative numbers may indicate file-not-found, etc.)."); // fail only on negative numbers (file-not-found, something completely off)
             } finally {
                 // shutting down the local mini batch processor:
                 OneTimeTearDown();
