@@ -212,7 +212,7 @@ namespace BoSSS.Application.BoSSSpad {
         internal bool RunWorkflowFromBackup {
             get {
                 string runfromBackup = System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP");
-
+                return runfromBackup.IsEmptyOrWhite() == false;
             }
         }
 
