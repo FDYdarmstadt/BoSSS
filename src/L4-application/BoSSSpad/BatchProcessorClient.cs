@@ -356,6 +356,7 @@ namespace BoSSS.Application.BoSSSpad {
         public abstract string GetStderrFile(string idToken, string DeployDir);
 
 
+
         /// <summary>
         /// Creates (or opens) a database in a location which is ensured to work with this batch processor
         /// </summary>
@@ -378,8 +379,6 @@ namespace BoSSS.Application.BoSSSpad {
                 string fullPathAtRemote = pp.PathAtRemote.TrimEnd('/', '\\');
                 string remoteDirSep = pp.PathAtRemote.Contains('/') ? "/" : "\\";
                 fullPathAtRemote = fullPathAtRemote + remoteDirSep + dbDir;
-
-                //todo:  add alternate path 
                 DatabaseInfo.AddAlternateDbPaths(fullPath, fullPathAtRemote, null);
             }
 
@@ -391,7 +390,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// Creates (or opens) a database in a location which is ensured to work with this batch processor
         /// </summary>
         public IDatabaseInfo CreateTempDatabase() {
-             if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
+            if(AllowedDatabasesPaths == null || AllowedDatabasesPaths.Count <= 0)
                 throw new NotSupportedException("`AllowedDatabasesPaths` not specified, unable to create Database (should be specified in ~/.BoSSS/etc/BatchProcessorConfig.json).");
 
             string relPath = null;
