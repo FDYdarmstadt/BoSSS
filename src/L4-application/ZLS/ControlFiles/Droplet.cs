@@ -73,8 +73,8 @@ namespace ZwoLevelSetSolver.ControlFiles {
 
             C.Material = new Solid() {
                 Density = 1000 * scale * scale * scale,
-                Lame2 = 100000 * scale ,
-                Viscosity = 0.05 * scale
+                Lame2 = 1000 * scale,
+                Viscosity = 0.5 * scale
                 //Viscosity = 0 0.05e-4 * scale,
             };
 
@@ -217,7 +217,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             
 
             C.TimesteppingMode = compMode;
-            double dt = 1e-6;
+            double dt = 5e-7;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10;

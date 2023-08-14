@@ -15,22 +15,13 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         public Continuity(string spcName, int D) {
             this.spcName = spcName;
-            if(false) {
-                for(int i = 0; i < D; ++i) {
-                    string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
-                    AddVariableNames(velocity);
-                    var divergence1 = new Divergence(spcName, velocity, i);
-                    AddComponent(divergence1);
-                }
-            } else {
-                string[] displacement = ZwoLevelSetSolver.VariableNames.DisplacementVector(D);
-                for(int i = 0; i < D; ++i) {
-                    AddVariableNames(displacement);
-                    var divergence = new Divergence(spcName, displacement[i], i, 1.0);
-                    AddComponent(divergence);
-                }
-                AddComponent(new NonlinearContinuityForm(spcName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)));
+            for(int i = 0; i < D; ++i) {
+                string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
+                AddVariableNames(velocity);
+                var divergence1 = new Divergence(spcName, velocity, i);
+                AddComponent(divergence1);
             }
+            AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -600));
         }
 
         public override string SpeciesName => spcName;

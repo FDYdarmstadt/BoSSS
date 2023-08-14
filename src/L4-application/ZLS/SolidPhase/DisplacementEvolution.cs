@@ -16,7 +16,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string codomainName;
 
-        public DisplacementEvolution(string speciesName, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap) {
+        public DisplacementEvolution(string speciesName, Solid material, int d, int D, IncompressibleMultiphaseBoundaryCondMap boundaryMap) {
             this.speciesName = speciesName;
             this.codomainName = EquationNames.DisplacementEvolutionComponent(d);
             AddVariableNames(BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
@@ -28,6 +28,10 @@ namespace ZwoLevelSetSolver.SolidPhase {
             AddComponent(convection);
             var source = new MultiPhaseVariableSource(speciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], -1.0);
             AddComponent(source);
+            //AddComponent(new EdgePenaltyForm1(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], material.Lame2 ));
+            //AddComponent(new BoundaryEdgePenaltyForm(SpeciesName, ZwoLevelSetSolver.VariableNames.DisplacementVector(D)[d], material.Lame2));
+            //AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], - material.Viscosity));
+            //AddComponent(new BoundaryEdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[d], material.Viscosity));
         }
 
         public override string SpeciesName => speciesName;

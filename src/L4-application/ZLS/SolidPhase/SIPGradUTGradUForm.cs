@@ -135,7 +135,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
             for(int i = 0; i < D; ++i) {
                 for(int j = 0; j < D; ++j) {
-                    u[i] += U[j, row] * U[j, row];
+                    u[i] += U[j, row] * U[j, i];
                 }
             }
             return u;
