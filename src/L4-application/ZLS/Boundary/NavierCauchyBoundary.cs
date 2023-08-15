@@ -37,7 +37,8 @@ namespace ZwoLevelSetSolver.Boundary {
                 material.Density, rho_fluid, d, 1, fluidSpecies, solidSpecies));
 
             //Penalty coupling
-            AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, 0));
+            double maxViscosity = Math.Max(viscosity, material.Viscosity);
+            AddComponent(new NoSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, maxViscosity, maxViscosity));
             //AddComponent(new NavierSlipVelocityPenaltyForm(fluidSpecies, solidSpecies, d, D, 1, viscosity, material.Lame2, 0.1));
         }
 

@@ -97,7 +97,7 @@ namespace ZwoLevelSetSolver {
                 opFactory.AddEquation(new Dummy("B", VariableNames.DisplacementVector(D)[d], EquationNames.DisplacementEvolutionComponent(d)));
                 opFactory.AddParameter(Gravity.CreateFrom("C", d, D, Control, Control.Material.Density, Control.GetGravity("C", d)));
             }
-            var continuityEquation = new SolidPhase.Continuity("C", D);
+            var continuityEquation = new SolidPhase.Continuity("C", D, Control.Material);
             
             opFactory.AddEquation( continuityEquation);
 

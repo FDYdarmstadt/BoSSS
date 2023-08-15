@@ -13,7 +13,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
 
         string spcName;
 
-        public Continuity(string spcName, int D) {
+        public Continuity(string spcName, int D, Solid material) {
             this.spcName = spcName;
             for(int i = 0; i < D; ++i) {
                 string velocity = BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D)[i];
@@ -21,7 +21,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
                 var divergence1 = new Divergence(spcName, velocity, i);
                 AddComponent(divergence1);
             }
-            AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -600));
+            AddComponent(new EdgePenaltyForm(SpeciesName, BoSSS.Solution.NSECommon.VariableNames.Pressure, -1.0 / material.Lame2 - 1.0 / material.Viscosity));
         }
 
         public override string SpeciesName => spcName;
