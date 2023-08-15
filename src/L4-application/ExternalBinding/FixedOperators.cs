@@ -532,17 +532,12 @@ namespace BoSSS.Application.ExternalBinding {
                         Console.WriteLine("No initialization function given - using droplet");
                         func = InitFunc();
                     }
-                    ScalarFunction UInitFunc() {
-                        return ((_3D)((x, y, z) => 0.89235*z)).Vectorize();
-                    }
                     Console.WriteLine("Zero order parameter field encountered - initializing with given function");
                     c.Clear();
                     u.Clear();
                     v.Clear();
                     w.Clear();
-                    if (Ufunc == null){
-                        u.ProjectField(UInitFunc());
-                    } else {
+                    if (Ufunc != null){
                         u.ProjectField(Ufunc);
                     }
 
