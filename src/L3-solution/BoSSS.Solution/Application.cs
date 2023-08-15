@@ -338,6 +338,9 @@ namespace BoSSS.Solution {
                     else
                         Console.WriteLine("Running with " + size + " MPI processes ");
 
+                    Console.WriteLine($"Working path: {Directory.GetCurrentDirectory()}");
+                    Console.WriteLine($"Binary path: {Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}");
+
                     Console.WriteLine("User: " + System.Environment.UserName);
 
                     using (var stw = new StringWriter()) {
@@ -1316,7 +1319,9 @@ namespace BoSSS.Solution {
                     if (DBpath == null)
                         DBpath = "NULL";
                     if (DatabaseDriver.MyRank == 0) {
-                        Console.WriteLine("Session ID: {0}, DB path: '{1}'.", this.CurrentSessionInfo.ID.ToString(), DBpath);
+                        Console.WriteLine($"Session ID: {this.CurrentSessionInfo.ID.ToString()}, DB path: '{DBpath}'");
+                        var sdir = Path.Combine(DBpath, StandardFsDriver.SessionsDir, this.CurrentSessionInfo.ID.ToString());
+                        Console.WriteLine($"Session directory '{sdir}'.");
                     }
                 } else {
                     Console.WriteLine("IO deactivated.");
