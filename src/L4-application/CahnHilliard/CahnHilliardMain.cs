@@ -665,30 +665,6 @@ namespace BoSSS.Application.CahnHilliard {
 
                 var Qnts_old = ComputeBenchmarkQuantities();
 
-
-                // string[] bndFuncName = new string[]{"Top_Wall", "Bottom_Wall", "Wall"};
-                var leftBVC = new AppControl.BoundaryValueCollection();
-                leftBVC.type = "Pressure_Outlet";
-                var rightBVC = new AppControl.BoundaryValueCollection();
-                rightBVC.type = "Pressure_Outlet";
-                var topBVC = new AppControl.BoundaryValueCollection();
-                topBVC.type = "Wall";
-                var bottomBVC = new AppControl.BoundaryValueCollection();
-                bottomBVC.type = "Wall";
-                var fbBVC = new AppControl.BoundaryValueCollection();
-                fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
-                var bcmapcollection = new Dictionary<string, AppControl.BoundaryValueCollection>() {
-                    { "Outflow", leftBVC},
-                    // { "Wall", rightBVC},
-                    { "Bottom_Wall", bottomBVC},
-                    { "Top_Wall", topBVC },
-                    // { "Outflow", fbBVC},
-                };
-                var BCmap = new IncompressibleBoundaryCondMap(RealTracker.GridDat, bcmapcollection, PhysicsMode.Incompressible);
-                var stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true);
-                var uStokes = this.Velocity.CloneAs();
-                stokesExt.SolveExtension(0, RealTracker, uStokes.ToArray(), this.Velocity.ToArray());
-
                 base.Timestepping.Solve(phystime, dt);
                 
                 RealLevSet.Clear();

@@ -69,7 +69,7 @@ namespace BoSSS.Application.ExternalBinding {
             //     return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
             // }
 
-            var _chParams = new CahnHilliardParameters(_cahn: 0.1, _diffusion: 0.1, _stationary: false, _dt: 0.1, _endT: 0.1*1.1);
+            var _chParams = new CahnHilliardParameters(_cahn: 0.1, _diffusion: 0.05, _stationary: false, _dt: 0.1, _endT: 0.1*1.1);
 
             ScalarFunction UInitFunc() {
                 return ((_3D)((x, y, z) => 0.01 * z)).Vectorize();
