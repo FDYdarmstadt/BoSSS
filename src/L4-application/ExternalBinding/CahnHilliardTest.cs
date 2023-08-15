@@ -57,7 +57,7 @@ namespace BoSSS.Application.ExternalBinding {
             double[] safeVals = new double[] { 0.0, 0.0, 0.0 , 0.0 , 0.0 };
             cPtch = new OpenFoamPatchField(grd, 1, safeEts, safeEtyps, safeVals);
 
-            double[] safeValsU = new double[] { 0.01*15, 0.01*(-15), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            double[] safeValsU = new double[] { 0.001*15, 0.001*(-15), 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             OpenFoamPatchField uPtch = new OpenFoamPatchField(grd, 3, safeEts, safeEtyps, safeValsU);
             OpenFoamDGField U = new OpenFoamDGField(grd, 2, 3);
 
@@ -69,7 +69,7 @@ namespace BoSSS.Application.ExternalBinding {
             //     return ((_3D)((x, y, z) => Math.Tanh((-Math.Sqrt(Math.Pow(x, 2) + Math.Pow(z, 2)) + Math.Pow(radius, 1)) * Math.Sqrt(2)))).Vectorize();
             // }
 
-            var _chParams = new CahnHilliardParameters(_cahn: 0.1, _diffusion: 0.1, _stationary: false, _dt: 0.2, _endT: 0.2*1.1);
+            var _chParams = new CahnHilliardParameters(_cahn: 0.1, _diffusion: 0.1, _stationary: false, _dt: 0.1, _endT: 0.1*1.1);
             chOp.CahnHilliardInternal(mtx, null, U, cPtch, uPtch, chParams: _chParams);
 
             var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
@@ -366,8 +366,8 @@ namespace BoSSS.Application.ExternalBinding {
             // RunDropletTest(grd);
 
             // DropletTest();
-            // ConvergenceTest();
-            Test1D();
+            ConvergenceTest();
+            // Test1D();
 
         }
 
