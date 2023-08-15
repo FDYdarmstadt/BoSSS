@@ -449,7 +449,7 @@ namespace BoSSS.Application.ExternalBinding {
             // convection = false;
             // stat = true;
             CahnHilliardParameters chParams = new CahnHilliardParameters(_dt: deltaT, _diffusion: Diff, _cahn: Cahn, _stationary: false, _endT: deltaT*0.9);
-            CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, chParams);
+            CahnHilliardInternal(mtx, Flux, U, ptch, ptchU, null, null, chParams);
         }
         // public static bool FirstTimeStep = true;
 
@@ -469,7 +469,7 @@ namespace BoSSS.Application.ExternalBinding {
         /// Solves the Cahn-Hilliard equation
         /// This method also contains arguments that cannot be made available to OpenFOAM due to limitations of the mono-C-interface.
         /// </summary>
-        public void CahnHilliardInternal(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction func = null, CahnHilliardParameters chParams = new CahnHilliardParameters()) {
+        public void CahnHilliardInternal(OpenFoamMatrix mtx, OpenFoamSurfaceField Flux, OpenFoamDGField U, OpenFoamPatchField ptch, OpenFoamPatchField ptchU, ScalarFunction func = null, ScalarFunction Ufunc = null,  CahnHilliardParameters chParams = new CahnHilliardParameters()) {
             try {
             // {
                 _mtx = mtx;
@@ -540,13 +540,18 @@ namespace BoSSS.Application.ExternalBinding {
                     u.Clear();
                     v.Clear();
                     w.Clear();
-                    u.ProjectField(UInitFunc());
+                    if (Ufunc == null){
+                        u.ProjectField(UInitFunc());
+                    } else {
+                        u.ProjectField(Ufunc);
+                    }
 
                     // var cP0 = new SinglePhaseField(new Basis(c.GridDat, 0));
                     // cP0.ProjectField(func);
                     // c.AccLaidBack(1.0, cP0);
 
                     c.ProjectField(func);
+                    FirstSolve = false; // since we project onto P2, the first solve is no longer necessary
                 }
                 mu = new SinglePhaseField(b);
                 // for (int j = 0; j < J; j++)
@@ -713,66 +718,66 @@ namespace BoSSS.Application.ExternalBinding {
                 // Boundary Condition map
                 // ======================
 
-                IncompressibleBoundaryCondMap BCmap;
-                {
+                // IncompressibleBoundaryCondMap BCmap;
+                // {
 
-                    // TODO
-                    var leftBVC = new AppControl.BoundaryValueCollection();
-                    leftBVC.type = "Pressure_Outlet";
-                    var rightBVC = new AppControl.BoundaryValueCollection();
-                    rightBVC.type = "Pressure_Outlet";
-                    var topBVC = new AppControl.BoundaryValueCollection();
-                    topBVC.type = "Wall";
-                    // double shearRate = 0.89235;
-                    double shearRate = 0.01;
-                    topBVC.Evaluators.Add("VelocityX", (X,t) => shearRate*X[2]);
-                    var bottomBVC = new AppControl.BoundaryValueCollection();
-                    bottomBVC.type = "Wall";
-                    bottomBVC.Evaluators.Add("VelocityX", (X,t) => shearRate*X[2]);
-                    var fbBVC = new AppControl.BoundaryValueCollection();
-                    // fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
-                    fbBVC.type = IncompressibleBcType.FreeSlip.ToString();
-                    // fbBVC.type = IncompressibleBcType.Pressure_Outlet.ToString(); // leads to y-velocity after 1st timestep
-                    // fbBVC.type = IncompressibleBcType.Wall.ToString();
-                    var bcmapcollection = new Dictionary<string, AppControl.BoundaryValueCollection>() {
-                            { "left", leftBVC},
-                            { "right", rightBVC},
-                            { "bottom", bottomBVC},
-                            { "top", topBVC },
-                            { "frontAndBack", fbBVC},
-                            // { "front", fbBVC},
-                            // { "back", fbBVC},
-                    };
-                    // string[] bndFuncName = new string[]{"left", "right", "bottom", "top"};
-                    BCmap = new IncompressibleBoundaryCondMap(grd, bcmapcollection, PhysicsMode.Incompressible);
-                }
-
-                
-
-                // perform Stokes Extension
-                // ========================
-                StokesExtension stokesExt;
-                SinglePhaseField[] uStokes;
-                {
-                    stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true, useBCMap: true);
-                    uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
-                  /*  stokesExt.SolveExtension(0, RealTracker, uStokes, velocity); */
-                    // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
-                }
+                //     // TODO
+                //     var leftBVC = new AppControl.BoundaryValueCollection();
+                //     leftBVC.type = "Pressure_Outlet";
+                //     var rightBVC = new AppControl.BoundaryValueCollection();
+                //     rightBVC.type = "Pressure_Outlet";
+                //     var topBVC = new AppControl.BoundaryValueCollection();
+                //     topBVC.type = "Wall";
+                //     // double shearRate = 0.89235;
+                //     double shearRate = 0.01;
+                //     topBVC.Evaluators.Add("VelocityX", (X,t) => shearRate*X[2]);
+                //     var bottomBVC = new AppControl.BoundaryValueCollection();
+                //     bottomBVC.type = "Wall";
+                //     bottomBVC.Evaluators.Add("VelocityX", (X,t) => shearRate*X[2]);
+                //     var fbBVC = new AppControl.BoundaryValueCollection();
+                //     // fbBVC.type = IncompressibleBcType.SlipSymmetry.ToString();
+                //     fbBVC.type = IncompressibleBcType.FreeSlip.ToString();
+                //     // fbBVC.type = IncompressibleBcType.Pressure_Outlet.ToString(); // leads to y-velocity after 1st timestep
+                //     // fbBVC.type = IncompressibleBcType.Wall.ToString();
+                //     var bcmapcollection = new Dictionary<string, AppControl.BoundaryValueCollection>() {
+                //             { "left", leftBVC},
+                //             { "right", rightBVC},
+                //             { "bottom", bottomBVC},
+                //             { "top", topBVC },
+                //             { "frontAndBack", fbBVC},
+                //             // { "front", fbBVC},
+                //             // { "back", fbBVC},
+                //     };
+                //     // string[] bndFuncName = new string[]{"left", "right", "bottom", "top"};
+                //     BCmap = new IncompressibleBoundaryCondMap(grd, bcmapcollection, PhysicsMode.Incompressible);
+                // }
 
 
-                /*
-                lsu.InitializeParameters(domfields, paramfields);
-                */
 
-                // var tp = new Tecplot(grd.Grid.GridData, 3);
-                // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
-                uStokes[0].Identification = VariableNames.Velocity0X;
-                uStokes[1].Identification = VariableNames.Velocity0Y;
-                uStokes[2].Identification = VariableNames.Velocity0Z;
-                u.Identification = VariableNames.VelocityX;
-                v.Identification = VariableNames.VelocityY;
-                w.Identification = VariableNames.VelocityZ;
+                // // perform Stokes Extension
+                // // ========================
+                // StokesExtension stokesExt;
+                // SinglePhaseField[] uStokes;
+                // {
+                //     stokesExt = new StokesExtension(3, BCmap, 3, 0.0, true, useBCMap: true);
+                //     uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
+                //   /*  stokesExt.SolveExtension(0, RealTracker, uStokes, velocity); */
+                //     // stokesExt.SolveExtension(0, RealTracker, velocity, velocity);
+                // }
+
+
+                // /*
+                // lsu.InitializeParameters(domfields, paramfields);
+                // */
+
+                // // var tp = new Tecplot(grd.Grid.GridData, 3);
+                // // Tecplot("plot.1", 0.0, 3, c, mu, RealLevSet, u, v, w, uStokes[0], uStokes[1], uStokes[2]);
+                // uStokes[0].Identification = VariableNames.Velocity0X;
+                // uStokes[1].Identification = VariableNames.Velocity0Y;
+                // uStokes[2].Identification = VariableNames.Velocity0Z;
+                // u.Identification = VariableNames.VelocityX;
+                // v.Identification = VariableNames.VelocityY;
+                // w.Identification = VariableNames.VelocityZ;
 
                 
 
@@ -865,7 +870,12 @@ namespace BoSSS.Application.ExternalBinding {
                     // - For the Stokes Extension, we only require level-set-surface integrals; no cut-edge integrals are required;
                     // - therefore, the level-set does not need to be strictly continuous.
                     // => ContinuityProjectionOption.None should be ok.
-                    lsu.EnforceContinuity();
+
+                    try{
+                        lsu.EnforceContinuity();
+                    } catch (LevelSetTopologyException e) {
+                        Console.WriteLine("Ignoring topology exception");
+                    }
                     lsu.InitializeParameters(domfields, paramfields);
                     var RealTracker = lsu.Tracker;
 
@@ -876,7 +886,7 @@ namespace BoSSS.Application.ExternalBinding {
                         {
                             if (_dgls.L2Norm() == 0)
                             {
-                                throw new ArithmeticException("level-set is exactly zero");
+                                Console.WriteLine("WARNNING: level-set is exactly zero");
                             }
                         }
                     }
@@ -884,12 +894,13 @@ namespace BoSSS.Application.ExternalBinding {
                     RealTracker.UpdateTracker(0);
                     VerifyTrackerState(RealTracker);
 
+
                     while (time < endTime) {
                         RealLevSet.Clear();
                         RealLevSet.Acc(1.0, c);
                         RealTracker.UpdateTracker(time);
                         VerifyTrackerState(RealTracker);
-                        uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
+                        // uStokes = velocity.Select(Vel_d => Vel_d.CloneAs()).ToArray();
                         // Tecplot("plotb4." + (t + 2), time, 3, c, mu, u, v, w);
                         // if (chParams.Convection){
                             // Console.WriteLine("solving Stokes extension");

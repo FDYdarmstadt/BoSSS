@@ -110,6 +110,7 @@ namespace BoSSS.Application.ExternalBinding {
             List<double> errors = new List<double>();
             int i = 0;
             foreach (var grdStr in new List<string>{smallGrd, mediumGrd, largeGrd}){
+            // foreach (var grdStr in new List<string>{mediumGrd, largeGrd}){
                 OpenFOAMGrid grd = GridImportFromDirectory.GenerateFOAMGrid(grdStr);
                 OpenFoamDGField f = new OpenFoamDGField(grd, 2, 2);
                 OpenFoamMatrix mtx = new OpenFoamMatrix(grd, f);
@@ -131,14 +132,18 @@ namespace BoSSS.Application.ExternalBinding {
                 {
                     return ((_3D)((x, y, z) => Math.Sign(x))).Vectorize();
                 }
+                ScalarFunction Ufunc()
+                {
+                    return ((_3D)((x, y, z) => 0)).Vectorize();
+                }
 
                 var _chParams = new CahnHilliardParameters(_cahn: cahn, _diffusion: 1.0, _stationary: true);
-                chOp.CahnHilliardInternal(mtx, null, U, cPtch, uPtch, func(), chParams: _chParams);
+                chOp.CahnHilliardInternal(mtx, null, U, cPtch, uPtch, func: func(), Ufunc: Ufunc(), chParams: _chParams);
 
                 var field = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
                 field.Acc(1.0, mtx.Fields[0].Fields[0] as SinglePhaseField);
                 var other = new SinglePhaseField(mtx.ColMap.BasisS[0], "c");
-                other.ProjectField(((x, y, z) => Math.Tanh(x / (Math.Sqrt(2) * cahn))));
+                other.ProjectField(((x, y, z) => Math.Tanh((x) / (Math.Sqrt(2) * cahn))));
                 double error = field.L2Error(other);
                 errors.Add(error);
                 DOFs.Add(grd.NumberOfCells);
@@ -358,11 +363,11 @@ namespace BoSSS.Application.ExternalBinding {
             string currentDirectory = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
             string grd = Path.Combine(currentDirectory, "meshes", "big", "medium", "polyMesh");
 
-            RunDropletTest(grd);
+            // RunDropletTest(grd);
 
             // DropletTest();
             // ConvergenceTest();
-            // Test1D();
+            Test1D();
 
         }
 
