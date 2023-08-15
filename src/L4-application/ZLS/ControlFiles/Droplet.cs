@@ -74,7 +74,7 @@ namespace ZwoLevelSetSolver.ControlFiles {
             C.Material = new Solid() {
                 Density = 1000 * scale * scale * scale,
                 Lame2 = 1000 * scale,
-                Viscosity = 0.5 * scale
+                Viscosity = 1 * scale
                 //Viscosity = 0 0.05e-4 * scale,
             };
 
