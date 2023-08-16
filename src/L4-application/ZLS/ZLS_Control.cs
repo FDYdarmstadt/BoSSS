@@ -21,6 +21,8 @@ namespace ZwoLevelSetSolver {
             UseImmersedBoundary = true;
             Option_LevelSetEvolution = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
             Option_LevelSetEvolution2 = BoSSS.Solution.LevelSetTools.LevelSetEvolution.StokesExtension;
+            AdvancedDiscretizationOptions.ViscosityMode = BoSSS.Solution.XNSECommon.ViscosityMode.FullySymmetric;
+            AdvancedDiscretizationOptions.PenaltySafety = 1;
         }
 
         public override Type GetSolverType() {
