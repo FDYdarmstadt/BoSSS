@@ -1045,6 +1045,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                     {
+
                         if (jCellNeigh_max < 0) { //is(not) it a proper target?
                             bool isAggChainPossible = false;
 
@@ -1275,6 +1276,8 @@ namespace BoSSS.Foundation.XDG {
                 failCells.AddRange(CellsNeedChainAgglomeration);
 
                 if (failCells.Count.MPISum() > 0) {
+                    //Console.WriteLine($"WARNING: commented out exception");
+                    //PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, ExceptionOnFailedAgglomeration & false, failCells);
                     PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, ExceptionOnFailedAgglomeration, failCells, AggCandidates);
                 }
                 #endregion

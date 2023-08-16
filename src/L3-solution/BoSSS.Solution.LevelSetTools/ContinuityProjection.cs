@@ -133,7 +133,10 @@ namespace BoSSS.Solution.LevelSetTools {
         /// <param name="DGLevelSet">input; may be discontinuous on cell boundaries</param>
         /// <param name="LevelSet">output; should be continuous</param>
         /// <param name="Domain"></param>
-        /// <param name="PosMask"></param>
+        /// <param name="PosMask">
+        /// If the FAR-field is set to a constant value (<paramref name="setFarFieldConstant"/> is true), this determines which cells belong to the positive part of the FAR-field;
+        /// The negative part is determined by a complement-operation (<see cref="ExecutionMask.Complement{T}"/>)
+        /// </param>
         public void MakeContinuous(SinglePhaseField DGLevelSet, SinglePhaseField LevelSet, CellMask Domain, CellMask PosMask, bool setFarFieldConstant = true) {
             using(var ft = new FuncTrace()) {
                 //Console.WriteLine("calling ContinuityProjection.MakeContinuous() ...");
