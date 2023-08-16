@@ -63,15 +63,13 @@ namespace BoSSS.Application.CahnHilliard {
                 double[] yNodes = GenericBlas.Linspace(-S, S, yRes+1);
 
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                grd.EdgeTagNames.Add(1, BoundaryType.Wall.ToString());
-                grd.EdgeTagNames.Add(2, BoundaryType.Outflow.ToString());
 
                 grd.DefineEdgeTags(delegate (double[] X) {
-                    byte et = 0;
+                    string et = null;
                     if (Math.Abs(Math.Abs(X[1]) - S) <= 1.0e-8)
-                        et = 1;
+                        et = BoundaryType.Wall.ToString();
                     if (Math.Abs(Math.Abs(X[0]) - S) <= 1.0e-8)
-                        et = 1;
+                        et = BoundaryType.Outflow.ToString();
 
                     return et;
                 });
@@ -84,7 +82,7 @@ namespace BoSSS.Application.CahnHilliard {
             double thickness = multiplier * (double)4.0/pDG; //initially tried 3.0/pDG
             RR.cahn = 2 * gridsize * 1/4.164;//thickness * (1/4.164 * gridsize);
 
-            RR.diff = 1.0; // 1.0 / RR.cahn.Pow2();// RR.cahn/(4.0 * mu);
+            RR.diff = 1.0 / RR.cahn.Pow2();// RR.cahn/(4.0 * mu);
             RR.lambda = 0.0;
 
             double radius = 0.3; // 0.275
@@ -96,7 +94,7 @@ namespace BoSSS.Application.CahnHilliard {
             //RR.InitialValues_Evaluators.Add("c", X => X[0] < -0.5 ? -1.0 : Math.Tanh((-Math.Sqrt(Math.Pow(X[0] + 0.5, 2.0) + Math.Pow(X[1] - 0.0, 2.0)) + radius)/(Math.Sqrt(2) * RR.cahn)));
             //RR.InitialValues_Evaluators.Add("c", X => X[0] < -radius ? Math.Tanh((-Math.Sqrt(Math.Pow(X[0] + radius, 2.0) + Math.Pow(X[1] - 0.0, 2.0)) + radius) / (Math.Sqrt(2) * RR.cahn)) : X[0] > radius ? Math.Tanh((-Math.Sqrt(Math.Pow(X[0] - radius, 2.0) + Math.Pow(X[1] - 0.0, 2.0)) + radius) / (Math.Sqrt(2) * RR.cahn)) : Math.Tanh((-Math.Sqrt(Math.Pow(X[1], 2.0)) + radius) / (Math.Sqrt(2) * RR.cahn)));
             //RR.AddInitialValue("c", new Formula("X => X[0] < 0.5 ? (X[0] > -0.8 ? (X[1] > -0.5 ? (X[1] < 0.5 ? 1.0 : -1.0) : -1.0) : -1.0) : -1.0", false));
-            RR.InitialValues_Evaluators.Add("c", X =>  Math.Tanh((-Math.Sqrt(Math.Pow(X[0] - 0.0, 2.0) + Math.Pow(X[1] - 0.0, 2.0)) + radius)/(Math.Sqrt(2) * RR.cahn)));
+            RR.InitialValues_Evaluators.Add("c", X => Math.Tanh((-Math.Sqrt(Math.Pow(X[0] - 0.0, 2.0) + Math.Pow(X[1] - 0.0, 2.0)) + radius)/(Math.Sqrt(2) * RR.cahn)));
             //RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => X[1] ", false));
             //RR.InitialValues_Evaluators.Add(VariableNames.VelocityX, X =>  Math.Exp(-Math.Pow(X[0],2.0)));
             //RR.InitialValues_Evaluators.Add(VariableNames.VelocityY, X => 2.0 * X[1] * X[0] * Math.Exp(-Math.Pow(X[0],2.0)));
@@ -108,8 +106,8 @@ namespace BoSSS.Application.CahnHilliard {
 
             RR.ModTyp = CahnHilliardControl.ModelType.modelB;
             RR.CorrectionType = CahnHilliardControl.Correction.None;
-            // RR.CurvatureCorrection = false;
-            // RR.UseDirectCurvature = false;
+            //RR.CurvatureCorrection = false;
+            //RR.UseDirectCurvature = false;
             RR.UseFDJacobian = false;
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
@@ -125,7 +123,7 @@ namespace BoSSS.Application.CahnHilliard {
             RR.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             RR.NonLinearSolver.MaxSolverIterations = 25;
 
-            RR.includeConvection = false;
+            // RR.includeConvection = false;
 
             return RR;
         }
@@ -134,8 +132,7 @@ namespace BoSSS.Application.CahnHilliard {
         /// Test on a Cartesian grid, with an exact polynomial solution.
         /// Non-dimenzionalized with interface thickness xi=1
         /// </summary>
-        public static CahnHilliardControl TestCartesian3D(int xRes = 20, int yRes = 20, int zRes = 20, int pDG = 3)
-        {
+        public static CahnHilliardControl TestCartesian3D(int xRes = 20, int yRes = 20, int zRes = 20, int pDG = 3) {
             var RR = new CahnHilliardControl();
             RR.ProjectName = "CahnHilliard/cartesian";
 
@@ -191,17 +188,11 @@ namespace BoSSS.Application.CahnHilliard {
             return RR;
         }
 
-        public static CahnHilliardControl EllipticDroplet(int xRes = 90, int yRes = 90, int pDG = 2)
-        {
-            // Console.ReadLine();
+        public static CahnHilliardControl EllipticDroplet(int xRes = 90, int yRes = 90, int pDG = 2) {
             var RR = new CahnHilliardControl();
             RR.ProjectName = "CahnHilliard/cartesian";
 
             RR.savetodb = false;
-
-            // RR.CurvatureCorrection = false;
-            // RR.UseDirectCurvature = false;
-            // RR.ModTyp = CahnHilliardControl.ModelType.modelB;
 
             RR.SetDGdegree(pDG);
 
@@ -210,8 +201,7 @@ namespace BoSSS.Application.CahnHilliard {
                 double[] yNodes = GenericBlas.Linspace(-15, 15, yRes + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
-                grd.EdgeTagNames.Add(1, BoundaryType.Wall.ToString());
-                grd.DefineEdgeTags(delegate (double[] X) { return (byte)1; });
+                grd.DefineEdgeTags((double[] X) => BoundaryType.Wall.ToString());
 
                 return grd;
             };
@@ -223,18 +213,73 @@ namespace BoSSS.Application.CahnHilliard {
             RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => 0.0 ", false));
             RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => 0.0 ", false));
 
-            RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
 
             RR.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             RR.dtFixed = 1e-1;
+            RR.NoOfTimesteps = 10;
+
             RR.cahn = 1;
             RR.diff = 0.1;
-            
+
             return RR;
         }
 
-        public static CahnHilliardControl RotatingDisk(int xRes = 20, int yRes = 20, int pDG = 6)
-        {
+        public static CahnHilliardControl EllipticDropletPseudo3D(int xRes = 90, int yRes = 90, int pDG = 2) {
+            var RR = new CahnHilliardControl();
+            RR.ProjectName = "CahnHilliard/cartesian";
+
+            RR.savetodb = false;
+
+            RR.ModTyp = CahnHilliardControl.ModelType.modelB;
+
+            RR.SetDGdegree(pDG);
+
+            RR.GridFunc = delegate () {
+                // double[] xNodes = GenericBlas.Linspace(-0.001, 0.001, xRes + 1);
+                // double[] yNodes = GenericBlas.Linspace(-0.001, 0.001, yRes + 1);
+                double[] xNodes = GenericBlas.Linspace(-15, 15, xRes + 1);
+                double[] yNodes = GenericBlas.Linspace(-15, 15, yRes + 1);
+                double[] zNodes = GenericBlas.Linspace(-0.1, 0.1, 2);
+
+                var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes);
+                grd.DefineEdgeTags((double[] X) => BoundaryType.Wall.ToString());
+
+                return grd;
+            };
+
+            RR.AddBoundaryValue(BoundaryType.Wall.ToString(), "c", new Formula("X => -1"));
+
+            //RR.AddInitialValue("c", new Formula("X => (X[0]*X[0] + X[1]*X[1]) < 0.25 ? 1.0 : -1.0", false));
+            // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)/(1e-5 * Math.Sqrt(2))))"));
+            // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)/(1e-5*Math.Sqrt(2))))"));
+            // RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5)*Math.Sqrt(2)))"));
+            RR.AddInitialValue("c", new Formula("X => -Math.Tanh(((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-8)*Math.Sqrt(2)))"));
+            RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => 0.0 ", false));
+            RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => 0.0 ", false));
+            RR.AddInitialValue(VariableNames.VelocityZ, new Formula("X => 0.0 ", false));
+
+            RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
+
+            double epsilon = 1e-5; // capillary width
+            double M = Math.Sqrt(epsilon); // mobility parameter
+            double sigma = 0.063;
+            double lam = 3 / (2 * Math.Sqrt(2)) * sigma * epsilon; // Holger's lambda
+
+            RR.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            RR.dtFixed = 1e-1;
+            RR.NoOfTimesteps = 10;
+
+            RR.cahn = 1;
+            // RR.cahn = 1/(epsilon * epsilon);
+            RR.diff = 0.1;
+            // RR.diff = (M*lam);
+            RR.lambda = 0;
+            // RR.penalty_poisson = 1.0;
+
+            return RR;
+        }
+
+        public static CahnHilliardControl RotatingDisk(int xRes = 20, int yRes = 20, int pDG = 6) {
             var RR = new CahnHilliardControl();
             RR.ProjectName = "CahnHilliard/cartesian";
             RR.includeDiffusion = false;
@@ -244,8 +289,8 @@ namespace BoSSS.Application.CahnHilliard {
             RR.SetDGdegree(pDG);
 
             RR.GridFunc = delegate () {
-                double[] xNodes = GenericBlas.Linspace(-15, 15, xRes + 1);
-                double[] yNodes = GenericBlas.Linspace(-15, 15, yRes + 1);
+                double[] xNodes = GenericBlas.Linspace(-0.001, 0.001, xRes + 1);
+                double[] yNodes = GenericBlas.Linspace(-0.001, 0.001, yRes + 1);
 
                 var grd = Grid2D.Cartesian2DGrid(xNodes, yNodes);
                 grd.EdgeTagNames.Add(1, BoundaryType.Wall.ToString());
@@ -253,14 +298,16 @@ namespace BoSSS.Application.CahnHilliard {
 
                 return grd;
             };
-            
+
             RR.AddBoundaryValue(BoundaryType.Wall.ToString(), "c", new Formula("X => -1"));
 
             //RR.AddInitialValue("c", new Formula("X => (X[0]*X[0] + X[1]*X[1]) < 0.25 ? 1.0 : -1.0", false));
-            RR.AddInitialValue("c", new Formula("X => -Math.Tanh((Math.Sqrt(X[0]*X[0]*0.75 + X[1]*X[1])-5)*Math.Sqrt(2))"));
+            RR.AddInitialValue("c", new Formula("X => -Math.Tanh(50000 * ((Math.Sqrt(X[0]*X[0]*1.0 + X[1]*X[1])-5e-4)*Math.Sqrt(2)))"));
             //RR.AddInitialValue("c", new Formula("X => X[0] < 1 && X[0] > -1 && X[1] > 0 ? -1 : -Math.Tanh((Math.Sqrt(X[0]*X[0] + X[1]*X[1])-5)*Math.Sqrt(2))"));
-            RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => -X[1] ", false));
-            RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => X[0] ", false));
+            // RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => -X[1] ", false));
+            // RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => X[0] ", false));
+            RR.AddInitialValue(VariableNames.VelocityX, new Formula("X => 0 ", false));
+            RR.AddInitialValue(VariableNames.VelocityY, new Formula("X => 0", false));
 
             RR.GridPartType = BoSSS.Foundation.Grid.GridPartType.none;
 
