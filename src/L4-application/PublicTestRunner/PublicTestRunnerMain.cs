@@ -419,7 +419,12 @@ namespace PublicTestRunner {
                                     s.AddRange(LocateFile(someFile));
                                 }
                             }
-                            
+
+                            //if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+                            //    s.Add("BOSSS_RUNTESTFROMBACKUP.txt");
+                            //}
+
+
 
                             d.Add(r.Last(), s.ToArray());
                         }
@@ -434,7 +439,7 @@ namespace PublicTestRunner {
                 s.AddRange(d[testname]);
                 s.AddRange(g);
 
-                List<string> FileNamesOnly = new List<string>();
+                List<string> FileNamesOnly = new();
                 foreach (string filePath in s) {
                     string fileName = Path.GetFileName(filePath);
                     if (FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
@@ -939,7 +944,7 @@ namespace PublicTestRunner {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                            var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, RelManagedPath, cnt);
+                            var j = SubmitJob(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, RelManagedPath, cnt);
                             if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
@@ -1030,7 +1035,7 @@ namespace PublicTestRunner {
                                             foreach(var orig in sourceFiles) {
                                                 string n = Path.GetFileName(orig);
                                                 string dest = Path.Combine(CurrentDir, n);
-                                                File.Copy(orig, dest);
+                                                File.Copy(orig, dest, true);
                                             }
                                         } catch(IOException ioe) {
                                             Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
@@ -1253,7 +1258,7 @@ namespace PublicTestRunner {
             }
         }
 
-        static public (Job j, string resultFile, string name) JobManagerRun(
+        static public (Job j, string resultFile, string name) SubmitJob(
             Assembly a,
             string TestName, string Shortname,
             BatchProcessorClient bpc,
@@ -1302,6 +1307,9 @@ namespace PublicTestRunner {
                 foreach (var f in AdditionalFiles) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
                 }
+                if(BOSSS_RUNTESTFROMBACKUP_ENVVAR) {
+                    j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes("BOSSS_RUNTESTFROMBACKUP.txt"), "BOSSS_RUNTESTFROMBACKUP.txt"));
+                }
                 if (nativeOverride != null) {
                     j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride);
                 }
@@ -1338,16 +1346,21 @@ namespace PublicTestRunner {
         /// - otherwise (e.g. if tests are deployed to a HPC cluster) it does not copy anything and we hope that all required files are in place.
         /// </remarks>
         static void MegaMurxPlusPlus(Assembly a, string filter) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 var r = GetTestsInAssembly(a, filter);
 
                 var dir = Directory.GetCurrentDirectory();
+                tr.Info("Current dir: " + dir);
 
                 foreach (var t in r.tests) { 
                     foreach (var fOrigin in r.RequiredFiles4Test[t]) {
+                        tr.Info("Origin file: " + fOrigin);
                         if (File.Exists(fOrigin)) {
                             string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));
+                            tr.Info("Destination file: " + fDest);
                             File.Copy(fOrigin, fDest, true);
+                        } else {
+                            tr.Info($"Origin file {fOrigin} NOT FOUND!");
                         }
                     }
                 }
@@ -1531,6 +1544,9 @@ namespace PublicTestRunner {
         }
 
 
+
+        static public bool BOSSS_RUNTESTFROMBACKUP_ENVVAR = false;
+
         /// <summary>
         /// the real main-function
         /// </summary>
@@ -1566,6 +1582,12 @@ namespace PublicTestRunner {
                 Console.WriteLine("Insufficient number of arguments.");
                 PrintMainUsage();
                 return -7777;
+            }
+
+            if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+                BOSSS_RUNTESTFROMBACKUP_ENVVAR = true;
+                File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Helo, Suckers!");
+                Console.WriteLine("trying to forward the BOSSS_RUNTESTFROMBACKUP hack via additional deployment files...");
             }
 
             BoSSS.Solution.Application.InitMPI();

@@ -848,10 +848,10 @@ namespace BoSSS.Application.BoSSSpad {
             /// 
             /// </summary>
             public override string ToString() {
-                return "Job "
-                    + (this.BatchProcessorIdentifierToken != null ? BatchProcessorIdentifierToken : "null") + ", "
+                return "Job token: "
+                    + (this.BatchProcessorIdentifierToken ?? "unknown") + ", "
                     + this.Status
-                    + " '" + this.RelativeDeploymentDirectory + "'"
+                    + " '" + (this.RelativeDeploymentDirectory ?? "unkown_DeploymentDirectory") + "'"
                     + (m_owner.AssignedBatchProc != null ? (" @ " + m_owner.AssignedBatchProc) : "");
             }
         }
