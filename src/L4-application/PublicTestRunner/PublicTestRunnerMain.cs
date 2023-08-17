@@ -1673,7 +1673,18 @@ namespace PublicTestRunner {
                 // seems to silently fail on all exceptions thrown after MPI init.
 
                 
+
+
                 Console.WriteLine("Got some exception: " + e);
+
+                using (var stw = new StreamWriter("Exception-" + DateTime.Now.ToString("MMMdd_HHmmss") + ".txt")) {
+                    stw.WriteLine("Got some exception: " + e);
+                    stw.WriteLine(e.StackTrace);
+                    stw.Flush();
+                    stw.Close();
+                }
+
+
                 return -667;
             }
         }
