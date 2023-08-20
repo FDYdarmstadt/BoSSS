@@ -54,12 +54,12 @@ namespace BoSSS.Foundation.IO
             using (var s = new MemoryStream()) {
                 using (var writer = GetJsonWriter(s)) {
                     JsonFormatter.Serialize(writer, obj, objectType);
+
+
+                    s.Seek(0, SeekOrigin.Begin);
+                    s.CopyTo(_s);
                     writer.Close();
                 }
-
-                s.Seek(0, SeekOrigin.Begin);
-                s.CopyTo(_s);
-
             }
         }
 
