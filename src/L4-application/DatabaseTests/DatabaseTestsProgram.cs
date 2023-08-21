@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MPI.Wrappers;
 using System.Diagnostics;
+using IntersectingQuadrature.TensorAnalysis;
 
 namespace BoSSS.Application.DatabaseTests {
     public class DatabaseTestsProgram {
@@ -19,10 +20,15 @@ namespace BoSSS.Application.DatabaseTests {
         }
 
         static void RunTest() {
-            var tst = new MiscTests();
-            tst.Init();
-            tst.GridEquivalenceTest();
-            tst.CleanUp();
+            //var tst = new MiscTests();
+            //tst.Init();
+            //tst.GridEquivalenceTest();
+            //tst.CleanUp();
+
+            var t2 = new DBDriverTests();
+            t2.Init();
+            t2.TestCopySession();
+            t2.CleanUp();
         }
 
         static void PrintActiveThreads() {
