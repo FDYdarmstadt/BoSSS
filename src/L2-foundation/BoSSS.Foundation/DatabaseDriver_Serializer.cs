@@ -91,7 +91,7 @@ namespace BoSSS.Foundation.IO
             ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
             ReferenceLoopHandling = ReferenceLoopHandling.Serialize,
             //Binder = new MySerializationBinder()
-            //SerializationBinder = new MySerializationBinder()
+            SerializationBinder = new MySerializationBinder()
         };
 
         /// <summary>
