@@ -3113,108 +3113,26 @@ namespace ApplicationWithIDT {
 
             //start by clearing the personField and setting all mean values to minus infinity
             personField.Clear();
-            //int it = 0;
-            //PlotCurrentState($"debug_{it}", 2);
             var fullMask = CellMask.GetFullMask(this.LsTrk.GridDat);
             foreach(int jCell in fullMask.ItemEnum) {
                 foreach(SpeciesId speciesId in LsTrk.SpeciesIdS) {
                     personField.GetSpeciesShadowField(speciesId).SetMeanValue(jCell, -10);
                 }
             }
-            //it++;
-            //PlotCurrentState($"debug_{it}", 2);
 
+            //Choose Quad Order
             int deg = xdgfieldToTest.Basis.Degree;
             var AvailOrders = LsTrk.GetCachedOrders().Where(order => order >= 2 * deg);
             int order2Pick = AvailOrders.Any() ? AvailOrders.Min() : 2 * deg;
-
-
-
-            //Console.WriteLine(this.Identification + ": available XDG quad orders: " + AvailOrders.ToConcatString("", ",", ";") + " using order: " + order2Pick);
-
-            //SinglePhaseField fieldToTest = new SinglePhaseField(xdgfieldToTest.Basis.NonX_Basis);
-            //var cutCellMask = LsTrk.Regions.GetCutCellMask();
-            //var NonCutCellMask = CellMask.GetFullMask(this.LsTrk.GridDat).Except(cutCellMask);
-            //foreach(SpeciesId speciesId in this.SpeciesToEvaluate_Ids) {
-            //fieldToTest.Clear();
-            //fieldToTest.Acc(1.0, xdgfieldToTest.GetSpeciesShadowField(this.LsTrk.GetSpeciesName(speciesId)));
-            //DGField temp = fieldToTest.CloneAs();
-            //this.PlotCurrentState(1);
-            // Compute the P-1 Projection
-
             XDGField fieldPMinus1 = GetPMinus1Projection(LsTrk, xdgfieldToTest, order2Pick);
             
-                
-
-            //do it for every cell
-            //BitArray cellArray = new BitArray(Grid.NumberOfCells);
-            //foreach(int cell in cutCellMask.ItemEnum) {
 
             var fieldPMinus1LaidBack = new XDGField(xdgfieldToTest.Basis, "fieldPMinus1LaidBack");
             fieldPMinus1LaidBack.AccLaidBack(1.0, fieldPMinus1);
 
-            
-
-            //// Compute the L2 Norms for every Cell and Species for xdgFieldtoTest and the fieldDifference immedieatly ave to the personField
-            //foreach(SpeciesId speciesId in this.SpeciesToEvaluate_Ids) {
-
-            //    var SchemeHelper = LsTrk.GetXDGSpaceMetrics(new[] { speciesId }, Control.NonlinearQuadratureDegree).XQuadSchemeHelper; // new XQuadSchemeHelper(lsTrk, momentFittingVariant, );
-
-            //    //cellArray[cell] = true;
-            //    CellQuadratureScheme cqs = SchemeHelper.GetVolumeQuadScheme(speciesId, UseDefaultFactories: true, fullMask);
-            //    var rule = cqs.Compile(GridData, Control.NonlinearQuadratureDegree);
-
-            //    MultidimensionalArray integrationResults = MultidimensionalArray.Create(Grid.NumberOfCells);
-
-            //    CellQuadrature.GetQuadrature(new int[] { 1 },
-            //        GridData,
-            //        rule,
-            //        delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) {
-            //            MultidimensionalArray tmpResult = EvalResult.ExtractSubArrayShallow(-1, -1, 0);
-
-            //            MultidimensionalArray copyResult = tmpResult.CloneAs();
-            //            MultidimensionalArray copyResultLaidBack = tmpResult.CloneAs();
-
-            //            //Evaluate both fields
-            //            xdgfieldToTest.Evaluate(i0, Length, QR.Nodes, copyResult);
-            //            fieldPMinus1LaidBack.Evaluate(i0, Length, QR.Nodes, copyResultLaidBack);
-
-            //            //compute the difference
-            //            copyResultLaidBack.Acc(-1.0, copyResult);
-
-            //            //compute the quotient
-            //            for(int i = 0; i < copyResult.Lengths[0]; i++) {
-            //                for(int j = 0; j < copyResult.Lengths[1]; j++) {
-            //                    if(Math.Abs(copyResult[i, j]) == 0 && copyResultLaidBack[i, j] != 0) {
-            //                        copyResult[i, j] = double.MaxValue.Sqrt();
-            //                    } else {
-            //                        copyResult[i, j] = copyResultLaidBack[i, j] / copyResult[i, j];
-            //                    }
-            //                }
-            //            }
-            //            EvalResult.ExtractSubArrayShallow(-1, -1, 0).Multiply(1.0, copyResult, copyResult, 0.0, "ij", "ij", "ij");
-            //        },
-            //        delegate (int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
-            //            personField.GetSpeciesShadowField(speciesId).SetMeanValue(i0, Math.Log10(ResultsOfIntegration[0, 0].Sqrt()));//.Sqrt();
-            //        }).Execute();
-
-            //    //reset array
-            //    //cellArray[cell] = false;
-            //}
-
-
             var diffField = xdgfieldToTest.CloneAs();
             diffField.Identification = "diffField";
             diffField.Acc(-1.0, fieldPMinus1LaidBack);
-            //var NonCutCellMask = CellMask.GetFullMask(this.LsTrk.GridDat).Except(cutCellMask);
-
-#if DEBUG
-            //if(!isCalledDuringLineSearch) {
-            //    Console.WriteLine("Note: RemovePlotting PersonField");
-            //    var tp = new Tecplot(GridData, 5);
-            //    tp.PlotFields("PersonProjection_" + CurrentStepNo, 0.0, new DGField[] { xdgfieldToTest, fieldPMinus1, fieldPMinus1LaidBack, diffField });
-            //}
-#endif
             int N = xdgfieldToTest.Basis.NonX_Basis.Length; // DOFs per cell per species.
 
             double[] GetCoords(int j,SpeciesId spc,XDGField field) {
@@ -3241,8 +3159,6 @@ namespace ApplicationWithIDT {
                         personField.GetSpeciesShadowField(speciesId).SetMeanValue(cell, val);
                     }
                 }
-                //it++;
-                //PlotCurrentState($"debug_{it}", 2);
             }
             
             foreach(SpeciesId speciesId in this.SpeciesToEvaluate_Ids) {
@@ -3273,11 +3189,6 @@ namespace ApplicationWithIDT {
                     double nominator = CoordsDiff.InnerProd(tmp2);
 
                     SetValuePersonField(jCell, speciesId, nominator, denominator);
-                    //if(LsTrk.GetSpeciesName(speciesId) == "A") {
-                    //    PlotCurrentState(CurrentStepNo + "0000" + 2*jCell);
-                    //} else {
-                    //    PlotCurrentState(CurrentStepNo + "0000" + 2 * jCell+1);
-                    //}
                     
                 }
 
@@ -3287,14 +3198,10 @@ namespace ApplicationWithIDT {
                     double[] CoordsDiff = GetCoords(iCell, speciesId, diffField);
 
                     // in this iCell, we have an orthonormal basis, i.e. the mass matrix is the identity
-
                     double denominator = CoordsFTT.L2NormPow2();
                     double nominator = CoordsDiff.L2NormPow2();
 
                     SetValuePersonField(iCell, speciesId, nominator, denominator);
-                    
-                    
-
                 }
             }
         }
@@ -3346,15 +3253,6 @@ namespace ApplicationWithIDT {
                 var tmpVec = new double[fieldPMinus1.CoordinateVector.Length];
                 MMPmin1P.SpMV(1.0, xdgfieldToTest.CoordinateVector, 0.0, tmpVec);
                 MMPmin1Pmin1Inv.SpMV(1.0, tmpVec, 0.0, fieldPMinus1.CoordinateVector);
-                //for(int rows = 0; rows < MMPmin1Pmin1.NoOfRows; rows++) {
-                //    if(MMPmin1Pmin1.GetNoOfNonZerosPerRow(rows) == 0) {
-                //        MMPmin1Pmin1[rows, rows] = 1;
-                //    }
-                //}
-                //massMatrix.SaveToTextFile("massMat.txt");
-                //MMPmin1P.SaveToTextFile("ProjectionMatrixPminP.txt");
-                //MMPmin1Pmin1.SaveToTextFile("ProjectionMatrixPminPmin.txt");
-                //SimpleSolversInterface.Solve_Direct(MMPmin1Pmin1, fieldPMinus1.CoordinateVector, tmpVec);
 
 
             }

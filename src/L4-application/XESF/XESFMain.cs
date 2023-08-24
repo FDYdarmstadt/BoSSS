@@ -42,9 +42,7 @@ namespace XESF {
         /// </summary>
         /// <param name="args">string pointing to a control file, i.e. 'cs:XESF.XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base()' </param>
         static void Main(string[] args) {
-            //BoSSS.Solution.Application.InitMPI();
-            //DeleteOldPlotFiles();
-            JakobsTestRunner.RunTests();
+            //XESF.Tests.XESFTestProgram.XDGBowShockFromDB(5, 16, 1, 0);
             XESFMain._Main(args, false, () => new XESFMain());
         }
 

@@ -1180,7 +1180,7 @@ namespace XESF {
         /// <param name="itMinPIter"></param>
         /// <param name="iTermN"></param>
         /// <returns></returns>
-        public static XESFControl XDGBS_Cluster(double gammaMin = 1e-04, double agg = 0.2, double tALNR = 1.001, int TermN = 8, int numY = 22, string dbPath = @"\\dc1\userspace\sebastian\cluster\XESF_BowShock_ConvStudy",
+        public static XESFControl XDGBS_Cluster(double gammaMin = 1e-04, double agg = 0.4, double tALNR = 1.001, int TermN = 8, int numY = 22, string dbPath = null,
             int numX = 10, int DegE = 3, int DegS = 0, int plotInterval = -1, int iProb=0,int iflux = 0, int terStrat = 0, int iRI = 0, int itALNR =0, int itMinPIter =0,int iTermN =0, int iRIT=0, int iFphi=0) 
             
             {
@@ -1200,8 +1200,8 @@ namespace XESF {
                 dgDegreeStart: DegS, dgDegreeEnd: DegE,
                 dbPath: dbPath,
                 shockLevelSet_SessionId: @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2",
-                pointPath: @"\\dc1\userspace\sebastian\cluster\BowShockPoints.txt",
-                shockLevelSet_Db: @"\\dc1\userspace\sebastian\cluster\bosss_db_levelSets.zip",
+                pointPath: @".\BowShockPoints.txt",
+                shockLevelSet_Db: @".\bosss_db_levelSets.zip",
                 PlotInterval: plotInterval,
                 optprob: OProblems[iProb],
                 interfaceFluxLS2: IFluxes[iflux],
@@ -1334,7 +1334,7 @@ namespace XESF {
         GetInitialValue initialValue = GetInitialValue.FromDBSinglePhase, bool iVFromShockRelations = false,
         double agg = 0.2, GlobalizationStrategy globalization = ApplicationWithIDT.GlobalizationStrategy.LineSearch,
         MeritFunctionType meritFunctionType = MeritFunctionType.ExactMerit, SolverRunType solverRunType = SolverRunType.Staggerd, int[] MinPIter= null, TerminationStrategy terStrat =TerminationStrategy.Skyline,
-        int[] staggeredTS = null, bool applyReInit=true, GetLevelSet getLevelSet = GetLevelSet.FromReconstructionFromPoints) {
+        int[] staggeredTS = null, bool applyReInit=false, GetLevelSet getLevelSet = GetLevelSet.FromReconstructionFromPoints) {
             XESFControl c = new XESFControl();
 
             int dgDegree = dgDegreeEnd;
@@ -1349,10 +1349,6 @@ namespace XESF {
             c.SuperSampling = 2;
             c.NoOfTimesteps = MaxIterations;
             bool restart = false;
-            if(shockLevelSet_Db == null) {
-                shockLevelSet_Db = @"C:\experimental\internal\src\private-mag\XDGShock\Tests\bosss_db_levelSets.zip";
-                //shockLevelSet_Db = @"C:\Users\jakob\Documents\Uni\Promotion\Programmieren\BoSSS\experimental\internal\src\private-seb\Notebooks\XESF\BowShock\BowShock_P0_db";
-            }
             c.IVTimestepNumber = IVtsNumber;
             #endregion
             #region Optimization variables
@@ -1363,17 +1359,11 @@ namespace XESF {
             // Adaptive Regularization
             c.Gamma_Max = gammaMax;
             c.Gamma_Min = gammaMin;
-            //reinit thrshhold
-            c.reInit_c1 = -1.5;
-
             c.optProblemType = optprob;
-
             c.GlobalizationStrategy = globalization;
             c.GetInitialValue = initialValue;
             c.MeritFunctionType = meritFunctionType;
             c.fphiType = fphitype;
-            //shockLevelSet_Db = @"C:\BoSSS-experimental\internal\src\private-mag\XDGShock\Tests\bosss_db_levelSets.zip";
-
 
             
             // ### Time config ###
@@ -1946,372 +1936,6 @@ namespace XESF {
             c.Queries.Add("L2NormDensity", QueryLibrary.L2Norm(CompressibleVariables.Density));
             c.Queries.Add("L2NormMomentumX", QueryLibrary.L2Norm(CompressibleVariables.Momentum[0]));
             c.Queries.Add("L2NormEnergy", QueryLibrary.L2Norm(CompressibleVariables.Energy));
-
-            return c;
-        }
-        /// <summary>
-        /// Control for NACAAirfoil, problem set up from (Zahr et al Implicit shock tracking using an optimization-based high-order discontinuous Galerkin method 2020).
-        /// Uses a straight Level Set as initial guess and  Not running so far.
-        /// TODO:
-        /// - Need finer mesh? (especially at the airfoil)
-        /// - check BCs
-        /// </summary>
-        /// <param name="getInitialValue"></param>
-        /// <param name="MeshPara"></param>
-        /// <param name="alpha"></param>
-        /// <param name="optiLSDegree"></param>
-        /// <param name="MaxIterations"></param>
-        /// <param name="dgDegree"></param>
-        /// <param name="numOfCellsX"></param>
-        /// <param name="numOfCellsY"></param>
-        /// <param name="PlotInterval"></param>
-        /// <param name="dbPath"></param>
-        /// <param name="lsDegree"></param>
-        /// <param name="bulkFlux"></param>
-        /// <param name="optiLevelSetType"></param>
-        /// <param name="interfaceFluxLS1"></param>
-        /// <param name="interfaceFluxLS2"></param>
-        /// <param name="FluxVersion"></param>
-        /// <param name="shockLevelSet_Db"></param>
-        /// <param name="agg"></param>
-        /// <param name="solverRunType"></param>
-        /// <param name="lsTwoDegree"></param>
-        /// <param name="lsOneDegree"></param>
-        /// <param name="dgDegreeEnd"></param>
-        /// <param name="dgDegreeStart"></param>
-        /// <returns></returns>
-        public static XESFControl XDGNACAAirfoil(GetInitialValue getInitialValue, int MeshPara, double alpha, int optiLSDegree = 1, int MaxIterations = 1, int dgDegree = 0, int numOfCellsX = 4,
-        int numOfCellsY = 16, int PlotInterval = 100,
-        string dbPath = null, int lsDegree = 1, ConvectiveBulkFluxes bulkFlux = ConvectiveBulkFluxes.OptimizedHLLC,
-        OptiLevelSetType optiLevelSetType = OptiLevelSetType.SplineLevelSet,
-        ConvectiveInterfaceFluxes interfaceFluxLS1 = ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var,
-        ConvectiveInterfaceFluxes interfaceFluxLS2 = ConvectiveInterfaceFluxes.GodunovInterface,
-        XESF.Fluxes.FluxVersion FluxVersion = Fluxes.FluxVersion.Optimized, string shockLevelSet_Db = null, double agg = 0.3,
-        SolverRunType solverRunType = SolverRunType.Staggerd, int lsTwoDegree = 0, int lsOneDegree = 0, int dgDegreeEnd = 0, int dgDegreeStart = 0) {
-            XESFControl c = new XESFControl();
-
-            if(shockLevelSet_Db == null) {
-                shockLevelSet_Db = @"C:\BoSSS-experimental\internal\src\private-mag\XDGShock\Tests\bosss_db_levelSets.zip";
-            }
-
-            //System.Threading.Thread.Sleep(10000);
-            // dbg_launch();
-            c.DbPath = dbPath;
-            c.savetodb = true;
-            if(dbPath == null)
-                c.savetodb = false;
-            c.NoOfTimesteps = MaxIterations;
-            c.ImmediatePlotPeriod = PlotInterval;
-            c.SuperSampling = 2;
-
-
-            c.GlobalizationStrategy = GlobalizationStrategy.LineSearch;
-
-            // ### Database ###
-            //c.DbPath = @"c:\bosss_db";
-            //c.savetodb = c.DbPath != null;
-            //c.saveperiod = 1;
-
-            // ### Time config ###
-            c.NoOfTimesteps = 20;
-
-            // ### Agglomeration and quadrature ###
-            c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.Saye;
-            //c.NonlinearQuadratureDegree = 6;
-            c.IsTwoLevelSetRun = true;
-            // ### Level set ###
-            c.SpeciesTable[0, 0] = "X"; // 'Forbidden' species
-            c.SpeciesTable[0, 1] = "V"; // Void area (inside the blunt body)
-            c.SpeciesTable[1, 0] = "L"; // Pre-shock region (on the left of the shock)
-            c.SpeciesTable[1, 1] = "R"; // Post-shock region (on the right of the shock)
-
-            c.LsOne_NegSpecies = "V";
-            c.LsOne_PosSpecies = "R";
-
-            c.LsTwo_NegSpecies = "L";
-            c.LsTwo_PosSpecies = "R";
-
-            c.SpeciesToEvaluate = new string[] { "L", "R" };
-
-            c.AddVariable(XESFVariables.LevelSet, 2);
-            c.LevelSetDegree = 2;
-            c.AddVariable(XESFVariables.LevelSetTwo, optiLSDegree);
-            c.LevelSetTwoDegree = 5;
-
-
-            // ### Fluxes ###
-            c.ConvectiveBulkFlux = bulkFlux;
-            c.ConvectiveInterfaceFlux_LsOne = ConvectiveInterfaceFluxes.OptimizedHLLCWall_Separate_For_Each_Var;
-            c.ConvectiveInterfaceFlux_LsTwo = interfaceFluxLS2;
-            c.FluxVersion = Fluxes.FluxVersion.Optimized;
-            c.MassMatrixShapeandDependence = BoSSS.Solution.XdgTimestepping.MassMatrixShapeandDependence.IsNonIdentity;
-
-            //c.ShockSetup = ShockSetup.BuildAll;
-
-            bool restart = false;
-            c.GetLevelSet = GetLevelSet.FromReconstruction;
-
-            //// ShockSetup.BuildAll
-            //string shockLevelSet_SessionId = @"9c45ebf9-f3e0-4d1d-bf91-776bf46e4fc2";
-
-            //c.ShockLevelSet_Db = shockLevelSet_Db ?? throw new NotSupportedException("Shock level set DB is null.");
-            //c.ShockLevelSet_Info = new Tuple<Guid, TimestepNumber>(new Guid(shockLevelSet_SessionId), -1);
-            //c.ShockLevelSet_FieldName = "levelSet_recon_prc_cont";
-            //c.ShockLevelSet_SeedFromDb = true;
-
-            // ShockSetup.ReloadFromDb
-            //c.ShockLevelSet_RestartDb = @"C:\bosss_db";
-            //c.ShockLevelSet_RestartInfo = new Tuple<Guid, TimestepNumber>(new Guid("9f3de596-3649-4965-986e-eb1f449f6cb5"), -1);
-
-
-
-            #region Grid Definition
-            // Mesh Taken from CNS.IBMTests.NACA0012
-            // Refined Region
-            double xBegin = -0.012;
-            double xEnd = 1.01;
-
-
-
-            //refined grid form CNS
-            //c.GridFunc = delegate {
-
-            //    int chords = 100;
-
-            //    int xleft = -chords;
-            //    int xRight = chords;
-            //    int yBottom = -chords;
-            //    int yTop = chords;
-
-            //    double spacingFactor = 3.95;
-
-            //    double[] xnodes1 = Grid1D.TanhSpacing(xleft, xBegin, MeshPara + 1, spacingFactor, false);
-            //    double[] xnodes2 = Grid1D.TanhSpacing_DoubleSided(xBegin, xEnd, MeshPara + 1, 2.0);
-            //    double[] xnodes3 = Grid1D.TanhSpacing(xEnd, xRight, MeshPara + 1, spacingFactor, true);
-
-            //    double[] xComplete = new double[xnodes1.Length + xnodes2.Length + xnodes3.Length - 2];
-            //    for(int i = 0; i < xnodes1.Length; i++) {
-            //        xComplete[i] = xnodes1[i];
-            //    }
-            //    for(int i = 1; i < xnodes2.Length; i++) {
-            //        xComplete[i + xnodes1.Length - 1] = xnodes2[i];
-            //    }
-            //    for(int i = 1; i < xnodes3.Length; i++) {
-            //        xComplete[i + xnodes1.Length + xnodes2.Length - 2] = xnodes3[i];
-            //    }
-
-            //    double yrefinedTop = 0.2;
-            //    double yrefinedBottom = -0.2;
-
-            //    double[] ynodes1 = Grid1D.TanhSpacing(yBottom, yrefinedBottom, MeshPara + 1, spacingFactor, false);
-            //    double[] ynodes2 = GenericBlas.Linspace(yrefinedBottom, yrefinedTop, (int)(0.75 * MeshPara) + 1);
-            //    double[] ynodes3 = Grid1D.TanhSpacing(yrefinedTop, yTop, MeshPara + 1, spacingFactor, true);
-
-            //    double[] yComplete = new double[ynodes1.Length + ynodes2.Length + ynodes3.Length - 2];
-            //    for(int i = 0; i < ynodes1.Length; i++) {
-            //        yComplete[i] = ynodes1[i];
-            //    }
-            //    for(int i = 1; i < ynodes2.Length; i++) {
-            //        yComplete[i + ynodes1.Length - 1] = ynodes2[i];
-            //    }
-            //    for(int i = 1; i < ynodes3.Length; i++) {
-            //        yComplete[i + ynodes1.Length + ynodes2.Length - 2] = ynodes3[i];
-            //    }
-            //    GridCommons grid = Grid2D.Cartesian2DGrid(xComplete, yComplete);
-
-            //    int numOfCellsX = (xRight - xleft) * MeshPara;
-            //    int numOfCellsY = (yTop - yBottom) * MeshPara*2;
-
-            //    //grid.EdgeTagNames.Add(1, "supersonicinlet");
-            //    //grid.EdgeTagNames.Add(2, "AdiabaticSlipWall");
-            //    //grid.DefineEdgeTags((Vector X) => 1);
-
-            //    grid.EdgeTagNames.Add(1, "SupersonicInlet");
-            //    grid.EdgeTagNames.Add(2, "SupersonicOutlet");
-            //    grid.EdgeTagNames.Add(3, "AdiabaticSlipWall");
-
-            //    grid.DefineEdgeTags(delegate (double[] X) {
-            //        if(Math.Abs(X[0] - xRight) < 1e-14) {    // Right boundary
-            //            if(Math.Abs(X[1]) - 0.1 < 1e-14) { // Right boundary (part of void area)
-            //                return 3;
-            //            } else {
-            //                return 2;
-            //            }
-            //            //return 2;
-            //        } else if(Math.Abs(X[0] - xleft) < 1e-14) { // Left boundary
-            //            return 1;
-            //        } else {    // Top and bottom boundary
-            //            return 1;
-            //        }
-            //    });
-
-            //    grid.Name = "[" + xleft + "," + xRight + "]x[" + yBottom + "," + yTop + "]_Cells:(" + (xComplete.Length - 1) + "x" + (yComplete.Length - 1) + ")";
-
-            //    return grid;
-            //};
-            //MJZ Paper
-            c.GridFunc = delegate {
-                double xRight = 1.5;
-                double xleft = -0.5;
-                double yTop = 3;
-                double yBottom = 0;
-                //Grid1D.TanhSpacing(yBottom, yrefinedBottom, MeshPara + 1, spacingFactor, false);
-                double[] nodesX = GenericBlas.Linspace(xleft, xRight, MeshPara * 2);
-                double[] nodesY = GenericBlas.Linspace(yBottom, yTop, MeshPara * 3);
-
-                GridCommons grid = Grid2D.Cartesian2DGrid(nodesX, nodesY);
-
-                grid.EdgeTagNames.Add(1, "SupersonicInlet");
-                grid.EdgeTagNames.Add(2, "AdiabaticSlipWall");
-
-                grid.DefineEdgeTags(delegate (double[] X) {
-                    if(Math.Abs(X[0] - xRight) < 1e-14) {    // Right boundary
-                        if(Math.Abs(X[1]) - 0.1 < 1e-14) { // Right boundary (part of void area)
-                            return 1;
-                        } else {
-                            return 2;
-                        }
-                        //return 2;
-                    } else if(Math.Abs(X[0] - xleft) < 1e-14) { // Left boundary
-                        return 1;
-                    } else {    // Top and bottom boundary
-                        return 1;
-                    }
-                });
-                return grid;
-            };
-
-            #endregion
-
-            #region airfoil
-            // ### Level set function of the airfoil###
-            Func<double[], double, double> levelSet = delegate (double[] X, double t) {
-                double value = 0.0;
-
-                double radian = alpha * Math.PI / 180;
-
-                double xRotated = 1 + Math.Cos(radian) * (X[0] - 1) - Math.Sin(radian) * (X[1]);
-                double yRotated = Math.Sin(radian) * (X[0] - 1) + Math.Cos(radian) * (X[1]);
-
-                double a = 0.6;
-                //double b = 0.2969;
-                double c1 = 0.126;
-                double d = 0.3516;
-                double e = 0.2843;
-                double f = 0.1036;
-
-
-                if(yRotated >= 0.0 || (X[0] > 0.562875 && X[1] > 0)) {
-                    //if (yRotated >= 0.0 ){
-                    value = Math.Pow((yRotated + a * (c1 * xRotated + d * Math.Pow(xRotated, 2) - e * Math.Pow(xRotated, 3) + f * Math.Pow(xRotated, 4))), 2) - 0.0317338596 * xRotated;
-                } else {
-                    value = Math.Pow((-yRotated + a * (c1 * xRotated + d * Math.Pow(xRotated, 2) - e * Math.Pow(xRotated, 3) + f * Math.Pow(xRotated, 4))), 2) - 0.0317338596 * xRotated;
-                }
-
-                //value = yRotated - Math.Tan(radian)*xRotated;
-
-                return value;
-            };
-            c.LevelSetPos = X => levelSet(X, 0);
-            #endregion
-
-            #region Initial Shock Level Set
-            // Test level set, put it in the middle
-            c.IsTwoLevelSetRun = true;
-            c.GetLevelSet = GetLevelSet.FromFunction;
-            c.OptiLevelSetDegree = 3;
-            c.OptiLevelSetType = optiLevelSetType;
-            if(optiLevelSetType == OptiLevelSetType.SplineLevelSet) {
-                c.InitialShockPostion = X => (0.69); //Initial Pos for the Spline
-            } else {
-                c.InitialShockPostion = X => (X[0] - 0.69); //Initial Pos for the Spline
-            }
-
-            #endregion
-
-            #region Problem Parameters
-
-            c.AddVariable(CompressibleVariables.Density, dgDegree);
-            c.AddVariable(CompressibleVariables.Momentum.xComponent, dgDegree);
-            c.AddVariable(CompressibleVariables.Momentum.yComponent, dgDegree);
-            c.AddVariable(CompressibleVariables.Energy, dgDegree);
-            c.AddVariable(XESFVariables.Velocity.xComponent, dgDegree);
-            c.AddVariable(XESFVariables.Velocity.yComponent, dgDegree);
-            c.AddVariable(XESFVariables.Pressure, dgDegree);
-            c.AddVariable(XESFVariables.Enthalpy, dgDegree);
-            c.AddVariable(XESFVariables.LocalMachNumber, dgDegree);
-
-            c.EquationOfState = IdealGas.Air;
-            c.MachNumber = 1.0 / Math.Sqrt(c.EquationOfState.HeatCapacityRatio);
-            c.ReynoldsNumber = 1.0;
-            c.PrandtlNumber = 0.71;
-            c.SolDegree = dgDegree;
-
-            // inflow Boundary conditions
-            double density = 1.0;
-            double pressure = 1.0;
-            double Mach = 0.85;
-            double velocityX = Mach * Math.Sqrt(c.EquationOfState.HeatCapacityRatio * pressure / density);
-            double velocityY = 0.0;
-            double momentumX = density * velocityX;
-            double gamma = IdealGas.Air.HeatCapacityRatio;
-            double innerEnergy = pressure / (gamma - 1);
-            double kineticEnergy = 0.5 * density * (velocityX * velocityX + velocityY * velocityY);
-            double totalEnergy = innerEnergy + kineticEnergy;
-
-            // Functions
-            Func<double[], double, double> rho = (X, t) => density;
-            Func<double[], double, double> u0 = (X, t) => 1.0;
-            Func<double[], double, double> u1 = (X, t) => 0.0;
-            Func<double[], double, double> p = (X, t) => pressure;
-
-            Func<double[], double> test = X => 1 - 0.05 * 0.4 / 1.4 * Math.Pow(Math.Exp(1 - X[0] * X[0] - X[1] * X[1]), (1 / 0.4));
-
-            // Boundary conditions in PRIMITIVE variables
-            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#L", (X, t) => rho(X, 0.0));
-            c.AddBoundaryValue("SupersonicInlet", CompressibleVariables.Density + "#R", (X, t) => rho(X, 0.0));
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#L", (X, t) => u0(X, 0.0));
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.xComponent + "#R", (X, t) => u0(X, 0.0));
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.yComponent + "#L", (X, t) => u1(X, 0.0));
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Velocity.yComponent + "#R", (X, t) => u1(X, 0.0));
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#L", (X, t) => p(X, 0.0));
-            c.AddBoundaryValue("SupersonicInlet", XESFVariables.Pressure + "#R", (X, t) => p(X, 0.0));
-
-            // In theory no outflow boundary condition has to be specified as all characteristics move downstream
-            //c.AddBoundaryValue("SupersonicOutlet", XESFVariables.Pressure + "#L", (X, t) => 0.0);
-            //c.AddBoundaryValue("SupersonicOutlet", XESFVariables.Pressure + "#R", (X, t) => 0.0);
-            //c.AddBoundaryValue("AdiabaticSlipWall");
-
-
-
-            // Initial conditions
-            c.GetInitialValue = getInitialValue;
-            if(restart == false) {
-                // Initial conditions in PRIMITIVE variables
-                c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#L", X => rho(X, 0.0));
-                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#L", X => u0(X, 0.0));
-                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.yComponent + "#L", X => u1(X, 0.0));
-                c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#L", X => p(X, 0.0));
-
-                c.InitialValues_Evaluators.Add(CompressibleVariables.Density + "#R", X => rho(X, 0.0));
-                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.xComponent + "#R", X => u0(X, 0.0));
-                c.InitialValues_Evaluators.Add(XESFVariables.Velocity.yComponent + "#R", X => u1(X, 0.0));
-                c.InitialValues_Evaluators.Add(XESFVariables.Pressure + "#R", X => p(X, 0.0));
-            }
-            #endregion
-
-            c.ProjectName = "XDGNACA0012_TwoLs";
-            c.SessionName = string.Format("XDGNACA0012_TwoLs_p{0}_xCells{1}_yCells{2}",
-                dgDegree, numOfCellsX, numOfCellsY);
-            if(restart == true) {
-                c.SessionName = c.SessionName + "_RESTART";
-            }
-
-            // ### Queries ###
-            c.Queries.Add("L2NormDensity", QueryLibrary.L2Norm(CompressibleVariables.Density));
-            c.Queries.Add("L2NormMomentumX", QueryLibrary.L2Norm(CompressibleVariables.Momentum[0]));
-            c.Queries.Add("L2NormEnergy", QueryLibrary.L2Norm(CompressibleVariables.Energy));
-
 
             return c;
         }
