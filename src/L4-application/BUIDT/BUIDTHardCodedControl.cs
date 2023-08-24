@@ -250,7 +250,7 @@ namespace BUIDT
         /// <param name="staggeredTS"></param>
         /// <returns></returns>
         public static BUIDTControl AccShock(string dbPath, int MaxIterations, int dgDegree, int numOfCellsX,
-        int numOfCellsY, Linearization linearization, bool applyReInit=true, int ImmediatePlotPeriod = -1, double agg = 0.0, int OptiNumOfCellsX = 1, int OptiNumOfCellsY = 1, 
+        int numOfCellsY, Linearization linearization, bool applyReInit=false, int ImmediatePlotPeriod = -1, double agg = 0.0, int OptiNumOfCellsX = 1, int OptiNumOfCellsY = 1, 
         OptiLevelSetType optiLevelSetType = OptiLevelSetType.GlobalLevelSet, int LSDregree=3,GetLevelSet getLevelSet = GetLevelSet.FromFunction,
             SolverRunType solverRunType = SolverRunType.Standard, int[] staggeredTS=null) {
             var c = BUIDTHardCodedControl.BaseControl(
@@ -261,9 +261,6 @@ namespace BUIDT
                     numOfCellsY: numOfCellsY,
                     ImmediatePlotPeriod: ImmediatePlotPeriod
                     );
-
-
-            
 
             // ### Grid ###
             double xMin = -0.2;

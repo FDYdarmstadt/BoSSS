@@ -28,6 +28,8 @@ namespace BUIDT {
         /// </summary>
         /// <param name="args">string pointing to a control file, i.e. 'cs:BUIDT.BUIDTHardCodedControl.StraightShockCurvedStart_Eccomas22()' </param>
         static void Main(string[] args) {
+            //Tests.BUIDTTestProgram.StraightShockCurvedStart_Eccomas22();
+            //Tests.BUIDTTestProgram.AcceleratingShock();
             BUIDTMain._Main(args, false, () => new BUIDTMain());
         }
 
