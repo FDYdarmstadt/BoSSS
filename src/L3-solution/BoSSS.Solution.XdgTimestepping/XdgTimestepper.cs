@@ -549,7 +549,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             var spc = CreateDummyTracker(Fields.First().GridDat);
 
-            if (lsu == null){
+            if (lsu == null) {
                 lsu = () => new UpdateLevelsetWithNothing(this);
             }
 

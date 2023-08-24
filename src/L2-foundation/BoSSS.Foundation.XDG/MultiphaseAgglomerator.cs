@@ -848,13 +848,16 @@ namespace BoSSS.Foundation.XDG {
                         if(iLevel == 0) {
                             // convert un-cut volume into volume fraction
                             for(int j = 0; j < J; j++) {
-                                //if (Math.Abs(VolumeFrac[j]) < 1e-25) {
+                                // if (Math.Abs(VolumeFrac[j]) < 1e-25) {
                                 //    Console.WriteLine("Attempting to divide by zero for VolumeFrac at j = " + j);
-                                //}
+                                //    VolumeFrac[j] = 1;
+                                // }
                                 double uncutVolume = VolumeFrac[j]; // so far, VolumeFrac[j] is the un-cut cell volume;
-                                VolumeFrac[j] = CellVolume[j] / VolumeFrac[j]; 
-                                if (VolumeFrac[j] < 0 || VolumeFrac[j] > 1.1)
-                                    throw new ArithmeticException($"Agglomerated cell volume fraction is {VolumeFrac[j]}; expected to be between 0 and 1; cut cell volume = {CellVolume[j]}, un-cut volume = {uncutVolume}");
+                                if (!(VolumeFrac[j].IsNaNorInf() || Math.Abs(VolumeFrac[j]) < 1e25)){
+                                    VolumeFrac[j] = CellVolume[j] / VolumeFrac[j];
+                                    if (VolumeFrac[j] < 0 || VolumeFrac[j] > 1.1)
+                                        throw new ArithmeticException($"Agglomerated cell volume fraction is {VolumeFrac[j]}; expected to be between 0 and 1; cut cell volume = {CellVolume[j]}, un-cut volume = {uncutVolume}");
+                                }
                             }
                         }
 
@@ -877,14 +880,29 @@ namespace BoSSS.Foundation.XDG {
                         MultidimensionalArray CellVolume = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 1);
                         MultidimensionalArray LengthScales = AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc);
                         MultidimensionalArray VolumeFrac = CellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc, 2);
-                        
+
                         // Loop includes external cells
                         for(int j = 0; j < JE; j++) {
                             // Note: the following un-guarded division might result in NaN's or Inf's.
                             // (especially in void-cells, the NaN's are desired)
                             // This is intended, since it will create exceptions in the penalty computation when something is wrong with the cut-cell integration domain.
 
-                            LengthScales[j] = CellVolume[j] / CellSurface[j]; // length scale is [Volume / Area]
+                            if (Math.Abs(CellSurface[j]) < 1e-25) {
+                                    LengthScales[j] = System.Double.NaN;
+                                } else {
+                                LengthScales[j] = CellVolume[j] / CellSurface[j]; // length scale is [Volume / Area]
+                                LengthScales[j] = Math.Max(LengthScales[j], BLAS.MachineEps * this.Tracker.GridDat.Cells.h_min[j]);
+                            }
+
+
+                            // Darios alternation:
+                            // if (Math.Abs(CellSurface[j]) < 1e-25) {
+                            //     // Console.WriteLine("Attempting to divide by zero for VolumeFrac at j = " + j);
+                            // LengthScales[j] = Math.Pow(CellVolume[j], 1.0/3);
+                            // } else {
+                            //     LengthScales[j] = CellVolume[j] / CellSurface[j];
+                            // }
+
                         }
 
 
@@ -913,7 +931,7 @@ namespace BoSSS.Foundation.XDG {
                     this.CellVolumeFrac = new Dictionary<SpeciesId, MultidimensionalArray>();
                     this.CellSurface = new Dictionary<SpeciesId, MultidimensionalArray>();
                     this.CutCellVolumes = new Dictionary<SpeciesId, MultidimensionalArray>();
-                    
+
                     for(int iSpc = 0; iSpc < species.Length; iSpc++) {
                         SpeciesId spc = species[iSpc];
                         this.CellLengthScales.Add(spc, AggCellLengthScalesMda.ExtractSubArrayShallow(-1, iSpc).CloneAs());

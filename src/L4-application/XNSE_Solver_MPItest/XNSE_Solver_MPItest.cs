@@ -45,7 +45,7 @@ using MathNet.Numerics.Statistics;
 namespace BoSSS.Application.XNSE_Solver {
 
     /// <summary>
-    /// Tests whether the XNSE solver (<see cref="XNSE_SolverMain"/>) also works MPI-parallel for 
+    /// Tests whether the XNSE solver (<see cref="XNSE{T}"/>) also works MPI-parallel for 
     /// non-trivial cases.
     /// </summary>
     [TestFixture]

@@ -73,9 +73,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-            Debugger.Launch();
-
-            
+                        
             //InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
@@ -136,7 +134,7 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
         public override void Init(AppControl control) {
-
+                
 
             base.Init(control);
             var ctrl = (control as XNSE_Control);

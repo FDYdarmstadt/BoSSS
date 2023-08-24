@@ -36,9 +36,6 @@
       <HintPath>..\..\..\..\libs\system.configuration.configurationmanager.4.5.0\lib\netstandard2.0\System.Configuration.ConfigurationManager.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <!--ItemGroup>
-    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
-  </ItemGroup-->
   <ItemGroup>
     <ProjectReference Include="..\..\layer_1.1-MPI.NET\MPI.Wrappers\MPI.Wrappers.csproj" />
   </ItemGroup>
