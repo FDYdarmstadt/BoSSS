@@ -50,8 +50,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             ProjectName = projectName;
             SessionName = projectName;
             ProjectDescription = projectDescription;
-            if(tags != null) {
-                for(int i = 0; i < tags.Count; i++) {
+            if (tags != null) {
+                for (int i = 0; i < tags.Count; i++) {
                     Tags.Add(tags[i]);
                 }
             }
@@ -92,6 +92,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         public override void SetDGdegree(int p) {
             SetFieldOptions(p, Math.Max(4, 2 * p));
+            //SetFieldOptions(p, p);
             FieldOptions.Add(VariableNames.Phoretic, new FieldOpts() {
                 Degree = p,
                 SaveToDB = FieldOpts.SaveToDBOpt.TRUE
@@ -106,8 +107,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 return true;
             }
             set {
-                if(value == false) {
-                    Console.Error.WriteLine($"Immersed Boundary cannot be turned off for {typeof(XNSERO).Name}.");    
+                if (value == false) {
+                    Console.Error.WriteLine($"Immersed Boundary cannot be turned off for {typeof(XNSERO).Name}.");
                 }
             }
         }
@@ -128,7 +129,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The position of all boundaries, independent of boundary condition.
         /// </summary>
         [DataMember]
-        public double[][] BoundaryPositionPerDimension{ get; private set; }
+        public double[][] BoundaryPositionPerDimension { get; private set; }
 
         /// <summary>
         /// The position of all boundaries, only for walls.
@@ -208,12 +209,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="boundaryValues"></param>
         public void SetBoundaries(List<string> boundaryValues) {
-            if(boundaryValues.Count > 4)
+            if (boundaryValues.Count > 4)
                 throw new NotImplementedException("max 4 boundary values");
-            for(int i = 0; i < boundaryValues.Count; i++) {
+            for (int i = 0; i < boundaryValues.Count; i++) {
                 AddBoundaryValue(boundaryValues[i]);
                 BoundaryValueList.Add(boundaryValues[i]);
             }
+            //BoundaryValueList.Add("Pressure_Dirichlet_1");
+            //BoundaryValueList.Add("Pressure_Dirichlet_2");
         }
 
         /// <summary>
@@ -225,7 +228,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="periodicX"></param>
         /// <param name="periodicY"></param>
         public void SetGrid2D(double lengthX, double lengthY, double cellsPerUnitLength, bool periodicX = false, bool periodicY = false) {
-            MaxGridLength = 1 / cellsPerUnitLength;
+            MaxGridLength = 1 / (cellsPerUnitLength);
+            Console.WriteLine("max " + 1 / cellsPerUnitLength + " min " + MaxGridLength);
 
             BoundaryPositionPerDimension = new double[2][];
             BoundaryPositionPerDimension[0] = new double[] { -lengthX / 2, lengthX / 2 };
@@ -239,30 +243,31 @@ namespace BoSSS.Application.XNSERO_Solver {
             BoundaryIsPeriodic[0] = periodicX;
             BoundaryIsPeriodic[1] = periodicY;
 
-            if(IsRestart)
+            if (IsRestart)
                 return;
 
             GridFunc = delegate {
-                int q = (int)(cellsPerUnitLength * lengthX); 
-                int r = (int)(cellsPerUnitLength * lengthY); 
+                int q = (int)(cellsPerUnitLength * lengthX);
+                int r = (int)(cellsPerUnitLength * lengthY);
 
                 double[] Xnodes = GenericBlas.Linspace(-lengthX / 2, lengthX / 2, q + 1);
                 double[] Ynodes = GenericBlas.Linspace(-lengthY / 2, lengthY / 2, r + 1);
 
                 Grid2D grid = Grid2D.Cartesian2DGrid(Xnodes, Ynodes, periodicX: periodicX, periodicY: periodicY);
 
-                for(int i = 0; i < BoundaryValueList.Count; i++) {
+                for (int i = 0; i < BoundaryValueList.Count; i++) {
                     byte iB = (byte)(i + 1);
                     grid.EdgeTagNames.Add(iB, BoundaryValueList[i]);
                 }
 
-                if(BoundaryValueList.Count == 0 && periodicX == false && periodicY == false)
+                if (BoundaryValueList.Count == 0 && periodicX == false && periodicY == false)
                     throw new Exception("Please specify boundaries before creating the grid");
 
-                if(BoundaryValueList.Count == 1) {
+
+                if (BoundaryValueList.Count == 1) {
                     grid.DefineEdgeTags(delegate (double[] X) {
                         byte et = 1;
-                        if(BoundaryValueList[0].Contains("wall") || BoundaryValueList[0].Contains("Wall")) {
+                        if (BoundaryValueList[0].Contains("wall") || BoundaryValueList[0].Contains("Wall")) {
                             WallPositionPerDimension[0][0] = -lengthX / 2;
                             WallPositionPerDimension[0][1] = lengthX / 2;
                             WallPositionPerDimension[1][0] = -lengthY / 2;
@@ -273,44 +278,57 @@ namespace BoSSS.Application.XNSERO_Solver {
                 } else {
                     grid.DefineEdgeTags(delegate (double[] X) {
                         byte et = 0;
-                        if(Math.Abs(X[0] - (-lengthX / 2)) <= 1.0e-8) {
-                            for(int i = 0; i < BoundaryValueList.Count; i++) {
-                                if(BoundaryValueList[i].Contains("left") || BoundaryValueList[i].Contains("Left")) {
-                                    et = (byte)(i + 1);
-                                    if(BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
+                        if (Math.Abs(X[0] - (-lengthX / 2)) <= 1.0e-8) {
+                            for (int i = 0; i < BoundaryValueList.Count; i++) {
+                                if (BoundaryValueList[i].Contains("left") || BoundaryValueList[i].Contains("Left")) {
+                                    if (BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
                                         WallPositionPerDimension[0][0] = -lengthX / 2;
                                     }
+                                    return (byte)(i + 1);
                                 }
                             }
                         }
-                        if(Math.Abs(X[0] + (-lengthX / 2)) <= 1.0e-8) {
-                            for(int i = 0; i < BoundaryValueList.Count; i++) {
-                                if(BoundaryValueList[i].Contains("right") || BoundaryValueList[i].Contains("Right")) {
-                                    et = (byte)(i + 1);
-                                    if(BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
+                        if (Math.Abs(X[0] + (-lengthX / 2)) <= 1.0e-8) {
+                            for (int i = 0; i < BoundaryValueList.Count; i++) {
+                                if (BoundaryValueList[i].Contains("right") || BoundaryValueList[i].Contains("Right")) {
+                                    if (BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
                                         WallPositionPerDimension[0][1] = lengthX / 2;
                                     }
+                                    return (byte)(i + 1);
                                 }
                             }
                         }
-
-                        if(Math.Abs(X[1] - (-lengthY / 2)) <= 1.0e-8) {
-                            for(int i = 0; i < BoundaryValueList.Count; i++) {
-                                if(BoundaryValueList[i].Contains("lower") || BoundaryValueList[i].Contains("Lower")) {
-                                    et = (byte)(i + 1);
-                                    if(BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
+                        if (Math.Abs(X[1] - (-lengthY / 2)) <= 1.0e-8 && Math.Abs(X[0]) <= 2 / cellsPerUnitLength) {
+                            for (int i = 0; i < BoundaryValueList.Count; i++) {
+                                if (BoundaryValueList[i].Contains("_1")) {
+                                    return (byte)(i + 1);
+                                }
+                            }
+                        }
+                        if (Math.Abs(X[1] + (-lengthY / 2)) <= 1.0e-8 && Math.Abs(X[0]) <= 2 / cellsPerUnitLength) {
+                            for (int i = 0; i < BoundaryValueList.Count; i++) {
+                                if (BoundaryValueList[i].Contains("_2")) {
+                                    return (byte)(i + 1);
+                                }
+                            }
+                        }
+                        if (Math.Abs(X[1] - (-lengthY / 2)) <= 1.0e-8) {
+                            for (int i = 0; i < BoundaryValueList.Count; i++) {
+                                if (BoundaryValueList[i].Contains("lower") || BoundaryValueList[i].Contains("Lower")) {
+                                    if (BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
                                         WallPositionPerDimension[1][0] = -lengthY / 2;
                                     }
+                                    return (byte)(i + 1);
                                 }
                             }
                         }
-                        if(Math.Abs(X[1] + (-lengthY / 2)) <= 1.0e-8) {
-                            for(int i = 0; i < BoundaryValueList.Count; i++) {
-                                if(BoundaryValueList[i].Contains("upper") || BoundaryValueList[i].Contains("Upper")) {
-                                    et = (byte)(i + 1);
-                                    if(BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
+                        if (Math.Abs(X[1] + (-lengthY / 2)) <= 1.0e-8) {
+                            for (int i = 0; i < BoundaryValueList.Count; i++) {
+                                if (BoundaryValueList[i].Contains("upper") || BoundaryValueList[i].Contains("Upper")) {
+                                    if (BoundaryValueList[i].Contains("wall") || BoundaryValueList[i].Contains("Wall")) {
                                         WallPositionPerDimension[1][1] = lengthY / 2;
                                     }
+                                    return (byte)(i + 1);
                                 }
                             }
                         }
@@ -319,6 +337,16 @@ namespace BoSSS.Application.XNSERO_Solver {
                     });
                 }
                 Console.WriteLine("Cells:" + grid.NumberOfCells);
+                if (BoundaryIsPeriodic[0]) {
+                    WallPositionPerDimension[0][0] = 0;
+                    WallPositionPerDimension[0][1] = 0;
+                }
+                if (BoundaryIsPeriodic[1]) {
+
+                    WallPositionPerDimension[1][0] = 0;
+                    WallPositionPerDimension[1][1] = 0;
+                }
+                Console.WriteLine("wall  positions" + new Vector(WallPositionPerDimension[0][0], WallPositionPerDimension[0][1]) + "   " + new Vector(WallPositionPerDimension[1][0], WallPositionPerDimension[1][1]));
                 return grid;
             };
         }
@@ -341,36 +369,40 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="ParticleList"></param>
         public void InitialiseParticles(List<Particle> ParticleList) {
-            if (IsRestart) {
-                ParticleList= LoadParticlesOnRestart(PathToOldSessionDir, ParticleList, TimestepNoForRestart);
-            }
 
             Particles = ParticleList.ToArray();
-
-            // Initialize particle level-set
-            double levelSet(double[] X) {
-                double levelSetFunction = int.MinValue;
-                for(int p = 0; p < Particles.Length; p++) {
-                    Particle currentParticle = Particles[p];
-                    if(levelSetFunction < currentParticle.LevelSetFunction(X, 0))
-                        levelSetFunction = currentParticle.LevelSetFunction(X, 0);
+            if (IsRestart) {
+                ParticleList = LoadParticlesOnRestart(PathToOldSessionDir, ParticleList, TimestepNoForRestart);
+            } else {
+                Particles = ParticleList.ToArray();
+                //Console.WriteLine("Init");
+                //Console.WriteLine(Particles[0].Motion.GetPosition(0));
+                //Console.WriteLine(Particles[1].Motion.GetPosition(0));
+                // Initialize particle level-set
+                double levelSet(double[] X) {
+                    double levelSetFunction = int.MinValue;
+                    for (int p = 0; p < Particles.Length; p++) {
+                        Particle currentParticle = Particles[p];
+                        if (levelSetFunction < currentParticle.LevelSetFunction(X, 0))
+                            levelSetFunction = currentParticle.LevelSetFunction(X, 0);
+                    }
+                    return levelSetFunction;
                 }
-                return levelSetFunction;
+
+                InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), levelSet);
+                Option_LevelSetEvolution2 = Solution.LevelSetTools.LevelSetEvolution.RigidObject;
+
+                Console.WriteLine("Simulation with " + Particles.Length + " particles");
             }
-
-            InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(1), levelSet);
-            Option_LevelSetEvolution2 = Solution.LevelSetTools.LevelSetEvolution.RigidObject;
-
-            Console.WriteLine("Simulation with " + Particles.Length + " particles");
         }
 
-        private static List<Particle> LoadParticlesOnRestart(string pathToOldSessionDir, List<Particle> ParticleList, int timestep=0) {
+        private static List<Particle> LoadParticlesOnRestart(string pathToOldSessionDir, List<Particle> ParticleList, int timestep = 0) {
             string pathToPhysicalData = Path.Combine(pathToOldSessionDir, "PhysicalData.txt");
 
             int historyLength = 3;
             string[] records = File.ReadAllLines(pathToPhysicalData);
             int timestepIndexOffset = 0;
-            string lastLine = records[records.Length-1];
+            string lastLine = records[records.Length - 1];
             string[] lastLineFields = lastLine.Split(',');
             int lastTimestep = Convert.ToInt32(lastLineFields[0]);
             if (timestep != 0)

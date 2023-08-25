@@ -212,8 +212,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             Vector orientationVector = new(inp.Parameters_IN[2], inp.Parameters_IN[3]);
             Vector orientationNormal = new(-orientationVector[1], orientationVector[0]);
             Vector activeStressVector = new(orientationNormal * normalVector > 0 ? -ActiveStress * normalVector[1] : ActiveStress * normalVector[1], orientationNormal * normalVector > 0 ? (ActiveStress * normalVector[0]) : -ActiveStress * normalVector[0]);
-            
+
             BoundaryConditionType bcType = (orientationVector * normalVector <= 0) ? BoundaryConditionType.passive : BoundaryConditionType.active;
+            //BoundaryConditionType bcType = BoundaryConditionType.active;
 
             
             if(m_UsePhoretic) {

@@ -102,7 +102,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
-        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.4, int cellsPerUnitLength = 10, double noOfParticles = 4) {
+        public static XNSERO_Control Closed(int k = 2, double particleLength = 0.5, double aspectRatio = 0.4, int cellsPerUnitLength = 10, double lengthParameter = 4) {
             XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
@@ -127,21 +127,23 @@ namespace BoSSS.Application.XNSERO_Solver {
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 1000;
             double activeStress = 1e1;
-            double nextParticleDistance = particleLength * 2.45;
-            double domainLength = nextParticleDistance * noOfParticles;
-            List<string> boundaryValues = new() {  "Wall" };
+            double distanceParam = 2.45;
+            double nextParticleDistance = particleLength * distanceParam;
+            double domainLength = nextParticleDistance * lengthParameter;
+            List<string> boundaryValues = new() {  "wall" };
             C.SetBoundaries(boundaryValues);
             C.SetGrid2D(domainLength, domainLength, cellsPerUnitLength, false, false);
             C.CoefficientOfRestitution = 1;
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2 ;
             int j = 0;
             List<Particle> particles = new List<Particle>();
-            while (leftCorner + j * nextParticleDistance * aspectRatio * 3 < domainLength / 2) {//nextParticleDistance * aspectRatio * 1.3
+            double densityParam = 6;
+            while (leftCorner + j * nextParticleDistance * aspectRatio * densityParam < domainLength / 2) {//nextParticleDistance * aspectRatio * 1.3
                 int i = 0;
                 while (leftCorner + i * nextParticleDistance < domainLength / 2) {
                     double angle2 = 180 * (-i + j);
                     Motion motion = new(particleDensity);
-                    particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance * aspectRatio * 3 }, angle2, activeStress));
+                    particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { leftCorner + i * nextParticleDistance, leftCorner + j * nextParticleDistance * aspectRatio * densityParam }, angle2, activeStress));
 
                     i += 1;
                 }
@@ -232,17 +234,18 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
-        public static XNSERO_Control Channel(int k = 2, double particleLength = 0.5, double aspectRatio = 0.4, int cellsPerUnitLength = 10, double noOfParticles = 16) {
-            XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods");
+        public static XNSERO_Control Channel(int k = 2, double particleLength = 0.3, double aspectRatio = 0.4, int cellsPerUnitLength = 20) {
+            XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods", IsRestart: false, PathToOldSessionDir: @"D:\BoSSS_databases\Channel\sessions\85c5edac-706a-4f5d-b0a6-6aa1f489efac");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
-            string ID = "827b306e-a50e-4eb3-b8bc-c06e0ac8a053";
+            string ID = "85c5edac-706a-4f5d-b0a6-6aa1f489efac";
             Guid SID = new Guid(ID);
             //C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("1"));
-            int timestep = 9518;
+            int timestep = 220;
             //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
-            string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\827b306e-a50e-4eb3-b8bc-c06e0ac8a053";
+            string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\85c5edac-706a-4f5d-b0a6-6aa1f489efac";
+           
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
@@ -252,49 +255,65 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.PhysicalParameters.IncludeConvection = false;
             C.LS_TrackerWidth = 2;
             C.TracingNamespaces = "BoSSS.Foundation";
+            //C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
+
+            C.AdaptiveMeshRefinement = false;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 3 });
 
             // Particle Properties
             // =============================
             double particleDensity = C.PhysicalParameters.rho_A * 1000;
-            double activeStress = 10;
+            double activeStress = 100;
             double nextParticleDistance = 0.5 * 2.45;
-            double domainLength = nextParticleDistance * noOfParticles;
+            double domainLength =3;
             List<string> boundaryValues = new() {
                 "Wall_lower",
                 "Wall_upper",
-                //"Pressure_Dirichlet_right",
-                //"Pressure_Dirichlet_left"
+                //"Pressure_Outlet_right",
+               // "Pressure_Outlet_left"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid2D(domainLength, domainLength/5, cellsPerUnitLength, true, false);
+            C.SetGrid2D(domainLength, 4, cellsPerUnitLength, true, false);
             C.CoefficientOfRestitution = 1;
             Motion motion = new(particleDensity);
             double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
-            int j = 0;
+            double j = -domainLength / 2 + 0.5;
             List<Particle> particles = new List<Particle>();
-            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, 0 }, 0, activeStress));
-            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, 0 }, 0, activeStress));
-            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, 0 }, 0, activeStress));
-            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, 1.1 }, 0, activeStress));
-            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, 1.1 }, 0, activeStress));
-            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, 1.1 }, 0, activeStress));
-            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + domainLength / 10, -1.1 }, 0, activeStress));
-            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 2 * domainLength / 10, -1.1 }, 0, activeStress));
-            particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { -domainLength / 2 + 3 * domainLength / 10, -1.1 }, 0, activeStress));
+            while (j * 1 < domainLength / 2)
+            {
+                double posX = j * 1;
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, 2.333 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, 2.000 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, 1.666 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, 1.333 }, 0, activeStress));
+                particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, 1.5 }, 0, activeStress));
+                particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, 1 }, 0, activeStress));
+                particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, 0.5 }, 0, activeStress));
+                particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, 0.000 }, 0, activeStress));
+                particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, -0.5 }, 0, activeStress));
+                particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, -1 }, 0, activeStress));
+                particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, -1.5 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, -1.333 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, -1.666 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { posX, -2.000 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, -2.333 }, 0, activeStress));
+                j += 1;
+            }
             C.InitialiseParticles(particles);
-            C.WallPositionPerDimension[0][0] = -domainLength / 2;
-            C.WallPositionPerDimension[0][1] = domainLength / 2;
-            C.WallPositionPerDimension[1][0] = -domainLength / 2;
-            C.WallPositionPerDimension[1][1] = domainLength / 2;
+           
+
+            //Console.WriteLine(particles[0].Motion.GetPosition(0));
+            //Console.WriteLine(particles[1].Motion.GetPosition(0));
             C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
             C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
             C.UseSchurBlockPrec = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.NonLinearSolver.ConvergenceCriterion = 1e-4;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
             C.NonLinearSolver.MinSolverIterations = 2;
-
+            C.SetGravity(new Vector(1, 0));
+            C.AgglomerationThreshold = 0.1;
             return C;
         }
 
@@ -443,61 +462,81 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         public static XNSERO_Control Wirbelbett(int k = 3, double particleLength = 0.25, double aspectRatio = 1, int cellsPerUnitLength = 5, double noOfRows = 13) {
-            XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "wirbelbett");
+            XNSERO_Control C = new XNSERO_Control(degree: k, projectName: "2_active_Rods", IsRestart: true, PathToOldSessionDir: @"D:\BoSSS_databases\Channel\sessions\cdfe23b1-6f88-4f4f-83ee-39168c6893ad");
             //C.SetSaveOptions(@"/work/scratch/ij83requ/default_bosss_db", 1);
             C.SetSaveOptions(dataBasePath: @"D:\BoSSS_databases\Channel", savePeriod: 1);
             //C.SetSaveOptions(dataBasePath: @"\\hpccluster\hpccluster-scratch\deussen\cluster_db\packedParticles", savePeriod: 1);
-            //string ID = "ccf040a2-e5db-47a7-b226-b642676636cd";
-            //C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), -1);
-            //C.IsRestart = true;
+            string ID = "cdfe23b1-6f88-4f4f-83ee-39168c6893ad";
+            Guid SID = new Guid(ID);
+            //C.RestartInfo = new Tuple<Guid, TimestepNumber>(SID, new TimestepNumber("1"));
+            int timestep = 320;
+            C.RestartInfo = new Tuple<Guid, BoSSS.Foundation.IO.TimestepNumber>(new Guid(ID), timestep);
+            string PathToOldSessionDir = @"D:\BoSSS_databases\Channel\sessions\cdfe23b1-6f88-4f4f-83ee-39168c6893ad";
 
-            List<string> boundaryValues = new List<string> {
-                "Velocity_Inlet_lower",
-                "Pressure_Outlet_upper",
-                "Wall_Left",
-                "Wall_Right"
-            };
-            C.SetBoundaries(boundaryValues);
-            C.AddBoundaryValue("Velocity_Inlet_lower", "VelocityY", X => 0.1);
             // Fluid Properties
             // =============================
             C.PhysicalParameters.rho_A = 1;
-            C.PhysicalParameters.mu_A = 1e-2;
+            C.PhysicalParameters.mu_A = 1;
             C.PhysicalParameters.rho_B = 1;
             C.PhysicalParameters.mu_B = 1;
             C.PhysicalParameters.IncludeConvection = false;
-            C.LS_TrackerWidth = 2;
-            C.SetGravity(new Vector(0,-0.01));
+            C.LS_TrackerWidth = 3;
+            C.TracingNamespaces = "BoSSS.Foundation";
+
+            C.AdaptiveMeshRefinement = false;
+            C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = 3 });
 
             // Particle Properties
             // =============================
-            double particleDensity = C.PhysicalParameters.rho_A * 100;
-            double nextParticleDistance = particleLength * 4;
-            C.SetGrid2D(6, 12, cellsPerUnitLength, false, false);
+            double particleDensity = C.PhysicalParameters.rho_A * 1000;
+            double activeStress = 10;
+            double nextParticleDistance = 0.5 * 2.45;
+            double domainLength = 1;
+            List<string> boundaryValues = new() {
+                "Wall_lower",
+                "Wall_upper",
+                //"Pressure_Dirichlet_right",
+                //"Pressure_Dirichlet_left"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid2D(domainLength, 3, cellsPerUnitLength, true, false);
             C.CoefficientOfRestitution = 1;
             Motion motion = new(particleDensity);
-            double leftCornerX = -6 / 2 + nextParticleDistance / 2;
-            double leftCornerY = -12 / 2 + nextParticleDistance / 2;
-            Random angle = new Random();
-            int j = 0;
+            double leftCorner = -domainLength / 2 + nextParticleDistance / 2;
+            double j = -domainLength / 2 + 0.5;
             List<Particle> particles = new List<Particle>();
-            while (leftCornerY + j * nextParticleDistance < 12 / 2 && j < noOfRows) {
-                int i = 0;                
-                while (leftCornerX + i * nextParticleDistance < 6 / 2 ) {
-                    particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { leftCornerX + i * nextParticleDistance, leftCornerY + j * nextParticleDistance }));
-
-                    i += 1;
-                }
-                j += 1;
+            while ((j) * 1 < domainLength / 2) {
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, 2.333 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, 2.000 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, 1.666 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, 1.333 }, 0, activeStress));
+                particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1 * 0, 1.000 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, 0.666 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, 0.333 }, 0, activeStress));
+                particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1 * 0, 0.000 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, -0.333 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, -0.666 }, 0, activeStress));
+                particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1 * 0, -1.000 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, -1.333 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, -1.666 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, -2.000 }, 0, activeStress));
+                //particles.Add(new ParticleEllipse(motion, particleLength, particleLength * aspectRatio, new double[] { j * 1, -2.333 }, 0, activeStress));
+                j += 100000;
             }
-            double dt = 1e-1;
             C.InitialiseParticles(particles);
-            C.SetTimesteps(dt, noOfTimesteps: 50);
+
+
+            //Console.WriteLine(particles[0].Motion.GetPosition(0));
+            //Console.WriteLine(particles[1].Motion.GetPosition(0));
+            C.SetTimesteps(dt: 1e-2, noOfTimesteps: int.MaxValue);
             C.AdvancedDiscretizationOptions.PenaltySafety = 4;
-            //C.AdvancedDiscretizationOptions.CellAgglomerationThreshold = 0.5;
+            C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+            C.UseSchurBlockPrec = false;
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
             C.NonLinearSolver.ConvergenceCriterion = 1e-4;
+            C.NonLinearSolver.MinSolverIterations = 2;
+            C.SetGravity(new Vector(1, 0));
 
             return C;
         }

@@ -64,7 +64,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             SpatialDim = startPos.Length;
             ActiveStress = activeStress;
             Aux = new Auxillary();
-            this.Motion = motion ?? throw new ArgumentNullException("Missing definition of particle motion");
+            this.Motion = motion.CloneAs() ?? throw new ArgumentNullException("Missing definition of particle motion");
             this.Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
             this.Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
             Density = this.Motion.Density;

@@ -46,7 +46,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
             //TestProgram.TestParticleInShearFlow_Phoretic();
             //Assert.IsFalse(true, "remove me");
-            
             void KatastrophenPlot(DGField[] dGFields) {
                 Tecplot.PlotFields(dGFields, "AgglomerationKatastrophe", 0.0, 3);
             }
@@ -167,6 +166,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <remarks>base: Navier Stokes, if(...): phoretic field</remarks>
         protected override void DefineSystem(int D, OperatorFactory opFactory, LevelSetUpdater lsUpdater) {
+
             if (Control.UseAveragedEquations) {
                 XNSE_OperatorConfiguration config = new(Control);
 
@@ -377,6 +377,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 for (int p = 0; p < Particles.Length; p++) {
                     Particles[p].IsCollided = false;
                 }
+                //Console.WriteLine("wppd " + Control.WallPositionPerDimension[0][0] + Control.WallPositionPerDimension[0][1] + "   " + Control.WallPositionPerDimension[1][0] + Control.WallPositionPerDimension[1][1]);
                 ParticleCollision Collision = new(MaxGridLength, CoefficientOfRestitution, dt, Control.WallPositionPerDimension, Control.BoundaryIsPeriodic);
                 Collision.Calculate(Particles, CollisionTree);
             }
@@ -400,6 +401,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Creates a log file for the physical data of the particles. Only active if a database is specified.
         /// </summary>
         private void CreatePhysicalDataLogger() {
+            Console.WriteLine(CurrentSessionInfo.ID);
             if ((MPIRank == 0) && (CurrentSessionInfo.ID != Guid.Empty)) {
                 LogParticleData = DatabaseDriver.FsDriver.GetNewLog("PhysicalData", CurrentSessionInfo.ID);
                 LogParticleData.WriteLine(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}", "time-step", "particle", "time", "posX", "posY", "angle", "velX", "velY", "rot", "fX", "fY", "T"));
