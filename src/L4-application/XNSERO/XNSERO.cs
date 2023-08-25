@@ -40,8 +40,8 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args) {
-            //InitMPI();
-            //TestProgram.TestRigidLevelSetProjection();
+            InitMPI();
+            TestProgram.TestStickyTrap();
             //TestProgram.TestParticleParameter();
             //BoSSS.Application.XNSERO_Solver.TestProgram.TestRigidLevelSetProjection();
             //TestProgram.TestParticleInShearFlow_Phoretic();
@@ -340,6 +340,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 for (int p = 0; p < Particles.Length; p++) {
                     Console.WriteLine("Position of particle " + p + ": " + Particles[p].Motion.GetPosition(0));
                     Console.WriteLine("Velocity of particle " + p + ": " + Particles[p].Motion.GetTranslationalVelocity(0));
+                    Console.WriteLine("Rotational velocity of particle " + p + ": " + Particles[p].Motion.GetRotationalVelocity(0));
                 }
                 LogPhysicalData(phystime, TimestepNo);
                 Console.WriteLine($"done with time step {TimestepNo}");

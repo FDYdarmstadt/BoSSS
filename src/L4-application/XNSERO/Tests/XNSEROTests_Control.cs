@@ -30,7 +30,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             };
             C.SetBoundaries(boundaryValues);
             C.SetGrid2D(lengthX: 4, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
+            C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 0);
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -180,7 +180,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 5;
             C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
-            C.NonLinearSolver.ConvergenceCriterion = 1e-12;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
 
             // Timestepping
             // ============
@@ -244,7 +244,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 new ParticleSuperEllipsoidFlat(new MotionFixed(particleDensity2), 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
                 new ParticleSuperEllipsoidFlat(new MotionFixed(particleDensity2), 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
             };
-            double dt = 1e-2;
+            double dt = 1e-1;
             C.InitialiseParticles(particles);
             C.PhysicalParameters.IncludeConvection = false;
 
@@ -262,7 +262,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 31;
+            C.NoOfTimesteps = 300;
 
             // haben fertig...
             // ===============

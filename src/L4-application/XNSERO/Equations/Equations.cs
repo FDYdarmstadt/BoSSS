@@ -71,13 +71,15 @@ namespace BoSSS.Application.XNSERO_Solver.Equations {
                     default: throw new NotSupportedException($"Unknown fluid species: {this.m_fluidPhase}");
                 }
 
-                // convective operator
-                // ===================
-                if(physParams.IncludeConvection && config.isTransport) {
-                    var ConvIB = new ConvectionAtIB( d, D, LFF, boundaryMap, rho, isMovingMesh, m_iLevSet, m_fluidPhase, m_solidPhase, true);
-                    AddComponent(ConvIB);
-                }
-                if(isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
+            // convective operator
+            // ===================
+            if (physParams.IncludeConvection && config.isTransport) {
+                if (AllParticles[0].ActiveStress != 0)
+                    throw new NotImplementedException("Convective transport not implemented for active particles");
+                var ConvIB = new ConvectionAtIB(d, D, LFF, boundaryMap, rho, isMovingMesh, m_iLevSet, m_fluidPhase, m_solidPhase, true);
+                AddComponent(ConvIB);
+            }
+            if (isMovingMesh && (physParams.IncludeConvection && config.isTransport == false)) {
                     // if Moving mesh, we need the interface transport term somehow
                     throw new NotImplementedException("Convective terms for active boundary in case of moving mesh are unknown (Feb 2022).");
                 }
