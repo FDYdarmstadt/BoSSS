@@ -6198,7 +6198,14 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public static XNSE_Control MergingBubble(int k = 2, int Res = 20, int SpaceDim = 2, TestCase myTestCase = TestCase.Bubble, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true) {
             XNSE_Control C = new XNSE_Control();
+            C.DbPath = @"C:\debug_db";
+            C.ProjectName = "XNSE-Bubble";
+            C.ProjectDescription = "merging bubble";
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D", SpaceDim));
+            C.savetodb = true;
 
+            C.SessionName = $"{myTestCase}Merger_k{k}_Res{Res}_AMR{AMR}_LS{LSMethod}";
             C.GridFunc = LongGridFuncFactory(SpaceDim, Res);
             C.GridPartType = GridPartType.Hilbert;
             C.DynamicLoadBalancing_On = false;
@@ -6336,7 +6343,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.dtMax = dt;
             C.dtMin = dt;
             C.NoOfTimesteps = 1500;
-            C.saveperiod = 10;
+            C.saveperiod = 1;
 
             C.AdaptiveMeshRefinement = AMR;
             if (AMR) {
