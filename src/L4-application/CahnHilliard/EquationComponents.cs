@@ -21,7 +21,7 @@ namespace BoSSS.Application.CahnHilliard {
     }
 
     public class __c_Flux : phi_Flux {
-        public __c_Flux(int D, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, __boundaryCondMap, "c") { }
+        public __c_Flux(int D, Func<DGField[]> VelocityGetter, BoundaryCondMap<BoundaryType> __boundaryCondMap) : base(D, VelocityGetter, __boundaryCondMap, "c") { }
     }
 
     /*

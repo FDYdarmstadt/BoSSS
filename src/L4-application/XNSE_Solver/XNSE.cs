@@ -73,8 +73,7 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
-            
+                        
             //InitMPI();
             //DeleteOldPlotFiles();
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
@@ -135,7 +134,7 @@ namespace BoSSS.Application.XNSE_Solver {
     public class XNSE<T> : SolverWithLevelSetUpdater<T> where T : XNSE_Control, new() {
 
         public override void Init(AppControl control) {
-
+                
 
             base.Init(control);
             var ctrl = (control as XNSE_Control);
@@ -492,9 +491,11 @@ namespace BoSSS.Application.XNSE_Solver {
             // === additional parameters === //
             opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
             Velocity0Mean v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
-            if ((config.physParams.IncludeConvection && config.isTransport) && UseAdHocLinearization) {
-                opFactory.AddParameter(new Velocity0(D));
+            
+            if (config.physParams.IncludeConvection && config.isTransport) {
                 opFactory.AddParameter(v0Mean);
+                if(this.Control.NonLinearSolver.SolverCode == NonLinearSolverCode.Picard)
+                    opFactory.AddParameter(new Velocity0(D));
             }
 
             // === level set related parameters === //
@@ -634,7 +635,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
             using (var f = new FuncTrace()) {
-                if ((int)this.Control.TimeSteppingScheme >= 100) {
+                if ((int)this.Control.TimeSteppingScheme >= 100 && this.Control.TimesteppingMode != AppControl._TimesteppingMode.Steady) {
                     
                     // this is a RK scheme, set here the maximum 
                     dt = this.GetTimestep();
