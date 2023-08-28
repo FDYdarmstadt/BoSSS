@@ -213,7 +213,7 @@ namespace BoSSS.Foundation.Comm {
         /// </summary>
         /// <returns></returns>
         public Permutation Invert() {
-            using(new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 Permutation inv = new Permutation(this);
                 int localLength = m_Partition.LocalLength; //m_LocalLengths[m_Master.MyRank];
                 int size;
@@ -235,7 +235,6 @@ namespace BoSSS.Foundation.Comm {
                         i0[i] = i0[i - 1] + m_Partition.GetLocalLength(i - 1);// m_LocalLengths[i - 1];
 
 
-
                     // do local inversion and collect items 
                     // ====================================
                     List<PermutationEntry>[] itemsToSend = new List<PermutationEntry>[size];
@@ -244,7 +243,7 @@ namespace BoSSS.Foundation.Comm {
 
                     for (int i = 0; i < localLength; i++) {
 
-                        // decide wether inversion of entry i is local or has to be transmitted ...
+                        // decide whether inversion of entry i is local or has to be transmitted ...
                         if (m_Values[i] >= myi0Offset && m_Values[i] < (myi0Offset + localLength)) {
                             // local 
                             inv.m_Values[this.m_Values[i] - myi0Offset] = i + myi0Offset;
