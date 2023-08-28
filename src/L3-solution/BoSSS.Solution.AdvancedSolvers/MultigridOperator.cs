@@ -82,7 +82,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // dbg_launch();
                 while(!foundACell && neighborSearchDepth >= 0) {
                     if(lsTrk != null) {
-                    Cells2avoid = lsTrk.Regions.GetNearFieldMask(lsTrk.NearRegionWidth).GetBitMask();
+                        Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(1, neighborSearchDepth)).GetBitMask();
                         //}
                     } else {
                         Cells2avoid = null;

@@ -282,7 +282,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocitySol = -0.0003878516431006705;
+                double angularVelocitySol = -0.0004198291651200775;
                 double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
 
                 double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);
@@ -327,7 +327,7 @@ namespace BoSSS.Application.XNSERO_Solver {
                 p.Init(ctrl);
                 p.RunSolverMode();
 
-                double angularVelocitySol = -0.0003878516431006705;
+                double angularVelocitySol = -0.0004198291651200775;
                 double angularVelocityIs = p.Particles[0].Motion.GetRotationalVelocity(0);
 
                 double diff_Velocity = Math.Abs(angularVelocityIs - angularVelocitySol);
