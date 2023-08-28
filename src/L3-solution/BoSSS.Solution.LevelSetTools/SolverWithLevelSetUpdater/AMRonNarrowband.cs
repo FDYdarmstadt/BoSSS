@@ -16,6 +16,7 @@ limitations under the License.
 
 using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
+using ilPSP;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -75,6 +76,50 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
         public override int GetHashCode() {
             return base.GetHashCode();
+        }
+    }
+
+    public class AMRForRigidObject : AMRLevelIndicatorWithLevelset {
+
+        public AMRForRigidObject(List<Func<Vector, double, bool>> ContainsFunction, double LengthScale) {
+            AllContainsFunctions = ContainsFunction;
+            this.LengthScale = LengthScale;
+        }
+
+        private readonly List<Func<Vector, double, bool>> AllContainsFunctions;
+        private readonly double LengthScale;
+
+        bool ContainsFunction(double[] X) {
+            bool containsFunction = false;
+            int i = 0;
+            while(!containsFunction && i < AllContainsFunctions.Count()) {
+                containsFunction = AllContainsFunctions[i](X, LengthScale);
+                i += 1;
+            }
+            return containsFunction;
+        }
+
+        public override int[] DesiredCellChanges() {
+
+            int J = GridData.CellPartitioning.LocalLength;
+            int[] levels = new int[J];
+
+            int cellsToRefine = 0;
+            int cellsToCoarse = 0;
+            Cell[] cells = GridData.Grid.Cells;
+            for (int j = 0; j < J; j++) {
+                int currentLevel = cells[j].RefinementLevel;
+                Vector cellCenter = new Vector(GridData.iGeomCells.GetCenter(j));
+                if (ContainsFunction(cellCenter) && currentLevel < maxRefinementLevel) {
+                    levels[j] = 1;
+                    cellsToRefine++;
+                } else if (!ContainsFunction(cellCenter) && currentLevel > 0) {
+                    levels[j] = -1;
+                    cellsToCoarse++;
+                }
+            }
+
+            return levels;
         }
     }
 }

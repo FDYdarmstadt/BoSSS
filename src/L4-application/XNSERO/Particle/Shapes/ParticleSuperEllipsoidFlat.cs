@@ -6,23 +6,26 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace BoSSS.Application.XNSERO_Solver {
-    class Particle_superEllipsoidFlat : Particle_superEllipsoid{
+    class ParticleSuperEllipsoidFlat : ParticleSuperEllipsoid{
 
         double m_Length;
         double m_Exponent;
         double m_Thickness;
 
-        public Particle_superEllipsoidFlat(
-            InitializeMotion motionInit, 
+        public ParticleSuperEllipsoidFlat(
+            IMotion motion, 
             double length, 
             double thickness, 
             int superEllipsoidExponent, 
-            double[] startPos = null, 
+            double[] startPos, 
             double startAngl = 0, 
             double activeStress = 0, 
             double[] startTransVelocity = null, 
             double startRotVelocity = 0)
-            : base(motionInit, length, thickness, superEllipsoidExponent, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            : base(motion, length, thickness, superEllipsoidExponent, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
+
             m_Length = length;
             m_Thickness = thickness;
             m_Exponent = superEllipsoidExponent;

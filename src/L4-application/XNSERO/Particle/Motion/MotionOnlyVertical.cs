@@ -14,22 +14,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-using BoSSS.Foundation.Grid;
 using ilPSP;
-using System.Collections.Generic;
 using System;
 
 namespace BoSSS.Application.XNSERO_Solver {
     [Serializable]
-    public class MotionWetNoRotation : Motion {
+    public class MotionOnlyVertical : Motion {
 
         /// <summary>
-        /// The dry description of motion including hydrodynamics without rotation.
+        /// The dry description of motion without hydrodynamics and rotation.
         /// </summary>
+        /// <param name="gravity">
+        /// The gravity (volume forces) acting on the particle.
+        /// </param>
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        public MotionWetNoRotation(double density) : base(density) { }
+        public MotionOnlyVertical(double density) : base(density) { }
 
         public override bool IncludeRotation() {
             return false;
@@ -46,34 +47,38 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         /// <summary>
-        /// Calculate the new angular velocity of the particle using explicit Euler scheme.
+        /// Calculate the new particle position
         /// </summary>
-        /// <param name="dt">Timestep</param>
-        /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        public override double CalculateAngularVelocity(double dt) {
-            double l_RotationalVelocity = 0;
-            Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
-            return l_RotationalVelocity;
+        /// <param name="dt"></param>
+        public override Vector CalculateParticlePosition(double dt) {
+            Vector position = Position[1] + (5 * TranslationalVelocity[0] + 8 * TranslationalVelocity[1] - TranslationalVelocity[2]) * dt / 12;
+            position[0] = Position[1][0];
+            position[1] = Position[1][1];
+            Aux.TestArithmeticException(position, "particle position");
+            return position;
         }
 
         /// <summary>
-        /// Update Forces and Torque acting from fluid onto the particle
+        /// Calculate the new particle position
         /// </summary>
-        /// <param name="hydrodynamicsIntegration"></param>
-        /// <param name="fluidDensity"></param>
-        //public override Vector CalculateHydrodynamics(ParticleHydrodynamicsIntegration hydrodynamicsIntegration, string[] FluidSpecies, double dt) {
-        //    int NoOfFluidSpecies = FluidSpecies.Length;
-        //    Vector tempForces = new Vector(SpatialDim + 1);
-        //    for(int i = 0; i < NoOfFluidSpecies; i++) {
-        //        tempForces += hydrodynamicsIntegration.Main(GetPosition(0), CutCells, FluidSpecies[i]);
-        //    }
-        //    Aux.TestArithmeticException(tempForces, "temporal forces during calculation of hydrodynamics");
-        //    tempForces[SpatialDim] = 0;
-        //    return tempForces;
-        //}
+        /// <param name="dt"></param>
+        public override Vector CalculateParticlePositionDuringCollision(double dt) {
+            Vector position = Position[0] + (5 * TranslationalVelocity[0] + 8 * TranslationalVelocity[1] - TranslationalVelocity[2]) * dt / 12;
+            position[0] = Position[0][0];
+            Aux.TestArithmeticException(position, "particle position");
+            return position;
+        }
+
+        /// <summary>
+        /// Calculate the new acceleration (translational and rotational)
+        /// </summary>
+        /// <param name="dt"></param>
+        public override double CalculateRotationalAcceleration(double dt) {
+            return 0;
+        }
 
         public override object Clone() {
-            MotionWetNoRotation clonedMotion = new MotionWetNoRotation(Density);
+            MotionDryNoRotation clonedMotion = new MotionDryNoRotation(Density);
             clonedMotion.Volume = this.Volume;
             clonedMotion.MomentOfInertia = this.MomentOfInertia;
             return clonedMotion;

@@ -22,11 +22,11 @@ using System.Linq;
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Shell : Particle {
+    public class ParticleShell : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Shell() : base() {
+        private ParticleShell() : base() {
 
         }
 
@@ -57,16 +57,20 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Shell(InitializeMotion motionInit, double length = 4, double height = 1, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public ParticleShell(IMotion motion, double length, double height, double thickness, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            throw new NotImplementedException("Legacy code, untested, update necessary");
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
+
             m_Length = length;
             m_Thickness = thickness;
             m_Height = height;
             Aux.TestArithmeticException(length, "Particle length");
             Aux.TestArithmeticException(thickness, "Particle thickness");
 
-            Motion.SetMaxLength(GetLengthScales().Max());
-            Motion.SetVolume(Area);
-            Motion.SetMomentOfInertia(MomentOfInertia);
+            Motion.CharacteristicLength = GetLengthScales().Max();
+            Motion.Volume = this.Volume;
+            Motion.MomentOfInertia = this.MomentOfInertia;
         }
 
         [DataMember]
@@ -77,7 +81,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         private readonly double m_Height;
 
         /// <summary>
-        /// The shell is devided into two convex sub particles. Necesarry for the GJK-algorithm in the collision model.
+        /// The shell is devided into two convex sub particles. Necessary for the GJK-algorithm in the collision model.
         /// </summary>
         public override int NoOfSubParticles => 3;
 
@@ -89,12 +93,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Moment of inertia of an elliptic particle.
         /// </summary>
-        override public double MomentOfInertia => (Mass_P * (m_Length.Pow2() + m_Height.Pow2()) - Mass_P * (5 * m_Thickness.Pow2() - 2 * (m_Length + m_Height) * m_Thickness) / ((m_Height - m_Thickness) * (m_Length - 2 * m_Thickness))) / 12;
+        override public double MomentOfInertia => (Mass * (m_Length.Pow2() + m_Height.Pow2()) - Mass * (5 * m_Thickness.Pow2() - 2 * (m_Length + m_Height) * m_Thickness) / ((m_Height - m_Thickness) * (m_Length - 2 * m_Thickness))) / 12;
 
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Area => m_Length * m_Height - (m_Height - m_Thickness) * (m_Length - 2 * m_Thickness);
+        public override double Volume => m_Length * m_Height - (m_Height - m_Thickness) * (m_Length - 2 * m_Thickness);
 
         /// <summary>
         /// Level set function of the particle.
@@ -173,13 +177,15 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
             Aux.TestArithmeticException(supportVector, "vector in calc of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
             double[] position = Position;
-            double angle = Motion.GetAngle(0);
+            if (Angle.Dim > 1)
+                throw new NotImplementedException("Only 2D support");
+            double angle = Angle[0]; // hardcoded 2D
             double[] subPosition = position.CloneAs();
             double[] length = position.CloneAs();
 

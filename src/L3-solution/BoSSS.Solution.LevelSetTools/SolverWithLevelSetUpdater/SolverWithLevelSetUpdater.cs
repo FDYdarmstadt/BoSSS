@@ -155,7 +155,6 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 throw new ApplicationException("invalid grid -- most likely something went wrong during mesh adaptation/redistribution");
             int D = this.Grid.SpatialDimension;
             var lsNames = this.LevelSetNames;
-            //ISpatialOperator test = this.Operator; hier ist noch kein OP
             int NoOfLevelSets = lsNames.Length;
             if(NoOfLevelSets != this.NoOfLevelSets)
                 throw new ApplicationException();

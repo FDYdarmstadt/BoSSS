@@ -17,30 +17,26 @@ limitations under the License.
 using System;
 using System.Runtime.Serialization;
 using ilPSP;
-using System.Linq;
 
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Hippopede : Particle {
+    public class ParticleBean : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Hippopede() : base() {
+        private ParticleBean() : base() {
 
         }
 
         /// <summary>
-        /// Constructor for a hippopede.
+        /// Constructor for a bean. Warning: Legacy code.
         /// </summary>
         /// <param name="motionInit">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
-        /// <param name="length">
-        /// The length of the horizontal halfaxis.
-        /// </param>
-        /// <param name="thickness">
-        /// The length of the vertical halfaxis.
+        /// <param name="radius">
+        /// The main lengthscale of the bean. 
         /// </param>
         /// <param name="startPos">
         /// The initial position.
@@ -57,35 +53,36 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Hippopede(InitializeMotion motionInit, double length, double thickness, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, activeStress, startAngl, startTransVelocity, startRotVelocity) {
-            m_Length = length;
-            m_Thickness = thickness;
-            Aux.TestArithmeticException(length, "Particle length");
-            Aux.TestArithmeticException(thickness, "Particle thickness");
-            Motion.SetMaxLength(GetLengthScales().Max());
-            Motion.SetVolume(Area);
-            Motion.SetMomentOfInertia(MomentOfInertia);
+        public ParticleBean(IMotion motion, double radius, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            throw new NotImplementedException("Legacy code, untested, update necessary");
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
+            
+            m_Radius = radius;
+            Aux.TestArithmeticException(radius, "Particle radius");
+
+            Motion.CharacteristicLength = radius;
+            Motion.Volume = this.Volume;
+            Motion.MomentOfInertia = this.MomentOfInertia;
         }
 
         [DataMember]
-        private readonly double m_Length;
-        [DataMember]
-        private readonly double m_Thickness;
+        private readonly double m_Radius;
 
         /// <summary>
         /// Circumference. Approximated with sphere.
         /// </summary>
-        public override double Circumference => Math.PI * m_Length * m_Thickness;
+        public override double Circumference => 2 * Math.PI * m_Radius;
 
         /// <summary>
-        /// Area occupied by the particle. Approximated with sphere.
+        /// Area occupied by the particle.
         /// </summary>
-        public override double Area => Math.PI * m_Length * m_Thickness;
+        public override double Volume => Math.PI * m_Radius * m_Radius;
 
         /// <summary>
-        /// Moment of inertia of the particle. Approximated with sphere.
+        /// Moment of inertia. Approximated with sphere.
         /// </summary>
-        override public double MomentOfInertia => (1 / 2.0) * (Mass_P * m_Length * m_Thickness);
+        override public double MomentOfInertia => (1 / 2.0) * (Mass * m_Radius * m_Radius);
 
         /// <summary>
         /// Level set function of the particle.
@@ -94,10 +91,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The current point.
         /// </param>
         protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
-            double a = m_Length;
-            double b = m_Thickness;
-            double alpha = -(Motion.GetAngle(0));
-            return -((((X[0] - Postion[0]) * Math.Cos(alpha) - (X[1] - Postion[1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - Postion[0]) * Math.Sin(alpha) + (X[1] - Postion[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - Postion[0]) * Math.Cos(alpha) - (X[1] - Postion[1]) * Math.Sin(alpha)).Pow2() - b * ((X[0] - Postion[0]) * Math.Sin(alpha) + (X[1] - Postion[1]) * Math.Cos(alpha)).Pow2());
+            double alpha = -Motion.GetAngle(0);
+            double[] position = Postion;
+            double a = 3.0 * m_Radius.Pow2();
+            double b = 1.0 * m_Radius.Pow2();
+            return -((((X[0] - position[0]) * Math.Cos(alpha) - (X[1] - position[1]) * Math.Sin(alpha)).Pow(2) + ((X[0] - position[0]) * Math.Sin(alpha) + (X[1] - position[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((X[0] - position[0]) * Math.Cos(alpha) - (X[1] - position[1]) * Math.Sin(alpha)).Pow(3) - b * ((X[0] - position[0]) * Math.Sin(alpha) + (X[1] - position[1]) * Math.Cos(alpha)).Pow2());
         }
 
         /// <summary>
@@ -110,10 +108,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// tolerance length.
         /// </param>
         protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
+            double alpha = Motion.GetAngle(0);
+            Vector position = Motion.GetPosition(0);
             // only for rectangular cells
-            double a = m_Length + tolerance;
-            double b = m_Thickness + tolerance;
-            if (-((((point[0] - Motion.GetPosition(0)[0]) * Math.Cos(Motion.GetAngle(0)) - (point[1] - Motion.GetPosition(0)[1]) * Math.Sin(Motion.GetAngle(0))).Pow(2) + ((point[0] - Motion.GetPosition(0)[0]) * Math.Sin(Motion.GetAngle(0)) + (point[1] - Motion.GetPosition(0)[1]) * Math.Cos(Motion.GetAngle(0))).Pow(2)).Pow2() - a * ((point[0] - Motion.GetPosition(0)[0]) * Math.Cos(Motion.GetAngle(0)) - (point[1] - Motion.GetPosition(0)[1]) * Math.Sin(Motion.GetAngle(0))).Pow2() - b * ((point[0] - Motion.GetPosition(0)[0]) * Math.Sin(Motion.GetAngle(0)) + (point[1] - Motion.GetPosition(0)[1]) * Math.Cos(Motion.GetAngle(0))).Pow2()) > 0) {
+            double radiusTolerance = 1.0 + tolerance;
+            double a = 4.0 * radiusTolerance.Pow2();
+            double b = 1.0 * radiusTolerance.Pow2();
+            if (-((((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(2) + ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow(2)).Pow2() - a * ((point[0] - position[0]) * Math.Cos(alpha) - (point[1] - position[1]) * Math.Sin(alpha)).Pow(3) - b * ((point[0] - position[0]) * Math.Sin(alpha) + (point[1] - position[1]) * Math.Cos(alpha)).Pow2()) > 0) {
                 return true;
             }
             return false;
@@ -123,7 +124,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Returns the legnthscales of a particle.
         /// </summary>
         override public double[] GetLengthScales() {
-            return new double[] { m_Length, m_Thickness };
+            return new double[] { m_Radius, m_Radius };
         }
     }
 }

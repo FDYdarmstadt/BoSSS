@@ -22,11 +22,11 @@ using System.Linq;
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Rectangle : Particle {
+    public class ParticleRectangle : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Rectangle() : base() {
+        private ParticleRectangle() : base() {
 
         }
 
@@ -57,15 +57,18 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Rectangle(InitializeMotion motionInit, double length = 4, double thickness = 1, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public ParticleRectangle(IMotion motion, double length, double thickness, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
+
             m_Length = length;
             m_Thickness = thickness;
             Aux.TestArithmeticException(length, "Particle length");
             Aux.TestArithmeticException(thickness, "Particle thickness");
 
-            Motion.SetMaxLength(GetLengthScales().Max());
-            Motion.SetVolume(Area);
-            Motion.SetMomentOfInertia(MomentOfInertia);
+            Motion.CharacteristicLength = GetLengthScales().Max();
+            Motion.Volume = this.Volume;
+            Motion.MomentOfInertia = this.MomentOfInertia;
         }
 
         [DataMember]
@@ -81,12 +84,12 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Moment of inertia of an elliptic particle.
         /// </summary>
-        override public double MomentOfInertia => (Mass_P * (m_Length.Pow2() + m_Thickness.Pow2())) / 12;
+        override public double MomentOfInertia => (Mass * (m_Length.Pow2() + m_Thickness.Pow2())) / 12;
 
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Area => m_Length * m_Thickness;
+        public override double Volume => m_Length * m_Thickness;
 
         /// <summary>
         /// Level set function of the particle.
@@ -131,13 +134,15 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
             Aux.TestArithmeticException(supportVector, "vector in calc of support point");
             if (supportVector.L2Norm() == 0)
                 throw new ArithmeticException("The given vector has no length");
 
             Vector supportPoint = new Vector(supportVector);
-            double angle = Motion.GetAngle(0);
+            if (Angle.Dim > 1)
+                throw new NotImplementedException("Only 2D support");
+            double angle = Angle[0]; // hardcoded 2D
             Vector position = new Vector(Position);
             Vector rotVector = new Vector(supportVector);
             rotVector[0] = supportVector[0] * Math.Cos(angle) - supportVector[1] * Math.Sin(angle);

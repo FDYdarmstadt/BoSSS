@@ -75,7 +75,6 @@ namespace BoSSS.Application.XNSERO_Solver {
                 var ret = ArrayTools.Cat(VariableNames.Velocity0Vector(m_D), VariableNames.Velocity0MeanVector(m_D));
                 if(m_UseLevelSetVelocityParameter) {
                     ret = ret.Cat(VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.VelocityVector(m_D)));
-                    ret = ret.Cat(VariableNames.AsLevelSetVariable(VariableNames.LevelSetCGidx(m_iLevSet), VariableNames.SurfaceForceVector(m_D)));
                 }
                 return ret;
             }
@@ -112,20 +111,24 @@ namespace BoSSS.Application.XNSERO_Solver {
             } else {
                 BoSSS.Foundation.CommonParams inp = cp;
                 double[] uLevSet;
-                if(m_UseLevelSetVelocityParameter) {
-                    Vector activeStressVector = new Vector(inp.Parameters_IN[m_D * 3], inp.Parameters_IN[m_D * 3 + 1]);
-                    BoundaryConditionType bcType = activeStressVector.Abs() <= 1e-8 ? BoundaryConditionType.passive : BoundaryConditionType.active;
-                    switch(bcType) {
-                        case BoundaryConditionType.passive:
-                        uLevSet = inp.Parameters_IN.GetSubVector(m_D * 2, m_D);
-                        break;
-                        case BoundaryConditionType.active:
-                        uLevSet = new double[m_D];
-                        uLevSet[m_d] = U_Neg[0];
-                        break;
-                        default:
-                        throw new NotImplementedException("Unknown boundary condition for convection at particle surface");
-                    }
+                if (m_UseLevelSetVelocityParameter) {
+                    uLevSet = inp.Parameters_IN.GetSubVector(m_D * 2, m_D);
+                    //Vector activeStressVector = new Vector(inp.Parameters_IN[m_D * 3], inp.Parameters_IN[m_D * 3 + 1]);
+                    //BoundaryConditionType bcType = activeStressVector.Abs() <= 1e-8 ? BoundaryConditionType.passive : BoundaryConditionType.active;
+                    Vector normalVector = inp.Normal;
+                    //Vector orientationVector = new(inp.Parameters_IN[2], inp.Parameters_IN[3]);
+                    //BoundaryConditionType bcType = (orientationVector * normalVector <= 0) ? BoundaryConditionType.passive : BoundaryConditionType.active;
+                    //switch (bcType) {
+                    //    case BoundaryConditionType.passive:
+                    //    uLevSet = inp.Parameters_IN.GetSubVector(m_D * 2, m_D);
+                    //    break;
+                    //    case BoundaryConditionType.active:
+                    //    uLevSet = new double[m_D];
+                    //    uLevSet[m_d] = U_Neg[0];
+                    //    break;
+                    //    default:
+                    //    throw new NotImplementedException("Unknown boundary condition for convection at particle surface");
+                    //}
                 } else {
                     uLevSet = new double[m_D];
                 }
