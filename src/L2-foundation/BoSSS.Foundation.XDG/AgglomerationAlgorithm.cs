@@ -913,6 +913,7 @@ namespace BoSSS.Foundation.XDG {
         /// <remarks>
         /// Revised algorithm, in use since Dec. 2021
         /// </remarks>
+        //[MethodImpl(MethodImplOptions.NoInlining)] too see which lines throw exception.
         protected virtual void FindAgglomerationTargets_Mk2(
             List<int> AgglomSourceCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates
             ) {
@@ -1129,7 +1130,7 @@ namespace BoSSS.Foundation.XDG {
                 ChainCountMax = ChainCountMax.MPIMax();
 
                 // Global-MPI level
-                while (ChainCountMax > 0 && ii < iteration_threeshold) { // as long as a cell is need to be agglomerated or not exceeding the threshold
+                while (ChainCountMax > 0 && ii < iteration_threeshold) { // as long as a cell needs to be agglomerated or not exceeding the threshold
                     var LoopChainAgglomerationPairs = new List<CellAgglomerator.AgglomerationPair>();
 
                     List<(double EdgeArea, double Dist, int jCell, int jCellNeigh, int targetCell, int targetRank)> weightedEdges = new List<(double, double, int, int, int, int)>();
@@ -1166,14 +1167,15 @@ namespace BoSSS.Foundation.XDG {
                                 double EdgeArea_iEdge = edgeArea[iEdge];
                                 Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
 
-                                if (jCellNeigh >= 0 && EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG)
-                                    IsPossibleTarget = true;
-
-                                if (CellVolumes[jCell] <= 0)
+                                if ((jCellNeigh >= 0 && EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG) || CellVolumes[jCell] <= 0) { 
                                     IsPossibleTarget = true;
 
                                 if (AggSourcesWithExternalCell[jCellNeigh])
                                     NeighborAggSourceCells++;
+
+                                } else {
+                                    continue;
+                                }                    
 
                                 // assume maximum distance as default value for cases that there is no additional info
                                 double Distance = double.MaxValue;
