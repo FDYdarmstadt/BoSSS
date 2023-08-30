@@ -188,7 +188,7 @@ namespace XESF {
             double LevelSet1Prime = Math.Tan(wedge_angle_radial);
             double LevelSet2Prime = Math.Tan(initialAngle_shockLS * Math.PI / 180.0);
 
-
+            
             // ### Wedge Level set function ###
             c.LevelSetPos = delegate (double[] X) { return -X[0] + 0.5 + (X[1] / 0.17632698070846498); };
 
@@ -226,14 +226,7 @@ namespace XESF {
                 c.OptiLevelSet_ParamValues = new List<double>(tmp_LS.m_ParamValues);
                 c.OptiLevelSet_Param_Functions = new List<Func<double[], double, double>>(tmp_LS.m_phi);
                 c.OptiLSIsOrthonormal = true;
-                switch(optiLevelSetType) {
-                    case OptiLevelSetType.SplineLevelSet:
-                    c.InitialShockPostion = Y => 0.5 + Y[1] / LevelSet2Prime;
-                    break;
-                    default:
-                    c.InitialShockPostion = X => X[0] - 0.5 - (X[1] / LevelSet2Prime);
-                    break;
-                }
+                
                 
                 break;
                 case GetLevelSet.FromReconstruction:
@@ -247,6 +240,16 @@ namespace XESF {
                 default:
                 throw new NotSupportedException("Not supported Shock Setup");
 
+            }
+            //Initial Level Set as function
+            switch (optiLevelSetType)
+            {
+                case OptiLevelSetType.SplineLevelSet:
+                    c.InitialShockPostion = Y => 0.5 + Y[1] / LevelSet2Prime;
+                    break;
+                default:
+                    c.InitialShockPostion = X => X[0] - 0.5 - (X[1] / LevelSet2Prime);
+                    break;
             }
             #endregion
 
@@ -1180,7 +1183,7 @@ namespace XESF {
         /// <param name="itMinPIter"></param>
         /// <param name="iTermN"></param>
         /// <returns></returns>
-        public static XESFControl XDGBS_Cluster(double gammaMin = 1e-04, double agg = 0.4, double tALNR = 1.001, int TermN = 8, int numY = 22, string dbPath = null,
+        public static XESFControl XDGBS_Cluster(bool aRI = false, double gammaMin = 1e-04, double agg = 0.4, double tALNR = 1.001, int TermN = 8, int numY = 22, string dbPath = null,
             int numX = 10, int DegE = 3, int DegS = 0, int plotInterval = -1, int iProb=0,int iflux = 0, int terStrat = 0, int iRI = 0, int itALNR =0, int itMinPIter =0,int iTermN =0, int iRIT=0, int iFphi=0) 
             
             {
@@ -1210,12 +1213,13 @@ namespace XESF {
                 tALNRs: tALNRArrays[itALNR],
                 TermNs: TermNArrays[iTermN],
                 MinPIter: MinPIterArrays[itMinPIter],
+                applyReInit:aRI,
                 MaxReInits: MaxReinitArrays[iRI],
                 ReInitTols: ReInitTolsArray[iRIT],
                 fphitype:fphiTypes[iFphi]
                 ) ;
                 
-                c.SessionName = string.Format($"XDGBS-p{DegE}-{numX}x{numY}-agg{agg}-iProb{iProb}-iFlux{iflux}-FphiType{iFphi}-NewAgglo");
+                c.SessionName = string.Format($"XDGBS-p{DegE}-{numX}x{numY}-agg{agg}-iProb{iProb}-iFlux{iflux}-FphiType{iFphi}-aRI_{aRI}");
             return c;
         }
         /// <summary>

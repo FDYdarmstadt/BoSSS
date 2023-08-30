@@ -3756,24 +3756,41 @@ namespace ApplicationWithIDT {
         /// <param name="y3"></param>
         /// <param name="l3"></param>
         public void GetPlotTable(List<double> y1, string l1, List<double> y2 = null, string l2 = null, List<double> y3 = null, string l3 = null) {
+            SavePlotTable(StepCount, y1, l1, y2, l2, y3, l3);
+        }
 
-            var table1 = MultidimensionalArray.Create(y1.Count,2);
+        /// <summary>
+        /// Used for Ticks
+        /// </summary>
+        /// <param name="y1"></param>
+        /// <param name="l1"></param>
+        /// <param name="y2"></param>
+        /// <param name="l2"></param>
+        /// <param name="y3"></param>
+        /// <param name="l3"></param>
+        public static void SavePlotTable(List<double> StepCount,List<double> y1, string l1, List<double> y2 = null, string l2 = null, List<double> y3 = null, string l3 = null)
+        {
+            var table1 = MultidimensionalArray.Create(y1.Count, 2);
             table1.SetColumn(0, StepCount);
             table1.SetColumn(1, y1);
             table1.SaveToTextFile(l1 + ".txt");
-            if(y2 != null && l2 != null) {
+            if (y2 != null && l2 != null)
+            {
                 var table2 = MultidimensionalArray.Create(y2.Count, 2);
                 table2.SetColumn(0, StepCount);
                 table2.SetColumn(1, y2);
                 table2.SaveToTextFile(l2 + ".txt");
             }
-            if(y3 != null && l3 != null) {
+            if (y3 != null && l3 != null)
+            {
                 var table3 = MultidimensionalArray.Create(y3.Count, 2);
                 table3.SetColumn(0, StepCount);
                 table3.SetColumn(1, y3);
                 table3.SaveToTextFile(l3 + ".txt");
             }
         }
+
+
 
         //public Plot2Ddata GetResEnthalpyPlot(ISessionInfo si, double EEN) {
         //    var EE = new List<double>();
@@ -3782,7 +3799,7 @@ namespace ApplicationWithIDT {
         //    }
         //    GetPlotTable(obj_f_vals, "obj_f_vals", ResNorms, "ResNorms", EE, "EnthalpyError");
         //}
-        
+
         public void PlotShadowFields(ISessionInfo si) {
             var texplot = new Tecplot(ConservativeFields[0].GridDat, 3);
             foreach(var timestep in si.Timesteps) {
