@@ -17,6 +17,74 @@ using BoSSS.Foundation.Comm;
 
 namespace BoSSS.Foundation.XDG {
 
+
+    /// <summary>
+    /// defines a chain from the agglomeration pairs (source and target)
+    /// </summary>
+    [Serializable]
+    public struct AgglomerationChain : IEquatable<AgglomerationChain> {
+
+        /// <summary>
+        /// local cell index of agglomeration target cell (the cell where volume is added) 
+        /// </summary>
+        public int jCellChainTarget;
+
+        /// <summary>
+        /// MPI rank of the process which owns cell <see cref="OwnerRank4ChainTarget"/>
+        /// </summary>
+        public int OwnerRank4ChainTarget;
+
+        /// <summary>
+        /// list of agglomeration source cells in AgglomerationPairs <see cref="CellAgglomerator.AgglomerationPair"/>
+        /// </summary>
+        public List<CellAgglomerator.AgglomerationPair> ChainSources;
+
+
+        /// <summary>
+        /// GetHashCode
+        /// </summary>
+        /// <returns></returns>
+        public override int GetHashCode() {
+            int hashCode = 0;
+            foreach (var Cell in ChainSources)
+                hashCode += Cell.GetHashCode();
+            return hashCode;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public bool Equals(AgglomerationChain other) {
+            if (object.ReferenceEquals(this, other)) {
+                return true;
+            } else if (this.GetHashCode() != other.GetHashCode()) {
+                return false;
+            }
+
+            if (this.ChainSources.Count != other.ChainSources.Count)
+                return false;
+
+            bool result = true;
+
+            for (int k = 0; k < this.ChainSources.Count; k++)
+                result = result && this.ChainSources.Take(k).Equals(other.ChainSources.Take(k));
+
+            return result;
+        }
+
+    /// <summary>
+        /// Returns a string listing the chain target cell and the agglomeration pairs in the chain 
+        /// </summary>
+        public override string ToString() {
+            string str = $"AggChain to {jCellChainTarget} [rnk {OwnerRank4ChainTarget}]) \n";
+            foreach (var Cell in ChainSources)
+            str += $"- ({Cell.jCellSource} [rnk {Cell.OwnerRank4Source}] -> {Cell.jCellTarget} [rnk {Cell.OwnerRank4Target}], Level {Cell.AgglomerationLevel}) \n";
+            return str;
+        }
+    }
+
     /// <summary>
     /// Sometimes, this provides indeed a correct agglomeration graph ;), 
     /// the result is stored in <see cref="AgglomerationPairs"/>.
