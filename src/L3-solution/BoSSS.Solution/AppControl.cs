@@ -1037,6 +1037,13 @@ namespace BoSSS.Solution.Control {
         public bool DynamicLoadBalancing_RedistributeAtStartup = false;
 
         /// <summary>
+        /// If true, a plot for agglomeration would be written in addition to ImmediatePlotPeriod
+        /// time-step starts
+        /// </summary>
+        [DataMember]
+        public bool PlotAgglomeration = false;
+
+        /// <summary>
         /// A method that creates a new estimator for the runtime cost of individual cells
         /// </summary>
         [DataMember]

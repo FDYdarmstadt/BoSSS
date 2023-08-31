@@ -39,8 +39,8 @@ namespace BoSSS.Foundation.XDG {
         /// Temporary feature; will be removed in future;
         /// Plotting if agglomeration fails.
         /// </summary>
-        public static Action<DGField[],string> Katastrophenplot;
-
+        public static Action<DGField[], string> Katastrophenplot;
+        public static bool PlotAgglomeration = false;
 
         /// <summary>
         /// 
@@ -106,7 +106,7 @@ namespace BoSSS.Foundation.XDG {
 
 
         MultidimensionalArray CellVolumes;
-        
+
         MultidimensionalArray edgeArea;
 
 
@@ -123,8 +123,8 @@ namespace BoSSS.Foundation.XDG {
             get;
             private set;
         }
-        
-        
+
+
         /// <summary>
         /// species, for which the agglomeration graph is determined
         /// </summary>
@@ -159,7 +159,7 @@ namespace BoSSS.Foundation.XDG {
                 // init 
                 // =======
 
-                
+
                 int[,] Edge2Cell = grdDat.Edges.CellIndices;
                 byte[] EdgeTags = grdDat.Edges.EdgeTags;
                 var Cell2Edge = grdDat.Cells.Cells2Edges;
@@ -421,7 +421,7 @@ namespace BoSSS.Foundation.XDG {
             ) {
             using (new FuncTrace()) {
 
-                
+
                 var Cell2Edge = grdDat.Cells.Cells2Edges;
                 int[,] Edge2Cell = grdDat.Edges.CellIndices;
                 int NoOfEdges = grdDat.Edges.Count;
@@ -660,27 +660,37 @@ namespace BoSSS.Foundation.XDG {
 
                 if (failCells.Count.MPISum() > 0) {
                     double[] volFrac = new double[Jup];
+                    int Dim = grdDat.Cells.GetCenter(0).Dim;
+                    int[] pairIdentification = new int[Jup];
+                    int[] pairColor = new int[Jup];
+                    Vector[] aggDirection = new Vector[Jup];
+
                     for (int j = 0; j < Jup; j++) {
                         double totVol = grdDat.Cells.GetCellVolume(j);
                         double spcVol = CellVolumes[j];
                         volFrac[j] = spcVol / totVol;
+                        aggDirection[j] = new Vector(Dim);
                     }
-
-                    int[] pairIdentification = new int[Jup];
-                    int[] pairColor = new int[Jup];
 
                     int k = 1;
                     foreach (var pair in AgglomerationPairs) {
                         if (pair.jCellSource < Jup) {
                             pairIdentification[pair.jCellSource] = pair.jCellTarget;
                             pairColor[pair.jCellSource] = k;
+                            Vector direction = new Vector(Dim);
+                            direction = grdDat.Cells.GetCenter(pair.jCellTarget) - grdDat.Cells.GetCenter(pair.jCellSource);
+                            aggDirection[pair.jCellSource] = direction;
                         }
                         if ((pair.jCellTarget < Jup)) {
                             pairColor[pair.jCellTarget] = k; //can override when it is chain
                         }
                     }
 
-                    PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, ExceptionOnFailedAgglomeration, failCells, AggCandidates,pairIdentification,pairColor, volFrac);
+
+                    if (failCells.Count.MPISum() > 0)
+                        PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, ExceptionOnFailedAgglomeration, failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, "");
+                    else
+                        PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, false, failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, "");
 
                 }
 
@@ -781,13 +791,13 @@ namespace BoSSS.Foundation.XDG {
         //    return InterProcessAgglomeration;
         //}
 
-        private int DoAggPairsMPIexchangeToTheirNeighbors(List<CellAgglomerator.AgglomerationPair> AggPairs, ref List<CellAgglomerator.AgglomerationPair> AggPairsOnExtNeighborPairs ) {
+        private int DoAggPairsMPIexchangeToTheirNeighbors(List<CellAgglomerator.AgglomerationPair> AggPairs, ref List<CellAgglomerator.AgglomerationPair> AggPairsOnExtNeighborPairs) {
             int InterProcessAgglomeration = 0;
             int J = grdDat.iLogicalCells.NoOfLocalUpdatedCells;
             Partitioning CellPart = grdDat.CellPartitioning;
             long j0 = CellPart.i0;
             long[] GidxExt = grdDat.Parallel.GlobalIndicesExternalCells;
-  
+
             Dictionary<int, List<CellAgglomerator.AgglomerationPair>> _SendData = new Dictionary<int, List<CellAgglomerator.AgglomerationPair>>(Math.Max(1, (int)Math.Round(((double)(AggPairs.Count)) * 1.03)));
 
             foreach (var AggPair in AggPairs) {
@@ -801,7 +811,7 @@ namespace BoSSS.Foundation.XDG {
                 int[,] Edge2Cell = grdDat.Edges.CellIndices;
 
                 // loop over faces/neighbor cells...
-                for (int e = 0; e < NoOfEdges_4_jCell; e++) { 
+                for (int e = 0; e < NoOfEdges_4_jCell; e++) {
                     int iEdge = Cell2Edge_jCell[e];
                     int OtherCell, ThisCell;
                     if (iEdge < 0) {
@@ -845,7 +855,7 @@ namespace BoSSS.Foundation.XDG {
                             jCellSource = jAggSourceGlob,
                             jCellTarget = jGlbTarg,
                             OwnerRank4Source = AggPair.OwnerRank4Source,
-                            OwnerRank4Target = AggPair.OwnerRank4Target, 
+                            OwnerRank4Target = AggPair.OwnerRank4Target,
                         });
 
                     }
@@ -860,7 +870,7 @@ namespace BoSSS.Foundation.XDG {
 
             InterProcessAgglomeration = MPIExtensions.MPIMax(InterProcessAgglomeration);
 
-            if (InterProcessAgglomeration > 0) { 
+            if (InterProcessAgglomeration > 0) {
                 var RcvData = SerialisationMessenger.ExchangeData(SendData);
                 foreach (var kv in RcvData) {
                     int rcvMpiRank = kv.Key;
@@ -892,7 +902,7 @@ namespace BoSSS.Foundation.XDG {
                             OwnerRank4Source = rap.OwnerRank4Source,
                             OwnerRank4Target = rap.OwnerRank4Target,
                         });
- 
+
                     }
                 }
             }
@@ -965,7 +975,7 @@ namespace BoSSS.Foundation.XDG {
 
                 // First check if a target can be found among neighbors
                 #region DirectAgg
-                // first check if source cells can find a "proper" target (excluding non-vanishing and newborn cells)
+                // first check if source cells can find a "proper" target (excluding vanishing and newborn cells)
                 foreach (int jCell in AgglomSourceCellsList) {
                     var Cell2Edge_jCell = Cell2Edge[jCell];
                     //bool[] EdgeIsNonempty = new bool[Cell2Edge_jCell.Length];
@@ -1167,15 +1177,15 @@ namespace BoSSS.Foundation.XDG {
                                 double EdgeArea_iEdge = edgeArea[iEdge];
                                 Debug.Assert(Edge2Cell[iEdge, ThisCell] == jCell);
 
-                                if ((jCellNeigh >= 0 && EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG) || CellVolumes[jCell] <= 0) { 
+                                if ((jCellNeigh >= 0 && EdgeTags[iEdge] < GridCommons.FIRST_PERIODIC_BC_TAG) || CellVolumes[jCell] <= 0) {
                                     IsPossibleTarget = true;
 
-                                if (AggSourcesWithExternalCell[jCellNeigh])
-                                    NeighborAggSourceCells++;
+                                    if (AggSourcesWithExternalCell[jCellNeigh])
+                                        NeighborAggSourceCells++;
 
                                 } else {
                                     continue;
-                                }                    
+                                }
 
                                 // assume maximum distance as default value for cases that there is no additional info
                                 double Distance = double.MaxValue;
@@ -1298,14 +1308,14 @@ namespace BoSSS.Foundation.XDG {
 
                 // Save the data for debugging purposes
                 if (ChainCountMax > 0) {
-                    ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("o_ChainAgglomerationPairs", ".txt");
-                    m_AggPairs.SaveToTextFileDebugUnsteady("m_AggPairs", ".txt");
-                    AggPairsOnExtNeighborPairs.SaveToTextFileDebugUnsteady("e_AggPairsOnExtNeighborPairs", ".txt");
+                    ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("agg_ChainAgglomerationPairs", ".txt");
+                    m_AggPairs.SaveToTextFileDebugUnsteady("agg_AggPairs", ".txt");
+                    AggPairsOnExtNeighborPairs.SaveToTextFileDebugUnsteady("agg_AggPairsOnExtNeighborPairs", ".txt");
                 }
 
                 failCells.AddRange(CellsNeedChainAgglomeration);
 
-                if (failCells.Count.MPISum() > 0) {
+                if (failCells.Count.MPISum() > 0 || PlotAgglomeration) {
                     string Tag;
                     switch (spId.cntnt) {
                         case 11111:
@@ -1318,21 +1328,27 @@ namespace BoSSS.Foundation.XDG {
 
                     int[] pairIdentification = new int[Jup];
                     int[] pairColor = new int[Jup];
-
+                    Vector[] aggDirection = new Vector[Jup];
                     double[] volFrac = new double[Jup];
+                    int Dim = grdDat.Cells.GetCenter(0).Dim;
+
+
                     for (int j = 0; j < Jup; j++) {
                         double totVol = grdDat.Cells.GetCellVolume(j);
                         double spcVol = CellVolumes[j];
                         volFrac[j] = spcVol / totVol;
+                        aggDirection[j] = new Vector(Dim);
                     }
 
                     int k = (int)CellPart.i0 + 1;
                     foreach (var pair in AgglomerationPairs) {
                         pairIdentification[pair.jCellSource] = pair.jCellTarget;
                         pairColor[pair.jCellSource] = k;
-
                         if (pair.jCellTarget < Jup) {
                             pairColor[pair.jCellTarget] = k; //can override when it is chain
+                            Vector direction = new Vector(Dim);
+                            direction = grdDat.Cells.GetCenter(pair.jCellTarget) - grdDat.Cells.GetCenter(pair.jCellSource);
+                            aggDirection[pair.jCellSource] = direction;
                         } else {
                             int jAggTarget = (int)grdDat.Parallel.GetGlobalCellIndex(pair.jCellTarget);
                             pairIdentification[pair.jCellSource] = -jAggTarget;
@@ -1341,9 +1357,13 @@ namespace BoSSS.Foundation.XDG {
                         k++;
                     }
 
-                    PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, ExceptionOnFailedAgglomeration, failCells, AggCandidates, pairIdentification, pairColor, volFrac, $"{Tag}_");
+                    if (failCells.Count.MPISum() > 0)
+                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, ExceptionOnFailedAgglomeration, failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}_");
+                    else
+                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, false, failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}_");
                 }
                 #endregion
+
 
 
                 //int[] intAggCandidates = new int[Jup];
@@ -1360,7 +1380,7 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        private void PlotFail(MultidimensionalArray CellVolumes, MultidimensionalArray[] oldCellVolumes, List<int> AgglomCellsList, bool ExceptionOnFailedAgglomeration, List<int> failCells, BitArray AggCandidates, int[] pairIdentification, int[] pairColor, double[] volFrac, string Tag = "") {
+        private void PlotFail(MultidimensionalArray CellVolumes, MultidimensionalArray[] oldCellVolumes, List<int> AgglomCellsList, bool ExceptionOnFailedAgglomeration, List<int> failCells, BitArray AggCandidates, int[] pairIdentification, int[] pairColor, Vector[] aggDirection, double[] volFrac, string Tag = "") {
             // ++++++++++++++++++++++++++
             // Error handling / reporting
             // ++++++++++++++++++++++++++
@@ -1467,6 +1487,34 @@ namespace BoSSS.Foundation.XDG {
                 PairColor.SetMeanValue(j, pairColor[j]);
             }
 
+            if (aggDirection[0].Dim > 0) {
+                DGField AggDirX = new SinglePhaseField(b, "aggDirX");
+                AggDirX.Clear();
+                for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                    AggDirX.SetMeanValue(j, aggDirection[j][0]);
+                }
+                CellVolumesViz = CellVolumesViz.Cat(AggDirX);
+            } 
+            if (aggDirection[0].Dim > 1) {
+                DGField AggDirY = new SinglePhaseField(b, "aggDirY");
+                AggDirY.Clear();
+                for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                    AggDirY.SetMeanValue(j, aggDirection[j][1]);
+                }
+                CellVolumesViz = CellVolumesViz.Cat(AggDirY);
+            } 
+            if (aggDirection[0].Dim > 2) {
+                DGField AggDirZ = new SinglePhaseField(b, "aggDirZ");
+                AggDirZ.Clear();
+                for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
+                    AggDirZ.SetMeanValue(j, aggDirection[j][2]);
+                }
+                CellVolumesViz = CellVolumesViz.Cat(AggDirZ);
+            }
+            if (aggDirection[0].Dim > 3 || aggDirection[0].Dim < 1) {
+                    throw new ArgumentOutOfRangeException("Agglomeration fail plot can only support 1D,2D and 3D geometries");
+            }
+          
             DGField VolFrac = new SinglePhaseField(b, "volFrac");
             VolFrac.Clear();
             for (int j = 0; j < grdDat.Cells.NoOfLocalUpdatedCells; j++) {
@@ -1474,14 +1522,16 @@ namespace BoSSS.Foundation.XDG {
             }
 
             if (Katastrophenplot != null)
-                Katastrophenplot(CellVolumesViz.Cat(MPIRank,AgglomCellsViz, AggTarget, FailedViz, LevelSets, LvSetDist, CellNumbers, CellNumbersGlob, GlobalID, PairIdentification, PairColor,VolFrac),Tag);
+                Katastrophenplot(CellVolumesViz.Cat(MPIRank,AgglomCellsViz, AggTarget, FailedViz, LevelSets, LvSetDist, CellNumbers, CellNumbersGlob, GlobalID, PairIdentification, PairColor, VolFrac),Tag);
 
 
-            string message = ($"Agglomeration failed - no candidate for agglomeration found for {failCells.Count.MPISum()} cells.");
-            if (ExceptionOnFailedAgglomeration)
-                throw new Exception(message);
-            else
-                Console.WriteLine(message);
+            if (failCells.Count.MPISum() > 0) { 
+               string message = ($"Agglomeration failed - no candidate for agglomeration found for {failCells.Count.MPISum()} cells.");
+                if (ExceptionOnFailedAgglomeration)
+                    throw new Exception(message);
+                else
+                    Console.WriteLine(message);
+            }
         }
 
 
