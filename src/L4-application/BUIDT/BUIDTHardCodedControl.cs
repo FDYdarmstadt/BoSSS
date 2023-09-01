@@ -117,8 +117,8 @@ namespace BUIDT
         /// - initial value is piecewise constant
         /// - initially a curved level Set is initialized
         /// TODO: Add section from paper, after publication
-        public static BUIDTControl StraightShockCurvedStart_Eccomas22(string dbPath, int MaxIterations, int dgDegree, int numOfCellsX,
-        int numOfCellsY, Linearization linearization, int ImmediatePlotPeriod = -1, double agg = 0.0)
+        public static BUIDTControl StraightShockCurvedStart_Eccomas22(string dbPath=null, int MaxIterations=50, int dgDegree=0, int numOfCellsX=10,
+        int numOfCellsY=10, Linearization linearization=Linearization.FD, int lsDegree = 2,  int ImmediatePlotPeriod = -1, double agg = 0.4, GetLevelSet getLevelSet=GetLevelSet.FromFunction, OptiLevelSetType optiLevelSetType=OptiLevelSetType.SplineLevelSet)
         {
             var c = BUIDTHardCodedControl.BaseControl(
                     dbPath: dbPath,
@@ -129,44 +129,55 @@ namespace BUIDT
                     ImmediatePlotPeriod: ImmediatePlotPeriod
                     );
             c.Linearization = linearization;
-            c.LevelSetDegree = 2;
-            c.OptiLevelSetDegree = 2;
-            c.OptiLevelSet_ParamNames = new List<string>();
-            c.OptiLevelSet_ParamValues = new List<double>();
-            c.OptiLevelSet_Param_Functions = new List<Func<double[], double, double>>();
+            c.LevelSetDegree = lsDegree;
+            c.OptiLevelSetDegree = lsDegree;
+            c.OptiLevelSetType= optiLevelSetType;
+            c.GetLevelSet= getLevelSet;
+            switch (optiLevelSetType)
+            {
+                case OptiLevelSetType.SplineLevelSet:
+                    c.InitialShockPostion = y => 0.4 + y[1] * 0.6 - 0.2 * y[1] * y[1];
+                    break;
+                case OptiLevelSetType.GlobalLevelSet:
+                    switch (getLevelSet)
+                    {
+                        case GetLevelSet.FromFunction:
+                            c.InitialShockPostion = x => x[0] - (0.4 + x[1] * 0.6 - 0.2 * x[1] * x[1]);
+                            break;
+                        case GetLevelSet.FromParams:
+                            c.OptiLevelSet_ParamNames = new List<string>();
+                            c.OptiLevelSet_ParamValues = new List<double>();
+                            c.OptiLevelSet_Param_Functions = new List<Func<double[], double, double>>();
 
-            c.OptiLevelSet_ParamNames.Add("L");
-            c.OptiLevelSet_ParamValues.Add(1.0);
-            c.OptiLevelSet_Param_Functions.Add((x, a) => x[0] * a);
+                            c.OptiLevelSet_ParamNames.Add("L");
+                            c.OptiLevelSet_ParamValues.Add(1.0);
+                            c.OptiLevelSet_Param_Functions.Add((x, a) => x[0] * a);
 
-            c.OptiLevelSet_ParamNames.Add("R");
-            c.OptiLevelSet_ParamValues.Add(-0.4);
-            c.OptiLevelSet_Param_Functions.Add((x, b) => b);
+                            c.OptiLevelSet_ParamNames.Add("R");
+                            c.OptiLevelSet_ParamValues.Add(-0.4);
+                            c.OptiLevelSet_Param_Functions.Add((x, b) => b);
 
-            c.OptiLevelSet_ParamNames.Add("c");
-            c.OptiLevelSet_ParamValues.Add(-0.6);
-            c.OptiLevelSet_Param_Functions.Add((x, c) => x[1] * c);
+                            c.OptiLevelSet_ParamNames.Add("c");
+                            c.OptiLevelSet_ParamValues.Add(-0.6);
+                            c.OptiLevelSet_Param_Functions.Add((x, c) => x[1] * c);
 
-            c.OptiLevelSet_ParamNames.Add("d");
-            c.OptiLevelSet_ParamValues.Add(0.2);
-            c.OptiLevelSet_Param_Functions.Add((x, d) => x[1] * x[1] * d);
-
+                            c.OptiLevelSet_ParamNames.Add("d");
+                            c.OptiLevelSet_ParamValues.Add(0.2);
+                            c.OptiLevelSet_Param_Functions.Add((x, d) => x[1] * x[1] * d);
+                            break;
+                        default:
+                            throw new Exception($"{getLevelSet.ToString()} not supported for this control");
+                    }
+                    break;
+                default:
+                    c.InitialShockPostion = x => x[0] - (0.4 + x[1] * 0.6 - 0.2 * x[1] * x[1]);
+                break;
+            }
             c.InitialValueFunctionsPerSpecies.Clear();
-            c.InitialValueFunctionsPerSpecies.Add("L", x => x[0] < 0.5 * x[1] ? 0.75 :0.25);
+            c.InitialValueFunctionsPerSpecies.Add("L", x => x[0] < 0.5 * x[1] ? 0.75 : 0.25);
             c.InitialValueFunctionsPerSpecies.Add("R", x => x[0] < 0.5 * x[1] ? 0.75 : 0.25);
             c.UseP0ProjectionAsInitialGuess = true;
-
             c.AgglomerationThreshold = agg;
-            
-            //c.SuperSampling = 4;
-            //c.Gamma_Max = 1;
-            //c.Gamma_Min = 1e-08;
-            //c.L = 1;
-            //c.Mu_Start = 1;
-            //c.Alpha_Min = 0.0125;
-            //c.Alpha_Start = 1;
-            //c.FDtype = FDtype.Central;
-            c.NonlinearQuadratureDegree = 20;
             return c;
         }
         /// <summary>

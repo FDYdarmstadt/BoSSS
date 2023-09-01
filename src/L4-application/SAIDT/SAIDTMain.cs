@@ -24,6 +24,7 @@ namespace SAIDT {
         /// </summary>
         /// <param name="args">string pointing to a control file, i.e. 'cs:SAIDT.SAIDTHardCodedControl.CurvedShock_Eccomas22()' </param>
         static void Main(string[] args) {
+            //SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22();
             SAIDTMain._Main(args, false, () => new SAIDTMain());
         }
 
@@ -187,7 +188,12 @@ namespace SAIDT {
 
                 default: throw new ArgumentOutOfRangeException(nameof(Control.OptiLevelSetType));
             }
-            switch(Control.GetInitialValue) {
+            //We project the LevelSetOpti object onto the DG LsTBO
+            LevelSetOpti.AssembleTransMat(LsTBO);
+            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
+            LsTrk.UpdateTracker(CurrentStepNo);
+            LsTrk.PushStacks();
+            switch (Control.GetInitialValue) {
                 case GetInitialValue.FromFunctionPerSpecies:
                 foreach(string spec in this.SpeciesToEvaluate) {
                     Concentration.GetSpeciesShadowField(spec).ProjectField(Control.GetInitialValueFunc(spec));
@@ -195,11 +201,7 @@ namespace SAIDT {
 
                 break;
             }
-            //We project the LevelSetOpti object onto the DG LsTBO
-            LevelSetOpti.AssembleTransMat(LsTBO);
-            LevelSetOpti.ProjectOntoLevelSet(LsTBO);
-            LsTrk.UpdateTracker(CurrentStepNo);
-            LsTrk.PushStacks();
+            
 
             //The initial values are set elsewhere as we use the p0 projection and thus we need to assemble the operator first
 

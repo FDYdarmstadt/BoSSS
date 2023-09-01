@@ -83,7 +83,7 @@ namespace ApplicationWithIDT {
         public MassMatrixShapeandDependence MassMatrixShapeandDependence { get; set; } = MassMatrixShapeandDependence.IsNonIdentity;
 
 
-        #region Initial Value/Boundary Condition stuff
+        #region Initial Value/Boundary Conditions
         public Dictionary<string, Func<double[], double>> InitialValueFunctionsPerSpecies { get; set; }
         public Func<double[], double> GetInitialValueFunc(string species) {
             Func<double[], double> ret;

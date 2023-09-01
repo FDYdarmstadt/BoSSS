@@ -49,8 +49,7 @@ namespace BUIDT.Tests
                     dgDegree: 0,
                     numOfCellsX: 10,
                     numOfCellsY: 10,
-                    linearization: Linearization.FD,
-                    agg:0.1,
+                    agg:0.2,
                     ImmediatePlotPeriod: -1
                     );
                 p.Init(C);

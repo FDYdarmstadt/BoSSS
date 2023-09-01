@@ -162,7 +162,11 @@ namespace SAIDT {
                 c.InitialShockPostion = x => x[0] - 0.1 - 0.7 * x[1] + x[1] * x[1] - 0.7 * x[1] * x[1] * x[1];
             }
             #endregion
-
+            c.GetInitialValue = GetInitialValue.FromP0Timestepping;
+            Func<double, double> exactShock = t => t*t*t-3.0/2.0*t*t+0.5*t+0.25;
+            c.InitialValueFunctionsPerSpecies.Clear();
+            c.InitialValueFunctionsPerSpecies.Add("L", x => exactShock(x[1])-x[0]  > 0 ? 1 : 0);
+            c.InitialValueFunctionsPerSpecies.Add("R", x => exactShock(x[1]) - x[0] > 0 ? 1 : 0);
             c.UseP0ProjectionAsInitialValue = true;
             c.SuperSampling = 4;
             c.AgglomerationThreshold = agg;

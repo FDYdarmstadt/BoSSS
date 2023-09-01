@@ -28,14 +28,14 @@ namespace SAIDT.Tests {
             BoSSS.Solution.Application.InitMPI();
             using(var p = new SAIDTMain()) {
                 var C = SAIDTHardCodedControl.CurvedShock_Eccomas22(
-                    dbPath: null,
-                    MaxIterations: 40,
-                    dgDegree: 0,
-                    numOfCellsX: 10,
-                    numOfCellsY: 10,
-                    agg: 0.1,
-                    ImmediatePlotPeriod: -1
-                    );
+                        dbPath: null,
+                        MaxIterations: 50,
+                        dgDegree: 0,
+                        numOfCellsX: 10,
+                        numOfCellsY: 10,
+                        agg: 0.4,
+                        optiLevelSetType: OptiLevelSetType.SplineLevelSet
+                        );
                 C.MinPIter = new int[] {40};
                 p.Init(C);
                 p.RunSolverMode();
