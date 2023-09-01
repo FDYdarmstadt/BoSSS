@@ -21,11 +21,11 @@ using ilPSP;
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Sphere : Particle {
+    public class ParticleDisk : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Sphere() : base() {
+        private ParticleDisk() : base() {
 
         }
 
@@ -53,14 +53,16 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Sphere(InitializeMotion motionInit, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public ParticleDisk(IMotion motion, double radius, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
 
             m_Radius = radius;
             Aux.TestArithmeticException(radius, "Particle radius");
 
-            Motion.SetMaxLength(radius);
-            Motion.SetVolume(Area);
-            Motion.SetMomentOfInertia(MomentOfInertia);
+            Motion.CharacteristicLength = radius;
+            Motion.Volume = this.Volume;
+            Motion.MomentOfInertia = this.MomentOfInertia;
 
         }
 
@@ -70,7 +72,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Area => Math.PI * m_Radius.Pow2();
+        public override double Volume => Math.PI * m_Radius.Pow2();
 
         /// <summary>
         /// Circumference. 
@@ -80,7 +82,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Moment of inertia. 
         /// </summary>
-        override public double MomentOfInertia => (1 / 2.0) * (Mass_P * m_Radius.Pow2());
+        override public double MomentOfInertia => (1 / 2.0) * (Mass * m_Radius.Pow2());
 
         /// <summary>
         /// Level set function of the particle.
@@ -115,15 +117,15 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="vector">
         /// A vector. 
         /// </param>
-        override public Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
+        override public Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
             double length = Math.Sqrt(supportVector[0].Pow2() + supportVector[1].Pow2());
             double CosT = supportVector[0] / length;
             double SinT = supportVector[1] / length;
             Vector SupportPoint = new Vector(SpatialDim);
             if (SpatialDim != 2)
                 throw new NotImplementedException("Only two dimensions are supported at the moment");
-            SupportPoint[0] = CosT * m_Radius + Position[0];
-            SupportPoint[1] = SinT * m_Radius + Position[1];
+            SupportPoint[0] = CosT * (m_Radius + tolerance) + Position[0];
+            SupportPoint[1] = SinT * (m_Radius + tolerance) + Position[1];
             if (double.IsNaN(SupportPoint[0]) || double.IsNaN(SupportPoint[1]))
                 throw new ArithmeticException("Error trying to calculate point0 Value:  " + SupportPoint[0] + " point1 " + SupportPoint[1]);
             return SupportPoint;
@@ -137,7 +139,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         }
 
         public override object Clone() {
-            Particle clonedParticle = new Particle_Sphere(MotionInitializer,
+            Particle clonedParticle = new ParticleDisk(Motion,
                                                              m_Radius,
                                                              Motion.GetPosition(),
                                                              Motion.GetAngle() * 360 / (2 * Math.PI),

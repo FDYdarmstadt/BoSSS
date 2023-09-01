@@ -22,11 +22,11 @@ using System.Linq;
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_superEllipsoid : Particle {
+    public class ParticleSuperEllipsoid : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_superEllipsoid() : base() {
+        private ParticleSuperEllipsoid() : base() {
 
         }
 
@@ -60,7 +60,11 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_superEllipsoid(InitializeMotion motionInit, double length, double thickness, int superEllipsoidExponent, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public ParticleSuperEllipsoid(IMotion motion, double length, double thickness, int superEllipsoidExponent, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            //throw new NotImplementedException("Legacy code, untested, update necessary");
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
+
             m_Length = length;
             m_Thickness = thickness;
             m_Exponent = superEllipsoidExponent;
@@ -68,9 +72,9 @@ namespace BoSSS.Application.XNSERO_Solver {
             Aux.TestArithmeticException(thickness, "Particle thickness");
             Aux.TestArithmeticException(superEllipsoidExponent, "super ellipsoid exponent");
 
-            Motion.SetMaxLength(GetLengthScales().Max());
-            Motion.SetVolume(Area);
-            Motion.SetMomentOfInertia(MomentOfInertia);
+            Motion.CharacteristicLength = GetLengthScales().Max();
+            Motion.Volume = this.Volume;
+            Motion.MomentOfInertia = this.MomentOfInertia;
         }
 
         [DataMember]
@@ -81,19 +85,19 @@ namespace BoSSS.Application.XNSERO_Solver {
         private readonly double m_Exponent;
 
         /// <summary>
-        /// Circumference. Approximated with sphere.
+        /// Circumference. Extremely rough approximation.
         /// </summary>
         public override double Circumference => (2 * m_Length + 2 * m_Thickness + 2 * Math.PI * m_Thickness) / 2;
 
         /// <summary>
         /// Area occupied by the particle. 
         /// </summary>
-        public override double Area => 4 * m_Length * m_Thickness;// * (SpecialFunctions.Gamma(1 + 1 / m_Exponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / m_Exponent);
+        public override double Volume => 4 * m_Length * m_Thickness;// * (SpecialFunctions.Gamma(1 + 1 / m_Exponent)).Pow2() / SpecialFunctions.Gamma(1 + 2 / m_Exponent);
 
         /// <summary>
         /// Moment of inertia. 
         /// </summary>
-        override public double MomentOfInertia => (1 / 4.0) * Mass_P * (m_Length * m_Length + m_Thickness * m_Thickness);
+        override public double MomentOfInertia => (1 / 4.0) * Mass * (m_Length * m_Length + m_Thickness * m_Thickness);
 
         /// <summary>
         /// Level set function of the particle.

@@ -22,11 +22,11 @@ using ilPSP.Utils;
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_Pentagone : Particle {
+    public class ParticlePentagone : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_Pentagone() : base() {
+        private ParticlePentagone() : base() {
 
         }
 
@@ -54,13 +54,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_Pentagone(InitializeMotion motionInit, double radius, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public ParticlePentagone(IMotion motion, double radius, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            throw new NotImplementedException("Legacy code, untested, update necessary");
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
+
             m_Radius = radius;
             Aux.TestArithmeticException(radius, "Particle radius");
 
-            Motion.SetMaxLength(radius);
-            Motion.SetVolume(Area);
-            Motion.SetMomentOfInertia(MomentOfInertia);
+            Motion.CharacteristicLength = radius;
+            Motion.Volume = this.Volume;
+            Motion.MomentOfInertia = this.MomentOfInertia;
 
         }
 
@@ -70,7 +74,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Area occupied by the particle.
         /// </summary>
-        public override double Area => (5 * m_Radius.Pow2()) / 4;
+        public override double Volume => (5 * m_Radius.Pow2()) / 4;
 
         /// <summary>
         /// Circumference. 

@@ -438,6 +438,7 @@ namespace BoSSS.Foundation.XDG {
 
                     using (new BlockTrace("surface_integration", tr)) {
                         if (DoEdge) {
+                            // TODO: are the quadrature rules non-empty?
 #if DEBUG
                             {
                                 // test if the 'coupling rules' are synchronous among MPI processes - otherwise, deadlock!

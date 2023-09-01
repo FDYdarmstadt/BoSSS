@@ -15,6 +15,7 @@ limitations under the License.
 */
 
 using ilPSP;
+using ilPSP.Tracing;
 using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -266,23 +267,25 @@ namespace BoSSS.Foundation.IO {
         /// </summary>
         public IList<ISessionInfo> Sessions {
             get {
-                //Stopwatch stw = new Stopwatch();
+                using (new FuncTrace()) {
+                    //Stopwatch stw = new Stopwatch();
 
-                //Console.WriteLine("aquire sessions...");
-                //stw.Reset();
-                //stw.Start();
-                var allsessions = Controller.Sessions;
-                //stw.Stop();
-                //Console.WriteLine("done. " + stw.ElapsedMilliseconds);
+                    //Console.WriteLine("aquire sessions...");
+                    //stw.Reset();
+                    //stw.Start();
+                    var allsessions = Controller.Sessions;
+                    //stw.Stop();
+                    //Console.WriteLine("done. " + stw.ElapsedMilliseconds);
 
-                //Console.WriteLine("sorting sessions...");
-                //stw.Reset();
-                //stw.Start();
-                var R = allsessions.OrderByDescending(s => s.WriteTime).ToList();
-                //stw.Stop();
-                //Console.WriteLine("done. " + stw.ElapsedMilliseconds);
+                    //Console.WriteLine("sorting sessions...");
+                    //stw.Reset();
+                    //stw.Start();
+                    var R = allsessions.OrderByDescending(s => s.WriteTime).ToList();
+                    //stw.Stop();
+                    //Console.WriteLine("done. " + stw.ElapsedMilliseconds);
 
-                return R;
+                    return R;
+                }
             }
         }
 

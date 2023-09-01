@@ -22,11 +22,11 @@ using ilPSP.Utils;
 namespace BoSSS.Application.XNSERO_Solver {
     [DataContract]
     [Serializable]
-    public class Particle_TrapRight : Particle {
+    public class ParticleTrapLeft : Particle {
         /// <summary>
         /// Empty constructor used during de-serialization
         /// </summary>
-        private Particle_TrapRight() : base() {
+        private ParticleTrapLeft() : base() {
 
         }
 
@@ -54,12 +54,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle_TrapRight(InitializeMotion motionInit, double width, double[] startPos = null, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motionInit, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+        public ParticleTrapLeft(IMotion motion, double width, double[] startPos, double startAngl = 0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) : base(motion, startPos, startAngl, activeStress, startTransVelocity, startRotVelocity) {
+            throw new NotImplementedException("Legacy code, untested, update necessary");
+            if (startPos.Length != 2)
+                throw new ArgumentOutOfRangeException("Spatial dimension does not fit particle definition");
+
             m_Length = width;
             Aux.TestArithmeticException(width, "Particle width");
-            Motion.SetMaxLength(width);
-            Motion.SetVolume(Area);
-            Motion.SetMomentOfInertia(MomentOfInertia);
+
+            Motion.CharacteristicLength = width;
+            Motion.Volume = this.Volume;
+            Motion.MomentOfInertia = this.MomentOfInertia;
 
         }
 
@@ -74,17 +79,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Area occupied by the particle. 
         /// </summary>
-        public override double Area => (7 * m_Length * m_Length) / 8;
+        public override double Volume => (7 * m_Length * m_Length) / 8;
 
         /// <summary>
-        /// Circumference.
+        /// Circumference. 
         /// </summary>
         public override double Circumference => m_Length * 5;
 
         /// <summary>
-        /// Moment of inertia.
+        /// Moment of inertia. 
         /// </summary>
-        override public double MomentOfInertia => Math.Pow(m_Length, 4) * 0.301627768;
+        override public double MomentOfInertia => Math.Pow(m_Length, 4) * 0.13785958;
 
         /// <summary>
         /// Level set function of the particle.
@@ -94,10 +99,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </param>
         protected override double ParticleLevelSetFunction(double[] X, Vector Postion) {
             double r;
-            // Falle_Rechts:
+            // Falle_Links:
             r = Math.Abs(Postion[1] - X[1]);
-            r = Math.Max(r, Math.Abs(-X[1] - 0.5 * X[0] + Postion[1] + Postion[0] - m_Length) - Math.Abs(X[1] - Postion[1]));
-            r = Math.Max(r, Math.Abs(Postion[0] - X[0] + 0.5 * m_Length));
+            r = Math.Max(r, Math.Abs(-X[1] + 0.5 * X[0] + Postion[1] - Postion[0] - m_Length) - Math.Abs(X[1] - Postion[1]));
+            r = Math.Max(r, Math.Abs(Postion[0] - X[0] - 0.5 * m_Length));
             r -= 4.5 * m_Length;
             r = -r;
             return r;
@@ -115,7 +120,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         protected override bool ParticleContains(Vector point, Vector Position, double tolerance = 0) {
             // only for rectangular cells
             double radiusTolerance = 5 * m_Length + tolerance;
-            double distance = point.L2Distance(Position);
+            var distance = point.L2Distance(Position);
             return distance < radiusTolerance;
         }
 
@@ -137,8 +142,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 throw new ArithmeticException("Error trying to calculate the number of surface points, overflow");
 
             for (int k = 0; k < NoOfSurfacePoints; k++) {
-                SurfacePoints[0, k, 0] = Motion.GetPosition(0)[0] + m_Length / 2 - InfinitisemalLength[k];
-                SurfacePoints[0, k, 1] = Motion.GetPosition(0)[1] - m_Length / 2 + 1.5 * SurfacePoints[0, k, 0] + m_Length / 2;
+                SurfacePoints[0, k, 0] = Motion.GetPosition(0)[0] - m_Length / 2 + InfinitisemalLength[k];
+                SurfacePoints[0, k, 1] = Motion.GetPosition(0)[1] - m_Length / 2 - 1.5 * SurfacePoints[0, k, 0] + m_Length / 2;
             }
 
             for (int j = 0; j < NoOfSurfacePoints; j++) {

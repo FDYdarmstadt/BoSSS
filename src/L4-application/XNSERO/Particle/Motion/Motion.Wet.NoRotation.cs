@@ -26,24 +26,20 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// The dry description of motion including hydrodynamics without rotation.
         /// </summary>
-        /// <param name="gravity">
-        /// The gravity (volume forces) acting on the particle.
-        /// </param>
         /// <param name="density">
         /// The density of the particle.
         /// </param>
-        /// /// <param name="underrelaxationParam">
-        /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
-        /// </param>
-        public MotionWetNoRotation(double density) : base(density) {
-            IncludeRotation = false;
+        public MotionWetNoRotation(double density) : base(density) { }
+
+        public override bool IncludeRotation() {
+            return false;
         }
 
         /// <summary>
         /// Calculate the new particle angle
         /// </summary>
         /// <param name="dt"></param>
-        protected override double CalculateParticleAngle(double dt) {
+        public override double CalculateParticleAngle(double dt) {
             double l_Angle = GetAngle(1);
             Aux.TestArithmeticException(l_Angle, "particle angle");
             return l_Angle;
@@ -54,7 +50,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="dt">Timestep</param>
         /// <param name="collisionTimestep">The time consumed during the collision procedure</param>
-        protected override double CalculateAngularVelocity(double dt) {
+        public override double CalculateAngularVelocity(double dt) {
             double l_RotationalVelocity = 0;
             Aux.TestArithmeticException(l_RotationalVelocity, "particle rotational velocity");
             return l_RotationalVelocity;
@@ -77,9 +73,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         //}
 
         public override object Clone() {
-            Motion clonedMotion = new MotionWetNoRotation(Density);
-            clonedMotion.SetVolume(Volume);
-            clonedMotion.SetMomentOfInertia(MomentOfInertia);
+            MotionWetNoRotation clonedMotion = new MotionWetNoRotation(Density);
+            clonedMotion.Volume = this.Volume;
+            clonedMotion.MomentOfInertia = this.MomentOfInertia;
             return clonedMotion;
         }
     }

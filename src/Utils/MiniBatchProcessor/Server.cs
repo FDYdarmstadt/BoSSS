@@ -67,11 +67,18 @@ namespace MiniBatchProcessor {
 
 
                 try {
+                    
+
                     if(File.Exists(GetServerMutexPath(__BatchInstructionDir))) {
-                        // try to delete
-
+                        
+                        // try to write exclusively; this should produce an exception in Linux and probably also Windows, if it is opened by any other process)
+                        using(var ServerMutex2 = File.Open(GetServerMutexPath(__BatchInstructionDir), FileMode.Create, FileAccess.Write, FileShare.None)) {
+                            ServerMutex2.WriteByte(1);
+                            ServerMutex2.Close();
+                        }
+                                                
+                        // try to delete; was sufficient to produce an exsption on Windows, (if opened by any other process), but unreliable on Linux
                         File.Delete(GetServerMutexPath(__BatchInstructionDir));
-
 
                         return false;
                     } else {
@@ -291,7 +298,7 @@ namespace MiniBatchProcessor {
 
         bool Init(bool Reset) {
 
-
+            
             string MutexFileName = Path.Combine(GetServerMutexPath(config.BatchInstructionDir));
             try {
                 // Check that we are the only instance:
@@ -462,6 +469,13 @@ namespace MiniBatchProcessor {
 
             string dir = null;
             if(args.Length > 0) {
+                if (args[0].Equals("terminate")) {
+                    Console.WriteLine("sending termination signal.");
+                    SendTerminationSignal(WaitForOtherJobstoFinish:false);
+                    return 0;
+                }
+
+
                 dir = args[0];
                 if(!Directory.Exists(dir)) {
                     throw new IOException("specified batch directory '" + dir + "' does not exist.");
@@ -642,8 +656,32 @@ namespace MiniBatchProcessor {
                 ProcessStartInfo psi = new ProcessStartInfo();
                 switch (System.Environment.OSVersion.Platform) {
                     case System.PlatformID.Unix:
-                        psi.FileName = "mpirun";
-                        psi.Arguments = " -np " + data.NoOfProcs + "  " + data.exefile + " ";
+                        //psi.FileName = "mpirun";
+                        //psi.Arguments = " -np " + data.NoOfProcs + "  " + data.exefile + " ";
+                        if(data.NoOfProcs <= 1) {
+
+                            // This is some "speciality" due to our CI workflow
+                            // On our Linux server (Ubuntu 20.04.6 LTS, OpenMPI 4.0.3), 
+                            // when we are using `mpirun` or `mpiexe` to execute validation tests
+                            // (i.e., tests which execute a Jupyter worksheet)
+                            // the worksheet crashes on MPI_Init;
+                            // If executed without `mpirun` or `mpiexec`, the respective tests work.
+                            //
+                            // This is a somewhat known issue: https://github.com/open-mpi/ompi/issues/11063
+                            // When we set the envrinoment variable "PMIX_MCA_gds" to "hash", this resolves the problem partly,
+                            // (e.g., add `psi.EnvironmentVariables.Add("PMIX_MCA_gds", "hash");` here.)
+                            // i.e. the worksheet test sucseeds, but the test runner seems to hang indefinitly during exit.
+                            //
+                            // However, since worksheets only use one processor anyway, 
+                            // avoiding `mpirun` is a sufficient workaround for now (fk, 03aug23).
+                            //
+                            Server.LogMessage($"Skipping mpirun on {data.exefile} because MPI size is 1 anyway."); 
+                            psi.FileName = data.exefile;
+
+                        } else {
+                            psi.FileName = "mpirun";
+                            psi.Arguments = " -np " + data.NoOfProcs + "  " + data.exefile + " ";
+                        }
                         break;
                     default:
                         psi.FileName = "mpiexec.exe";
@@ -658,7 +696,6 @@ namespace MiniBatchProcessor {
                 for (int i = 0; i < data.EnvVars.Length; i++) {
                     psi.EnvironmentVariables.Add(data.EnvVars[i].Item1, data.EnvVars[i].Item2);
                 }
-
 
                 psi.UseShellExecute = false;
                 psi.RedirectStandardOutput = true;
