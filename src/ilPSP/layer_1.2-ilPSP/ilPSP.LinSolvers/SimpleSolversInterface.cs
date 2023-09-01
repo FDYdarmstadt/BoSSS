@@ -134,6 +134,7 @@ namespace ilPSP.LinSolvers {
             //*
 
             string LastError = null;
+            int count = 0;
             foreach (var f in SolverFallbackSeq) {
                 using (var slv = f()) {
                     //Console.WriteLine("Using solver: " + slv.GetType() + " ...");
@@ -145,9 +146,10 @@ namespace ilPSP.LinSolvers {
                         //Console.WriteLine("residual is fine.");
                         return;
                     } else {
-                        //Console.WriteLine("some error.");
+                        Console.Error.WriteLine($"Solve_Direct fail in fallback seq (#{count}): " + LastError);
                     }
                 }
+                count++;
             }
 
             if (LastError != null)
@@ -212,7 +214,7 @@ namespace ilPSP.LinSolvers {
                     double prev_invMinLambda = invMinLambda;
                     invMinLambda = tmp.MPI_InnerProd(Evect, Mtx.MPI_Comm);
                     double ChangeNorm = Math.Abs(invMinLambda - prev_invMinLambda) / Math.Max(invMinLambda.Abs(), prev_invMinLambda.Abs());
-                    //Console.WriteLine(i + " -- Change norm is: " + ChangeNorm);
+                    Console.WriteLine(i + " -- Change norm is: " + ChangeNorm);
 
                     // prepare for next loop:
                     var a = Evect;
