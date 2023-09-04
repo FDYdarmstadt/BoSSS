@@ -63,6 +63,12 @@ namespace BoSSS.Foundation.XDG {
             public int jCellSource;
 
             /// <summary>
+            /// local cell index of neighbor agglomeration source cell that provided a connection to the target
+            /// in case of AgglomerationLevel=1 the cell between the source and the target, in case of AgglomerationLevel  > 1 only the cell next to the source
+            /// </summary>
+            public int jNeighborSource;
+
+            /// <summary>
             /// MPI rank of the process which owns cell <see cref="jCellSource"/>
             /// </summary>
             public int OwnerRank4Source;

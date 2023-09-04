@@ -37,8 +37,87 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// list of agglomeration source cells in AgglomerationPairs <see cref="CellAgglomerator.AgglomerationPair"/>
         /// </summary>
-        public List<CellAgglomerator.AgglomerationPair> ChainSources;
+        private List<CellAgglomerator.AgglomerationPair> ChainSources;
 
+        /// <summary>
+        /// list of connected edges in AgglomerationPairs <see cref="CellAgglomerator.AgglomerationPair"/>
+        /// </summary>
+        private List<int> ConnectedCells;
+
+        private void AddNeighbors(int jCell) {
+            var Cell2Edge = m_grdDat.Cells.Cells2Edges;
+            int[,] Edge2Cell = m_grdDat.Edges.CellIndices;
+            var Cell2Edge_jCell = Cell2Edge[jCell];
+            int NoOfEdges_4_jCell = Cell2Edge_jCell.Length;
+
+            for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
+                int iEdge = Cell2Edge_jCell[e];
+                int OtherCell, ThisCell;
+                if (iEdge < 0) {
+                    // cell 'jCell' is the OUT-cell of edge 'iEdge'
+                    OtherCell = 0;
+                    ThisCell = 1;
+                    iEdge *= -1;
+                } else {
+                    OtherCell = 1;
+                    ThisCell = 0;
+                }
+                iEdge--;
+                Debug.Assert(ThisCell == jCell);
+
+                int jCellNeigh = Edge2Cell[iEdge, OtherCell];
+                
+                //if (!ConnectedCells.Contains(jCellNeigh)) a cell can be added multiple times, which indicate that it has a connectivity to the target via multiple cells
+                if (jCellNeigh > 0)
+                    ConnectedCells.Add(jCellNeigh);
+
+            }
+
+        }
+
+        GridData m_grdDat;
+
+        MultidimensionalArray m_CellVolumes;
+
+        public AgglomerationChain(CellAgglomerator.AgglomerationPair FirstPair, GridData grdDat, MultidimensionalArray CellVolumes) {
+            var pair = FirstPair;
+            this.jCellChainTarget = pair.jCellTarget;
+            this.OwnerRank4ChainTarget = pair.OwnerRank4Target;
+            this.m_grdDat = grdDat;
+            this.ChainSources = new List<CellAgglomerator.AgglomerationPair>();
+            this.ConnectedCells = new List<int>();
+            this.m_CellVolumes = CellVolumes;
+
+            this.sumFractions = Math.Round(m_CellVolumes[pair.jCellTarget] / m_grdDat.Cells.GetCellVolume(pair.jCellTarget), 2);
+            AddNeighbors(pair.jCellTarget);
+
+            this.Add(pair);
+        }
+
+        public AgglomerationChain(int TargetCell, int TargetRank, GridData grdDat, MultidimensionalArray CellVolumes) {
+            this.jCellChainTarget = TargetCell;
+            this.OwnerRank4ChainTarget = TargetRank;
+            this.m_grdDat = grdDat;
+            this.ChainSources = new List<CellAgglomerator.AgglomerationPair>();
+            this.ConnectedCells = new List<int>();
+            this.m_CellVolumes = CellVolumes;
+
+            this.sumFractions =  Math.Round(m_CellVolumes[TargetCell] / m_grdDat.Cells.GetCellVolume(TargetCell), 2);
+            AddNeighbors(TargetCell);
+
+        }
+
+        public bool IsConnected(int CellNumber) {
+            return ConnectedCells.Contains(CellNumber);
+        }
+ 
+        public bool IsPart(int CellNumber) {
+            bool IsInSources = ChainSources.Where(p => p.jCellSource == CellNumber).Any();
+            bool IsTarget = jCellChainTarget == CellNumber;
+            return IsInSources || IsTarget;
+        }
+
+        public double sumFractions;
 
         /// <summary>
         /// GetHashCode
@@ -49,6 +128,32 @@ namespace BoSSS.Foundation.XDG {
             foreach (var Cell in ChainSources)
                 hashCode += Cell.GetHashCode();
             return hashCode;
+        }
+
+        public void Add(CellAgglomerator.AgglomerationPair pair) {
+            if (pair.jCellTarget !=  jCellChainTarget) {
+                throw new ArgumentException("Wrong chain is selected as target");
+            }
+
+            //Console.WriteLine("Source cell id:" + pair.jCellSource);
+            
+            //Console.Write("Connected Cells: ");
+
+            //foreach (var Cell in ConnectedCells)
+            //    Console.Write(Cell + " - ");
+
+
+            if (!IsConnected (pair.jCellSource)) {
+                throw new ArgumentException("Chain has not any connection to the target cell");
+            }
+
+            //if (IsPart(pair.jCellSource))
+            //    return;
+
+            this.sumFractions += Math.Round(m_CellVolumes[pair.jCellSource] / m_grdDat.Cells.GetCellVolume(pair.jCellSource), 2);
+
+            ChainSources.Add(pair);
+            AddNeighbors(pair.jCellSource);
         }
 
         /// <summary>
@@ -74,13 +179,19 @@ namespace BoSSS.Foundation.XDG {
             return result;
         }
 
-    /// <summary>
+        /// <summary>
         /// Returns a string listing the chain target cell and the agglomeration pairs in the chain 
         /// </summary>
         public override string ToString() {
-            string str = $"AggChain to {jCellChainTarget} [rnk {OwnerRank4ChainTarget}]) \n";
+            string str = $"AggChain to {jCellChainTarget} [rnk {OwnerRank4ChainTarget}]) with total frac={sumFractions} \n";
             foreach (var Cell in ChainSources)
             str += $"- ({Cell.jCellSource} [rnk {Cell.OwnerRank4Source}] -> {Cell.jCellTarget} [rnk {Cell.OwnerRank4Target}], Level {Cell.AgglomerationLevel}) \n";
+
+            str += "ConnectedCells";
+            foreach (var Cell in ConnectedCells) {
+                str += Cell.ToString() + ", ";
+            }
+
             return str;
         }
     }
@@ -109,6 +220,8 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public static Action<DGField[], string> Katastrophenplot;
         public static bool PlotAgglomeration = false;
+
+        public List<AgglomerationChain> m_AgglomerationChains;
 
         /// <summary>
         /// 
@@ -1183,26 +1296,32 @@ namespace BoSSS.Foundation.XDG {
                                 jCellTarget = jCellNeigh_max,
                                 jCellSource = jCell,
                                 OwnerRank4Target = jCellNeighRank,
-                                OwnerRank4Source = myMpiRank
+                                OwnerRank4Source = myMpiRank,
+                                AgglomerationLevel = 0
                             });
                         }
                     }
                 }
-                #endregion 
+                #endregion
 
                 // If there are remaining cells, try to create agg. chains (the level of chains would be handled in CellAgglomerator.cs)
                 #region ChainAgg
-                // in certain cases, agglomeration sources can require to create a chain/cluster (a set of newborn cells that should be agglomerated to a target) 
+                MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
+
+                // in certain cases, agglomeration sources can require to create a chain/cluster (a set of cut cells that should be agglomerated to a target) 
                 var ChainAgglomerationPairs = new List<CellAgglomerator.AgglomerationPair>();
 
                 int iteration_threeshold = (int)Math.Pow(Math.Max(CellsNeedChainAgglomeration.Count, 2), 3); // 
                 iteration_threeshold = iteration_threeshold.MPIMax();
                 int ii = 0;
 
-                // Exchange already paired cells (needs to be updated in every update in the loop below)
+                // Exchange already paired cells (needs to be updated in every change in the loop below)
                 var AggPairsOnExtNeighborPairs = new List<CellAgglomerator.AgglomerationPair>();
                 var InterProcessChainAgglomeration = DoAggPairsMPIexchangeToTheirNeighbors(AgglomerationPairs, ref AggPairsOnExtNeighborPairs);
                 m_AggPairsOnNeighborPairs = AggPairsOnExtNeighborPairs;
+
+                // Create agglomeration chains
+                m_AgglomerationChains = new List<AgglomerationChain>();
 
                 int ChainCountMax = CellsNeedChainAgglomeration.Count;
                 ChainCountMax = ChainCountMax.MPIMax();
@@ -1211,8 +1330,8 @@ namespace BoSSS.Foundation.XDG {
                 while (ChainCountMax > 0 && ii < iteration_threeshold) { // as long as a cell needs to be agglomerated or not exceeding the threshold
                     var LoopChainAgglomerationPairs = new List<CellAgglomerator.AgglomerationPair>();
 
-                    List<(double SpeciesFrac, double Dist, int jCell, int jCellNeigh, int targetCell, int targetRank)> weightedEdges = new List<(double, double, int, int, int, int)>();
-                    List<int> DirectConnectionCells = new List<int>(CellsNeedChainAgglomeration.Count);
+                    List<(double SpeciesFrac, double Dist, int AggLevel, int jCell, int jCellNeigh, int targetCell, int targetRank)> weightedEdges = new List<(double, double, int, int, int, int, int)>();
+                    List<int> ImmediateConnectionCells = new List<int>(CellsNeedChainAgglomeration.Count);
 
                     // Any cell to be agglomerated in a chain on the local proc (a parallel variation of Kruskal's algorithm for Minimum Spanning Forest adapted to our context
                     if (CellsNeedChainAgglomeration.Count > 0) {
@@ -1222,7 +1341,7 @@ namespace BoSSS.Foundation.XDG {
                             var Cell2Edge_jCell = Cell2Edge[jCell];
                             int NoOfEdges_4_jCell = Cell2Edge_jCell.Length;
 
-                            List<(double SpeciesFrac, double Dist, int jCell, int jCellNeigh, int targetCell, int targetRank)> weightedEdgesjCell = new List<(double, double, int, int, int, int)>(NoOfEdges_4_jCell);
+                            List<(double SpeciesFrac, double Dist, int AggLevel, int jCell, int jCellNeigh, int targetCell, int targetRank)> weightedEdgesjCell = new List<(double, double, int, int, int, int, int)>(NoOfEdges_4_jCell);
 
                             // Collect neighbors and determine if there is a possible source cell through which 'jCell' can be connected to a proper target
                             int NeighborAggSourceCells = 0;
@@ -1259,40 +1378,46 @@ namespace BoSSS.Foundation.XDG {
                                 double Distance = double.MaxValue;
 
                                 // Searching for a pair is needed to ensure the neighbor cell has a "real" target, which will be connected in CellAgglomerator.cs later
-                                var TargetPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellSource == jCellNeigh);
+                                var TargetPairs = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellSource == jCellNeigh);
 
-                                if (TargetPair.Count() > 1) { 
+                                if (TargetPairs.Count() > 1) { 
                                     throw new ArgumentException("Agglomeration fail: a cell is mapped to two different target cells");
                                 }
 
                                 // only already paired cells can form a target for the chain
-                                if (TargetPair.Any() && IsPossibleTarget) { //check if a neighbor is agglomerated
-                                    int possibleTarget;
-                                    int TargetCellOfTargetPair = TargetPair.First().jCellTarget; //looking for the final target
+                                if (TargetPairs.Any() && IsPossibleTarget) { //check if a neighbor is agglomerated
+                                    var TargetPair = TargetPairs.First();
+                                    int TargetCellOfTargetPair = TargetPair.jCellTarget; //looking for the final target
+                                    int possibleTarget; // due to the mpi boundaries we may select the neighbor as target instead of the final target
                                     int targetRank = -1; //by default assigned an invalid value to ensure code works
 
                                     // To turn off the direct agg to the final target, assign the below to -1
-                                    TargetCellOfTargetPair = -1; // normally the code is able to choose a target that forms higher level agg. chains. However, it is decided to be handled in CellAgglomerator.cs
+                                    //TargetCellOfTargetPair = -1; // normally the code is able to choose a target that forms higher level agg. chains. However, it is decided to be handled in CellAgglomerator.cs
 
                                     // if TargetCellOfTargetPair is one of ext/ghost cells or already on local proc
-                                    bool IsTargetCellKnown = TargetCellOfTargetPair >= 0 && TargetPair.First().OwnerRank4Target >= 0;
+                                    bool IsTargetCellKnown = TargetCellOfTargetPair >= 0 && TargetPairs.First().OwnerRank4Target >= 0;
 
                                     // We must also ensure that source cell is known to the owner of the target as well (otherwise it will lead to local indexing errors)
-                                    bool IsSourceKnownToOwnerOfTargetCell = grdDat.Cells.CellNeighbours[jCell].Contains(TargetCellOfTargetPair) || TargetPair.First().OwnerRank4Target == myMpiRank;
+                                    bool IsSourceKnownToOwnerOfTargetCell = grdDat.Cells.CellNeighbours[jCell].Contains(TargetCellOfTargetPair) || TargetPairs.First().OwnerRank4Target == myMpiRank;
 
                                     if (IsTargetCellKnown && IsSourceKnownToOwnerOfTargetCell) {
                                         possibleTarget = TargetCellOfTargetPair; //if so, directly pair jCell with the final target
-                                        targetRank = TargetPair.First().OwnerRank4Target;
+                                        targetRank = TargetPair.OwnerRank4Target;
                                     } else {
                                         possibleTarget = jCellNeigh;  //if not, pair jCell with jNeigh (which is also TargetPair.jCellSource). This cell will behave like a "carrying" cell which ultimately would lead to the target cell
-                                        targetRank = TargetPair.First().OwnerRank4Source;
+                                        targetRank = TargetPair.OwnerRank4Source;
+                                        Debug.Assert(jCellNeigh == TargetPair.jCellSource);
                                     }
+                                    
+                                    // Create the AggLevel info
+                                    int AggLevel = TargetPairs.First().AgglomerationLevel;
+
                                     double SpeciesFrac = Math.Round(CellVolumes[possibleTarget] / grdDat.Cells.GetCellVolume(possibleTarget), 2);
 
                                     Vector posTarget = grdDat.Cells.GetCenter(possibleTarget);
                                     Vector posSource = grdDat.Cells.GetCenter(jCell);
                                     Distance = Vector.Dist(posTarget, posSource);
-                                    weightedEdgesjCell.Add((SpeciesFrac, Distance, jCell, jCellNeigh, possibleTarget, targetRank));
+                                    weightedEdgesjCell.Add((SpeciesFrac, Distance, AggLevel, jCell, jCellNeigh, possibleTarget, targetRank));
                                     PairedNeighborAggSourceCells++;
                                 }
                             }
@@ -1301,17 +1426,40 @@ namespace BoSSS.Foundation.XDG {
 
                             // If all possible neighbors are already paired, we can choose one of them directly
                             if (IsAllPossibleNeighborCellsPaired) {
-                                var DirectConnection = weightedEdgesjCell.Where(p => p.jCell == jCell).OrderByDescending(p => p.SpeciesFrac).ThenBy(p => p.Dist).ToList().First();
+                                var ConnectionEdge = weightedEdgesjCell.Where(p => p.jCell == jCell).OrderByDescending(p => p.SpeciesFrac).ThenBy(p => p.Dist).ToList().First();
 
-                                if (DirectConnection.targetRank >= 0) {
-                                    LoopChainAgglomerationPairs.Add(new CellAgglomerator.AgglomerationPair() {
-                                        jCellTarget = DirectConnection.targetCell,
-                                        jCellSource = DirectConnection.jCell,
-                                        OwnerRank4Target = DirectConnection.targetRank,
-                                        OwnerRank4Source = myMpiRank
-                                    });
+                                if (ConnectionEdge.targetRank >= 0) {
+                                    var newPair = new CellAgglomerator.AgglomerationPair() {
+                                        jCellTarget = ConnectionEdge.targetCell,
+                                        jNeighborSource = ConnectionEdge.jCellNeigh,
+                                        jCellSource = ConnectionEdge.jCell,
+                                        OwnerRank4Target = ConnectionEdge.targetRank,
+                                        OwnerRank4Source = myMpiRank,
+                                        AgglomerationLevel = ConnectionEdge.AggLevel + 1
+                                    };
 
-                                    DirectConnectionCells.Add(DirectConnection.jCell);
+                                    var targetChains = this.m_AgglomerationChains.Where(p => p.jCellChainTarget == ConnectionEdge.targetCell);
+
+                                    if (targetChains.Any()) {
+                                        if (targetChains.Count() > 1)
+                                            throw new Exception("A cell is associated with two different chains");
+
+                                        var targetChain = targetChains.First();
+                                        targetChain.Add(newPair);
+
+
+                                    } else {
+                                        var firstPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellTarget == ConnectionEdge.targetCell && p.jCellSource == ConnectionEdge.jCellNeigh).First();
+                                        var newChain = new AgglomerationChain(firstPair, grdDat, CellVolumes);
+                                        
+                                        newChain.Add(newPair);
+                                        this.m_AgglomerationChains.Add(newChain);
+
+                                    }
+
+                                    LoopChainAgglomerationPairs.Add(newPair);
+                                    ImmediateConnectionCells.Add(ConnectionEdge.jCell);
+
                                     continue;
                                 }
 
@@ -1323,29 +1471,58 @@ namespace BoSSS.Foundation.XDG {
                         }
 
                         // discard already connected cells
-                        foreach (int DirectConnected in DirectConnectionCells) {
+                        foreach (int DirectConnected in ImmediateConnectionCells) {
                             CellsNeedChainAgglomeration.Remove(DirectConnected);
                         }
 
                         // sort remaining edges
                         weightedEdges = weightedEdges.OrderByDescending(p => p.SpeciesFrac).ThenBy(p => p.Dist).ToList(); // (descending, ascending)
 
+                        weightedEdges.SaveToTextFileDebugUnsteady("weightedEdges",".txt");
+
                         // if any target available in case a target needed?
-                        Debug.Assert(weightedEdges.Any() || DirectConnectionCells.Any() || !CellsNeedChainAgglomeration.Any(), "Cell agglomeration failed." +
+                        Debug.Assert(weightedEdges.Any() || ImmediateConnectionCells.Any() || !CellsNeedChainAgglomeration.Any(), "Cell agglomeration failed." +
                                 " There are cells that cannot be connected any target cells. (Cycle between cells to be agglomerated");
 
                         // choose the first edge and add the corresponding agg. pair
                         if (weightedEdges.Any() && CellsNeedChainAgglomeration.Any()) {
                             var aggConnectionEdge = weightedEdges.First();
 
+
                             // AddToList
                             if (aggConnectionEdge.targetRank > -1) {
-                                LoopChainAgglomerationPairs.Add(new CellAgglomerator.AgglomerationPair() {
+                                var SourceCell2Edge_jCell = Cell2Edge[aggConnectionEdge.jCell];
+
+                                var newPair = new CellAgglomerator.AgglomerationPair() {
                                     jCellTarget = aggConnectionEdge.targetCell,
                                     jCellSource = aggConnectionEdge.jCell,
                                     OwnerRank4Target = aggConnectionEdge.targetRank,
-                                    OwnerRank4Source = myMpiRank
-                                });
+                                    OwnerRank4Source = myMpiRank,
+                                    AgglomerationLevel = aggConnectionEdge.AggLevel + 1
+
+                                };
+
+                                LoopChainAgglomerationPairs.Add(newPair);
+
+                                var targetChains = this.m_AgglomerationChains.Where(p => p.jCellChainTarget == aggConnectionEdge.targetCell);
+
+                                if (targetChains.Any()) {
+                                    if (targetChains.Count() > 1)
+                                        throw new Exception("A cell is associated with two different chains");
+
+                                    var targetChain = targetChains.First();
+                                    targetChain.Add(newPair);
+
+
+                                } else {
+                                    var firstPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellTarget == aggConnectionEdge.targetCell && p.jCellSource == aggConnectionEdge.jCellNeigh).First();
+                                    var newChain = new AgglomerationChain(firstPair, grdDat, CellVolumes);
+
+
+                                    newChain.Add(newPair);
+                                    this.m_AgglomerationChains.Add(newChain);
+
+                                }
 
                                 CellsNeedChainAgglomeration.Remove(aggConnectionEdge.jCell);
                             }
@@ -1370,8 +1547,9 @@ namespace BoSSS.Foundation.XDG {
                     ChainCountMax = ChainCountMax.MPIMax();
                     #endregion
                 }
-                MPICollectiveWatchDog.Watch(csMPI.Raw._COMM.WORLD);
                 #endregion
+
+                m_AgglomerationChains.SaveToTextFileDebugUnsteady("aggChains",".txt");
 
                 // If there is still cells waiting for agglomeration, this means that agg. failed
                 #region AgglomerationKatastrophe
