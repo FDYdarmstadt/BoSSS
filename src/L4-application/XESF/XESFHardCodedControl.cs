@@ -21,8 +21,8 @@ namespace XESF {
     public class XESFHardCodedControl {
 
         /// <summary>
-        /// Base Control for supersonic flow over an inclined plane (aka. WedgeFlow) discretized using 2 levelsets (TwoLs).
-        /// - one LS is used to represent the immersed boundary (i.e. the inlcined Plane)
+        /// Base Control for supersonic flow over an inclined plane (aka. WedgeFlow) discretized using 2 level sets (TwoLs).
+        /// - one LS is used to represent the immersed boundary (i.e. the inclined Plane)
         /// - the second level Set represents the straight shock that is obtained
         /// -  as long as the shock does not detach or vanish the solution is piecewise constant
         /// </summary>
@@ -94,7 +94,7 @@ namespace XESF {
             c.IsTwoLevelSetRun = true;
 
             c.LevelSetDegree = 1;
-            c.AddVariable(XESFVariables.LevelSet, 1); //this is the levelSet uesed for the Immersed Boundary (the Wedge)
+            c.AddVariable(XESFVariables.LevelSet, 1); //this is the levelSet used for the Immersed Boundary (the Wedge)
             c.AddVariable(XESFVariables.LevelSetTwo, lsDegree); // this is the levelSet used for the shock
 
             c.SpeciesTable[0, 0] = "X"; // 'Forbidden' species
@@ -151,7 +151,7 @@ namespace XESF {
                                                            //    return 2;
                                                            //} else { // (part of void area)
                         return 2;
-                        //return 3; // Wedge Part part of Outlet
+                        //return 3; // Wedge Part of Outlet
 
                     } else if(Math.Abs(X[0] - xMin) < 1e-14) { // Left boundary
                         return 1;
@@ -253,7 +253,7 @@ namespace XESF {
             }
             #endregion
 
-            #region Inital Values for Solution + Boundary Values
+            #region Initial Values for Solution + Boundary Values
             c.SolDegree = dgDegree;
             c.GetInitialValue = initialValue;
             c.EquationOfState = IdealGas.Air;
@@ -423,8 +423,8 @@ namespace XESF {
             return c;
         }
         /// <summary>
-        /// Control for supersonic flow over an inclined plane (aka. WedgeFlow) discretized using 1 levelset.
-        /// To obtain the inclined plane a cartesian grid with bottom boundary is rotated with presribed wedge_angle.
+        /// Control for supersonic flow over an inclined plane (aka. WedgeFlow) discretized using 1 level set.
+        /// To obtain the inclined plane a Cartesian grid with bottom boundary is rotated with prescribed wedge_angle.
         /// - the level Set represents the straight shock that is obtained
         /// - as long as the shock does not detach or vanish the solution is piecewise constant
         /// </summary>
@@ -494,7 +494,7 @@ namespace XESF {
             c.IsTwoLevelSetRun = false;
 
             c.LevelSetDegree = lsDegree;
-            c.AddVariable(XESFVariables.LevelSet, 1); //this is the levelSet uesed for the Immersed Boundary (the Wedge)
+            c.AddVariable(XESFVariables.LevelSet, 1); //this is the levelSet used for the Immersed Boundary (the Wedge)
 
             c.SpeciesTable[0, 0] = "L"; // 'Forbidden' species
             c.SpeciesTable[1, 0] = "R"; // Void area (inside the blunt body)
@@ -546,7 +546,7 @@ namespace XESF {
                                                               //    return 2;
                                                               //} else { // (part of void area)
                         return 2;
-                        //return 3; // Wedge Part part of Outlet
+                        //return 3; // Wedge Part of Outlet
 
                     } else if(Math.Abs(rotX[0] - xMin) < 1e-14) { // Left boundary
                         return 1;
@@ -659,7 +659,7 @@ namespace XESF {
             }
             #endregion
 
-            #region Inital Values for Solution + Boundary Values
+            #region Initial Values for Solution + Boundary Values
             c.SolDegree = dgDegree;
             c.GetInitialValue = initialValue;
             c.EquationOfState = IdealGas.Air;
@@ -826,11 +826,11 @@ namespace XESF {
             return c;
         }
         /// <summary>
-        /// Control for supersonic flow over an inclined plane (aka. WedgeFlow) discretized using 1 levelset.
+        /// Control for supersonic flow over an inclined plane (aka. WedgeFlow) discretized using 1 level set.
         /// To obtain the inclined plane a grid/mesh must be provided via Gmsh (.msh)
         /// - the level Set represents the straight shock that is obtained
         /// - as long as the shock does not detach or vanish the solution is piecewise constant
-        /// - may not work ATM, --> problems with non-cartesian cut-cells
+        /// - may not work ATM, --> problems with non-Cartesian cut-cells
         /// TODO: Look into this issue
         /// </summary>
         /// <param name="MaxIterations"></param>
@@ -897,7 +897,7 @@ namespace XESF {
             c.CutCellQuadratureType = XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
             c.IsTwoLevelSetRun = false;
             c.LevelSetDegree = lsDegree;
-            c.AddVariable(XESFVariables.LevelSet, lsDegree); //this is the levelSet uesed for the Immersed Boundary (the Wedge)
+            c.AddVariable(XESFVariables.LevelSet, lsDegree); //this is the levelSet used for the Immersed Boundary (the Wedge)
             c.SpeciesTable = new string[1, 2];
             c.SpeciesTable[0, 0] = "L"; // Left to the Shock
             c.SpeciesTable[0, 1] = "R"; // Right to the Shock
@@ -976,7 +976,7 @@ namespace XESF {
             }
             #endregion
 
-            #region Inital Values for Solution + Boundary Values
+            #region Initial Values for Solution + Boundary Values
             c.SolDegree = dgDegree;
             c.GetInitialValue = initialValue;
             c.EquationOfState = IdealGas.Air;
@@ -1084,7 +1084,7 @@ namespace XESF {
                 return 0;
             }
             #endregion
-            #region Set inital values
+            #region Set initial values
             if(iVFromShockRelations) {
 
                 //// Initial conditions in PRIMITIVE variables -- Pre Shock
@@ -1129,7 +1129,7 @@ namespace XESF {
             c.Queries.Add("L2NormEnergy", QueryLibrary.L2Norm(CompressibleVariables.Energy));
             #endregion
 
-            #region Projecti Information
+            #region Project Information
             c.ProjectName = "XESFWedgeFlow_OneLs";
             c.SessionName = string.Format("WedgeFlow_OneLs_p{0}_iterations{1}_angle{2}_lSDegree{3}_Glob{4}_agg{5}_",
                 dgDegree, c.NoOfTimesteps, initialAngle_shockLS, lsDegree, globalization.ToString(), agg);
@@ -1142,7 +1142,7 @@ namespace XESF {
         }
         /// <summary>
         /// Control for supersonic flow over an inclined plane (aka. WedgeFlow) discretized using 2 Level Sets derived from Base Control.
-        /// Here only the selected problem paramaters may be controlled
+        /// Here only the selected problem parameters may be controlled
         /// </summary>
         /// <param name="MaxIterations"></param>
         /// <param name="dgDegree"></param>
@@ -1612,7 +1612,7 @@ namespace XESF {
             return c;
         }
         /// <summary>
-        /// COntrol object for Bowshock where intial value and Level Set are seeded as whished. Not in use ATM
+        /// COntrol object for Bow shock where initial value and Level Set are seeded as wished. Not in use ATM
         /// </summary>
         /// <param name="optiLSDegree"></param>
         /// <param name="MaxIterations"></param>

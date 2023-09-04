@@ -52,7 +52,6 @@ namespace XESF.Fluxes {
             // +++++++++++++++ V0 +++++++++++++++
             double[] V0 = new double[D + 2];
             V0[0] = vAverage[component] - speedOfSoundAverage * normal[component];
-            //xxx wenn Error, dann u.a. hier prüfen
             for(int i = 1; i < D+1; i++) {
                 if(component == i-1) {
                     V0[i] = (vAverage[component] - normal[component]) * normal[i-1] + 1;
@@ -68,47 +67,13 @@ namespace XESF.Fluxes {
                 k_j += V0[i] * eigenVals[i] * result[i];
             }
 
-            //OLD stuff
-            //(MultidimensionalArray V0_inv_old, MultidimensionalArray eigenVals_old,MultidimensionalArray V0_old)= OldSetup(normal, Uin, Uout, D); 
-            //var prod = V0_old * eigenVals_old * V0_inv_old;
-            //var k_123 = prod.MatVecMul(1.0, Udiff);
-            //if(Math.Abs(k_123[component]-k_j)>1e-15) {
-            //    Console.WriteLine("*************** Fehler im Code: Momentum Flux ***************");
-            //    var result_old=V0_inv_old.MatVecMul(1.0, Udiff);
-            //}
 
             double momentumFlux = 0.5 * (FL + FR) + 0.5 * k_j;
 
-            //if(momentumFlux.IsNaN()) {
-            //    Console.WriteLine("*************** Fehler im Code: Momentum Flux ***************");
-            //}
             return momentumFlux;
 
         }
 
-        public double InnerEdgeSplitFlux(double[] normal, double[] Uin, double[] Uout, int D) {
-            // old version, not working because of X-Split 
-            (double[] waveStrength, double[] eigenVal, double[,] eigenVec) = SetupXSplit(normal, Uin, Uout, D);
-            Vector n = new Vector(normal);
-            double FL = Flux(Uin, D) * n;
-            double FR = (-1) * Flux(Uout, D) * n;
-            double momentumFlux = 0;
-            double k_123 = 0;
-            for(int i = 0; i < 5; i++) {
-                k_123 += waveStrength[i] * Math.Abs(eigenVal[i]) * eigenVec[component + 1, i];
-            }
-            momentumFlux += 0.5 * (FL + FR);// - 0.5 * k_123;
-            if(momentumFlux.IsNaN()) {
-                Console.WriteLine("*************** Fehler im Code: Momentum Flux ***************");
-            }
-            return momentumFlux;
-        }
-
-
-        // Copied from HLLCMomentumFlux 
-        //!!!!
-        // xxx noch checken+überarbeiten !!!! ist noch im raw-Zustand
-        //!!!!
         public Vector Flux(double[] U, int D) {
             Vector Output = new Vector(D);
             int L = U.Length;
@@ -117,18 +82,8 @@ namespace XESF.Fluxes {
             double gammaMachSquared = gamma * Mach * Mach;
 
             double density = U[0];
-            try {
-                double energytest = U[D + 1];
-
-            } catch {
-                Console.WriteLine("");
-            }
             double energy = U[D + 1];
 
-            
-            
-            //state.Momentum[MomentumComponent] * state.Velocity
-            //    + 1/(gamma * Mach^2) * state.Pressure * ComponentVector;
             double momentumSquared = 0.0;
             for(int d = 0; d < D; d++) {
                 Output[d] += U[component + 1] * U[d + 1] / density;
@@ -155,8 +110,6 @@ namespace XESF.Fluxes {
         }
 
         public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            // Copied from HLLCMomentumFlux
-            // xxx am Ende auf Korrektheit überprüfen mit dem Code der noch implemntiert wird/wurde !!
             Vector fluxvector = Flux(U, cpv.D);
             return -1.0 * fluxvector * GradV;
         }

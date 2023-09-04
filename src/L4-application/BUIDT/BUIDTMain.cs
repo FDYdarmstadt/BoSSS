@@ -24,7 +24,7 @@ namespace BUIDT {
     /// Fluxes are implemented in BUIDT.Fluxes, so far only upwind flux is supported
     /// 
     /// Author: Jakob Vandergrift 
-    /// Date of Creation/Maintanance: 08-2022 until at least 08-2024
+    /// Date of Creation/Maintenance: 08-2022 until at least 08-2024
     /// </summary>
     public class BUIDTMain : ApplicationWithIDT<BUIDTControl> {
         
@@ -130,7 +130,7 @@ namespace BUIDT {
             R_JacobiOperator = XSpatialOperator.GetJacobiOperator(SpatialDimension: 2);
 
 
-            //noe that the operator is assembeled we can compute the p0 solution
+            //now that the operator is assembled we can compute the p0 solution
             if(Control.UseP0ProjectionAsInitialGuess) {
                 ComputeP0Solution();
             }
@@ -198,7 +198,7 @@ namespace BUIDT {
                         splineLS.GetSplineOverDetermined(Points);
                         SplineOptiLevelSet.EmbeddInLevelSet(splineLS.Spline, splineLS);
                     } else {
-                        throw new ArgumentException("something went wrong, as we excpect LeveSetOpti to be of type SplineLS");
+                        throw new ArgumentException("something went wrong, as we expect LeveSetOpti to be of type SplineLS");
                     }
 
                     break;

@@ -251,7 +251,7 @@ namespace SAIDT {
             return c;
         }
         /// <summary>
-        /// Example with sinusodial shock
+        /// Example with sinusoidal shock
         /// </summary>
         /// <param name="dbPath"></param>
         /// <param name="MaxIterations"></param>

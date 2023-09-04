@@ -14,7 +14,7 @@ namespace BUIDT
             return typeof(BUIDTMain);
         }
         /// <summary>
-        /// contrtols smoothness of smoothed upwind flux
+        /// controls smoothness of smoothed upwind flux
         /// </summary>
         public double s_alpha { get; set; } = 10;
         /// <summary>

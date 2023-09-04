@@ -12,8 +12,8 @@ using ilPSP.LinSolvers;
 
 namespace ApplicationWithIDT.OptiLevelSets {
     /// <summary>
-    /// Defines an interface for the representation of the Level Set trageted by the optimizer.
-    /// - In order to spare work each Level Set representation is projected onto a DG Level Set linked to all solver routines, this needs to be done everytime before a boss routing (e.g. resiudal evaluation is needed).
+    /// Defines an interface for the representation of the Level Set targeted by the optimizer.
+    /// - In order to spare work each Level Set representation is projected onto a DG Level Set linked to all solver routines, this needs to be done every-time before a boss routing (e.g. residual evaluation is needed).
     /// </summary>
     public interface IOptiLevelSet : ICloneable {
         /// <summary>
@@ -38,7 +38,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// <returns>param value $a_i$</returns>
         double GetParam(int index);
         /// <summary>
-        /// Determines wether the DOF of the given index influences the NearBand of the LevelSet. If it does not the Jacobian entires do not need to be computed.
+        /// Determines whether the DOF of the given index influences the NearBand of the LevelSet. If it does not the Jacobian entires do not need to be computed.
         /// </summary>
         /// <param name="index">i param index</param>
         /// <returns></returns>
@@ -107,14 +107,14 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// </summary>
         /// <param name="sourceLS">member LevelSet </param>
         /// <exception cref="ArgumentException"> TransMat was not assembled or assembled with a different LevelSet</exception>
-        /// <exception cref="NotImplementedException">only works if optiLevelSet has an orthormal Basis</exception>
+        /// <exception cref="NotImplementedException">only works if optiLevelSet has an orthonormal Basis</exception>
         void ProjectFromLevelSet(ConventionalDGField sourceLS);
         /// <summary>
         /// helper Function to obtain the value of a Function described by the polynomial object 
         /// </summary>
         /// <param name="x">point to be evaluated</param>
         /// <param name="a">coefficient</param>
-        /// <param name="p">Polyonmial</param>
+        /// <param name="p">Polynomial</param>
         /// <returns> function value a * p(x) </returns>
         public static double FuncFromPolynomial(double[] x, double a, Polynomial p) {
             double ret = 0;
@@ -190,10 +190,10 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// <summary>
         /// This method projects a scalar function onto the OptiLevelSet. It is only usable if the OptiLevelSet has an Orthonormal basis (constructed by the <see cref="CreateONBLevelSet"/> method)
         /// 
-        /// The projectiong is done:
+        /// The projection is done:
         /// 1. initializing a SinglePhasephield using the member grid 
-        /// 2. Then the projection matrix is assembled (Projecton from the OptiLevelSet field onto the SInglephasefield)
-        /// 3. The Transpose of that matrix is multiplied with the coordiante Vector of the Singlephasefield so the coordinateVector for the optiLevelSet is Obtained
+        /// 2. Then the projection matrix is assembled (projection from the OptiLevelSet field onto the SInglephasefield)
+        /// 3. The Transpose of that matrix is multiplied with the coordinate Vector of the Singlephasefield so the coordinateVector for the optiLevelSet is Obtained
         /// </summary>
         /// <param name="initialShockPostion"></param>
         void ProjectFromFunction(Func<double[], double> initialShockPostion);
@@ -203,7 +203,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         void AssembleTracker();
         double Norm(double[] levelSetStepCoordinates);
         /// <summary>
-        /// a method that returns the regularisation Matrix
+        /// a method that returns the regularization Matrix
         /// </summary>
         /// <returns></returns>
         MsrMatrix GetRegMatrix();

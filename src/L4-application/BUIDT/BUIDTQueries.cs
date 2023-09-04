@@ -28,7 +28,7 @@ namespace BUIDT {
             };
         }
         /// <summary>
-        /// the L2error of the splineLevelSet isocotour as 1D function y ->f(y) is computed against a referenceSol
+        /// the L2error of the splineLevelSet iso contour as 1D function y ->f(y) is computed against a referenceSol
         /// </summary>
         /// <param name="referenceSolution"></param>
         /// <returns></returns>

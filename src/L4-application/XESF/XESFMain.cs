@@ -31,14 +31,14 @@ namespace XESF {
     /// Implements shock fitting for stationary XDG Euler (2D) which is solved by the routines defined in ApplicationWithIDT 
     /// Naming: X(DG) - E(uler) - S(hock) - F(itting)
     /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a XESFControl.cs object
-    /// Fluxes are implemented in XESF.Fluxes. This sovler supports:
+    /// Fluxes are implemented in XESF.Fluxes. This solver supports:
     /// - Roe Flux (with smoothing factor alpha)
     /// - HLLC Flux
     /// - Godunov Flux
     /// - Central Flux (only for interface)
     /// 
     /// Author: Jakob Vandergrift 
-    /// Date of Creation/Maintanance: 08-2022 until at least 08-2024
+    /// Date of Creation/Maintenance: 08-2022 until at least 08-2024
     /// </summary>
 
     public class XESFMain : ApplicationWithIDT<XESFControl> {
@@ -345,15 +345,6 @@ namespace XESF {
                     throw new NotSupportedException("This should never happen");
                 }
             }
-            //#region TemporalOperator
-            //{
-            //    var TempOp = new ConstantXTemporalOperator(this.XSpatialOperator, 0.0);
-            //    this.XSpatialOperator.TemporalOperator = TempOp;
-            //    foreach(var kv in this.MassScale) {
-            //        TempOp.DiagonalScale[LsTrk.GetSpeciesName(kv.Key)].SetV(kv.Value.ToArray());
-            //    }
-            //}
-            //#endregion
             if(Control.FluxVersion == FluxVersion.NonOptimized) {
                 this.XSpatialOperator.LinearizationHint = LinearizationHint.GetJacobiOperator;
                 this.XSpatialOperator.AgglomerationThreshold = this.Control.AgglomerationThreshold;
@@ -374,8 +365,8 @@ namespace XESF {
                 this.Op_obj.AgglomerationThreshold = this.Control.AgglomerationThreshold;
 
                 // here the Optimization problem is set.
-                // - Rankine Hugouniot sets and objective function that is the weak form of either evaluating the RH condition on the interface only or on all faces.
-                // - EnRes uses the objective function defined by the enriched Residual. The Obj Operator is then the sam
+                // - Rankine Hugoniot sets and objective function that is the weak form of either evaluating the RH condition on the interface only or on all faces.
+                // - EnRes uses the objective function defined by the enriched Residual. The Obj Operator is then the same
                 switch(Control.optProblemType) {
                 case OptProblemType.RankineHugoniotFull:
                 case OptProblemType.RankineHugoniotOnlyInterface:
@@ -418,7 +409,7 @@ namespace XESF {
             }
 
 
-            #region Timestepper
+            #region Time-stepper
             //TimeStepConstraints = new List<TimeStepConstraint>();
             //if(Control.IsTwoLevelSetRun) {
             //    TimeStepConstraints.Add(new ConvectiveXDGCFLConstraint(LsTrk, LsTrk.GetAgglomerator(SpeciesToEvaluate_Ids, Control.NonlinearQuadratureDegree, Control.AgglomerationThreshold), SpeciesToEvaluate_Ids[0], 0, ConservativeFields, gridData, Control));
@@ -500,14 +491,14 @@ namespace XESF {
 
         
         /// <summary>
-        /// Initilaizes multigridoperator configuration object. The MGP is used only in the process of agglomeration so far to transform from solution to agllomeration space.
+        /// Initializes multi-grid operator configuration object. The MGP is used only in the process of agglomeration so far to transform from solution to agglomeration space.
         /// </summary>
         public override void InitializeMultiGridOpConfig() {
             int p = this.Momentum[0].Basis.Degree;
             int D = this.GridData.SpatialDimension;
             // set the MultigridOperator configuration for each level:
-            // it is not necessary to have exactly as many configurations as actual multigrid levels:
-            // the last configuration enty will be used for all higher level
+            // it is not necessary to have exactly as many configurations as actual multi grid levels:
+            // the last configuration entry will be used for all higher level
             MultiGridOperatorConfig = new MultigridOperator.ChangeOfBasisConfig[3][];
             for(int iLevel = 0; iLevel < MultiGridOperatorConfig.Length; iLevel++) {
                 MultiGridOperatorConfig[iLevel] = new MultigridOperator.ChangeOfBasisConfig[D + 2];
@@ -579,7 +570,7 @@ namespace XESF {
             }
             #endregion
 
-            #region Initialiize the LevelSet
+            #region Initialize the LevelSet
             if(Control.IsTwoLevelSetRun) {
                 this.LevelSet.ProjectField(1.0, this.Control.LevelSetPos, scheme);
                 LsTBO = LevelSetTwo;
@@ -601,7 +592,7 @@ namespace XESF {
                 LevelSetOpti.ProjectOntoLevelSet(LsTBO);
                 break;
 
-                case GetLevelSet.FromOldSimulation: //Assuming that we allready Loaded the ShockLevelSet
+                case GetLevelSet.FromOldSimulation: //Assuming that we already Loaded the ShockLevelSet
                 case GetLevelSet.FromReconstruction:
                 LevelSetOpti.AssembleTransMat(LsTBO);
                 LsTBO.Clear();
@@ -635,7 +626,7 @@ namespace XESF {
                     default:
                     LevelSetOpti.AssembleTransMat(LsTBO);
 
-                    //load the density of last timestep
+                    //load the density of last time step
                     var densityField = tsiFromDb.Fields.Where(f => f.Identification == "rho").SingleOrDefault() as SinglePhaseField;
                     var points = IMatrixExtensions.LoadFromTextFile(Control.PointPath);
                     var tmpLS = ShockFindingExtensions.ReconstructLevelSetField(densityField, points);
@@ -818,7 +809,7 @@ namespace XESF {
                 }
                 break;
                 #endregion
-                #region From P0 Timestepping
+                #region From P0 Time-stepping
                 //case GetInitialValue.FromP0Timestepping:
                 //    //ComputeP0Solution(); cannot be done here as operator is not assembled at this point, it is done at the end of CreateEquationsAndSolvers()
                 //break;
@@ -986,8 +977,8 @@ namespace XESF {
 
         }
         /// <summary>
-        /// updates deriv variables such as pressure, velocity, enthalpy, ...
-        /// used in every timestep
+        /// updates derived variables such as pressure, velocity, enthalpy, ...
+        /// used in every time step
         /// </summary>
         public override void UpdateDerivedVariables() {
             // Update derived variables (including sensor _variable_)
@@ -1021,7 +1012,7 @@ namespace XESF {
         /// Creates the spatial operator from a Control, a LevelSetTracker and a grid
         /// Helper function for debugging
         /// DOes not have all the changes done in CreateEquationsAndSolvers, will throw errors for new fluxes.
-        /// TODO: define a common function that is used in both methodsm remove duplicate code
+        /// TODO: define a common function that is used in both methods remove duplicate code
         /// </summary>
         /// <param name="Control">Main control</param>
         /// <param name="LsTrk"> LevelSetTracker</param>

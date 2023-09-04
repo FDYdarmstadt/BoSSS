@@ -32,8 +32,8 @@ using static BoSSS.Solution.GridImport.NASTRAN.NastranFile;
 
 namespace ApplicationWithIDT {
     /// <summary>
-    /// Abstract Class for Implicit Discontinuity Tracking (IDT) via Optimization
-    /// - Solves Optimization problem   f(U,phi) -> min!
+    /// Abstract class for implicit discontinuity tracking (IDT) via optimization
+    /// - Solves optimization problem   f(U,phi) -> min!
     ///                                 subject to r(U,phi)=0
     /// Here:
     ///     - f is an objective function [Code: obj_f, obj_vec ...] 
@@ -74,7 +74,7 @@ namespace ApplicationWithIDT {
         #region LevelSets
         public LevelSet LevelSet { get; set; }
         public LevelSet LevelSetTwo { get; set; }
-        public LevelSet LsTBO { get; set; } // This shall meen LevelSetToBeOptimized and is a reference to either LevelSetOne or LevelSetTwo
+        public LevelSet LsTBO { get; set; } // This stands for LevelSet To Be Optimized and is a reference to either LevelSetOne or LevelSetTwo
         public LevelSet levelSetBackup { get; set; }
         public IOptiLevelSet LevelSetOpti { get; set; }
         public IOptiLevelSet LevelSetOptiBackup { get; set; }
@@ -219,7 +219,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public double f_phi { get; set; }
         /// <summary>
-        /// Current Agglomeration Threshhold
+        /// Current Agglomeration Threshold
         /// </summary>
         public double CurrentAgglo { get; set; }
         /// <summary>
@@ -236,7 +236,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public double InitResNorm { get; set; }
         /// <summary>
-        /// Inital objective value
+        /// Initial objective value
         /// </summary>
         public double Init_obj_f { get; set; }
         /// <summary>
@@ -247,7 +247,7 @@ namespace ApplicationWithIDT {
         #endregion
         #region Member Methods
         /// <summary>
-        /// Overrided this to include Optimization variables
+        /// Override this to include Optimization variables
         /// </summary>
         /// <param name="timestepno"></param>
         /// <param name="t"></param>
@@ -316,9 +316,9 @@ namespace ApplicationWithIDT {
         public abstract void CreateConservativeFields(LevelSetTracker LsTrk,int DgDegree);
 
         /// <summary>
-        /// This method creates the Fields used in this solver, also various lists are beeing created 
-        /// aswell as the data structure needed in the programm (e.g. LHS,RHS, ...)
-        /// It is the immplementation of the Application member <see cref="Application{T}.CreateFields"/>
+        /// This method creates the Fields used in this solver, also various lists are being created 
+        /// as well as the data structure needed in the program (e.g. LHS,RHS, ...)
+        /// It is the implementation of the Application member <see cref="Application{T}.CreateFields"/>
         /// </summary>
         /// <returns></returns>
         protected override void CreateFields() {
@@ -336,7 +336,7 @@ namespace ApplicationWithIDT {
                     CreateConservativeFields(this.LsTrk, Control.DgDegree_Start); //here we start with the lowest degree
                 break;
                 default:
-                throw new NotImplementedException("this type of Solverrun is undefined");
+                throw new NotImplementedException("this type of Solver run is undefined");
             }
 
             //Initialize all dependent Fields
@@ -344,7 +344,7 @@ namespace ApplicationWithIDT {
 
             //Initialize the MultigridOperatorConfig
             InitializeMultiGridOpConfig();
-            //Create history Lists to track the paramters
+            //Create history Lists to track the parameters
             Gammas = new List<double>();
             Gammas.Add(Control.Gamma_Start);
 
@@ -523,7 +523,7 @@ namespace ApplicationWithIDT {
 
             // makes the step continues if SinglePhaseField as OptiLevelSet is used
             if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOpti.GetGrid().iGeomCells.Count > 1) {
-                // Does a continuitiy projection (hopefully) of the step
+                // Does a continuity projection (hopefully) of the step
                 MakeLevelSetContinous(StepOptiLevelSet);
                 SaveStepFieldToStep(stepIN, StepOptiLevelSet);
                 var StepOptiLevelSet_afterprojection = GetStepOptiLevelSet(stepIN);
@@ -557,7 +557,7 @@ namespace ApplicationWithIDT {
             //Check for termination or Increase of P degree
             CheckTermination();
             UpdateAgglomerator();
-            // must return sth (normally the timestep)
+            // must return something (normally the time step)
             return 0;
         }
 
@@ -580,7 +580,7 @@ namespace ApplicationWithIDT {
                     CurrentDeg = CurrentDeg + 1;
                     ChangeTOBasisofDegree(CurrentDeg);
                     
-                    //increas Current Minimal iTerations by the respective Minimal iterations wanted for the polynomial degree
+                    //increase Current Minimal iTerations by the respective Minimal iterations wanted for the polynomial degree
 
                     CurMinIter = CurrentStepNo + Control.MinPIter[CurrentDeg];
                     ReiniTMaxIter = CurrentStepNo + Control.ReiniTMaxIters[CurrentDeg];
@@ -692,7 +692,7 @@ namespace ApplicationWithIDT {
                     throw new NotImplementedException("not supported");
                 }
                 if(LsTBO.Basis.Degree < LevelSetOptiSpecBasis.ContainingDGBasis.Degree) {
-                    Console.WriteLine("WARNING: The Basis of the DG LevelSet is " + LsTBO.Basis.Degree + " and therefore is lower than the SpecFem OptiLevelSet Degree " + LevelSetOptiSpecBasis.ContainingDGBasis.Degree + " --> DGLevelSet will eventually become discontinous");
+                    Console.WriteLine("WARNING: The Basis of the DG LevelSet is " + LsTBO.Basis.Degree + " and therefore is lower than the SpecFem OptiLevelSet Degree " + LevelSetOptiSpecBasis.ContainingDGBasis.Degree + " --> DGLevelSet will eventually become discontinuous");
                 }
                 this.LevelSetOpti = new SpecFemOptiLevelSet(LevelSetOptiSpecBasis, LsTBO, true, LsTrk, lsNumber);
                 break;
@@ -704,12 +704,12 @@ namespace ApplicationWithIDT {
             #endregion
         }
         /// <summary>
-        /// This method needs to be implemented by deriving classes and initialize the multigridoperator config
+        /// This method needs to be implemented by deriving classes and initialize the multi grid-operator config
         /// </summary>
         public abstract void InitializeMultiGridOpConfig();
 
         /// <summary>
-        /// intialize fields dependent on ConVars (e.g. stepField, PersonFIeld, EnrichedField,Residuals)
+        /// initialize fields dependent on ConVars (e.g. stepField, PersonFIeld, EnrichedField,Residuals)
         /// </summary>
         public void InitDependentFields() {
             m_UnknownsVector = new CoordinateVector(ConservativeFields);
@@ -725,7 +725,7 @@ namespace ApplicationWithIDT {
                 originalStep[i] = new XDGField(stepBasis, ConservativeFields[i].Identification + "_step");
                 LagMult[i] = new XDGField(ConservativeFields[i].Basis, ConservativeFields[i].Identification + "_lam");
             }
-            //initialize Personfield, storing the sensorvalues
+            //initialize Person-field, storing the sensor-values
             personField = new XDGField(new XDGBasis(LsTrk, 0), "personField");
 
             #region Create fields for residuals and the Enriched XDGFields
@@ -737,7 +737,7 @@ namespace ApplicationWithIDT {
             #endregion
         }
         /// <summary>
-        /// Made an extra method out of this, bc it needs to be executed after Operator Initialization
+        /// Made an extra method out of this, because it needs to be executed after Operator Initialization
         /// </summary>
         public void InitObjFields() {
             obj_f_fields = Oproblem.CreateObjField(Residuals);
@@ -745,7 +745,7 @@ namespace ApplicationWithIDT {
         }
 
         /// <summary>
-        /// Initialized all MAtrices and Vectors used with the correct sizes (e.g dep. on polnomial degree)
+        /// Initialized all MAtrices and Vectors used with the correct sizes (e.g dep. on polynomial degree)
         /// we want to call it at the beginning of a SolverRun an if the Polynomial Degree/LevelSet or Mesh is changed
         /// </summary>
         public void InitializeMatricesAndVectors() {
@@ -859,7 +859,7 @@ namespace ApplicationWithIDT {
             }
         }
         /// <summary>
-        /// deletes old textfiles
+        /// deletes old text-files
         /// </summary>
         public static void DeleteOldTextFiles() {
             if(ilPSP.Environment.MPIEnv.MPI_Rank == 0) {
@@ -1005,7 +1005,7 @@ namespace ApplicationWithIDT {
         public void SolveSystem() {
             
             
-            //Console.WriteLine("Check: Computed Sytem ...");
+            //Console.WriteLine("Check: Computed System ...");
             for(int rows = 0; rows < LHS.NoOfRows; rows++) {
                 if(LHS.GetNoOfNonZerosPerRow(rows) == 0) {
                     LHS[rows, rows] = 1;
@@ -1041,13 +1041,13 @@ namespace ApplicationWithIDT {
                 //    Console.WriteLine("dR0dUMinEIg=" + Jr_U.MinimalEigen());
                 //    Console.WriteLine("dR0dUMaximalEIg=" + Jr_U.MaximalEigen());
                 //} catch {
-                //    Console.WriteLine("Expection thrown From MinEig, but we continue...");
+                //    Console.WriteLine("Exception thrown From MinEig, but we continue...");
                 //}
                 //Console.WriteLine("RHSNorm=" + RHS.L2Norm());
                 //Console.WriteLine("gradfNorm=" + gradf.L2Norm());
                 //Console.WriteLine("residualNorm=" + ResidualVector.L2Norm());
 #endif
-                Console.WriteLine("Expection: " + e.ToString() +" From DirectSOlver Thrown, but we continue...");
+                Console.WriteLine("Exception: " + e.ToString() +" From DirectSOlver Thrown, but we continue...");
                 //throw;
             }
             CmpLineSearchResidualWeight();
@@ -1066,7 +1066,7 @@ namespace ApplicationWithIDT {
             Kappas.Add(kappa);
         }     
         /// <summary>
-        /// computes the mu associated with the linesearch merit function
+        /// computes the mu associated with the line-search merit function
         /// </summary>
         public void CmpLineSearchResidualWeight() {
 
@@ -1125,7 +1125,7 @@ namespace ApplicationWithIDT {
         
 #region Plotting
         /// <summary>
-        /// a public plot function (can't make Aplication member PlotCurrentState public)
+        /// a public plot function (can't make Application member PlotCurrentState public)
         /// </summary>
         /// <param name="physTime"></param>
         /// <param name="timestepNo"></param>
@@ -1134,7 +1134,7 @@ namespace ApplicationWithIDT {
             PlotCurrentState(physTime, timestepNo, superSampling);
         }
         /// <summary>
-        /// a custom Plotfunction (ignoring the physical time)
+        /// a custom Plot-function (ignoring the physical time)
         /// </summary>
         /// <param name="timestepNo"></param>
         /// <param name="superSampling"></param>
@@ -1146,7 +1146,7 @@ namespace ApplicationWithIDT {
             plotDriver.PlotFields(Control.ProjectName + "_" + timestepNo, 0.0, m_IOFields);
         }
         /// <summary>
-        /// a custom Plotfunction (ignoring the physical time), where the user sets a custom name
+        /// a custom Plot-function (ignoring the physical time), where the user sets a custom name
         /// </summary>
         /// <param name="name"></param>
         /// <param name="superSampling"></param>
@@ -1236,7 +1236,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// saves everything relevant to database
         /// </summary>
-        /// <param name="timestepno">timestep number</param>
+        /// <param name="timestepno">time step number</param>
         /// <param name="t">physical time</param>
         protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
             // Make sure that all derived variables are updated before saving
@@ -1339,11 +1339,11 @@ namespace ApplicationWithIDT {
             return ret_OLS;
         }
         /// <summary>
-        /// does what it promises. Making the Level Set LSTBO continous, Not really in Use
+        /// does what it promises. Making the Level Set LSTBO continuous, Not really in Use
         /// </summary>
         /// <param name="targetOptiLevelSet"></param>
         public void MakeLevelSetContinous(IOptiLevelSet targetOptiLevelSet) {
-            // Does a continuitiy projection (hopefully)
+            // Does a continuity projection (hopefully)
             IGridData gridData = targetOptiLevelSet.GetGrid();
             SinglePhaseField continuousLevelSet = new SinglePhaseField(new Basis(gridData, targetOptiLevelSet.GetDegree()), "LevelSet_cont");
             var tmp_LsTrk = new LevelSetTracker((GridData)gridData, Control.CutCellQuadratureType, 1, LsTrk.SpeciesTable, new LevelSet[] { targetOptiLevelSet.ToLevelSet(targetOptiLevelSet.GetDegree()) });
@@ -1407,11 +1407,11 @@ namespace ApplicationWithIDT {
             //LsTBO.CoordinateVector.SaveToTextFile(@"C:\Users\sebastian\Documents\Forschung" + $"\\LSCoord_p{Control.SolDegree}_TS{CurrentStepNo}.txt");
             (Jr_phi, Jobj_phi) = FD_LevelSet();
 
-            //Calc some B parts
+            //Compute some B parts
             var BUU = Jobj_U.Transpose() * Jobj_U;
             var BUPhi = Jobj_U.Transpose() * Jobj_phi;
 
-            //Calc gradf_U
+            //Compute gradf_U
             Jobj_U.Transpose().SpMV(1, obj_f_vec, 0, gradf_U);
 
             //***************************** */
@@ -1461,17 +1461,17 @@ namespace ApplicationWithIDT {
             Assembler assembler = new Assembler(noOfRowsB + length_R + length_r);
 
             //*******************************/
-            //// assemble R_{phi} (part of objective function coresponding to Level Set)
+            //// assemble R_{phi} (part of objective function corresponding to Level Set)
             ///*******************************/
             (double[] f_phi_vec, MsrMatrix Jf_phi) = ComputeFphiandJFphi();
 
             //***************************** */
-            //// Calc BPhiPhi
+            //// Compute BPhiPhi
             //***************************** */
             var BPhiPhi = Jobj_phi.Transpose() * Jobj_phi;
             //Add Fphi contribution
             assembler.AccBlock(Jf_phi.Transpose() * Jf_phi, BPhiPhi, 0, 0);
-            //Add Regularisation
+            //Add Regularization
             MsrMatrix D = this.LevelSetOpti.GetRegMatrix();
             D.Scale(gamma);
             assembler.AccBlock(D, BPhiPhi, 0, 0);
@@ -1514,7 +1514,7 @@ namespace ApplicationWithIDT {
             //IMutuableMatrixEx_Extensions.SaveToTextFile(J_R_comp, path + "\\J_R_comp_TT.txt");
 
             //***************************** */
-            //// Set the Blocks of gradf and Assemble RHS
+            //// Set the Blocks of <see:cref and Assemble RHS
             ///  gradf = (              JRerr_U^T R_err(U)
             ///            JRerr_Phi^T R_err(U) + JfPhi_Phi^T R_phi(U)
             ///                                 r                       )          
@@ -1524,11 +1524,11 @@ namespace ApplicationWithIDT {
                 RHS[i] = gradf[i];
             }
 
-            //Calc JRerr_Phi^T R_err(U)
+            //Compute JRerr_Phi^T R_err(U)
             double[] gradRerrPhi = new double[length_l];
             Jobj_phi.Transpose().SpMV(1, obj_f_vec, 0, gradRerrPhi);
 
-            //Calc JfPhi_Phi^T R_phi(U)
+            //Compute JfPhi_Phi^T R_phi(U)
             double[] gradfphi = new double[length_l];
             Jf_phi.Transpose().SpMV(1,f_phi_vec, 0, gradfphi);
 
@@ -1555,7 +1555,7 @@ namespace ApplicationWithIDT {
             // }
 
             //calculate lambda_k
-            //Console.WriteLine("Check: Computed Sytem ...");
+            //Console.WriteLine("Check: Computed System ...");
             //for(int rows = 0; rows < Jr_U.NoOfRows; rows++) {
             //    if(Jr_U.GetNoOfNonZerosPerRow(rows) == 0) {
             //        Jr_U[rows, rows] = 1;
@@ -1589,7 +1589,7 @@ namespace ApplicationWithIDT {
         ///  1. the Jacobians Jr_U,Jobj_U are computed with respect to the state DOFS -depending  on the Linearization chosen
         ///  2. the Jacobians Jobj_vec,Jobj_phi are computed with respect to the Level Set DOFS using the FD_LevelSet function
         ///  3. If agglomerate=true, agglomeration is performed on the Jacobians
-        ///  4. everything is put togethe in the LHS variable
+        ///  4. everything is put together in the LHS variable
         ///  5. grad_f is computed and put together in the RHS variable
         /// </summary>
         public void ComputeSystem() {
@@ -1676,7 +1676,7 @@ namespace ApplicationWithIDT {
             }
 
             //*******************************/
-            //// assemble R_{phi} (part of objective function coresponding to Level Set)
+            //// assemble R_{phi} (part of objective function corresponding to Level Set)
             ///*******************************/
             (double[] f_phi_vec, MsrMatrix Jf_phi) = ComputeFphiandJFphi();
 
@@ -1708,7 +1708,7 @@ namespace ApplicationWithIDT {
             //upper left block
             assembler.AccBlock(Jobj.Transpose() * Jobj, LHS, 0, 0);
 
-            //Regularisation
+            //Regularization
             MsrMatrix reg = this.LevelSetOpti.GetRegMatrix();
             reg.Scale(gamma);
             assembler.AccBlock(reg, LHS, length_r, length_r);
@@ -1754,7 +1754,7 @@ namespace ApplicationWithIDT {
             // }
 
             //calculate lambda_k
-            //Console.WriteLine("Check: Computed Sytem ...");
+            //Console.WriteLine("Check: Computed System ...");
             //for(int rows = 0; rows < Jr_U.NoOfRows; rows++) {
             //    if(Jr_U.GetNoOfNonZerosPerRow(rows) == 0) {
             //        Jr_U[rows, rows] = 1;
@@ -1889,7 +1889,7 @@ namespace ApplicationWithIDT {
                 foreach(int iCell in mask.ItemEnum) { // loop over all cells we consider
                     ba[iCell] = true; //set corresponding entry
                     var tmpmsk = new CellMask(GridData, ba);
-                    // Copy only the coordiantes that belong to the highest modes 
+                    // Copy only the coordinates that belong to the highest modes 
                     foreach(int coordinate in LsTBO.Basis.GetPolynomialIndicesForDegree(iCell, deg)) {
                         fphi[count] = fphi[count]+Math.Pow(LsTBO.Coordinates[iCell, coordinate],2);
                     }
@@ -1929,7 +1929,7 @@ namespace ApplicationWithIDT {
 
 
                 LsTBO.ComputeTotalCurvature(totCurv, mask);
-                totCurv.Scale(0.5); // we want the mean curvature, we dont care about the sign
+                totCurv.Scale(0.5); // we want the mean curvature, we don't care about the sign
 
                 var ba = new BitArray(Grid.NumberOfCells); //empty array
                 int count = 0;
@@ -1972,10 +1972,10 @@ namespace ApplicationWithIDT {
             LevelSetOpti.CopyParamsFrom(LevelSetOptiBackup);
         }
         /// <summary>
-        /// this method computes a custom norm (basically the L2-Norm of the  coordinates ) where one can choose which entries in the double[] x are ommited. 
-        /// This is used here as the step in our method also contains DOFs corresponding to the lagrange multiplier lambda which shall be ommitted.
+        /// this method computes a custom norm (basically the L2-Norm of the  coordinates ) where one can choose which entries in the double[] x are committed. 
+        /// This is used here as the step in our method also contains DOFs corresponding to the Lagrange multiplier lambda which shall be omitted.
         /// </summary>
-        /// <param name="x"> array containing the unknows </param>
+        /// <param name="x"> array containing the unknowns </param>
         /// <param name="length_r">first length should equal state DOFs</param>
         /// <param name="length_l">second length should equal LevelSet DOFs</param>
         /// <returns></returns>
@@ -2188,7 +2188,7 @@ namespace ApplicationWithIDT {
                         for(int i = i0; i < normHistory.Count - 1; i++) { // look at the last 'N' residual norms...
                             double ResNormReductionFactor = NormHistorySkyline[i] / Math.Max(NormHistorySkyline[i + 1], double.Epsilon);
                             if(ResNormReductionFactor < 1)
-                                ResNormReductionFactor = 1; // should never happen anyway due to skylining...
+                                ResNormReductionFactor = 1; // should never happen anyway due to sky lining...
                             Count = Count + 1;
                             Avg = Avg + ResNormReductionFactor;
                         }
@@ -2278,7 +2278,7 @@ namespace ApplicationWithIDT {
             int counter2 = 0;
             m_alpha = Control.Alpha_Start;
 #if DEBUG
-            //Create second Backup Deebuging
+            //Create second Backup Debugging
             //double[] rho_backup = new double[UBackup[0].CoordinateVector.Length];
             //rho_backup.SetV(UBackup[0].CoordinateVector);
 #endif
@@ -2332,8 +2332,8 @@ namespace ApplicationWithIDT {
                     LsTrk_copy.UpdateTracker(CurrentStepNo, Control.NearRegionWidth);
                 } catch { //if Exception is called no step is computed
                     Console.WriteLine($"alpha, ||R1|| {m_alpha} LevelSetCFL ");
-                    success = false; //continue the looop
-                    m_alpha *= tau;  //reduce m_alpha if Exeption is thrown
+                    success = false; //continue the loop
+                    m_alpha *= tau;  //reduce m_alpha if Exception is thrown
                     counter1++;
                     //tp.PlotFields("BackUp" + "_" + 1, 0.0, list);
                 }
@@ -2341,8 +2341,8 @@ namespace ApplicationWithIDT {
             }
 
             //if(counter1 > 0) {
-            //    //Console.WriteLine("step induces LevelSetCFL and had to be shortend by" + Math.Pow(tau, counter1));
-            //    Console.WriteLine("step induces LevelSetCFL and had to be shortend to alpha =" + m_alpha);
+            //    //Console.WriteLine("step induces LevelSetCFL and had to be shortened by" + Math.Pow(tau, counter1));
+            //    Console.WriteLine("step induces LevelSetCFL and had to be shortened to alpha =" + m_alpha);
             //}
 
 #if DEBUG
@@ -2386,7 +2386,7 @@ namespace ApplicationWithIDT {
                     counter2++;
                     m_alpha *= tau; //further reduce m_alpha if Exception is thrown
                     success = AccumulateStep(step_t, m_alpha);
-                    success = false; //continue the looop
+                    success = false; //continue the loop
                     if(m_alpha < Control.Alpha_Min) {
                         success = true;
                     }
@@ -2396,12 +2396,12 @@ namespace ApplicationWithIDT {
             // if alpha hat to be shortened to much throw exception
             if(m_alpha < Control.Alpha_Min) {
                 AllthePossibleStepsPlot(step_t, tau);
-                throw new Exception("step needed to be shortend to much (m_alpha < alpha_min)");
+                throw new Exception("step needed to be shortened to much (m_alpha < alpha_min)");
             }
 
             //if(counter2 > 0) {
-            //    //Console.WriteLine("step breaks Operator and had to be shortend to alpha=" + Math.Pow(tau, counter1 + counter2));
-            //    Console.WriteLine("step breaks Operator and had to be shortend to alpha=" + m_alpha);
+            //    //Console.WriteLine("step breaks Operator and had to be shortened to alpha=" + Math.Pow(tau, counter1 + counter2));
+            //    Console.WriteLine("step breaks Operator and had to be shortened to alpha=" + m_alpha);
             //}
 #endregion
             resetStep();
@@ -2459,7 +2459,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         /// <param name="step_t">step to be accumulated</param>
         /// <param name="m_alpha">step size </param>
-        /// <returns>if succesful (no LevelSetCFL thrown) </returns>
+        /// <returns>if successful (no LevelSetCFL thrown) </returns>
         public bool AccumulateStep(double[] step_t, double m_alpha) {
 
             int iField = 0;
@@ -2520,7 +2520,7 @@ namespace ApplicationWithIDT {
             
         }
         /// <summary>
-        /// Transform the solutionVector into AggSpace (from the non-ggglomerated)
+        /// Transform the solutionVector into AggSpace (from the non-agglomerated)
         /// </summary>
         public void TransformFromSourceToAggSpace() {
             if(CurrentAgglo > 0) {
@@ -2542,10 +2542,10 @@ namespace ApplicationWithIDT {
         }
 
         /// <summary>
-        /// This method serves as a globalization to this solver.Starting with the computed step s^{IN} and depending on the globlaization chosen a new step s
-        /// is computed which either satisfies the cirterium of sufficent decrease
+        /// This method serves as a globalization to this solver.Starting with the computed step s^{IN} and depending on the globalization chosen a new step s
+        /// is computed which either satisfies the condition of sufficient decrease
         /// $$ f_m(z_k +s) \leq f_m(z_k) + s^T f_M'(z_k) $$ 
-        /// or was shortend by $alpha_min$.
+        /// or was shortened by $alpha_min$.
         /// 
         /// The globalization strategies implemented so far:
         /// 
@@ -2572,8 +2572,8 @@ namespace ApplicationWithIDT {
             //Goes Back to NonAggSpace
             resetStep();
 
-            /// Generate the Merit Functions (don't know if this can be done once per SImulation run or has to be done every timestep
-            /// precalculate things later used to calculate the predicted merit function
+            /// Generate the Merit Functions (don't know if this can be done once per SImulation run or has to be done every time step
+            /// pre calculate things later used to calculate the predicted merit function
             switch(Control.MeritFunctionType) {
                 case MeritFunctionType.ExactMerit:
                     res_l1 = 0;
@@ -2684,7 +2684,7 @@ namespace ApplicationWithIDT {
                     last_pred = -1;
                 }
 
-                //Console.WriteLine("deltastart=" + TrustRegionDelta + " Ares:=" + last_ared +" Pres:=" + last_pred);
+                //Console.WriteLine("delta start=" + TrustRegionDelta + " Ares:=" + last_ared +" Pres:=" + last_pred);
                 // trust region adaptation loop
                 while(last_ared >= last_pred) {
                     double newTrustRegionDelta = TrustRegionDelta * 0.5;
@@ -2700,13 +2700,13 @@ namespace ApplicationWithIDT {
                         last_ared = 1000000;
                         last_pred = -1;
                         if(TrustRegionDelta == delta_min) {
-                            throw new Exception("TrustregionDeltaNeeded to be shortend to much");
+                            throw new Exception("TrustregionDeltaNeeded to be shortened to much");
                         }
                     }
                     //Console.WriteLine("try delta=" + TrustRegionDelta + " Ares:=" + last_ared +" Pres:=" + last_pred);
                 }
                 succes = AccumulateStep(step, 1.0);
-                // //Final Trustregion update
+                // //Final Trust-region update
                 // {
                 //     // taken from [Pawlovski et.al. 2006], section 2.4;
                 //     // originally from J. E. Dennis, Jr. and R. B. Schnabel. Numerical Methods for Unconstrained Optimization and Nonlinear Equations. Series in Automatic Computation. Prentice-Hall, Englewood Cliffs, NJ, 1983.
@@ -2859,7 +2859,7 @@ namespace ApplicationWithIDT {
         }
 
         /// <summary>
-        /// This function shall update all derived Variables that are added. User has maximum felxibility here
+        /// This function shall update all derived Variables that are added. User has maximum flexibility here
         /// </summary>
         public abstract void UpdateDerivedVariables();
         
@@ -2894,12 +2894,12 @@ namespace ApplicationWithIDT {
                     int[] con;
                     int[] CellNeighbours;
                     var shadowZero = fieldZero.GetSpeciesShadowField(cell.Item2);
-                    //gives the cell neighbours
+                    //gives the cell neighbors
                     this.GridData.GetCellNeighbours(cell.Item1, GetCellNeighbours_Mode.ViaEdges, out CellNeighbours, out con);
-                    //in this loop over all neighbours the patch is created above wich the average is computed
+                    //in this loop over all neighbors the patch is created above which the average is computed
                     for(int iNeigh = 0; iNeigh < CellNeighbours.Length; iNeigh++) {
                         int neighbour = CellNeighbours[iNeigh];
-                        //Here for each neighbour we check the jumpNorm, for this we need an edgemask
+                        //Here for each neighbor we check the jumpNorm, for this we need an edge mask
                         //var cellEdges = new int[] { GridData.CellToEdge(cell.Item1, 0), GridData.CellToEdge(cell.Item1, 1), GridData.CellToEdge(cell.Item1, 2), GridData.CellToEdge(cell.Item1, 3) };
                         var edge = new BitArray(GridData.iLogicalEdges.Count);
                         {
@@ -2908,7 +2908,7 @@ namespace ApplicationWithIDT {
                         // ToDo: Check the JumpNorm
                         var jumpnorm = shadowZero.JumpNorm(new EdgeMask(GridData, edge));
 
-                        // if jumpnorm less than prescribed constant, add cell to patch and volume to accpatchvolume
+                        // if jump-norm less than prescribed constant, add cell to patch and volume to accpatchvolume
                         if(jumpnorm <= Control.reInit_c3) {
                             CellPatch[neighbour] = true;
                             accPatchVolume += cutCellVolumes[neighbour];
@@ -2918,7 +2918,7 @@ namespace ApplicationWithIDT {
                 }
                 CellMask PatchMask = new CellMask(GridData, CellPatch);
 
-                // next for every field in ConFields we compute the average and reset with it the respective copyfield
+                // next for every field in ConFields we compute the average and reset with it the respective copy field
                 for(int i = 0; i < ConservativeFields.Length; i++) {
                     var copyField = ConservativeFieldsCopy[i]; //here the new values are saved
                     var conservativeField = ConservativeFields[i];
@@ -2943,7 +2943,7 @@ namespace ApplicationWithIDT {
                                 //}
                             }).Execute();
 
-                        average = average / accPatchVolume; // finaly divide by the average
+                        average = average / accPatchVolume; // finally divide by the average
                     }
 
                     //set DG coordinates of shadowCopy to zero in given cell
@@ -3026,8 +3026,8 @@ namespace ApplicationWithIDT {
         }
         /// <summary>
         /// Performs Reinitialization of the XDG-solution, that is setting the solution to a constant 
-        /// equalling the average above nieghbouring cells (that do not cross a shock), 
-        /// This function is used before each SQP-iteration and occassionally, if there is an excessive number
+        /// equaling the average above neighboring cells (that do not cross a shock), 
+        /// This function is used before each SQP-iteration and occasionally, if there is an excessive number
         /// of Line Search iterations 
         /// </summary>
         /// <param name="isExcessiveLineSearch">true if performed during line search</param>
@@ -3041,7 +3041,7 @@ namespace ApplicationWithIDT {
 
             double maxSensorValue = double.MinValue;
             {
-                //gives the maximum Sensor value, only used when performed during linesearch
+                //gives the maximum Sensor value, only used when performed during line-search
 
                 if(isExcessiveLineSearch == true) {
                     maxSensorValue = personField.GetMeanValue(0);
@@ -3201,7 +3201,7 @@ namespace ApplicationWithIDT {
             }
         }
         /// <summary>
-        /// Computes the Projection onto the (p-1)-Polynomial space (relativ to the input field)
+        /// Computes the Projection onto the (p-1)-Polynomial space (relative to the input field)
         /// </summary>
         /// <param name="LsTrk"></param>
         /// <param name="xdgfieldToTest"></param>
@@ -3216,7 +3216,7 @@ namespace ApplicationWithIDT {
                 BlockMsrMatrix MMPmin1Pmin1Inv = massMatrixFactory.GetMassMatrix(fieldPMinus1.Mapping, inverse: true);
 
                 //get the subMassMatrices of deg p-1
-                MsrMatrix MMPmin1P;//Sub of Mass Mat with (rows p-1 ,coloumn p)
+                MsrMatrix MMPmin1P;//Sub of Mass Mat with (rows p-1 ,column p)
                 MsrMatrix MMPmin1Pmin1;
                 {
                     //compute the lists of indices used by GetSubMatrix()
@@ -3273,12 +3273,12 @@ namespace ApplicationWithIDT {
                                 this.MultiGridOperatorConfig, null, this.Control.AgglomerationThreshold,
                                 this.Control.LinearSolver, this.Control.NonLinearSolver);
 
-            //get a startign Timestepsize
+            //get a starting Timestepsize
             double dt = Control.IG_dt_Start;
             //double dt = 0.1;
             //an adaptive function
             void AdaptTS(double nu) {
-                //adaptive Timestepping
+                //adaptive Time-stepping
                 if(nu < Control.IG_nu_Min) {
                     dt = dt * Control.IG_alpha;
                 } else if(nu < Control.IG_nu_Max) {
@@ -3288,7 +3288,7 @@ namespace ApplicationWithIDT {
                 }
             }
 
-            //chosse max iter and initialize counter
+            //choose max iter and initialize counter
             int maxIt = 100;
             int it = 0;
 
@@ -3313,7 +3313,7 @@ namespace ApplicationWithIDT {
                 } catch {
                     SolVec = new CoordinateVector(ConVars);
                     SolVec.SetV(u_n0);
-                    Console.WriteLine($"timestep dt ={dt} breaks operator and is shortend to {dt * Control.IG_beta}");
+                    Console.WriteLine($"time step dt ={dt} breaks operator and is shortened to {dt * Control.IG_beta}");
                     dt = dt * Control.IG_beta;
                     continue;
                 }
@@ -3375,12 +3375,12 @@ namespace ApplicationWithIDT {
                                 this.MultiGridOperatorConfig, null, this.Control.AgglomerationThreshold,
                                 this.Control.LinearSolver, this.Control.NonLinearSolver);
 
-            //get a startign Timestepsize
+            //get a starting Timestepsize
             double dt = Control.IG_dt_Start;
             //double dt = 0.1;
             //an adaptive function
             void AdaptTS(double nu) {
-                //adaptive Timestepping
+                //adaptive Time stepping
                 if(nu < Control.IG_nu_Min) {
                     dt = dt * Control.IG_alpha;
                 } else if(nu < Control.IG_nu_Max) {
@@ -3390,7 +3390,7 @@ namespace ApplicationWithIDT {
                 }
             }
             
-            //chosse max iter and initialize counter
+            //choose max iter and initialize counter
             int maxIt = 100;
             int it = 0;
 
@@ -3413,7 +3413,7 @@ namespace ApplicationWithIDT {
                 } catch {
                     SolVec = new CoordinateVector(ConVars);
                     SolVec.SetV(u_n0);
-                    Console.WriteLine($"timestep dt ={dt} breaks operator and is shortend to {dt * Control.IG_beta}");
+                    Console.WriteLine($"time step dt ={dt} breaks operator and is shortened to {dt * Control.IG_beta}");
                     dt = dt * Control.IG_beta;
                     continue;
                 }
@@ -3452,11 +3452,11 @@ namespace ApplicationWithIDT {
             Console.WriteLine("...Finished");
         }
         /// <summary>
-        /// Compute a p0 inital guess for the sate given a fixed LevelSet
+        /// Compute a p0 initial guess for the sate given a fixed LevelSet
         /// </summary>
         public void ComputeP0Solution() {
 
-            //create a vecotr with the cons. fields with p=0 basis
+            //create a vector with the cons. fields with p=0 basis
             var P0Vars = new XDGField[ConservativeFields.Length];
             var P0Residuals = new XDGField[ConservativeFields.Length];
             //LevelSetTracker tmp_trk;
@@ -3482,7 +3482,7 @@ namespace ApplicationWithIDT {
             DoImplicitTimeStepping(P0Vars,P0Residuals);
 
 
-            //XdgBDFTimestepping timestepping = new XdgBDFTimestepping(P0Vars,null,IterationResiduals,LsTrk,false,
+            //XdgBDFTimestepping time-stepping = new XdgBDFTimestepping(P0Vars,null,IterationResiduals,LsTrk,false,
             //CoordinateVector ResVec=null;
             //MsrMatrix J_r=null;
             //BlockMsrMatrix MM = null;
@@ -3524,7 +3524,7 @@ namespace ApplicationWithIDT {
 
             //void AdaptTS(CoordinateVector delta_u) {
             //    norm = delta_u.L2Norm();
-            //    //adaptive Timestepping
+            //    //adaptive Time stepping
             //    if(norm < Control.IG_nu_Min) {
             //        dt = dt * Control.IG_alpha;
             //    } else if(norm < Control.IG_nu_Max) {
@@ -3789,7 +3789,7 @@ namespace ApplicationWithIDT {
 
         //public Plot2Ddata GetResEnthalpyPlot(ISessionInfo si, double EEN) {
         //    var EE = new List<double>();
-        //    foreach(var timestep in si.Timesteps) {
+        //    foreach(var time step in si.Timesteps) {
         //        EE.Add(((XDGField)timestep.GetField("h_err")).L2NormAllSpecies() / EEN);
         //    }
         //    GetPlotTable(obj_f_vals, "obj_f_vals", ResNorms, "ResNorms", EE, "EnthalpyError");
@@ -3807,10 +3807,10 @@ namespace ApplicationWithIDT {
     }
 #region Helper Class to Assemble System
     /// <summary>
-    /// This is a helper class serving the puropse to insert one MsrMatrix A into a bigger Matrix B.
+    /// This is a helper class serving the purpose to insert one MsrMatrix A into a bigger Matrix B.
     /// This is done by using AccSubMatrixTo - method.
-    /// This method needs long - arrays (which command the row/coloumn indices that are being set) to work. 
-    /// Thes long arrays are initialized only once on construction of this assembler object
+    /// This method needs long - arrays (which command the row/column indices that are being set) to work. 
+    /// These long arrays are initialized only once on construction of this assembler object
     /// </summary>
     public class Assembler {
         public int m_length;
@@ -3850,7 +3850,7 @@ namespace ApplicationWithIDT {
             var cols_target = new long[source.NoOfCols];
             Array.Copy(helper, jCol, cols_target, 0, source.NoOfCols);
 
-            source.AccSubMatrixTo(1, target, rows_source, rows_target, cols_source, cols_target); //set would be nicer but one one part Acc is used to acc the reg matrix
+            source.AccSubMatrixTo(1, target, rows_source, rows_target, cols_source, cols_target);
         }
 
 

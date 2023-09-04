@@ -70,7 +70,7 @@ namespace XESF.Fluxes {
         //private static StreamWriter writer;
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            // Adibatic slip wall
+            // Adiabatic slip wall
             //Vector normalVec = inp.Normal;
             Vector normalVec_A = new Vector(inp.Normal[0], inp.Normal[1]);
             Vector normalVec_B = new Vector(-inp.Normal[0], -inp.Normal[1]);
@@ -88,7 +88,7 @@ namespace XESF.Fluxes {
 
             for (int i = 0; i < uWall.Length; i++) {
                 if (uWall[i] != test[i]) {
-                    throw new NotSupportedException("Normal vec does matter for adibatic slip wall calculation");
+                    throw new NotSupportedException("Normal vector does matter for adiabatic slip wall calculation");
                 }
             }
 
@@ -192,7 +192,7 @@ namespace XESF.Fluxes {
         //    Debug.Assert(NumOfCells == 1);
         //    Debug.Assert(Koeff_V.GetLength(0) == NumOfCells);
 
-        //    // Split coeff array into species A and B
+        //    // Split coefficient array into species A and B
         //    MultidimensionalArray fA = Koeff_V.ExtractSubArrayShallow(-1, -1, 0);
         //    MultidimensionalArray fB = Koeff_V.ExtractSubArrayShallow(-1, -1, 1);
         //    Debug.Assert(fA.Lengths.ListEquals(fB.Lengths, (a, b) => a == b));

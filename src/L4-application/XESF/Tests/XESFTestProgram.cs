@@ -169,7 +169,7 @@ namespace XESF.Tests
                 }
                 else
                 {
-                    throw new NotSupportedException("not supported - but one could implemet a Newton Rootfinding along lines of type x -> (x,y_i) for that");
+                    throw new NotSupportedException("not supported - but one could implement a Newton Root finding along lines of type x -> (x,y_i) for that");
                 }
             }
         }

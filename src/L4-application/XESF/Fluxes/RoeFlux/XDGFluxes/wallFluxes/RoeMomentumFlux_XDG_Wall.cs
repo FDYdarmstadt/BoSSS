@@ -82,7 +82,7 @@ namespace XESF.Fluxes {
             int D = inp.D;
             double[] Uin = uB;
             double[] Uout = uWall;
-            Vector normal = new Vector(inp.Normal); //xxx schauen ob das die richtige Referenz ist
+            Vector normal = new Vector(inp.Normal); 
 
             double[] Udiff = Uin.CloneAs();
             Udiff.AccV(-1, Uout);
@@ -95,7 +95,6 @@ namespace XESF.Fluxes {
             // +++++++++++++++ V0 +++++++++++++++
             double[] V0 = new double[D + 2];
             V0[0] = vAverage[component] - speedOfSoundAverage * normal[component];
-            //xxx wenn Error, dann u.a. hier prüfen
             for(int i = 1; i < D + 1; i++) {
                 if(component == i - 1) {
                     V0[i] = (vAverage[component] - normal[component]) * normal[i - 1] + 1;
@@ -112,10 +111,6 @@ namespace XESF.Fluxes {
             }
 
             double momentumFlux = 0.5 * (FL + FR) + 0.5 * k_j;
-
-            if(momentumFlux.IsNaN()) {
-                Console.WriteLine("*************** Fehler im Code: Momentum Flux ***************");
-            }
             return momentumFlux;
 
 
@@ -295,7 +290,7 @@ namespace XESF.Fluxes {
         //        Output[e + Offset, n] += edgeFlux;
         //    }
         //    //}
-        //    #endregion
+        //    #end region
 
         //    //fA.Acc(+1.0, Output);
         //    fB.Acc(1.0, Output);

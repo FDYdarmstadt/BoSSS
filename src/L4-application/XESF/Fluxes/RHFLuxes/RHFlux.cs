@@ -81,7 +81,7 @@ namespace XESF.Fluxes {
             //Call state evaluation
             var stateOut = boundaryCondition.GetBoundaryState(inp.time, inp.X, inp.Normal, stateIn);
 
-            //Creat Uout from stateOut
+            //Create Uout from stateOut
             Uout[0] = stateOut.Density;
             for(int i = 0; i < inp.D; i++) {
                 Uout[1 + i] = stateOut.Momentum[i];

@@ -101,7 +101,7 @@ namespace XESF.Fluxes {
             Debug.Assert(Koeff_Vin.GetLength(0) == inp.Len);
             Debug.Assert(Koeff_Vot.GetLength(0) == inp.Len);
 
-            // Split coeff array into species A and B
+            // Split coefficient array into species A and B
             MultidimensionalArray fA = Koeff_Vin;//.ExtractSubArrayShallow(-1, -1, 0);
             MultidimensionalArray fB = Koeff_Vot;//.ExtractSubArrayShallow(-1, -1, 1);
             Debug.Assert(fA.Lengths.ListEquals(fB.Lengths, (a, b) => a == b));

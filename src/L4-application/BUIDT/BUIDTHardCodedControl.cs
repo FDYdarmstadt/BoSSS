@@ -296,7 +296,7 @@ namespace BUIDT
             double mu1 = 4.0;
             double mu2 = 3.0;
             double x0 = 0.2501;
-            c.fphiType = FphiType.None; // does not work with any fphi, bc. shock is "too" curved
+            c.fphiType = FphiType.None; // does not work with any fphi, because. shock is "too" curved
             c.GetLevelSet = getLevelSet;
             double SmoothedHeaviSide(double x) {
                 return 1 / (1 + Math.Exp(-2 * s_alpha * x));
@@ -348,7 +348,7 @@ namespace BUIDT
             if(optiLevelSetType == OptiLevelSetType.SplineLevelSet) {
                 //c.InitialShockPostion = x =>ShockSpeed(x[1]);
                 c.InitialShockPostion = x =>  x[1]*1.2;
-                //Incase of Point Reconstruction
+                //In case of Point Reconstruction
                 c.SLSPointPath = @"../../../SplinePointsCurvedBurgers.txt";
             } else {
                 c.InitialShockPostion = x => x[0] - ShockSpeed(x[1]);
@@ -356,7 +356,7 @@ namespace BUIDT
 
             
 
-#region     Initial Vlaue for Global LevelSet
+#region     Initial Value for Global LevelSet
             c.OptiLevelSet_ParamNames = new List<string>();
             c.OptiLevelSet_ParamValues = new List<double>();
             c.OptiLevelSet_Param_Functions = new List<Func<double[], double, double>>();

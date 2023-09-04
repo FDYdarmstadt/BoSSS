@@ -21,7 +21,7 @@ namespace BUIDT.Tests {
 
         [Test]
         public static void ChangeOfPOrderTest() {
-            #region initialize a field and programm object
+            #region initialize a field and program object
             var p = new BUIDTMain();
             var C = BUIDTHardCodedControl.AccShock(
                     dbPath: null,

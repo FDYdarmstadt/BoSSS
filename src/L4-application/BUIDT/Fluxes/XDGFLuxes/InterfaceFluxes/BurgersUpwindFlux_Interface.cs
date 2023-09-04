@@ -30,7 +30,7 @@ namespace BUIDT.Fluxes {
 
     /// <summary>
     /// S(pace) - T(ime) - Burgers - Upwind - Flux - (over the) Interface
-    /// implements the weak form of the XDG discretization for the space time burgers equation using an smooth/unsmooth upwind flux
+    /// implements the weak form of the XDG discretization for the space time burgers equation using an smooth/un-smooth upwind flux
     /// </summary>
     public class BurgersUpwindFlux_Interface : ILevelSetForm, ILevelSetEquationComponentCoefficient, ISupportsJacobianComponent {
 

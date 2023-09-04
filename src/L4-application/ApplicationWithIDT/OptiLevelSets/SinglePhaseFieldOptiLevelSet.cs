@@ -69,14 +69,14 @@ namespace ApplicationWithIDT.OptiLevelSets {
 
         public void AssembleTransMat(LevelSet targetLS) {
             //m_TransMat = MultidimensionalArray.Create(targetLS.CoordinateVector.Length, this.GetLength());
-            //SinglePhaseField tmp = this.CloneAs();
+            //SinglePhaseField mp = this.CloneAs();
             //LevelSet LSbackup = targetLS.CloneAs();
-            ////Set all params of tmp to zero
+            ////Set all params of mp to zero
             //tmp.Clear();
             //for(int i = 0; i < this.GetLength(); i++) {
             //    tmp.CoordinateVector[i] = 1;
             //    LSbackup.Clear();
-            //    LSbackup.ProjectFromForeignGrid(1.0,tmp);
+            //    LSbackup.ProjectFromForeignGrid(1.0,mp);
             //    for(int j = 0; j < LSbackup.CoordinateVector.Length; j++) {
             //        m_TransMat[j, i] = LSbackup.CoordinateVector[j];
             //    }
@@ -84,7 +84,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             //}
         }
         /// <summary>
-        /// Checks if the param index corresponds to a cell in the Nearfield of the MemberGrid (not the grid of the interal BOSSS LevelSet)
+        /// Checks if the param index corresponds to a cell in the Near-field of the MemberGrid (not the grid of the internal BOSSS LevelSet)
         /// </summary>
         /// <param name="index">i param index</param>
         /// <returns></returns>
@@ -93,7 +93,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             Mapping.LocalFieldCoordinateIndex(index, out int iField, out int jCell, out int nMode);
             //then we get the Cell indices from the NearField
             var NFmask = m_thisTracker.Regions.GetNearFieldMask(jCell);
-            //we check if the cell is in the nearfield
+            //we check if the cell is in the near-field
             return NFmask.Contains(jCell);
         }
         public void CopyParamsFrom(IOptiLevelSet source) {
@@ -195,7 +195,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         }
 
         /// <summary>
-        /// here one could do a continuity projection ??, potentially also interface straightening by projection onto p1? but how to identify an oscilating interface?
+        /// here one could do a continuity projection ??, potentially also interface straightening by projection onto p1? but how to identify an oscillating interface?
         /// </summary>
         public void Reinitialize(double L, double kappa_S) {
 

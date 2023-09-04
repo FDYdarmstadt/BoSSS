@@ -62,7 +62,7 @@ namespace ApplicationWithIDT {
         /// </summary>
         public int SolDegree { get; set; }
         /// <summary>
-        /// indicates if the initialLevelSet is far from the exact position. So every hardcoded control can have to options 
+        /// indicates if the initialLevelSet is far from the exact position. So every hard-coded control can have to options 
         /// </summary>
         public bool isFarConfig { get; set; } = true;
         /// <summary>
@@ -76,7 +76,7 @@ namespace ApplicationWithIDT {
         //public LinearSolverConfig LinearSolver = new LinearSolverConfig();
         public BoSSS.Solution.AdvancedSolvers.ISolverFactory LinearSolver { get; set; } = new BoSSS.Solution.AdvancedSolvers.DirectSolver.Config();
         /// <summary>
-        /// Configuration of 'primary' nonlinear solver, used for the initial value compuation
+        /// Configuration of 'primary' nonlinear solver, used for the initial value computation
         /// </summary>
         [DataMember]
         public NonLinearSolverConfig NonLinearSolver { get; set; }
@@ -188,15 +188,15 @@ namespace ApplicationWithIDT {
         /// Reinitialization params
         /// </summary>
         public bool ApplyReiInit { get; set; } = true;
-        public double reInit_c1 { get; set; } = -2e-1; // c_6 closee to eq. (65) taken from,  A robust, high-order implicit shock tracking method for simulation of complex, high-speed flows
-        public double reInit_c2 { get; set; } = 1e-2; // c_7 closee to eq. (67) taken from,  A robust, high-order implicit shock tracking method for simulation of complex, high-speed flows
-        public double reInit_c3 { get; set; } = 1e-2; // c_8 closee to eq. (70) taken from,  A robust, high-order implicit shock tracking method for simulation of complex, high-speed flows
+        public double reInit_c1 { get; set; } = -2e-1; // c_6 close to eq. (65) taken from,  A robust, high-order implicit shock tracking method for simulation of complex, high-speed flows
+        public double reInit_c2 { get; set; } = 1e-2; // c_7 close to eq. (67) taken from,  A robust, high-order implicit shock tracking method for simulation of complex, high-speed flows
+        public double reInit_c3 { get; set; } = 1e-2; // c_8 close to eq. (70) taken from,  A robust, high-order implicit shock tracking method for simulation of complex, high-speed flows
         public double Kappa { get; set; } = 0.5;
 
         public double[] reInitTols { get; set; } = new double[] { -2e-1,-2e-1,0,0,0,0};
 
         /// <summary>
-        /// Staggerd Solver
+        /// Staggered Solver
         /// </summary>
         public SolverRunType solRunType { get; set; } = SolverRunType.Standard;
         //public StaggerdRunConfig staggerdRunConfig { get; set; } = StaggerdRunConfig.ConstantTimesteps;
@@ -256,7 +256,7 @@ namespace ApplicationWithIDT {
         public double[] tALNRs { get; set; } = new double[] { 1.005, 1.005, 1.001, 1.01, 1.01, 1.01, 1.01, 1.01, 1.01 };
     }
         /// <summary>
-        /// this enum vontrols were we get the initial value from
+        /// this enum controls were we get the initial value from
         /// </summary>
         public enum GetInitialValue {
         FromFunctionPerSpecies,
@@ -340,7 +340,7 @@ namespace ApplicationWithIDT {
         DB
     }
     /// <summary>
-    /// this enum tells us what koind of SolverRun we have
+    /// this enum tells us what kind of SolverRun we have
     /// </summary>
     public enum SolverRunType {
         Standard,
@@ -348,7 +348,7 @@ namespace ApplicationWithIDT {
         Unsteady
     }
     /// <summary>
-    /// For the staggerd solver, controls when the Basis degree is changed
+    /// For the staggered solver, controls when the Basis degree is changed
     /// </summary>
     //public enum StaggerdRunConfig {
     //    ConstantTimesteps,
