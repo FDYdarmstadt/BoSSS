@@ -547,7 +547,7 @@ namespace ApplicationWithIDT {
 
             ComputeAndWriteResiduals();
             WriteStuffAndAddToLists(TimestepNo);
-            ComputeGamma();
+            CmpRegParam();
             CurrentStepNo++;
             LsTrk.PushStacks();
             //this is called only due to plotting reasons
@@ -1050,12 +1050,12 @@ namespace ApplicationWithIDT {
                 Console.WriteLine("Expection: " + e.ToString() +" From DirectSOlver Thrown, but we continue...");
                 //throw;
             }
-            ComputeMu();
-            ComputeKappa();
+            CmpLineSearchResidualWeight();
+            CmpFphiWeight();
             TransformFromSourceToAggSpace();
             createBackUp();
         }
-        public void ComputeKappa() {
+        public void CmpFphiWeight() {
             var f_phi_vec = ComputeFphi();
             var f_phi = f_phi_vec.InnerProd(f_phi_vec);
             if(CurrentStepNo< Control.Kappa_M) {
@@ -1068,7 +1068,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// computes the mu associated with the linesearch merit function
         /// </summary>
-        public void ComputeMu() {
+        public void CmpLineSearchResidualWeight() {
 
             //version 1
             //stepUphi = new double[(int)UnknownsMap.TotalLength + LevelSetOpti.GetLength()];
@@ -1103,7 +1103,7 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// computes the gamma associated with regularization of the linear system LHS*(stepIN;lambda)=RHS
         /// </summary>
-        public void ComputeGamma() {
+        public void CmpRegParam() {
 
             SaveStepFieldToStep(stepIN, GetStepOptiLevelSet(stepIN));
             //double norm = LevelSetStep.L2Norm();
