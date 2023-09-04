@@ -15,18 +15,22 @@ using System;
 
 
 namespace BUIDT {
+
+    /// <summary>
+    /// Implements XDG Space Time Scalar Advection in (1D in space) which is solved by the routines defined in ApplicationWithIDT 
+    /// Naming: BU(rgers) - I(implict) - D(iscontinuity) - T(racking)
+    /// 
+    /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a BUIDTControl.cs object, e.g. Boundary Conditions are set by  by the property DirichletToBoundaryMap
+    /// Fluxes are implemented in BUIDT.Fluxes, so far only upwind flux is supported
+    /// 
+    /// Author: Jakob Vandergrift 
+    /// Date of Creation/Maintanance: 08-2022 until at least 08-2024
+    /// </summary>
     public class BUIDTMain : ApplicationWithIDT<BUIDTControl> {
+        
         /// <summary>
-        /// Implements XDG Space Time Scalar Advection in (1D in space) which is solved by the routines defined in ApplicationWithIDT 
-        /// Naming: BU(rgers) - I(implict) - D(iscontinuity) - T(racking)
-        /// 
-        /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a BUIDTControl.cs object, e.g. Boundary Conditions are set by  by the property DirichletToBoundaryMap
-        /// Fluxes are implemented in BUIDT.Fluxes, so far only upwind flux is supported
-        /// 
-        /// Author: Jakob Vandergrift 
-        /// Date of Creation/Maintanance: 08-2022 until at least 08-2024
         /// </summary>
-        /// <param name="args">string pointing to a control file, i.e. 'cs:BUIDT.BUIDTHardCodedControl.StraightShockCurvedStart_Eccomas22()' </param>
+        /// <param name="args">string pointing to a control file, i.e. `cs:BUIDT.BUIDTHardCodedControl.StraightShockCurvedStart_Eccomas22()` </param>
         static void Main(string[] args) {
             //Tests.BUIDTTestProgram.StraightShockCurvedStart_Eccomas22();
             //Tests.BUIDTTestProgram.AcceleratingShock();
@@ -65,7 +69,7 @@ namespace BUIDT {
         }
         /// <summary>
         /// Initializes the Optimization Problem and computes and initial residual, also if chosen initial value is computed by P0 projection
-        /// 1. Here the objects for the discretized equation are constructed by constructing a Spatial Operator and adding the fluxes defined in SAIDT.FLUXES
+        /// 1. Here the objects for the discretized equation are constructed by constructing a Spatial Operator and adding the fluxes defined in <see cref="BUIDT.Fluxes"/>
         /// 2. The Functional needed for the objective function is constructed
         /// </summary>
         /// <param name="L"></param>

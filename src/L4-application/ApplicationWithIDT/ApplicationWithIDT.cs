@@ -59,8 +59,6 @@ namespace ApplicationWithIDT {
     /// - Clean up
     /// - More Documentation
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// 
     public abstract class ApplicationWithIDT<T> : Application<T>
         where T : IDTControl, new() {
         #region Member XDG Fields
@@ -989,7 +987,6 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// evaluates both residuals
         /// </summary>
-        /// 
         public void ComputeResiduals<V>(V enRes_out, V res_out) where V : IList<double> {
             Oproblem.EvalConsAndObj(enRes_out, res_out,ConservativeFields);
             //Transform back into Agglomerated Space
@@ -1067,7 +1064,7 @@ namespace ApplicationWithIDT {
                 }
             }
             Kappas.Add(kappa);
-        }
+        }     
         /// <summary>
         /// computes the mu associated with the linesearch merit function
         /// </summary>
@@ -1240,8 +1237,7 @@ namespace ApplicationWithIDT {
         /// saves everything relevant to database
         /// </summary>
         /// <param name="timestepno">timestep number</param>
-        /// <param name="t">physycal time</param>
-        /// <returns></returns>
+        /// <param name="t">physical time</param>
         protected override ITimestepInfo SaveToDatabase(TimestepNumber timestepno, double t) {
             // Make sure that all derived variables are updated before saving
             UpdateDerivedVariables();
@@ -1252,7 +1248,6 @@ namespace ApplicationWithIDT {
         /// This function computes a Jacobian of an Operator with respect to the LevelSet Coordinates using Central FDs
         /// </summary>
         /// <param name="Eval"> Operator to be differentiated </param>
-        /// <returns></returns>
         public (MsrMatrix Jr, MsrMatrix Jobj) FD_LevelSet() {
             using(new FuncTrace()) {
 

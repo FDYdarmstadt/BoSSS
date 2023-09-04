@@ -26,19 +26,25 @@ using ApplicationWithIDT.OptiLevelSets;
 
 
 namespace XESF {
+
+    /// <summary>
+    /// Implements shock fitting for stationary XDG Euler (2D) which is solved by the routines defined in ApplicationWithIDT 
+    /// Naming: X(DG) - E(uler) - S(hock) - F(itting)
+    /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a XESFControl.cs object
+    /// Fluxes are implemented in XESF.Fluxes. This sovler supports:
+    /// - Roe Flux (with smoothing factor alpha)
+    /// - HLLC Flux
+    /// - Godunov Flux
+    /// - Central Flux (only for interface)
+    /// 
+    /// Author: Jakob Vandergrift 
+    /// Date of Creation/Maintanance: 08-2022 until at least 08-2024
+    /// </summary>
+
     public class XESFMain : ApplicationWithIDT<XESFControl> {
+
         /// <summary>
-        /// Implements shock fitting for stationary XDG Euler (2D) which is solved by the routines defined in ApplicationWithIDT 
-        /// Naming: X(DG) - E(uler) - S(hock) - F(itting)
-        /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a XESFControl.cs object
-        /// Fluxes are implemented in XESF.Fluxes. This sovler supports:
-        /// - Roe Flux (with smoothing factor alpha)
-        /// - HLLC Flux
-        /// - Godunov Flux
-        /// - Central Flux (only for interface)
         /// 
-        /// Author: Jakob Vandergrift 
-        /// Date of Creation/Maintanance: 08-2022 until at least 08-2024
         /// </summary>
         /// <param name="args">string pointing to a control file, i.e. 'cs:XESF.XESFHardCodedControl.XDGWedgeFlow_TwoLs_Base()' </param>
         static void Main(string[] args) {
