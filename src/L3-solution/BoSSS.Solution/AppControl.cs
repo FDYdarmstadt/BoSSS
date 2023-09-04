@@ -33,6 +33,7 @@ using BoSSS.Solution.Utils;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using BoSSS.Solution.LoadBalancing;
+using Newtonsoft.Json.Linq;
 
 namespace BoSSS.Solution.Control {
 
@@ -1163,6 +1164,7 @@ namespace BoSSS.Solution.Control {
                 ReferenceLoopHandling = ReferenceLoopHandling.Error
             };
 
+            formatter.Converters.Add(new ilPSP.Vector.VectorConverter());
 
             
             using(var tr = new StringReader(Str)) {
@@ -1177,7 +1179,7 @@ namespace BoSSS.Solution.Control {
 
                 using(JsonReader reader = new JsonTextReader(tr)) {
                     var obj = formatter.Deserialize(reader, ControlObjectType);
-
+                    
                     AppControl ctrl = (AppControl)obj;
                     return ctrl;
                 }

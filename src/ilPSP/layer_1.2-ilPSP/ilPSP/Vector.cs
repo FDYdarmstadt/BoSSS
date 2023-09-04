@@ -23,6 +23,9 @@ using ilPSP.Utils;
 using ilPSP;
 using System.Collections;
 using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace ilPSP {
 
@@ -31,6 +34,7 @@ namespace ilPSP {
     /// </summary>
     [Serializable] 
     [StructLayout(LayoutKind.Sequential)]
+    [DataContract]
     public struct Vector : IList<double> {
 
         /// <summary>
@@ -133,20 +137,25 @@ namespace ilPSP {
         /// <summary>
         /// x - component
         /// </summary>
+        [DataMember]
         public double x;
+
         /// <summary>
         /// y - component (used for dimensions >= 2)
         /// </summary>
+        [DataMember]
         public double y;
 
         /// <summary>
         /// z - component (used for dimensions >= 3)
         /// </summary>
+        [DataMember]
         public double z;
 
         /// <summary>
         /// spatial dimension
         /// </summary>
+        [DataMember]
         public int Dim;
 
         /// <summary>
@@ -601,7 +610,7 @@ namespace ilPSP {
         public override string ToString() {
             switch(this.Dim) {
                 case 0:
-                return "null";
+                return "nüll";
                 case 1:
                 return ("(" + x + ")");
                 case 2:
@@ -1217,6 +1226,46 @@ namespace ilPSP {
                 inp[RowNo, 0] = row.x; inp[RowNo, 1] = row.y; inp[RowNo, 2] = row.z; return;
                 default:
                 throw new NotImplementedException();
+            }
+        }
+
+        /// <summary>
+        /// Helps with the Serialization/Deserialization of Vectors in control files
+        /// </summary>
+        public class VectorConverter : JsonConverter<Vector> {
+            public override bool CanWrite => true;
+            public override bool CanRead => true;
+
+            public override void WriteJson(JsonWriter writer, Vector value, JsonSerializer serializer) {
+                // Create a JObject and write the x and y properties
+                var jObject = new JObject();
+                jObject["Dim"] = value.Dim;
+                jObject["x"] = value.x;
+                if (value.Dim > 1)
+                    jObject["y"] = value.y;
+                if (value.Dim > 2)
+                    jObject["z"] = value.z;
+
+                jObject.WriteTo(writer);
+            }
+
+            public override Vector ReadJson(JsonReader reader, Type objectType, Vector existingValue, bool hasExistingValue, JsonSerializer serializer) {
+
+
+                // Read JObject from the reader
+                var jObject = JObject.Load(reader);
+
+                // Deserialize x and y from JObject
+                var Dim = jObject["Dim"].Value<int>();
+
+                var ret = new Vector(Dim);
+                ret.x = jObject["x"].Value<double>();
+                if (Dim > 1)
+                    ret.y = jObject["y"].Value<double>();
+                if (Dim > 2)
+                    ret.z = jObject["z"].Value<double>();
+
+                return ret;
             }
         }
     }
