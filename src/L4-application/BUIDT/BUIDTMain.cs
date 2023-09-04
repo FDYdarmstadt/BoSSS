@@ -17,11 +17,11 @@ using System;
 namespace BUIDT {
 
     /// <summary>
-    /// Implements XDG Space Time Scalar Advection in (1D in space) which is solved by the routines defined in ApplicationWithIDT 
+    /// Implements XDG space-timeBurgers equation in (1D in space) which is solved by the routines defined in <see cref="ApplicationWithIDT"/>
     /// Naming: BU(rgers) - I(implict) - D(iscontinuity) - T(racking)
     /// 
-    /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a BUIDTControl.cs object, e.g. Boundary Conditions are set by  by the property DirichletToBoundaryMap
-    /// Fluxes are implemented in BUIDT.Fluxes, so far only upwind flux is supported
+    /// Concrete configurations of solver (initial guess, optimization parameters,...) are set in a <see cref="BUIDTControl.cs"/> object, e.g. boundary conditions are set by the property <see cref="IDTControl.DirichletBoundaryMap"/>
+    /// Fluxes are implemented in <see cref="BUIDT.Fluxes"/>, so far only upwind flux is supported
     /// 
     /// Author: Jakob Vandergrift 
     /// Date of Creation/Maintenance: 08-2022 until at least 08-2024

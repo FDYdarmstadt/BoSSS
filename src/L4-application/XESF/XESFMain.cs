@@ -28,10 +28,10 @@ using ApplicationWithIDT.OptiLevelSets;
 namespace XESF {
 
     /// <summary>
-    /// Implements shock fitting for stationary XDG Euler (2D) which is solved by the routines defined in ApplicationWithIDT 
+    /// Implements shock fitting for stationary XDG Euler (2D) which is solved by the routines defined in <see cref="ApplicationWithIDT"/>
     /// Naming: X(DG) - E(uler) - S(hock) - F(itting)
-    /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a XESFControl.cs object
-    /// Fluxes are implemented in XESF.Fluxes. This solver supports:
+    /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a <see cref="XESFControl.cs"/> object
+    /// Fluxes are implemented in <see cref="XESF.Fluxes"/>. This solver supports:
     /// - Roe Flux (with smoothing factor alpha)
     /// - HLLC Flux
     /// - Godunov Flux

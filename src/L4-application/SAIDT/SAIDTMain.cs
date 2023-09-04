@@ -13,9 +13,9 @@ using BoSSS.Solution.AdvancedSolvers;
 
 namespace SAIDT {
     /// <summary>
-    /// Implements XDG Space Time Scalar Advection in (1D in space) which is solved by the routines defined in ApplicationWithIDT 
+    /// Implements XDG space-time Scalar Advection in (1D in space) which is solved by the routines defined in <see cref="ApplicationWithIDT"/>
     /// Naming: S(calar) - A(dvection) - I(mplict) - D(iscontinuity) - T(racking)
-    /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a <see cref="SAIDTControl.cs"/> object, e.g. boundary conditions are set by  by the property DirichletToBoundaryMap
+    /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a <see cref="SAIDTControl.cs"/> object, e.g. boundary conditions are set by  by the property <see cref="IDTControl.DirichletBoundaryMap"/>
     /// Fluxes are implemented in <see cref="SAIDT.Fluxes"/>, so far only upwind flux is supported
     /// 
     /// Author: Jakob Vandergrift 
