@@ -1121,8 +1121,10 @@ namespace BoSSS.Solution.Control {
                 Formatting = Formatting.Indented
 //                ObjectCreationHandling = ObjectCreationHandling.
             };
-                        
-            using(var tw = new StringWriter()) {
+
+            formatter.Converters.Add(new ilPSP.Vector.VectorConverter());
+
+            using (var tw = new StringWriter()) {
                 tw.WriteLine(this.GetType().AssemblyQualifiedName);
                 using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
                     formatter.Serialize(writer, this);
@@ -1165,8 +1167,7 @@ namespace BoSSS.Solution.Control {
             };
 
             formatter.Converters.Add(new ilPSP.Vector.VectorConverter());
-
-            
+ 
             using(var tr = new StringReader(Str)) {
                 string typeName = tr.ReadLine();
                 Type ControlObjectType = Type.GetType(typeName);
