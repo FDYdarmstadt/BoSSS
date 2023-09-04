@@ -15,7 +15,6 @@ using System;
 
 
 namespace BUIDT {
-
     /// <summary>
     /// Implements XDG space-timeBurgers equation in (1D in space) which is solved by the routines defined in <see cref="ApplicationWithIDT"/>
     /// Naming: BU(rgers) - I(implict) - D(iscontinuity) - T(racking)
@@ -81,15 +80,6 @@ namespace BUIDT {
             this.XSpatialOperator = new XSpatialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
             this.Op_obj = new XSpatialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
             #endregion
-
-
-            //switch (Control.FluxVersion)
-            //{
-            //    case FluxVersion.Jakob:
-            //foreach(SpeciesId id in SpeciesToEvaluate_Ids) {
-            //    string spcNmn = LsTrk.GetSpeciesName(id);
-            //    this.XSpatialOperator.EquationComponents["c"].Add(new BUIDT.Fluxes.ScalarAdvectionUpwindFlux(spcNmn, Control.ShockPos, Control.LeftValue, Control.RightValue, Control.FlowFunc));
-            //}
             this.XSpatialOperator.EquationComponents["c"].Add(new BUIDT.Fluxes.STBurgersUpwindFlux("L", Control.is_nf_smth, Control.s_alpha, Control.DirichletBoundaryMap));
             this.XSpatialOperator.EquationComponents["c"].Add(new BUIDT.Fluxes.STBurgersUpwindFlux("R", Control.is_nf_smth, Control.s_alpha, Control.DirichletBoundaryMap));
             this.XSpatialOperator.EquationComponents["c"].Add(new BurgersUpwindFlux_Interface(Control.is_nf_smth, Control.s_alpha));

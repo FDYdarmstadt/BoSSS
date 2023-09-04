@@ -21,7 +21,6 @@ namespace SAIDT {
     /// Author: Jakob Vandergrift 
     /// Date of Creation/Maintenance: 08-2022 until at least 08-2024
     /// </summary>
-
     public class SAIDTMain : ApplicationWithIDT<SAIDTControl> {
         /// <summary>
         /// 
