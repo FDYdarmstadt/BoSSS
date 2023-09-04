@@ -291,8 +291,8 @@ namespace XESF.Variables {
                         delegate (Vector X, double[] U, int j) {
                             var state = new StateVector(U, program.Control.GetMaterial());
                             double r = state.LocalMachNumber;
-                            //Debug.Assert(r.IsNaN() == false, "NAN in local mach number");
-                            //Debug.Assert(r.IsInfinity() == false, "INF in local mach number");
+                            //Debug.Assert(r.IsNaN() == false, "NAN in local Mach number");
+                            //Debug.Assert(r.IsInfinity() == false, "INF in local Mach number");
                             return r;
                         },
                         program.SpeciesToEvaluate_Ids,
@@ -310,8 +310,8 @@ namespace XESF.Variables {
                 //        delegate (Vector X, double[] U, int j) {
                 //            var state = new StateVector(U, program.Control.GetMaterial());
                 //            double r = state.LocalMachNumber;
-                //            Debug.Assert(r.IsNaN() == false, "NAN in local mach number");
-                //            Debug.Assert(r.IsInfinity() == false, "INF in local mach number");
+                //            Debug.Assert(r.IsNaN() == false, "NAN in local Mach number");
+                //            Debug.Assert(r.IsInfinity() == false, "INF in local Mach number");
                 //            return r;
                 //        },
                 //        new CellQuadratureScheme(true, cellMask),
