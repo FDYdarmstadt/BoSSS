@@ -802,7 +802,7 @@ namespace CNS {
             return c;
         }
 
-        public static CNSControl StationaryShockWave_Perturbation(string dbPath = null, int savePeriod = 100, int dgDegree = 2, double CFLFraction = 0.1, double Ms = 1.5, int numOfCellsX = 100, int numOfCellsY = 10, double endTime = 2.13) {
+        public static CNSControl StationaryShockWave_Perturbation(bool AV = true, double shockPosition = 3.14, string dbPath = null, int savePeriod = 100, int dgDegree = 2, double CFLFraction = 0.1, double Ms = 1.5, int numOfCellsX = 100, int numOfCellsY = 10, double endTime = 2.13) {
             CNSControl c = new CNSControl();
 
             // ### Database ###
@@ -817,7 +817,6 @@ namespace CNS {
             c.GridPartType = GridPartType.METIS;
 
             // ### Shock-Capturing ###
-            bool AV = false;
             if (dgDegree > 0) {
                 AV = true;
             }
@@ -933,8 +932,6 @@ namespace CNS {
                 return (Math.Tanh(distance / maxDistance) + 1.0) * 0.5;
             };
 
-            double shockPosition = 3.14;
-            //double shockPosition = 7;
 
             // See PDF by Yi Zhang (Meeting Geisenhofer/Kummer/Oberlack/Zhang 12/08/2020)
             double u_hat_minus = 1e-5;
