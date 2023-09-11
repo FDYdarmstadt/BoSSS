@@ -723,8 +723,16 @@ namespace BoSSS.Solution.XdgTimestepping {
                 //k++;
             }
 
-            if(StencilCondNoVizS.Count > 0) {
-                Tecplot.Tecplot.PlotFields(ArrayTools.Cat(StencilCondNoVizS, (LevelSet)m_LsTrk.LevelSetHistories[0].Current), "stencilCond", 0.0, 1);
+
+            if (StencilCondNoVizS.Count > 0) {
+            var LevelSets = m_LsTrk.LevelSetHistories;
+
+                foreach (var levelSet in LevelSets) {
+                    StencilCondNoVizS.Add((LevelSet)levelSet.Current);
+            }
+
+            if (StencilCondNoVizS.Count > 0) {
+                Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 1);
             }
 
             return Ret;
