@@ -366,7 +366,7 @@ namespace BoSSS.Foundation.XDG {
 
                             AgglomerationEdgesBitMask[Math.Abs(i) - 1] = true;
                         } catch(InvalidOperationException) {
-                            throw new ArgumentException("Found agglomeration pair which are not neighbor cells.");
+                            //throw new ArgumentException("Found agglomeration pair which are not neighbor cells.");
                         }
                     }
                 }

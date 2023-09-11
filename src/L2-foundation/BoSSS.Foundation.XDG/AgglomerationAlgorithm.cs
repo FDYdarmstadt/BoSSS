@@ -42,7 +42,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// list of connected edges in AgglomerationPairs <see cref="CellAgglomerator.AgglomerationPair"/>
         /// </summary>
-        private List<int> ConnectedCells;
+        private List<int> NeighborCells;
 
         private void AddNeighbors(int jCell) {
             var Cell2Edge = m_grdDat.Cells.Cells2Edges;
@@ -69,7 +69,7 @@ namespace BoSSS.Foundation.XDG {
                 
                 //if (!ConnectedCells.Contains(jCellNeigh)) a cell can be added multiple times, which indicate that it has a connectivity to the target via multiple cells
                 if (jCellNeigh > 0)
-                    ConnectedCells.Add(jCellNeigh);
+                    NeighborCells.Add(jCellNeigh);
 
             }
 
@@ -85,7 +85,7 @@ namespace BoSSS.Foundation.XDG {
             this.OwnerRank4ChainTarget = pair.OwnerRank4Target;
             this.m_grdDat = grdDat;
             this.ChainSources = new List<CellAgglomerator.AgglomerationPair>();
-            this.ConnectedCells = new List<int>();
+            this.NeighborCells = new List<int>();
             this.m_CellVolumes = CellVolumes;
 
             this.sumFractions = Math.Round(m_CellVolumes[pair.jCellTarget] / m_grdDat.Cells.GetCellVolume(pair.jCellTarget), 2);
@@ -99,7 +99,7 @@ namespace BoSSS.Foundation.XDG {
             this.OwnerRank4ChainTarget = TargetRank;
             this.m_grdDat = grdDat;
             this.ChainSources = new List<CellAgglomerator.AgglomerationPair>();
-            this.ConnectedCells = new List<int>();
+            this.NeighborCells = new List<int>();
             this.m_CellVolumes = CellVolumes;
 
             this.sumFractions =  Math.Round(m_CellVolumes[TargetCell] / m_grdDat.Cells.GetCellVolume(TargetCell), 2);
@@ -108,7 +108,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         public bool IsConnected(int CellNumber) {
-            return ConnectedCells.Contains(CellNumber);
+            return NeighborCells.Contains(CellNumber);
         }
  
         public bool IsPart(int CellNumber) {
@@ -187,8 +187,8 @@ namespace BoSSS.Foundation.XDG {
             foreach (var Cell in ChainSources)
             str += $"- ({Cell.jCellSource} [rnk {Cell.OwnerRank4Source}] -> {Cell.jCellTarget} [rnk {Cell.OwnerRank4Target}], Level {Cell.AgglomerationLevel}) \n";
 
-            str += "ConnectedCells";
-            foreach (var Cell in ConnectedCells) {
+            str += "NeighborCells: ";
+            foreach (var Cell in NeighborCells) {
                 str += Cell.ToString() + ", ";
             }
 
