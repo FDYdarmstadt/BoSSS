@@ -835,8 +835,9 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 var grd = m_MultigridOp.Mapping.AggGrid;
 
                 double[] BCN = new double[J];
-                for(int j = 0; j < J; j++) {
 
+                for(int j = 0; j < J; j++) {
+                    try { 
                     var LocBlk = grd.GetCellNeighboursViaEdges(j).Select(t => t.Item1).ToList();
                     LocBlk.Add(j);
                     for(int i = 0; i < LocBlk.Count; i++) {
@@ -856,7 +857,10 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                     MultidimensionalArray FullBlock = Blocks.Cat();
 
                     BCN[j] = FullBlock.Cond('I');
-
+                    } catch {
+                        Console.WriteLine($"Empty block detected in stencil for j={j}");
+                        BCN[j] = -999;
+                    }
                 }
                 return BCN;
             }
@@ -928,7 +932,7 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 //double CondNo = this.CondLAPACK();
                 Ret.Add("TotCondNo-" + VarNames, CondNo);
                 stpw.Stop();
-                Console.WriteLine(stpw.Elapsed.TotalSeconds);
+                Console.WriteLine("- Calculated in " + stpw.Elapsed.TotalSeconds + " seconds");
 
                 //var pair = this.Eigenval();
                 //Ret.Add("maxEigenvalue", pair.maxEigen);

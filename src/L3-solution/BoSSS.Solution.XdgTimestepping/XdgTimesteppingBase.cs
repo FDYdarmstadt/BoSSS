@@ -681,11 +681,11 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns a collection of local and global condition numbers in order to assess the operators stability,
         /// <see cref="IApplication.OperatorAnalysis"/>.
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = true) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
-
-            long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
             
+            long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
+
             if(VarGroups == null) {
                 int NoOfVar = this.CurrentStateMapping.Fields.Count;
                 VarGroups = new int[][] { NoOfVar.ForLoop(i => i) };
@@ -725,14 +725,12 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
             if (StencilCondNoVizS.Count > 0) {
-            var LevelSets = m_LsTrk.LevelSetHistories;
+                var LevelSets = m_LsTrk.LevelSetHistories;
 
                 foreach (var levelSet in LevelSets) {
                     StencilCondNoVizS.Add((LevelSet)levelSet.Current);
-            }
-
-            if (StencilCondNoVizS.Count > 0) {
-                Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 1);
+                }
+                Tecplot.Tecplot.PlotFields(StencilCondNoVizS, "stencilCond", 0.0, 0);
             }
 
             return Ret;
