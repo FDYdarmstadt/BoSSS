@@ -6194,16 +6194,50 @@ namespace BoSSS.Application.XNSE_Solver {
             Bubble,
             Droplet
         }
-      
+        public static XNSE_Control MergingDroplet3DLevelSetError() {
+            var C = MergingBubble(1, 20, 3, TestCase.Droplet,g: 0);
 
-        public static XNSE_Control MergingBubble(int k = 2, int Res = 20, int SpaceDim = 2, TestCase myTestCase = TestCase.Bubble, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true) {
+            // Update relevant parameters"
+            // ==============
+            string LargeDrop, SmallDrop;
+            double[] center_l, center_s;
+            double radius_l = 0.25;
+            double radius_s = 0.2;
+
+
+            // Lvl Set 3D
+            center_l = new double[] { 0.5, 1.0008, 0.5 };
+            center_s = new double[] { 0.5, 0.5402, 0.5 };
+
+            LargeDrop = $"(Math.Sqrt((X[0] - {center_l[0]}).Pow2() + (X[1] - {center_l[1]}).Pow2() + (X[2] - {center_l[2]}).Pow2()) - {radius_l}) ";
+            SmallDrop = $"(Math.Sqrt((X[0] - {center_s[0]}).Pow2() + (X[1] - {center_s[1]}).Pow2() + (X[2] - {center_s[2]}).Pow2()) - {radius_s} )";
+
+
+            string code = $"(X) => 0";
+            code = $"(X) => -Math.Min(" + LargeDrop + " , " + SmallDrop + " ) ";
+                
+            C.InitialValues.Add("VelocityY#B", new Formula( $"X =>  X[1] > {center_l[1]-radius_l}  ?  0.1 : 1.5")  );
+            C.SessionName = "Droplet_" + C.SessionName;
+
+            var my_formula = new Formula(code);
+
+            C.InitialValues.Remove("Phi");
+            //Phi
+            C.InitialValues.Add("Phi",
+                        new Formula(code)
+                        );
+            C.NoOfTimesteps = 100;
+            return C;
+        }
+
+        public static XNSE_Control MergingBubble(int k = 2, int Res = 20, int SpaceDim = 2, TestCase myTestCase = TestCase.Bubble, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true, double g=-9.81) {
             XNSE_Control C = new XNSE_Control();
-            C.DbPath = @"C:\debug_db";
+            //C.DbPath = @"C:\debug_db";
             C.ProjectName = "XNSE-Bubble";
             C.ProjectDescription = "merging bubble";
             C.Tags.Add("level set");
             C.Tags.Add(String.Format("{0}D", SpaceDim));
-            C.savetodb = true;
+            C.savetodb = false;
 
             C.SessionName = $"{myTestCase}Merger_k{k}_Res{Res}_AMR{AMR}_LS{LSMethod}";
             C.GridFunc = LongGridFuncFactory(SpaceDim, Res);
@@ -6278,7 +6312,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.UseImmersedBoundary = false;
 
 
-            double G = -9.81;
+            double G = g;
 
             C.InitialValues.Add("GravityY#A",
                         new Formula($"X => {G}")
@@ -6342,22 +6376,16 @@ namespace BoSSS.Application.XNSE_Solver {
             double dt = 2e-4;
             C.dtMax = dt;
             C.dtMin = dt;
-            C.NoOfTimesteps = 1500;
-            C.saveperiod = 1;
+            C.NoOfTimesteps = 500;
+            C.saveperiod = 10;
 
             C.AdaptiveMeshRefinement = AMR;
             if (AMR) {
                 int AMRlvl = 1;
                 C.SetMaximalRefinementLevel(AMRlvl);
                 C.AMR_startUpSweeps = AMRlvl;
-                //C.SessionName += $"_AMR{AMRlvl}";
-            } else {
-                //C.SessionName += $"_AMRoff";
-
             }
 
-            //C.AgglomerationThreshold = 0;
-            //C.SessionName += "_noAgg";
 
             C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye; //default
 
