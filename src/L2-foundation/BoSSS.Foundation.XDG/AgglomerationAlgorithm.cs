@@ -45,33 +45,11 @@ namespace BoSSS.Foundation.XDG {
         private List<int> NeighborCells;
 
         private void AddNeighbors(int jCell) {
-            var Cell2Edge = m_grdDat.Cells.Cells2Edges;
-            int[,] Edge2Cell = m_grdDat.Edges.CellIndices;
-            var Cell2Edge_jCell = Cell2Edge[jCell];
-            int NoOfEdges_4_jCell = Cell2Edge_jCell.Length;
+            var Ret = m_grdDat.GetCellNeighboursViaEdges(jCell);
 
-            for (int e = 0; e < NoOfEdges_4_jCell; e++) { // loop over faces/neighbour cells...
-                int iEdge = Cell2Edge_jCell[e];
-                int OtherCell, ThisCell;
-                if (iEdge < 0) {
-                    // cell 'jCell' is the OUT-cell of edge 'iEdge'
-                    OtherCell = 0;
-                    ThisCell = 1;
-                    iEdge *= -1;
-                } else {
-                    OtherCell = 1;
-                    ThisCell = 0;
-                }
-                iEdge--;
-                Debug.Assert(ThisCell == jCell);
-
-                int jCellNeigh = Edge2Cell[iEdge, OtherCell];
-                
-                //if (!ConnectedCells.Contains(jCellNeigh)) a cell can be added multiple times, which indicate that it has a connectivity to the target via multiple cells
-                if (jCellNeigh > 0)
-                    NeighborCells.Add(jCellNeigh);
-
-            }
+            foreach(var e in Ret)
+                if (e.jCellLoc > 0)
+                    NeighborCells.Add(e.jCellLoc);
 
         }
 
