@@ -1196,6 +1196,37 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
            
         }
 
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Something_Unsteady"/>
+        /// </summary>
+        [Test]
+        public static void ScalingRotCubeTests2D([Values(1, 2, 3)] int deg,  [Values(0.1, 0.2, 0.3)] double AggTreshold  ) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D --result=blabla.xml
+            ScalingRotCubeTest(deg, 2, AggTreshold);
+        }
+
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Something_Unsteady"/>
+        /// </summary>
+        public static void ScalingRotCubeTest(int deg = 1, int spatialDimension = 2, double AgglomerationTreshold = 0.1) {
+            Console.WriteLine("Agg Threshold is set to " + AgglomerationTreshold);
+
+            var Controls = new List<XNSE_Control>();
+
+            foreach (var Res in new[] { 2, 4, 8, 16}) {
+                var C = HardcodedControl.Rotating_Something_Unsteady(k: deg, Res: Res * 5, SpaceDim: spatialDimension, useAMR: true, useLoadBal: true, Gshape: Shape.Cube);
+
+                C.PhysicalParameters.IncludeConvection = true;
+                C.NonLinearSolver.ConvergenceCriterion = 10e-6;
+                C.NoOfTimesteps = 3;
+                C.AgglomerationThreshold = AgglomerationTreshold;
+                Controls.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(Controls, true, $"Scaling{spatialDimension}DRotTorus-p{deg}-Agg{AgglomerationTreshold}" );
+        }
+
 #if !DEBUG
         [Test]
         public static void RotatingCubeTest(
