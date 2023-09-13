@@ -6230,6 +6230,14 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
+
+        public static XNSE_Control RotatingTilted3DTorus() {
+            var C = RotatingTiltedXRigid(1, 20, 3, true, 2);
+            C.PlotAgglomeration = true;
+            return C;
+        }
+
+
         public static XNSE_Control MergingBubble(int k = 2, int Res = 20, int SpaceDim = 2, TestCase myTestCase = TestCase.Bubble, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true, double g=-9.81) {
             XNSE_Control C = new XNSE_Control();
             //C.DbPath = @"C:\debug_db";
@@ -6390,6 +6398,157 @@ namespace BoSSS.Application.XNSE_Solver {
             C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye; //default
 
             return C;
+        }
+
+
+        public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 2, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = false) {
+            XNSE_Control C = new XNSE_Control();
+
+            // Simulation Settings
+            // ===================
+            bool IncludeConvection = true;
+            int NoOfTimeSteps = 200;
+
+            C.SessionName = "Solver" + SolverOn + "_" + C.SessionName;
+            C.savetodb = false;
+            //C.DbPath = @"D:\trash_db";
+            C.ProjectName = "XNSE/IBM_test";
+            C.ProjectDescription = "rotating torus";
+            C.Tags.Add("rotating");
+            C.Tags.Add("level set");
+            C.Tags.Add(String.Format("{0}D", SpaceDim));
+
+            switch (OuterBcType) {
+                case IncompressibleBcType.Wall:
+                case IncompressibleBcType.Pressure_Outlet:
+                    // ok;
+                    break;
+
+                default:
+                    throw new ArgumentException("not recommended to use boundary condition: " + OuterBcType);
+
+            }
+
+            C.GridFunc = GridFuncFactory(SpaceDim, Res, false, OuterBcType);
+
+            // Physical Parameters
+            // ===================
+            const double rhoA = 1;
+            const double Re = 1000;
+            double muA = 10e-2;
+
+            double partRad = 0.39;
+            double d_hyd = 2 * partRad;
+            double anglev = Re * muA / rhoA / d_hyd;
+            double VelocityIn = Re * muA / rhoA / d_hyd;
+            double[] pos = new double[SpaceDim];
+            double ts = 2 * Math.PI / anglev / NoOfTimeSteps; //   2 revolution around its rot. axis
+            Console.WriteLine("Angular Velocity: {0}", anglev);
+
+            C.PhysicalParameters.IncludeConvection = IncludeConvection;
+            C.PhysicalParameters.Material = true;
+            C.PhysicalParameters.rho_A = rhoA;
+            C.PhysicalParameters.mu_A = muA;
+
+            string rotAxis;
+            if (RotAxis == null)
+                rotAxis = "y";
+            else
+                rotAxis = RotAxis;
+
+            C.SessionName = string.Format("k{0}_Re{1}_t{2}_ti{3:f3}at{4}_r{5}_AMR{6}_LoadBalance{7}", k, Re, NoOfTimeSteps, TiltAngle, rotAxis.ToUpper(), partRad, AMR, LoadBalance);
+            if (IncludeConvection) {
+                C.SessionName += "_NSE";
+                C.Tags.Add("NSE");
+            } else {
+                C.SessionName += "_Stokes";
+                C.Tags.Add("Stokes");
+            }
+            C.Tags.Add(SpaceDim + "D");
+            C.Tags.Add("transient");
+
+            // DG degrees
+            // ==========
+            C.SetFieldOptions(k, Math.Max(k, 2));
+            C.saveperiod = 5;
+
+            C.GridPartType = GridPartType.Hilbert;
+            //C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
+            C.DynamicLoadBalancing_On = LoadBalance;
+            C.DynamicLoadBalancing_RedistributeAtStartup = true;
+            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
+
+            C.ImmediatePlotPeriod = 10;
+            C.SuperSampling = 0;
+
+            //Set xRigid 
+            double ringRad = partRad / 1.5;
+            C.Rigidbody.SetParameters(pos, anglev, partRad, SpaceDim, ringRad);
+            C.Rigidbody.SpecifyShape(shape);
+            C.Rigidbody.SetRotationAxis(rotAxis);
+
+            var tiltAxis = new Vector(1, 0, 0);
+            C.SessionName += $"_W{anglev:f2}";
+            C.Rigidbody.SetTilt(tiltAxis, TiltAngle);
+            C.AddInitialValue(VariableNames.LevelSetCGidx(0), new Formula("X => -1"));
+            C.UseImmersedBoundary = true;
+
+            C.AddInitialValue("Pressure", new Formula(@"X => 0"));
+            C.AddBoundaryValue(OuterBcType.ToString());
+
+            //double inletdelay = 5*ts;
+            //C.AddBoundaryValue("Velocity_inlet","VelocityX",new Formula($"(X,t) => {VelocityIn}*(double)(t<={inletdelay}?(t/{inletdelay}):1)",true));
+            //C.AddBoundaryValue("Velocity_inlet","VelocityX",new Formula($"(X) => {VelocityIn}"));
+            //C.AddInitialValue("VelocityX", new Formula($"(X) => {VelocityIn}"));
+
+
+            // discretization settings
+            C.CutCellQuadratureType = BoSSS.Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
+            C.UseSchurBlockPrec = true;
+            C.AgglomerationThreshold = 0.2;
+            C.AdvancedDiscretizationOptions.ViscosityMode = ViscosityMode.FullySymmetric;
+            C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            C.LinearSolver = new BoSSS.Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
+                NoOfMultigridLevels = 5,
+                ConvergenceCriterion = 1E-8,
+                MaxSolverIterations = 100,
+                //MaxKrylovDim = 30,
+                TargetBlockSize = 10000,
+                //verbose = true
+            };
+            //C.LinearSolver.NoOfMultigridLevels = 5;
+            //C.LinearSolver.ConvergenceCriterion = 1E-6;
+            //C.LinearSolver.MaxSolverIterations = 200;
+            //C.LinearSolver.MaxKrylovDim = 50;
+            //C.LinearSolver.TargetBlockSize = 10000;
+            //C.LinearSolver.verbose = true;
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
+            C.NonLinearSolver.ConvergenceCriterion = 1E-3;
+            C.NonLinearSolver.MaxSolverIterations = 50;
+            C.NonLinearSolver.verbose = true;
+
+            C.AdaptiveMeshRefinement = AMR;
+            if (AMR) {
+                C.SetMaximalRefinementLevel(AMRLevel);
+                C.AMR_startUpSweeps = AMRLevel;
+            }
+
+
+            // Timestepping
+            // ============
+            C.NoOfTimesteps = NoOfTimeSteps;
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            C.TimeSteppingScheme = TimeSteppingScheme.ExplicitEuler; //BD4
+            C.dtFixed = ts;
+            C.SkipSolveAndEvaluateResidual = !SolverOn;
+
+
+            return C;
+
         }
 
 
