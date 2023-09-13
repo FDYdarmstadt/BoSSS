@@ -6194,6 +6194,7 @@ namespace BoSSS.Application.XNSE_Solver {
             Bubble,
             Droplet
         }
+
         public static XNSE_Control MergingDroplet3DLevelSetError() {
             var C = MergingBubble(1, 20, 3, TestCase.Droplet,g: 0);
 
@@ -6231,14 +6232,7 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        public static XNSE_Control RotatingTilted3DTorus() {
-            var C = RotatingTiltedXRigid(1, 20, 3, true, 2);
-            C.PlotAgglomeration = true;
-            return C;
-        }
-
-
-        public static XNSE_Control MergingBubble(int k = 2, int Res = 20, int SpaceDim = 2, TestCase myTestCase = TestCase.Bubble, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true, double g=-9.81) {
+        public static XNSE_Control MergingBubble(int k = 2, int Res = 20, int SpaceDim = 2, TestCase myTestCase = TestCase.Bubble, LevelSetHandling LSMethod = LevelSetHandling.LieSplitting, bool AMR = true, double g = -9.81) {
             XNSE_Control C = new XNSE_Control();
             //C.DbPath = @"C:\debug_db";
             C.ProjectName = "XNSE-Bubble";
@@ -6401,7 +6395,14 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
 
-        public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 2, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = false) {
+        public static XNSE_Control RotatingTilted3DTorus() {
+            var C = RotatingTiltedXRigid(1, 20, 3, true, AMRLevel: 2, TiltAngle: Math.PI/6, SolverOn: true);
+            C.PlotAgglomeration = true;
+            return C;
+        }
+
+
+        public static XNSE_Control RotatingTiltedXRigid(int k = 3, int Res = 20, int SpaceDim = 2, bool AMR = true, int AMRLevel = 1, bool LoadBalance = false, Shape shape = Shape.Torus, double TiltAngle = Math.PI/4, string RotAxis = "y", IncompressibleBcType OuterBcType = IncompressibleBcType.Pressure_Outlet, bool SolverOn = true) {
             XNSE_Control C = new XNSE_Control();
 
             // Simulation Settings
@@ -6435,7 +6436,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ===================
             const double rhoA = 1;
             const double Re = 1000;
-            double muA = 10e-2;
+            double muA = 0.01;
 
             double partRad = 0.39;
             double d_hyd = 2 * partRad;
@@ -6545,7 +6546,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.TimeSteppingScheme = TimeSteppingScheme.ExplicitEuler; //BD4
             C.dtFixed = ts;
             C.SkipSolveAndEvaluateResidual = !SolverOn;
-
+            Console.WriteLine(C.SessionName); 
 
             return C;
 

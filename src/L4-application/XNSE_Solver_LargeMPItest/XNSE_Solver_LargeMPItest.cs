@@ -55,12 +55,19 @@ namespace BoSSS.Application.XNSE_Solver {
             //Assert.IsTrue(false, "this should fail!");
         }
 
+        [Test]
+        public static XNSE_Control ParallelRotatingTilted3DTorus() {
+            var C = HardcodedControl.RotatingTiltedXRigid(1, 20, 3, true, AMRLevel: 1, TiltAngle: Math.PI / 4, SolverOn: true);
+            C.NoOfTimesteps = 100; //only 1 revolution around rotating axis
+            return C;
+        }
         /// <summary>
-        /// 
+        /// Initiates all the test cases
         /// </summary>
         static void Main(string[] args) {
             BoSSS.Solution.Application.InitMPI();
             ParallelRotatingSphere();
+            ParallelRotatingTilted3DTorus();
             BoSSS.Solution.Application.FinalizeMPI();
         }
 
