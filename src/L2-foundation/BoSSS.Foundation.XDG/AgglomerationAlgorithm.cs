@@ -1527,7 +1527,8 @@ namespace BoSSS.Foundation.XDG {
                 }
                 #endregion
 
-                m_AgglomerationChains.SaveToTextFileDebugUnsteady("aggChains",".txt");
+                if (ChainAgglomerationPairs.Count() > 0)
+                    m_AgglomerationChains.SaveToTextFileDebugUnsteady("aggChains", ".txt");
 
                 // If there is still cells waiting for agglomeration, this means that agg. failed
                 #region AgglomerationKatastrophe
