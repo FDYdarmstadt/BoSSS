@@ -6156,6 +6156,17 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
+        public static XNSE_Control RotCubePicardConvergenceError() {
+            //this error does happen when number of processsors =2 but not with np=4
+            var C = Rotating_Something_Unsteady(4, 20, 2, false);
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.ConvergenceCriterion = 0.000001; //it can also happen with 0.001 depending on parameters
+            C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;
+            C.PhysicalParameters.IncludeConvection = true;
+            C.NoOfTimesteps = 300;
+            return C;
+        }
+
         public static XNSE_Control RotCubeFreeMeanValueError() {
             // cs:BoSSS.Application.XNSE_Solver.HardcodedControl.RotCubeFreeMeanValueError()
 
