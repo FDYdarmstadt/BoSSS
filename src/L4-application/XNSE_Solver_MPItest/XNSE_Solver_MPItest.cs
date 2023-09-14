@@ -275,7 +275,7 @@ namespace BoSSS.Application.XNSE_Solver {
             double[] centerSphere = new double[2] { 0.5, 0.5 };
             int[] DGorders = new int[] { 1, 2}; 
             int[] ResArray = new int[] { 16, 20};
-            const int NoTimeSteps = 100;
+            const int NoTimeSteps = 50;
 
             var LBon = new Stopwatch();
             var LBoff = new Stopwatch();
