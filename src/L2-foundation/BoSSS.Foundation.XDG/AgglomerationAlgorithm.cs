@@ -14,6 +14,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using BoSSS.Foundation.Comm;
+using System.Runtime.CompilerServices;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -581,6 +582,8 @@ namespace BoSSS.Foundation.XDG {
             using (new FuncTrace()) {
 
 
+                Console.WriteLine("Count of AgglomCellsList:" + AgglomCellsList.Count + " AgglomCellsBitmask: " + AgglomCellsBitmask.Count + " AggCandidates: " + AggCandidates.Count);
+
                 var Cell2Edge = grdDat.Cells.Cells2Edges;
                 int[,] Edge2Cell = grdDat.Edges.CellIndices;
                 int NoOfEdges = grdDat.Edges.Count;
@@ -1082,11 +1085,12 @@ namespace BoSSS.Foundation.XDG {
         /// <remarks>
         /// Revised algorithm, in use since Dec. 2021
         /// </remarks>
-        //[MethodImpl(MethodImplOptions.NoInlining)] too see which lines throw exception.
+        [MethodImpl(MethodImplOptions.NoInlining)] //too see which lines throw exception.
         protected virtual void FindAgglomerationTargets_Mk2(
             List<int> AgglomSourceCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates
             ) {
-            using (new FuncTrace()) {
+            //using (new FuncTrace()) {
+
                 var Cell2Edge = grdDat.Cells.Cells2Edges;
                 int[,] Edge2Cell = grdDat.Edges.CellIndices;
                 int NoOfEdges = grdDat.Edges.Count;
@@ -1104,8 +1108,9 @@ namespace BoSSS.Foundation.XDG {
                 AggCandidates.MPIExchange(grdDat);
 
                 //exchange the source cell information to be able to know about external/ghost cells (needed only once)
-                var AggSourcesWithExternalCell = new BitArray(grdDat.iLogicalCells.Count, false);
-                foreach (var jCell in AgglomSourceCellsList)
+                BitArray AggSourcesWithExternalCell = new BitArray(grdDat.iLogicalCells.Count, false);
+
+                foreach (var jCell in AgglomSourceCellsList) 
                     AggSourcesWithExternalCell[jCell] = true;
 
                 AggSourcesWithExternalCell.MPIExchange(grdDat);
@@ -1418,22 +1423,22 @@ namespace BoSSS.Foundation.XDG {
 
                                     var targetChains = this.m_AgglomerationChains.Where(p => p.jCellChainTarget == ConnectionEdge.targetCell);
 
-                                    if (targetChains.Any()) {
-                                        if (targetChains.Count() > 1)
-                                            throw new Exception("A cell is associated with two different chains");
+                                    //if (targetChains.Any()) {
+                                    //    if (targetChains.Count() > 1)
+                                    //        throw new Exception("A cell is associated with two different chains");
 
-                                        var targetChain = targetChains.First();
-                                        targetChain.Add(newPair);
+                                    //    var targetChain = targetChains.First();
+                                    //    targetChain.Add(newPair);
 
 
-                                    } else {
-                                        var firstPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellTarget == ConnectionEdge.targetCell && p.jCellSource == ConnectionEdge.jCellNeigh).First();
-                                        var newChain = new AgglomerationChain(firstPair, grdDat, CellVolumes);
+                                    //} else {
+                                    //    var firstPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellTarget == ConnectionEdge.targetCell && p.jCellSource == ConnectionEdge.jCellNeigh).First();
+                                    //    var newChain = new AgglomerationChain(firstPair, grdDat, CellVolumes);
                                         
-                                        newChain.Add(newPair);
-                                        this.m_AgglomerationChains.Add(newChain);
+                                    //    newChain.Add(newPair);
+                                    //    this.m_AgglomerationChains.Add(newChain);
 
-                                    }
+                                    //}
 
                                     LoopChainAgglomerationPairs.Add(newPair);
                                     ImmediateConnectionCells.Add(ConnectionEdge.jCell);
@@ -1484,23 +1489,23 @@ namespace BoSSS.Foundation.XDG {
 
                                 var targetChains = this.m_AgglomerationChains.Where(p => p.jCellChainTarget == aggConnectionEdge.targetCell);
 
-                                if (targetChains.Any()) {
-                                    if (targetChains.Count() > 1)
-                                        throw new Exception("A cell is associated with two different chains");
+                                //if (targetChains.Any()) {
+                                //    if (targetChains.Count() > 1)
+                                //        throw new Exception("A cell is associated with two different chains");
 
-                                    var targetChain = targetChains.First();
-                                    targetChain.Add(newPair);
-
-
-                                } else {
-                                    var firstPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellTarget == aggConnectionEdge.targetCell && p.jCellSource == aggConnectionEdge.jCellNeigh).First();
-                                    var newChain = new AgglomerationChain(firstPair, grdDat, CellVolumes);
+                                //    var targetChain = targetChains.First();
+                                //    targetChain.Add(newPair);
 
 
-                                    newChain.Add(newPair);
-                                    this.m_AgglomerationChains.Add(newChain);
+                                //} else {
+                                //    var firstPair = m_AggPairsWithExtNeighborPairs.Where(p => p.jCellTarget == aggConnectionEdge.targetCell && p.jCellSource == aggConnectionEdge.jCellNeigh).First();
+                                //    var newChain = new AgglomerationChain(firstPair, grdDat, CellVolumes);
 
-                                }
+
+                                //    newChain.Add(newPair);
+                                //    this.m_AgglomerationChains.Add(newChain);
+
+                                //}
 
                                 CellsNeedChainAgglomeration.Remove(aggConnectionEdge.jCell);
                             }
@@ -1607,7 +1612,7 @@ namespace BoSSS.Foundation.XDG {
                 // ================
                 this.AgglomerationPairs = AgglomerationPairs.Select(pair => (pair.jCellSource, pair.jCellTarget)).ToArray();
 
-            }
+           // }
         }
 
         private void PlotFail(MultidimensionalArray CellVolumes, MultidimensionalArray[] oldCellVolumes, List<int> AgglomCellsList, bool ExceptionOnFailedAgglomeration, List<int> failCells, BitArray AggCandidates, int[] pairIdentification, int[] pairColor, Vector[] aggDirection, double[] volFrac, string Tag = "") {

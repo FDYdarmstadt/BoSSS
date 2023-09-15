@@ -228,11 +228,10 @@ namespace BoSSS.Foundation.XDG {
                 throw new Exception();
             }
             */
-
             // perform agglomeration
             foreach (var spc in this.SpeciesList) {
-                
-                                
+
+
 
                 var aggAlg = new AgglomerationAlgorithm(this.Tracker, spc, CutCellsQuadOrder,
                     AgglomerationThreshold, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold,

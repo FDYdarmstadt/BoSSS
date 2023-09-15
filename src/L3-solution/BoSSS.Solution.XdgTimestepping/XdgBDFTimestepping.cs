@@ -938,7 +938,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         updateAgglom = true;
                     } else {
                         if (m_CurrentAgglomeration == null)
-                            throw new ApplicationException();
+                            Console.WriteLine("throw new ApplicationException()");
+                            // //throw new ApplicationException();
                     }
                     // ensure, that, when splitting is used we update the agglomerator in the very first iteration.
                 }
@@ -1212,7 +1213,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // ---------------------
                 Debug.Assert(object.ReferenceEquals(m_CurrentAgglomeration.Tracker, m_LsTrk));
                 m_CurrentAgglomeration.ManipulateMatrixAndRHS(System, Affine, CurrentStateMapping, CurrentStateMapping);
-                
+
                 if(Linearization) {
                     m_LsTrk.CheckVectorZeroInEmptyCutCells(Affine, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
                     m_LsTrk.CheckMatrixZeroInEmptyCutCells(System, CurrentStateMapping, this.Config_SpeciesToCompute, m_CurrentAgglomeration, this.Config_CutCellQuadratureOrder);
@@ -1673,6 +1674,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if (m_ResLogger != null)
                         m_ResLogger.NextIteration(true);
                 }
+
+                //base.OperatorAnalysis();
 
                 int newLsTrkPushCount = m_LsTrk.PushCount;
                 if (newLsTrkPushCount != oldLsTrkPushCount)
