@@ -1370,7 +1370,7 @@ namespace BoSSS.Foundation.XDG {
                                     int targetRank = -1; //by default assigned an invalid value to ensure code works
 
                                     // To turn off the direct agg to the final target, assign the below to -1
-                                    //TargetCellOfTargetPair = -1; // normally the code is able to choose a target that forms higher level agg. chains. However, it is decided to be handled in CellAgglomerator.cs
+                                    TargetCellOfTargetPair = -1; // normally the code is able to choose a target that forms higher level agg. chains. However, it is decided to be handled in CellAgglomerator.cs
 
                                     // if TargetCellOfTargetPair is one of ext/ghost cells or already on local proc
                                     bool IsTargetCellKnown = TargetCellOfTargetPair >= 0 && TargetPairs.First().OwnerRank4Target >= 0;

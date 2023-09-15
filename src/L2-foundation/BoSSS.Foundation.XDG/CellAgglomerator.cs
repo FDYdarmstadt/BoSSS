@@ -366,7 +366,7 @@ namespace BoSSS.Foundation.XDG {
 
                             AgglomerationEdgesBitMask[Math.Abs(i) - 1] = true;
                         } catch(InvalidOperationException) {
-                            //throw new ArgumentException("Found agglomeration pair which are not neighbor cells.");
+                            throw new ArgumentException("Found agglomeration pair which are not neighbor cells.");
                         }
                     }
                 }
@@ -652,8 +652,8 @@ namespace BoSSS.Foundation.XDG {
                     int myMpiRank = g.MpiRank;
                     for(int i = 0; i < AggPairs.Count; i++) {
                         if(AggPairs[i].jSource >= 0 && AggPairs[i].jTarget >= 0) { // only take non-deleted pairs
-                            ai.AgglomerationPairs[ii].jCellSource = AggPairs[i].Item1;
-                            ai.AgglomerationPairs[ii].jCellTarget = AggPairs[i].Item2;
+                            ai.AgglomerationPairs[ii].jCellSource = AggPairs[i].jSource;
+                            ai.AgglomerationPairs[ii].jCellTarget = AggPairs[i].jTarget;
                             ai.AgglomerationPairs[ii].OwnerRank4Target = TargetCellMpiRank[i];
                             ai.AgglomerationPairs[ii].OwnerRank4Source = SourceCellMpiRank[i];
                             ai.AgglomerationPairs[ii].AgglomerationLevel = Level[i];

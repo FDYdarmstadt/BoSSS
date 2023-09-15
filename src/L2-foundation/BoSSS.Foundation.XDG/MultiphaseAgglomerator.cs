@@ -251,7 +251,15 @@ namespace BoSSS.Foundation.XDG {
             }
 
             this.TotalNumberOfAgglomerations = this.DictAgglomeration.Values.Sum(agg => agg.TotalNumberOfAgglomerations);
+            
+            string[] AggNumberWrite = new string[this.DictAgglomeration.Values.Count()];
+                for (int i = 0; i < this.DictAgglomeration.Values.Count(); i++) {
+                AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString()}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
+            }           
+            Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite));
 
+
+            AggNumberWrite.SaveToTextFileDebugUnsteady("TotalNumberOfAgglomerations",".txt");
             // compute metrics of AGGLOMERATED cut cells
             this.LengthScaleAgg();
         }
