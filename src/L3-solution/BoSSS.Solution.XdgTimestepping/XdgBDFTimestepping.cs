@@ -1675,7 +1675,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         m_ResLogger.NextIteration(true);
                 }
 
-                //base.OperatorAnalysis();
+                var table = base.OperatorAnalysis(plotStencilCondNumViz: false);
+                table.SaveToTextFileDebugUnsteadyNumbered("CondEst", ".txt");
 
                 int newLsTrkPushCount = m_LsTrk.PushCount;
                 if (newLsTrkPushCount != oldLsTrkPushCount)
