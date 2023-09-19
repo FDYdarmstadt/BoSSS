@@ -681,7 +681,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns a collection of local and global condition numbers in order to assess the operators stability,
         /// <see cref="IApplication.OperatorAnalysis"/>.
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = true) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false, bool calculateStencils = true) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
             
             long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
@@ -697,7 +697,14 @@ namespace BoSSS.Solution.XdgTimestepping {
             //int k = 0;
             foreach(int[] varGroup in VarGroups) {
                 var ana = new BoSSS.Solution.AdvancedSolvers.Testing.OpAnalysisBase(this.m_LsTrk, System, Affine, this.CurrentStateMapping, this.m_CurrentAgglomeration, MassMatrix, this.Config_MultigridOperator, this.AbstractOperator);
-               
+
+                //check if expensive stencilCondNumbers are required
+                if (plotStencilCondNumViz == true || calculateStencils == true) { 
+                    ana.CalculateStencils = true;
+                } else { 
+                    ana.CalculateStencils = false;
+                }
+
 
                 ana.VarGroup = varGroup;
                 var Table = ana.GetNamedProperties();

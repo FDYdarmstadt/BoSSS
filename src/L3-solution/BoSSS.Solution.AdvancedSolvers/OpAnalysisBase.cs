@@ -92,6 +92,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             }
         }
 
+        private bool calculateStencils = false;
+
 
         /// <summary>
         /// user-defined indices of depended variables, if not the full matrix should be analyzed, e.g. 0 = u_x, 1=u_y, 2=u_z, 3=p ...
@@ -907,6 +909,8 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             }
         }
 
+        public bool CalculateStencils { get => calculateStencils; set => calculateStencils = value; }
+
         /// <summary>
         /// Various condition numbers, organized in a dictionary to create a regression over multiple meshes
         /// </summary>
@@ -941,47 +945,48 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
                 //var maxeig = this.MaximalEigen();
                 //Ret.Add("lambdaMin", mineig.lambdaMin);
                 //Ret.Add("lambdaMax", maxeig.lambdaMax);
+                if (CalculateStencils == true) { 
+                    // block-wise condition numbers
+                    // ============================
+                    double[] bcn = this.StencilCondNumbers();
 
-                // block-wise condition numbers
-                // ============================
-                double[] bcn = this.StencilCondNumbers();
+                    CellMask innerUncut, innerCut, bndyUncut, bndyCut;
+                    if(m_LsTrk != null) {
+                        // +++++++++
+                        // using XDG
+                        // +++++++++
+                        innerUncut = grd.GetBoundaryCells().Complement().Except(m_LsTrk.Regions.GetCutCellMask());
+                        innerCut = m_LsTrk.Regions.GetCutCellMask().Except(grd.GetBoundaryCells());
 
-                CellMask innerUncut, innerCut, bndyUncut, bndyCut;
-                if(m_LsTrk != null) {
-                    // +++++++++
-                    // using XDG
-                    // +++++++++
-                    innerUncut = grd.GetBoundaryCells().Complement().Except(m_LsTrk.Regions.GetCutCellMask());
-                    innerCut = m_LsTrk.Regions.GetCutCellMask().Except(grd.GetBoundaryCells());
+                        bndyUncut = grd.GetBoundaryCells().Except(m_LsTrk.Regions.GetCutCellMask());
+                        bndyCut = grd.GetBoundaryCells().Intersect(m_LsTrk.Regions.GetCutCellMask());
+                    } else {
+                        // ++++++++
+                        // using DG 
+                        // ++++++++
+                        innerUncut = grd.GetBoundaryCells().Complement();
+                        innerCut = CellMask.GetEmptyMask(grd);
 
-                    bndyUncut = grd.GetBoundaryCells().Except(m_LsTrk.Regions.GetCutCellMask());
-                    bndyCut = grd.GetBoundaryCells().Intersect(m_LsTrk.Regions.GetCutCellMask());
-                } else {
-                    // ++++++++
-                    // using DG 
-                    // ++++++++
-                    innerUncut = grd.GetBoundaryCells().Complement();
-                    innerCut = CellMask.GetEmptyMask(grd);
+                        bndyUncut = grd.GetBoundaryCells();
+                        bndyCut = CellMask.GetEmptyMask(grd);
+                    }
+                    double innerUncut_MaxCondNo = innerUncut.NoOfItemsLocally > 0 ? innerUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
+                    double innerCut_MaxCondNo = innerCut.NoOfItemsLocally > 0 ? innerCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
+                    double bndyUncut_MaxCondNo = bndyUncut.NoOfItemsLocally > 0 ? bndyUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
+                    double bndyCut_MaxCondNo = bndyCut.NoOfItemsLocally > 0 ? bndyCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
 
-                    bndyUncut = grd.GetBoundaryCells();
-                    bndyCut = CellMask.GetEmptyMask(grd);
-                }
-                double innerUncut_MaxCondNo = innerUncut.NoOfItemsLocally > 0 ? innerUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
-                double innerCut_MaxCondNo = innerCut.NoOfItemsLocally > 0 ? innerCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
-                double bndyUncut_MaxCondNo = bndyUncut.NoOfItemsLocally > 0 ? bndyUncut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
-                double bndyCut_MaxCondNo = bndyCut.NoOfItemsLocally > 0 ? bndyCut.ItemEnum.Max(jCell => bcn[jCell]) : 1.0;
+                    innerUncut_MaxCondNo = innerUncut_MaxCondNo.MPIMax();
+                    innerCut_MaxCondNo = innerCut_MaxCondNo.MPIMax();
+                    bndyUncut_MaxCondNo = bndyUncut_MaxCondNo.MPIMax();
+                    bndyCut_MaxCondNo = bndyCut_MaxCondNo.MPIMax();
 
-                innerUncut_MaxCondNo = innerUncut_MaxCondNo.MPIMax();
-                innerCut_MaxCondNo = innerCut_MaxCondNo.MPIMax();
-                bndyUncut_MaxCondNo = bndyUncut_MaxCondNo.MPIMax();
-                bndyCut_MaxCondNo = bndyCut_MaxCondNo.MPIMax();
+                    Ret.Add("StencilCondNo-innerUncut-" + VarNames, innerUncut_MaxCondNo);
+                    Ret.Add("StencilCondNo-bndyUncut-" + VarNames, bndyUncut_MaxCondNo);
 
-                Ret.Add("StencilCondNo-innerUncut-" + VarNames, innerUncut_MaxCondNo);
-                Ret.Add("StencilCondNo-bndyUncut-" + VarNames, bndyUncut_MaxCondNo);
-
-                if(m_LsTrk != null) {
-                    Ret.Add("StencilCondNo-innerCut-" + VarNames, innerCut_MaxCondNo);
-                    Ret.Add("StencilCondNo-bndyCut-" + VarNames, bndyCut_MaxCondNo);
+                    if(m_LsTrk != null) {
+                        Ret.Add("StencilCondNo-innerCut-" + VarNames, innerCut_MaxCondNo);
+                        Ret.Add("StencilCondNo-bndyCut-" + VarNames, bndyCut_MaxCondNo);
+                    }
                 }
                 return Ret;
             }
