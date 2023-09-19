@@ -6554,7 +6554,7 @@ namespace BoSSS.Application.XNSE_Solver {
             // ============
             C.NoOfTimesteps = NoOfTimeSteps;
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
-            C.TimeSteppingScheme = TimeSteppingScheme.ExplicitEuler; //BD4
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler; //BD4
             C.dtFixed = ts;
             C.SkipSolveAndEvaluateResidual = !SolverOn;
             Console.WriteLine(C.SessionName); 
