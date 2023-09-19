@@ -681,7 +681,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// Returns a collection of local and global condition numbers in order to assess the operators stability,
         /// <see cref="IApplication.OperatorAnalysis"/>.
         /// </summary>
-        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false, bool calculateStencils = true) {
+        public IDictionary<string, double> OperatorAnalysis(IEnumerable<int[]> VarGroups = null, bool plotStencilCondNumViz = false, bool calculateStencils = true, bool calculateMassMatrix = false) {
             AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, this.CurrentStateMapping.Fields.ToArray(), true, out var Dummy);
             
             long J = this.m_LsTrk.GridDat.CellPartitioning.TotalLength;
@@ -713,6 +713,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                     if(!Ret.ContainsKey(kv.Key)) {
                         Ret.Add(kv.Key, kv.Value);
                     }
+                }
+
+
+                if (calculateMassMatrix) {
+                    var condNoMassMtx = ana.CondMassMatrix();
+                        Ret.Add("MassMtxCondNo" , condNoMassMtx);
                 }
 
                 if (plotStencilCondNumViz) {

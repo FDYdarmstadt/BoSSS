@@ -868,6 +868,11 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             }
         }
 
+        public double CondMassMatrix() {
+            var Mtx = this.m_MultigridOp.MassMatrix;
+            return Mtx.cond();
+        }
+
         /// <summary>
         /// Local condition number formed by the block of each cell and its neighbors, visualized as a degree-0 DG field.
         /// </summary>
