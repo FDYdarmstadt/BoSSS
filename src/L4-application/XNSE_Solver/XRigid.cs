@@ -334,12 +334,16 @@ namespace BoSSS.Application.XNSE_Solver {
                     affineTrafoTilt = AffineTrafo.Rotation3D(TiltVector, tiltDegree);
                 }
 
-                double[] X = new double[] { 0, 0, 0 };
-
                 var affineTrafoRot = AffineTrafo.Rotation3D(rotAxis, angle);
                 var affineTrafoFinal = affineTrafoRot * affineTrafoTilt;
 
-                X = affineTrafoFinal.Transform(x);
+                double[] X = new double[] { 0, 0, 0 };
+
+                // Update intermediate variable X w.r.t. input x 
+                for (int d=0; d<x.Length; d++)
+                    X[d] = x[d];
+
+                X = affineTrafoFinal.Transform(X);
 
                 var TorusObject = new BoSSS.Solution.LevelSetTools.TestCases.Torus(particleRad, ringRad);
                 switch (SpaceDim) {
