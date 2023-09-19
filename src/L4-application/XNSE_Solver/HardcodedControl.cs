@@ -6488,14 +6488,14 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.DynamicLoadbalancing_ClassifierType = ClassifierType.CutCells;
             C.DynamicLoadBalancing_On = LoadBalance;
             C.DynamicLoadBalancing_RedistributeAtStartup = true;
-            C.DynamicLoadBalancing_Period = 1;
+            C.DynamicLoadBalancing_Period = 10;
             C.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
 
             C.ImmediatePlotPeriod = 10;
             C.SuperSampling = 0;
 
             //Set xRigid 
-            double ringRad = partRad / 1.5;
+            double ringRad = partRad / 2;
             C.Rigidbody.SetParameters(pos, anglev, partRad, SpaceDim, ringRad);
             C.Rigidbody.SpecifyShape(shape);
             C.Rigidbody.SetRotationAxis(rotAxis);

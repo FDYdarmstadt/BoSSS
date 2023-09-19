@@ -65,12 +65,12 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
         /// </summary>
-        public void SetParameters(double[] pos, double anglevelocity, double partRadius, int SpaceDim, double ringRadius = 0) {
+        public void SetParameters(double[] pos, double anglevelocity, double majorRadius, int SpaceDim, double minorRadius = 0.0) {
             m_pos = pos;
             m_anglevelocity = anglevelocity;
-            m_partRadius = partRadius;
+            m_partRadius = majorRadius;
             m_SpaceDim = SpaceDim;
-            m_ringRadius = ringRadius;
+            m_ringRadius = minorRadius;
         }
 
         public void SpecifyShape(Shape shape) {
