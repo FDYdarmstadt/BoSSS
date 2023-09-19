@@ -258,7 +258,7 @@ namespace BoSSS.Foundation.XDG {
             Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite));
 
 
-            AggNumberWrite.SaveToTextFileDebugUnsteady("TotalNumberOfAgglomerations",".txt");
+            AggNumberWrite.SaveToTextFileDebugUnsteady("AggNumberWrite", ".txt");
             // compute metrics of AGGLOMERATED cut cells
             this.LengthScaleAgg();
         }
