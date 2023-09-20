@@ -408,79 +408,8 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// </summary>
         public const byte FIRST_PERIODIC_BC_TAG = 181;
 
-        /// <summary>
-        /// Periodic boundary conditions are treated by connecting an "outlet"
-        /// with some "inlet". Beside the cell neighborship relations (see
-        /// <see cref="GridData.CellData.CellNeighbours"/>) an linear
-        /// transformation must be provided which maps an affine-linear
-        /// manifold A (the "outlet") of dimension D-1 (D denotes the spatial
-        /// dimension) to another affine-linear manifold B (the "inlet"). (Note
-        /// that the terms "outlet" and "inlet" are exchangeable.)
-        /// </summary>
-        /// <param name="X1">
-        /// D pairwise different vectors, each d-dimensional, that specify the
-        /// affine-linear manifold A;
-        /// </param>
-        /// <param name="N1">
-        /// normal onto manifold A
-        /// </param>
-        /// <param name="X2">
-        /// the image (i.e. the result when the transformation is applied onto
-        /// the vectors <paramref name="X1"/>) of the (unknown) 
-        /// transformation in manifold B; 
-        /// </param>
-        /// <param name="N2">
-        /// normal onto manifold B
-        /// </param>
-        /// <param name="PeriodicTrafo_Tag">
-        /// The edge tag for the periodic transformation
-        /// </param>
-        public void ConstructPeriodicEdgeTrafo(Vector[] X1, Vector N1, Vector[] X2, Vector N2, out byte PeriodicTrafo_Tag) {
 
-            // check for right usage
-            // ---------------------
-
-            //if (m_Context.m_Fields != null)
-            //    throw new ApplicationException("it's not allowed to call this method after Context.Setup(..) has been called.");
-
-            int D = SpatialDimension;
-
-            if (X1.Length != D)
-                throw new ArgumentException("must contain exactly " + D + " elements in " + D + "D.", "x");
-            if (X2.Length != D)
-                throw new ArgumentException("must contain exactly " + D + " elements in " + D + "D.", "y");
-            for (int i = 0; i < D; i++) {
-                if (X1[i].Dim != D)
-                    throw new ArgumentException("vectors must be " + D + "-dimensional.", "x");
-                if (X2[i].Dim != D)
-                    throw new ArgumentException("vectors must be " + D + "-dimensional.", "y");
-            }
-            if (N1.Dim != D)
-                throw new ArgumentException("vectors must be " + D + "-dimensional.", "x");
-            if (N2.Dim != D)
-                throw new ArgumentException("vectors must be " + D + "-dimensional.", "y");
-
-            MultidimensionalArray preImage = MultidimensionalArray.Create(D + 1, D);
-            MultidimensionalArray image = MultidimensionalArray.Create(D + 1, D);
-            for (int i = 0; i < D; i++) {
-                for (int d = 0; d < D; d++) {
-                    preImage[i, d] = X1[i][d];
-                    image[i, d] = X2[i][d];
-                }
-            }
-            for (int d = 0; d < D; d++) {
-                preImage[D, d] = N1[d] + X1[0][d];
-                image[D, d] = N2[d] + X2[0][d];
-            }
-            AffineTrafo pet = AffineTrafo.FromPoints(preImage, image);
-
-
-            int Tag = m_PeriodicTrafo.Count + FIRST_PERIODIC_BC_TAG;
-            if (Tag >= (byte.MaxValue - 1)) // rem: tag=255 is reserved
-                throw new ApplicationException("Can't handle more than " + (byte.MaxValue - FIRST_PERIODIC_BC_TAG + 1) + "periodic boundary conditions.");
-            PeriodicTrafo_Tag = (byte)Tag;
-            m_PeriodicTrafo.Add(pet);
-        }
+       
 
         /// <summary>
         /// Periodic boundary conditions are treated by connecting an "outlet"
@@ -495,8 +424,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// Transformation from "inlet" to "outlet" pair
         /// </param>
         /// <returns></returns>
-        public byte AddPeriodicEdgeTrafo(AffineTrafo periodicTrafo)
-        {
+        public byte AddPeriodicEdgeTrafo(AffineTrafo periodicTrafo) {
             int tag = FIRST_PERIODIC_BC_TAG + m_PeriodicTrafo.Count;
             if (tag >= (byte.MaxValue - 1))
                 throw new ApplicationException("Can't handle more than " + (byte.MaxValue - FIRST_PERIODIC_BC_TAG + 1) + "periodic boundary conditions.");
@@ -1108,7 +1036,7 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// <summary>
         /// Typed version of <see cref="iGridData"/>
         /// </summary>
-        public GridData GridData {
+        virtual public GridData GridData {
             get {
                 InitGridData();
                 if (!object.ReferenceEquals(m_GridData.Grid, this))

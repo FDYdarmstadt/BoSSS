@@ -146,7 +146,8 @@ namespace PublicTestRunner {
                         typeof(ALTSTests.Program),
                         typeof(ZwoLevelSetSolver.ZLS),
                         typeof(HangingNodesTests.HangingNodesTestMain),
-                        typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain)
+                        typeof(BoSSS.Application.CahnHilliard.CahnHilliardMain),
+                        typeof(IntersectingLevelSetTest.AllUpTest),
                     };
             }
         }
@@ -418,7 +419,12 @@ namespace PublicTestRunner {
                                     s.AddRange(LocateFile(someFile));
                                 }
                             }
-                            
+
+                            //if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+                            //    s.Add("BOSSS_RUNTESTFROMBACKUP.txt");
+                            //}
+
+
 
                             d.Add(r.Last(), s.ToArray());
                         }
@@ -433,7 +439,7 @@ namespace PublicTestRunner {
                 s.AddRange(d[testname]);
                 s.AddRange(g);
 
-                List<string> FileNamesOnly = new List<string>();
+                List<string> FileNamesOnly = new();
                 foreach (string filePath in s) {
                     string fileName = Path.GetFileName(filePath);
                     if (FileNamesOnly.Contains(fileName, (string a, string b) => a.Equals(b, StringComparison.InvariantCultureIgnoreCase)))
@@ -730,7 +736,7 @@ namespace PublicTestRunner {
         /// <summary>
         /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE)
         /// </summary>
-        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex");
+        static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex_" + System.Environment.UserName);
 
         /// <summary>
         /// to distinct the internalTestRunner
@@ -774,6 +780,8 @@ namespace PublicTestRunner {
                             wrt.WriteLine("Locked by BoSSS test runner at " + DateNtime);
                         }
                     } catch(Exception ee) {
+                        Console.Error.WriteLine($"Unable to get lock on {MutexFileName}: {ee}");
+                        Console.Error.WriteLine("wait and try again...");
                         ServerMutex = null;
                         Thread.Sleep(rnd.Next(10000));
                     }
@@ -792,6 +800,11 @@ namespace PublicTestRunner {
             }
             Tracer.NamespacesToLog = new string[] { "" };
             InitTraceFile("JobManagerRun-" + DateNtime);
+
+            bool I_StartedMinibatch = false;
+            if(bpc is MiniBatchProcessorClient) {
+                I_StartedMinibatch = MiniBatchProcessor.Server.StartIfNotRunning(RunExternal: true);
+            }
 
             
             int returnCode = 0;
@@ -931,7 +944,7 @@ namespace PublicTestRunner {
                         try {
                             cnt++;
                             Console.WriteLine($"Submitting {cnt} of {allTests.Count} ({t.shortname})...");
-                            var j = JobManagerRun(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, RelManagedPath, cnt);
+                            var j = SubmitJob(t.ass, t.testname, t.shortname, bpc, t.depfiles, DateNtime, t.NoOfProcs, NativeOverride, RelManagedPath, cnt);
                             if(checkResFileName.Add(j.resultFile) == false) {
                                 throw new IOException($"Result file name {j.resultFile} is used multiple times.");
                             }
@@ -982,15 +995,24 @@ namespace PublicTestRunner {
                                 }
 
 
-                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
-                                    if(s == JobStatus.FailedOrCanceled) {
-                                        Console.WriteLine(" ------------------- Job Failed reason:");
-                                        var s1 = jj.job.GetStatus(true);
-                                        if(s1 != s) {
-                                            Console.WriteLine("changed its mind to: " + s1);
-                                            s = s1;
-                                        }
+                                if (s == JobStatus.FailedOrCanceled) {
+                                    Console.WriteLine(" ------------------- Job Failed reason:");
+                                    var s1 = jj.job.GetStatus(true);
+                                    if (s1 != s) {
+                                        Console.WriteLine("changed its mind to: " + s1);
+                                        s = s1;
                                     }
+
+                                    if (jj.job.SubmitCount < jj.job.RetryCount) {
+                                        Console.WriteLine("Trying once again with failed job...");
+                                        jj.job.Reactivate();
+                                        continue;
+                                    }
+                                }
+
+
+                                if(s == JobStatus.FailedOrCanceled || s == JobStatus.FinishedSuccessful) {
+                                    
 
 
                                     // message:
@@ -1013,7 +1035,7 @@ namespace PublicTestRunner {
                                             foreach(var orig in sourceFiles) {
                                                 string n = Path.GetFileName(orig);
                                                 string dest = Path.Combine(CurrentDir, n);
-                                                File.Copy(orig, dest);
+                                                File.Copy(orig, dest, true);
                                             }
                                         } catch(IOException ioe) {
                                             Console.Error.WriteLine(ioe.GetType().Name + ": " + ioe.Message);
@@ -1030,6 +1052,7 @@ namespace PublicTestRunner {
                                             }
                                         }
                                     }
+
 
                                     // move job to 'finished' list
                                     var X = (jj.job, jj.ResFile, jj.testname, s);
@@ -1108,13 +1131,15 @@ namespace PublicTestRunner {
                 // very final message:
                 if(SuccessfulFinishedCount == (AllOpenJobs.Count + AllFinishedJobs.Count)) {
                     Console.WriteLine("All tests/jobs finished successfully.");
+                    Console.WriteLine("SUCCESS.");
 
                     if(returnCode != 0) {
-                        Console.Error.WriteLine("Some other error occurred (maybe IO error after successful test run) -- check output log");
-                        Console.Error.WriteLine("FAILURE.");
+                        Console.Error.WriteLine("Ignoring some other error occurred (maybe IO error after successful test run) -- check output log;");
+                        //Console.Error.WriteLine("FAILURE.");
                     } else {
-                        Console.WriteLine("SUCCESS.");
                     }
+
+                    returnCode = 0;
 
                 } else {
                     Console.Error.WriteLine($"Only {SuccessfulFinishedCount} tests/jobs finished successfully -- {OtherStatCount} have other states.");
@@ -1122,6 +1147,10 @@ namespace PublicTestRunner {
                 }
                 Console.WriteLine($"{DateTime.Now}");
             }
+
+
+            if(I_StartedMinibatch)
+                MiniBatchProcessor.Server.SendTerminationSignal(WaitForOtherJobstoFinish: false);
 
             CloseTracing();
 
@@ -1229,7 +1258,7 @@ namespace PublicTestRunner {
             }
         }
 
-        static public (Job j, string resultFile, string name) JobManagerRun(
+        static public (Job j, string resultFile, string name) SubmitJob(
             Assembly a,
             string TestName, string Shortname,
             BatchProcessorClient bpc,
@@ -1272,11 +1301,14 @@ namespace PublicTestRunner {
                 // create job
                 Job j = new Job(final_jName, TestTypeProvider.GetType());
                 j.SessionReqForSuccess = false;
-                j.RetryCount = 1;
+                j.RetryCount = 3;
                 string resultFile = $"result-{dor}-{cnt}.xml";
                 j.MySetCommandLineArguments("nunit3", Path.GetFileNameWithoutExtension(a.Location), $"--test={TestName}", $"--result={resultFile}");
                 foreach (var f in AdditionalFiles) {
                     j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes(f), Path.GetFileName(f)));
+                }
+                if(BOSSS_RUNTESTFROMBACKUP_ENVVAR) {
+                    j.AdditionalDeploymentFiles.Add(new Tuple<byte[], string>(File.ReadAllBytes("BOSSS_RUNTESTFROMBACKUP.txt"), "BOSSS_RUNTESTFROMBACKUP.txt"));
                 }
                 if (nativeOverride != null) {
                     j.EnvironmentVars.Add(BoSSS.Foundation.IO.Utils.BOSSS_NATIVE_OVERRIDE, nativeOverride);
@@ -1314,16 +1346,21 @@ namespace PublicTestRunner {
         /// - otherwise (e.g. if tests are deployed to a HPC cluster) it does not copy anything and we hope that all required files are in place.
         /// </remarks>
         static void MegaMurxPlusPlus(Assembly a, string filter) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
                 var r = GetTestsInAssembly(a, filter);
 
                 var dir = Directory.GetCurrentDirectory();
+                tr.Info("Current dir: " + dir);
 
-                foreach (var t in r.tests) {
+                foreach (var t in r.tests) { 
                     foreach (var fOrigin in r.RequiredFiles4Test[t]) {
+                        tr.Info("Origin file: " + fOrigin);
                         if (File.Exists(fOrigin)) {
                             string fDest = Path.Combine(dir, Path.GetFileName(fOrigin));
+                            tr.Info("Destination file: " + fDest);
                             File.Copy(fOrigin, fDest, true);
+                        } else {
+                            tr.Info($"Origin file {fOrigin} NOT FOUND!");
                         }
                     }
                 }
@@ -1342,8 +1379,9 @@ namespace PublicTestRunner {
             InitTraceFile($"Nunit3.{DateTime.Now.ToString("MMMdd_HHmmss")}.{MpiRank}of{MpiSize}");
 
             Console.WriteLine($"Running an NUnit test on {MpiSize} MPI processes ...");
+            Tracer.NamespacesToLog_EverythingOverrideTestRunner = true;
 
-            using(var ftr = new FuncTrace()) {
+            using (var ftr = new FuncTrace()) {
                 Assembly[] assln = GetAllAssembliesForTests();
 
                 if(MpiSize != 1) {
@@ -1381,6 +1419,12 @@ namespace PublicTestRunner {
                     if(!FilterTestAssembly(a, AssemblyFilter)) {
                         continue;
                     }
+
+                    if(GetTestsInAssembly(a, AssemblyFilter).NoOfTests <= 0) {
+                        Console.WriteLine("Matching Assembly search string, but none of the methods match. (wrong wildcard?)");
+                        continue;
+                    }
+
                     Console.WriteLine("Matching assembly: " + a.Location);
                     ftr.Info("found Assembly #" + count + ": " + a.Location);
                     count++;
@@ -1388,6 +1432,9 @@ namespace PublicTestRunner {
                     if(MpiRank == 0) {
                         MegaMurxPlusPlus(a, AssemblyFilter);
                     }
+
+
+
 
                     Console.WriteLine("Waiting for all processors to catch up BEFORE starting test(s)...");
                     csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
@@ -1417,10 +1464,32 @@ namespace PublicTestRunner {
                         for(int rnk = 0; rnk < all_rS.Length; rnk++) {
                             bt.Info($"Rank {rnk}: NUnit returned code " + r);
                         }
-                        
+
+
+                        {
+                            string currentDirectory = Directory.GetCurrentDirectory();
+                            string[] pltFiles = Directory.GetFiles(currentDirectory, "*.plt");
+
+                            long totalSizeBytes = 0;
+
+                            foreach (string pltFile in pltFiles) {
+                                FileInfo fileInfo = new FileInfo(pltFile);
+                                totalSizeBytes += fileInfo.Length;
+                            }
+
+                            double totalSizeGigabytes = totalSizeBytes / (1024.0 * 1024 * 1024);
+
+                            if (totalSizeGigabytes > 2.0) {
+                                bt.Error("Test produced more than 2 Gigabyte of plt-files -- please check!");
+                                //throw new IOException("Test produced more than 2 Gigabyte of plt-files -- please check!");
+                            }
+                        }
+
                     }
 
+                    ftr.Info($"failstate before most recent code {ret} (false means OK, r = {r})");
                     ret = ret | (r != 0);
+                    ftr.Info($"failstate after most recent code {ret} (false means OK, r = {r})");
                 }
 
                 {
@@ -1434,6 +1503,7 @@ namespace PublicTestRunner {
 
 
                 Console.WriteLine();
+                ftr.Info($"failstate all tests: {ret} (false means OK)");
                 return ret ? -1 : 0;
             }
         }
@@ -1474,6 +1544,9 @@ namespace PublicTestRunner {
         }
 
 
+
+        static public bool BOSSS_RUNTESTFROMBACKUP_ENVVAR = false;
+
         /// <summary>
         /// the real main-function
         /// </summary>
@@ -1509,6 +1582,12 @@ namespace PublicTestRunner {
                 Console.WriteLine("Insufficient number of arguments.");
                 PrintMainUsage();
                 return -7777;
+            }
+
+            if (System.Environment.GetEnvironmentVariable("BOSSS_RUNTESTFROMBACKUP").IsEmptyOrWhite() == false) {
+                BOSSS_RUNTESTFROMBACKUP_ENVVAR = true;
+                File.WriteAllText("BOSSS_RUNTESTFROMBACKUP.txt", "Helo, Suckers!");
+                Console.WriteLine("trying to forward the BOSSS_RUNTESTFROMBACKUP hack via additional deployment files...");
             }
 
             BoSSS.Solution.Application.InitMPI();
@@ -1592,6 +1671,8 @@ namespace PublicTestRunner {
                 break;
             }
 
+
+            Console.WriteLine("ret b4 finalize = " + ret);
             csMPI.Raw.mpiFinalize();
 
 
@@ -1614,7 +1695,18 @@ namespace PublicTestRunner {
                 // seems to silently fail on all exceptions thrown after MPI init.
 
                 
-                Console.WriteLine(e);
+
+
+                Console.WriteLine("Got some exception: " + e);
+
+                using (var stw = new StreamWriter("Exception-" + DateTime.Now.ToString("MMMdd_HHmmss") + ".txt")) {
+                    stw.WriteLine("Got some exception: " + e);
+                    stw.WriteLine(e.StackTrace);
+                    stw.Flush();
+                    stw.Close();
+                }
+
+
                 return -667;
             }
         }

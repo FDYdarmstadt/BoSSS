@@ -21,6 +21,7 @@ using ilPSP;
 using BoSSS.Foundation.Grid;
 using System.Collections;
 using System.Linq;
+using ilPSP.Tracing;
 
 namespace BoSSS.Application.XNSERO_Solver {
 
@@ -41,7 +42,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Constructor for an arbitrary particle to be implemented in the Particle_Shape classes.
         /// </summary>
-        /// <param name="motionInit">
+        /// <param name="motion">
         /// Initializes the motion parameters of the particle (which model to use, whether it is a dry simulation etc.)
         /// </param>
         /// <param name="startPos">
@@ -59,20 +60,23 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <param name="startRotVelocity">
         /// The inital rotational velocity.
         /// </param>
-        public Particle(InitializeMotion motionInit, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
+        public Particle(IMotion motion, double[] startPos, double startAngl = 0.0, double activeStress = 0, double[] startTransVelocity = null, double startRotVelocity = 0) {
             SpatialDim = startPos.Length;
             ActiveStress = activeStress;
             Aux = new Auxillary();
-
-            if(motionInit != null) {
-                motionInit.CheckInput();
-                Motion = motionInit.ParticleMotion;
-                Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
-                Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
-                particleDensity = Motion.Density;
-                MotionInitializer = motionInit;
-            }
+            this.Motion = motion.CloneAs() ?? throw new ArgumentNullException("Missing definition of particle motion");
+            this.Motion.InitializeParticlePositionAndAngle(startPos, startAngl);
+            this.Motion.InitializeParticleVelocity(startTransVelocity, startRotVelocity);
+            Density = this.Motion.Density;
         }
+
+        [DataMember]
+        public bool IncludeRotation = true;
+        [DataMember]
+        public bool IncludeTranslation = true;
+
+        [DataMember]
+        public double phoreticActivity = 0;
 
         /// <summary>
         /// Level set tracker of the solid level set.
@@ -90,7 +94,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The density of the particle.
         /// </summary>
         [DataMember]
-        private readonly double particleDensity;
+        private readonly double Density;
 
         /// <summary>
         /// The spatial dimension.
@@ -102,19 +106,13 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Instantiate object for particle motion.
         /// </summary>
         [DataMember]
-        public Motion Motion { get; private set; }
-
-        /// <summary>
-        /// Instantiate object for motion initialization.
-        /// </summary>
-        [DataMember]
-        public InitializeMotion MotionInitializer;
+        public IMotion Motion { get; private set; }
 
         /// <summary>
         /// Mass of the current particle.
         /// </summary>
         [DataMember]
-        protected double Mass_P => Area * particleDensity;
+        public double Mass => Volume * Density;
 
         /// <summary>
         /// Check whether any particles is collided with another particle
@@ -132,12 +130,6 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
         /// </summary>
         [DataMember]
-        public double Eccentricity { get; private set; }
-        
-        /// <summary>
-        /// The translational velocity of the particle in the current time step. This list is used by the momentum conservation model.
-        /// </summary>
-        [DataMember]
         public Vector ClosestPointOnOtherObjectToThis = new Vector(2);
 
         /// <summary>
@@ -150,7 +142,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Area of the current particle. Implementation within the specific particle shapes.
         /// </summary>
         [DataMember]
-        public virtual double Area => throw new NotImplementedException();
+        public virtual double Volume => throw new NotImplementedException();
         
         /// <summary>
         /// Circumference of the current particle.
@@ -167,7 +159,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>   
         public double LevelSetFunction(double[] X, double GridLength) {
             double levelSet = ParticleLevelSetFunction(X, Motion.GetPosition());
-            for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count(); i++) {
+            for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
                 Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
                 if (Motion.IsInsideOfPeriodicDomain(virtualPosition, (GridLength * 2 + GetLengthScales().Max())))
                     levelSet = Math.Max(levelSet, ParticleLevelSetFunction(X, Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition()));
@@ -188,15 +180,17 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="LsTrk"></param>
         /// <returns></returns>
-        public CellMask ParticleCutCells(LevelSetTracker LsTrk, CellMask AllCutCells, double GridLengthScaleParameter) {
-            BitArray CellArray = new BitArray(LsTrk.GridDat.Cells.NoOfLocalUpdatedCells);
+        public CellMask ParticleCutCells(LevelSetTracker LsTrk, CellMask AllCutCells) {
+            BitArray CellArray = AllCutCells.GetBitMask();
+            BitArray ContainArray = new(CellArray.Length);
             MultidimensionalArray CellCenters = LsTrk.GridDat.Cells.CellCenter;
-            var h_min = LsTrk.Regions.GetCutCellSubGrid().h_minSubGrd;
+            double h = 1;// LsTrk.GridDat.Cells.h_maxGlobal;
             for (int i = 0; i < CellArray.Length; i++) {
-                CellArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]), h_min * 2);
+                if (CellArray[i]) {
+                    ContainArray[i] = Contains(new Vector(CellCenters[i, 0], CellCenters[i, 1]),h);
+                }
             }
-            CellMask CutCells = new CellMask(LsTrk.GridDat, CellArray, MaskType.Logical);
-            CutCells = CutCells.Intersect(AllCutCells);
+            CellMask CutCells = new(LsTrk.GridDat, ContainArray, MaskType.Logical);
             return CutCells;
         }
 
@@ -209,7 +203,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         public bool Contains(Vector Point, double Tolerance = 0) {
             bool contains = ParticleContains(Point, Motion.GetPosition(), Tolerance);
             if (!contains) {
-                for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count(); i++) {
+                for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
                     Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
                     if (Motion.IsInsideOfPeriodicDomain(virtualPosition, Tolerance + GetLengthScales().Max()))
                         contains = ParticleContains(Point, virtualPosition, Tolerance);
@@ -238,16 +232,18 @@ namespace BoSSS.Application.XNSERO_Solver {
         public virtual MultidimensionalArray GetSurfacePoints(double hMin, double searchAngle, int subParticleID) => throw new NotImplementedException();
 
         /// <summary>
-        /// Calculates the support point with an analytic formula (if applicable)
+        /// Calculates the support point with an analytic formula (if applicable), else it uses a binary search.
         /// </summary>
         /// <param name="supportVector"></param>
         /// <param name="SubParticleID">between 0 and <see cref="NoOfSubParticles"/>, i guess</param>
         /// <param name="Position"></param>
-        public virtual Vector GetSupportPoint(Vector supportVector, Vector Position, int SubParticleID) {
+        public virtual Vector GetSupportPoint(Vector supportVector, Vector Position, Vector Angle, int SubParticleID, double tolerance = 0) {
             int spatialDim = Position.Dim;
-            Vector currentSupportPoint = new Vector(spatialDim);
-            double angle = Motion.GetAngle(0);
-            Vector particleDirection = new Vector(Math.Cos(angle), Math.Sin(angle));
+            Vector currentSupportPoint = new(spatialDim);
+            if (spatialDim != 2)
+                throw new NotImplementedException("Calculation of support point only implemented in 2D");
+            double angle = Angle[0]; // hardcoded 2D
+            Vector particleDirection = new(Math.Cos(angle), Math.Sin(angle));
             double crossProductDirectionSupportVector = particleDirection[0] * supportVector[1] - particleDirection[1] * supportVector[0];
             double searchStartAngle = (1 - Math.Sign(crossProductDirectionSupportVector)) * Math.PI / 2 + Math.Acos((supportVector * particleDirection) / supportVector.L2Norm());
             double L = searchStartAngle - Math.PI;
@@ -256,8 +252,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 searchStartAngle = (L + R) / 2;
                 double dAngle = 1e-8;
                 MultidimensionalArray SurfacePoints = GetSurfacePoints(dAngle, searchStartAngle, SubParticleID);
-                Vector RightNeighbour = new Vector(spatialDim);
-                Vector LeftNeighbour = new Vector(spatialDim);
+                Vector RightNeighbour = new(spatialDim);
+                Vector LeftNeighbour = new(spatialDim);
                 for (int d = 0; d < spatialDim; d++) {
                     currentSupportPoint[d] = SurfacePoints[1, d];
                     LeftNeighbour[d] = SurfacePoints[0, d];
@@ -278,17 +274,21 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// <summary>
         /// Calculates the radial vector (SurfacePoint-ParticleReadOnlyPosition)
         /// </summary>
-        /// <param name="SurfacePoint">
+        /// <param name="Point">
         /// </param>
-        /// <param name="RadialVector">
-        /// </param>
-        /// <param name="RadialLength">
-        /// </param>
-        internal Vector CalculateRadialVector(Vector SurfacePoint) {
+        internal Vector CalculateRadialVector(Vector Point) {
             Aux = new Auxillary();
-            Vector RadialVector = new Vector(SurfacePoint[0] - Motion.GetPosition(0)[0], SurfacePoint[1] - Motion.GetPosition(0)[1]);
+            Vector RadialVector = new(Point[0] - Motion.GetPosition(0)[0], Point[1] - Motion.GetPosition(0)[1]);
+            if(RadialVector.L2Norm() > GetLengthScales().Max()) {//Point is in a different virtual domain (Periodic bndy only):
+                for (int i = 0; i < Motion.OriginInVirtualPeriodicDomain.Count; i++) {
+                    Vector virtualPosition = Motion.OriginInVirtualPeriodicDomain[i] + Motion.GetPosition();
+                    Vector tempRadialVector = new(Point[0] - virtualPosition[0], Point[1] - virtualPosition[1]);
+                    if (tempRadialVector.L2Norm() < RadialVector.L2Norm())
+                        RadialVector = new Vector(tempRadialVector);
+                }
+            }
             if (RadialVector.L2Norm() == 0)
-                throw new ArithmeticException("The radial vector has no length. Surface point: " + SurfacePoint + " Position: " + Motion.GetPosition(0));
+                throw new ArithmeticException("The radial vector has no length. Surface point: " + Point + " Position: " + Motion.GetPosition(0));
             Aux.TestArithmeticException(RadialVector, "particle radial vector");
             return RadialVector;
         }
@@ -298,14 +298,14 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         internal double CalculateEccentricity(Vector normalVector, Vector ClosestPoint) {
             Vector radialVector = CalculateRadialVector(ClosestPoint);
-            Vector normalRadialVector = new Vector(-radialVector[1], radialVector[0]);
+            Vector normalRadialVector = new(-radialVector[1], radialVector[0]);
             return normalRadialVector * normalVector;
         }
 
         internal double CalculateSecondOrderEccentricity(Vector NormalVector, Vector ClosestPoint) {
             Vector radialVector = CalculateRadialVector(ClosestPoint);
             double firstCrossProduct2D = radialVector[0] * NormalVector[1] - radialVector[1] * NormalVector[0];
-            Vector secondCrossProduct2D = new Vector(-firstCrossProduct2D * radialVector[1], firstCrossProduct2D * radialVector[0]);
+            Vector secondCrossProduct2D = new(-firstCrossProduct2D * radialVector[1], firstCrossProduct2D * radialVector[0]);
             return secondCrossProduct2D * NormalVector;
         }
 

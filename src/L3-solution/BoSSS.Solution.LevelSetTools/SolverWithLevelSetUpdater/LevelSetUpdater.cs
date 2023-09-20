@@ -265,7 +265,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     phaseInterface.CGLevelSet.Basis,
                     phaseInterface.DGLevelSet.Basis,
                     Tracker.GridDat,
-                    ContinuityProjectionOption.ConstrainedDG);
+                    ContinuityProjectionOption.None);
                 LevelSet preCGLevelSet = phaseInterface.CGLevelSet.CloneAs();
                 preEnforcer.MakeContinuous(phaseInterface.DGLevelSet, preCGLevelSet, Near1, PosFF);
                 LevelSetTracker preTracker = new LevelSetTracker(Tracker.GridDat, Tracker.CutCellQuadratureType, 1, new string[] { "A", "B" }, preCGLevelSet);
@@ -275,10 +275,11 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 CellMask CCplus = CC.Union(Tracker.Regions.GetCutCellMask4LevSet(phaseInterface.LevelSetIndex));
                 PosFF = preTracker.Regions.GetLevelSetWing(0, +1).VolumeMask;
 
+
+
                 enforcer.MakeContinuous(phaseInterface.DGLevelSet, phaseInterface.CGLevelSet, CCplus, PosFF);
                 preTracker.Dispose();
             }
-
 
             public void UpdateParameters(
                 IReadOnlyDictionary<string, DGField> DomainVarFields,

@@ -63,6 +63,7 @@ namespace BoSSS.Solution.XheatCommon {
             // ==========================
             if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
                 double penalty = dntParams.PenaltySafety;
+                AddCoefficient("ThermalSlipLengths");
 
                 var Visc = new ConductivityInSpeciesBulk(
                     penalty, //dntParams.UseGhostPenalties ? 0.0 : penalty, 
@@ -450,11 +451,11 @@ namespace BoSSS.Solution.XheatCommon {
             // viscous operator (laplace)
             // ==========================
             if (config.getConductMode == ConductivityInSpeciesBulk.ConductivityMode.SIP) {
-
+                AddCoefficient("ThermalSlipLengths");
                 double penalty = dntParams.PenaltySafety;
 
                 //var Visc = new ConductivityAtLevelSet(LsTrk, kA, kB, penalty * 1.0, Tsat);
-                var Visc = new ConductivityAtLevelSet_material(dimension, kF, kS, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName, iLevSet: iLevSet);
+                var Visc = new ConductivityAtLevelSet_material(dimension, kF, kS, penalty * 1.0, Tsat, FirstSpeciesName, SecondSpeciesName, iLevSet: iLevSet, bndTyp: dntParams.IBM_ThermalBoundaryType);
                 AddComponent(Visc);                
             } else {
                 throw new NotImplementedException();

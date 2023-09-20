@@ -58,6 +58,14 @@ namespace ilPSP.Tracing {
             }
         }
 
+
+        /// <summary>
+        /// overrides <see cref="NamespacesToLog"/> to trace everything; 
+        /// This is intended to be used only by the test runner
+        /// </summary>
+        public static bool NamespacesToLog_EverythingOverrideTestRunner = false;
+
+
         /// <summary>
         /// Must be initialized to write memory-tracing
         /// </summary>
@@ -694,7 +702,7 @@ namespace ilPSP.Tracing {
                 return;
 
             string _name;
-            Type callingType = null;
+            Type callingType;
             {
                 StackFrame fr = new StackFrame(1, true);
 
@@ -702,11 +710,15 @@ namespace ilPSP.Tracing {
                 _name = m.DeclaringType.FullName + "." + m.Name;
                 callingType = m.DeclaringType;
             }
-            
-            for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
-                if (_name.StartsWith(Tracer.m_NamespacesToLog[i])) {
-                    DoLogging = true;
-                    break;
+
+            if (Tracer.NamespacesToLog_EverythingOverrideTestRunner) {
+                DoLogging = true;
+            } else {
+                for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
+                    if (_name.StartsWith(Tracer.m_NamespacesToLog[i])) {
+                        DoLogging = true;
+                        break;
+                    }
                 }
             }
 
@@ -732,11 +744,15 @@ namespace ilPSP.Tracing {
                 callingType = m.DeclaringType;
                 filtername = callingType.FullName;
             }
-            
-            for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
-                if (filtername.StartsWith(Tracer.m_NamespacesToLog[i])) {
-                    DoLogging = true;
-                    break;
+
+            if (Tracer.NamespacesToLog_EverythingOverrideTestRunner) {
+                DoLogging = true;
+            } else {
+                for (int i = Tracer.m_NamespacesToLog.Length - 1; i >= 0; i--) {
+                    if (filtername.StartsWith(Tracer.m_NamespacesToLog[i])) {
+                        DoLogging = true;
+                        break;
+                    }
                 }
             }
 
@@ -776,7 +792,7 @@ namespace ilPSP.Tracing {
     /// </summary>
     public class BlockTrace : Tmeas {
 
-        FuncTrace _f;
+        readonly FuncTrace _f;
 
         /// <summary>
         /// ctor
@@ -793,6 +809,7 @@ namespace ilPSP.Tracing {
         public BlockTrace(string Title, FuncTrace f, bool timeToCout = false) {
             if(!Tracer.InstrumentationSwitch)
                 return;
+            base.DoLogging = f.DoLogging;
             string _name = Title;
             _f = f;
             m_Logger = _f.m_Logger;
@@ -800,7 +817,7 @@ namespace ilPSP.Tracing {
             base.EnterMessage("BLKENTER ", _name);
         }
 
-        bool m_timeToCout = false;
+        readonly bool m_timeToCout = false;
 
         /*
         /// <summary>

@@ -783,7 +783,7 @@ namespace BoSSS.Foundation.XDG {
 
 #endif
                             } catch (ArithmeticException) {
-                                Console.WriteLine("WARNING: indefinite mass matrix.");
+                                //Console.WriteLine("WARNING: indefinite mass matrix.");
                                 blk.InvertTo(inv_Blk);
 #if DEBUG
                                 for (int n = 0; n < N; n++)

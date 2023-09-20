@@ -33,6 +33,7 @@ using BoSSS.Solution.Utils;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using BoSSS.Solution.LoadBalancing;
+using Newtonsoft.Json.Linq;
 
 namespace BoSSS.Solution.Control {
 
@@ -1120,8 +1121,10 @@ namespace BoSSS.Solution.Control {
                 Formatting = Formatting.Indented
 //                ObjectCreationHandling = ObjectCreationHandling.
             };
-                        
-            using(var tw = new StringWriter()) {
+
+            formatter.Converters.Add(new ilPSP.Vector.VectorConverter());
+
+            using (var tw = new StringWriter()) {
                 tw.WriteLine(this.GetType().AssemblyQualifiedName);
                 using(JsonWriter writer = new JsonTextWriter(tw)) {  // Alternative: binary writer: BsonWriter
                     formatter.Serialize(writer, this);
@@ -1163,8 +1166,8 @@ namespace BoSSS.Solution.Control {
                 ReferenceLoopHandling = ReferenceLoopHandling.Error
             };
 
-
-            
+            formatter.Converters.Add(new ilPSP.Vector.VectorConverter());
+ 
             using(var tr = new StringReader(Str)) {
                 string typeName = tr.ReadLine();
                 Type ControlObjectType = Type.GetType(typeName);
@@ -1177,7 +1180,7 @@ namespace BoSSS.Solution.Control {
 
                 using(JsonReader reader = new JsonTextReader(tr)) {
                     var obj = formatter.Deserialize(reader, ControlObjectType);
-
+                    
                     AppControl ctrl = (AppControl)obj;
                     return ctrl;
                 }

@@ -351,7 +351,7 @@ namespace BoSSS.Application.XNSEC {
                 opFactory.AddParameter(new Viscosity(EoS_A, EoS_B));
                 opFactory.AddParameter(new HeatCapacity(EoS_A, EoS_B));
             }
-            opFactory.AddCoefficient(new SlipLengths(config, VelocityDegree()));
+            opFactory.AddCoefficient(new Solution.XNSECommon.SlipLengths(config, VelocityDegree()));
 
 
 
@@ -368,7 +368,11 @@ namespace BoSSS.Application.XNSEC {
             opFactory.AddParameter(normalsParameter);
 
             lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, normalsParameter);
-            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, new Velocity0Mean(D, LsTrk, quadOrder));
+            var v0Mean = new Velocity0Mean(D, LsTrk, quadOrder);
+            if (config.physParams.IncludeConvection && config.isTransport) {
+                opFactory.AddParameter(v0Mean);
+            }
+            lsUpdater.AddLevelSetParameter(VariableNames.LevelSetCG, v0Mean);
 
             #region SurfaceTension
 
@@ -973,10 +977,7 @@ namespace BoSSS.Application.XNSEC {
             return dt;
         }
 
-        protected override void Bye() {
-            // base.PostprocessingModules.Add();
-            base.Bye();
-        }
+       
 
         private int hack_TimestepIndex = 0;
         //private PerssonSensor sensor;

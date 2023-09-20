@@ -31,12 +31,8 @@ namespace BoSSS.Solution.NSECommon.Operator.Continuity {
     /// velocity jump penalty for the divergence operator, on the level set
     /// </summary>
     public class DivergenceAtIB : ILevelSetForm, ISupportsJacobianComponent {
-
-        //LevelSetTracker m_LsTrk;
-
         public DivergenceAtIB(int _D, int iLevSet, string FluidSpc, string SolidSpecies, bool UseLevelSetVelocityParameter, double _vorZeichen = 1.0) {
             this.D = _D;
-            //this.m_LsTrk = lsTrk;
             this.LevelSetIndex = iLevSet;
             this.PositiveSpecies = SolidSpecies;
             this.NegativeSpecies = FluidSpc;

@@ -883,8 +883,8 @@ namespace BoSSS.Foundation.Grid.Classic {
             /// <summary>
             /// Which edges (see <see cref="EdgeData.CellIndices"/>) bound to
             /// which cells? <br/>
-            /// - 1st index: local cell index <em>j</em>, only local updated<br/>
-            /// - 2nd index: collection, order is arbitrary; <br/>
+            /// - 1st index: local cell index <em>j</em>, only local updated
+            /// - 2nd index: collection, order is arbitrary;
             /// - content <em>e</em>: 
             ///   If <em>e</em> is positive, then cell <em>j</em> is the first
             ///   (IN) cell of edge <em>e - 1</em>. Otherwise, if <em>e</em> is

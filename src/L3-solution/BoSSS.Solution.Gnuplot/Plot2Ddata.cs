@@ -1372,7 +1372,7 @@ namespace BoSSS.Solution.Gnuplot {
             {
                 if (this.ShowXtics) {
                     if (this.LogX){
-                        gp.Cmd("set xtics format \"$" + this.LogBaseX + "^{%L}$\" ");
+                        gp.Cmd("set xtics format \"" + this.LogBaseX + "^{%L}\" ");
                         gp.Cmd("set xtics offset 0, 0-0.4 font \"sans, 18\" ");
                         gp.Cmd($"set xtics font \"sans, {this.LabelFont}\" ");
                     }
@@ -1384,7 +1384,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowX2tics) {
                     if (this.LogX2)
-                        gp.Cmd("set x2tics format \"$" + this.LogBaseX + "^{%L}$\" ");
+                        gp.Cmd("set x2tics format \"" + this.LogBaseX + "^{%L}\" ");
                     else
                         gp.Cmd("set x2tics ");
                 } else {
@@ -1393,7 +1393,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowYtics) {
                     if (this.LogY){
-                        gp.Cmd("set ytics format \"$" + this.LogBaseY + "^{%L}$\" ");
+                        gp.Cmd("set ytics format \"" + this.LogBaseY + "^{%L}\" ");
                         gp.Cmd($"set ytics font \"sans, {this.LabelFont}\" ");
                     }else
                         gp.Cmd("set ytics ");
@@ -1403,7 +1403,7 @@ namespace BoSSS.Solution.Gnuplot {
 
                 if (this.ShowY2tics) {
                     if (this.LogY2)
-                        gp.Cmd("set y2tics format \"$" + this.LogBaseY + "^{%L}$\" ");
+                        gp.Cmd("set y2tics format \"" + this.LogBaseY + "^{%L}\" ");
                     else
                         gp.Cmd("set y2tics ");
                 } else {

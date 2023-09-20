@@ -15,13 +15,8 @@ limitations under the License.
 */
 
 using ilPSP;
-using System;
 using System.Collections.Generic;
 using BoSSS.Solution.Control;
-using BoSSS.Foundation.Grid;
-using System.Diagnostics;
-using ilPSP.Utils;
-using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Solution.XdgTimestepping;
 
 namespace BoSSS.Application.XNSERO_Solver {
@@ -34,22 +29,23 @@ namespace BoSSS.Application.XNSERO_Solver {
                 "Pressure_Outlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 1);
+            C.SetGrid2D(lengthX: 4, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 0);
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            double dt = 1e-2;
 
             // Fluid Properties
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 0;
             double particleDensity1 = 1;
-            InitializeMotion motion1 = new InitializeMotion(particleDensity1);
+            Motion motion1 = new(particleDensity1);
             List<Particle> particles = new List<Particle> {
-                new Particle_Sphere(motion1, 0.5, new double[] { 0.0, 0.0 }),
+                new ParticleDisk(motion1, 0.5, new double[] { 0.0, 0.0 }),
             };
-            C.SetParticles(particles);
+            C.InitialiseParticles(particles);
 
             C.PhysicalParameters.IncludeConvection = false;
 
@@ -60,7 +56,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AgglomerationThreshold = 0.2;
             C.NonLinearSolver.MaxSolverIterations = 10;
 
-            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1e-2;
@@ -72,6 +67,39 @@ namespace BoSSS.Application.XNSERO_Solver {
             return C;
         }
 
+        public static XNSERO_Control TestParticleProperties(Particle TestParticle) {
+            XNSERO_Control C = new XNSERO_Control(2, "ParticleParameterTest");
+
+            List<string> boundaryValues = new List<string> {
+                "Pressure_Outlet"
+            };
+            C.SetBoundaries(boundaryValues);
+            C.SetGrid2D(lengthX: 10, lengthY: 10, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
+
+            // Coupling Properties
+            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+
+            C.PhysicalParameters.rho_A = 1.0;
+            C.PhysicalParameters.mu_A = 1.0;
+            C.CoefficientOfRestitution = 0;
+            double dt = 1e-2;
+            C.InitialiseParticles(new List<Particle>() { TestParticle });
+
+            C.PhysicalParameters.IncludeConvection = false;
+
+            C.AdvancedDiscretizationOptions.PenaltySafety = 4;
+            C.AgglomerationThreshold = 0.2;
+            C.NonLinearSolver.MaxSolverIterations = 10;
+
+            C.dtMax = dt;
+            C.dtMin = dt;
+            C.Endtime = 1e-2;
+            C.NoOfTimesteps = 1;
+
+            return C;
+        }
+
         public static XNSERO_Control TestParticleParameter(int k = 2) {
             XNSERO_Control C = new XNSERO_Control(k, "ParticleParameterTest");
 
@@ -79,8 +107,8 @@ namespace BoSSS.Application.XNSERO_Solver {
                 "Pressure_Outlet"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 8, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
-            C.SetAddaptiveMeshRefinement(amrLevel: 1);
+            C.SetGrid2D(lengthX: 8, lengthY: 4, cellsPerUnitLength: 1, periodicX: false, periodicY: false);
+            C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
 
             // Coupling Properties
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
@@ -89,15 +117,16 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.PhysicalParameters.rho_A = 1.0;
             C.PhysicalParameters.mu_A = 0.1;
             C.CoefficientOfRestitution = 0;
-            double particleDensity1 = 2;
-            InitializeMotion motion1 = new InitializeMotion(particleDensity1);
+            double particleDensity1 = 2; 
+            Motion motion1 = new(particleDensity1);
             double particleDensity2 = 1;
-            InitializeMotion motion2 = new InitializeMotion(particleDensity2);
+            Motion motion2 = new(particleDensity2);
             List<Particle> particles = new List<Particle> {
-                new Particle_Sphere(motion1, 1, new double[] { -2.0, 0.0 }),
-                new Particle_Ellipsoid(motion2, 1, 1, new double[] { 2.0, 0.0 }, startAngl: 0)
+                new ParticleDisk(motion1, 1, new double[] { -2.0, 0.0 }),
+                new ParticleEllipse(motion2, 1, 1, new double[] { 2.0, 0.0 }, startAngl: 0)
             };
-            C.SetParticles(particles);
+            double dt = 1e-2;
+            C.InitialiseParticles(particles);
 
             C.PhysicalParameters.IncludeConvection = false;
 
@@ -108,7 +137,6 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.AgglomerationThreshold = 0.2;
             C.NonLinearSolver.MaxSolverIterations = 10;
 
-            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1e-2;
@@ -129,16 +157,17 @@ namespace BoSSS.Application.XNSERO_Solver {
                 "Velocity_Inlet_right",
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: true);
-            C.SetAddaptiveMeshRefinement(amrLevel: 1);
+            C.SetGrid2D(lengthX: 4, lengthY: 6, cellsPerUnitLength: 5, periodicX: false, periodicY: true);
+            C.SetAddaptiveMeshRefinement(MaxRefinementLevel: 1);
 
             C.AddBoundaryValue("Velocity_Inlet_left", "VelocityY#A", X => 0.02);
             C.AddBoundaryValue("Velocity_Inlet_right", "VelocityY#A", X => -0.02);
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            double dt = 0.1;
 
             double particleDensity = 1;
-            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, true);
-            C.SetParticles(new List<Particle> { new Particle_Sphere(motion, 0.4, new double[] { 0.0, 0.0 }) });
+            MotionWetNoTranslation motion = new(particleDensity);
+            C.InitialiseParticles(new List<Particle> { new ParticleDisk(motion, 0.4, new double[] { 0.0, 0.0 }) });
             C.PhysicalParameters.rho_A = 1;
             C.PhysicalParameters.mu_A = 0.25;
             C.PhysicalParameters.IncludeConvection = true;
@@ -151,17 +180,16 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.MinSolverIterations = 5;
             C.LinearSolver = LinearSolverCode.direct_mumps.GetConfig();
-            C.NonLinearSolver.ConvergenceCriterion = 1e-12;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-8;
 
             // Timestepping
             // ============
 
-            double dt = 0.1;
             C.dtFixed = dt;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 120;
-            C.NoOfTimesteps = 25;
+            C.NoOfTimesteps = 10;
 
 
             // haben fertig...
@@ -194,7 +222,7 @@ namespace BoSSS.Application.XNSERO_Solver {
             "Pressure_Dirichlet_upper"
             };
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 3, lengthY: 3, cellsPerUnitLength: 10, periodicX: false, periodicY: false);
+            C.SetGrid2D(lengthX: 3, lengthY: 3, cellsPerUnitLength: 20, periodicX: false, periodicY: false);
             // Initial Values
             // ==============
 
@@ -206,18 +234,18 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.PhysicalParameters.mu_A = 1;
             C.CoefficientOfRestitution = 0;
             C.SetGravity(new Vector(0, -9.81));
+            C.SkipSolveAndEvaluateResidual = true;
 
             // Particle Properties
             double particleDensity1 = 100.0;
-            InitializeMotion motion1 = new InitializeMotion(particleDensity1, false, true);
             double particleDensity2 = 1.0;
-            InitializeMotion motion2 = new InitializeMotion(particleDensity2, false, true, true);
             List<Particle> particles = new List<Particle> {
-                new Particle_Sphere(motion1, 0.18, new double[] { 0.0, 0.6 }),
-                new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
-                new Particle_superEllipsoidFlat(motion2, 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
+                new ParticleDisk(new Motion(particleDensity1), 0.18, new double[] { 0.0, 0.6 }),
+                new ParticleSuperEllipsoidFlat(new MotionFixed(particleDensity2), 0.4, 0.2, 4, new double[] { 0.45, 0 }, startAngl: 45),
+                new ParticleSuperEllipsoidFlat(new MotionFixed(particleDensity2), 0.4, 0.2, 4, new double[] { -0.45, 0 }, startAngl: -45),
             };
-            C.SetParticles(particles);
+            double dt = 1e-1;
+            C.InitialiseParticles(particles);
             C.PhysicalParameters.IncludeConvection = false;
 
             // misc. solver options
@@ -231,11 +259,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             // ============
 
             // Timestepping
-            double dt = 1e-2;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 10.0;
-            C.NoOfTimesteps = 25;
+            C.NoOfTimesteps = 300;
 
             // haben fertig...
             // ===============

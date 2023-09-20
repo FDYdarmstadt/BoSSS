@@ -47,7 +47,8 @@ namespace BoSSS.Solution.XNSECommon {
                     break;
                 }
                 case NavierSlip_Localization.ContactLine: {
-                    SlipArea = null;
+                    throw new NotImplementedException();
+                    //SlipArea = null;
                     break;
                 }
                 case NavierSlip_Localization.Nearband: {
