@@ -95,9 +95,10 @@ namespace BoSSS.Solution.NSECommon {
         ScalarDirichlet_PressureOutlet = 9,
 
         /// <summary>
-        /// freestream B.C. for outer flows (prescribed velocity and zero velocity gradient)
+        /// pressure outlet B.C. for a cartesian cut-out in a rotating disk flow field (von Karman flow) 
+        /// specialized use for 3D and angular velocities with \f[ \vec{\omega} = (0, 0, \omega)^T\f]
         /// </summary>
-        Freestream = 10
+        Outlet_RotDisk = 10
 
     }
 }

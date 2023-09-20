@@ -26,6 +26,7 @@ using System.Diagnostics;
 using BoSSS.Foundation.Grid.Classic;
 using ilPSP;
 using BoSSS.Foundation.XDG;
+using NUnit.Framework.Internal.Execution;
 
 namespace BoSSS.Solution.NSECommon {
 
@@ -179,8 +180,7 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.FreeSlip:
                 case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear:
-                case IncompressibleBcType.Velocity_Inlet:
-                case IncompressibleBcType.Freestream: {
+                case IncompressibleBcType.Velocity_Inlet: {
 
                     // Fluss am Rand: f(u[d]) = n∙v∙u[d]
                     // wobei n der Normalenvektor, v=(v1,v2) resp. v=(v1,v2,v3) der Linearisierungspunkt.
@@ -354,6 +354,27 @@ namespace BoSSS.Solution.NSECommon {
 
                     return r;
                 }
+                case IncompressibleBcType.Outlet_RotDisk: {
+                        double r = 0.0;
+                        double u1, u2, u3 = 0, u_d;
+
+                        if (m_UseBoundaryVelocityParameter) {
+                            throw new NotImplementedException();
+                        } else {
+                            u_d = Uin[0];
+                            u1 = inp.Parameters_IN[0];
+                            u2 = inp.Parameters_IN[1];
+                            u3 = inp.Parameters_IN[2];
+                        }
+
+                        double theta = Math.Atan2(inp.X[1], inp.X[0]);
+                        r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1] * Math.Cos(theta) + u3 * inp.Normal[2]);
+
+                        //double rho = EoS.GetDensity(inp.Parameters_IN[2 * m_SpatialDimension]);
+                        //r *= rho;
+
+                        return r;
+                    }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");
             }
@@ -798,6 +819,24 @@ namespace BoSSS.Solution.NSECommon {
 
                     return r;
                 }
+                case IncompressibleBcType.Outlet_RotDisk: {
+                        double r = 0.0;
+                        double u1, u2, u3 = 0, u_d;
+
+                        u_d = Uin[argumentIndex];
+                        u1 = Uin[0];
+                        u2 = Uin[1];
+                        u3 = Uin[2];
+
+                        double theta = Math.Atan2(inp.X[1], inp.X[0]);
+                        r += u_d * (u1 * inp.Normal[0] + u2 * inp.Normal[1] * Math.Cos(theta) + u3 * inp.Normal[2]);
+
+                        //double[] densityArguments = Uin.GetSubVector(m_SpatialDimension, 1); // Only Temp
+                        //double rho = EoS.GetDensity(densityArguments);
+                        //r *= rho;
+
+                        return r;
+                    }
                 default:
                 throw new NotImplementedException("Boundary condition not implemented!");
             }

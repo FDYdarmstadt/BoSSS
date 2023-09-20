@@ -249,5 +249,14 @@ namespace BoSSS.Application.XRheology_Solver {
                 return false;
             }
         }
+
+        public virtual bool isRotInertiaForce {
+            get { return false; }
+        }
+
+        public virtual bool isCylindricalCoords {
+            get { return false; }
+        }
+
     }
 }

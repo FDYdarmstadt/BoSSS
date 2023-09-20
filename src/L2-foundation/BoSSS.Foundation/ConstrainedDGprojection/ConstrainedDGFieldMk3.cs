@@ -391,7 +391,7 @@ namespace BoSSS.Foundation.ConstrainedDGprojection {
                     int nodeCount = 0;
                     foreach(int iEdg in constraintsMask.ItemEnum) {
                         if(ConsiderEdge(iEdg, out _, out _)) {
-
+                            
                             int NoOfNodes = GetNodeSet(iEdg).NoOfNodes;
 
                             BlockI0.Add(i0);

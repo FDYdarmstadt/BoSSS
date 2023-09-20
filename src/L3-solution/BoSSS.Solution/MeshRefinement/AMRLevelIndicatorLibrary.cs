@@ -36,7 +36,7 @@ namespace BoSSS.Solution {
         [Serializable]
         public class AMRonBoundary : AMRLevelIndicator {
 
-            
+            [JsonProperty]
             private byte[] m_EdgeTags;
             
             public AMRonBoundary(params byte[] EdgeTags) {

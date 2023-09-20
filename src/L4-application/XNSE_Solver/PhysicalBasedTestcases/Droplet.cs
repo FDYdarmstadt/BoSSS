@@ -50,11 +50,11 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         /// 
         /// </summary>
         /// <returns></returns>
-        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 7, int AMRlvl = 0) {
+        public static XNSE_Control StaticDroplet_Free(int p = 2, int kelem = 28, int AMRlvl = 0) {
 
             XNSE_Control C = new XNSE_Control();
 
-            int D = 3;
+            int D = 2;
 
             AppControl._TimesteppingMode compMode = AppControl._TimesteppingMode.Transient;
             bool steadyInterface = false;
@@ -271,6 +271,10 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.InitialValues_Evaluators.Add("GravityY#B", X => 0.0);
 
 
+            //C.UseRampUpForInitialVelocityField = true;
+            //C.rampUpValues_VelocityZ = new double[] { 0.0, 1.0 };
+
+
             // restart
             //var database = new DatabaseInfo(_DbPath);
             //Guid restartID = new Guid("c95b2833-288e-4014-ba08-affa65a2398e");
@@ -365,7 +369,7 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.LinearSolver = new DirectSolver() { WhichSolver = DirectSolver._whichSolver.PARDISO };
 
 
-            C.Option_LevelSetEvolution = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None; // (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetEvolution.None : LevelSetEvolution.FastMarching;
             //C.Option_LevelSetEvolution = (steadyInterface) ? LevelSetEvolution.None : LevelSetEvolution.Fourier;
             C.FastMarchingPenaltyTerms = Solution.LevelSetTools.Smoothing.JumpPenalization.jumpPenalizationTerms.Jump;
 
@@ -433,16 +437,16 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //C.Timestepper_LevelSetHandling = (compMode == AppControl._TimesteppingMode.Steady) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
 
             //C.LSunderrelax = 0.05;
-            C.Timestepper_LevelSetHandling = (steadyInterface) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None; // (steadyInterface) ? LevelSetHandling.None : LevelSetHandling.Coupled_Once;
 
             C.TimesteppingMode = compMode;
             //C.CompMode = AppControl._CompMode.Transient; 
 
-            double dt = 0.1; //0.01;
+            double dt = 1e-6; //0.01;
             C.dtMax = dt;
             C.dtMin = dt;
             C.Endtime = 1000;
-            C.NoOfTimesteps = 1; // 12500; // (int)(125.0 / dt);
+            C.NoOfTimesteps = 2; // 12500; // (int)(125.0 / dt);
             C.saveperiod = 10;
             
             #endregion

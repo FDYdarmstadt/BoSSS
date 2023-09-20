@@ -40,6 +40,7 @@ using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
 using BoSSS.Foundation;
 using BoSSS.Application.XNSE_Solver.LoadBalancing;
 using ilPSP;
+using Newtonsoft.Json.Linq;
 
 namespace BoSSS.Application.XNSE_Solver {
 
@@ -657,6 +658,49 @@ namespace BoSSS.Application.XNSE_Solver {
         public void SetVolumeForce(string species, int d, Func<double[], double, double> g) {
             this.InitialValues_Evaluators_TimeDep[VariableNames.VolumeForce_d(d) + "#" + species] = g;
         }
+
+        /// <summary>
+        /// activates inertia force terms occuring in rotational systems
+        /// </summary>
+        //[DataMember]
+        //public bool UseRotInertForceTerms = false;
+
+        /// <summary>
+        /// Angular velocity for rotating systems
+        /// </summary>
+        //[DataMember]
+        //public double[] AngularVelocity;
+
+        /// <summary>
+        /// activates cylindircal terms
+        /// </summary>
+        //[DataMember]
+        //public bool UseCylindricalCoords = false;
+
+
+        [DataMember]
+        Dictionary<string, List<IBoundaryAndInitialData>> m_InitialRampUpValues;
+
+
+        [JsonIgnore]
+        public IDictionary<string, List<IBoundaryAndInitialData>> InitialRampUpValues {
+            get {
+                return m_InitialRampUpValues;
+            }
+        }
+
+        public void AddInitialRampUpValue(string fieldname, IBoundaryAndInitialData value) {
+            if (m_InitialRampUpValues == null)
+                m_InitialRampUpValues = new Dictionary<string, List<IBoundaryAndInitialData>>();
+
+            if (m_InitialRampUpValues.TryGetValue(fieldname, out List<IBoundaryAndInitialData> values)) {
+                values.Add(value);
+            } else {
+                m_InitialRampUpValues.Add(fieldname, new List<IBoundaryAndInitialData>());
+                m_InitialRampUpValues[fieldname].Add(value);  
+            }
+        }
+
 
         /// <summary>
         /// Control Options for ReInit

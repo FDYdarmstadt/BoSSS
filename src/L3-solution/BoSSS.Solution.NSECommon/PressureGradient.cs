@@ -96,10 +96,16 @@ namespace BoSSS.Solution.NSECommon {
                 case IncompressibleBcType.SlipSymmetry:
                 case IncompressibleBcType.NavierSlip_Linear:
                 case IncompressibleBcType.NoSlipNeumann:
-                case IncompressibleBcType.Freestream:
                     // hom. Neumann b.c.
                     // +++++++++++++++++
                     return Uin[0] * inp.Normal[m_d];
+                case IncompressibleBcType.Outlet_RotDisk: {
+                        double theta = Math.Atan2(inp.X[1], inp.X[0]);
+                        if (m_d == 1)
+                            return Uin[0] * inp.Normal[m_d] * Math.Cos(theta);
+                        else
+                            return Uin[0] * inp.Normal[m_d];
+                    }
                 default:
                     throw new NotImplementedException();
             }

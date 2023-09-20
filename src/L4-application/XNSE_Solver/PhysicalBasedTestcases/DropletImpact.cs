@@ -37,6 +37,7 @@ using BoSSS.Application.XNSE_Solver.Logging;
 using System.Configuration;
 using static BoSSS.Solution.AMRLevelIndicatorLibrary;
 using BoSSS.Solution;
+using BoSSS.Application.XNSE_Solver.SpecificSolutions;
 
 namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
@@ -184,21 +185,21 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
         }
 
 
-        static public Grid3D RotatingDiskSector_Linearized(double radiusOP, double l_azimuthal, double l_radial, double h_axial, int res_azimuthal, int res_radial, int res_axial) {
+        static public Grid3D RotatingDiskSector_Linearized(double radiusOP, double l_radial, double l_azimuthal, double h_axial, int res_azimuthal, int res_radial, int res_axial) {
 
-            double[] xNodes = GenericBlas.Linspace(-l_azimuthal / 2.0, l_azimuthal / 2.0, res_azimuthal + 1);    // azimuthal direction
-            double[] yNodes = GenericBlas.Linspace(-l_radial / 2.0, l_radial / 2.0, res_radial + 1);    // radial direction
+            double[] xNodes = GenericBlas.Linspace(-l_radial / 2.0, l_radial / 2.0, res_radial + 1);    // radial direction
+            double[] yNodes = GenericBlas.Linspace(-l_azimuthal / 2.0, l_azimuthal / 2.0, res_azimuthal + 1);    // azimuthal direction
             double[] zNodes = GenericBlas.Linspace(0.0, h_axial, res_axial + 1);    // axial direction
 
-            var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes, periodicX: true);
-            grd.Name = $"RotatingDiskSector3D_Linearized_{res_azimuthal}x{res_radial}x{res_axial}";
+            var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes, periodicY: false);
+            grd.Name = $"RotatingDiskSector3D_Linearized_{res_radial}x{res_azimuthal}x{res_axial}";
 
             grd.EdgeTagNames.Add(1, "wall_rotatingDisk");
-            grd.EdgeTagNames.Add(2, "freestream_top");
-            grd.EdgeTagNames.Add(3, "pressure_outlet_front");
-            grd.EdgeTagNames.Add(4, "pressure_outlet_back");
-            // grd.EdgeTagNames.Add(5, "pressure_outlet_upstream");
-            // grd.EdgeTagNames.Add(6, "pressure_outlet_downstream");
+            grd.EdgeTagNames.Add(2, "velocity_inlet_top");
+            grd.EdgeTagNames.Add(3, "velocity_inlet_front");
+            grd.EdgeTagNames.Add(4, "velocity_inlet_back");
+            grd.EdgeTagNames.Add(5, "velocity_inlet_upstream");
+            grd.EdgeTagNames.Add(6, "velocity_inlet_downstream");
 
             grd.DefineEdgeTags(delegate (Vector X) {
                 byte et = 0;
@@ -206,14 +207,14 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
                     et = 1;
                 if ((X.z - h_axial).Abs() <= 1e-8)
                     et = 2;
-                if ((X.y + (l_radial / 2.0)).Abs() <= 1e-8)
+                if ((X.x + (l_radial / 2.0)).Abs() <= 1e-8)
                     et = 3;
-                if ((X.y - (l_radial / 2.0)).Abs() <= 1e-8)
+                if ((X.x - (l_radial / 2.0)).Abs() <= 1e-8)
                     et = 4;
-                // if((X.x + (l_azimuthal / 2.0)).Abs() <= 1e-8)
-                //     et = 5;
-                // if((X.x - (l_azimuthal / 2.0)).Abs() <= 1e-8)
-                //     et = 6;
+                if ((X.y + (l_azimuthal / 2.0)).Abs() <= 1e-8)
+                    et = 5;
+                if ((X.y - (l_azimuthal / 2.0)).Abs() <= 1e-8)
+                    et = 6;
 
                 return et;
             });
@@ -230,8 +231,8 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             double radiusOP = 100; // operating point -> Re = radiusOp / Lstar
-            double viscosity = 1.0; // kinematic viscosity
-            double omega = 1.0; // rotation rate
+            double viscosity = 0.01; // kinematic viscosity
+            double omega = 0.01; // rotation rate
             double Lstar = Math.Sqrt(viscosity / omega);
 
             double z = 10;
@@ -247,21 +248,53 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
 
 
             // set grid
-            double l_azimuthal = zstar / 5.0;
             double l_radial = zstar / 10.0;
+            double l_azimuthal = zstar / 5.0;
             double h_axial = zstar;
 
-            int res_azimuthal = 2 * gridRes;
-            int res_radial = 1 * gridRes;
-            int res_axial = 10 * gridRes;
+            int res_global = 2;
+            int res_radial = 1 * res_global;
+            int res_azimuthal = 2 * res_global;
+            int res_axial = 10 * res_global;
 
-            Grid3D grd = RotatingDiskSector_Linearized(radiusOP, l_azimuthal, l_radial, h_axial, res_azimuthal, res_radial, res_axial);
-            C.GridFunc = delegate () { return grd; };
+            Grid3D grd = RotatingDiskSector_Linearized(radiusOP, l_radial, l_azimuthal, h_axial, res_azimuthal, res_radial, res_axial);
+            C.GridFunc = delegate() { return grd; };
 
+
+            //C.UseRotInertForceTerms = true;
+            //C.AngularVelocity = new double[] { 0.0, 0.0, omega };
+            //C.UseCylindricalCoords = true;
 
 
             // boundary condition
-            C.AddBoundaryValue("wall_rotatingDisk", "VelocityX#A", X => -(X[1] + radiusOP) * omega);
+            Formula RotatingDisk = new Formula("VelY", false,
+                "double VelY(double[] X) { double radiusOP = 100.0; double omega = 0.01; return (X[1] + radiusOP) * omega; } ");
+            C.AddBoundaryValue("wall_rotatingDisk", "VelocityX#A", RotatingDisk);
+
+
+            double velW_top = -0.884473;
+            double velWstar_top = velW_top * Math.Sqrt(viscosity * omega);
+            Formula VelocityZ_top = new Formula("VelZ", false, "double VelZ(double[] X) { return -0.00884473; } ");
+
+            C.AddBoundaryValue("velocity_inlet_top", "VelocityZ#A", VelocityZ_top);
+
+            var vonKarman_sol = new RotatingDiskBoundaryLayerConditions();
+
+            C.AddBoundaryValue("velocity_inlet_front", "VelocityX#A", vonKarman_sol);
+            C.AddBoundaryValue("velocity_inlet_front", "VelocityY#A", vonKarman_sol);
+            C.AddBoundaryValue("velocity_inlet_front", "VelocityZ#A", vonKarman_sol);
+
+            C.AddBoundaryValue("velocity_inlet_back", "VelocityX#A", vonKarman_sol);
+            C.AddBoundaryValue("velocity_inlet_back", "VelocityY#A", vonKarman_sol);
+            C.AddBoundaryValue("velocity_inlet_back", "VelocityZ#A", vonKarman_sol);
+
+            C.AddBoundaryValue("velocity_inlet_upstream", "VelocityX#A", vonKarman_sol);
+            C.AddBoundaryValue("velocity_inlet_upstream", "VelocityY#A", vonKarman_sol);
+            C.AddBoundaryValue("velocity_inlet_upstream", "VelocityZ#A", vonKarman_sol);
+
+            C.AddBoundaryValue("velocity_inlet_downstream", "VelocityX#A", vonKarman_sol);
+            C.AddBoundaryValue("velocity_inlet_downstream", "VelocityY#A", vonKarman_sol);
+            C.AddBoundaryValue("velocity_inlet_downstream", "VelocityZ#A", vonKarman_sol);
 
 
             C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
@@ -277,14 +310,180 @@ namespace BoSSS.Application.XNSE_Solver.PhysicalBasedTestcases {
             //    C.AMR_startUpSweeps = AMRlevel;
             //}
 
-            Func<double[], double> PhiFunc = X => -1.0;
-            C.InitialValues_Evaluators.Add("Phi", PhiFunc);
+            //Func<double[], double> PhiFunc = X => -1.0;
+            //C.InitialValues_Evaluators.Add("Phi", PhiFunc);
 
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
 
-            //C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
-            //C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+
+            return C;
+        }
+
+
+        static public Grid3D RotatingDiskSector_CartesianCutOut(double radiusOP, double l_radial, double l_azimuthal, double h_axial, int res_radial, int res_azimuthal, int res_axial) {
+
+            double[] xNodes = GenericBlas.Linspace(radiusOP - (l_radial / 2.0), radiusOP + (l_radial / 2.0), res_radial + 1);    // radial direction
+            double[] yNodes = GenericBlas.Linspace(-l_azimuthal / 2.0, l_azimuthal / 2.0, res_azimuthal + 1);    // azimuthal direction
+            // double[] yNodes = GenericBlas.Linspace(-l_azimuthal / 3.0, (2.0 * l_azimuthal) / 3.0, res_azimuthal + 1);    // azimuthal direction
+            double[] zNodes = GenericBlas.Linspace(0.0, h_axial, res_axial + 1);    // axial direction
+
+            var grd = Grid3D.Cartesian3DGrid(xNodes, yNodes, zNodes, periodicY: false);
+            grd.Name = $"RotatingDiskSector3D_CartesianCutOut_{res_radial}x{res_azimuthal}x{res_axial}";
+
+            grd.EdgeTagNames.Add(1, "velocity_inlet_rotatingDisk");
+            grd.EdgeTagNames.Add(2, "velocity_inlet_top");
+            grd.EdgeTagNames.Add(3, "velocity_inlet_back");
+            grd.EdgeTagNames.Add(4, "velocity_inlet_front");
+            grd.EdgeTagNames.Add(5, "velocity_inlet_upstream");
+            grd.EdgeTagNames.Add(6, "pressure_outlet_downstream");
+
+            grd.DefineEdgeTags(delegate (Vector X) {
+                byte et = 0;
+                if (X.z.Abs() <= 1e-8)
+                    et = 1;
+                if ((X.z - h_axial).Abs() <= 1e-8)
+                    et = 2;
+                if (((X.x - radiusOP) + (l_radial / 2.0)).Abs() <= 1e-8)
+                    et = 3;
+                if (((X.x - radiusOP) - (l_radial / 2.0)).Abs() <= 1e-8)
+                    et = 4;
+                if ((X.y + (l_azimuthal / 2.0)).Abs() <= 1e-8)
+                    et = 5;
+                if ((X.y - (l_azimuthal / 2.0)).Abs() <= 1e-8)
+                    et = 6;
+                // if ((X.y + (l_azimuthal / 3.0)).Abs() <= 1e-8)
+                //     et = 5;
+                // if ((X.y - (2.0 * l_azimuthal / 3.0)).Abs() <= 1e-8)
+                //     et = 6;
+
+                return et;
+            });
+
+            return grd;
+        }
+
+
+        public static XNSE_Control DropletRebound(int k = 3, int gridRes = 4) {
+
+            var C = new XNSE_Control();
+
+            C.SetDGdegree(k);
+
+
+            // physical parameters
+            C.PhysicalParameters.rho_A = 1.0;
+            C.PhysicalParameters.mu_A = 1.0;
+
+            C.PhysicalParameters.rho_B = 1.0;
+            C.PhysicalParameters.mu_B = 0.01;
+
+            C.PhysicalParameters.Sigma = 72.9e-3;
+
+            C.PhysicalParameters.IncludeConvection = true;
+
+
+            // set grid
+            double l_radial = 10;
+            double l_azimuthal = 10;
+            double h_axial = 10;
+
+            int res_global = gridRes;
+            int res_radial = 1 * res_global;
+            int res_azimuthal = 1 * res_global;
+            int res_axial = 1 * res_global;
+
+            double radiusOP = 100;
+            Grid3D grd = RotatingDiskSector_CartesianCutOut(radiusOP, l_radial, l_azimuthal, h_axial, res_radial, res_azimuthal, res_axial);
+            C.GridFunc = delegate () { return grd; };
+
+
+            // boundary conditions
+            //C.AddBoundaryValue("velocity_inlet_rotatingDisk", "VelocityX#B", RotatingDiskVelocityX);
+            //C.AddBoundaryValue("velocity_inlet_rotatingDisk", "VelocityY#B", RotatingDiskVelocityY);
+
+            //C.AddBoundaryValue("velocity_inlet_top", "VelocityX#B", vonKarmanHAM_velX);
+            //C.AddBoundaryValue("velocity_inlet_top", "VelocityY#B", vonKarmanHAM_velY);
+            //C.AddBoundaryValue("velocity_inlet_top", "VelocityZ#B", vonKarmanHAM_velZ);
+
+            //C.AddBoundaryValue("velocity_inlet_front", "VelocityX#B", vonKarmanHAM_velX);
+            //C.AddBoundaryValue("velocity_inlet_front", "VelocityY#B", vonKarmanHAM_velY);
+            //C.AddBoundaryValue("velocity_inlet_front", "VelocityZ#B", vonKarmanHAM_velZ);
+
+            //C.AddBoundaryValue("velocity_inlet_back", "VelocityX#B", vonKarmanHAM_velX);
+            //C.AddBoundaryValue("velocity_inlet_back", "VelocityY#B", vonKarmanHAM_velY);
+            //C.AddBoundaryValue("velocity_inlet_back", "VelocityZ#B", vonKarmanHAM_velZ);
+
+            //C.AddBoundaryValue("velocity_inlet_upstream", "VelocityX#B", vonKarmanHAM_velX);
+            //C.AddBoundaryValue("velocity_inlet_upstream", "VelocityY#B", vonKarmanHAM_velY);
+            //C.AddBoundaryValue("velocity_inlet_upstream", "VelocityZ#B", vonKarmanHAM_velZ);
+
+            // C.AddBoundaryValue("velocity_inlet_downstream", "VelocityX#B", vonKarman_velX);
+            // C.AddBoundaryValue("velocity_inlet_downstream", "VelocityY#B", vonKarman_velY);
+            // C.AddBoundaryValue("velocity_inlet_downstream", "VelocityZ#B", vonKarman_velZ);
+            // C.AddBoundaryValue("pressure_dirichlet_downstream", "Pressure#B", vonKarman_P);
+
+
+            // initial conditions
+            //C.AddInitialValue("VelocityX#B", vonKarmanHAM_velX);
+            //C.AddInitialValue("VelocityY#B", vonKarmanHAM_velY);
+            //C.AddInitialValue("VelocityZ#B", vonKarmanHAM_velZ);
+            // C.AddInitialValue("Pressure#B", vonKarman_P);
+
+            Formula PhiFunc = new Formula(
+                "Phi",
+                false,
+                "double Phi(double[] X) { " +
+                "double radiusOP = 100;" +
+                "double radiusDrop = 1;" +
+                "double initHeight = 7.5;" +
+                "return Math.Sqrt((X[0] - radiusOP).Pow2() + X[1].Pow2() + (X[2] - initHeight).Pow2()) - radiusDrop; } "
+            );
+
+            C.AddInitialValue("Phi", PhiFunc);
+            // C.AddInitialValue("VelocityZ#A", InitVelocity);
+
+            //C.UseRampUpForInitialVelocityField = true;
+            //C.rampUpValues_VelocityZ = new double[] { 0.0, -0.112, -0.56, -1.12 };
+            C.AddInitialRampUpValue("VelocityZ#A", new ConstantValue(0.0));
+            C.AddInitialRampUpValue("VelocityZ#A", new ConstantValue(-0.112));
+            C.AddInitialRampUpValue("VelocityZ#A", new ConstantValue(-0.56));
+            C.AddInitialRampUpValue("VelocityZ#A", new ConstantValue(-1.12));
+
+
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.LSContiProjectionMethod = ContinuityProjectionOption.ConstrainedDG;
+
+
+            // C.SkipSolveAndEvaluateResidual = true;
+
+            C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
+            C.NonLinearSolver.ConvergenceCriterion = 1e-9;
+            C.NonLinearSolver.MaxSolverIterations = 20;
+
+            // C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
+
+
+            //C.TimesteppingMode = AppControl._TimesteppingMode.Steady;
+            C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+            C.Option_LevelSetEvolution = LevelSetEvolution.None;
+
+            C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
+            // C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
+            // C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;
+            C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler;
+            C.dtFixed = 1.0e-6;
+            C.NoOfTimesteps = 5;
+
+            {
+                C.AdaptiveMeshRefinement = true;
+                int AMRlevel = 1;
+                C.activeAMRlevelIndicators.Add(new AMRonNarrowband() { maxRefinementLevel = AMRlevel });
+                //C.activeAMRlevelIndicators.Add(new AMRLevelIndicatorLibrary.AMRonBoundary(new byte[] { 1 }) { maxRefinementLevel = AMRlevel });
+                C.AMR_startUpSweeps = AMRlevel + 1;
+            }
 
             return C;
         }

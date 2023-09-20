@@ -717,18 +717,20 @@ namespace BoSSS.Solution.NSECommon {
 
                     break;
                 }
-                case IncompressibleBcType.Freestream: {
+                case IncompressibleBcType.Outlet_RotDisk: {
 
-                    double g_D = this.g_Diri(inp.X, inp.time, inp.EdgeTag, m_iComp);
+                    double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag, inp.time);
+                    double theta = Math.Atan2(inp.X[1], inp.X[0]);
 
-                        for (int d = 0; d < inp.D; d++) {
-                            double nd = inp.Normal[d];
-                            //Acc += (muA * _Grad_uA[m_iComp, d]) * (_vA) * nd;
-                            Acc += (muA * _Grad_vA[d]) * (_uA[m_iComp] - g_D) * nd;
-                        }
-                        Acc *= base.m_alpha;
+                    for (int d = 0; d < inp.D; d++) {
+                        if (d == 1)
+                            Acc += 0.5 * muA * (_Grad_uA[m_iComp, d]) * (_vA) * inp.Normal[d] * Math.Cos(theta);  // consistency term  
+                        else
+                            Acc += 0.5 * muA * (_Grad_uA[m_iComp, d]) * (_vA) * inp.Normal[d];  // consistency term  
+                    }
+                    Acc *= base.m_alpha;
 
-                        Acc -= muA * (_uA[m_iComp] - g_D) * (_vA - 0) * pnlty;
+                    Acc += 0.5 * muA * g_N * Math.Cos(theta) * _vA * base.m_alpha;
 
                     break;    
                 }
@@ -1200,20 +1202,22 @@ namespace BoSSS.Solution.NSECommon {
                     Acc *= base.m_alpha;
                     break;
                 }
-                case IncompressibleBcType.Freestream: {
+                case IncompressibleBcType.Outlet_RotDisk: {
 
-                        for (int i = 0; i < inp.D; i++) {
-                            // consistency
-                            //Acc += (muA * _Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i];
-                            // symmetry
-                            Acc += (muA * _Grad_vA[i]) * (_uA[i] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, i)) * inp.Normal[m_iComp];
+                     double theta = Math.Atan2(inp.X[1], inp.X[0]);
+
+                     for (int i = 0; i < inp.D; i++) {
+                         if (i == 1)
+                            Acc += 0.5 * muA * (_Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i] * Math.Cos(theta); // consistency term
+                         else
+                            Acc += 0.5 * muA * (_Grad_uA[i, m_iComp]) * (_vA) * inp.Normal[i]; // consistency term
                         }
-                        Acc *= base.m_alpha;
+                     Acc *= base.m_alpha;
 
-                        // penalty
-                        Acc -= muA * (_uA[m_iComp] - this.g_Diri(inp.X, inp.time, inp.EdgeTag, base.m_iComp)) * (_vA - 0) * pnlty;
+                     //double g_N = g_Neu(inp.X, inp.Normal, inp.EdgeTag);
+                     //Acc += 0.5 * muA * g_N * Math.Cos(theta) * _vA * base.m_alpha;
 
-                    break;
+                     break;
                 }
                 default:
                     throw new NotSupportedException();

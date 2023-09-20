@@ -27,6 +27,8 @@ using System.Threading;
 using ilPSP;
 using System.IO.Pipes;
 using System.Threading.Tasks;
+using BoSSS.Application.XNSE_Solver;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -109,7 +111,7 @@ namespace BoSSS.Application.BoSSSpad {
         //[STAThread]
         public static int Main(string[] args) {
             int errCount = 0;
-            
+
 
             Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
             //string path = @"\\fdygitrunner\ValidationTests\LinslvPerfPar-temp\sessions\eb58bc08-a44f-4beb-99fc-4267567b1353"; 

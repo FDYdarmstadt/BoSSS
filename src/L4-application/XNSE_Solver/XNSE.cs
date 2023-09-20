@@ -548,6 +548,16 @@ namespace BoSSS.Application.XNSE_Solver {
 
             if (Control.UseImmersedBoundary)
                 DefineSystemImmersedBoundary(D, opFactory, lsUpdater);
+
+
+            // inertia force terms (centrifugal & Coriolis force for rotating disk)
+            // ================
+            //if (config.isRotInertiaForce) { // specialized terms for x(radial), y(azimuthal), z(axial)
+            //    Console.WriteLine("add inertia force terms");
+            //    DefineRotatingForceTerms(opFactory, config, D);
+            //}
+
+
         }
 
         /// <summary>
@@ -633,6 +643,21 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="D">Spatial dimension (only 3D)</param>
+        protected virtual void DefineRotatingForceTerms(OperatorFactory opFactory, XNSE_OperatorConfiguration config, int D) {
+
+            double[] angVelocity = config.AngularVelocity;
+
+            for (int d = 0; d < 2; ++d)
+                opFactory.AddEquation(new InertiaForceTermsInRotSystem("A", d, D, angVelocity, config));
+        }
+
+
+
         public List<(double, double)> ImbalanceTrack;
 
         protected override double RunSolverOneStep(int TimestepNo, double phystime, double dt) {
@@ -669,6 +694,12 @@ namespace BoSSS.Application.XNSE_Solver {
 
                 if (ImbalanceTrack != null) ImbalanceTrack.Add((RelCellsInbalance, RelCutCellsInbalance));
 
+
+                if (!this.Control.InitialRampUpValues.IsNullOrEmpty()) {
+                    SetRampUpValue(TimestepNo, phystime);
+                }
+
+
                 Console.WriteLine($"Starting time step {TimestepNo}, dt = {dt} ...");
                 bool success = Timestepping.Solve(phystime, dt, Control.SkipSolveAndEvaluateResidual);
 
@@ -683,6 +714,27 @@ namespace BoSSS.Application.XNSE_Solver {
                 return dt;
             }
         }
+
+
+        void SetRampUpValue(int TimestepNo, double phystime) {
+
+            Console.WriteLine($"setting rampUp values");
+
+            foreach (string rampUpField in this.Control.InitialRampUpValues.Keys) {
+                int numRampUpValues = this.Control.InitialRampUpValues[rampUpField].Count();
+                var rampUpValue = (TimestepNo <= numRampUpValues) ? this.Control.InitialRampUpValues[rampUpField].ElementAt(TimestepNo - 1) : this.Control.InitialRampUpValues[rampUpField].ElementAt(numRampUpValues - 1);
+
+                var NameAndSpc = rampUpField.Split(new string[] { "#" }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (XDGField field in Timestepping.CurrentState.Fields) {
+                    if (field.Identification.Equals(NameAndSpc[0])) {
+                        field.GetSpeciesShadowField(NameAndSpc[1]).Clear();
+                        field.GetSpeciesShadowField(NameAndSpc[1]).ProjectField(delegate (double[] X) { return rampUpValue.Evaluate(X, phystime); });
+                    }
+                }
+            }
+        }
+
+
         protected virtual List<DGField> GetInterfaceVelocity(){
             int D = this.GridData.SpatialDimension;
             var cm = this.LsTrk.Regions.GetCutCellMask4LevSet(0);

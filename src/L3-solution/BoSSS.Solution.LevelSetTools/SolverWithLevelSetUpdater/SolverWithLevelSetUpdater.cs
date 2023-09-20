@@ -545,6 +545,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             LsUpdater.InitializeParameters(DomainVarsDict, ParameterVarsDict);
 
+
             foreach (var f in LsUpdater.Parameters.Values) {
                 base.RegisterField(f);
             }
