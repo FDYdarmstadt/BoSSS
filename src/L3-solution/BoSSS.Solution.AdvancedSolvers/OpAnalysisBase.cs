@@ -687,6 +687,12 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
             return Mtx.cond();
         }
 
+        public double Cond2Arnoldi() {
+            var Mtx = this.m_OpMtx;
+            return Mtx.condestArnoldi();
+        }
+
+
         /// <summary>
         /// Test if the matrix is symmetric positive definite
         /// </summary>
