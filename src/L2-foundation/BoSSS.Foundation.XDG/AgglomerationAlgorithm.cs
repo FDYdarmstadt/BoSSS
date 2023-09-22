@@ -1104,9 +1104,6 @@ namespace BoSSS.Foundation.XDG {
                 var AgglomerationPairs = new List<CellAgglomerator.AgglomerationPair>();
                 m_AggPairs = AgglomerationPairs;
 
-                //exchange the candidate information to be able to know about external/ghost cells (needed only once)
-                AggCandidates.MPIExchange(grdDat);
-
                 //exchange the source cell information to be able to know about external/ghost cells (needed only once)
                 BitArray AggSourcesWithExternalCell = new BitArray(grdDat.iLogicalCells.Count, false);
 
@@ -1122,7 +1119,10 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                if (edgeArea.GetLength(0) != NoOfEdges)
+                //exchange the candidate information to be able to know about external/ghost cells (needed only once)
+                AggCandidates.MPIExchange(grdDat);
+
+            if (edgeArea.GetLength(0) != NoOfEdges)
                     throw new ArgumentException();
 
                 double EmptyEdgeTreshold = 1.0e-10; // edges with a measure below or equal to this threshold are
@@ -1533,7 +1533,7 @@ namespace BoSSS.Foundation.XDG {
                 #endregion
 
                 if (ChainAgglomerationPairs.Count() > 0)
-                    m_AgglomerationChains.SaveToTextFileDebugUnsteady("aggChains", ".txt");
+                    m_AgglomerationChains.SaveToTextFileDebugUnsteady("aggChains_" + spId.ToString(), ".txt");
 
                 // If there is still cells waiting for agglomeration, this means that agg. failed
                 #region AgglomerationKatastrophe
@@ -1541,25 +1541,20 @@ namespace BoSSS.Foundation.XDG {
                     Console.WriteLine($"## Chain Agglomeration is failed on proc-{ilPSP.Environment.MPIEnv.MPI_Rank} ##");
                 }
 
-                // Save the data for debugging purposes
-                if (ChainCountMax > 0) {
-                    ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("agg_ChainAgglomerationPairs", ".txt");
-                    m_AggPairs.SaveToTextFileDebugUnsteady("agg_AggPairs", ".txt");
-                    AggPairsOnExtNeighborPairs.SaveToTextFileDebugUnsteady("agg_AggPairsOnExtNeighborPairs", ".txt");
+            m_AggPairs.SaveToTextFileDebugUnsteady("agg_AggPairs_" + spId.ToString(), ".txt");
+
+
+            // Save the data for debugging purposes
+            if (ChainCountMax > 0) {
+                    ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("agg_ChainAgglomerationPairs_" + spId.ToString(), ".txt");
+                    m_AggPairs.SaveToTextFileDebugUnsteady("agg_AggPairs_" + spId.ToString(), ".txt");
+                    AggPairsOnExtNeighborPairs.SaveToTextFileDebugUnsteady("agg_AggPairsOnExtNeighborPairs_ " + spId.ToString(), ".txt");
                 }
 
                 failCells.AddRange(CellsNeedChainAgglomeration);
 
                 if (failCells.Count.MPISum() > 0 || PlotAgglomeration) {
-                    string Tag;
-                    switch (spId.cntnt) {
-                        case 11111:
-                            Tag = "A"; break;
-                        case 11112:
-                            Tag = "B"; break;
-                        default:
-                            Tag = "C"; break;
-                    }
+                    string Tag = spId.ToString();
 
                     int[] pairIdentification = new int[Jup];
                     int[] pairColor = new int[Jup];
@@ -1587,7 +1582,10 @@ namespace BoSSS.Foundation.XDG {
                         } else {
                             int jAggTarget = (int)grdDat.Parallel.GetGlobalCellIndex(pair.jCellTarget);
                             pairIdentification[pair.jCellSource] = -jAggTarget;
-                        }
+                            Vector direction = new Vector(Dim);
+                            direction = grdDat.Cells.GetCenter(pair.jCellTarget) - grdDat.Cells.GetCenter(pair.jCellSource);
+                            aggDirection[pair.jCellSource] = direction;
+                    }
 
                         k++;
                     }
