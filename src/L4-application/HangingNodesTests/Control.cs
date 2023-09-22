@@ -13,7 +13,7 @@ using BoSSS.Platform.Utils.Geom;
 using BoSSS.Solution.Control;
 
 namespace HangingNodesTests {
-    public partial class Control {
+    partial class Control {
 
         /// <summary>
         /// Test discrete maximum principle for heat equation
