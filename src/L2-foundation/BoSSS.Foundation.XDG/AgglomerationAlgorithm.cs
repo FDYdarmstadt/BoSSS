@@ -208,11 +208,12 @@ namespace BoSSS.Foundation.XDG {
         public AgglomerationAlgorithm(LevelSetTracker __Tracker, SpeciesId __spId, int CutCellsQuadOrder,
             double AgglomerationThreshold, double[] oldTs__AgglomerationTreshold, double NewbornAndDecasedThreshold,
             bool AgglomerateNewborn, bool AgglomerateDeceased,
-            bool ExceptionOnFailedAgglomeration) {
+            bool ExceptionOnFailedAgglomeration, string _tag) {
 
 
             Tracker = __Tracker;
             spId = __spId;
+            Tag = _tag + "_" + spId.ToString();
             this.AgglomerateDeceased = AgglomerateDeceased;
             this.AgglomerateNewborn = AgglomerateNewborn;
             this.AgglomerationThreshold = AgglomerationThreshold;
@@ -263,7 +264,7 @@ namespace BoSSS.Foundation.XDG {
         double[] oldTs__AgglomerationTreshold;
         bool AgglomerateNewborn;
         bool AgglomerateDeceased;
-
+        string Tag;
 
         MultidimensionalArray CellVolumes;
 
@@ -850,7 +851,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                     if (failCells.Count.MPISum() > 0)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, ExceptionOnFailedAgglomeration, failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, "");
+                        PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, ExceptionOnFailedAgglomeration, failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, "Katastrophe");
                     else
                         PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, false, failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, "");
 
@@ -1089,7 +1090,7 @@ namespace BoSSS.Foundation.XDG {
         protected virtual void FindAgglomerationTargets_Mk2(
             List<int> AgglomSourceCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates
             ) {
-            //using (new FuncTrace()) {
+           using (new FuncTrace()) {
 
                 var Cell2Edge = grdDat.Cells.Cells2Edges;
                 int[,] Edge2Cell = grdDat.Edges.CellIndices;
@@ -1533,7 +1534,7 @@ namespace BoSSS.Foundation.XDG {
                 #endregion
 
                 if (ChainAgglomerationPairs.Count() > 0)
-                    m_AgglomerationChains.SaveToTextFileDebugUnsteady("aggChains_" + spId.ToString(), ".txt");
+                    m_AgglomerationChains.SaveToTextFileDebugUnsteady("aggChains_" + Tag, ".txt");
 
                 // If there is still cells waiting for agglomeration, this means that agg. failed
                 #region AgglomerationKatastrophe
@@ -1541,21 +1542,16 @@ namespace BoSSS.Foundation.XDG {
                     Console.WriteLine($"## Chain Agglomeration is failed on proc-{ilPSP.Environment.MPIEnv.MPI_Rank} ##");
                 }
 
-            m_AggPairs.SaveToTextFileDebugUnsteady("agg_AggPairs_" + spId.ToString(), ".txt");
-
-
-            // Save the data for debugging purposes
-            if (ChainCountMax > 0) {
-                    ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("agg_ChainAgglomerationPairs_" + spId.ToString(), ".txt");
-                    m_AggPairs.SaveToTextFileDebugUnsteady("agg_AggPairs_" + spId.ToString(), ".txt");
-                    AggPairsOnExtNeighborPairs.SaveToTextFileDebugUnsteady("agg_AggPairsOnExtNeighborPairs_ " + spId.ToString(), ".txt");
+                // Save the data for debugging purposes
+                if (ChainCountMax > 0) {
+                    ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("agg_ChainAgglomerationPairs_" + Tag, ".txt");
+                    m_AggPairs.SaveToTextFileDebugUnsteady("agg_AggPairs_" + Tag, ".txt");
+                    AggPairsOnExtNeighborPairs.SaveToTextFileDebugUnsteady("agg_AggPairsOnExtNeighborPairs_ " + Tag, ".txt");
                 }
 
                 failCells.AddRange(CellsNeedChainAgglomeration);
 
                 if (failCells.Count.MPISum() > 0 || PlotAgglomeration) {
-                    string Tag = spId.ToString();
-
                     int[] pairIdentification = new int[Jup];
                     int[] pairColor = new int[Jup];
                     Vector[] aggDirection = new Vector[Jup];
@@ -1591,7 +1587,7 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     if (failCells.Count.MPISum() > 0)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, ExceptionOnFailedAgglomeration, failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}_");
+                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, ExceptionOnFailedAgglomeration, failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}_Katastrophe");
                     else
                         PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, false, failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}_");
                 }
@@ -1610,7 +1606,7 @@ namespace BoSSS.Foundation.XDG {
                 // ================
                 this.AgglomerationPairs = AgglomerationPairs.Select(pair => (pair.jCellSource, pair.jCellTarget)).ToArray();
 
-           // }
+           }
         }
 
         private void PlotFail(MultidimensionalArray CellVolumes, MultidimensionalArray[] oldCellVolumes, List<int> AgglomCellsList, bool ExceptionOnFailedAgglomeration, List<int> failCells, BitArray AggCandidates, int[] pairIdentification, int[] pairColor, Vector[] aggDirection, double[] volFrac, string Tag = "") {
