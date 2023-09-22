@@ -614,7 +614,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                         allfields.Add(f);
                 }
 
-                Tecplot.Tecplot.PlotFields(allfields, Tag+"AgglomerationKatastrophe", 0.0, 0);
+                Tecplot.Tecplot.PlotFields(allfields, Tag+"Agglomeration", 0.0, 0);
 
                 //if (Tag.Length > 0) 
                 //    Tecplot.Tecplot.PlotFields(allfields, Tag + "AgglomerationKatastrophe_HighRes", 0.0, 2);

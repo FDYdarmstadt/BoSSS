@@ -153,18 +153,22 @@ namespace BoSSS.Foundation.XDG {
         /// </param>
         /// <param name="NewbornAndDecasedThreshold">
         /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
-        /// </param>        
+        /// </param>       
+        /// <param name="Tag">
+        /// A string value to pass tags for debugs (e.g. LevelSetAgg)
+        /// </param>     
         /// <returns></returns>
         public MultiphaseCellAgglomerator GetAgglomerator(
             SpeciesId[] Spc, int CutCellsQuadOrder,
             double __AgglomerationTreshold, 
             bool AgglomerateNewborn = false, bool AgglomerateDecased = false, bool ExceptionOnFailedAgglomeration = true, 
             double[] oldTs__AgglomerationTreshold = null,
-            double NewbornAndDecasedThreshold = 1.0e-6
+            double NewbornAndDecasedThreshold = 1.0e-6,
+            string Tag = null
             ) {
             
             return new MultiphaseCellAgglomerator(this, Spc, CutCellsQuadOrder,
-                __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold);
+                __AgglomerationTreshold, AgglomerateNewborn, AgglomerateDecased, ExceptionOnFailedAgglomeration, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold, Tag);
         }
 
 

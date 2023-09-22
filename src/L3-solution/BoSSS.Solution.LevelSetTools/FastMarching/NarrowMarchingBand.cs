@@ -1196,7 +1196,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                     //    whichSpc:Tracker.GetSpeciesId("A"));
                     XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = InterfaceOperator.GetMatrixBuilder(Tracker, map, IfParams, map);
 
-                    MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.1); //which throws an agglomeration error [Toprak]
+                    MultiphaseCellAgglomerator dummy = Tracker.GetAgglomerator(Tracker.SpeciesIdS.ToArray(), HMForder, 0.1, Tag: "NarrowMarchingBand"); //which throws an agglomeration error [Toprak]
                     //mtxBuilder.SpeciesOperatorCoefficients[Tracker.GetSpeciesId("A")].CellLengthScales = dummy.CellLengthScales[Tracker.GetSpeciesId("A")];
                     mtxBuilder.CellLengthScales.Add(Tracker.GetSpeciesId("A"), dummy.CellLengthScales[Tracker.GetSpeciesId("A")]);
 

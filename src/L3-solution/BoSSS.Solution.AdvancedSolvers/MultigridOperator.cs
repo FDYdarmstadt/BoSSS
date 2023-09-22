@@ -1210,8 +1210,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </summary>
         public BlockMsrMatrix OperatorMatrix {
             get {
-                Setup();
-               
+                Setup();               
                 return m_OperatorMatrix;
             }
         }

@@ -141,13 +141,14 @@ namespace BoSSS.Foundation.XDG {
         /// Volume fraction threshold at which a cut-cell counts as newborn, resp. deceased, see <paramref name="AgglomerateNewborn"/>, <paramref name="AgglomerateDecased"/>;
         /// this should typically be the same order which is used to evaluate the XDG operator matrix.
         /// </param>
+        /// <param name="Tag"> Tag to pass debug information </param>
         internal MultiphaseCellAgglomerator(
             LevelSetTracker lsTrk,
             SpeciesId[] Spc, int CutCellsQuadOrder,
             double __AgglomerationTreshold,
             bool AgglomerateNewborn = false, bool AgglomerateDecased = false, bool ExceptionOnFailedAgglomeration = true,
             double[] oldTs__AgglomerationTreshold = null,
-            double NewbornAndDecasedThreshold = 1.0e-6
+            double NewbornAndDecasedThreshold = 1.0e-6, string Tag = null
             ) {
             MPICollectiveWatchDog.Watch();
             if (__AgglomerationTreshold < 0.0 || __AgglomerationTreshold >= 1.0)
@@ -155,6 +156,9 @@ namespace BoSSS.Foundation.XDG {
 
             if (NewbornAndDecasedThreshold < 0.0 || NewbornAndDecasedThreshold >= 1.0)
                 throw new ArgumentOutOfRangeException();
+
+            if (Tag == null)
+                Tag = "";
 
             this.Tracker = lsTrk;
 
@@ -236,7 +240,7 @@ namespace BoSSS.Foundation.XDG {
                 var aggAlg = new AgglomerationAlgorithm(this.Tracker, spc, CutCellsQuadOrder,
                     AgglomerationThreshold, oldTs__AgglomerationTreshold, NewbornAndDecasedThreshold,
                     AgglomerateNewborn, AgglomerateDecased,
-                    ExceptionOnFailedAgglomeration
+                    ExceptionOnFailedAgglomeration, Tag
                     );
 
                 var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs);
@@ -254,11 +258,12 @@ namespace BoSSS.Foundation.XDG {
             string[] AggNumberWrite = new string[this.DictAgglomeration.Values.Count()];
                 for (int i = 0; i < this.DictAgglomeration.Values.Count(); i++) {
                 AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString()}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
-            }           
-            Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite));
+            }
+
+            Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite) + " in " + Tag);
 
 
-            AggNumberWrite.SaveToTextFileDebugUnsteady("AggNumberWrite", ".txt");
+            AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt");
             // compute metrics of AGGLOMERATED cut cells
             this.LengthScaleAgg();
         }
