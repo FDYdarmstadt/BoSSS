@@ -57,8 +57,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         [Test]
         public static void ParallelRotatingTilted3DTorus() {
-            var C = HardcodedControl.RotatingTiltedXRigid(1, 20, 3, true, AMRLevel: 1, TiltAngle: Math.PI / 4, SolverOn: true);
-            C.NoOfTimesteps = 100; //only 1 revolution around rotating axis
+            var C = HardcodedControl.RotatingTiltedXRigid(k: 1, Res: 20, SpaceDim: 3, AMR: true, AMRLevel: 1, TiltAngle: Math.PI / 4, SolverOn: true);
 
             using (var solver = new XNSE()) {
                 solver.Init(C);
