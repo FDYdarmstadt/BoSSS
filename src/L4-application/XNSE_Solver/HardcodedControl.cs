@@ -6425,7 +6425,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.savetodb = false;
             //C.DbPath = @"D:\trash_db";
             C.ProjectName = "XNSE/IBM_test";
-            C.ProjectDescription = "rotating torus";
+            C.ProjectDescription = "rotating" + shape.ToString();
             C.Tags.Add("rotating");
             C.Tags.Add("level set");
             C.Tags.Add(String.Format("{0}D", SpaceDim));
@@ -6454,7 +6454,7 @@ namespace BoSSS.Application.XNSE_Solver {
             double anglev = Re * muA / rhoA / d_hyd;
             double VelocityIn = Re * muA / rhoA / d_hyd;
             double[] pos = new double[SpaceDim];
-            double ts = 2 * Math.PI / anglev / NoOfTimeSteps; //   2 revolution around its rot. axis
+            double ts = 2 * Math.PI / anglev / NoOfTimeSteps; //   1 revolution around its rot. axis
             Console.WriteLine("Angular Velocity: {0}", anglev);
 
             C.PhysicalParameters.IncludeConvection = IncludeConvection;
@@ -6491,7 +6491,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_Period = 10;
             C.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
 
-            C.ImmediatePlotPeriod = 10;
+            C.ImmediatePlotPeriod = 1;
             C.SuperSampling = 0;
 
             //Set xRigid 
@@ -6552,7 +6552,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
             // Timestepping
             // ============
-            C.NoOfTimesteps = NoOfTimeSteps;
+            C.NoOfTimesteps = 1; //NoOfTimeSteps
             C.TimesteppingMode = AppControl._TimesteppingMode.Transient;
             C.TimeSteppingScheme = TimeSteppingScheme.ImplicitEuler; //BD4
             C.dtFixed = ts;
