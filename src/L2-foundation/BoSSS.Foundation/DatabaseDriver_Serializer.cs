@@ -10,10 +10,8 @@ using Newtonsoft.Json.Serialization;
 using System.Diagnostics;
 using System.IO.Compression;
 
-namespace BoSSS.Foundation.IO
-{
-    interface ISerializer
-    {
+namespace BoSSS.Foundation.IO {
+    interface ISerializer {
         string Name { get; }
 
         object Deserialize(Stream stream, Type objectType);
@@ -54,7 +52,6 @@ namespace BoSSS.Foundation.IO
             using (var s = new MemoryStream()) {
                 using (var writer = GetJsonWriter(s)) {
                     JsonFormatter.Serialize(writer, obj, objectType);
-
 
                     s.Seek(0, SeekOrigin.Begin);
                     s.CopyTo(_s);
@@ -126,14 +123,14 @@ namespace BoSSS.Foundation.IO
             using (MemoryStream memoryStream = new MemoryStream()) {
                 stream.CopyTo(memoryStream);
                 memoryStream.Seek(0, SeekOrigin.Begin);
-           
+
                 using (var reader = GetJsonReader(memoryStream)) {
 
 
 
 
                     object obj = jsonFormatter.Deserialize(reader, objectType);
-                
+
                     if (obj == null) {
                         throw new IOException("Deserializing failed; object is null");
                     }

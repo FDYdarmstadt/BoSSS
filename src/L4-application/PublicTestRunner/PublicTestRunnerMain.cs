@@ -171,8 +171,8 @@ namespace PublicTestRunner {
             get {
                 return new (Type type, int NoOfProcs)[] {
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_LargeMPItest), 8),
-                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
                         (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 3),
+                        (typeof(BoSSS.Application.XNSE_Solver.XNSE_Solver_MPItest), 4),
                         (typeof(BoSSS.Application.XdgPoisson3.XdgPoisson3Main), 4),
                         (typeof(MPITest.Program), 4),
                         //(typeof(HangingNodesTests.HangingNodesTestMain), 2), // fk, 29mar22: parallel runs executed directly in `release.yml` to allow serial-parallel comparison
@@ -734,7 +734,8 @@ namespace PublicTestRunner {
         }
 
         /// <summary>
-        /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE)
+        /// to avoid IO collisions for concurrent runs of the job manager on the same machine (e.g. DEBUG and RELEASE);
+        /// appending of the user name avoids "unauthorized access"-exceptions
         /// </summary>
         static Mutex IOsyncMutex = new Mutex(false, "_BoSSS_test_runner_IOmutex_" + System.Environment.UserName);
 
@@ -1444,6 +1445,9 @@ namespace PublicTestRunner {
                     using(new BlockTrace("RUNNING_TEST", ftr)) {
                         var tr = new TextRunner(a);
                         r = tr.Execute(args);
+                        //var summary = tr.Summary;
+                        //File.WriteAllText("a.txt", summary.ToString());
+                        //ftr.Info("Test summary: " + summary.ToString());
                     }
 
                     using(var bt = new BlockTrace("StdOut/StdErr reset", ftr)) {
@@ -1453,7 +1457,8 @@ namespace PublicTestRunner {
 
 
                         bt.Info("Waiting for all processors to catch up AFTER running test(s)...");
-                        csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                        //csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                        MPICollectiveWatchDog.WatchAtRelease(csMPI.Raw._COMM.WORLD, 10*60, true); // 10 Minute timeout for all processors to arrive.
                         bt.Info("All Here.");
 
                         
@@ -1694,12 +1699,18 @@ namespace PublicTestRunner {
                 // note: this seemingly useless try-catch is here since our test runner server (FDYGITRUNNER)
                 // seems to silently fail on all exceptions thrown after MPI init.
 
-                
-
+                int rank, size;
+                if (csMPI.Raw.Initialized()) {
+                    csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out rank);
+                    csMPI.Raw.Comm_Size(csMPI.Raw._COMM.WORLD, out size);
+                } else {
+                    rank = 0;
+                    size = 0;
+                }
 
                 Console.WriteLine("Got some exception: " + e);
 
-                using (var stw = new StreamWriter("Exception-" + DateTime.Now.ToString("MMMdd_HHmmss") + ".txt")) {
+                using (var stw = new StreamWriter("Exception-" + DateTime.Now.ToString("MMMdd_HHmmss") + "." + rank + "of" + size + ".txt")) {
                     stw.WriteLine("Got some exception: " + e);
                     stw.WriteLine(e.StackTrace);
                     stw.Flush();

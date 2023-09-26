@@ -1,5 +1,6 @@
 ﻿using BoSSS.Foundation;
 using BoSSS.Foundation.Grid;
+using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.IO;
 using BoSSS.Foundation.Quadrature;
@@ -181,6 +182,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             var parameterFields = Operator.InvokeParameterFactory(CurrentState.Fields);
             Parameters = new List<DGField>();
             // Console.WriteLine(parameterFields.Count()); [Toprak]: I noticed that this is unnecessary, therefore I made it comment.
+
             foreach (var f in parameterFields) {
                 this.Parameters.Add(f);
                 if(f != null) 
@@ -786,6 +788,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
             }
         }
+
     }
 
 

@@ -64,7 +64,7 @@ namespace BoSSS.Application.BoSSSpad {
             if (BoSSSshell.WorkflowMgm.AllJobs.ContainsKey(name)) {
                 throw new ArgumentException("Job with name '" + name + "' is already defined in the workflow management.");
             }
-            BoSSSshell.WorkflowMgm.AllJobs.Add(name, this);
+            BoSSSshell.WorkflowMgm.m_AllJobs.Add(name, this);
             if (string.IsNullOrWhiteSpace(BoSSSshell.WorkflowMgm.CurrentProject)) {
                 throw new NotSupportedException("Project management not initialized - set project name (try e.g. 'WorkflowMgm.CurrentProject = \"BlaBla\"').");
             }
@@ -354,7 +354,7 @@ namespace BoSSS.Application.BoSSSpad {
         private void FiddleControlFile(BatchProcessorClient bpc) {
             if(m_ctrl == null)
                 return;
-
+           
             // check the database 
             // ==================
             IDatabaseInfo ctrl_db = m_ctrl.GetDatabase();
@@ -1073,14 +1073,15 @@ namespace BoSSS.Application.BoSSSpad {
                 for (int i = 0; i < AllNewSessions.Length; i++) {
                     var sinf = AllNewSessions[i];
 
-                    string RelDeployPath = sinf.DeployPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).Last();
+                    if (sinf.DeployPath != null) {
+                        string RelDeployPath = sinf.DeployPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries).Last();
 
-
-                    foreach (var dep in m_Deployments) {
-                        if (dep.RelativeDeploymentDirectory == RelDeployPath) {
-                            // bingo
-                            dep.Session = sinf;
-                            AllNewSessions[i] = null;
+                        foreach (var dep in m_Deployments) {
+                            if (dep.RelativeDeploymentDirectory == RelDeployPath) {
+                                // bingo
+                                dep.Session = sinf;
+                                AllNewSessions[i] = null;
+                            }
                         }
                     }
                 }
@@ -1134,7 +1135,7 @@ namespace BoSSS.Application.BoSSSpad {
         /// <summary>
         /// Deletes any trace of previous calculations for this job.
         /// </summary>
-        public void DeleteOldDeploymentsAndSessions() {
+        public void DeleteOldDeploymentsAndSessions(bool deleteSessions = true) {
             foreach(var dep in AllDeployments) {
                 if(dep.Session != null) {
                     try {

@@ -3,6 +3,7 @@ using BoSSS.Solution.LoadBalancing;
 using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,10 +23,6 @@ namespace BoSSS.Application.XNSE_Solver.Loadbalancing {
         /// </summary>
         public XNSECellCostEstimator() {
             base.CellClassifier = new CutStateClassifier();
-
-
-
-            
         }
 
         

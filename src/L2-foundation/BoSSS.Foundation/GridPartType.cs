@@ -28,31 +28,38 @@ namespace BoSSS.Foundation.Grid {
         /// <summary>
         /// use <see cref="ParMETIS"/> (parallel partitioning)
         /// </summary>
-        ParMETIS,
+        ParMETIS = 1,
 
         /// <summary>
         /// Predefined partition.
         /// </summary>
-        Predefined,
+        Predefined = 2,
 
         /// <summary>
         /// Partitioning according to space-filling clusterHilbert curve considering Clusters, ...
         /// </summary>
-        clusterHilbert,
+        clusterHilbert = 3,
 
         /// <summary>
         /// Partitioning according to space-filling clusterHilbert curve, direct Costmapping ...
         /// </summary>
-        Hilbert,
+        Hilbert = 4,
 
         /// <summary>
         /// leave grid as it is; The first J/P cells will be on first processor, ...
         /// </summary>
-        none,
+        none = 0,
 
         /// <summary>
         /// Use <see cref="METIS"/> (serial partitioning)
         /// </summary>
-        METIS
+        METIS = 5,
+
+        /// <summary>
+        /// Mostly for debugging:
+        /// Using a partitioning stored in a field `MPIrank` in another session;
+        /// the session ID is drawn from the partitioning options string, see <see cref="IGrid.Redistribute"/>
+        /// </summary>
+        OtherSession = 6
     }
 }
