@@ -290,9 +290,18 @@ namespace ilPSP.Tracing {
             if(!Tracer.InstrumentationSwitch)
                 return 0;
 
+            
             // expensive: 
             switch (Tracer.MemoryInstrumentationLevel) {
                 case MemoryInstrumentationLevel.GcAndPrivateMemory:
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine("WARNING: `Tracer.MemoryInstrumentationLevel` set to " + MemoryInstrumentationLevel.GcAndPrivateMemory);
+                    Console.WriteLine("This gives the most accurate memory allocation report, but it is a");
+                    Console.WriteLine("very expensive instrumentation option, slows down the application by a factor of two to three!!!");
+                    Console.WriteLine("Should not be used for production runs, but in order to identify memory problems.");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+                    Console.WriteLine("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
                     var p = Process.GetCurrentProcess(); // process object must be fresh, otherwise old data
                     return p.WorkingSet64;
 

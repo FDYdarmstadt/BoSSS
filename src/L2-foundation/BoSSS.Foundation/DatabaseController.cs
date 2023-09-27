@@ -622,8 +622,8 @@ namespace BoSSS.Foundation.IO {
             = new Dictionary<Guid, GridInitializationContext>();
 
 
-        // Saving the timestep-initialization contexts should not be necessay anymore,
-        // since the DG basis is now a leightweigt object -- all expensive caching is done in 'ChefBasis',
+        // Saving the timestep-initialization contexts should not be necessary anymore,
+        // since the DG basis is now a lightweight object -- all expensive caching is done in 'ChefBasis',
         // see GridData.BasisData.
         // fk, 05sep16
         //private Dictionary<Guid, TimestepInitializationContext> m_timestepInitializationContexts
@@ -637,8 +637,9 @@ namespace BoSSS.Foundation.IO {
         /// <param name="gridData"></param>
         public void AddGridInitializationContext(IGridData gridData) {
             if (m_gridInitializationContexts.ContainsKey(gridData.GridID)) {
-                throw new ArgumentException(
-                    "An initialization context for the given grid already exists");
+                //throw new ArgumentException(
+                //    "An initialization context for the given grid already exists");
+                return;
             }
 
             m_gridInitializationContexts[gridData.GridID] = new GridInitializationContext(gridData);
@@ -650,8 +651,8 @@ namespace BoSSS.Foundation.IO {
         /// <param name="ts"></param>
         /// <returns></returns>
         public IInitializationContext GetInitializationContext(ITimestepInfo ts) {
-            // Saving the timestep-initialization contexts should not be necessay anymore,
-            // since the DG basis is now a leightweigt object -- all expensive caching is done in 'ChefBasis',
+            // Saving the timestep-initialization contexts should not be necessary anymore,
+            // since the DG basis is now a lightweight object -- all expensive caching is done in 'ChefBasis',
             // see GridData.BasisData.
             // fk, 05sep16
 

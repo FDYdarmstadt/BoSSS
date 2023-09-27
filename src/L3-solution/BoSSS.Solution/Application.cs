@@ -1329,11 +1329,13 @@ namespace BoSSS.Solution {
 
                 // kernel setup
                 //====================
-               {
-                    Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
+                {
+                    Grid.Redistribute(this.Database, Control.GridPartType, Control.GridPartOptions);
+                    //Grid.Redistribute(DatabaseDriver, Control.GridPartType, Control.GridPartOptions);
+
                     if (!passiveIo && !DatabaseDriver.GridExists(Grid.ID)) {
 
-                        DatabaseDriver.SaveGrid(this.Grid, this.m_Database);
+                        DatabaseDriver.SaveGrid(this.Grid, this.Database);
                         //DatabaseDriver.SaveGridIfUnique(ref _grid, out GridReplaced, this.m_Database);
                     }
 
@@ -1528,16 +1530,22 @@ namespace BoSSS.Solution {
         /// </summary>
         private IDatabaseInfo m_Database;
 
+        public IDatabaseInfo Database {
+            get {
+                if (m_Database == null) {
+                    m_Database = GetDatabase();
+                }
+                return m_Database;
+            }
+        }
+
+
         /// <summary>
         /// interface to the database driver
         /// </summary>
         public IDatabaseDriver DatabaseDriver {
             get {
-                if (m_Database == null) {
-                    return null;
-                } else {
-                    return m_Database.Controller.DBDriver;
-                }
+                return Database?.Controller?.DBDriver;
             }
         }
 
@@ -1547,8 +1555,6 @@ namespace BoSSS.Solution {
         /// </summary>
         protected virtual IGrid CreateOrLoadGrid() {
             using (var ht = new FuncTrace()) {
-
-                
 
 
                 if (this.Control != null) {

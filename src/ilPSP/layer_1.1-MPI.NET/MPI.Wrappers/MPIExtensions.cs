@@ -1353,6 +1353,23 @@ namespace MPI.Wrappers {
         /// <summary>
         /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
         /// </summary>
+        static public double[] MPIAllGatherv(this double[] send, MPI_Comm comm) {
+            int sz = send.Length;
+            int[] AllSz = sz.MPIAllGather(comm);
+            return MPIAllGatherv(send, AllSz, comm);
+        }
+
+        /// <summary>
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public double[] MPIAllGatherv(this double[] send) {
+            return MPIAllGatherv(send, csMPI.Raw._COMM.WORLD);
+        }
+
+
+        /// <summary>
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
         static public int[] MPIAllGatherv(this int[] send, int[] recvcounts) {
             return send.Int_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
         }
@@ -1400,6 +1417,58 @@ namespace MPI.Wrappers {
 
             return result;
         }
+
+        /// <summary>
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public double[] MPIAllGatherv(this double[] send, int[] recvcounts) {
+            return send.Double_MPIAllGatherv(recvcounts, csMPI.Raw._COMM.WORLD);
+        }
+
+        /// <summary>
+        /// Gathers all int[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
+        /// </summary>
+        static public double[] MPIAllGatherv(this double[] send, int[] recvcounts, MPI_Comm comm) {
+            return send.Double_MPIAllGatherv(recvcounts, comm);
+        }
+
+        /// <summary>
+        /// Gathers all send Arrays on all MPI-processes, at which every jth block of data is from the jth process.
+        /// </summary>
+        static private double[] Double_MPIAllGatherv(this double[] send, int[] m_recvcounts, MPI_Comm comm) {
+            csMPI.Raw.Comm_Size(comm, out int size);
+            int rcs = m_recvcounts.Sum();
+            if (rcs == 0)
+                return new double[0];
+
+
+            double[] result = new double[rcs];
+            if (send.Length == 0)
+                send = new double[1];
+
+            unsafe {
+                int* displs = stackalloc int[size];
+                for (int i = 1; i < size; i++) {
+                    displs[i] = displs[i - 1] + m_recvcounts[i - 1];
+                }
+                fixed (double* pResult = result, pSend = send) {
+                    fixed (int* pRcvcounts = m_recvcounts) {
+                        csMPI.Raw.Allgatherv(
+                            (IntPtr)pSend,
+                            send.Length,
+                            csMPI.Raw._DATATYPE.DOUBLE,
+                            (IntPtr)pResult,
+                            (IntPtr)pRcvcounts,
+                            (IntPtr)displs,
+                            csMPI.Raw._DATATYPE.DOUBLE,
+                            comm);
+                    }
+                }
+            }
+
+            return result;
+        }
+
 
         /// <summary>
         /// Gathers all byte[] send Arrays on all MPI-processes, at which every j-th block of data is from the j-th process.
@@ -1617,6 +1686,19 @@ namespace MPI.Wrappers {
         /// MPI-process with rank <paramref name="root"/> gathers this int[] of all MPI-processes in the
         /// <paramref name="comm"/>-communicator with variable length. The length of the gathered int[] is specified by <paramref name="recvcount"/>
         /// </summary>
+        /// <param name="recvcounts">
+        /// Significant only at <paramref name="root"/> process. 
+        /// number of items to receive from each process in the communicator <paramref name="comm"/>;
+        /// </param>
+        /// <param name="root">
+        /// rank of receiving process
+        /// </param>
+        /// <param name="comm">
+        /// communicator
+        /// </param>
+        /// <param name="send">
+        /// data to send at each process.
+        /// </param>
         static public int[] MPIGatherv(this int[] send, int[] recvcounts, int root, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
             csMPI.Raw.Comm_Rank(comm, out int rank);

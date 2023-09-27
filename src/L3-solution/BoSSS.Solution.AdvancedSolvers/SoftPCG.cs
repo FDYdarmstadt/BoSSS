@@ -233,41 +233,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if(!M.ColPartition.EqualsPartition(MgMap))
                         throw new ArgumentException("Column partitioning mismatch.");
 
-                    //this.m_Matrix = M;
-                    /*
-                    int n = m_Matrix.RowPartitioning.LocalLength;
-                    if(n > 50000) {
-                        var _Matrix = new ilPSP.LinSolvers.monkey.CPU.RefMatrix(M.ToMsrMatrix());
-
-                        double[] xTest = new double[n];
-                        double[] bTest = new double[n];
-                        Random r = new Random(123);
-                        for(int i = 0; i < n; i++) {
-                            xTest[i] = r.NextDouble();
-                            bTest[i] = r.NextDouble();
-                        }
-
-
-                        double[] b1 = bTest.CloneAs();
-                        double[] x1 = bTest.CloneAs();
-                        Stopwatch monkey = new Stopwatch();
-                        monkey.Start();
-                        for (int i = 0; i < 100; i++)
-                            _Matrix.SpMV(1.0, x1, -0.1, b1);
-                        monkey.Stop();
-
-                        double[] b2 = bTest.CloneAs();
-                        double[] x2 = bTest.CloneAs();
-                        Stopwatch block = new Stopwatch();
-                        block.Start();
-                        for (int i = 0; i < 100; i++)
-                            m_Matrix.SpMV(1.0, x1, -0.1, b1);
-                        block.Stop();
-
-                        Console.WriteLine("SPMV monkey:    " + monkey.Elapsed.TotalSeconds);
-                        Console.WriteLine("SPMV block MSR: " + block.Elapsed.TotalSeconds);
-                    }
-                    */
+                    
                     if(Precond != null)
                         Precond.Init(op);
                 }
@@ -299,8 +265,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void ResetStat() {
             this.m_Converged = false;
             this.NoOfIterations = 0;
-            if(this.Precond != null)
-                this.Precond.ResetStat();
+            this?.Precond.ResetStat();
         }
 
         /// <summary>
@@ -317,7 +282,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
         public void Dispose() {
-            Precond.Dispose();
+            Precond?.Dispose();
+            m_MgOp = null;  // setting this to null ensures that Init(...) will actually initialize the solvers
         }
 
         public long UsedMemory() {

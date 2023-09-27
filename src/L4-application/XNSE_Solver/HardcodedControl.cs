@@ -655,14 +655,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
-            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
-                NoOfMultigridLevels = 4,
-                ConvergenceCriterion = 1E-8,
-                MaxSolverIterations = 200,
-                //MaxKrylovDim = 50,
-                TargetBlockSize = 10000,
-                //verbose = true
-            };
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 1E-6;
             C.NonLinearSolver.MaxSolverIterations = 6;
@@ -1094,14 +1087,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
-            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
-                NoOfMultigridLevels = 4,
-                ConvergenceCriterion = 1E-8,
-                MaxSolverIterations = 200,
-                //MaxKrylovDim = 50,
-                TargetBlockSize = 10000,
-                //verbose = true
-            };
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 1E-3;
             C.NonLinearSolver.MaxSolverIterations = 5;
@@ -1588,14 +1574,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
 
             C.Timestepper_LevelSetHandling = LevelSetHandling.None;
-            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
-                NoOfMultigridLevels = 4,
-                ConvergenceCriterion = 1E-8,
-                MaxSolverIterations = 200,
-                //MaxKrylovDim = 50,
-                TargetBlockSize = 10000,
-                //verbose = true
-            };
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             C.NonLinearSolver.ConvergenceCriterion = 1.1123E-6;
             C.NonLinearSolver.MaxSolverIterations = 5;
@@ -2074,12 +2053,12 @@ namespace BoSSS.Application.XNSE_Solver {
             C.AddBoundaryValue("wall", "VelocityY", VelocityYex);
 
             //C.LinearSolver = LinearSolverCode.classic_pardiso.GetConfig();
-            C.LinearSolver = new PmgConfig() {
-                ConvergenceCriterion = 1e-9
-            };
-            //C.LinearSolver = new OrthoMGSchwarzConfig() {
+            //C.LinearSolver = new PmgConfig() {
             //    ConvergenceCriterion = 1e-9
             //};
+            C.LinearSolver = new OrthoMGSchwarzConfig() {
+                ConvergenceCriterion = 1e-9
+            };
 
 
             C.LevelSet_ConvergenceCriterion = 1e-6;
@@ -4577,14 +4556,7 @@ namespace BoSSS.Application.XNSE_Solver {
             //C.VelocityBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             //C.PressureBlockPrecondMode = MultigridOperator.Mode.IdMass_DropIndefinite;
             C.UseSchurBlockPrec = true;
-            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
-                NoOfMultigridLevels = 5,
-                ConvergenceCriterion = 1E-8,
-                MaxSolverIterations = 30,
-                //MaxKrylovDim = 50,
-                TargetBlockSize = 10000,
-                //verbose = true
-            };
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
             C.NonLinearSolver.verbose = true;
             C.NonLinearSolver.MaxSolverIterations = 100;
             C.NonLinearSolver.ConvergenceCriterion = 1e-8;
@@ -6305,14 +6277,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.Option_LevelSetEvolution2 = LevelSetEvolution.Prescribed;
             C.Option_LevelSetEvolution = LevelSetEvolution.None;
             C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.LinearSolver = new Solution.AdvancedSolvers.OrthoMGSchwarzConfig() {
-                NoOfMultigridLevels = 5,
-                ConvergenceCriterion = 1E-8,
-                MaxSolverIterations = 100,
-                //MaxKrylovDim = 30,
-                TargetBlockSize = 10000,
-                //verbose = true
-            };
+            C.LinearSolver = LinearSolverCode.exp_Kcycle_schwarz.GetConfig();
             C.NonLinearSolver.SolverCode = NonLinearSolverCode.Picard;
             C.NonLinearSolver.MaxSolverIterations = 50;
             C.NonLinearSolver.verbose = true;

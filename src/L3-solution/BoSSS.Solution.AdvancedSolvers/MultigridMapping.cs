@@ -467,6 +467,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return GlobalUniqueIndex(ifld, jCell, n_agg);
         }
 
+        public long GetCellI0(int jCell) {
+            if (jCell < this.LocalNoOfBlocks) {
+                return this.GetBlockI0(jCell + this.FirstBlock);
+            } else {
+                if (this.GetLength(jCell) > 0)
+                    return GlobalUniqueIndex(0, jCell, 0);
+                else
+                    return GlobalUniqueIndex(0, jCell - 1, 0);
+            }
+        }
+
         public long GlobalUniqueIndex(int ifld, int jCell, int n) {
             Debug.Assert(ifld >= 0 && ifld < this.m_DgDegree.Length);
             Debug.Assert(jCell >= 0 && jCell < (this.AggGrid.iLogicalCells.NoOfLocalUpdatedCells + this.AggGrid.iLogicalCells.NoOfExternalCells));        

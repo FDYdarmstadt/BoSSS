@@ -20,7 +20,7 @@ namespace ZwoLevelSetSolver.SolidPhase {
             get { return TermActivationFlags.UxGradV; } 
         }
 
-        public IList<string> ArgumentOrdering => new string[] { BoSSS.Solution.NSECommon.VariableNames.Pressure};
+        public IList<string> ArgumentOrdering => new string[] { BoSSS.Solution.NSECommon.VariableNames.Pressure };
 
         public IList<string> ParameterOrdering => new string[0];
 
