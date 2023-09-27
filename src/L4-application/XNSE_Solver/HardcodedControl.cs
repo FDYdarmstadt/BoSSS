@@ -6408,7 +6408,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         public static XNSE_Control RotatingTilted3DTorus() {
             var C = RotatingTiltedXRigid(1, 20, 3, true, AMRLevel: 2, TiltAngle: Math.PI/6, SolverOn: true);
-            C.PlotAgglomeration = true;
+            C.NoOfTimesteps = 100;
             return C;
         }
 
@@ -6491,7 +6491,7 @@ namespace BoSSS.Application.XNSE_Solver {
             C.DynamicLoadBalancing_Period = 10;
             C.DynamicLoadBalancing_ImbalanceThreshold = 0.1;
 
-            C.ImmediatePlotPeriod = 1;
+            C.ImmediatePlotPeriod = 10;
             C.SuperSampling = 0;
 
             //Set xRigid 
