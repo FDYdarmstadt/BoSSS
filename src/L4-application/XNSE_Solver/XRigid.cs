@@ -27,7 +27,7 @@ namespace BoSSS.Application.XNSE_Solver {
         [DataMember]
         private double[] m_pos; //center of mass
         [DataMember]
-        private double m_anglevelocity = -1.0;
+        private double m_angleVelocity = -1.0;
         [DataMember]
         private double m_partRadius = -1.0;
         [DataMember]
@@ -65,9 +65,9 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// TODO: Move this to SetRigidLevelSet and EvolveRigidLevelSet
         /// </summary>
-        public void SetParameters(double[] pos, double anglevelocity, double majorRadius, int SpaceDim, double minorRadius = 0.0) {
+        public void SetParameters(double[] pos, double angleVelocity, double majorRadius, int SpaceDim, double minorRadius = 0.0) {
             m_pos = pos;
-            m_anglevelocity = anglevelocity;
+            m_angleVelocity = angleVelocity;
             m_partRadius = majorRadius;
             m_SpaceDim = SpaceDim;
             m_ringRadius = minorRadius;
@@ -144,7 +144,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         private void DefineSphere() {
             var pos = m_pos;
-            var anglevelocity = m_anglevelocity;
+            var anglevelocity = m_angleVelocity;
             var SpaceDim = m_SpaceDim;
             var particleRad = m_partRadius;
             var RotationCenter = m_RotationCenter;
@@ -200,7 +200,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         private void DefineCube() {
             var pos = m_pos;
-            var anglevelocity = m_anglevelocity;
+            var anglevelocity = m_angleVelocity;
             var SpaceDim = m_SpaceDim;
             var particleRad = m_partRadius;
             var tiltVector = m_tiltVector;
@@ -295,7 +295,7 @@ namespace BoSSS.Application.XNSE_Solver {
 
         private void DefineTorus() {
             var pos = m_pos;
-            var anglevelocity = m_anglevelocity;
+            var anglevelocity = m_angleVelocity;
             var SpaceDim = m_SpaceDim;
             var particleRad = m_partRadius;
             var ringRad = m_ringRadius;
@@ -362,7 +362,7 @@ namespace BoSSS.Application.XNSE_Solver {
         private void SetVelocityAtIB() {
             var pos = m_pos;
             var rotCenter = m_RotationCenter;
-            var anglevelocity = m_anglevelocity;
+            var anglevelocity = m_angleVelocity;
             var SpaceDim = m_SpaceDim;
             var tiltVector = m_tiltVector;
             var tiltDegree = m_tiltDegree;

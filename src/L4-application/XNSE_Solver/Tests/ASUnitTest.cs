@@ -1200,11 +1200,70 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
         /// <see cref="BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Something_Unsteady"/>
         /// </summary>
         [Test]
-        public static void ScalingRotCubeTests2D([Values(1, 2, 3)] int deg,  [Values(0.1, 0.2, 0.3)] double AggTreshold  ) {
-            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D --result=blabla.xml
+        public static void ScalingRotCubeTests2D_p1([Values(0.1, 0.2, 0.3)] double AggTreshold  ) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D_p1 --result=blabla.xml
+
+            int deg = 1;
             ScalingRotCubeTest(deg, 2, AggTreshold);
         }
 
+        [Test]
+        public static void ScalingRotCubeTests2D_p2([Values(0.1, 0.2, 0.3)] double AggTreshold) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D_p2 --result=blabla.xml
+
+            int deg = 2;
+            ScalingRotCubeTest(deg, 2, AggTreshold);
+        }
+
+        [Test]
+        public static void ScalingRotCubeTests2D_p3([Values(0.1, 0.2, 0.3)] double AggTreshold) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotCubeTests2D_p3 --result=blabla.xml
+
+            int deg = 3;
+            ScalingRotCubeTest(deg, 2, AggTreshold);
+        }
+
+        public static void ScalingRotTorusTests2D_p1([Values(0.1, 0.2, 0.3)] double AggTreshold) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotTorusTests2D_p1 --result=blabla.xml
+
+            int deg = 1;
+            ScalingRotTorusTest(deg, 2, AggTreshold);
+        }
+
+        public static void ScalingRotTorusTests2D_p2([Values(0.1, 0.2, 0.3)] double AggTreshold) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotTorusTests2D_p2 --result=blabla.xml
+
+            int deg = 2;
+            ScalingRotTorusTest(deg, 2, AggTreshold);
+        }
+
+        public static void ScalingRotTorusTests2D_p3([Values(0.1, 0.2, 0.3)] double AggTreshold) {
+            // PublicTestRunner.exe nunit3 'XNSE_Solver' --test=BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingRotTorusTests2D_p3 --result=blabla.xml
+
+            int deg = 3;
+            ScalingRotTorusTest(deg, 2, AggTreshold);
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSE_Solver.HardcodedControl.RotatingTiltedXRigid"/>
+        /// </summary>
+        public static void ScalingRotTorusTest(int deg = 1, int spatialDimension = 2, double AgglomerationTreshold = 0.1) {
+            Console.WriteLine("Agg Threshold is set to " + AgglomerationTreshold);
+
+            var Controls = new List<XNSE_Control>();
+
+            foreach (var Res in new[] { 16, 32, 64 }) {
+                var C = HardcodedControl.RotatingTiltedXRigid(k: deg, Res: Res , SpaceDim: spatialDimension, AMR: true, AMRLevel:1, shape: Shape.Torus, TiltAngle: 0.0, RotAxis: "z");
+                C.Timestepper_LevelSetHandling = LevelSetHandling.None;
+                C.PhysicalParameters.IncludeConvection = true;
+                C.NonLinearSolver.ConvergenceCriterion = 10e-6;
+                C.NoOfTimesteps = 1;
+                C.AgglomerationThreshold = AgglomerationTreshold;
+                Controls.Add(C);
+            }
+
+            ConditionNumberScalingTest.Perform(Controls, true, $"Scaling{spatialDimension}DRotTorus-p{deg}-Agg{AgglomerationTreshold}");
+        }
 
         /// <summary>
         /// <see cref="BoSSS.Application.XNSE_Solver.HardcodedControl.Rotating_Something_Unsteady"/>
@@ -1216,7 +1275,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
 
             foreach (var Res in new[] { 2, 4, 8, 16}) {
                 var C = HardcodedControl.Rotating_Something_Unsteady(k: deg, Res: Res * 5, SpaceDim: spatialDimension, useAMR: true, useLoadBal: true, Gshape: Shape.Cube);
-
                 C.PhysicalParameters.IncludeConvection = true;
                 C.NonLinearSolver.ConvergenceCriterion = 10e-6;
                 C.NoOfTimesteps = 3;
@@ -1224,7 +1282,7 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
                 Controls.Add(C);
             }
 
-            ConditionNumberScalingTest.Perform(Controls, true, $"Scaling{spatialDimension}DRotTorus-p{deg}-Agg{AgglomerationTreshold}" );
+            ConditionNumberScalingTest.Perform(Controls, true, $"Scaling{spatialDimension}DRotCube-p{deg}-Agg{AgglomerationTreshold}" );
         }
 
 #if !DEBUG
