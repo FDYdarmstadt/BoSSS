@@ -938,8 +938,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         updateAgglom = true;
                     } else {
                         if (m_CurrentAgglomeration == null)
-                            Console.WriteLine("throw new ApplicationException()");
-                            // //throw new ApplicationException();
+                            Console.WriteLine("throw new ApplicationException();");
+                            //throw new ApplicationException();
                     }
                     // ensure, that, when splitting is used we update the agglomerator in the very first iteration.
                 }
@@ -1676,7 +1676,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                         m_ResLogger.NextIteration(true);
                 }
 
-                bool calculateCondNumbers = false;
+                bool calculateCondNumbers = true;
                 
                 if (calculateCondNumbers) { 
                     var table = base.OperatorAnalysis(plotStencilCondNumViz: false, calculateStencils: false, calculateMassMatrix: true);
