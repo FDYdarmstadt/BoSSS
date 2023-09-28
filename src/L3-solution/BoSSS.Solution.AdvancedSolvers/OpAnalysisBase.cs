@@ -922,6 +922,39 @@ namespace BoSSS.Solution.AdvancedSolvers.Testing {
 
         public bool CalculateStencils { get => calculateStencils; set => calculateStencils = value; }
 
+
+        /// <summary>
+        /// Various condition numbers w.r.t. different <see cref="MultigridOperator.Mode"/> are preconditioned, organized in a dictionary to create a regression over multiple meshes
+        /// </summary>
+        public IDictionary<string, double> CompareMultiGridModes() {
+            using (new FuncTrace()) {
+                var Ret = new Dictionary<string, double>();
+
+                List<MultigridOperator.Mode> Modes = new List<MultigridOperator.Mode> {
+                    MultigridOperator.Mode.Eye,
+                    MultigridOperator.Mode.IdMass,
+                    MultigridOperator.Mode.LeftInverse_Mass,
+                    MultigridOperator.Mode.SymPart_DiagBlockEquilib,
+                    MultigridOperator.Mode.SymPart_DiagBlockEquilib_DropIndefinite
+                };
+
+                double CondNo = this.CondNumMatlab(); // matlab seems to be more reliable
+                Ret.Add("DefaultOpCondNo-" + VarNames, CondNo);
+
+                foreach(var mode in Modes) {
+
+                var Op =  GetAlternativeMgOp(mode);
+                    if (Op != null) {
+                        double modeCondNo = Op.OperatorMatrix.condest();
+                        Console.WriteLine(mode.ToString() + "CondNo-" + CondNo);
+                        Ret.Add(mode.ToString() + "CondNo-" + VarNames, CondNo);
+                    }
+                }
+
+                return Ret;
+            }
+        }
+
         /// <summary>
         /// Various condition numbers, organized in a dictionary to create a regression over multiple meshes
         /// </summary>
