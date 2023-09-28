@@ -262,6 +262,134 @@ namespace BoSSS.Foundation.XDG {
 
 
 
+        /// <summary>
+        /// The cell agglomerator v2
+        /// </summary>
+        /// <param name="g">grid</param>
+        /// <param name="AgglomerationPairs">
+        /// <see cref="AgglomerationPair"/>)
+        /// </param>
+        /// <remarks>
+        /// The cell agglomerator checks possible problems in the agglomeration pairs coming from <see cref="AgglomerationAlgorithm"/>.
+        /// </remarks>
+        public CellAgglomerator(GridData g, List<AgglomerationPair> AgglomerationPairs) {
+            using (new FuncTrace()) {
+
+                // check and init
+                // ==============
+
+                MPICollectiveWatchDog.Watch();
+                this.GridDat = g;
+                int J = g.Cells.NoOfLocalUpdatedCells;
+                int JE = g.Cells.Count;
+                int mpiRank = g.MpiRank;
+                int InterProcessAgglomeration = 0; // used as boolean
+                // check cell index validity
+                {
+                    BitArray sourceUnique = new BitArray(J);
+                    foreach (var AggPair in AgglomerationPairs) {
+                        int jAggTarget = AggPair.jCellTarget;
+                        int jAggSource = AggPair.jCellSource;
+
+                        if (jAggSource < 0 || jAggSource >= J)
+                            throw new IndexOutOfRangeException($"Agglomeration source cell (cell index {jAggSource}) must be in the range of locally updated cells.");
+                        if (jAggTarget < 0 || jAggTarget >= JE)
+                            throw new IndexOutOfRangeException($"Agglomeration target (cell index {jAggTarget}) is not a valid cell index.");
+                        if (jAggTarget >= J)
+                            InterProcessAgglomeration += 1;
+
+                        if (sourceUnique[jAggSource])
+                            throw new ArgumentException("Illegal agglomeration graph: Local cell " + jAggSource + " is occurring in at least two agglomeration pairs as source.");
+                        sourceUnique[jAggSource] = true;
+                    }
+                }
+
+                // Collect the interprocess agg. pairs directed as this rank
+                InterProcessAgglomeration = InterProcessAgglomeration.MPISum();
+
+                //if (InterProcessAgglomeration > 0) {
+                //    List<AgglomerationPair> NeighborPairs = new List<AgglomerationPair>();
+                //    AgglomerationAlgorithm.DoAggPairsMPIexchangeToTheirNeighbors(AgglomerationPairs.ToList(), ref NeighborPairs);
+                //    AgglomerationPairs = (List<AgglomerationPair>)AgglomerationPairs.Union(NeighborPairs.Where(pair => pair.OwnerRank4Target == mpiRank));
+                //}
+
+
+                // mark and check all edges which are used for agglomeration
+                // =========================================================
+
+                BitArray AgglomerationEdgesBitMask = new BitArray(g.Edges.Count);
+                int[,] E2C = g.Edges.CellIndices;
+                int[][] C2E = g.Cells.Cells2Edges;
+                {
+                    foreach (var pair in AgglomerationPairs) {
+                        int j1 = pair.jCellSource;
+                        int j2 = pair.jCellTarget;
+
+                        Debug.Assert(j1 < J || j2 < J);
+                        if (j1 >= J) {
+                            int a = j2;
+                            j2 = j1;
+                            j1 = a;
+                        }
+
+                        try {
+                            int i = C2E[j1].Single(delegate (int k) {
+                                int iEdge = Math.Abs(k) - 1;
+                                //                          => E2C[Math.Abs(k) - 1, 0] == jAggSrc &&
+                                if (k > 0)
+                                    return (E2C[iEdge, 0] == j1 && E2C[iEdge, 1] == j2);
+                                else if (k < 0)
+                                    return (E2C[iEdge, 1] == j1 && E2C[iEdge, 0] == j2);
+                                else
+                                    throw new ApplicationException();
+
+                            });
+
+                            AgglomerationEdgesBitMask[Math.Abs(i) - 1] = true;
+                        } catch (InvalidOperationException) {
+                            throw new ArgumentException("Found agglomeration pair which are not neighbor cells.");
+                        }
+                    }
+                }
+
+                int MaxLevel = AgglomerationPairs.Count() > 0 ? AgglomerationPairs.Select(agg => agg.AgglomerationLevel).Max() : 0;
+                MaxLevel = MPIExtensions.MPIMax(MaxLevel);
+                // Save the agglomeration info
+                // ============================
+                {
+                    var ai = new CellAgglomerator.AgglomerationInfo();
+                    this.AggInfo = ai;
+                    ai.MaxLevel = MaxLevel;
+
+                    BitArray SourceCellBitMask = new BitArray(J);
+                    foreach (var pair in AgglomerationPairs) {
+                        int jAggSrc = pair.jCellSource;
+                        if (jAggSrc < J && jAggSrc >= 0)
+                            SourceCellBitMask[jAggSrc] = true;
+
+
+                    }
+                    ai.SourceCells = new CellMask(g, SourceCellBitMask);
+
+                    BitArray SourceCellsEdgesBitMask = new BitArray(g.Edges.Count);
+                    foreach (int jCell in ai.SourceCells.ItemEnum) {
+                        foreach (int i in C2E[jCell]) {
+                            int iEdg = Math.Abs(i) - 1;
+                            SourceCellsEdgesBitMask[iEdg] = true;
+                        }
+                    }
+                    ai.SourceCellsEdges = new EdgeMask(g, SourceCellsEdgesBitMask);
+
+                    ai.InterProcessAgglomeration = InterProcessAgglomeration != 0;
+
+                    ai.AgglomerationEdges = new EdgeMask(g, AgglomerationEdgesBitMask);
+                    ai.AgglomerationPairs = AgglomerationPairs.ToArray();
+
+                    // at this point, because jAggSource must be local, the agglomerations are unique over all MPI processors.
+                    this.TotalNumberOfAgglomerations = AgglomerationPairs.Count().MPISum();
+                }
+            }
+        }
 
 
         /// <summary>

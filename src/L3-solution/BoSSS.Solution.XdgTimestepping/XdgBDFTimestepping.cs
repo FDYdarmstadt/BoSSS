@@ -1676,9 +1676,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                         m_ResLogger.NextIteration(true);
                 }
 
-                bool calculateCondNumbers = true;
+                bool calculateCondNumbers = false;
                 
-                if (calculateCondNumbers) { 
+                if (calculateCondNumbers) {
                     var table = base.OperatorAnalysis(plotStencilCondNumViz: false, calculateStencils: false, calculateMassMatrix: true);
                     table.SaveToTextFileDebugUnsteady("CondEst", ".txt");
                 }
