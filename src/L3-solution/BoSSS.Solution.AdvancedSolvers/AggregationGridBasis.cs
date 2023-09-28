@@ -1079,8 +1079,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return m_CompositeBasis[jAgg];
         }
 
-
-        
+        /// <summary>
+        /// Creates composite basis
+        /// </summary>
         MultidimensionalArray CA(int _jAgg) {
             AggregationGridData ag = this.AggGrid;
             var compCell = ag.iLogicalCells.AggregateCellToParts[_jAgg];
