@@ -243,7 +243,7 @@ namespace BoSSS.Foundation.XDG {
                     ExceptionOnFailedAgglomeration, Tag
                     );
 
-                var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs);
+                var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairsWithLevels);
 
                 //int myRank = lsTrk.GridDat.MpiRank;
                 //foreach(var p in m_agglomeration.AggInfo.AgglomerationPairs) {
