@@ -6405,10 +6405,19 @@ namespace BoSSS.Application.XNSE_Solver {
             return C;
         }
 
+        public static XNSE_Control RotatingTilted3DTorusAgg0() {
+            // throws an error due to the SymPart_DiagBlockEquilib_DropIndefinite
+            var C = RotatingTiltedXRigid(2, 16, 3, true, AMRLevel: 1, TiltAngle: Math.PI / 4, SolverOn: false);
+            C.AgglomerationThreshold = 0.0;
+            C.NoOfTimesteps = 100;
+            return C;
+        }
 
         public static XNSE_Control RotatingTilted3DTorus() {
+            // throws an error due to the SymPart_DiagBlockEquilib_DropIndefinite
             var C = RotatingTiltedXRigid(1, 20, 3, true, AMRLevel: 2, TiltAngle: Math.PI/6, SolverOn: true);
             C.NoOfTimesteps = 100;
+            C.TimeSteppingScheme = TimeSteppingScheme.ExplicitEuler;
             return C;
         }
 
