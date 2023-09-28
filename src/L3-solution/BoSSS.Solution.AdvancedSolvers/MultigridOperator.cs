@@ -573,9 +573,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// deferred initialization of matrices; only executed if an actual matrix is requested.
         /// </summary>
         void Setup() {
+            if (setupdone)
+                return;
             using (var tr = new FuncTrace()) {
-                if (setupdone)
-                    return;
                 setupdone = true;
 
                 using(new BlockTrace("FinerLevel", tr)) {

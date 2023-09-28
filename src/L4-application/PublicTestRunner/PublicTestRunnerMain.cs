@@ -1441,7 +1441,7 @@ namespace PublicTestRunner {
                     Console.WriteLine("All Here.");
 
                     int r;
-                    using(new BlockTrace("RUNNING_TEST", ftr)) {
+                    using(var bt = new BlockTrace("RUNNING_TEST", ftr)) {
                         var tr = new TextRunner(a);
                         r = tr.Execute(args);
                     }
@@ -1450,7 +1450,7 @@ namespace PublicTestRunner {
                         Console.SetOut(new StreamWriter(Console.OpenStandardOutput()));
                         Console.SetError(new StreamWriter(Console.OpenStandardError()));
 
-
+                        
 
                         bt.Info("Waiting for all processors to catch up AFTER running test(s)...");
                         csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);

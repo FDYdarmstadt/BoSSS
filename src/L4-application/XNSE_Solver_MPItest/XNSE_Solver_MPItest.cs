@@ -65,6 +65,8 @@ namespace BoSSS.Application.XNSE_Solver {
             }
         }
 
+
+        
         [Test]
         static public void RotCube_GetSpeciesIDError() {
             // Tritt nur mit 4 cores auf !!!
