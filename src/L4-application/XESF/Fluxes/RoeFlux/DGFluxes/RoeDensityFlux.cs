@@ -31,11 +31,11 @@ using System.Diagnostics;
 
 namespace XESF.Fluxes {
     /* INFO
-            Implementation Guide Luine => s. Toro p.376
+            Implementation Guide Line => s. Toro p.376
             ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             See p.376:
             "   Before solving these equations we note that in the purely one–dimensional case
-                v˜ = w˜ = 0, α˜3 = α˜4 = 0 (wavestrength), K˜ (3) = K˜ (4) = 0 (11.67)           "
+                v˜ = w˜ = 0, α˜3 = α˜4 = 0 (wave strength), K˜ (3) = K˜ (4) = 0 (11.67)           "
             ++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
       */
     
@@ -72,21 +72,7 @@ namespace XESF.Fluxes {
             for(int i = 0; i < D + 2; i++) {
                 k_j += V0[i] * eigenVals[i] * result[i];
             }
-
-            //OLD stuff
-            //(MultidimensionalArray V0_inv_old, MultidimensionalArray eigenVals_old,MultidimensionalArray V0_old)= OldSetup(normal, Uin, Uout, D); 
-            //var prod = V0_old * eigenVals_old * V0_inv_old;
-            //var k_0 = prod.MatVecMul(1.0, Udiff);
-            //if(Math.Abs(k_0[0]-k_j)>1e-15) {
-            //    Console.WriteLine("*************** Fehler im Code: Density Flux ***************");
-            //    var result_old=V0_inv_old.MatVecMul(1.0, Udiff);
-            //}
-
             double densityFlux = 0.5 * (FL + FR) + 0.5 * k_j;
-
-            //if(densityFlux.IsNaN()) {
-            //    Console.WriteLine("*************** Fehler im Code: Density Flux ***************");
-            //}
             return densityFlux;
 
         }

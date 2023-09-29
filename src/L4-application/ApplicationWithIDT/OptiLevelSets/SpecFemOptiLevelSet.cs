@@ -13,7 +13,7 @@ using ilPSP.LinSolvers;
 namespace ApplicationWithIDT.OptiLevelSets {
     /// <summary>
     /// Spectral Finite Element Level Set:
-    /// - defined on a cartesian grid -> must have at least degree 2
+    /// - defined on a Cartesian grid -> must have at least degree 2
     /// - is continuous
     /// </summary>
     public class SpecFemOptiLevelSet : SpecFemField, IOptiLevelSet {
@@ -23,7 +23,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         public MultidimensionalArray m_TransMat;
 
         /// <summary>
-        /// This ist the LevelSet which is used internally by the method to compute Residuals etc.
+        /// This is the LevelSet which is used internally by the method to compute Residuals etc.
         /// </summary>
         public LevelSet m_LevelSet;
 
@@ -75,10 +75,10 @@ namespace ApplicationWithIDT.OptiLevelSets {
             return (SpecFemOptiLevelSet)Clone();
         }
         /// <summary>
-        /// Accumalates onto a coordinate
+        /// Accumulates onto a coordinate
         /// </summary>
         /// <param name="index"> index of that coordinate</param>
-        /// <param name="acc">value to be accumlated</param>
+        /// <param name="acc">value to be accumulated</param>
         public void AccToParam(int index, double acc) {
             Coordinates[index] += acc;
         }
@@ -98,7 +98,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             m_TransMat = MultidimensionalArray.Create(targetLS.CoordinateVector.Length, GetLength());
             SpecFemOptiLevelSet tmp = CloneAs();
             LevelSet LSbackup = targetLS.CloneAs();
-            //Set all params of tmp to zero
+            //Set all params of mp to zero
             tmp.Clear();
             for(int i = 0; i < GetLength(); i++) {
                 // set one Coordinate to 1
@@ -112,11 +112,11 @@ namespace ApplicationWithIDT.OptiLevelSets {
                 LSbackup.Clear();
                 LSbackup.ProjectFromForeignGrid(1.0, m_DGField);
 
-                //then the coordinates of LSBackup are equlling the entries of the general transformation matrix (bc of orthonormality).
+                //then the coordinates of LSBackup are equaling the entries of the general transformation matrix (because of orthonormality).
                 for(int j = 0; j < LSbackup.CoordinateVector.Length; j++) {
                     m_TransMat[j, i] = LSbackup.CoordinateVector[j];
                 }
-                // reset tmp to zero
+                // reset mp to zero
                 tmp.Coordinates[i] = 0;
             }
         }
@@ -195,7 +195,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             return false;
         }
         /// <summary>
-        /// Converts to a SinglePhaseField of varaible Degree
+        /// Converts to a SinglePhaseField of variable Degree
         /// </summary>
         /// <param name="degree"></param>
         /// <returns></returns>
@@ -235,7 +235,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         }
 
         /// <summary>
-        /// Right now I dont have any Idea how to check if the coordinate influences the residual. 
+        /// Right now I don't have any Idea how to check if the coordinate influences the residual. 
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
@@ -270,7 +270,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         }
 
         // <summary>
-        /// here one could do interface straightening by projection onto p=1? but how to identify an oscilating interface?
+        /// here one could do interface straightening by projection onto p=1? but how to identify an oscillating interface?
         /// </summary>
         public void Reinitialize(double L, double kappa_S) {
 

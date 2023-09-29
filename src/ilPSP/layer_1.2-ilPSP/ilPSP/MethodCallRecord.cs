@@ -429,7 +429,7 @@ namespace ilPSP.Tracing {
             override public string ToString() {
                 using(var stw = new StringWriter()) {
                     stw.Write(string.Format(
-                        "'{0}': {1} calls, {2:0.###E-00} seconds, {3:F3} %  of '{4}', {5} MB allocated, {6} MB allocated exclusive, called by :",
+                        "'{0}': {1} calls, {2:0.###E-00} seconds, {3:F3} %  of '{4}', {5} MB allocated, {6} MB allocated exclusive, called by: ",
                         M.Name, // 0
                         M.CallCount, // 1
                         TimeSpentInMethod.TotalSeconds, //  2
@@ -443,7 +443,7 @@ namespace ilPSP.Tracing {
                     } else {
                         var mcr = M.ParrentCall;
                         while(mcr != null) {
-                            stw.Write(M.ParrentCall.Name);
+                            stw.Write(mcr.Name);
                             mcr = mcr.ParrentCall;
                             if(mcr != null)
                                 stw.Write(">");
@@ -700,7 +700,7 @@ namespace ilPSP.Tracing {
 
                 stw.Write($"'{this.Name}': {this.CallCount} calls, ");
                 stw.Write($"{(this.ExclusiveTimeFractionOfRoot * 100):F3}% / {(new TimeSpan(this.ExclusiveTicks)).TotalSeconds:0.##E-00} sec. runtime exclusive, ");
-                stw.Write($"{(this.TimeFractionOfRoot * 100):F3}% / {(new TimeSpan(this.ExclusiveTicks)).TotalSeconds:0.##E-00} sec. runtime inclusive child calls, ");
+                stw.Write($"{(this.TimeFractionOfRoot * 100):F3}% / {(new TimeSpan(this.TicksSpentInMethod)).TotalSeconds:0.##E-00} sec. runtime inclusive child calls, ");
                 stw.Write($"{(double)(this.InclusiveMemoryIncrease) / (1024.0 * 1024.0):0.##E-00}/{(double)(this.ExclusiveMemoryIncrease) / (1024.0 * 1024.0):0.##E-00} MB allocated incl./excl., ");
                 stw.Write("called by: ");
                         

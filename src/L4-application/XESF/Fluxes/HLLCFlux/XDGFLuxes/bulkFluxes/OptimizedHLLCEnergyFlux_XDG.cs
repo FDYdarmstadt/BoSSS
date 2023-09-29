@@ -67,7 +67,7 @@ namespace XESF.Fluxes {
 
                 // Sweep until the boundary condition changes
                 int __L = 1;
-                for (; e + __L < Lenght; __L++) { //raus?
+                for (; e + __L < Lenght; __L++) { 
                     byte _EdgeTag = EdgeTags[e + __L + EdgeTagsOffset];
                     if (EdgeTag != _EdgeTag)
                         break;
@@ -88,7 +88,7 @@ namespace XESF.Fluxes {
 
                 e += __L - 1;
             }
-            //InnerEdgeFlux(time, jEdge, x, normal, Uin, Uout, Offset, Lenght, Output);
+            //InnerEdgeFlux(time, jEdge, x, normal, Uin, Uout, Offset, Length, Output);
         }
 
         /// <summary>

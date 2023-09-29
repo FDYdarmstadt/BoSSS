@@ -63,7 +63,6 @@ namespace BoSSS.Application.XdgPoisson3 {
             //BoSSS.Application.XdgPoisson3.Tests.IterativeSolverTest(Code.exp_gmres_levelpmg);
             //BoSSS.Application.XdgPoisson3.Tests.ParabolaTest(2, 0.6);
             //throw new Exception("remove me");
-           
             BoSSS.Solution.Application<XdgPoisson3Control>._Main(args, false, delegate () {
                 return new XdgPoisson3Main();
             });

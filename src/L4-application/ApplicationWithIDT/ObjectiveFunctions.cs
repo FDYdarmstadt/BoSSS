@@ -271,9 +271,9 @@ namespace ApplicationWithIDT {
             for(int iRow = 0; iRow < (int)obj_map.TotalLength; iRow++) {
                 obj_map.LocalFieldCoordinateIndex(iRow, out int iField, out int jCell, out int nMode);
                 if(NB.Contains(jCell)) {
-                    continue; // do nothing if cell is in nearband
+                    continue; // do nothing if cell is in near-band
                 } else {
-                    obj_out[iRow] = 0; //set uneeded entries to zero
+                    obj_out[iRow] = 0; //set unneeded entries to zero
                 }
             }
         }
@@ -287,9 +287,9 @@ namespace ApplicationWithIDT {
             for(int iRow = 0; iRow < (int)obj_map.TotalLength; iRow++) {
                 obj_map.LocalFieldCoordinateIndex(iRow, out int iField, out int jCell, out int nMode);
                 if(NB.Contains(jCell)) {
-                    continue; // do nothing if cell is in nearband
+                    continue; // do nothing if cell is in near-band
                 } else {
-                    Jobj.ClearRow(iRow); //set uneeded entries to zero
+                    Jobj.ClearRow(iRow); //set unneeded entries to zero
                 }
             }
             return Jobj;
@@ -309,9 +309,9 @@ namespace ApplicationWithIDT {
             for(int iRow = 0; iRow < (int)obj_map.TotalLength; iRow++) {
                 obj_map.LocalFieldCoordinateIndex(iRow, out int iField, out int jCell, out int nMode);
                 if(NB.Contains(jCell)) {
-                    continue; // do nothing if cell is in nearband
+                    continue; // do nothing if cell is in near-band
                 } else {
-                    obj_out[iRow] = 0; //set uneeded entries to zero
+                    obj_out[iRow] = 0; //set unneeded entries to zero
                 }
             }
         }
@@ -325,9 +325,9 @@ namespace ApplicationWithIDT {
             for(int iRow = 0; iRow < (int)obj_map.TotalLength; iRow++) {
                 obj_map.LocalFieldCoordinateIndex(iRow, out int iField, out int jCell, out int nMode);
                 if(NB.Contains(jCell)) {
-                    continue; // do nothing if cell is in nearband
+                    continue; // do nothing if cell is in near-band
                 } else {
-                    Jobj.ClearRow(iRow); //set uneeded entries to zero
+                    Jobj.ClearRow(iRow); //set unneeded entries to zero
                 }
             }
             return Jobj;

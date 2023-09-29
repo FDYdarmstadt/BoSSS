@@ -26,7 +26,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             private set;
         }
         /// <summary>
-        /// Matrix that transfroms this OptiLevelSet tothe LevelSet used by BoSSS
+        /// Matrix that transforms this OptiLevelSet to the LevelSet used by BoSSS
         /// </summary>
         public MultidimensionalArray m_TransMat {
             get;
@@ -97,7 +97,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         }
 
         /// <summary>
-        /// inidicating if the basis is Orthonormal
+        /// indicating if the basis is Orthonormal
         /// </summary>
         public bool IsOrthonormal = false;
 
@@ -177,7 +177,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         }
 
         /// <summary>
-        /// as the LevelSet is global this is allways true
+        /// as the LevelSet is global this is always true
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
@@ -223,7 +223,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         public object Clone() {
             GlobalOptiLevelSet r = new GlobalOptiLevelSet(m_grid, dim);
 
-            // done via for loop to ensure we dont get a shallow copy
+            // done via for loop to ensure we don't get a shallow copy
             for(int i = 0; i < Length; i++) {
                 r.m_ParamNames.Add(m_ParamNames[i]);
                 r.m_ParamValues.Add(m_ParamValues[i]);
@@ -289,7 +289,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// </summary>
         /// <param name="phi_component"> basis function \varphi_{N+1}</param>
         /// <param name="ParamName"> name of the parameter </param>
-        /// <param name="ParamValue"> intial value a_{N+1} </param>
+        /// <param name="ParamValue"> initial value a_{N+1} </param>
         public void AddComponent(Func<double[], double, double> phi_component, string ParamName, double ParamValue = 1) {
             // 2D test
             double test = 0;
@@ -395,7 +395,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             m_TransMat = MultidimensionalArray.Create(targetLS.CoordinateVector.Length, GetLength());
             GlobalOptiLevelSet tmp = CloneAs();
             LevelSet LSbackup = targetLS.CloneAs();
-            //Set all params of tmp to zero
+            //Set all params of mp to zero
             for(int i = 0; i < GetLength(); i++) {
                 tmp.SetParam(i, 0);
             }
@@ -427,7 +427,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             Console.WriteLine(m_ParamNames[m_ParamNames.Count] + "=" + m_ParamValues[m_ParamNames.Count]);
         }
         /// <summary>
-        /// This function creates an global OptiLevelSet with orthonormal Basis functions on a rectungular domain with variable degree.
+        /// This function creates an global OptiLevelSet with orthonormal Basis functions on a rectangular domain with variable degree.
         /// This is achieved by extracting polynomial basis functions from Polynomial lists.
         /// </summary>
         /// <param name="xMin"></param>
@@ -470,7 +470,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             var TransMat = MultidimensionalArray.Create(tmpLS.CoordinateVector.Length, GetLength());
             GlobalOptiLevelSet tmp = CloneAs();
             LevelSet LSbackup = tmpLS.CloneAs();
-            //Set all params of tmp to zero
+            //Set all params of mp to zero
             for(int i = 0; i < GetLength(); i++) {
                 tmp.SetParam(i, 0);
             }
@@ -499,7 +499,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// </summary>
         /// <param name="sourceLS">member LevelSet </param>
         /// <exception cref="ArgumentException"> TransMat was not assembled or assembled with a different LevelSet</exception>
-        /// <exception cref="NotImplementedException">only works if optiLevelSet has an orthormal Basis</exception>
+        /// <exception cref="NotImplementedException">only works if optiLevelSet has an orthonormal Basis</exception>
         public void ProjectFromLevelSet(ConventionalDGField sourceLS) {
             if(IsOrthonormal == true) {
                 if(sourceLS.CoordinateVector.Length == m_TransMat.NoOfRows) {
@@ -512,7 +512,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
                     throw new ArgumentException("TransMat was not assembled or assembled with a different LevelSet");
                 }
             } else {
-                throw new NotImplementedException("Reverse Transformation Only Implemented for Orthormal LevelSet");
+                throw new NotImplementedException("Reverse Transformation Only Implemented for Orthonormal LevelSet");
             }
         }
         /// <summary>
@@ -520,7 +520,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// </summary>
         /// <param name="x">point to be evaluated</param>
         /// <param name="a">coefficient</param>
-        /// <param name="p">Polyonmial</param>
+        /// <param name="p">Polynomial</param>
         /// <returns> function value a * p(x) </returns>
         public static double FuncFromPolynomial(double[] x, double a, Polynomial p) {
             double ret = 0;
@@ -548,7 +548,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         }
 
         /// <summary>
-        /// this helper function gives an evaluator wher only one component is active (this is only used to check if the basis is truly orthonormal)
+        /// this helper function gives an evaluator where only one component is active (this is only used to check if the basis is truly orthonormal)
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
@@ -639,10 +639,10 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// <summary>
         /// This method projects a scalar function onto the OptiLevelSet. It is only usable if the OptiLevelSet has an Orthonormal basis (constructed by the <see cref="CreateONBLevelSet"/> method)
         /// 
-        /// The projectiong is done:
+        /// The projection is done:
         /// 1. initializing a SinglePhasephield using the member grid 
-        /// 2. Then the projection matrix is assembled (Projecton from the OptiLevelSet field onto the SInglephasefield)
-        /// 3. The Transpose of that matrix is multiplied with the coordiante Vector of the Singlephasefield so the coordinateVector for the optiLevelSet is Obtained
+        /// 2. Then the projection matrix is assembled (projection from the OptiLevelSet field onto the SInglephasefield)
+        /// 3. The Transpose of that matrix is multiplied with the coordinate Vector of the Singlephasefield so the coordinateVector for the optiLevelSet is Obtained
         /// </summary>
         /// <param name="initialShockPostion"></param>
         public void ProjectFromFunction(Func<double[], double> initialShockPostion) {
@@ -651,7 +651,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
                 var TransMat = MultidimensionalArray.Create(tmp_fld.CoordinateVector.Length, GetLength());
                 GlobalOptiLevelSet tmp = CloneAs();
                 var LSbackup = tmp_fld.CloneAs();
-                //Set all params of tmp to zero
+                //Set all params of mp to zero
                 for(int i = 0; i < GetLength(); i++) {
                     tmp.SetParam(i, 0);
                 }

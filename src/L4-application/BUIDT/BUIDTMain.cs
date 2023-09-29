@@ -15,16 +15,15 @@ using System;
 
 
 namespace BUIDT {
-
     /// <summary>
-    /// Implements XDG Space Time Scalar Advection in (1D in space) which is solved by the routines defined in ApplicationWithIDT 
+    /// Implements XDG space-timeBurgers equation in (1D in space) which is solved by the routines defined in <see cref="ApplicationWithIDT"/>
     /// Naming: BU(rgers) - I(implict) - D(iscontinuity) - T(racking)
     /// 
-    /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a BUIDTControl.cs object, e.g. Boundary Conditions are set by  by the property DirichletToBoundaryMap
-    /// Fluxes are implemented in BUIDT.Fluxes, so far only upwind flux is supported
+    /// Concrete configurations of solver (initial guess, optimization parameters,...) are set in a <see cref="BUIDTControl.cs"/> object, e.g. boundary conditions are set by the property <see cref="IDTControl.DirichletBoundaryMap"/>
+    /// Fluxes are implemented in <see cref="BUIDT.Fluxes"/>, so far only upwind flux is supported
     /// 
     /// Author: Jakob Vandergrift 
-    /// Date of Creation/Maintanance: 08-2022 until at least 08-2024
+    /// Date of Creation/Maintenance: 08-2022 until at least 08-2024
     /// </summary>
     public class BUIDTMain : ApplicationWithIDT<BUIDTControl> {
         
@@ -81,15 +80,6 @@ namespace BUIDT {
             this.XSpatialOperator = new XSpatialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
             this.Op_obj = new XSpatialOperatorMk2(new string[] { "c" }, null, new string[] { "c" }, Control.quadOrderFunc, this.SpeciesToEvaluate);
             #endregion
-
-
-            //switch (Control.FluxVersion)
-            //{
-            //    case FluxVersion.Jakob:
-            //foreach(SpeciesId id in SpeciesToEvaluate_Ids) {
-            //    string spcNmn = LsTrk.GetSpeciesName(id);
-            //    this.XSpatialOperator.EquationComponents["c"].Add(new BUIDT.Fluxes.ScalarAdvectionUpwindFlux(spcNmn, Control.ShockPos, Control.LeftValue, Control.RightValue, Control.FlowFunc));
-            //}
             this.XSpatialOperator.EquationComponents["c"].Add(new BUIDT.Fluxes.STBurgersUpwindFlux("L", Control.is_nf_smth, Control.s_alpha, Control.DirichletBoundaryMap));
             this.XSpatialOperator.EquationComponents["c"].Add(new BUIDT.Fluxes.STBurgersUpwindFlux("R", Control.is_nf_smth, Control.s_alpha, Control.DirichletBoundaryMap));
             this.XSpatialOperator.EquationComponents["c"].Add(new BurgersUpwindFlux_Interface(Control.is_nf_smth, Control.s_alpha));
@@ -130,7 +120,7 @@ namespace BUIDT {
             R_JacobiOperator = XSpatialOperator.GetJacobiOperator(SpatialDimension: 2);
 
 
-            //noe that the operator is assembeled we can compute the p0 solution
+            //now that the operator is assembled we can compute the p0 solution
             if(Control.UseP0ProjectionAsInitialGuess) {
                 ComputeP0Solution();
             }
@@ -198,7 +188,7 @@ namespace BUIDT {
                         splineLS.GetSplineOverDetermined(Points);
                         SplineOptiLevelSet.EmbeddInLevelSet(splineLS.Spline, splineLS);
                     } else {
-                        throw new ArgumentException("something went wrong, as we excpect LeveSetOpti to be of type SplineLS");
+                        throw new ArgumentException("something went wrong, as we expect LeveSetOpti to be of type SplineLS");
                     }
 
                     break;

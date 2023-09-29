@@ -59,30 +59,14 @@ namespace XESF.Fluxes {
                 k_j += V0[i] * eigenVals[i] * result[i];
             }
 
-            //OLD stuff
-            //(MultidimensionalArray V0_inv_old, MultidimensionalArray eigenVals_old,MultidimensionalArray V0_old)= OldSetup(normal, Uin, Uout, D); 
-            //var prod = V0_old * eigenVals_old * V0_inv_old;
-            //var k_4 = prod.MatVecMul(1.0, Udiff);
-            //if(Math.Abs(k_4[D+1]-k_j)>1e-15) {
-            //    Console.WriteLine("*************** Fehler im Code: Energy Flux ***************");
-            //    var result_old=V0_inv_old.MatVecMul(1.0, Udiff);
-            //}
 
             double energyFlux = 0.5 * (FL + FR) + 0.5 * k_j;
-
-            //if(energyFlux.IsNaN()) {
-            //    Console.WriteLine("*************** Fehler im Code: Energy Flux ***************"); 
-            //}
             return energyFlux;
 
 
         }
 
 
-        // Copied from HLLCEnergyFlux 
-        //!!!!
-        // xxx noch checken+überarbeiten !!!! ist noch im raw-Zustand
-        //!!!!
         public Vector Flux(double[] U, int D) {
             Vector Output = new Vector(D);
             double gamma = this.material.EquationOfState.HeatCapacityRatio;
@@ -99,10 +83,8 @@ namespace XESF.Fluxes {
             }
             double pressure = (gamma - 1.0) * (energy - gammaMachSquared * 0.5 * momentumSquared / density);
 
-            //return state.Velocity * (state.Energy + state.Pressure);
             for(int d = 0; d < D; d++) {
                 double flux = U[d + 1] / density * (energy + pressure);
-                //Debug.Assert(!double.IsNaN(flux) || double.IsInfinity(flux));
                 Output[d] += flux;
             }
             return Output;
@@ -122,8 +104,6 @@ namespace XESF.Fluxes {
         }
 
         public override double VolumeForm(ref CommonParamsVol cpv, double[] U, double[,] GradU, double V, double[] GradV) {
-            // Copied from HLLCEnergyFlux
-            // xxx am Ende auf Korrektheit überprüfen mit dem Code der noch implemntiert wird/wurde !!
             Vector fluxvector = Flux(U, cpv.D);
             return -1.0 * fluxvector * GradV;
         }

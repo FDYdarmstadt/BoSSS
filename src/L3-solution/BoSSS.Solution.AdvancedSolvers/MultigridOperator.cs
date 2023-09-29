@@ -1201,7 +1201,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         {
             using(new FuncTrace()) {
                 if(this.LevelIndex != 0)
-                    throw new NotSupportedException("Not Inteded to be called on any multi-grid level but the finest one.");
+                    throw new NotSupportedException("Not Intended to be called on any multi-grid level but the finest one.");
 
                 int I = this.Mapping.ProblemMapping.LocalLength;
                 if(INOUT_X.Count != I)
@@ -1225,6 +1225,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.TransformSolInto(INOUT_X, X);
 
                 solver.ResetStat();
+                //Console.WriteLine("REM testcode: random vlaue init!!!!!");
+                //X.FillRandom();
                 solver.Solve(X, B);
 
                 this.TransformSolFrom(INOUT_X, X);

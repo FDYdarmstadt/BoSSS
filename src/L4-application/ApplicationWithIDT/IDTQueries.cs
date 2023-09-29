@@ -18,7 +18,7 @@ using static BoSSS.Foundation.XDG.XDGField;
 
 
 /// <summary>
-/// This stuff doesn't work like intended as the types dont match.
+/// This stuff doesn't work like intended as the types don't match.
 /// </summary>
 namespace ApplicationWithIDT {
     public static class IDTQueries {

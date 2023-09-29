@@ -51,7 +51,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             if(GridDat is GridData grid) {
                 var Distinct_y_values = grid.Vertices.Coordinates.ExtractSubArrayShallow(-1, 1).CloneAs().To1DArray().ToList().Distinct().ToList();
                 Distinct_y_values.Sort();
-                // in pratice the given values will feature double points, so next they are sorted out
+                // in practice the given values will feature double points, so next they are sorted out
                 for(int i = 0; i < Distinct_y_values.Count - 1; i++) {
                     //remove a node if it is the same as the next
                     if(Distinct_y_values[i + 1] - Distinct_y_values[i] < 1e-14) {
@@ -93,7 +93,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         /// </summary>
         public void MakeDiscontinuousAt(int index) {
             if(y[index + 1] - y[index] < 1e-14 || y[index] - y[index - 1] < 1e-14) {
-                Console.WriteLine("Spline already discontinous at this point");
+                Console.WriteLine("Spline already discontinuous at this point");
 
             } else {
                 var new_y = new double[y.Length + 1];
@@ -147,8 +147,8 @@ namespace ApplicationWithIDT.OptiLevelSets {
                 Spline = LinearSpline.InterpolateSorted(y, x);
                 break;
                 case Mode.Deg2:
-                // here one should normaly calculate c3 from c2 and x
-                // We could also make it C2- Contiuous which would give us one free parameter alongside x
+                // here one should normally calculate c3 from c2 and x
+                // We could also make it C2- Continuous which would give us one free parameter alongside x
                 double[] c2 = m_AllParams.ExtractSubArrayShallow(new int[] { numberOfNodes }, new int[] { numberOfNodes * 2 - 1 }).To1DArray();
 
                 double[] c3 = new double[numberOfNodes];
@@ -291,13 +291,13 @@ namespace ApplicationWithIDT.OptiLevelSets {
                 //    var eps = ((yPoints[1] - yPoints[0]) + (yPoints[2] - yPoints[1])) / 2;
                 //    var diff = xPoints[2] - 2 * xPoints[1] + xPoints[0];
                 //    cPoints[0] = diff / (eps * eps);
-                //    //dont include first and last point, use central fds in the middlepoints
+                //    //don't include first and last point, use central FDs in the middle-points
                 //    for(int i = 1; i < cPoints.Length - 1; i++) {
                 //        eps = ((yPoints[i] - yPoints[i - 1]) + (yPoints[i + 1] - yPoints[i])) / 2;
                 //        diff = xPoints[i + 1] - 2 * xPoints[i] + xPoints[i - 1];
                 //        cPoints[i] = diff / (eps * eps);
                 //    }
-                //    //dp backward FDS on the last one
+                //    //do backward FDS on the last one
                 //    var iEnd = yPoints.Length - 1;
                 //    eps = ((yPoints[iEnd - 1] - yPoints[iEnd - 2]) + (yPoints[iEnd] - yPoints[iEnd - 1])) / 2;
                 //    diff = xPoints[iEnd] - 2 * xPoints[iEnd - 1] + xPoints[iEnd - 2];
@@ -318,7 +318,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             bool CheckifPointHasNeighbours(int iY) {
                 bool exbiggerpoint = false;
                 bool exsmallerpoint = false;
-                //Checks if the point lies outside, so if it has a smaller and bigger neigbour
+                //Checks if the point lies outside, so if it has a smaller and bigger neighbor
                 for(int iYPoint = 0; iYPoint < yPoints.Length; iYPoint++) {
                     if(yPoints[iYPoint] - y[iY] < 1e-06) {
                         exsmallerpoint = true;
@@ -344,7 +344,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
 
 
 
-            //loop over all interpolatory points y, check if point has a close neighbour in yPoints, if so use the spline, if not use the linear Extrapolation Func
+            //loop over all interpolatory points y, check if point has a close neighbor in yPoints, if so use the spline, if not use the linear Extrapolation Func
             List<int> CellsLeft = new List<int>();
             List<int> CellsWithEnoughPoints = new List<int>();
             for(int iY = 0; iY < y.Length; iY++) {
@@ -362,7 +362,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
                 //    m_AllParams[iY + y.Length] = ExtrapolationFuncGetA(y[iY]);
                 //}
             }
-            //for the remaining y's we do an linear interpolation using the nearest neighbour cell with points 
+            //for the remaining y's we do an linear interpolation using the nearest neighbor cell with points 
             int[] twoBiggestY = new int[] { CellsWithEnoughPoints[CellsWithEnoughPoints.Count - 2], CellsWithEnoughPoints.Last() };
             int[] twoSmallestY = new int[] { CellsWithEnoughPoints[0], CellsWithEnoughPoints[1] };
             double yMin = y[CellsWithEnoughPoints[0]];
@@ -425,7 +425,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             //        }
             //        if(is_regular_cell) { // if its regular we interpolate the value x[i]
             //            this.x[pair.Key] = this.Spline.Interpolate(y[pair.Key]);
-            //        } else { //if not e set the value to sth under minX
+            //        } else { //if not e set the value to something under minX
             //            this.x[pair.Key] = ExtrapolationFunc(y[pair.Key]); 
             //        }
 
@@ -565,13 +565,13 @@ namespace ApplicationWithIDT.OptiLevelSets {
                 //    var eps = ((yPoints[1] - yPoints[0]) + (yPoints[2] - yPoints[1])) / 2;
                 //    var diff = xPoints[2] - 2 * xPoints[1] + xPoints[0];
                 //    cPoints[0] = diff / (eps * eps);
-                //    //dont include first and last point, use central fds in the middlepoints
+                //    //don't include first and last point, use central FDs in the middle-points
                 //    for(int i = 1; i < cPoints.Length - 1; i++) {
                 //        eps = ((yPoints[i] - yPoints[i - 1]) + (yPoints[i + 1] - yPoints[i])) / 2;
                 //        diff = xPoints[i + 1] - 2 * xPoints[i] + xPoints[i - 1];
                 //        cPoints[i] = diff / (eps * eps);
                 //    }
-                //    //dp backward FDS on the last one
+                //    //do backward FDS on the last one
                 //    var iEnd = yPoints.Length - 1;
                 //    eps = ((yPoints[iEnd - 1] - yPoints[iEnd - 2]) + (yPoints[iEnd] - yPoints[iEnd - 1])) / 2;
                 //    diff = xPoints[iEnd] - 2 * xPoints[iEnd - 1] + xPoints[iEnd - 2];
@@ -765,7 +765,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             //targetLS.Clear();
             //targetLS.ProjectFromForeignGrid(1.0, this);
             //targetLS.CoordinateVector.SaveToTextFile($@"C:\Users\sebastian\Documents\Forschung\tLS{p}_{Directory.GetFiles(@"C:\Users\sebastian\Documents\Forschung", $"tLS{p}*").Length}.txt");
-            //var cloney = this.Clone();
+            //var clone = this.Clone();
             //targetLS.Clear();
             //Interpolate();
             //targetLS.ProjectFromForeignGrid(1.0, this);
@@ -803,7 +803,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
         }
         /// <summary>
         /// 
-        /// if there is a isolated cutcellpair (that is if 
+        /// if there is a isolated cut-cell pair (that is if 
         /// 
         ///         x_{i_i},x_{i+1} \notin [x_{min},x_{max}] 
         ///         but  x_{i} \in [x_{min},x_{max}]
@@ -846,7 +846,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             for(int iY = 0; iY < y.Length; iY++) { // loop over all y-Cells
                 //first we check whether the cell y_i,y_i+1 is isolated,
                 //that means that the x_i and x_i+1 are not inside the domain 
-                //Then we check whether the respective neighbours are isolated to
+                //Then we check whether the respective neighbors are isolated to
                 // a special treaty for the first and the last cell has to be done
                 // if a neighbor is isolated we can "freely" manipulate its parameters
                 bool hasRightIsolatedNeighbor = true;
@@ -871,9 +871,9 @@ namespace ApplicationWithIDT.OptiLevelSets {
                     bool isRightBoundaryCutCell = cutCells.ToList().Contains((int)GlobIndexRight);
 
                     double a = (x[iY + 1] - x[iY]) / (y[iY + 1] - y[iY]);
-                    if(isLeftBoundaryCutCell || isRightBoundaryCutCell) { //only do sth if its a cut cell
+                    if(isLeftBoundaryCutCell || isRightBoundaryCutCell) { //only do something if its a cut cell
                         if(!hasLeftIsolatedNeighbor && !hasRightIsolatedNeighbor) {
-                        //here it is not clear what to do, it means that an isolated cell has two non-isolated neighbours
+                        //here it is not clear what to do, it means that an isolated cell has two non-isolated neighbors
                     } else if(hasLeftIsolatedNeighbor && hasRightIsolatedNeighbor) {
                         
                             m_AllParams[iY + y.Length] = a;
@@ -942,9 +942,9 @@ namespace ApplicationWithIDT.OptiLevelSets {
             IMutuableMatrixEx_Extensions.AccEyeSp(reg, 1.0);
             return reg;
 
-            //sth else
+            //something else
             //for(int iY = 0; iY < y.Length; iY++) {
-            //    reg[iY, iY] = 1; // this is inversly proportional to the size of the minimal cut Cell
+            //    reg[iY, iY] = 1; // this is inversely proportional to the size of the minimal cut Cell
             //    reg[iY + y.Length, iY + y.Length] = 2;  // this is a 1st derivative so lets square it.
             //}
             //return reg;
@@ -963,7 +963,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
             var metrics = this.m_Tracker.GetXDGSpaceMetrics(this.m_Tracker.SpeciesIdS, this.GetDegree());
             var CutCellVolumes = metrics.CutCellMetrics.CutCellVolumes;
 
-            //Function that deterimines the minimal CutCell Volume for 2 cells accross all species
+            //Function that determines the minimal CutCell Volume for 2 cells across all species
             double MinCutCellVolume(long cell1, long cell2) {
                 double ret = double.MaxValue;
                 foreach(SpeciesId spc in this.m_Tracker.SpeciesIdS) {
@@ -1008,7 +1008,7 @@ namespace ApplicationWithIDT.OptiLevelSets {
                     }
                 }
                 diag[iY] = Math.Sqrt(maxCellVol / minCCV);
-                reg[iY, iY] = Math.Sqrt(maxCellVol / minCCV); // this is inversly proportional to the size of the minimal cut Cell
+                reg[iY, iY] = Math.Sqrt(maxCellVol / minCCV); // this is inversely proportional to the size of the minimal cut Cell
                 reg[iY + y.Length, iY + y.Length] = maxCellVol / minCCV;  // this is a 1st derivative so lets square it.
             }
             return reg;

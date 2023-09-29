@@ -69,7 +69,7 @@ namespace XESF.Fluxes {
         //private static StreamWriter writer;
 
         public double InnerEdgeForm(ref CommonParams inp, double[] uA, double[] uB, double[,] Grad_uA, double[,] Grad_uB, double vA, double vB, double[] Grad_vA, double[] Grad_vB) {
-            // Adibatic slip wall
+            // Adiabatic slip wall
             //Vector normalVec = inp.Normal;
             Vector normalVec_A = new Vector(inp.Normal[0], inp.Normal[1]);
 
@@ -88,7 +88,7 @@ namespace XESF.Fluxes {
 
             for (int i = 0; i < uWall.Length; i++) {
                 if (uWall[i] != test[i]) {
-                    throw new NotSupportedException("Normal vec does matter for adibatic slip wall calculation");
+                    throw new NotSupportedException("Normal vector does matter for adiabatic slip wall calculation");
                 }
             }
 #endif

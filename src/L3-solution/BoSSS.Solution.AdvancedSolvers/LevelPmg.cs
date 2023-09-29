@@ -254,9 +254,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
             var DGlowSelect = new SubBlockSelector(op.DgMapping);
-            //Func<int, int, int, int, bool> lowFilter = delegate (int iCell, int iVar, int iSpec, int pDeg) {
-            //    return pDeg <= (iVar != D && !config.EqualOrder ? config.OrderOfCoarseSystem : config.OrderOfCoarseSystem - 1); // containd the pressure hack
-            //};
             DGlowSelect.SetModeSelector(LowSelector);
 
             if (config.FullSolveOfCutcells)
@@ -293,7 +290,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                 } else {
-                    P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix, csMPI.Raw._COMM.SELF);
+                    P01HiMatrix = hMask.GetSubBlockMatrix(op.OperatorMatrix, op.OperatorMatrix.MPI_Comm);
 
                     hiSolver = new PARDISOSolver() {
                         CacheFactorization = true,
@@ -304,7 +301,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
             }
 
-            var P01SubMatrix = lMask.GetSubBlockMatrix(op.OperatorMatrix, csMPI.Raw._COMM.WORLD);
+            var P01SubMatrix = lMask.GetSubBlockMatrix(op.OperatorMatrix, op.OperatorMatrix.MPI_Comm);
             if (P01SubMatrix.MPI_Comm != op.OperatorMatrix.MPI_Comm)
                 throw new ApplicationException("MPI comm messup");
 
@@ -320,7 +317,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             Debug.Assert(config.UseDiagonalPmg && lowSolver != null);
             Debug.Assert(config.UseDiagonalPmg || (!config.UseDiagonalPmg && hiSolver != null));
-            Debug.Assert(m_lowMaskLen > 0);
+            //Debug.Assert(m_lowMaskLen > 0);
             //Debug.Assert(AnyHighOrderTerms && m_highMaskLen > 0);
 #if TEST
             P01SubMatrix.SaveToTextFileSparseDebug("lowM");
@@ -399,8 +396,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public void ResetStat() {
             Converged = false;
             ThisLevelIterations = 0;
+            StopwatchCoarse.Reset();
+            StopwatchFine.Reset();
         }
 
+
+        Stopwatch StopwatchCoarse = new Stopwatch();
 
         /// <summary>
         /// Computes the coarse-grid correction
@@ -408,6 +409,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <param name="x_out">output: coarse level solution, prolongated to fine level</param>
         /// <param name="in_rhs">input: RHS on fine level</param>
         void CoarseSolve(double[] x_out, double[] in_rhs) {
+            StopwatchCoarse.Start();
             // project to low-p/coarse
             double[] rhs_c = lMask.GetSubVec(in_rhs);
 
@@ -422,15 +424,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //double[] xtest = new double[in_rhs.Length];
             //m_op.OperatorMatrix.Solve_Direct(xtest, in_rhs);
             //x_out.AccV(1.0, xtest);
+            StopwatchCoarse.Stop();
 
         }
+
+        Stopwatch StopwatchFine = new Stopwatch();
 
         /// <summary>
         /// smoothing/solving on high level
         /// </summary>
         void FineSolve(double[] x_in_out, double[] in_rhs) {
             using(var tr = new FuncTrace()) {
-
+                StopwatchFine.Start();
 
                 // compute residual
                 double[] Res_f = in_rhs.CloneAs();
@@ -486,6 +491,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         }
                     }
                 }
+
+                StopwatchFine.Stop();
             }
         }
 
@@ -546,6 +553,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         }
 
 
+        Stopwatch ThisLevelTime = new Stopwatch();
+
         /// <summary>
         /// ~
         /// </summary>
@@ -554,7 +563,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
             where V : IList<double> // 
         {
             using(var tr = new FuncTrace()) {
-                tr.InfoToConsole = true;
+                ThisLevelTime.Start();
+                //tr.InfoToConsole = true;
                 int Lf = m_op.DgMapping.LocalLength; // DOF's in entire system
                 //int Lc = this.lMask.NoOfMaskedRows; // DOF's in low-order system
 
@@ -611,6 +621,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 
 
                 m_Iter++;
+                ThisLevelTime.Stop();
             }
         }
 
@@ -646,7 +657,17 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// 
         /// </summary>
         public void Dispose() {
-            if(lowSolver != null) {
+            //if (m_MTracker != null) m_MTracker.Dispose();
+            if (this.m_op is MultigridOperator _mgop) {
+                int lv = _mgop.LevelIndex;
+                Console.WriteLine($"LevelPMG lv {lv} - total runtime: {ThisLevelTime.Elapsed.TotalSeconds:F1} sec");
+                Console.WriteLine($"LevelPMG lv {lv} - fine runtime: {StopwatchFine.Elapsed.TotalSeconds:F1} sec ({100*StopwatchFine.Elapsed.TotalSeconds/ThisLevelTime.Elapsed.TotalSeconds:F1})");
+                Console.WriteLine($"LevelPMG lv {lv} - coarse runtime: {StopwatchCoarse.Elapsed.TotalSeconds:F1} sec ({100*StopwatchCoarse.Elapsed.TotalSeconds/ThisLevelTime.Elapsed.TotalSeconds:F1})");
+                Console.WriteLine($"LevelPMG lv {lv} - coarse level size: {this.lMask.LocalLength.MPISum(m_op.DgMapping.MPI_Comm)}");
+            }
+
+
+            if (lowSolver != null) {
                 lowSolver.Dispose();
                 lowSolver = null;
             }
@@ -659,6 +680,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             HighOrderBlocks_LUpivots = null;
             lMask = null;
             hMask = null;
+            this.m_op = null; // setting this to null ensures that Init(...) will actually initialize the solver
         }
 
         /// <summary>

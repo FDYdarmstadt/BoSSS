@@ -78,7 +78,7 @@ namespace XESF.Fluxes {
             int D = inp.D;
             double[] Uin = uB;
             double[] Uout = uWall;
-            Vector normal = new Vector(inp.Normal); //xxx schauen ob was die richtige Normal-Referenz ist
+            Vector normal = new Vector(inp.Normal);
 
             double vN = vAverage * (new Vector(normal));
 
@@ -104,10 +104,6 @@ namespace XESF.Fluxes {
             }
 
             double energyFlux = 0.5 * (FL + FR) + 0.5 * k_j;
-
-            if(energyFlux.IsNaN()) {
-                Console.WriteLine("*************** Fehler im Code: Energy Flux ***************");
-            }
             return energyFlux;
 
         }
@@ -280,12 +276,12 @@ namespace XESF.Fluxes {
          //        Output[e + Offset, n] += edgeFlux;
          //    }
          //    //}
-         //    #endregion  
+         //    #end region  
 
          //    //fA.Acc(+1.0, Output);
          //    fB.Acc(1.0, Output);
          //}
-         //#endregion
+         //#end region
         */
 
         #region IEquationComponentChecking members

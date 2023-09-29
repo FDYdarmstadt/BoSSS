@@ -291,8 +291,8 @@ namespace XESF.Variables {
                         delegate (Vector X, double[] U, int j) {
                             var state = new StateVector(U, program.Control.GetMaterial());
                             double r = state.LocalMachNumber;
-                            //Debug.Assert(r.IsNaN() == false, "NAN in local mach number");
-                            //Debug.Assert(r.IsInfinity() == false, "INF in local mach number");
+                            //Debug.Assert(r.IsNaN() == false, "NAN in local Mach number");
+                            //Debug.Assert(r.IsInfinity() == false, "INF in local Mach number");
                             return r;
                         },
                         program.SpeciesToEvaluate_Ids,
@@ -310,8 +310,8 @@ namespace XESF.Variables {
                 //        delegate (Vector X, double[] U, int j) {
                 //            var state = new StateVector(U, program.Control.GetMaterial());
                 //            double r = state.LocalMachNumber;
-                //            Debug.Assert(r.IsNaN() == false, "NAN in local mach number");
-                //            Debug.Assert(r.IsInfinity() == false, "INF in local mach number");
+                //            Debug.Assert(r.IsNaN() == false, "NAN in local Mach number");
+                //            Debug.Assert(r.IsInfinity() == false, "INF in local Mach number");
                 //            return r;
                 //        },
                 //        new CellQuadratureScheme(true, cellMask),
@@ -342,7 +342,7 @@ namespace XESF.Variables {
         //    "cflConvective",
         //    VariableTypes.Other,
         //    delegate (XDGField dgField, XESFMain program) {
-        //        // CFL sizes cannnot be plotted for the initial step, as the operator does not exist yet
+        //        // CFL sizes cannot be plotted for the initial step, as the operator does not exist yet
         //        if(program.XSpatialOperator == null) {
         //            return;
         //        }
@@ -997,7 +997,7 @@ namespace XESF.Variables {
                 XDGField tmp = new XDGField(density.Basis);
                 CellMask cellMask = CellMask.GetFullMask(program.GridData);
 
-                // Copy only the coordiantes that belong to P0
+                // Copy only the coordinates that belong to P0
                 foreach(string s in program.Control.SpeciesToEvaluate) {
                     foreach(int cell in cellMask.ItemEnum) {
                         foreach(int coordinate in density.GetSpeciesShadowField(s).Basis.GetPolynomialIndicesForDegree(cell, degree: 0)) {
@@ -1027,7 +1027,7 @@ namespace XESF.Variables {
 
                 CellMask cellMask = program.LsTrk.Regions.GetCutCellMask();
 
-                // Copy only the coordiantes that belong to P0
+                // Copy only the coordinates that belong to P0
                 foreach(string s in program.Control.SpeciesToEvaluate) {
                     foreach(int cell in cellMask.ItemEnum) {
                         foreach(int coordinate in density.GetSpeciesShadowField(s).Basis.GetPolynomialIndicesForDegree(cell, degree: 0)) {
@@ -1045,7 +1045,7 @@ namespace XESF.Variables {
                 double densityRight = (gamma + 1) * Ms * Ms / (2 + (gamma - 1) * Ms * Ms) * densityLeft;
                 double meanShock = (densityRight + densityLeft) / 2;
 
-                // Copy only the coordiantes that belong to P0
+                // Copy only the coordinates that belong to P0
                 foreach(string s in program.Control.SpeciesToEvaluate) {
                     foreach(int cell in cellMask.ItemEnum) {
                         double mean_a = tmp.GetSpeciesShadowField(program.Control.SpeciesToEvaluate[0]).GetMeanValue(cell);
@@ -1174,8 +1174,6 @@ namespace XESF.Variables {
                 velocity_y_L.Evaluate(j0, Len, NS, velocity_y_L_Res);
                 velocity_y_R.Evaluate(j0, Len, NS, velocity_y_R_Res);
 
-
-                // Normale reinbringen?
                 for(int j = 0; j < Len; j++) {
                     for(int k = 0; k < K; k++) {
                         double a = momentum_x_R_Res[j, k] + momentum_y_R_Res[j, k] - momentum_x_L_Res[j, k] - momentum_y_L_Res[j, k];

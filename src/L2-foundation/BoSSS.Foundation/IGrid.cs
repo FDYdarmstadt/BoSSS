@@ -51,9 +51,10 @@ namespace BoSSS.Foundation.Grid {
         /// - computing a new partition 
         /// - application of the partition to this grid, i.e. invocation off <see cref="RedistributeGrid(int[])"/>
         /// </summary>
-        void Redistribute(IDatabaseDriver iom, GridPartType method, string PartOptions);
+        void Redistribute(IDatabaseInfo iom, GridPartType method, string PartOptions);
 
         /// <summary>
+        /// Low-level interface:
         /// redistributes this grid, i.e. sends cells to different processors
         /// </summary>
         /// <param name="part">

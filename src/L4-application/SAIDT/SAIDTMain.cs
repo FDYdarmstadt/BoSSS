@@ -12,17 +12,20 @@ using ApplicationWithIDT;
 using BoSSS.Solution.AdvancedSolvers;
 
 namespace SAIDT {
+    /// <summary>
+    /// Implements XDG space-time Scalar Advection in (1D in space) which is solved by the routines defined in <see cref="ApplicationWithIDT"/>
+    /// Naming: S(calar) - A(dvection) - I(mplict) - D(iscontinuity) - T(racking)
+    /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a <see cref="SAIDTControl.cs"/> object, e.g. boundary conditions are set by  by the property <see cref="IDTControl.DirichletBoundaryMap"/>
+    /// Fluxes are implemented in <see cref="SAIDT.Fluxes"/>, so far only upwind flux is supported
+    /// 
+    /// Author: Jakob Vandergrift 
+    /// Date of Creation/Maintenance: 08-2022 until at least 08-2024
+    /// </summary>
     public class SAIDTMain : ApplicationWithIDT<SAIDTControl> {
         /// <summary>
-        /// Implements XDG Space Time Scalar Advection in (1D in space) which is solved by the routines defined in ApplicationWithIDT 
-        /// Naming: S(calar) - A(dvection) - I(implict) - D(iscontinuity) - T(racking)
-        /// Concrete configurations of solver (Initial Guess, optimization parameters,...) are set in a SAIDTControl.cs object, e.g. Boundary Conditions are set by  by the property DirichletToBoundaryMap
-        /// Fluxes are implemented in SAIDT.Fluxes, so far only upwind flux is supported
         /// 
-        /// Author: Jakob Vandergrift 
-        /// Date of Creation/Maintanance: 08-2022 until at least 08-2024
         /// </summary>
-        /// <param name="args">string pointing to a control file, i.e. 'cs:SAIDT.SAIDTHardCodedControl.CurvedShock_Eccomas22()' </param>
+        /// <param name="args">string pointing to a control file, i.e. `cs:SAIDT.SAIDTHardCodedControl.CurvedShock_Eccomas22()` </param>
         static void Main(string[] args) {
             //SAIDT.Tests.SAIDTTestProgram.CurvedShock_Eccomas22();
             SAIDTMain._Main(args, false, () => new SAIDTMain());
@@ -59,9 +62,9 @@ namespace SAIDT {
             return grid;
         }
         /// <summary>
-        /// Initializes the Optimization Problem and computes and initial residual, also if chosen initial value is computed by P0 projection
-        /// 1. Here the objects for the discretized equation are constructed by constructing a Spatial Operator and adding the fluxes defined in SAIDT.FLUXES
-        /// 2. The Functional needed for the objective function is constructed
+        /// Initializes the optimization problem and computes and initial residual, also if chosen initial value is computed by P0 projection
+        /// 1. Here the objects for the discretized equation are constructed by constructing a Spatial Operator and adding the fluxes defined in <see cref="SAIDT.Fluxes"/>
+        /// 2. The functional needed for the objective function is constructed
         /// </summary>
         /// <param name="L"></param>
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
@@ -119,23 +122,23 @@ namespace SAIDT {
             XSpatialOperator.Commit();
             #endregion 
 
-            #region Neccesary initalizations for Operator evaluation
+            #region necessary initializations for Operator evaluation
             LsTBO = LevelSet;
             LevelSetOpti.AssembleTransMat(LsTBO);
             LevelSetOpti.ProjectOntoLevelSet(LsTBO);
             LsTrk.UpdateTracker(CurrentStepNo);
             LsTrk.PushStacks();
-            //noe that the operator is assembeled we can compute the p0 solution
+            //note that the operator is assembled we can compute the p0 solution
             if(Control.GetInitialValue != GetInitialValue.FromFunctionPerSpecies) {
                 ComputeP0Solution();
             }
             //Initialize empty vectors and matrices
             InitializeMatricesAndVectors();
-            //// Cell agglomerator 
+            //// Cell agglomeration 
             UpdateAgglomerator();
             #endregion
 
-            #region  Compute Residual and Derived Qunatities
+            #region  Compute Residual and Derived Quantities
             ComputeResiduals();
             InitResNorm = res_l2;
             Init_obj_f = obj_f;
@@ -149,7 +152,7 @@ namespace SAIDT {
             return typeof(SAIDTMain);
         }
         /// <summary>
-        /// Solves the linear P=0 problem, by assembling the Operator Matrix of the residual and solving the linear system. 
+        /// Solves the linear P=0 problem, by assembling the operator matrix of the residual and solving the linear system. 
         /// </summary>
         public void ComputeP0Solution() {
             this.Concentration.Clear();
@@ -207,12 +210,12 @@ namespace SAIDT {
 
         }
         /// <summary>
-        /// Updates Derived Quantities, but does nothing here as there are no derived variables defined so far for Scalar Advection
+        /// Updates derived quantities, but does nothing here as there are no derived variables defined so far for scalar advection
         /// </summary>
         public override void UpdateDerivedVariables() {
         }
         /// <summary>
-        /// Some BoSSS structure needed for Agglomeration
+        /// Some BoSSS structure needed for agglomeration
         /// </summary>
         public override void InitializeMultiGridOpConfig() {
             MultiGridOperatorConfig = new MultigridOperator.ChangeOfBasisConfig[][]{
