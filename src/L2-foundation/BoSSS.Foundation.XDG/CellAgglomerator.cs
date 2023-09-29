@@ -272,7 +272,7 @@ namespace BoSSS.Foundation.XDG {
         /// <remarks>
         /// The cell agglomerator checks possible problems in the agglomeration pairs coming from <see cref="AgglomerationAlgorithm"/>.
         /// </remarks>
-        public CellAgglomerator(GridData g, List<AgglomerationPair> AgglomerationPairs) {
+        public CellAgglomerator(GridData g, IEnumerable<AgglomerationPair> AgglomerationPairs) {
             using (new FuncTrace()) {
 
                 // check and init
@@ -330,24 +330,6 @@ namespace BoSSS.Foundation.XDG {
                             int a = j2;
                             j2 = j1;
                             j1 = a;
-                        }
-
-                        try {
-                            int i = C2E[j1].Single(delegate (int k) {
-                                int iEdge = Math.Abs(k) - 1;
-                                //                          => E2C[Math.Abs(k) - 1, 0] == jAggSrc &&
-                                if (k > 0)
-                                    return (E2C[iEdge, 0] == j1 && E2C[iEdge, 1] == j2);
-                                else if (k < 0)
-                                    return (E2C[iEdge, 1] == j1 && E2C[iEdge, 0] == j2);
-                                else
-                                    throw new ApplicationException();
-
-                            });
-
-                            AgglomerationEdgesBitMask[Math.Abs(i) - 1] = true;
-                        } catch (InvalidOperationException) {
-                            throw new ArgumentException("Found agglomeration pair which are not neighbor cells.");
                         }
                     }
                 }
