@@ -613,11 +613,17 @@ namespace BoSSS.Solution.XdgTimestepping {
 
 
         /// <summary>
-        /// Operator Evaluation and Linearization, <see cref="DelComputeOperatorMatrix"/>:
+        /// Spatial Operator Evaluation and Linearization, <see cref="DelComputeOperatorMatrix"/>:
         /// - either update operator linearization matrix 
         /// - or evaluate the operator in the current linearization point
         /// In both cases, only the spatial component (i.e. no temporal derivatives) are linearized/evaluated.
-        /// /// </summary>
+        /// 
+        /// The contribution from the spatial operator is than added in <see cref="XdgTimesteppingBase.AssembleMatrixCallback"/>;
+        /// This contribution depends on the chosen time discretization see:
+        /// - <see cref="XdgBDFTimestepping.AssembleMatrixCallback"/>
+        /// - <see cref="XdgRKTimestepping.AssembleMatrixCallback"/>
+        /// - base routine: <see cref="XdgTimesteppingBase.AssembleMatrixCallback"/>
+        /// </summary>
         public void ComputeOperatorMatrix(BlockMsrMatrix OpMtx, double[] OpAffine, UnsetteledCoordinateMapping Mapping, DGField[] __CurrentState, Dictionary<SpeciesId, MultidimensionalArray> AgglomeratedCellLengthScales, double time, int LsTrkHistoryIndex) {
             using(var ft = new FuncTrace()) {
                 // compute operator
