@@ -81,7 +81,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             DGField[] IterationResiduals,
             LevelSetTracker LsTrk,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
-            ISpatialOperator abstractOperator,
+            IDifferentialOperator abstractOperator,
             Func<ISlaveTimeIntegrator> _UpdateLevelset,
             RungeKuttaScheme _RKscheme,
             LevelSetHandling _LevelSetHandling,
@@ -673,7 +673,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Matrix/Affine assembly in the case of an implicit RK stage.
         /// </summary>
-        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOp) {
+        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PcMassMatrix, DGField[] argCurSt, bool Linearization, out IDifferentialOperator abstractOp) {
 
             abstractOp = base.AbstractOperator;
            

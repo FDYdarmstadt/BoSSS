@@ -670,7 +670,7 @@ namespace BoSSS.Application.ExternalBinding {
                 // Assembly of Cahn Hilliard operator
                 // ==================================
                 int nParams = 7;
-                SpatialOperator CahnHillOp;
+                DifferentialOperator CahnHillOp;
                 {
                     double lambda = 0.0;
                     double penalty_const = 2.6;
@@ -679,7 +679,7 @@ namespace BoSSS.Application.ExternalBinding {
 
 
                     // var op = new SpatialOperator(2, nParams, 2, QuadOrderFunc.Linear(), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
-                    CahnHillOp = new SpatialOperator(2, nParams, 2, QuadOrderFunc.NonLinearWithoutParameters(3), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
+                    CahnHillOp = new DifferentialOperator(2, nParams, 2, QuadOrderFunc.NonLinearWithoutParameters(3), "c", "mu", "VelocityX", "VelocityY", "VelocityZ", "c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
                     // var op = new XSpatialOperatorMk2(2, nParams, 2, QuadOrderFunc.Linear(), new List<string>{"a", "b"}, "c", "mu", "VelocityX", "VelocityY", "VelocityZ","c0", "LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "Res_c", "Res_mu");
                     // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0", "VelocityX", "VelocityY", "VelocityZ", "c_Res", "mu_Res");
                     // var op = new SpatialOperator(2, 4, 2, QuadOrderFunc.Linear(), "c", "mu", "c0","LevelSetGradient[0]", "LevelSetGradient[1]", "LevelSetGradient[2]", "c_Res", "mu_Res");
@@ -950,7 +950,7 @@ namespace BoSSS.Application.ExternalBinding {
             var map = new UnsetteledCoordinateMapping(b);
 
             var L = new Laplace(1.3, ptch);
-            var op = new SpatialOperator(1, 0, 1, QuadOrderFunc.Linear(), "T", "c1");
+            var op = new DifferentialOperator(1, 0, 1, QuadOrderFunc.Linear(), "T", "c1");
 
             op.EquationComponents["c1"].Add(L);
             op.Commit();

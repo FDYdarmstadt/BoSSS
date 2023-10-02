@@ -78,7 +78,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
             this ResidualLoggerTypes loggerType,
             Application<T> program,
             CompressibleControl config,
-            SpatialOperator differentialOperator,
+            DifferentialOperator differentialOperator,
             DGField[] consVars,
             CoordinateMapping paramMap)
             where T : CompressibleControl, new() {

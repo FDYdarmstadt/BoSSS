@@ -104,8 +104,8 @@ namespace ApplicationWithIDT {
         }
         #endregion
         #region Operator stuff
-        public XSpatialOperatorMk2 XSpatialOperator { get; set; }
-        public XSpatialOperatorMk2 Op_obj { get; set; }
+        public XDifferentialOperatorMk2 XSpatialOperator { get; set; }
+        public XDifferentialOperatorMk2 Op_obj { get; set; }
         public IEvaluatorNonLin Eval_r { get; set; }
         public IOptProb Oproblem {get;set;}
         public IEvaluatorNonLin Eval_R { get; set; }
@@ -116,8 +116,8 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// The Jacobi operators belonging to r and R, used when Linearization = JacobiOperator
         /// </summary>
-        public ISpatialOperator r_JacobiOperator { get; set; }
-        public ISpatialOperator R_JacobiOperator { get; set; }
+        public IDifferentialOperator r_JacobiOperator { get; set; }
+        public IDifferentialOperator R_JacobiOperator { get; set; }
         public PlotDriver plotDriver { get; set; }
         #endregion
         #region Coordinate Vectors and Mappings

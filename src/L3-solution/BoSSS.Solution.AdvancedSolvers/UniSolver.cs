@@ -27,7 +27,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         class MatrixAssembler {
 
-            public MatrixAssembler(ISpatialOperator __op, CoordinateMapping Solution, AggregationGridData[] __MultigridSequence = null, QueryHandler __queryHandler = null, MultigridOperator.ChangeOfBasisConfig[][] __MgConfig = null) {
+            public MatrixAssembler(IDifferentialOperator __op, CoordinateMapping Solution, AggregationGridData[] __MultigridSequence = null, QueryHandler __queryHandler = null, MultigridOperator.ChangeOfBasisConfig[][] __MgConfig = null) {
                 using(var tr = new FuncTrace()) {
                     // init
                     // ====
@@ -68,7 +68,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
 
-                    xop = op as XSpatialOperatorMk2;
+                    xop = op as XDifferentialOperatorMk2;
 
 
                     if(xop != null) {
@@ -193,11 +193,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
             public LevelSetTracker LsTrk;
 
-            public XSpatialOperatorMk2 xop;
+            public XDifferentialOperatorMk2 xop;
 
             public int quadOrder;
 
-            public ISpatialOperator op;
+            public IDifferentialOperator op;
 
             public bool verbose = false;
 
@@ -212,7 +212,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             /// <summary>
             /// Implementation of <see cref="OperatorEvalOrLin"/>
             /// </summary>
-            public void AssembleMatrix(out BlockMsrMatrix opMtx, out double[] opAff, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization, out ISpatialOperator OberFrickelHack) {
+            public void AssembleMatrix(out BlockMsrMatrix opMtx, out double[] opAff, out BlockMsrMatrix MassMatrix, DGField[] CurrentState, bool Linearization, out IDifferentialOperator OberFrickelHack) {
                 using(var tr = new FuncTrace()) {
 
                     var Solution = new CoordinateMapping(CurrentState);
@@ -357,7 +357,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         var mtxBuilder = xop.GetFDJacobianBuilder(LsTrk, this.SolMapping, this.ParamFields, this.SolMapping);
                         mtxBuilder.time = 0.0;
                         mtxBuilder.MPITtransceive = true;
-                        if(mtxBuilder.Eval is XSpatialOperatorMk2.XEvaluatorNonlin evn) {
+                        if(mtxBuilder.Eval is XDifferentialOperatorMk2.XEvaluatorNonlin evn) {
                             foreach(var kv in AgglomeratedCellLengthScales) {
                                 evn.CellLengthScales[kv.Key] = kv.Value;
                             }
@@ -367,7 +367,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     }
 
                     case LinearizationHint.GetJacobiOperator: {
-                        var JacXop = xop.GetJacobiOperator(gdat.SpatialDimension) as XSpatialOperatorMk2;
+                        var JacXop = xop.GetJacobiOperator(gdat.SpatialDimension) as XDifferentialOperatorMk2;
 
                         if(JacobiParameterVars == null)
                             JacobiParameterVars = JacXop.InvokeParameterFactory(this.SolutionFields);
@@ -485,7 +485,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// - If false, console output should be relatively less
         /// </param>
         /// <param name="MgConfig">
-        /// Provisional: will be integrated into the <see cref="ISpatialOperator"/> at some point.
+        /// Provisional: will be integrated into the <see cref="IDifferentialOperator"/> at some point.
         /// </param>
         /// <param name="queryHandler">
         /// if provided, logging of solver statistics to the unified query table used with the BoSSS database
@@ -497,7 +497,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <returns>
         /// true on solver success
         /// </returns>
-        static public bool Solve(this ISpatialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
+        static public bool Solve(this IDifferentialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
             MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null,
             NonLinearSolverConfig nsc = null, ISolverFactory lsc = null,
             AggregationGridData[] MultigridSequence = null,
@@ -722,7 +722,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// </param>
         /// <returns></returns>
         /// <seealso cref="BoSSS.Solution.Application{T}.OperatorAnalysis"/>
-        static public IDictionary<string, double> OperatorAnalysis(this ISpatialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
+        static public IDictionary<string, double> OperatorAnalysis(this IDifferentialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
 
             var G = new MatrixAssembler(op, Mapping, null, null, MgConfig);
 
@@ -770,7 +770,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// provisional; note that the block preconditioning configured here has huge effects on the condition number.
         /// </param>
         /// <returns></returns>
-        static public MultigridOperator GetMultigridOperator(this ISpatialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
+        static public MultigridOperator GetMultigridOperator(this IDifferentialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
 
             var G = new MatrixAssembler(op, Mapping, null, null, MgConfig);
 
@@ -796,7 +796,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// provisional; note that the block preconditioning configured here has huge effects on the condition number.
         /// </param>
         /// <returns></returns>
-        static public BlockMsrMatrix GetMatrix(this ISpatialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
+        static public BlockMsrMatrix GetMatrix(this IDifferentialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
 
             return GetMultigridOperator(op, Mapping, MgConfig).OperatorMatrix;
 

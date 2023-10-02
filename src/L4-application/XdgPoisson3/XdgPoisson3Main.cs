@@ -166,7 +166,7 @@ namespace BoSSS.Application.XdgPoisson3 {
             double MU_A = this.Control.MU_A;
             double MU_B = this.Control.MU_B;
 
-            Op = new XSpatialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
+            Op = new XDifferentialOperatorMk2(1, 1, (A, B, C) => order, this.LsTrk.SpeciesNames, "u", "c1");
             Op.AgglomerationThreshold = this.Control.AgglomerationThreshold;
             //var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
             var lap = new XLaplace_Bulk(penalty_multiplyer, "u", this.Control.xLaplaceBCs, 1.0, MU_A, MU_B, this.Control.ViscosityMode);
@@ -181,7 +181,7 @@ namespace BoSSS.Application.XdgPoisson3 {
      
 
 
-        XSpatialOperatorMk2 Op;
+        XDifferentialOperatorMk2 Op;
 
   
         SinglePhaseField[] MGColoring;

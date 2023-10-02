@@ -24,14 +24,14 @@ namespace BoSSS.Solution.CompressibleFlowCommon.EquationSystem {
 
     public static class CompressibleOperatorFactory {
 
-        public static SpatialOperator BuildEulerOperator(IGridData gridData, CompressibleControl control) {
+        public static DifferentialOperator BuildEulerOperator(IGridData gridData, CompressibleControl control) {
 
             // Boundary condition map
             Material material = control.GetMaterial();
             IBoundaryConditionMap boundaryMap = new CompressibleBoundaryCondMap(gridData, control, material);
 
             // Initialize operator
-            SpatialOperator EulerOperator = new SpatialOperator(
+            DifferentialOperator EulerOperator = new DifferentialOperator(
                 new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy },
                 new string[] { },
                 new string[] { CompressibleVariables.Density, CompressibleVariables.Momentum.xComponent, CompressibleVariables.Momentum.yComponent, CompressibleVariables.Energy },

@@ -227,7 +227,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Main spatial operator
         /// </summary>
-        public abstract ISpatialOperator Operator {
+        public abstract IDifferentialOperator Operator {
             get;
         }
 
@@ -571,12 +571,12 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         /// <returns></returns>
         /// <param name="D">spatial dimension</param>
-        abstract protected XSpatialOperatorMk2 GetOperatorInstance(int D);
+        abstract protected XDifferentialOperatorMk2 GetOperatorInstance(int D);
 
         /// <summary>
         /// 
         /// </summary>
-        public override ISpatialOperator Operator {
+        public override IDifferentialOperator Operator {
             get {
                 return XOperator;
             }
@@ -609,7 +609,7 @@ namespace BoSSS.Solution.XdgTimestepping {
 
         }
 
-        private XSpatialOperatorMk2 m_XOperator {
+        private XDifferentialOperatorMk2 m_XOperator {
             get;
             set;
         }
@@ -617,7 +617,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Cache for <see cref="GetOperatorInstance"/>
         /// </summary>
-        virtual public XSpatialOperatorMk2 XOperator {
+        virtual public XDifferentialOperatorMk2 XOperator {
             get {
                 if (m_XOperator == null) {
                     m_XOperator = GetOperatorInstance(this.Grid.SpatialDimension);
@@ -824,7 +824,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// initialization of the main spatial operator
         /// </summary>
         /// <param name="D">spatial dimension</param>
-        abstract protected SpatialOperator GetOperatorInstance(int D);
+        abstract protected DifferentialOperator GetOperatorInstance(int D);
 
         /// <summary>
         /// empty in the DG case
@@ -849,19 +849,19 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// 
         /// </summary>
-        public override ISpatialOperator Operator {
+        public override IDifferentialOperator Operator {
             get {
                 return SOperator;
             }
         }
 
 
-        SpatialOperator m_SOperator;
+        DifferentialOperator m_SOperator;
 
         /// <summary>
         /// Cache for <see cref="GetOperatorInstance"/>
         /// </summary>
-        virtual public SpatialOperator SOperator {
+        virtual public DifferentialOperator SOperator {
             get {
                 if(m_SOperator == null) {
                     m_SOperator = GetOperatorInstance(this.Grid.SpatialDimension);

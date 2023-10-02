@@ -31,7 +31,7 @@ using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.Quadrature.FluxQuadCommon;
 
-using static BoSSS.Foundation.SpatialOperator;
+using static BoSSS.Foundation.DifferentialOperator;
 
 
 namespace BoSSS.Foundation.XDG {
@@ -41,7 +41,7 @@ namespace BoSSS.Foundation.XDG {
     /// it can have components which couple the phases.
     /// Mk2: enables the definition of different equation components for each phase 
     /// </summary>
-    public partial class XSpatialOperatorMk2 : ISpatialOperator {
+    public partial class XDifferentialOperatorMk2 : IDifferentialOperator {
 
         bool m_IsLinear;
 
@@ -61,7 +61,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// <see cref="ISpatialOperator.VectorFieldIndices"/>
+        /// <see cref="IDifferentialOperator.VectorFieldIndices"/>
         /// </summary>
         /// <remarks>
         /// Note: two ore more domain variable names of <see cref="DomainVar"/> are considered to be part of a vector field, 
@@ -77,7 +77,7 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// <see cref="ISpatialOperator.SolverSafeguard"/>
+        /// <see cref="IDifferentialOperator.SolverSafeguard"/>
         /// </summary>
         public SolverSafeguard SolverSafeguard {
             get;
@@ -104,9 +104,9 @@ namespace BoSSS.Foundation.XDG {
 
         public List<string> m_SpeciesList = new List<string>();
 
-        private SpatialOperator FilterSpeciesOperator(ISpatialOperator op, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
+        private DifferentialOperator FilterSpeciesOperator(IDifferentialOperator op, LevelSetTracker lsTrk, string species, int order, EdgeQuadratureScheme eqs, CellQuadratureScheme cqs, int TrackerHistory, IDictionary<SpeciesId,MultidimensionalArray> CellLenScales, IDictionary<SpeciesId,MultidimensionalArray> EdgLenScales) {
 
-            var r = new SpatialOperator(op.DomainVar, op.ParameterVar, op.CodomainVar, (degDom, degParam, degCod) => order);
+            var r = new DifferentialOperator(op.DomainVar, op.ParameterVar, op.CodomainVar, (degDom, degParam, degCod) => order);
 
             r.UserDefinedValues.AddRange(this.UserDefinedValues[species]);
 
@@ -180,7 +180,7 @@ namespace BoSSS.Foundation.XDG {
         ///     pages = {1217--1220}
         /// }                                                
         /// </summary>
-        public SpatialOperator GhostEdgesOperator {
+        public DifferentialOperator GhostEdgesOperator {
             get;
             private set;
         }
@@ -189,7 +189,7 @@ namespace BoSSS.Foundation.XDG {
         /// Non-coupling surface terms; originally intended to implement the flux-form of the surface tension.
         /// **Note: This only considers the 0-th level-set.**
         /// </summary>
-        public SpatialOperator SurfaceElementOperator_Ls0 {
+        public DifferentialOperator SurfaceElementOperator_Ls0 {
             get;
             private set;
         }
@@ -198,7 +198,7 @@ namespace BoSSS.Foundation.XDG {
         /// Non-coupling contact-line terms.
         /// **Note: This only considers the 0-th level-set.**
         /// </summary>
-        public SpatialOperator ContactLineOperator_Ls0 {
+        public DifferentialOperator ContactLineOperator_Ls0 {
             get;
             private set;
         }
@@ -345,9 +345,9 @@ namespace BoSSS.Foundation.XDG {
         /// Clone Method
         /// </summary>
         /// <returns></returns>
-        public XSpatialOperatorMk2 CloneAs()
+        public XDifferentialOperatorMk2 CloneAs()
         {
-            var ret = new XSpatialOperatorMk2(this.DomainVar, this.CodomainVar, this.QuadOrderFunction, this.Species);
+            var ret = new XDifferentialOperatorMk2(this.DomainVar, this.CodomainVar, this.QuadOrderFunction, this.Species);
 
             foreach(string var in this.CodomainVar)
             {
@@ -963,7 +963,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,int,Func{int[],int[],int[],int},string[])"/>
         /// </summary>
-        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species, params string[] __varnames)
+        public XDifferentialOperatorMk2(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species, params string[] __varnames)
             : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfParameters), GetSubarray(__varnames, NoOfDomFields + NoOfParameters, NoOfCodomFields), QuadOrderFunc, __Species) {
             if(NoOfCodomFields + NoOfDomFields + NoOfParameters != __varnames.Length)
                 throw new ArgumentException("mismatch between number of provided variable names and given number of domain, parameter and codomain fields.");
@@ -971,9 +971,9 @@ namespace BoSSS.Foundation.XDG {
         }
 
         /// <summary>
-        /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,Func{int[],int[],int[],int},string[])"/>
+        /// ctor, see <see cref="DifferentialOperator.DifferentialOperator(int,int,Func{int[],int[],int[],int},string[])"/>
         /// </summary>
-        public XSpatialOperatorMk2(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species, params string[] __varnames)
+        public XDifferentialOperatorMk2(int NoOfDomFields, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species, params string[] __varnames)
            : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfCodomFields), QuadOrderFunc, __Species) {
             if(NoOfCodomFields + NoOfDomFields != __varnames.Length)
                 throw new ArgumentException("mismatch between number of provided variable names and given number of domain and codomain fields.");
@@ -982,7 +982,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor
         /// </summary>
-        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species)
+        public XDifferentialOperatorMk2(IList<string> __DomainVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species)
             : this(__DomainVar, null, __CoDomainVar, QuadOrderFunc, __Species) {
         }
 
@@ -990,7 +990,7 @@ namespace BoSSS.Foundation.XDG {
         /// Almost empty constructor; Variable, Parameter, and Codomain/Equation names are specified by the 
         /// order in which equation components are added.
         /// </summary>
-        public XSpatialOperatorMk2(double __AgglomerationThreshold, params string[] species)
+        public XDifferentialOperatorMk2(double __AgglomerationThreshold, params string[] species)
             : this(new string[0], new string[0], new string[0], QuadOrderFunc.NonLinear(2), species) {
         }
 
@@ -998,7 +998,7 @@ namespace BoSSS.Foundation.XDG {
         /// <summary>
         /// ctor
         /// </summary>
-        public XSpatialOperatorMk2(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species) {
+        public XDifferentialOperatorMk2(IList<string> __DomainVar, IList<string> __ParameterVar, IList<string> __CoDomainVar, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species) {
             m_DomainVar = new string[__DomainVar.Count];
             for(int i = 0; i < m_DomainVar.Length; i++) {
                 if(Array.IndexOf<string>(m_DomainVar, __DomainVar[i]) >= 0)
@@ -1043,11 +1043,11 @@ namespace BoSSS.Foundation.XDG {
             this.QuadOrderFunction = QuadOrderFunc;
 
             
-            GhostEdgesOperator = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
+            GhostEdgesOperator = new DifferentialOperator(DomainVar, ParameterVar, CodomainVar,
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
-            SurfaceElementOperator_Ls0 = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
+            SurfaceElementOperator_Ls0 = new DifferentialOperator(DomainVar, ParameterVar, CodomainVar,
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
-            ContactLineOperator_Ls0 = new SpatialOperator(DomainVar, ParameterVar, CodomainVar,
+            ContactLineOperator_Ls0 = new DifferentialOperator(DomainVar, ParameterVar, CodomainVar,
                 (int[] A, int[] B, int[] C) => throw new ApplicationException("should not be called - only the 'FilterSpeciesOperator(...)' should be used."));
         }
 
@@ -1070,19 +1070,19 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         public class _XEquationComponents : IEquationComponents {
 
-            internal _XEquationComponents(XSpatialOperatorMk2 owner) {
+            internal _XEquationComponents(XDifferentialOperatorMk2 owner) {
                 m_owner = owner;
             }
 
-            XSpatialOperatorMk2 m_owner;
+            XDifferentialOperatorMk2 m_owner;
 
             /// <summary>
             /// Returns the collection of equation components for one variable in the codomain;
-            /// If the <paramref name="EqnName"/> is not known, and the operator is not committed yet (<see cref="SpatialOperator.Commit"/>) a new 
+            /// If the <paramref name="EqnName"/> is not known, and the operator is not committed yet (<see cref="DifferentialOperator.Commit"/>) a new 
             /// equation/codomain name is appended.
             /// </summary>
             /// <param name="EqnName">
-            /// a variable in the codomain (<see cref="SpatialOperator.CodomainVar"/>)
+            /// a variable in the codomain (<see cref="DifferentialOperator.CodomainVar"/>)
             /// </param>
             /// <returns></returns>
             public ICollection<IEquationComponent> this[string EqnName] {
@@ -1173,7 +1173,7 @@ namespace BoSSS.Foundation.XDG {
 
 
             // this is required because we allow equations and variable names to be added _before_ Commit();
-            SpatialOperator SyncSlaveOp(SpatialOperator slave, string slaveName) {
+            DifferentialOperator SyncSlaveOp(DifferentialOperator slave, string slaveName) {
                 if(!slave.IsCommitted)
                     throw new ApplicationException();
 
@@ -1186,7 +1186,7 @@ namespace BoSSS.Foundation.XDG {
                         throw new NotSupportedException($"Found domain variable {s} in {slaveName}, but not in main operator - not supported!");
                     }
 
-                var R = new SpatialOperator(this.DomainVar, this.ParameterVar, this.CodomainVar, slave.QuadOrderFunction);
+                var R = new DifferentialOperator(this.DomainVar, this.ParameterVar, this.CodomainVar, slave.QuadOrderFunction);
                 foreach(var eqname in slave.CodomainVar) {
                     foreach(var c in slave.EquationComponents[eqname])
                         R.EquationComponents[eqname].Add(c);
@@ -1215,7 +1215,7 @@ namespace BoSSS.Foundation.XDG {
         List<DelPartialParameterUpdate> m_ParameterUpdates = new List<DelPartialParameterUpdate>();
 
         /// <summary>
-        /// <see cref="ISpatialOperator.ParameterUpdates"/>
+        /// <see cref="IDifferentialOperator.ParameterUpdates"/>
         /// </summary>
         public ICollection<DelPartialParameterUpdate> ParameterUpdates {
             get {
@@ -1230,7 +1230,7 @@ namespace BoSSS.Foundation.XDG {
         List<DelParameterFactory> m_ParameterFactories = new List<DelParameterFactory>();
 
         /// <summary>
-        /// <see cref="ISpatialOperator.ParameterFactories"/>
+        /// <see cref="IDifferentialOperator.ParameterFactories"/>
         /// </summary>
         public ICollection<DelParameterFactory> ParameterFactories {
             get {
@@ -1245,7 +1245,7 @@ namespace BoSSS.Foundation.XDG {
         List<Action<double>> m_HomotopyUpdate = new List<Action<double>>();
 
         /// <summary>
-        /// <see cref="ISpatialOperator.HomotopyUpdate"/>
+        /// <see cref="IDifferentialOperator.HomotopyUpdate"/>
         /// </summary>
         public ICollection<Action<double>> HomotopyUpdate {
             get {
@@ -1286,7 +1286,7 @@ namespace BoSSS.Foundation.XDG {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        public ISpatialOperator GetJacobiOperator(int SpatialDimension) {
+        public IDifferentialOperator GetJacobiOperator(int SpatialDimension) {
             return _GetJacobiOperator(SpatialDimension);
         }
 
@@ -1295,7 +1295,7 @@ namespace BoSSS.Foundation.XDG {
         /// An operator which computes the Jacobian matrix of this operator.
         /// All components in this operator need to implement the <see cref="ISupportsJacobianComponent"/> interface in order to support this operation.
         /// </summary>
-        public XSpatialOperatorMk2 _GetJacobiOperator(int SpatialDimension) {
+        public XDifferentialOperatorMk2 _GetJacobiOperator(int SpatialDimension) {
             if (!this.IsCommitted)
                 throw new InvalidOperationException("Invalid prior to calling Commit().");
 
@@ -1327,7 +1327,7 @@ namespace BoSSS.Foundation.XDG {
 
             var h = new JacobianParamUpdate(this.DomainVar, this.ParameterVar, allcomps, extractTaf, SpatialDimension);
                        
-            var JacobianOp = new XSpatialOperatorMk2(
+            var JacobianOp = new XDifferentialOperatorMk2(
                    this.DomainVar,
                    h.JacobianParameterVars,
                    this.CodomainVar,
@@ -1423,9 +1423,9 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         class TemporalOperatorContainer : ITemporalOperator {
 
-            XSpatialOperatorMk2 m_newOwner;
+            XDifferentialOperatorMk2 m_newOwner;
             ITemporalOperator m_encapsulatedObj;
-            public TemporalOperatorContainer(XSpatialOperatorMk2 __newOwner, ITemporalOperator __encapsulatedObj) {
+            public TemporalOperatorContainer(XDifferentialOperatorMk2 __newOwner, ITemporalOperator __encapsulatedObj) {
                 m_encapsulatedObj = __encapsulatedObj;
                 m_newOwner = __newOwner;
 
@@ -1753,7 +1753,7 @@ namespace BoSSS.Foundation.XDG {
       
 
         /// <summary>
-        /// <see cref="ISpatialOperator.IsValidDomainDegreeCombination"/>
+        /// <see cref="IDifferentialOperator.IsValidDomainDegreeCombination"/>
         /// </summary>
         public bool IsValidDomainDegreeCombination(int[] DomainDegreesPerVariable, int[] CodomainDegreesPerVariable) {
             if (!this.IsCommitted)
@@ -1803,7 +1803,7 @@ namespace BoSSS.Foundation.XDG {
         /// if a component has an illegal configuration (e.g. it's arguments
         /// (<see cref="BoSSS.Foundation.IEquationComponent.ArgumentOrdering"/>) are not contained
         /// in the domain variable list (<see cref="DomainVar"/>)), an 
-        /// exception is thrown, if <paramref name="allowVarAddition"/> is set true, see also <see cref="ISpatialOperator.Commit(bool)"/>
+        /// exception is thrown, if <paramref name="allowVarAddition"/> is set true, see also <see cref="IDifferentialOperator.Commit(bool)"/>
         /// </remarks>
         internal protected void Verify(bool allowVarAddition) {
             //if(this.IsLinear && LinearizationHint != LinearizationHint.AdHoc)
@@ -2077,9 +2077,9 @@ namespace BoSSS.Foundation.XDG {
         /// </summary>
         class MyDict : IDictionary<string, bool> {
 
-            XSpatialOperatorMk2 owner;
+            XDifferentialOperatorMk2 owner;
 
-            public MyDict(XSpatialOperatorMk2 __owner) {
+            public MyDict(XDifferentialOperatorMk2 __owner) {
                 owner = __owner;
                 InternalRep = new Dictionary<string, bool>();
                 foreach (string domName in __owner.DomainVar) {

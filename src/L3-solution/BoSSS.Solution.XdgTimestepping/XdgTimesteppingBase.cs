@@ -48,7 +48,7 @@ namespace BoSSS.Solution.XdgTimestepping {
     /// <param name="CurrentState">
     /// Current solution, resp. linearization point;
     /// For linear problems the output matrix and vector must be (per definition) independent of the linearization point,
-    /// otherwise the problem is nonlinear (see also <see cref="ISpatialOperator.IsLinear"/>).
+    /// otherwise the problem is nonlinear (see also <see cref="IDifferentialOperator.IsLinear"/>).
     /// </param>
     /// <param name="AgglomeratedCellLengthScales">
     /// Length scale *of agglomerated grid* for each cell, e.g. to set penalty parameters. 
@@ -630,7 +630,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <summary>
         /// Les spatial operateur 
         /// </summary>
-        public virtual ISpatialOperator AbstractOperator {
+        public virtual IDifferentialOperator AbstractOperator {
             get;
             protected set;
         }
@@ -668,7 +668,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="abstractOperator">
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
-        abstract internal protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator);
+        abstract internal protected void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix MassMatrix, DGField[] argCurSt, bool Linearization, out IDifferentialOperator abstractOperator);
 
         /// <summary>
         /// Unscaled, agglomerated mass matrix used by the preconditioner.

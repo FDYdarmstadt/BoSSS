@@ -209,7 +209,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Spatial operator 
         /// </summary>
-        SpatialOperator XOP;
+        DifferentialOperator XOP;
 
      
         /// <summary>
@@ -346,7 +346,7 @@ namespace BoSSS.Application.Rheology {
 
                     string[] DomName = ArrayTools.Cat(VariableNames.VelocityVector(D), VariableNames.Pressure, VariableNames.StressXX, VariableNames.StressXY, VariableNames.StressYY);
 
-                    XOP = new SpatialOperator(DomName, Params, CodName, QuadOrderFunc.NonLinearWithoutParameters(2));
+                    XOP = new DifferentialOperator(DomName, Params, CodName, QuadOrderFunc.NonLinearWithoutParameters(2));
 
                     // Development switches to turn specific components on or off, 
                     // for the sake of iterative solver testing:
@@ -858,7 +858,7 @@ namespace BoSSS.Application.Rheology {
         /// <summary>
         /// Only for testing / NUnit:
         /// checks whether the finite difference approximation of the Jacobian of <see cref="XOP"/>
-        /// and the Jacobian operator (<see cref="ISpatialOperator.GetJacobiOperator"/>)
+        /// and the Jacobian operator (<see cref="IDifferentialOperator.GetJacobiOperator"/>)
         /// provide approximately the same matrix and affine vector.
         /// </summary>
         internal void CheckJacobian() {

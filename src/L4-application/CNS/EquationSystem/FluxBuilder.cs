@@ -23,7 +23,7 @@ namespace CNS.EquationSystem {
 
     /// <summary>
     /// Base class for flux builders which consume a
-    /// <see cref="SpatialOperator"/> and add all numerical fluxes required
+    /// <see cref="DifferentialOperator"/> and add all numerical fluxes required
     /// by a specific flux type.
     /// </summary>
     public abstract class FluxBuilder {

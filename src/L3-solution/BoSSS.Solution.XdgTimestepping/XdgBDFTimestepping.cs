@@ -84,7 +84,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             LevelSetTracker LsTrk,
             bool DelayInit,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
-            ISpatialOperator abstractOperator,
+            IDifferentialOperator abstractOperator,
             Func<ISlaveTimeIntegrator> _UpdateLevelset,
             int BDForder,
             LevelSetHandling _LevelSetHandling,
@@ -500,7 +500,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         /// <param name="OpInit"></param>
         private void InitTimestepping(bool OpInit) {
-
+            //Debugger.Launch();
             {
                 int[] Jtot =
                     (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally, base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
@@ -737,7 +737,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence,
-            ISpatialOperator abstractOperator) //
+            IDifferentialOperator abstractOperator) //
         {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = false;
@@ -891,7 +891,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="abstractOperator">
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
-        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator) {
+        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out IDifferentialOperator abstractOperator) {
             using (var tr = new FuncTrace()) {
 
                 // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
@@ -1598,7 +1598,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 //mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
                                 duration = DateTime.Now - st;
                             }
-                            Console.WriteLine("solver success: " + linearSolver.Converged + "; runtime: " + duration.TotalSeconds + " sec.");
+                            tr.Info("solver success: " + linearSolver.Converged + "; runtime: " + duration.TotalSeconds + " sec.");
                             success = linearSolver.Converged;
 
 

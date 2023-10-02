@@ -194,7 +194,7 @@ namespace BoSSS.Application.SipPoisson {
         /// <summary>
         /// Spatial operator used by <see cref="UniSolver.Solve"/>
         /// </summary>
-        SpatialOperator LapaceIp;
+        DifferentialOperator LapaceIp;
 
         /// <summary>
         /// Includes assembly of the matrix.
@@ -206,7 +206,7 @@ namespace BoSSS.Application.SipPoisson {
                 // create operator
                 // ===============
                 BoundaryCondMap<BoundaryType> PoissonBcMap = new BoundaryCondMap<BoundaryType>(this.GridData, this.Control.BoundaryValues, "T");
-                LapaceIp = new SpatialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
+                LapaceIp = new DifferentialOperator(1, 1, QuadOrderFunc.SumOfMaxDegrees(), "T", "T");
                 var flux = new ipFlux(base.Control.penalty_poisson, PoissonBcMap);
                 LapaceIp.EquationComponents["T"].Add(flux);
                 LapaceIp.EquationComponents["T"].Add(new RHSSource(this.RHS));
