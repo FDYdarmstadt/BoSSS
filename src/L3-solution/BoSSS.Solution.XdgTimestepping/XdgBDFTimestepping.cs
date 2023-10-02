@@ -120,8 +120,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             base.CurrentParameters = __Parameters.ToArray();
             base.AbstractOperator = abstractOperator;
 
-            if (base.MultigridSequence == null || base.MultigridSequence.Length < 1)
-                throw new ArgumentException("At least one grid level is required.");
 
             base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
 
@@ -196,8 +194,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // multigrid - init
             // ----------------
+            if (base.MultigridSequence == null || base.MultigridSequence.Length < 1)
+                throw new ArgumentException("At least one multi-grid level is required.");
 
             InitMultigrid(Fields.ToArray(), useX);
+
 
 
             // other stuff
