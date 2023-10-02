@@ -961,7 +961,7 @@ namespace BoSSS.Foundation.XDG {
         #region ModSpatialOperator
 
         /// <summary>
-        /// ctor, see <see cref="SpatialOperator.SpatialOperator(int,int,int,Func{int[],int[],int[],int},string[])"/>
+        /// ctor, see <see cref="DifferentialOperator.DifferentialOperator(int,int,int,Func{int[],int[],int[],int},string[])"/>
         /// </summary>
         public XDifferentialOperatorMk2(int NoOfDomFields, int NoOfParameters, int NoOfCodomFields, Func<int[], int[], int[], int> QuadOrderFunc, IEnumerable<string> __Species, params string[] __varnames)
             : this(GetSubarray(__varnames, 0, NoOfDomFields), GetSubarray(__varnames, NoOfDomFields, NoOfParameters), GetSubarray(__varnames, NoOfDomFields + NoOfParameters, NoOfCodomFields), QuadOrderFunc, __Species) {
