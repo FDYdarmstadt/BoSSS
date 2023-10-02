@@ -559,7 +559,7 @@ namespace BoSSS.Application.Rheology {
                     m_Timestepper = new XdgTimestepping(XOP, 
                         this.CurrentSolution.Fields, this.CurrentResidual.Fields, 
                         Control.TimeSteppingScheme, 
-                        this.MultigridOperatorConfig, this.MultigridSequence, 
+                        this.MultigridOperatorConfig,
                         Control.LinearSolver, Control.NonLinearSolver, null, this.QueryHandler);
 
                     m_Timestepper.RegisterResidualLogger(this.ResLogger);

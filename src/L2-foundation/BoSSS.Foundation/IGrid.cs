@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.IO;
 using BoSSS.Platform.LinAlg;
 using ilPSP;

@@ -192,7 +192,6 @@ namespace BoSSS.Application.XdgPoisson3 {
 
             bool succ = this.Op.Solve(this.u.Mapping, MgConfig:this.OpConfig,
                 nsc: this.Control.NonLinearSolver, lsc: this.Control.LinearSolver,
-                MultigridSequence: base.MultigridSequence, 
                 verbose: true,
                 queryHandler: base.QueryHandler);
 

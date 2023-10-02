@@ -649,7 +649,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 this.GetLevelSetUpdater,
                 LevelSetHandling,
                 MultigridOperatorConfig,
-                MultigridSequence,
                 Control.AgglomerationThreshold,
                 Control.LinearSolver, Control.NonLinearSolver,
                 this.LsTrk,
@@ -893,7 +892,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 CurrentResidual.Fields,
                 Control.TimeSteppingScheme,
                 MultigridOperatorConfig,
-                MultigridSequence,
                 Control.LinearSolver, Control.NonLinearSolver,
                 Parameters,
                 this.QueryHandler);

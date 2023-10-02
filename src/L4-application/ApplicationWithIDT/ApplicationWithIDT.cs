@@ -3270,7 +3270,7 @@ namespace ApplicationWithIDT {
                                 ConVars, residuals,
                                 TimeSteppingScheme.ExplicitEuler,
                                 null, LevelSetHandling.None,
-                                this.MultiGridOperatorConfig, null, this.Control.AgglomerationThreshold,
+                                this.MultiGridOperatorConfig, this.Control.AgglomerationThreshold,
                                 this.Control.LinearSolver, this.Control.NonLinearSolver);
 
             //get a starting Timestepsize
@@ -3372,7 +3372,7 @@ namespace ApplicationWithIDT {
                                 ConVars, residuals,
                                 TimeSteppingScheme.RK_ImplicitEuler,
                                 null, LevelSetHandling.None,
-                                this.MultiGridOperatorConfig, null, this.Control.AgglomerationThreshold,
+                                this.MultiGridOperatorConfig, this.Control.AgglomerationThreshold,
                                 this.Control.LinearSolver, this.Control.NonLinearSolver);
 
             //get a starting Timestepsize

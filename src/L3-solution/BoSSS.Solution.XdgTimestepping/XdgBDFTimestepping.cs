@@ -91,7 +91,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
             SpatialOperatorType _SpatialOperatorType,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
-            AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool _useX, Control.NonLinearSolverConfig nonlinconfig,
@@ -116,13 +115,12 @@ namespace BoSSS.Solution.XdgTimestepping {
             this.AbstractOperator = AbstractOperator;
             this.Config_AgglomerationThreshold = _AgglomerationThreshold;
             this.useX = _useX;
-            base.MultigridSequence = _MultigridSequence;
             base.Config_SpeciesToCompute = _SpId;
             base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
             base.CurrentParameters = __Parameters.ToArray();
             base.AbstractOperator = abstractOperator;
 
-            if (_MultigridSequence == null || _MultigridSequence.Length < 1)
+            if (base.MultigridSequence == null || base.MultigridSequence.Length < 1)
                 throw new ArgumentException("At least one grid level is required.");
 
             base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
@@ -709,7 +707,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // Delete agglomeration
                 m_CurrentAgglomeration = null;
                 base.MultigridBasis = null;
-                base.MultigridSequence = null;
                 OneTimeMgInit = false;
             }
         }
@@ -814,7 +811,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // finished
                 m_PrivateBalancingInfo = null;
-                base.MultigridSequence = _MultigridSequence;
                 InitMultigrid(Fields.ToArray(), this.useX);
 
                 // in case of steady level set the xdgAggBasis need to be updated

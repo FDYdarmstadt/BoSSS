@@ -88,7 +88,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
             SpatialOperatorType _SpatialOperatorType,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
-            AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool useX,
@@ -122,11 +121,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             base.AbstractOperator = abstractOperator;
             base.Config_AgglomerationThreshold = _AgglomerationThreshold;
             this.m_RKscheme = _RKscheme.CloneAs();
-            base.MultigridSequence = _MultigridSequence;
             base.Config_SpeciesToCompute = _SpId;
             base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
             base.CurrentParameters = __Parameters.ToArray();
-            if (_MultigridSequence == null || _MultigridSequence.Length < 1)
+            if (base.MultigridSequence == null || base.MultigridSequence.Length < 1)
                 throw new ArgumentException("At least one grid level is required.");
 
             m_CurrentState = new CoordinateVector(Fields);

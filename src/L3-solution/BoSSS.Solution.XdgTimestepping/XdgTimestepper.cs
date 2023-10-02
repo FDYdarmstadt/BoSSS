@@ -292,7 +292,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             Func<ISlaveTimeIntegrator> _UpdateLevelset = null,
             LevelSetHandling _LevelSetHandling = LevelSetHandling.None,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
-            AggregationGridData[] _MultigridSequence = null,
             double _AgglomerationThreshold = 0.1,
             AdvancedSolvers.ISolverFactory LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
             LevelSetTracker _optTracker = null,
@@ -334,7 +333,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 _UpdateLevelset, 
                 _LevelSetHandling,
                 _MultigridOperatorConfig, 
-                _MultigridSequence, 
                 _AgglomerationThreshold,
                 LinearSolver, NonLinearSolver,
                 queryHandler);
@@ -346,7 +344,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> Fields, IEnumerable<DGField> __Parameters, IEnumerable<DGField> IterationResiduals, 
             SpeciesId[] spcToCompute,
             Func<ISlaveTimeIntegrator> _UpdateLevelset, LevelSetHandling _LevelSetHandling, 
-            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, AggregationGridData[] _MultigridSequence, 
+            MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig, 
             double _AgglomerationThreshold,
             ISolverFactory LinearSolver, NonLinearSolverConfig NonLinearSolver,
             QueryHandler queryHandler) //
@@ -374,12 +372,12 @@ namespace BoSSS.Solution.XdgTimestepping {
                 };
             }
 
-            // default Multi-Grid
-            // ==================
+            //// default Multi-Grid
+            //// ==================
 
-            if (_MultigridSequence == null) {
-                _MultigridSequence = new[] { CoarseningAlgorithms.ZeroAggregation(this.GridDat) };
-            }
+            //if (_MultigridSequence == null) {
+            //    _MultigridSequence = new[] { CoarseningAlgorithms.ZeroAggregation(this.GridDat) };
+            //}
 
             // default level-set treatment
             // ===========================
@@ -417,7 +415,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     _LevelSetHandling,
                     MassMatrixShapeandDependence.IsTimeDependent,
                     _SpatialOperatorType,
-                    _MultigridOperatorConfig, _MultigridSequence,
+                    _MultigridOperatorConfig,
                     spcToCompute, quadOrder,
                     _AgglomerationThreshold, UseX,
                     NonLinearSolver,
@@ -432,7 +430,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                     _LevelSetHandling,
                     MassMatrixShapeandDependence.IsTimeDependent,
                     _SpatialOperatorType,
-                    _MultigridOperatorConfig, _MultigridSequence,
+                    _MultigridOperatorConfig,
                     spcToCompute, quadOrder,
                     _AgglomerationThreshold, UseX,
                     NonLinearSolver,
@@ -459,7 +457,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 Fields, this.Parameters, IterationResiduals,
                 this.UsedSpecies,
                 this.TimesteppingBase.UpdateLevelset, this.TimesteppingBase.Config_LevelSetHandling,
-                this.TimesteppingBase.Config_MultigridOperator, this.TimesteppingBase.MultigridSequence,
+                this.TimesteppingBase.Config_MultigridOperator,
                 this.TimesteppingBase.Config_AgglomerationThreshold,
                 TimesteppingBase.LinearSolverConfig, TimesteppingBase.XdgSolverFactory.Config, queryBkup);
 
@@ -531,7 +529,6 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> IterationResiduals,
             TimeSteppingScheme __Scheme,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig = null,
-            AggregationGridData[] _MultigridSequence = null,
             ISolverFactory LinearSolver = null, NonLinearSolverConfig NonLinearSolver = null,
             IList<DGField> _Parameters = null,
             QueryHandler queryHandler = null,
@@ -559,7 +556,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 lsu,
                 LevelSetHandling.None,
                 _MultigridOperatorConfig,
-                _MultigridSequence,
                 0.0,
                 LinearSolver, NonLinearSolver, queryHandler);
         }

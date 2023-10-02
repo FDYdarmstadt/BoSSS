@@ -27,7 +27,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         class MatrixAssembler {
 
-            public MatrixAssembler(IDifferentialOperator __op, CoordinateMapping Solution, AggregationGridData[] __MultigridSequence = null, QueryHandler __queryHandler = null, MultigridOperator.ChangeOfBasisConfig[][] __MgConfig = null) {
+            public MatrixAssembler(IDifferentialOperator __op, CoordinateMapping Solution, QueryHandler __queryHandler = null, MultigridOperator.ChangeOfBasisConfig[][] __MgConfig = null) {
                 using(var tr = new FuncTrace()) {
                     // init
                     // ====
@@ -107,7 +107,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     // Verify or Create Multigrid sequence
                     // ===================================
-                    MultigridSequence = __MultigridSequence;
+                    MultigridSequence = Solution.GridDat.MultigridSequence;
                     if(MultigridSequence != null) {
                         if(!object.ReferenceEquals(MultigridSequence[0].ParentGrid, gdat))
                             throw new ArgumentException("Multigrid parent must be the same grid on which the solution is defined.");
@@ -476,10 +476,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// - configuration of the linear solver 
         /// - if null, an default solver configuration is used 
         /// </param>
-        /// <param name="MultigridSequence">
-        /// Multigrid sequence/hierarchy on which a multigrid solver should operate;
-        /// Providing this does not guarantee that a multigrid solver is used, this also depends on the other solver settings.
-        /// </param>
         /// <param name="verbose">
         /// - If true, Writes a lot of logging information
         /// - If false, console output should be relatively less
@@ -500,7 +496,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
         static public bool Solve(this IDifferentialOperator op, CoordinateMapping Solution, CoordinateMapping optRHS = null,
             MultigridOperator.ChangeOfBasisConfig[][] MgConfig = null,
             NonLinearSolverConfig nsc = null, ISolverFactory lsc = null,
-            AggregationGridData[] MultigridSequence = null,
             bool verbose = false, QueryHandler queryHandler = null) {
             using(var tr = new FuncTrace()) {
                 tr.InfoToConsole = verbose;
@@ -529,7 +524,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     };
                 }
 
-                var G = new MatrixAssembler(op, Solution, MultigridSequence, queryHandler, __MgConfig: MgConfig);
+                var G = new MatrixAssembler(op, Solution, queryHandler, __MgConfig: MgConfig);
                 G.verbose = verbose;
 
                 if(verbose) {
@@ -552,8 +547,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     tr.Info($"Using quadrature order {G.quadOrder}.");
                     
 
-                    if(MultigridSequence != null) {
-                        tr.Info($"{MultigridSequence.Length} multigrid levels available.");
+                    if(Solution.GridDat.MultigridSequence != null) {
+                        tr.Info($"{Solution.GridDat.MultigridSequence.Length} multigrid levels available.");
                     } else {
                         tr.Info("No multigrid sequence available - using only one mesh level.");
                     }
@@ -724,7 +719,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <seealso cref="BoSSS.Solution.Application{T}.OperatorAnalysis"/>
         static public IDictionary<string, double> OperatorAnalysis(this IDifferentialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
 
-            var G = new MatrixAssembler(op, Mapping, null, null, MgConfig);
+            var G = new MatrixAssembler(op, Mapping, null, MgConfig);
 
             G.AssembleMatrix(out var Op_Matrix, out var Op_Affine, out var MassMatrix, G.SolutionFields, true, out _);
 
@@ -772,7 +767,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// <returns></returns>
         static public MultigridOperator GetMultigridOperator(this IDifferentialOperator op, CoordinateMapping Mapping, MultigridOperator.ChangeOfBasisConfig[][] MgConfig) {
 
-            var G = new MatrixAssembler(op, Mapping, null, null, MgConfig);
+            var G = new MatrixAssembler(op, Mapping, null, MgConfig);
 
             G.AssembleMatrix(out var Op_Matrix, out var _, out var MassMatrix, G.SolutionFields, true, out _);
 
