@@ -180,7 +180,7 @@ namespace AdvancedSolverTests {
 
         }
 
-        XSpatialOperatorMk2 Op;
+        XDifferentialOperatorMk2 Op;
         int m_quadOrder;
 
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
@@ -196,7 +196,7 @@ namespace AdvancedSolverTests {
             //var lengthScales = ((BoSSS.Foundation.Grid.Classic.GridData)GridData).Cells.PenaltyLengthScales;
             //var lap = new XLaplace_Bulk(this.LsTrk, 2.0 * penalty_base, "u1", xLaplaceBCs, 1.0, 1, 1000, lengthScales, XLaplace_Interface.Mode.SIP);
 
-            Op = new XSpatialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesNames, "u1", "u2", "c1", "c2");
+            Op = new XDifferentialOperatorMk2(2, 0, 2, (A, B, c) => m_quadOrder, LsTrk.SpeciesNames, "u1", "u2", "c1", "c2");
             //Op = new XSpatialOperatorMk2(1, 0, 1, (A, B, c) => m_quadOrder, LsTrk.SpeciesIdS.ToArray(), "u1","c1");
 
             switch (m_Mshape) {
@@ -397,7 +397,7 @@ namespace AdvancedSolverTests {
 
             Agg = LsTrk.GetAgglomerator(this.LsTrk.SpeciesIdS.ToArray(), m_quadOrder, __AgglomerationTreshold: this.THRESHOLD);
 
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, MG_Mapping.ProblemMapping, null, MG_Mapping.ProblemMapping);
             mtxBuilder.time = 0.0;
             mtxBuilder.CellLengthScales.AddRange(Agg.CellLengthScales);
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);

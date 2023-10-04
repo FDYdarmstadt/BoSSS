@@ -38,7 +38,7 @@ namespace NSE_SIMPLE {
             : base(PressureMapping, VelocityMapping, new SinglePhaseField[] { Temperature0 }, SolverConf, false, SpatialComponent, SpatialComponent,
             MaxUsePerIterMatrix: 3, MaxUsePerIterAffine: 2) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             LowMachSIMPLEControl lowMachControl = SolverConf.Control as LowMachSIMPLEControl;
             return (new Divergence_CentralDifference(SpatialComponent, SolverConf.BcMap, lowMachControl.EoS)).Operator();
         }

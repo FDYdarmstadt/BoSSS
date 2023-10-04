@@ -84,7 +84,7 @@ namespace BoSSS.Solution.Timestepping {
         /// optional parameter fields, can be null if
         /// <paramref name="spatialOp"/> contains no parameters; must match the
         /// parameter field list of <paramref name="spatialOp"/>, see
-        /// <see cref="BoSSS.Foundation.SpatialOperator.ParameterVar"/>
+        /// <see cref="BoSSS.Foundation.DifferentialOperator.ParameterVar"/>
         /// </param>
         /// <param name="order">Adams-Bashforth order</param>
         /// <param name="timeStepConstraints">
@@ -93,7 +93,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="sgrd">
         /// optional restriction to computational domain
         /// </param>
-        public AdamsBashforth(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null)
+        public AdamsBashforth(DifferentialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, IList<TimeStepConstraint> timeStepConstraints = null, SubGrid sgrd = null)
             : base(spatialOp, Fieldsmap, Parameters, SubGridBoundaryModes.InnerEdgeLTS, timeStepConstraints, sgrd) {
             if (order > 3 || order == 0) {
                 throw new ArgumentException("Order not supported. Order must be between 1 and 3, but was " + order, "order");
@@ -122,7 +122,7 @@ namespace BoSSS.Solution.Timestepping {
         /// <param name="order"></param>
         /// <param name="spatialOp"></param>
         /// <param name="Fields"></param>
-        public AdamsBashforth(int order, SpatialOperator spatialOp, params DGField[] Fields)
+        public AdamsBashforth(int order, DifferentialOperator spatialOp, params DGField[] Fields)
             : this(spatialOp, new CoordinateMapping(Fields), null, order) {
         }
 

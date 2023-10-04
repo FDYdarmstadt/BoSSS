@@ -35,7 +35,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// <summary>
         /// the differential operator
         /// </summary>
-        SpatialOperator m_DifferentialOperator;
+        DifferentialOperator m_DifferentialOperator;
 
         private IGridData m_GrdDat;
 
@@ -66,7 +66,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// the mapping for the DG fields (variables) in the parameter list of the differential operator <paramref name="DiffOp"/>;
         /// </param>
         protected NECQuadratureCommon(IGridData context,
-                                      SpatialOperator DiffOp,
+                                      DifferentialOperator DiffOp,
                                       IList<DGField> _DomainFields,
                                       IList<DGField> ParamFields,
                                       UnsetteledCoordinateMapping CodomainMapping) {

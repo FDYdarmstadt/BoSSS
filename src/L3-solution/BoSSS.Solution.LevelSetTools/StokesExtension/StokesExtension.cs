@@ -50,23 +50,23 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// Bulk of the artificial Stokes extension equation;
         /// 
         /// Note that it would also be possible to integrate this operator with <see cref="GetInterfaceOperator(int)"/>:
-        /// We could simply use an <see cref="XSpatialOperatorMk2"/> **on single phase fields** for the bulk matrix assembly;
+        /// We could simply use an <see cref="XDifferentialOperatorMk2"/> **on single phase fields** for the bulk matrix assembly;
         /// Then, in any cut background cell, the contribution of all cut cells would be summed up (because
         /// the single-phase field has only a single set of DOFs), in sum mimicking a standard cell integration.
         /// Obviously, this is overkill/unnecessary expense.
         /// It could be resolved by tinkering with the quadrature scheme providers 
-        /// (<see cref="XSpatialOperatorMk2.VolumeQuadraturSchemeProvider"/> and <see cref="XSpatialOperatorMk2.EdgeQuadraturSchemeProvider"/>).
+        /// (<see cref="XDifferentialOperatorMk2.VolumeQuadraturSchemeProvider"/> and <see cref="XDifferentialOperatorMk2.EdgeQuadraturSchemeProvider"/>).
         /// However, since the X-Navier-Stokes terms are implemented in the XNSECommon-package, 
         /// **we cannot use them here anyway, because we would run into circular reference**.
         /// </summary>
-        SpatialOperator GetBulkOperator() {
+        DifferentialOperator GetBulkOperator() {
             var DomVar = VariableNames.VelocityVector(D);
             var CoDomVar = EquationNames.MomentumEquations(D);
             if (fullStokes) {
                 DomVar = DomVar.Cat(VariableNames.Pressure);
                 CoDomVar = CoDomVar.Cat(EquationNames.ContinuityEquation);
             }
-            SpatialOperator Op = new SpatialOperator(DomVar, CoDomVar, QuadOrderFunc.Linear() );
+            DifferentialOperator Op = new DifferentialOperator(DomVar, CoDomVar, QuadOrderFunc.Linear() );
             //Op.QuadOrderFunction = QuadOrderFunc.Linear();
 
             {
@@ -134,11 +134,11 @@ namespace BoSSS.Solution.LevelSetTools.StokesExtension {
         /// this provides the coupling of the artificial Stokes equation for the extension
         /// to the physical equation, <see cref="InteriorVelocityBoundary"/>.
         /// </summary>
-        XSpatialOperatorMk2 GetInterfaceOperator(int levelSetIndex, LevelSetTracker LsTrk, DGField[] InterfaceVelocity) {
+        XDifferentialOperatorMk2 GetInterfaceOperator(int levelSetIndex, LevelSetTracker LsTrk, DGField[] InterfaceVelocity) {
             var BulkOp = GetBulkOperator();
 
             IEnumerable<string> requiredSpecies = LsTrk.GetSpeciesSeparatedByLevSet(levelSetIndex);
-            var Op = new XSpatialOperatorMk2(
+            var Op = new XDifferentialOperatorMk2(
                 BulkOp.DomainVar, 
                 VariableNames.AsLevelSetVariable("Interface", VariableNames.VelocityVector(D)),
                 BulkOp.CodomainVar,

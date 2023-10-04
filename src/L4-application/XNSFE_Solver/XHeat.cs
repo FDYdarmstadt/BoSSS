@@ -89,13 +89,13 @@ namespace BoSSS.Application.XNSFE_Solver {
             return pVel;
         }
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
             OperatorFactory opFactory = new OperatorFactory();
             boundaryMap = new ThermalMultiphaseBoundaryCondMap(this.GridData, this.Control.BoundaryValues, this.LsTrk.SpeciesNames.ToArray());
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
-            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
+            XDifferentialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
             XOP.AgglomerationThreshold = this.Control.AgglomerationThreshold;

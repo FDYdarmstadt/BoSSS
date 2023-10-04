@@ -208,7 +208,7 @@ namespace IntersectingLevelSetTest {
             }
         }
 
-        private XSpatialOperatorMk2 Op;
+        private XDifferentialOperatorMk2 Op;
 
         private int QuadOrder {
             get {
@@ -218,7 +218,7 @@ namespace IntersectingLevelSetTest {
         }
 
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
-            Op = new XSpatialOperatorMk2(1, 0, 1,
+            Op = new XDifferentialOperatorMk2(1, 0, 1,
                 QuadOrderFunc: (int[] DomDegs, int[] ParamDegs, int[] CoDomDegs) => QuadOrder,
                 __Species: new[] { "B" },
                 __varnames: new[] { "u", "c1" });
@@ -250,7 +250,7 @@ namespace IntersectingLevelSetTest {
             double[] Affine = new double[OperatorMatrix.RowPartitioning.LocalLength];
 
             // operator matrix assembly
-            XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, map, null, map);
+            XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = Op.GetMatrixBuilder(base.LsTrk, map, null, map);
             mtxBuilder.time = 0.0;
             mtxBuilder.ComputeMatrix(OperatorMatrix, Affine);
 

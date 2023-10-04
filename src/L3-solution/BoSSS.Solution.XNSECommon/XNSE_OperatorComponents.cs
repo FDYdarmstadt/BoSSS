@@ -51,7 +51,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="config"></param>
         /// <param name="LsTrk"></param>
         /// <param name="U0meanrequired"></param>
-        public static void AddSpeciesNSE_component(XSpatialOperatorMk2 XOp, INSE_Configuration config, int d, int D, string spcName, SpeciesId spcId,
+        public static void AddSpeciesNSE_component(XDifferentialOperatorMk2 XOp, INSE_Configuration config, int d, int D, string spcName, SpeciesId spcId,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             // check input
@@ -205,7 +205,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
         /// <param name="U0meanrequired"></param>
-        public static void AddSpeciesNSE(XSpatialOperatorMk2 XOp, INSE_Configuration config, int D, string spcName, SpeciesId spcId,
+        public static void AddSpeciesNSE(XDifferentialOperatorMk2 XOp, INSE_Configuration config, int D, string spcName, SpeciesId spcId,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, out bool U0meanrequired) {
 
             U0meanrequired = false;
@@ -227,7 +227,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="D"></param>
         /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceNSE_component(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int d, int D,
+        public static void AddInterfaceNSE_component(XDifferentialOperatorMk2 XOp, IXNSE_Configuration config, int d, int D,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             // check input
@@ -316,7 +316,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="config"></param>
         /// <param name="BcMap"></param>
         /// <param name="LsTrk"></param>
-        public static void AddInterfaceNSE(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D,
+        public static void AddInterfaceNSE(XDifferentialOperatorMk2 XOp, IXNSE_Configuration config, int D,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk) {
 
             for (int d = 0; d < D; d++) {
@@ -337,7 +337,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="degU"></param>
         /// <param name="NormalsRequired"></param>
         /// <param name="CurvatureRequired"></param>
-        public static void AddSurfaceTensionForce_component(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int d, int D,
+        public static void AddSurfaceTensionForce_component(XDifferentialOperatorMk2 XOp, IXNSE_Configuration config, int d, int D,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, int degU,
             out bool NormalsRequired, out bool CurvatureRequired) {
 
@@ -487,7 +487,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="degU"></param>
         /// <param name="NormalsRequired"></param>
         /// <param name="CurvatureRequired"></param>
-        public static void AddSurfaceTensionForce(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D,
+        public static void AddSurfaceTensionForce(XDifferentialOperatorMk2 XOp, IXNSE_Configuration config, int D,
             IncompressibleMultiphaseBoundaryCondMap BcMap, LevelSetTracker LsTrk, int degU,
             out bool NormalsRequired, out bool CurvatureRequired) {
 
@@ -519,7 +519,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <param name="spcName"></param>
         /// <param name="spcId"></param>
         /// <param name="BcMap"></param>
-        public static void AddSpeciesContinuityEq(XSpatialOperatorMk2 XOp, INSE_Configuration config, int D,
+        public static void AddSpeciesContinuityEq(XDifferentialOperatorMk2 XOp, INSE_Configuration config, int D,
             string spcName, SpeciesId spcId, IncompressibleMultiphaseBoundaryCondMap BcMap) {
 
             // check input
@@ -558,7 +558,7 @@ namespace BoSSS.Solution.XNSECommon {
         /// <summary>
         /// 
         /// </summary>
-        public static void AddInterfaceContinuityEq(XSpatialOperatorMk2 XOp, IXNSE_Configuration config, int D, LevelSetTracker LsTrk) {
+        public static void AddInterfaceContinuityEq(XDifferentialOperatorMk2 XOp, IXNSE_Configuration config, int D, LevelSetTracker LsTrk) {
 
             // check input
             if (XOp.IsCommitted)

@@ -47,7 +47,7 @@ namespace NSE_SIMPLE {
             : base(VelocityMapping, VelocityMapping, ArrayTools.Cat<SinglePhaseField>(Velocity.ToArray(), VelocityMean.ToArray()),
                 SolverConf, false, SpatialComponent, OnlyAffine: (SpatialComponent != 0)) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             return (new LinearizedConvection(SolverConf.SpatialDimension, SolverConf.BcMap, SpatialComponent)).Operator(2);
         }
     }
@@ -70,7 +70,7 @@ namespace NSE_SIMPLE {
         public MomentumViscousOperator(UnsetteledCoordinateMapping VelocityMapping, SolverConfiguration SolverConf, int SpatialComponent)
             : base(VelocityMapping, VelocityMapping, null, SolverConf, true, SpatialComponent, OnlyAffine: (SpatialComponent != 0)) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             //return (new Viscosity(SolverConf.PenaltyViscMomentum, SolverConf.reynolds, SolverConf.BcMap, SpatialComponent, false)).Operator();            
             return (new SipViscosity_Term1_segregatedVar(
                 SolverConf.PenaltyViscMomentum,

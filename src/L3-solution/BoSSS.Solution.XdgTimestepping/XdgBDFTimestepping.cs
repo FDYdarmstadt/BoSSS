@@ -84,14 +84,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             LevelSetTracker LsTrk,
             bool DelayInit,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
-            ISpatialOperator abstractOperator,
+            IDifferentialOperator abstractOperator,
             Func<ISlaveTimeIntegrator> _UpdateLevelset,
             int BDForder,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
             SpatialOperatorType _SpatialOperatorType,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
-            AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool _useX, Control.NonLinearSolverConfig nonlinconfig,
@@ -116,14 +115,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             this.AbstractOperator = AbstractOperator;
             this.Config_AgglomerationThreshold = _AgglomerationThreshold;
             this.useX = _useX;
-            base.MultigridSequence = _MultigridSequence;
             base.Config_SpeciesToCompute = _SpId;
             base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
             base.CurrentParameters = __Parameters.ToArray();
             base.AbstractOperator = abstractOperator;
 
-            if (_MultigridSequence == null || _MultigridSequence.Length < 1)
-                throw new ArgumentException("At least one grid level is required.");
 
             base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
 
@@ -198,8 +194,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // multigrid - init
             // ----------------
+            if (base.MultigridSequence == null || base.MultigridSequence.Length < 1)
+                throw new ArgumentException("At least one multi-grid level is required.");
 
             InitMultigrid(Fields.ToArray(), useX);
+
 
 
             // other stuff
@@ -500,7 +499,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         /// <param name="OpInit"></param>
         private void InitTimestepping(bool OpInit) {
-
+            //Debugger.Launch();
             {
                 int[] Jtot =
                     (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally, base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
@@ -709,7 +708,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // Delete agglomeration
                 m_CurrentAgglomeration = null;
                 base.MultigridBasis = null;
-                base.MultigridSequence = null;
                 OneTimeMgInit = false;
             }
         }
@@ -737,7 +735,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence,
-            ISpatialOperator abstractOperator) //
+            IDifferentialOperator abstractOperator) //
         {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = false;
@@ -814,7 +812,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // finished
                 m_PrivateBalancingInfo = null;
-                base.MultigridSequence = _MultigridSequence;
                 InitMultigrid(Fields.ToArray(), this.useX);
 
                 // in case of steady level set the xdgAggBasis need to be updated
@@ -891,7 +888,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="abstractOperator">
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
-        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator) {
+        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out IDifferentialOperator abstractOperator) {
             using (var tr = new FuncTrace()) {
 
                 // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
@@ -1598,7 +1595,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 //mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
                                 duration = DateTime.Now - st;
                             }
-                            Console.WriteLine("solver success: " + linearSolver.Converged + "; runtime: " + duration.TotalSeconds + " sec.");
+                            tr.Info("solver success: " + linearSolver.Converged + "; runtime: " + duration.TotalSeconds + " sec.");
                             success = linearSolver.Converged;
 
 

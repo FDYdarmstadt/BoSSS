@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+using BoSSS.Foundation.Grid.Aggregation;
 using BoSSS.Foundation.Grid.RefElements;
 using BoSSS.Platform.LinAlg;
 using BoSSS.Platform.Utils.Geom;
@@ -57,6 +58,13 @@ namespace BoSSS.Foundation.Grid {
         /// return the grid
         /// </summary>
         IGrid Grid {
+            get;
+        }
+
+        /// <summary>
+        /// an optional (i.e. can be null) multi-grid hierarchy
+        /// </summary>
+        AggregationGridData[] MultigridSequence {
             get;
         }
 
@@ -1069,5 +1077,7 @@ namespace BoSSS.Foundation.Grid {
         int[] RcvCommListsNoOfItems {
             get;
         }
+
+        
     }
 }

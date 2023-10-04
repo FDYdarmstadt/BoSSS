@@ -412,14 +412,14 @@ namespace BoSSS.Application.XNSE_Solver {
         /// <summary>
         /// Operator/equation assembly
         /// </summary>
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater) {
 
             OperatorFactory opFactory = new OperatorFactory();
 
             DefineSystem(D, opFactory, levelSetUpdater);
 
             //Get Spatial Operator
-            XSpatialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
+            XDifferentialOperatorMk2 XOP = opFactory.GetSpatialOperator(QuadOrder());
 
             //final settings
             FinalOperatorSettings(XOP, D);
@@ -429,9 +429,9 @@ namespace BoSSS.Application.XNSE_Solver {
         }
 
         /// <summary>
-        /// Misc adjustments to the spatial operator before calling <see cref="ISpatialOperator.Commit"/>
+        /// Misc adjustments to the spatial operator before calling <see cref="IDifferentialOperator.Commit"/>
         /// </summary>
-        protected virtual void FinalOperatorSettings(XSpatialOperatorMk2 XOP, int D) {
+        protected virtual void FinalOperatorSettings(XDifferentialOperatorMk2 XOP, int D) {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = true;
                 XOP.FreeMeanValue[VariableNames.Pressure] = !GetBcMap().DirichletPressureBoundary;
