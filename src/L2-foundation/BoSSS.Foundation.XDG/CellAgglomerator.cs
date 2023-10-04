@@ -63,12 +63,6 @@ namespace BoSSS.Foundation.XDG {
             public int jCellSource;
 
             /// <summary>
-            /// local cell index of neighbor agglomeration source cell that provided a connection to the target
-            /// in case of AgglomerationLevel=1 the cell between the source and the target, in case of AgglomerationLevel  > 1 only the cell next to the source
-            /// </summary>
-            public int jNeighborSource;
-
-            /// <summary>
             /// MPI rank of the process which owns cell <see cref="jCellSource"/>
             /// </summary>
             public int OwnerRank4Source;
@@ -304,15 +298,53 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                // Collect the interprocess agg. pairs directed as this rank
+                int NoLocalAggPairs = AgglomerationPairs.Count();
                 InterProcessAgglomeration = InterProcessAgglomeration.MPISum();
+                List<AgglomerationPair> NeighborPairs = new List<AgglomerationPair>();
 
-                //if (InterProcessAgglomeration > 0) {
-                //    List<AgglomerationPair> NeighborPairs = new List<AgglomerationPair>();
-                //    AgglomerationAlgorithm.DoAggPairsMPIexchangeToTheirNeighbors(AgglomerationPairs.ToList(), ref NeighborPairs);
-                //    AgglomerationPairs = (List<AgglomerationPair>)AgglomerationPairs.Union(NeighborPairs.Where(pair => pair.OwnerRank4Target == mpiRank));
-                //}
+                // if a cell both target and source, its level should be increased
+                var AdjustLevels = new List<AgglomerationPair>(AgglomerationPairs.Count());
+                var str = new List<string>();
+                foreach (var currentPair in AgglomerationPairs) {
+                    AgglomerationPair pa = currentPair;
+                    Console.Write(pa.ToString() + "- default : " + pa.AgglomerationLevel);
 
+                    var CorPairs = AgglomerationPairs.Where(p => p.jCellTarget == pa.jCellSource).Count();
+
+                    if (AgglomerationPairs.Where(p => p.jCellTarget == currentPair.jCellSource).Any()) {
+                        pa.AgglomerationLevel = pa.AgglomerationLevel + CorPairs;                   
+                    } 
+                    Console.WriteLine("Corpairs: " + CorPairs + " now: " + pa.AgglomerationLevel);
+
+                    AdjustLevels.Add(pa);
+                }
+                AdjustLevels.SaveToTextFileDebugUnsteady("AdjustLevels", ".txt");
+                AgglomerationPairs = AdjustLevels;
+
+                // Collect the interprocess agg. pairs directed to this processor
+                if (InterProcessAgglomeration > 0) {
+                    int NoOfChangedPairs = DoAggPairsMPIexchangeForOwners(g, AgglomerationPairs.ToList(), ref NeighborPairs);
+                    AgglomerationPairs = AgglomerationPairs.Union(NeighborPairs).Distinct().ToArray();
+                    Debug.Assert(NoOfChangedPairs == InterProcessAgglomeration);
+                }
+
+                var ArrayAgg = new AgglomerationPair[AgglomerationPairs.Count()];
+
+                int k = 0;
+                foreach (var pair in AgglomerationPairs) {
+                    AgglomerationPair pa = pair;
+                    Console.WriteLine(pa.ToString() + "- coming : " + pa.AgglomerationLevel);
+
+                    var CorPairs = NeighborPairs.Where(p => p.jCellTarget == pa.jCellSource);
+                    foreach (var CorPair in CorPairs) { 
+                            pa.AgglomerationLevel = Math.Max(pa.AgglomerationLevel +1,  CorPair.AgglomerationLevel+1);
+                            Console.WriteLine("Added: " + CorPair.ToString() + " now: " + pa.AgglomerationLevel);
+                    }
+                    ArrayAgg[k] = pa;
+
+                    k++;
+                }
+                AgglomerationPairs = ArrayAgg;
 
                 // mark and check all edges which are used for agglomeration
                 // =========================================================
@@ -365,10 +397,10 @@ namespace BoSSS.Foundation.XDG {
                     ai.InterProcessAgglomeration = InterProcessAgglomeration != 0;
 
                     ai.AgglomerationEdges = new EdgeMask(g, AgglomerationEdgesBitMask);
-                    ai.AgglomerationPairs = AgglomerationPairs.ToArray();
+                    ai.AgglomerationPairs = ArrayAgg;
 
                     // at this point, because jAggSource must be local, the agglomerations are unique over all MPI processors.
-                    this.TotalNumberOfAgglomerations = AgglomerationPairs.Count().MPISum();
+                    this.TotalNumberOfAgglomerations = NoLocalAggPairs.MPISum();
                 }
             }
         }
@@ -781,10 +813,108 @@ namespace BoSSS.Foundation.XDG {
 
                     if(ii < AggPairs.Count)
                         Array.Resize(ref ai.AgglomerationPairs, ii);
-
+                    //ai.AgglomerationPairs.SaveToTextFileDebugUnsteady("Agglomerator", ".txt");
                 }
             }
         }
+
+
+        private static int DoAggPairsMPIexchangeForOwners(GridData grdDat, List<AgglomerationPair> LocalAggPairs, ref List<AgglomerationPair> AggPairsDirectedToThisRank) {
+            int InterProcessAgglomeration = 0;
+            int J = grdDat.iLogicalCells.NoOfLocalUpdatedCells;
+            Partitioning CellPart = grdDat.CellPartitioning;
+            long j0 = CellPart.i0;
+            long[] GidxExt = grdDat.Parallel.GlobalIndicesExternalCells;
+            int MyRank = grdDat.MpiRank;
+
+            // Send data
+            Dictionary<int, List<CellAgglomerator.AgglomerationPair>> _SendData = new Dictionary<int, List<CellAgglomerator.AgglomerationPair>>(Math.Max(1, (int)Math.Round(((double)(LocalAggPairs.Count)) * 1.03)));
+            foreach (var AggPair in LocalAggPairs) {
+                int jAggSource = AggPair.jCellSource;
+                int jAggTarget = AggPair.jCellTarget;
+
+                int targetRank = AggPair.OwnerRank4Target;
+                int sourceRank = AggPair.OwnerRank4Source;
+
+
+                if (jAggSource >= J) {
+                    throw new Exception("Source cells should be in local cell index");
+                }
+
+                // is target in another process?
+                if (jAggTarget >= J || targetRank != MyRank) { //if so we need to send it
+                    InterProcessAgglomeration++;
+
+                    //if (AggPair.AgglomerationLevel < 1)
+                    //    throw new Exception("Inter-process agglomeration can not be zero-th level"); //seems that our agg. algorithm does not work properly
+
+                    // source cells are always in local processor
+                    int jAggSourceGlob = (int)j0 + jAggSource;
+
+                    //find rank of jTarget
+                    long jAggTargetGlob = (GidxExt[jAggTarget - J]);
+
+#if DEBUG
+                    int jAggTargetRank = CellPart.FindProcess(jAggTargetGlob);
+                    Debug.Assert(jAggTargetRank == targetRank);
+#endif
+
+                    List<CellAgglomerator.AgglomerationPair> SendDataList;
+                    if (!_SendData.TryGetValue(targetRank, out SendDataList)) {
+                        SendDataList = new List<CellAgglomerator.AgglomerationPair>();
+                        _SendData.Add(targetRank, SendDataList);
+                    }
+
+                    SendDataList.Add(new CellAgglomerator.AgglomerationPair() {
+                        jCellSource = jAggSourceGlob,
+                        jCellTarget = (int)jAggTargetGlob,
+                        OwnerRank4Source = AggPair.OwnerRank4Source,
+                        OwnerRank4Target = AggPair.OwnerRank4Target,
+                        AgglomerationLevel = AggPair.AgglomerationLevel,
+                    });
+                }
+            }
+
+            Dictionary<int, CellAgglomerator.AgglomerationPair[]> SendData = new Dictionary<int, CellAgglomerator.AgglomerationPair[]>(_SendData.Count);
+            foreach (var kv in _SendData) {
+                SendData.Add(kv.Key, kv.Value.ToArray());
+            }
+            _SendData = null;
+
+            InterProcessAgglomeration = MPIExtensions.MPIMax(InterProcessAgglomeration);
+            if (InterProcessAgglomeration > 0) {
+                // Receive
+                var RcvData = SerialisationMessenger.ExchangeData(SendData);
+                foreach (var kv in RcvData) {
+                    int rcvMpiRank = kv.Key;
+                    var ReceivedAggPairs = kv.Value;
+
+                    foreach (var rap in ReceivedAggPairs) {
+                        // receive pairs and convert back to local coordinates...
+                        long jGlbAggTarget = rap.jCellTarget;
+                        long jGlbAggSource = rap.jCellSource;
+
+                        Debug.Assert(CellPart.IsInLocalRange(jGlbAggTarget), "Agglomeration target is expected to be in local cell range.");
+                        int jAggTarget = (int)(jGlbAggTarget - j0);
+
+                        Debug.Assert(!CellPart.IsInLocalRange(jGlbAggSource), $"Agglomeration source is expected to be outside of the local cell range. proc-{grdDat.MpiRank}");
+                        int jAggSource = grdDat.Parallel.Global2LocalIdx[jGlbAggSource]; //checked((int)(jGlbAggSource - j0));
+
+                        AggPairsDirectedToThisRank.Add(new CellAgglomerator.AgglomerationPair() {
+                            jCellSource = jAggSource,
+                            jCellTarget = jAggTarget,
+                            OwnerRank4Source = rap.OwnerRank4Source,
+                            OwnerRank4Target = rap.OwnerRank4Target,
+                            AgglomerationLevel = rap.AgglomerationLevel
+                        });
+
+                    }
+                }
+            }
+            AggPairsDirectedToThisRank = AggPairsDirectedToThisRank.Distinct().ToList();
+            return InterProcessAgglomeration;
+        }
+
 
         private static int DoAggPairsMPIexchange(GridData g, List<(int jSource, int jTarget)> AggPairs, out List<int> TargetCellMpiRank, out List<int> SourceCellMpiRank) {
 
