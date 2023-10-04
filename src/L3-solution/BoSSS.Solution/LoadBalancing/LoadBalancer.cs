@@ -166,6 +166,7 @@ namespace BoSSS.Solution.LoadBalancing {
                         result = IndexBasedPartition(allCellCosts.Single());
                         break;
 
+                    case GridPartType.OtherSession:
                     case GridPartType.Predefined:
                         return null;
 
@@ -207,27 +208,31 @@ namespace BoSSS.Solution.LoadBalancing {
         /// <param name="imbalanceThreshold"></param>
         /// <returns> False: Imbalance is tolerable. True: Imbalance is too big.</returns>
         public bool CheckImbalance(IApplication app, double imbalanceThreshold) {
-            var imbalanceEstimates = new List<double>();
-            foreach (var estimator in CellCostEstimators) {
-                estimator.UpdateEstimates(app);
-                imbalanceEstimates.AddRange(estimator.ImbalanceEstimate());
-            }
-            bool imbalanceTooLarge = false;
-
+            using (var tr = new FuncTrace()) {
 #if DEBUG
-                Console.WriteLine(
-                    "At least one runtime imbalance estimate ({0}) was above configured threshold ({1:P1}); attempting repartitioning",
-                    String.Join(", ", imbalanceEstimates.Select(e => String.Format("{0:P1}", e))),
-                    imbalanceThreshold);
+                tr.InfoToConsole = true;
 #endif
+                var imbalanceEstimates = new List<double>();
+                foreach (var estimator in CellCostEstimators) {
+                    estimator.UpdateEstimates(app);
+                    imbalanceEstimates.AddRange(estimator.ImbalanceEstimate());
+                }
+                bool imbalanceTooLarge = false;
 
-            for (int i = 0; i < imbalanceEstimates.Count; i++) {
-                if (imbalanceEstimates[i].IsNaNorInf())
-                    throw new ArithmeticException("NaN/Inf in imbalance estimate: " + imbalanceEstimates[i]);
-                imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
+
+                for (int i = 0; i < imbalanceEstimates.Count; i++) {
+                    if (imbalanceEstimates[i].IsNaNorInf())
+                        throw new ArithmeticException("NaN/Inf in imbalance estimate: " + imbalanceEstimates[i]);
+                    imbalanceTooLarge |= (imbalanceEstimates[i] > imbalanceThreshold);
+                }
+
+                if (imbalanceTooLarge) {
+                    tr.Info( $"At least one runtime imbalance estimate ({String.Join(", ", imbalanceEstimates.Select(e => String.Format("{0:P1}", e)))}) was above configured threshold ({imbalanceThreshold:P1}); attempting repartitioning");
+                } else {
+                    tr.Info($"All imbalance estimate ({String.Join(", ", imbalanceEstimates.Select(e => String.Format("{0:P1}", e)))}) are within threshold ({imbalanceThreshold:P1}); no repartitioning necessary");
+                }
+                return imbalanceTooLarge;
             }
-
-            return imbalanceTooLarge;
         }
 
         static int[] IndexBasedPartition(int[] Cost) {

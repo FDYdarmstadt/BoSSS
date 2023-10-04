@@ -160,7 +160,7 @@ namespace BoSSS.Application.XRheology_Solver {
 
             // create Operator
             // ===============
-            m_XOp = new XSpatialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesNames);
+            m_XOp = new XDifferentialOperatorMk2(DomNameSelected, Params, CodNameSelected, (A, B, C) => _HMFdegree, this.LsTrk.SpeciesNames);
 
             // add components
             // ============================
@@ -384,7 +384,7 @@ namespace BoSSS.Application.XRheology_Solver {
             if (OpMatrix != null) {
 
                 if (!useJacobianForOperatorMatrix) {
-                    XSpatialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping);
+                    XDifferentialOperatorMk2.XEvaluatorLinear mtxBuilder = this.m_XOp.GetMatrixBuilder(LsTrk, ColMapping, Params, RowMapping);
                     this.ParameterUpdate(CurrentState, Params, CutCellQuadOrder, AgglomeratedCellLengthScales);
 
                     foreach (var kv in AgglomeratedCellLengthScales) {
@@ -443,7 +443,7 @@ namespace BoSSS.Application.XRheology_Solver {
                 }
 
             } else {
-                XSpatialOperatorMk2.XEvaluatorNonlin eval = this.m_XOp.GetEvaluatorEx(this.LsTrk,
+                XDifferentialOperatorMk2.XEvaluatorNonlin eval = this.m_XOp.GetEvaluatorEx(this.LsTrk,
                     CurrentState.ToArray(), Params, RowMapping);
 
                 foreach (var kv in AgglomeratedCellLengthScales) {

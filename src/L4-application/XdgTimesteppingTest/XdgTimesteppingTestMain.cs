@@ -269,7 +269,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
         }
 
 
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D) {
             // create operator
             // ---------------
 
@@ -300,7 +300,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                     }
                 }
 
-                var Operator = new XSpatialOperatorMk2(1, 2, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames, "u", "Vx", "Vy", "Cod1");
+                var Operator = new XDifferentialOperatorMk2(1, 2, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames, "u", "Vx", "Vy", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new TranportFlux_Bulk() { Inflow = uBnd });
                 Operator.EquationComponents["Cod1"].Add(new TransportFlux_Interface(S));
 
@@ -323,7 +323,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
                 return Operator;
             } else if(this.Control.Eq == Equation.HeatEq) {
 
-                var Operator = new XSpatialOperatorMk2(1, 0, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames, "u", "Cod1");
+                var Operator = new XDifferentialOperatorMk2(1, 0, 1, (A, B, C) => this.LinearQuadratureDegree, LsTrk.SpeciesNames, "u", "Cod1");
 
                 var bulkFlx = new HeatFlux_Bulk() { m_muA = this.Control.muA, m_muB = this.Control.muB, m_rhsA = this.Control.rhsA, m_rhsB = this.Control.rhsB };
                 var intfFlx = new HeatFlux_Interface(this.LsTrk, S) { m_muA = this.Control.muA, m_muB = this.Control.muB };
@@ -341,7 +341,7 @@ namespace BoSSS.Application.XdgTimesteppingTest {
 
             } else if(this.Control.Eq == Equation.Burgers) {
 
-                var Operator = new XSpatialOperatorMk2(1, 1, 1, (A, B, C) => this.NonlinearQuadratureDegree, LsTrk.SpeciesNames, "u", "u0", "Cod1");
+                var Operator = new XDifferentialOperatorMk2(1, 1, 1, (A, B, C) => this.NonlinearQuadratureDegree, LsTrk.SpeciesNames, "u", "u0", "Cod1");
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Bulk() { Direction = this.Control.BurgersDirection, Inflow = this.Control.u_Ex });
                 Operator.EquationComponents["Cod1"].Add(new BurgersFlux_Interface(S, this.Control.BurgersDirection));
                 Operator.TemporalOperator = new ConstantXTemporalOperator(Operator, 1.0);

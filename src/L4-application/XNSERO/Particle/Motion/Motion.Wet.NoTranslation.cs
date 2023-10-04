@@ -34,8 +34,10 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// /// <param name="underrelaxationParam">
         /// The underrelaxation parameters (convergence limit, prefactor and a bool whether to use addaptive underrelaxation) defined in <see cref="ParticleUnderrelaxationParam"/>.
         /// </param>
-        public MotionWetNoTranslation(double density) : base(density) {
-            IncludeTranslation = false;
+        public MotionWetNoTranslation(double density) : base(density) {  }
+
+        public override bool IncludeTranslation() {
+            return false;
         }
 
         /// <summary>
@@ -46,7 +48,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new particle position
         /// </summary>
         /// <param name="dt"></param>
-        protected override Vector CalculateParticlePosition(double dt) {
+        public override Vector CalculateParticlePosition(double dt) {
             Vector l_Position = GetPosition(1);
             Aux.TestArithmeticException(l_Position, "particle position");
             return l_Position;
@@ -56,7 +58,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// Calculate the new translational velocity of the particle using a Crank Nicolson scheme.
         /// </summary>
         /// <param name="dt">Timestep</param>
-        protected override Vector CalculateTranslationalVelocity(double dt) {
+        public override Vector CalculateTranslationalVelocity(double dt) {
             Vector l_TranslationalVelocity = new Vector(SpatialDim);
             Aux.TestArithmeticException(l_TranslationalVelocity, "particle translational velocity");
             return l_TranslationalVelocity;
@@ -80,9 +82,9 @@ namespace BoSSS.Application.XNSERO_Solver {
         //}
 
         public override object Clone() {
-            Motion clonedMotion = new MotionWetNoTranslation(Density);
-            clonedMotion.SetVolume(Volume);
-            clonedMotion.SetMomentOfInertia(MomentOfInertia);
+            MotionWetNoTranslation clonedMotion = new MotionWetNoTranslation(Density);
+            clonedMotion.Volume = this.Volume;
+            clonedMotion.MomentOfInertia = this.MomentOfInertia;
             return clonedMotion;
         }
 
@@ -91,7 +93,7 @@ namespace BoSSS.Application.XNSERO_Solver {
         /// </summary>
         /// <param name="fluidDensity"></param>
         /// <param name="tempForces"></param>
-        public override Vector GetGravityForces(Vector Gravity) {
+        public override Vector GravityForce(Vector Gravity) {
             return new Vector(0, 0);
         }
     }

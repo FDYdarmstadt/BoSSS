@@ -22,10 +22,10 @@ namespace IntersectingLevelSetTest {
             //AllUpTest.RealTransformTest(3);
 
 
-            //BoSSS.Solution.Application<PlotControl>._Main(
-            //    args,
-            //    true,
-            //    () => new ZwoLsCoupledSolver<PlotControl>() {MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye });
+            BoSSS.Solution.Application<PlotControl>._Main(
+                args,
+                false,
+                () => new ZwoLsCoupledSolver<PlotControl>() { MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye });
         }
     }
 }

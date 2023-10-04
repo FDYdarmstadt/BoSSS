@@ -39,8 +39,9 @@ namespace BoSSS.Foundation.Grid.Classic {
         ///   *or* loading a predefined partition <see cref="PredefinedGridPartitioning"/> from the database
         /// - application of this partition to this grid, by a call to <see cref="RedistributeGrid(int[])"/>
         /// </summary>
-        public void Redistribute(IDatabaseDriver iom, GridPartType method, string PartOptions) {
-            using (new FuncTrace()) {
+        public void Redistribute(IDatabaseInfo db, GridPartType method, string PartOptions) {
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
                 ilPSP.MPICollectiveWatchDog.Watch(MPI.Wrappers.csMPI.Raw._COMM.WORLD);
 
                 int size;
@@ -53,6 +54,9 @@ namespace BoSSS.Foundation.Grid.Classic {
 
                 //// invalid from now on
                 //m_GlobalId2CellIndexMap = null;
+
+                tr.Info($"Grid repartitioning method: {method}");
+                tr.Info($"Grid repartitioning options: {PartOptions}");
 
                 int[] part;
                 switch (method) {
@@ -130,7 +134,10 @@ namespace BoSSS.Foundation.Grid.Classic {
                             part = partHelp.CellToRankMap;
                             if (part == null) {
                                 var cp = this.CellPartitioning;
+                                var iom = db?.Controller?.DBDriver;
                                 part = iom.LoadVector<int>(partHelp.Guid, ref cp).ToArray();
+
+                                
                             }
 
 #if DEBUG
@@ -140,6 +147,45 @@ namespace BoSSS.Foundation.Grid.Classic {
                         }
                         break;
 
+                    case GridPartType.OtherSession: {
+                            Guid SessionID;
+                            try {
+                                SessionID = Guid.Parse(PartOptions);
+                            } catch (Exception ex) {
+                                throw new ArgumentException($"Exception parsing session ID from grid partitioning options {PartOptions}: {ex}");
+                            }
+                            tr.Info("Grid partition from Session: " + SessionID);
+                            var sess = db.Sessions.Single(sx => sx.ID == SessionID);
+                            var ts = sess.Timesteps.Last();
+                            tr.Info("From timestep: " + ts);
+                            if (ts.GridID != this.ID)
+                                throw new ArgumentException($"Grid mismatch in restoring partitioning of session {SessionID}: last grid is {ts.GridID}, this sessions grid is {this.ID}");
+
+                            var iom = db?.Controller?.DBDriver;
+                            var MPIrankField = iom.LoadFields(ts, this.GridData, new string[] { "MPIrank" }).Single();
+                            MPIrankField.GetExtremalValues(out double _minRank, out double _maxRank);
+                            int minRank = Convert.ToInt32(_minRank), maxRank = Convert.ToInt32(_maxRank);
+                            if (minRank < 0 || maxRank != this.Size - 1)
+                                throw new ArgumentException($"`MPIrank` from previous session is in the range of {minRank} to {maxRank}, but expecting 0 to {this.Size - 1}");
+
+                            int J = this.GridData.CellPartitioning.LocalLength;
+                            part = new int[J];
+                            double diff = 0;
+                            int myRank = this.MyRank;
+                            for (int j = 0; j < J; j++) {
+                                
+                                part[j] = Convert.ToInt32(MPIrankField.GetMeanValue(j));
+                                int diff_j = part[j] - myRank;
+                                diff += diff_j*diff_j;
+                            }
+                            diff = diff.MPISum().Sqrt();
+                            tr.Info("l2 distance to current partition: " + diff);
+#if DEBUG
+                            CheckPartitioning(part);
+#endif
+                            RedistributeGrid(part);
+                        }
+                        break;
 
                     default:
                         throw new NotImplementedException();
@@ -214,9 +260,13 @@ namespace BoSSS.Foundation.Grid.Classic {
         /// process rank where the cell should be placed.
         /// </returns>
         public int[] ComputePartitionMETIS(IList<int[]> ListofLocalCellWeights = null, int noOfPartitioningsToChooseFrom = 1) {
-            using (new FuncTrace()) {
+            using (var tr = new FuncTrace()) {
+                tr.InfoToConsole = true;
                 int size = this.Size;
                 int rank = this.MyRank;
+
+                tr.Info("Number of cell Weights: " + (ListofLocalCellWeights?.Count ?? 0));
+
 
                 if (size == 1) {
                     return new int[NoOfUpdateCells];
@@ -269,7 +319,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     ListofLocalCellWeights = new List<int[]>();
                     int L = this.CellPartitioning.LocalLength;
                     var dummy = new int[L];
-                    for (int i = 0; i < L; i++) dummy[i] = 1;
+                    dummy.SetAll(1);
+
                     ListofLocalCellWeights.Add(dummy);
                 }
 
@@ -359,6 +410,8 @@ namespace BoSSS.Foundation.Grid.Classic {
                     Debug.Assert((cellWeightsFlattened == null) == (ListofLocalCellWeights == null));
                     int objval = -1; // Value of the objective function at return time
 
+                    tr.Info($"noOfPartitioningsToChooseFrom = {noOfPartitioningsToChooseFrom}");
+
                     int[] Options = new int[METIS.METIS_NOPTIONS];
                     Options[(int)METIS.OptionCodes.METIS_OPTION_NCUTS] = noOfPartitioningsToChooseFrom; // 5 cuts
                     Options[(int)METIS.OptionCodes.METIS_OPTION_NITER] = 10; // This is the default refinement iterations
@@ -406,6 +459,13 @@ namespace BoSSS.Foundation.Grid.Classic {
                     localLengths[p] = this.CellPartitioning.GetLocalLength(p);
                 }
                 int[] localResult = globalResult.MPIScatterv(localLengths);
+
+                int[] CellsPerRank = new int[size];
+                foreach (var rnk in localResult)
+                    CellsPerRank[rnk]++;
+                CellsPerRank = CellsPerRank.MPISum();
+                tr.Info($"Cells per rank: " + CellsPerRank.ToConcatString("[", ", ", "]"));
+
 
                 return localResult;
             }

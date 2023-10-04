@@ -40,9 +40,8 @@ namespace BoSSS.Application.XNSERO_Solver {
             C.dtFixed = 1e-3;
             C.NoOfTimesteps = 50000;
             C.SetBoundaries(boundaryValues);
-            C.SetGrid(lengthX: 4, lengthY: 4, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
+            C.SetGrid2D(lengthX: 4, lengthY: 4, cellsPerUnitLength: 4, periodicX: false, periodicY: false);
             C.SetAddaptiveMeshRefinement(0);
-            C.IsRestart = false;
 
             // Fluid Properties
             // =============================
@@ -59,10 +58,10 @@ namespace BoSSS.Application.XNSERO_Solver {
             // =============================   
             double particleDensity = 150;
             List<Particle> particles = new List<Particle>();
-            InitializeMotion motion = new InitializeMotion(particleDensity, false, false, false,0);
-            particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4, new double[] { 1.0, 0.0 }, 0, 0, new double[] { 0, 0 }, 0));
-            particles.Add(new Particle_Ellipsoid(motion, 0.4, 0.4, new double[] { -1.0, 0.0 }, 0, 0, new double[] { 0, 0 }, 0));
-            C.SetParticles(particles);
+            Motion motion = new(particleDensity);
+            particles.Add(new ParticleEllipse(motion, 0.4, 0.4, new double[] { 1.0, 0.0 }, 0, 0, new double[] { 0, 0 }, 0));
+            particles.Add(new ParticleEllipse(motion, 0.4, 0.4, new double[] { -1.0, 0.0 }, 0, 0, new double[] { 0, 0 }, 0));
+            C.InitialiseParticles(particles);
             C.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.Saye;
             double levelSet0(double[] X) => X[0];
             C.InitialValues_Evaluators.Add(VariableNames.LevelSetCGidx(0), levelSet0);

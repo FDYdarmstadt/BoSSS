@@ -154,7 +154,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
     
         /// <summary>
-        /// Switch the use of the Homotopy-Path (<see cref="ISpatialOperator.HomotopyUpdate"/>) on/off
+        /// Switch the use of the Homotopy-Path (<see cref="IDifferentialOperator.HomotopyUpdate"/>) on/off
         /// </summary>
         public bool UseHomotopy {
             get {
@@ -929,7 +929,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// value must be stored externally for later iterations.
         /// </param>
         /// <param name="HomotopyValue">
-        /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
+        /// <see cref="IDifferentialOperator.CurrentHomotopyValue"/>
         /// </param>
         /// <remarks>
         /// See:
@@ -1141,7 +1141,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             public Newton owner;
 
             /// <summary>
-            /// <see cref="ISpatialOperator.CurrentHomotopyValue"/>
+            /// <see cref="IDifferentialOperator.CurrentHomotopyValue"/>
             /// </summary>
             internal double HomotopyValue;
 

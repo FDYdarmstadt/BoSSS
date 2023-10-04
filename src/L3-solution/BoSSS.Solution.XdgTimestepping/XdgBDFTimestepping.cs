@@ -84,14 +84,13 @@ namespace BoSSS.Solution.XdgTimestepping {
             LevelSetTracker LsTrk,
             bool DelayInit,
             DelComputeOperatorMatrix _ComputeOperatorMatrix,
-            ISpatialOperator abstractOperator,
+            IDifferentialOperator abstractOperator,
             Func<ISlaveTimeIntegrator> _UpdateLevelset,
             int BDForder,
             LevelSetHandling _LevelSetHandling,
             MassMatrixShapeandDependence _MassMatrixShapeandDependence,
             SpatialOperatorType _SpatialOperatorType,
             MultigridOperator.ChangeOfBasisConfig[][] _MultigridOperatorConfig,
-            AggregationGridData[] _MultigridSequence,
             SpeciesId[] _SpId,
             int _CutCellQuadOrder,
             double _AgglomerationThreshold, bool _useX, Control.NonLinearSolverConfig nonlinconfig,
@@ -116,14 +115,11 @@ namespace BoSSS.Solution.XdgTimestepping {
             this.AbstractOperator = AbstractOperator;
             this.Config_AgglomerationThreshold = _AgglomerationThreshold;
             this.useX = _useX;
-            base.MultigridSequence = _MultigridSequence;
             base.Config_SpeciesToCompute = _SpId;
             base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
             base.CurrentParameters = __Parameters.ToArray();
             base.AbstractOperator = abstractOperator;
 
-            if (_MultigridSequence == null || _MultigridSequence.Length < 1)
-                throw new ArgumentException("At least one grid level is required.");
 
             base.Residuals = new CoordinateVector(IterationResiduals.ToArray());
 
@@ -198,8 +194,11 @@ namespace BoSSS.Solution.XdgTimestepping {
 
             // multigrid - init
             // ----------------
+            if (base.MultigridSequence == null || base.MultigridSequence.Length < 1)
+                throw new ArgumentException("At least one multi-grid level is required.");
 
             InitMultigrid(Fields.ToArray(), useX);
+
 
 
             // other stuff
@@ -500,7 +499,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// </summary>
         /// <param name="OpInit"></param>
         private void InitTimestepping(bool OpInit) {
-
+            //Debugger.Launch();
             {
                 int[] Jtot =
                     (new int[] { base.m_LsTrk.Regions.GetCutCellMask().NoOfItemsLocally, base.m_LsTrk.GridDat.Cells.NoOfLocalUpdatedCells })
@@ -709,7 +708,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // Delete agglomeration
                 m_CurrentAgglomeration = null;
                 base.MultigridBasis = null;
-                base.MultigridSequence = null;
                 OneTimeMgInit = false;
             }
         }
@@ -737,7 +735,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             IEnumerable<DGField> IterationResiduals,
             LevelSetTracker LsTrk,
             AggregationGridData[] _MultigridSequence,
-            ISpatialOperator abstractOperator) //
+            IDifferentialOperator abstractOperator) //
         {
             using (var tr = new FuncTrace()) {
                 tr.InfoToConsole = false;
@@ -814,7 +812,6 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 // finished
                 m_PrivateBalancingInfo = null;
-                base.MultigridSequence = _MultigridSequence;
                 InitMultigrid(Fields.ToArray(), this.useX);
 
                 // in case of steady level set the xdgAggBasis need to be updated
@@ -891,7 +888,7 @@ namespace BoSSS.Solution.XdgTimestepping {
         /// <param name="abstractOperator">
         ///  the original operator that somehow produced the matrix; yes, this API is convoluted piece-of-shit
         /// </param>
-        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out ISpatialOperator abstractOperator) {
+        internal protected override void AssembleMatrixCallback(out BlockMsrMatrix System, out double[] Affine, out BlockMsrMatrix PrecondMassMatrix, DGField[] argCurSt, bool Linearization, out IDifferentialOperator abstractOperator) {
             using (var tr = new FuncTrace()) {
 
                 // copy data from 'argCurSt' to 'CurrentStateMapping', if necessary 
@@ -1574,21 +1571,31 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 System, MaMa,
                                 this.Config_MultigridOperator,
                                 dummy);
+                            OrthonormalizationMultigrid.AgglomMassMatrix = MaMa;
                         }
+
+                        //string path = Directory.GetCurrentDirectory();
+                        //var dinfo = Directory.CreateDirectory(Path.Combine(path, "plots"));
+                        //if (!dinfo.Exists)
+                        //    dinfo.Create();
+                        //ExecuteWaterfallAnalysis(dinfo.FullName);
+
 
                         using (var linearSolver = GetLinearSolver(mgOperator)) {
 
+                            
 
 
                             // try to solve the saddle-point system.
                             TimeSpan duration;
                             using (new BlockTrace("Solver_Run", tr)) {
                                 var st = DateTime.Now;
+
                                 mgOperator.UseSolver(linearSolver, m_Stack_u[0], RHS);
                                 //mgOperator.ComputeResidual(this.Residuals, m_Stack_u[0], RHS);
                                 duration = DateTime.Now - st;
                             }
-                            Console.WriteLine("solver success: " + linearSolver.Converged + "; runtime: " + duration.TotalSeconds + " sec.");
+                            tr.Info("solver success: " + linearSolver.Converged + "; runtime: " + duration.TotalSeconds + " sec.");
                             success = linearSolver.Converged;
 
 
@@ -1723,7 +1730,9 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // return 
                 // ======
                 //string path = Directory.GetCurrentDirectory();
-                //var dinfo = Directory.CreateDirectory(path+@"\plots");
+                //var dinfo = Directory.CreateDirectory(Path.Combine(path, "plots"));
+                //if(!dinfo.Exists)
+                //    dinfo.Create();
                 //ExecuteWaterfallAnalysis(dinfo.FullName);
                 //CreateFAMatrices(dinfo.FullName);
 
@@ -1777,116 +1786,7 @@ namespace BoSSS.Solution.XdgTimestepping {
             return CO;
         }
 
-        /*
-        public void ExtractSomeSamplepoints(string OutputDir) {
-            BlockMsrMatrix System, MaMa;
-            double[] RHSsmall, RHSbig, RHS;
-            double[] usmall, ubig;
-            int Lsmall, Lbig;
-
-            this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
-            RHS.ScaleV(-1);
-            MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
-                System, MaMa,
-                this.Config_MultigridOperator,
-                opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
-
-            Lbig = mgOperator.Mapping.ProblemMapping.LocalLength;
-            Lsmall = mgOperator.Mapping.LocalLength;
-            usmall = new double[Lsmall];
-            ubig = new double[Lbig];
-            RHSbig = RHS.CloneAs();
-            RHSsmall = new double[Lsmall];
-
-            var ReferenceSolver = new DirectSolver() {
-                WhichSolver = DirectSolver._whichSolver.PARDISO
-            };
-
-            ReferenceSolver.Init(mgOperator);
-            mgOperator.TransformRhsInto(RHSbig, RHSsmall, true);
-            ReferenceSolver.Solve(usmall, RHSsmall);
-            mgOperator.TransformSolFrom(ubig, usmall);
-
-            m_CurrentAgglomeration.ClearAgglomerated(ubig, this.m_Stack_u[0].Mapping);
-            var CO = new ConvergenceObserver(mgOperator, MaMa, ubig);
-            CO.Resample(1, usmall, "samples");
-        }
-        */
-
-        /*
-        public void CreateFAMatrices(string OutputDir) {
-            bool use_exact_solution = false; // switch between exact and zero solution
-
-            // build the saddle-point matrix
-            //AssembleMatrix(this.CurrentVel, dt, phystime + dt);
-            BlockMsrMatrix System, MaMa;
-            double[] RHSsmall, RHSbig, RHS;
-            double[] usmall, ubig;
-            double[] changeOfu;
-            int Lsmall, Lbig;
-            
-
-            this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var opi);
-            RHS.ScaleV(-1);
-
-            // update the multigrid operator
-            MultigridOperator mgOperator = new MultigridOperator(this.MultigridBasis, CurrentStateMapping,
-                System, MaMa,
-                this.Config_MultigridOperator,
-                opi.DomainVar.Select(varName => opi.FreeMeanValue[varName]).ToArray());
-
-            // Get Reference Solver
-            Lbig = mgOperator.BaseGridProblemMapping.LocalLength;
-            Lsmall = mgOperator.Mapping.LocalLength;
-
-            if (!use_exact_solution) {
-                RHS.Clear(); //zero solution
-            }
-
-            var StartSolution = GenericBlas.RandomVec(Lbig, 0);
-            RHSbig = RHS.CloneAs();
-            RHSsmall = new double[Lsmall];
-            usmall = new double[Lsmall];
-            ubig = new double[Lbig];
-
-            if (use_exact_solution) {
-                StartSolution = new double[Lbig];
-                var ReferenceSolver = new DirectSolver() {
-                    WhichSolver = DirectSolver._whichSolver.PARDISO
-                };
-
-                ReferenceSolver.Init(mgOperator);
-                mgOperator.TransformRhsInto(RHSbig, RHSsmall, true);
-                ReferenceSolver.Solve(usmall, RHSsmall);
-                mgOperator.TransformSolFrom(ubig, usmall);
-            }
-
-            // Get the configured solvers
-            ISolverSmootherTemplate linearSolver;
-            NonlinearSolver NonlinearSolver;
-            GetSolver(out NonlinearSolver, out linearSolver);
-
-            // set-up the convergence observer
-            m_CurrentAgglomeration.ClearAgglomerated(ubig, this.m_Stack_u[0].Mapping);
-            var CO = new ConvergenceObserver(mgOperator, MaMa, ubig);
-            CO.TecplotOut = OutputDir;
-            changeOfu = new double[Lsmall];
-            ((OrthonormalizationMultigrid)linearSolver).ExtractSamples = delegate (int iter, double[] u, string name){
-                //if (iter % 5 != 0 && iter != 1)
-                //    return;
-                Debug.Assert(u.Length== usmall.Length);
-                changeOfu.SetV(u);
-                changeOfu.AccV(-1.0, usmall);
-                CO.Resample(iter, changeOfu, name);
-            };
-            
-            // init linear solver
-            linearSolver.Init(mgOperator);
-
-            // try to solve the saddle-point system.
-            mgOperator.UseSolver(linearSolver, StartSolution, RHS);
-        }
-        */
+      
 
         /// <summary>
         /// If an iterative linear solver is used:
@@ -1915,11 +1815,24 @@ namespace BoSSS.Solution.XdgTimestepping {
 
                 var plots = ConvergenceObserver.WaterfallAnalysis((ISolverWithCallback)linearSolver, mgOperator, MaMa);
                 // put this shit out
-                foreach(var kv in plots) {
-                    //var CL = kv.Value.ToGnuplot().PlotCairolatex(xSize: 14, ySize: 12);
-                    //CL.WriteMinimalCompileableExample(Path.Combine(OutputDir, "plot_" + kv.Key + ".tex"), kv.Key + ".tex");
-                    kv.Value.SavePgfplotsFile_WA(OutputDir + @"\" + kv.Key + ".tex");
+
+                if (mgOperator.Mapping.MpiRank == 0) {
+                    Plot2Ddata[,] multi = new Plot2Ddata[1, plots.Count];
+                    int iCol = 0;
+                    foreach (var kv in plots) {
+                        multi[0, iCol] = kv.Value;
+                        iCol++;
+                        //var CL = kv.Value.ToGnuplot().PlotCairolatex(xSize: 14, ySize: 12);
+                        //CL.WriteMinimalCompileableExample(Path.Combine(OutputDir, "plot_" + kv.Key + ".tex"), kv.Key + ".tex");
+                        //kv.Value.SavePgfplotsFile_WA(Path.Combine(OutputDir, kv.Key + ".tex");
+                    }
+
+                    multi.SaveToGIF("waterfall." + DateTime.Now.ToString("yyyyMMMdd_HHmmss") + ".png", 600*4, 600);
+
                 }
+
+                csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
+                throw new Exception("exit2");
             }
         }
 

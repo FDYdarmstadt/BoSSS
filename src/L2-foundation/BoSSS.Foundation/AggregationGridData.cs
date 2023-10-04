@@ -777,6 +777,22 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
 
+        /// <summary>
+        /// returns the remaining multigrid hierarchy
+        /// </summary>
+        public AggregationGridData[] MultigridSequence {
+            get {
+
+                var baseMG = this.AncestorGrid.MultigridSequence;
+                for(int iLevel = 0; iLevel < baseMG.Length; iLevel++) {
+                    if(baseMG[iLevel].MgLevel == this.MgLevel + 1)
+                        return baseMG.Skip(iLevel).ToArray();
+                }
+
+                return null;
+            }
+        }
+
         public IDictionary<byte, string> EdgeTagNames {
             get {
                 return ParentGrid.EdgeTagNames;

@@ -55,57 +55,10 @@ namespace BoSSS.Solution.AdvancedSolvers {
          * the following code does not scale, since it works on global data!
          * (only activate it if you are sure what you are doing!)
 
-        static private long[][] GetGlobalCellNeigbourship(UnsetteledCoordinateMapping map) {
-            var GlobalNumberOfCells = map.GridDat.CellPartitioning.TotalLength;
-            long[] externalCellsGlobalIndices = map.GridDat.iParallel.GlobalIndicesExternalCells;
-            int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
             long[][] globalCellNeigbourship = new long[J][];
 
-            for (long j = 0; j < J; j++) {
-                // we use GetCellNeighboursViaEdges(j) to also find neigbours at periodic boundaries
-                var cellNeighbours = map.GridDat.GetCellNeighboursViaEdges((int)j);
-                globalCellNeigbourship[j] = new long[cellNeighbours.Length];
-                for (int i = 0; i < cellNeighbours.Length; i++) {
-                    globalCellNeigbourship[j][i] = cellNeighbours[i].Item1;
-                }
-
-                // translate local neighbour index into global index
-                for (int i = 0; i < globalCellNeigbourship[j].Length; i++) {
-                    if (globalCellNeigbourship[j][i] < J)
-                        globalCellNeigbourship[j][i] = globalCellNeigbourship[j][i] + map.GridDat.CellPartitioning.i0;
-                    else
-                        globalCellNeigbourship[j][i] = (int)externalCellsGlobalIndices[globalCellNeigbourship[j][i] - J];
-                }
-            }
-
-            return globalCellNeigbourship.MPI_AllGaterv();
-        }
-
-        /// <summary>
-        /// Returns the cutcells + neighbours on a global level.
-        /// </summary>
-        static private BitArray GetGlobalNearBand(BitArray levelSetCells, UnsetteledCoordinateMapping map) {
-            long[][] globalCellNeighbourship = GetGlobalCellNeigbourship(map);
-            BitArray globalCutCells = new BitArray(checked((int)map.GridDat.CellPartitioning.TotalLength));
-            int J = map.GridDat.iLogicalCells.NoOfLocalUpdatedCells;
-            for (int j = 0; j < J; j++) {
-                if (levelSetCells[j]) {
-                    int globalIndex = checked((int)(j + map.GridDat.CellPartitioning.i0));
-                    globalCutCells[globalIndex] = true;
-                    for (int i = 0; i < globalCellNeighbourship[globalIndex].Length; i++) {
-                        globalCutCells[(int)globalCellNeighbourship[globalIndex][i]] = true;
-                    }
-                }
-            }
-
-            //for (int j = 0; j < globalCutCells.Length; j++) {
-            //    globalCutCells[j] = globalCutCells[j].MPIOr();
-            //}
             globalCutCells.MPIOr();
-            return globalCutCells;
-        }
         */
-
         int FindPhaseDGCoordinate(UnsetteledCoordinateMapping map, int iVar, int jCell, AggregationGridBasis[] bases) {
             LevelSetTracker lsTrk = GetTracker(map);
             var basis = bases[iVar];
@@ -130,10 +83,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 while(!foundACell && neighborSearchDepth >= 0) {
                     if(lsTrk != null) {
                         Cells2avoid = lsTrk.Regions.GetNearFieldMask(Math.Min(1, neighborSearchDepth)).GetBitMask();
-                        
-                        //for(int i = 0; i < neighborSearchDepth - 2; i++) {
-                        //    if(neighborSearchDepth - 2 > 0)
-                        //        Cells2avoid = GetGlobalNearBand(Cells2avoid.CloneAs(), map);
                         //}
                     } else {
                         Cells2avoid = null;
@@ -176,7 +125,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         long m_ReferenceCell;
 
         /// <summary>
-        /// (MPI) global index of cell in which the reference point for floating/free-mean-value solutions (<see cref="ISpatialOperator.FreeMeanValue"/>) is located
+        /// (MPI) global index of cell in which the reference point for floating/free-mean-value solutions (<see cref="IDifferentialOperator.FreeMeanValue"/>) is located
         /// </summary>
         public long ReferenceCell {
             get {
@@ -397,12 +346,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 
         }
 
-        ISpatialOperator m_AbstractOperator;
+        IDifferentialOperator m_AbstractOperator;
 
         /// <summary>
         /// DG operatior which is the foundation of this linearization
         /// </summary>
-        public ISpatialOperator AbstractOperator {
+        public IDifferentialOperator AbstractOperator {
             get {
                 if(m_AbstractOperator == null) {
                     m_AbstractOperator = FinerLevel?.AbstractOperator;
@@ -484,7 +433,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         bool[] m__FreeMeanValue;
 
         /// <summary>
-        /// pass-through from <see cref="ISpatialOperator.FreeMeanValue"/>
+        /// pass-through from <see cref="IDifferentialOperator.FreeMeanValue"/>
         /// </summary>
         public bool[] FreeMeanValue {
             get {
@@ -521,11 +470,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// (Remark: this kind of preconditioning is mathematically equivalent to a change of the DG resp. XDG basis.)
         /// </param>
         /// <param name="__AbstractOperator">
-        /// information such as <see cref="ISpatialOperator.FreeMeanValue"/>,...
+        /// information such as <see cref="IDifferentialOperator.FreeMeanValue"/>,...
         /// </param>
         public MultigridOperator(IEnumerable<AggregationGridBasis[]> basisSeq,
             UnsetteledCoordinateMapping _ProblemMapping, BlockMsrMatrix OperatorMatrix, BlockMsrMatrix MassMatrix,
-            IEnumerable<ChangeOfBasisConfig[]> cobc, ISpatialOperator __AbstractOperator)
+            IEnumerable<ChangeOfBasisConfig[]> cobc, IDifferentialOperator __AbstractOperator)
             : this(null, basisSeq, _ProblemMapping, cobc) //
         {
             using(new FuncTrace()) {
@@ -624,9 +573,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// deferred initialization of matrices; only executed if an actual matrix is requested.
         /// </summary>
         void Setup() {
+            if (setupdone)
+                return;
             using (var tr = new FuncTrace()) {
-                if (setupdone)
-                    return;
                 setupdone = true;
 
                 using(new BlockTrace("FinerLevel", tr)) {
@@ -1252,7 +1201,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         {
             using(new FuncTrace()) {
                 if(this.LevelIndex != 0)
-                    throw new NotSupportedException("Not Inteded to be called on any multi-grid level but the finest one.");
+                    throw new NotSupportedException("Not Intended to be called on any multi-grid level but the finest one.");
 
                 int I = this.Mapping.ProblemMapping.LocalLength;
                 if(INOUT_X.Count != I)
@@ -1276,6 +1225,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.TransformSolInto(INOUT_X, X);
 
                 solver.ResetStat();
+                //Console.WriteLine("REM testcode: random vlaue init!!!!!");
+                //X.FillRandom();
                 solver.Solve(X, B);
 
                 this.TransformSolFrom(INOUT_X, X);

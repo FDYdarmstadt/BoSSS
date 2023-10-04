@@ -30,6 +30,7 @@ using BoSSS.Solution.Control;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Grid;
 using ilPSP.Tracing;
+using System.Collections.ObjectModel;
 
 namespace BoSSS.Application.BoSSSpad {
 
@@ -161,6 +162,7 @@ namespace BoSSS.Application.BoSSSpad {
         public void SetEqualityBasedSessionJobControlCorrelation() {
             SessionInfoJobCorrelation = delegate (ISessionInfo sinf, Job job) {
                 var c_job = job.GetControl();
+                
                 try {
                     var c_sinf = sinf.GetControl();
                     if(c_sinf != null)
@@ -195,17 +197,17 @@ namespace BoSSS.Application.BoSSSpad {
 
 
         /// <summary>
-        /// Defines, global for the entire workflow management, how session in the project correlate to jobs.
+        /// Defines, globally for the entire workflow management, how session in the project correlate to jobs.
         /// </summary>
         public Func<ISessionInfo, Job, bool> SessionInfoJobCorrelation;
 
         /// <summary>
-        /// Defines, global for the entire workflow management, how session in the project correlate to control objects.
+        /// Defines, globally for the entire workflow management, how session in the project correlate to control objects.
         /// </summary>
         public Func<ISessionInfo, AppControl, bool> SessionInfoAppControlCorrelation;
 
         /// <summary>
-        /// Defines, global for the entire workflow management, how jobs in the project correlate to control objects.
+        /// Defines, globally for the entire workflow management, how jobs in the project correlate to control objects.
         /// </summary>
         public Func<Job, AppControl, bool> JobAppControlCorrelation;
 
@@ -276,6 +278,48 @@ namespace BoSSS.Application.BoSSSpad {
             }
 
         }
+
+        /// <summary>
+        /// Removes any pre-existing results regarding this project; use with extreme care!
+        /// </summary>
+        public void ResetProject(bool ResetJobs = true, bool deleteDeployments = false, bool deleteSessions = false, bool deleteGrids = false) {
+            if (deleteSessions) {
+                Console.WriteLine("Deleting Sessions in projects...");
+                foreach(var s in this.Sessions) {
+                    s.Delete(true);
+                }
+            } else {
+                Console.WriteLine("Not deleting any sessions, because not specified (`deleteSessions:false`).");
+            }
+
+            if (deleteGrids) {
+                Console.WriteLine("Deleting Grids in projects...");
+                foreach (var g in this.Grids) {
+                    g.Delete(true);
+                }
+            } else {
+                Console.WriteLine("Not deleting any grids, because not specified (`deleteGrids:false`).");
+            }
+
+            if (deleteDeployments) {
+                Console.WriteLine("Deleting Job deployments in projects...");
+                foreach (var j in this.AllJobs) {
+                    j.Value.DeleteOldDeploymentsAndSessions(deleteSessions);
+                }
+
+            } else {
+                Console.WriteLine("Not deleting any grids, because not specified (`deleteDeployments:false`).");
+            }
+
+            if (ResetJobs) {
+                Console.WriteLine("Forgetting all Jobs defined in this notebook so far...");
+                this.m_AllJobs.Clear();
+            } else {
+                Console.WriteLine("Job objects defined so far remain valid (`ResetJobs:true`). ");
+            }
+        }
+
+
 
         IDatabaseInfo m_DefaultDatabase;
 
@@ -654,16 +698,16 @@ namespace BoSSS.Application.BoSSSpad {
 
 
 
-        Dictionary<string, Job> m_AllJobs = new Dictionary<string, Job>();
+        internal Dictionary<string, Job> m_AllJobs = new Dictionary<string, Job>();
 
         /// <summary>
         /// Lists all compute jobs which are currently known by the work flow management system.
         /// - key: job name
         /// - item 
         /// </summary>
-        public IDictionary<string, Job> AllJobs {
+        public ReadOnlyDictionary<string, Job> AllJobs {
             get {
-                return m_AllJobs;
+                return new ReadOnlyDictionary<string, Job>(m_AllJobs);
             }
         }
 

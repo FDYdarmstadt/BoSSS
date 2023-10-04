@@ -26,8 +26,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         public override ISolverSmootherTemplate CreateInstance(MultigridOperator level) {
             var r = CreateInstanceImpl__Kummer(level, level.DGpolynomialDegreeHierarchy);
+            //var r = CreateInstanceImpl__BottiDiPietro(level, level.DGpolynomialDegreeHierarchy);
 
-            if(r is IProgrammableTermination pt) {
+            if (r is IProgrammableTermination pt) {
                 pt.TerminationCriterion =  this.DefaultTermination;
 
             }
@@ -98,8 +99,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     OrthonormalizationMultigrid createOMG() {
 
-                        tr.Info("OrthoMG solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
-
+                       
 
                         var coarseSolver = new GridAndDegRestriction() {
                             RestrictedDeg = DegreeHierarchy[iLevel + skip].CloneAs(),
@@ -147,6 +147,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             pre = null;
                         }
 
+                        tr.Info("OrthoMG (pre = " + (pre?.GetType()?.Name ?? "NULL") + " post = " + (post?.GetType()?.Name ?? "NULL") +  ") solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
+
+
 
                         var omg = new OrthonormalizationMultigrid() {
                             CoarserLevelSolver = coarseSolver,
@@ -162,12 +165,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     //Console.WriteLine("###########################   testcode aktiv ##################################");
                     if ((iLevel >= 2) || (DegreeHierarchy.Length == iLevel + 1)) {
-
-                        tr.Info("direct solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
-
                         // ++++++++++++
                         // lowest level 
                         // ++++++++++++
+                        tr.Info("direct solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
+
                         var s = new DirectSolver();
                         s.config.TestSolution = false;
                         s.ActivateCaching = (a, b) => true;
@@ -177,7 +179,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         // +++++++++++++++++++++++++++
                         // intermediate level / coarse
                         // +++++++++++++++++++++++++++
-
                         tr.Info("GMRES solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
 
                         var gmRes = new SoftGMRES();
@@ -269,7 +270,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     ClassicMultigrid createMG() {
 
-                        tr.Info("OrthoMG solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
+                        tr.Info("ClassicMG solver on level " + iLevel + ", Degrees " + DegreeHierarchy[iLevel].ToConcatString("[", ",", "]") + ", dofs = " + len);
 
 
                         var coarseSolver = new GridAndDegRestriction() {

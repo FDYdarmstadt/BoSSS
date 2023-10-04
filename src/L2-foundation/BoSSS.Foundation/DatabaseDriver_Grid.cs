@@ -112,30 +112,34 @@ namespace BoSSS.Foundation.IO {
         }
 
         void SaveVectorData(IGridSerializationHandler grid) {
-            object[][] vectorData = grid.GetVectorData();
-            Guid[] vectorGuids = grid.GetVectorGuids();
-            Type[] vectorTypes = grid.GetVectorTypes();
+            using (var tr = new FuncTrace()) {
+                object[][] vectorData = grid.GetVectorData();
+                Guid[] vectorGuids = grid.GetVectorGuids();
+                Type[] vectorTypes = grid.GetVectorTypes();
 
-            int numberOfVectors = vectorData.Length;
-            for (int i = 0; i < numberOfVectors; ++i) {
-                Guid guid = vectorGuids[i];
-                Type vectorType = vectorTypes[i];
-                object[] vector = vectorData[i];
-                if (vector != null) {
-                    if (guid != Guid.Empty) {
-                        dynamicDriver.SaveVector(vectorData[i], vectorType, guid);
-                    } else {
-                        vectorGuids[i] = dynamicDriver.SaveVector(vectorData[i], vectorType);
+                int numberOfVectors = vectorData.Length;
+                for (int i = 0; i < numberOfVectors; ++i) {
+                    Guid guid = vectorGuids[i];
+                    Type vectorType = vectorTypes[i];
+                    object[] vector = vectorData[i];
+                    if (vector != null) {
+                        if (guid != Guid.Empty) {
+                            dynamicDriver.SaveVector(vectorData[i], vectorType, guid);
+                        } else {
+                            vectorGuids[i] = dynamicDriver.SaveVector(vectorData[i], vectorType);
+                        }
+
                     }
-
                 }
+                grid.SetVectorGuids(vectorGuids);
             }
-            grid.SetVectorGuids(vectorGuids);
         }
 
         void SaveGridInfo(IGrid grid) {
-            using (Stream stream = GetGridStream(true, grid.ID)) {
-                Driver.Serialize(stream, grid, typeof(IGrid));
+            using (new FuncTrace()) {
+                using (Stream stream = GetGridStream(true, grid.ID)) {
+                    Driver.Serialize(stream, grid, typeof(IGrid));
+                }
             }
         }
 
@@ -151,9 +155,11 @@ namespace BoSSS.Foundation.IO {
         /// The loaded grid
         /// </returns>
         public IGrid LoadGrid(Guid uid, IDatabaseInfo database) {
-            IGridInfo gridInfo = LoadGridInfo(uid, database);
-            IGrid grid = LoadGridData((IGrid)gridInfo);
-            return grid;
+            using (new FuncTrace()) {
+                IGridInfo gridInfo = LoadGridInfo(uid, database);
+                IGrid grid = LoadGridData((IGrid)gridInfo);
+                return grid;
+            }
         }
 
         /// <summary>
@@ -185,10 +191,12 @@ namespace BoSSS.Foundation.IO {
         }
 
         public IGrid DeserializeGrid(Guid gridGuid) {
-            // dbg_launch();
-            using (Stream s = GetGridStream(false, gridGuid)) {
-                IGrid grid = (IGrid)Driver.Deserialize(s, typeof(IGrid));
-                return grid;
+            using (var tr = new FuncTrace()) {
+                // dbg_launch();
+                using (Stream s = GetGridStream(false, gridGuid)) {
+                    IGrid grid = (IGrid)Driver.Deserialize(s, typeof(IGrid));
+                    return grid;
+                }
             }
         }
 
@@ -204,22 +212,22 @@ namespace BoSSS.Foundation.IO {
         }
 
         public void LoadGridData(IGridSerializationHandler gridSerializationHandler) {
-            Type[] vectorTypes = gridSerializationHandler.GetVectorTypes();
-            Guid[] guids = gridSerializationHandler.GetVectorGuids();
-            Partitioning p = null;
+            using (new FuncTrace()) {
+                Type[] vectorTypes = gridSerializationHandler.GetVectorTypes();
+                Guid[] guids = gridSerializationHandler.GetVectorGuids();
+                Partitioning p = null;
 
-            int numberOfVectors = vectorTypes.Length;
-            object[][] vectors = new object[numberOfVectors][];
-            for (int i = 0; i < numberOfVectors; ++i) {
-                Guid guid = guids[i];
-                if (guid != Guid.Empty) {
-                    Type vectorType = vectorTypes[i];
-                    vectors[i] = (object[])dynamicDriver.LoadVector(guid, vectorType, ref p);
+                int numberOfVectors = vectorTypes.Length;
+                object[][] vectors = new object[numberOfVectors][];
+                for (int i = 0; i < numberOfVectors; ++i) {
+                    Guid guid = guids[i];
+                    if (guid != Guid.Empty) {
+                        Type vectorType = vectorTypes[i];
+                        vectors[i] = (object[])dynamicDriver.LoadVector(guid, vectorType, ref p);
+                    }
                 }
+                gridSerializationHandler.SetVectorData(vectors);
             }
-            gridSerializationHandler.SetVectorData(vectors);
         }
-
-
     }
 }

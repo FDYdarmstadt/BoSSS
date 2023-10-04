@@ -42,7 +42,7 @@ namespace NSE_SIMPLE {
             ArrayTools.Cat<SinglePhaseField>(Velocity0.ToArray(), Velocity0Mean.ToArray(), Temperature0, Temperature0Mean),
             SolverConf, false) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             LowMachSIMPLEControl lowMachControl = SolverConf.Control as LowMachSIMPLEControl;
             return (new LinearizedScalarConvection(SolverConf.SpatialDimension, SolverConf.BcMap, lowMachControl.EoS)).Operator();
         }
@@ -63,7 +63,7 @@ namespace NSE_SIMPLE {
             : base(TemperatureMapping, TemperatureMapping, new SinglePhaseField[] { Temperature0 }, SolverConf, false,
             MaxUsePerIterMatrix: 1, MaxUsePerIterAffine: 1) { }
 
-        protected override SpatialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
+        protected override DifferentialOperator GetSpatialOperator(SolverConfiguration SolverConf, int SpatialComponent, int SpatialDirection) {
             LowMachSIMPLEControl lowMachControl = SolverConf.Control as LowMachSIMPLEControl;
             return (new swipHeatConduction(lowMachControl.Reynolds, lowMachControl.Prandtl, lowMachControl.EoS, SolverConf.PenaltyHeatConduction, 
                 base.GridData.Cells.cj,

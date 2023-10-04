@@ -181,7 +181,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     Console.Error.WriteLine("Mesh level: " + AggGrid.MgLevel);
                                     Console.Error.WriteLine("Aggregate cell " + jagg);
                                     Console.Error.WriteLine("Species Index: " + iSpc_agg);
-                                    Console.Error.WriteLine("Species Index Mapping: " + sim.GetRow(iSpc_agg).Take(K).ToConcatString("{", ",", "}"));
+                                    Console.Error.WriteLine("Species Index Mapping: " + sim.GetRow(iSpc_agg).Take(K).ToConcatString("{", ",", "}") + ", No of non-void cells: " + sim.GetRow(iSpc_agg).Where(idx => idx >= 0).Count() + ".");
 
                                     int[] parts = (AggGrid.iLogicalCells?.AggregateCellToParts[jagg]) ?? new int[0];
                                     Console.Error.WriteLine("Aggregate Cell: " + parts.ToConcatString("{", ",", "}"));
