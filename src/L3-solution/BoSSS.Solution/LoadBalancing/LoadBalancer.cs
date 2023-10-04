@@ -87,8 +87,7 @@ namespace BoSSS.Solution.LoadBalancing {
             using (var tr = new FuncTrace()) {
                 //tr.InfoToConsole = true;
                 tr.Info($"Computing Partition of using {gridPartType}...");
-                counter++;
-
+               
                 bool performPertationing;
 
                 if (TimestepNo == 0 || (TimestepNoRestart != null && TimestepNo == TimestepNoRestart.MajorNumber)) {
@@ -191,18 +190,15 @@ namespace BoSSS.Solution.LoadBalancing {
                     tr.Info("Number of cells which go to other processors: " + ToOther);
                 }
 
-                int[] CurrentPart = new int[result.Length];
-                CurrentPart.SetAll(app.MPIRank);
-                CurrentPart.SaveToTextFile($"OldPart{counter}.txt");
-
-                result.SaveToTextFile($"NewPart{counter}.txt");
+                //int[] CurrentPart = new int[result.Length];
+                //CurrentPart.SetAll(app.MPIRank);
+                //CurrentPart.SaveToTextFile($"OldPart{counter}.txt");
+                //result.SaveToTextFile($"NewPart{counter}.txt");
 
 
                 return result;
             }
         }
-
-        int counter = 0;
 
         /// <summary>
         /// Checks the imbalance w.r.t. pre-defined estimators

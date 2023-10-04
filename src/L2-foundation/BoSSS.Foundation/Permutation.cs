@@ -269,8 +269,10 @@ namespace BoSSS.Foundation.Comm {
                     // ===============
 
                     for (int i = 0; i < size; i++) {
-                        if (NoOfItemsToSent[i] > 0)
+                        if (NoOfItemsToSent[i] > 0) {
+                            tr.Info($"setting com path for {NoOfItemsToSent[i]} items to processor #{i}");
                             m2m.SetCommPath(i, NoOfItemsToSent[i]);
+                        }
                     }
                     m2m.CommitCommPaths();
 
@@ -293,11 +295,13 @@ namespace BoSSS.Foundation.Comm {
                         //Many2ManyMessenger.Buffer<PermEntry> sndbuf = new Many2ManyMessenger.Buffer<PermEntry>(m2m, false, p);
                         PermutationEntry[] items = itemsToSend[p].ToArray();
                         m2m.SendBuffers(p).CopyFrom(items, 0);
+                        tr.Info($"sending {items.Length} items to processor #{p}...");
 
                         m2m.TransmittData(p);
                     }
 
                     m2m.FinishBlocking();
+                    tr.Info("finished transmission.");
 
                     // invert received items
                     // =====================
@@ -312,7 +316,7 @@ namespace BoSSS.Foundation.Comm {
 
                         PermutationEntry[] items = new PermutationEntry[cnt];
                         rcvbuf.CopyTo(items, 0);
-
+                        tr.Info($"received {items.Length} items from processor {p}");
 
                         for (int i = 0; i < cnt; i++) {
                             inv.m_Values[items[i].PermVal - myi0Offset] = items[i].Index;
