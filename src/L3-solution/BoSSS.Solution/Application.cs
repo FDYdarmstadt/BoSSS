@@ -1340,11 +1340,14 @@ namespace BoSSS.Solution {
                     }
 
 
-                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0) {
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
-                    } else {
-                        this.MultigridSequence = new AggregationGridData[0];
-                    }
+                    
+
+                    if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
+                        (this.GridData as GridData)?.RegisterMultigridSequence(CoarseningAlgorithms.CreateSequence(this.GridData,
+                            MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1))
+                            );
+                    else
+                        (this.GridData as GridData)?.RegisterMultigridSequence(new AggregationGridData[0]);
                 }
                 
                
@@ -1507,8 +1510,9 @@ namespace BoSSS.Solution {
         /// Multigrid levels, sorted from fine to coarse, i.e. the 0-th entry contains the finest grid.
         /// </summary>
         public AggregationGridData[] MultigridSequence {
-            get;
-            private set;
+            get {
+                return GridData.MultigridSequence;
+            }
         }
 
         /// <summary>
@@ -2533,7 +2537,6 @@ namespace BoSSS.Solution {
                 // ===============
                 GridData newGridData;
                 {
-                    this.MultigridSequence = null;
 
                     this.Grid.RedistributeGrid(NewPartition);
                     newGridData = (GridData)this.Grid.iGridData;
@@ -2543,9 +2546,11 @@ namespace BoSSS.Solution {
                     }
 
                     if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                        this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData, MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                        (this.GridData as GridData)?.RegisterMultigridSequence(CoarseningAlgorithms.CreateSequence(this.GridData,
+                            MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1))
+                            );
                     else
-                        this.MultigridSequence = new AggregationGridData[0];
+                        (this.GridData as GridData)?.RegisterMultigridSequence(new AggregationGridData[0]);
 
                     //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                 }
@@ -2669,8 +2674,7 @@ namespace BoSSS.Solution {
                     // ===============
                     GridData newGridData;
                     {
-                        this.MultigridSequence = null;
-
+                        
                         this.Grid = newGrid;
                         newGridData = (GridData)this.Grid.iGridData;
                         oldGridData.Invalidate();
@@ -2681,10 +2685,11 @@ namespace BoSSS.Solution {
                         oldGridData = null;
 
                         if (this.Control == null || this.Control.NoOfMultigridLevels > 0)
-                            this.MultigridSequence = CoarseningAlgorithms.CreateSequence(this.GridData,
-                                MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1));
+                            (this.GridData as GridData)?.RegisterMultigridSequence(CoarseningAlgorithms.CreateSequence(this.GridData,
+                                MaxDepth: (this.Control != null ? this.Control.NoOfMultigridLevels : 1))
+                                );
                         else
-                            this.MultigridSequence = new AggregationGridData[0];
+                            (this.GridData as GridData)?.RegisterMultigridSequence(new AggregationGridData[0]);
 
                         //Console.WriteLine("P {0}: new grid: {1} cells.", MPIRank, newGridData.iLogicalCells.NoOfLocalUpdatedCells);
                     }

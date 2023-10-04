@@ -94,13 +94,13 @@ namespace BoSSS.Solution.Timestepping {
         /// </summary>
         /// <param name="spatialOp">Spatial operator</param>
         /// <param name="Fieldsmap"><see cref="CoordinateMapping"/> of the fields</param>
-        /// <param name="Parameters">Optional parameter fields, can be null if <paramref name="spatialOp"/> contains no parameters. Must match the parameter field list of <paramref name="spatialOp"/>, see <see cref="BoSSS.Foundation.SpatialOperator.ParameterVar"/>
+        /// <param name="Parameters">Optional parameter fields, can be null if <paramref name="spatialOp"/> contains no parameters. Must match the parameter field list of <paramref name="spatialOp"/>, see <see cref="BoSSS.Foundation.DifferentialOperator.ParameterVar"/>
         /// </param>
         /// <param name="order">Order of the LTS algorithm</param>
         /// <param name="adaptive"><see cref="adaptive"/></param>
         /// <param name="sgrd">Sub-grid in which the local Adams-Bashforth step is evaluated</param>
         /// <remarks>Result of the local sub-step is saved in historyDGC, not directly in m_DGCoordinates</remarks>
-        public ABevolve(SpatialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, bool adaptive = false, SubGrid sgrd = null)
+        public ABevolve(DifferentialOperator spatialOp, CoordinateMapping Fieldsmap, CoordinateMapping Parameters, int order, bool adaptive = false, SubGrid sgrd = null)
                 : base(spatialOp, Fieldsmap, Parameters, order, null, sgrd) {
             this.ABSubGrid = sgrd;
             HistoryDGCoordinate = new Queue<double[]>(order);

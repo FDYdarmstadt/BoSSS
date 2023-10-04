@@ -24,7 +24,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
     /// <summary>
     /// Utility class for the calculation of residuals. In contrast to
     /// <see cref="ChangeRateResidualLogger"/>, it evaluates the
-    /// <see cref="SpatialOperator"/> defining the equation system
+    /// <see cref="DifferentialOperator"/> defining the equation system
     /// to be solved and approximates the time-derivative by a backward-
     /// difference. This makes it applicable to unsteady problems. 
     /// </summary>
@@ -48,7 +48,7 @@ namespace BoSSS.Solution.CompressibleFlowCommon.Residual {
         /// The spatial differential operator defining (the spatial part of)
         /// the system of equations that are solved.
         /// </param>
-        public RigorousResidualLogger(Application<T> program, DGField[] consVars, CoordinateMapping paramMap, int residualInterval, SpatialOperator differentialOperator)
+        public RigorousResidualLogger(Application<T> program, DGField[] consVars, CoordinateMapping paramMap, int residualInterval, DifferentialOperator differentialOperator)
             : base(program.ResLogger, program.CurrentSessionInfo, consVars, residualInterval) {
             CoordinateMapping domainMapping = new CoordinateMapping(consVars);
             UnsetteledCoordinateMapping codomainMapping = new UnsetteledCoordinateMapping(

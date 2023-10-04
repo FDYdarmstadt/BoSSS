@@ -67,7 +67,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
 
             MeanVelocity = new VectorField<SinglePhaseField>(D.ForLoop(d => new SinglePhaseField(new Basis(GridDat, 0), VariableNames.Velocity0MeanVector(D)[d])));
 
-            SpatialOperator Lsevo = CreateAdvectionSpatialOperator(BcMap);
+            DifferentialOperator Lsevo = CreateAdvectionSpatialOperator(BcMap);
 
             DGField[] ParamFields;
             if (!divUzero) {
@@ -226,7 +226,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         internal int D;
         internal VectorField<SinglePhaseField> MeanVelocity;
         internal SinglePhaseField LevelSet;
-        internal SpatialOperator SO;
+        internal DifferentialOperator SO;
         internal SinglePhaseField divU;
         internal bool divUzero;
         
@@ -253,7 +253,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
         /// </summary>
         /// with
         /// <param name="bcMap">Boundary Conditions</param>
-        public SpatialOperator CreateAdvectionSpatialOperator(IncompressibleBoundaryCondMap bcMap) {
+        public DifferentialOperator CreateAdvectionSpatialOperator(IncompressibleBoundaryCondMap bcMap) {
 
             Func<int[], int[], int[], int> QuadOrderFunction = QuadOrderFunc.SumOfMaxDegrees();
 
@@ -265,7 +265,7 @@ namespace BoSSS.Solution.LevelSetTools.Advection {
                 parameterList = ArrayTools.Cat(parameterList, "div(U)");
             }
 
-            SpatialOperator SO = new SpatialOperator(new string[] { "LevelSet" },
+            DifferentialOperator SO = new DifferentialOperator(new string[] { "LevelSet" },
                     parameterList,
                     new string[] { "Phi-Evo" },
                     QuadOrderFunc.NonLinear(2));

@@ -183,7 +183,7 @@ namespace BoSSS.Application.ipViscosity {
             return grd;
         }
 
-        SpatialOperator Operator;
+        DifferentialOperator Operator;
         MsrMatrix OperatorMtx;
         
         protected override void CreateEquationsAndSolvers(BoSSS.Solution.LoadBalancing.GridUpdateDataVaultBase L) {
@@ -207,7 +207,7 @@ namespace BoSSS.Application.ipViscosity {
                 // equation assembly
                 // -----------------
                 string[] CodNames = D.ForLoop(i => "C" + i);
-                Operator = new SpatialOperator(VariableNames.VelocityVector(D), new string[] { VariableNames.ViscosityMolecular }, CodNames,QuadOrderFunc.Linear());
+                Operator = new DifferentialOperator(VariableNames.VelocityVector(D), new string[] { VariableNames.ViscosityMolecular }, CodNames,QuadOrderFunc.Linear());
 
                 for(int d = 0; d < D; d++) {
                     if((this.whichTerms & Terms.T1) != 0) {

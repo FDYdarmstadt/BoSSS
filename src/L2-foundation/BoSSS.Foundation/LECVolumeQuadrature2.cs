@@ -32,7 +32,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
         where M : IMutableMatrix
         where V : IList<double> //
     {
-        public LECVolumeQuadrature2(SpatialOperator op) {
+        public LECVolumeQuadrature2(DifferentialOperator op) {
             Operator = op;
             m_VolumeForm_UxV = EquationComponentArgMapping<IVolumeForm_UxV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.UxV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
             m_VolumeForm_UxGradV = EquationComponentArgMapping<IVolumeForm_UxGradV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.UxGradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
@@ -42,7 +42,7 @@ namespace BoSSS.Foundation.Quadrature.Linear {
             m_VolumeSource_GradV = EquationComponentArgMapping<IVolumeSource_GradV>.GetArgMapping(op, true, eq => ((eq.VolTerms & TermActivationFlags.GradV) != 0), eq => (eq is IVolumeForm) ? new LinearVolumeFormVectorizer((IVolumeForm)eq) : null);
         }
 
-        SpatialOperator Operator;
+        DifferentialOperator Operator;
 
 
         /// <summary>

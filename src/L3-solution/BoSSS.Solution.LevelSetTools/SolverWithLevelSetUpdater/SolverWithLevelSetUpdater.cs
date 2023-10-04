@@ -67,17 +67,17 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
         /// Instantiation of the spatial operator;
         /// Can only be called once per gird lifetime (until <see cref=""/>
         /// </summary>
-        protected override XSpatialOperatorMk2 GetOperatorInstance(int D) {
+        protected override XDifferentialOperatorMk2 GetOperatorInstance(int D) {
             // fails on a second call, if the LsUpdater is already configured.
             // access `base.XOperator`
-            XSpatialOperatorMk2 xOperator = GetOperatorInstance(D, LsUpdater);
+            XDifferentialOperatorMk2 xOperator = GetOperatorInstance(D, LsUpdater);
             return xOperator;
         }
 
         /// <summary>
         /// Instantiation of the spatial operator; 
         /// </summary>
-        protected abstract XSpatialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
+        protected abstract XDifferentialOperatorMk2 GetOperatorInstance(int D, LevelSetUpdater levelSetUpdater);
 
         /// <summary>
         /// Setup of the level-set system and the tracker

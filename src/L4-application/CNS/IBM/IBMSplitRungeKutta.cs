@@ -33,7 +33,7 @@ namespace CNS.IBM {
 
     public class IBMSplitRungeKutta : IBMRungeKutta {
 
-        public IBMSplitRungeKutta(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping parametersMap, ImmersedSpeciesMap speciesMap, IList<TimeStepConstraint> timeStepConstraints)
+        public IBMSplitRungeKutta(DifferentialOperator standardOperator, DifferentialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping parametersMap, ImmersedSpeciesMap speciesMap, IList<TimeStepConstraint> timeStepConstraints)
             : base(standardOperator, boundaryOperator, fieldsMap, parametersMap, speciesMap, timeStepConstraints) {
 
             if (speciesMap.Control.TimesteppingStrategy == TimesteppingStrategies.StrangSplitting) {

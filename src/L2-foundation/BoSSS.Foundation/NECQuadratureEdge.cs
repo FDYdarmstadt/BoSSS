@@ -101,7 +101,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// ctor.
         /// </summary>
         public NECQuadratureEdge(IGridData context,
-                                 SpatialOperator DiffOp,
+                                 DifferentialOperator DiffOp,
                                  IList<DGField> _DomainFields,
                                  IList<DGField> _ParameterFields,
                                  UnsetteledCoordinateMapping CodomainMapping,
@@ -497,7 +497,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </summary>
         /// <remarks>
         /// Array index: codomain variable index: (see 
-        /// <see cref="SpatialOperator.CodomainVar"/>,
+        /// <see cref="DifferentialOperator.CodomainVar"/>,
         /// <see cref="NECQuadratureCommon.m_DifferentialOperator"/>);
         /// <br/>
         /// For each <see cref="MultidimensionalArray"/>:
@@ -514,7 +514,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </summary>
         /// <remarks>
         /// Array index: codomain variable index: (see 
-        /// <see cref="SpatialOperator.CodomainVar"/>,
+        /// <see cref="DifferentialOperator.CodomainVar"/>,
         /// <see cref="NECQuadratureCommon.m_DifferentialOperator"/>);
         /// <br/>
         /// For each <see cref="MultidimensionalArray"/>:
@@ -532,7 +532,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </summary>
         /// <remarks>
         /// Array index: codomain variable index: (see 
-        /// <see cref="SpatialOperator.CodomainVar"/>,
+        /// <see cref="DifferentialOperator.CodomainVar"/>,
         /// <see cref="NECQuadratureCommon.m_DifferentialOperator"/>);
         /// <br/>
         /// For each <see cref="MultidimensionalArray"/>:
@@ -550,7 +550,7 @@ namespace BoSSS.Foundation.Quadrature.NonLin {
         /// </summary>
         /// <remarks>
         /// Array index: codomain variable index: (see 
-        /// <see cref="SpatialOperator.CodomainVar"/>,
+        /// <see cref="DifferentialOperator.CodomainVar"/>,
         /// <see cref="NECQuadratureCommon.m_DifferentialOperator"/>);
         /// <br/>
         /// For each <see cref="MultidimensionalArray"/>:
