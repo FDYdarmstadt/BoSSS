@@ -348,59 +348,62 @@ namespace BoSSS.Application.BoSSSpad {
         /// </summary>
         public IReadOnlyList<IDatabaseInfo> AllDatabases {
             get {
+                if (RunWorkflowFromBackup == false) {
+                    if (m_AllDatabases == null || ((DateTime.Now - m_AllDatabases_CacheTime) > UpdatePeriod)) {
 
-                if(m_AllDatabases == null || ((DateTime.Now - m_AllDatabases_CacheTime) > UpdatePeriod)) {
+                        var allDBs = new List<IDatabaseInfo>();
 
-                    var allDBs = new List<IDatabaseInfo>();
-
-                    foreach(var q in BoSSSshell.ExecutionQueues) {
-                        int cnt = 0;
-                        foreach(var dbPath in q.AllowedDatabasesPaths) {
-                            IDatabaseInfo dbi = null;
-                            string db_path = Path.Combine(dbPath.LocalMountPath, this.CurrentProject);
-                            if(cnt == 0) {
-                                try {
-                                    dbi = BoSSSshell.OpenOrCreateDatabase(db_path);
-                                } catch(Exception e) {
-                                    Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of database: {e.Message}.");
+                        foreach (var q in BoSSSshell.ExecutionQueues) {
+                            int cnt = 0;
+                            foreach (var dbPath in q.AllowedDatabasesPaths) {
+                                IDatabaseInfo dbi = null;
+                                string db_path = Path.Combine(dbPath.LocalMountPath, this.CurrentProject);
+                                if (cnt == 0) {
+                                    try {
+                                        dbi = BoSSSshell.OpenOrCreateDatabase(db_path);
+                                    } catch (Exception e) {
+                                        Console.Error.WriteLine($"{e.GetType().Name} caught during creation/opening of database: {e.Message}.");
+                                    }
+                                } else {
+                                    try {
+                                        dbi = BoSSSshell.OpenDatabase(db_path);
+                                    } catch (Exception) {
+                                        dbi = null;
+                                    }
                                 }
+                                if (dbi != null)
+                                    allDBs.Add(dbi);
+                                cnt++;
+                            }
+                        }
+
+                        if (m_DefaultDatabase != null) {
+                            int DefaultDbMatch = -1;
+                            int cnt = 0;
+                            foreach (var dbi in allDBs) {
+                                if (Object.ReferenceEquals(m_DefaultDatabase, dbi) || dbi.PathMatch(m_DefaultDatabase.Path)) {
+                                    DefaultDbMatch = cnt;
+                                    break;
+                                }
+                                cnt++;
+                            }
+
+                            if (DefaultDbMatch >= 0) {
+                                allDBs.RemoveAt(DefaultDbMatch);
+                                allDBs.Insert(0, m_DefaultDatabase);
                             } else {
-                                try {
-                                    dbi = BoSSSshell.OpenDatabase(db_path);
-                                } catch(Exception) {
-                                    dbi = null;
-                                }
+                                allDBs.Insert(0, m_DefaultDatabase);
                             }
-                            if(dbi != null)
-                                allDBs.Add(dbi);
-                            cnt++;
                         }
+
+                        m_AllDatabases_CacheTime = DateTime.Now;
+                        m_AllDatabases = allDBs;
                     }
 
-                    if(m_DefaultDatabase != null) {
-                        int DefaultDbMatch = -1;
-                        int cnt = 0;
-                        foreach(var dbi in allDBs) {
-                            if(Object.ReferenceEquals(m_DefaultDatabase, dbi) || dbi.PathMatch(m_DefaultDatabase.Path)) {
-                                DefaultDbMatch = cnt;
-                                break;
-                            }
-                            cnt++;
-                        }
-
-                        if(DefaultDbMatch >= 0) {
-                            allDBs.RemoveAt(DefaultDbMatch);
-                            allDBs.Insert(0, m_DefaultDatabase);
-                        } else {
-                            allDBs.Insert(0, m_DefaultDatabase);
-                        }
-                    }
-
-                    m_AllDatabases_CacheTime = DateTime.Now;
-                    m_AllDatabases = allDBs;
+                    return m_AllDatabases.AsReadOnly();
+                } else {
+                    return (new List<IDatabaseInfo>(new[] { DefaultDatabase })).AsReadOnly();
                 }
-                
-                return m_AllDatabases.AsReadOnly();
             }
         }
 
