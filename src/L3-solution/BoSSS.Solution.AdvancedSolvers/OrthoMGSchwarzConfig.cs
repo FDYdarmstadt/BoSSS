@@ -65,10 +65,19 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
         /// <summary>
-        /// Determines maximal DG order within coarse system of a p-Multigrid. 
+        /// Determines maximal DG order within coarse system of a p-Multigrid;
+        /// a negative number triggers an automatic, dynamic selection;
         /// </summary>
         [DataMember]
-        public int pMaxOfCoarseSolver = 1;
+        public int pMaxOfCoarseSolver = -11;
+
+        int Get_pMaxOfCoarseSolver(int maxDeg) {
+            if (pMaxOfCoarseSolver >= 0)
+                return pMaxOfCoarseSolver;
+            else
+                return (int)Math.Ceiling(maxDeg*0.5);
+        }
+
 
         /// <summary>
         /// Sets the **maximum** number of Multigrid levels to be used.
@@ -125,67 +134,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             instance.Init(level);
             return instance;
         }
-
-        /*
-        int GetLocalDOF(MultigridOperator op, int pOfLowOrderSystem) {
-            if(pOfLowOrderSystem <= -1) {
-                return op.Mapping.LocalLength;
-            } else {
-
-                
-                var map = op.Mapping;
-                int D = map.AggGrid.SpatialDimension;
-                int acc = 0;
-                int NoOfVars = map.NoOfVariables;
-                int J = map.AggGrid.iLogicalCells.NoOfLocalUpdatedCells;
-                var bS = map.AggBasis;
-                for(int j = 0; j < J; j++) {
-                    for(int iVar = 0; iVar < NoOfVars; iVar++) {
-                        int p = (iVar == D ? pOfLowOrderSystem - 1 : pOfLowOrderSystem);
-                        acc += bS[iVar].GetLength(j, p);
-                    }
-                }
-                return acc;
-            }
-        }
-
-        /// <summary>
-        /// Number of Blocks at this level. Minimum 1 per core
-        /// </summary>
-        private int NoOfBlocksAtLevel(MultigridOperator op, int MGLevel = 0, int pCoarsest = -1, Func<int, int> targetblocksize = null) {
-            if(targetblocksize == null)
-                targetblocksize = (int iLevel) => TargetBlockSize;
-            int SchwarzblockSize = targetblocksize(MGLevel);
-            int LocalDOF4directSolver = GetLocalDOF(op, pCoarsest);
-            double SizeFraction = (double)LocalDOF4directSolver / (double)SchwarzblockSize;
-            //SizeFraction = SizeFraction.MPIMax(); [Toprak] the bug cannot be reproduced, therefore, it is reverted to the previous version.
-            //when the number of blocks are not the same on the processors, it causes deadlock in MPI processes
-            //Hard solution would be checking all MPI processes written in SubBlocks and modify them to allow different numbered block partitioning 
-
-            //if(SizeFraction < 1) {
-            //    Console.WriteLine($"WARNING: local system size ({LocalDOF4directSolver}) < Schwarz-Block size ({SchwarzblockSize});");
-            //    Console.WriteLine($"resetting local number of Schwarz-Blocks to 1.");
-            //}
-            int LocalNoOfSchwarzBlocks = Math.Max(1, (int)Math.Floor(SizeFraction));
-            return LocalNoOfSchwarzBlocks;
-        }
-
-
-        /// <summary>
-        /// No Of Local Schwarz Blocks (process local) for all MG levels
-        /// </summary>
-        private int[] NoOfSchwarzBlocks(MultigridOperator op, int pCoarsest = -1, Func<int, int> targetblocksize = null) {
-            int MSLength = op.NoOfLevels;
-            var NoOfBlocks = MSLength.ForLoop(level => -1);
-            for(int iLevel = 0; iLevel < MSLength; iLevel++) {
-                int LocalNoOfSchwarzBlocks = NoOfBlocksAtLevel(op.GetLevel(iLevel), iLevel, pCoarsest, targetblocksize);
-                NoOfBlocks[iLevel] = LocalNoOfSchwarzBlocks;
-            }
-            return NoOfBlocks;
-        }
-        */
-
-
+        
         double ComputeInbalance(MultigridOperator level) {
             long LocalLength = level.Mapping.LocalLength;
             long MaxLocalLength = LocalLength.MPIMax();
@@ -199,11 +148,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         int[] GetLoOrderDegrees(MultigridOperator level) {
             int[] Degrees = level.Degrees;
-            int DegDecrease = Math.Max(Degrees.Max() - this.pMaxOfCoarseSolver, 0);
+            int DegDecrease = Math.Max(Degrees.Max() - this.Get_pMaxOfCoarseSolver(level.Degrees.Max()), 0);
             int[] loDegrees = Degrees.Select(deg => Math.Max(deg - DegDecrease, 0)).ToArray();
             return loDegrees;
         }
 
+        /// <summary>
+        /// Number of DG basis polynomials for different spatial dimensions
+        /// </summary>
         static int Np(int D, int p) {
             switch (D) {
                 case 1: return p + 1;
@@ -247,7 +199,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 {
                     if (this.UsepTG) {
                         var lowDOF = this.GetLowOrderLength(level);
-                        tr.Info($"low-order (pMaxOfCoarseSolver = {this.pMaxOfCoarseSolver}) DOF: {lowDOF}");
+                        tr.Info($"low-order (pMaxOfCoarseSolver = {this.Get_pMaxOfCoarseSolver(level.Degrees.Max())}) DOF: {lowDOF}");
                         LocalNoOfBlocks = lowDOF/TargetBlockSize;
                     } else {
                         LocalNoOfBlocks = level.Mapping.LocalLength/TargetBlockSize;
@@ -411,7 +363,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
 
                             var coarseConfig = new PTGconfig() {
-                                pMaxOfCoarseSolver = this.pMaxOfCoarseSolver,
+                                pMaxOfCoarseSolver = this.Get_pMaxOfCoarseSolver(op_lv.Degrees.Max()),
                             };
 
                             var _levelSolver2 = coarseConfig.CreateInstance(op_lv);
