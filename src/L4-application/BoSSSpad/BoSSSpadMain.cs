@@ -422,7 +422,7 @@ namespace BoSSS.Application.BoSSSpad {
                         // An `EventWaitHandle` would be much nicer, but that works only on Windows-machines.
                         //static internal EventWaitHandle BoSSSpadInitDone = new EventWaitHandle(false, EventResetMode.ManualReset, "MyUniqueEventName");
                         using (NamedPipeClientStream BoSSSpadInitDone = new NamedPipeClientStream(".", tempguid, PipeDirection.InOut)) {
-                            Console.WriteLine("Waiting for BoSSSpad to start up at " + DateTime.Now + ".");
+                            Console.WriteLine("Waiting for BoSSSpad to start up at " + DateTime.Now + ". Current directory is " + Directory.GetCurrentDirectory());
                             BoSSSpadInitDone.Connect(3 * 60 * 1000);
                             Console.WriteLine("BoSSSpad connected at " + DateTime.Now + "; now waiting for signal...");
 

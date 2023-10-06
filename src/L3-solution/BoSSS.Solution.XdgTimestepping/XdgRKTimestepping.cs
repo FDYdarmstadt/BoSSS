@@ -124,10 +124,10 @@ namespace BoSSS.Solution.XdgTimestepping {
             base.Config_SpeciesToCompute = _SpId;
             base.Config_CutCellQuadratureOrder = _CutCellQuadOrder;
             base.CurrentParameters = __Parameters.ToArray();
+            m_CurrentState = new CoordinateVector(Fields);
             if (base.MultigridSequence == null || base.MultigridSequence.Length < 1)
                 throw new ArgumentException("At least one grid level is required.");
 
-            m_CurrentState = new CoordinateVector(Fields);
 
             if (_MultigridOperatorConfig != null) {
                 Config_MultigridOperator = _MultigridOperatorConfig;

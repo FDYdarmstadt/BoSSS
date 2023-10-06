@@ -87,7 +87,7 @@ namespace BoSSS.Solution.LoadBalancing {
             using (var tr = new FuncTrace()) {
                 //tr.InfoToConsole = true;
                 tr.Info($"Computing Partition of using {gridPartType}...");
-
+               
                 bool performPertationing;
 
                 if (TimestepNo == 0 || (TimestepNoRestart != null && TimestepNo == TimestepNoRestart.MajorNumber)) {
