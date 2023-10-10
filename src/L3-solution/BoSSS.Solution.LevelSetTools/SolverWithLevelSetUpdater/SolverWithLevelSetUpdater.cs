@@ -609,12 +609,16 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 List<DGField> allfields = new();
                 allfields.AddRange(dGFields);
 
+                if (string.IsNullOrEmpty(Tag)) {
+                    Tag = "AgglomerationKatastrophe";
+                }
+                
                 foreach (var f in this.RegisteredFields) {
                     if (!allfields.Contains(f, (a, b) => object.ReferenceEquals(a, b)))
                         allfields.Add(f);
                 }
 
-                Tecplot.Tecplot.PlotFields(allfields, Tag+"Agglomeration", 0.0, 0);
+                Tecplot.Tecplot.PlotFields(allfields, Tag, 0.0, 0);
 
                 //if (Tag.Length > 0) 
                 //    Tecplot.Tecplot.PlotFields(allfields, Tag + "AgglomerationKatastrophe_HighRes", 0.0, 2);
