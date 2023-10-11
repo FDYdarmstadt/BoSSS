@@ -114,5 +114,14 @@ namespace BoSSS.Solution.LevelSetTools {
         /// A level set formulation for the surface of rigid objects. The Movement depends only on the position and orientation of the object.
         /// </summary>
         RigidObject,
+
+        /// <summary>
+        /// Parameterized Level Set
+        /// </summary>
+        /// <remarks>
+        /// For details:
+        /// <see cref="BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater.ParameterizedInterfaceEvolver"/>.
+        /// </remarks>
+        ParameterizedLevelSet,
     }
 }
