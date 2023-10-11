@@ -492,10 +492,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
                             rest.CoarserLevelSolver = levelSolver;
                     }
 
-                    if (TerminateMultigrid)
+                    if (TerminateMultigrid) {
+                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, terminating multigrid recursion.");
                         break;
+                    }
+
+                    if(op_lv.CoarserLevel == null) {
+                        tr.Info($"KcycleMultiSchwarz: lv {iLevel}, terminating multigrid recursion, no further level available.");
+
+                    }
                 }
 
+                tr.Info($"KcycleMultiSchwarz: depth of multigrid configuration: {SolverChain.Count}.");
                 return SolverChain[0];
             }
         }
