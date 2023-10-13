@@ -243,8 +243,8 @@ namespace BoSSS.Foundation.XDG {
                     ExceptionOnFailedAgglomeration, Tag
                     );
 
-                //var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairsWithRanks); // CellAgglomerator v2
-                var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs); // CellAgglomerator v1
+                var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairsWithRanks); // CellAgglomerator v2
+                //var m_agglomeration = new CellAgglomerator(this.Tracker.GridDat, aggAlg.AgglomerationPairs); // CellAgglomerator v1
 
                 //int myRank = lsTrk.GridDat.MpiRank;
                 //foreach(var p in m_agglomeration.AggInfo.AgglomerationPairs) {
@@ -255,16 +255,16 @@ namespace BoSSS.Foundation.XDG {
             }
 
             this.TotalNumberOfAgglomerations = this.DictAgglomeration.Values.Sum(agg => agg.TotalNumberOfAgglomerations);
-            
+
             string[] AggNumberWrite = new string[this.DictAgglomeration.Values.Count()];
-                for (int i = 0; i < this.DictAgglomeration.Values.Count(); i++) {
+            for (int i = 0; i < this.DictAgglomeration.Values.Count(); i++) {
                 AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString()}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
             }
 
             Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite) + " in " + Tag);
 
 
-            AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt");
+            //AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt");
             // compute metrics of AGGLOMERATED cut cells
             this.LengthScaleAgg();
         }
