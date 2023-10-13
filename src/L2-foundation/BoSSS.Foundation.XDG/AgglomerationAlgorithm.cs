@@ -14,166 +14,9 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using BoSSS.Foundation.Comm;
-using System.Runtime.CompilerServices;
 
 namespace BoSSS.Foundation.XDG {
 
-
-    /// <summary>
-    /// defines a chain from the agglomeration pairs (source and target)
-    /// </summary>
-    [Serializable]
-    public struct AgglomerationChain : IEquatable<AgglomerationChain> {
-
-        /// <summary>
-        /// local cell index of agglomeration target cell (the cell where volume is added) 
-        /// </summary>
-        public int jCellChainTarget;
-
-        /// <summary>
-        /// MPI rank of the process which owns cell <see cref="OwnerRank4ChainTarget"/>
-        /// </summary>
-        public int OwnerRank4ChainTarget;
-
-        /// <summary>
-        /// list of agglomeration source cells in AgglomerationPairs <see cref="CellAgglomerator.AgglomerationPair"/>
-        /// </summary>
-        private List<CellAgglomerator.AgglomerationPair> ChainSources;
-
-        /// <summary>
-        /// list of connected edges in AgglomerationPairs <see cref="CellAgglomerator.AgglomerationPair"/>
-        /// </summary>
-        private List<int> NeighborCells;
-
-        private void AddNeighbors(int jCell) {
-            var Ret = m_grdDat.GetCellNeighboursViaEdges(jCell);
-
-            foreach(var e in Ret)
-                if (e.jCellLoc > 0)
-                    NeighborCells.Add(e.jCellLoc);
-
-        }
-
-        GridData m_grdDat;
-
-        MultidimensionalArray m_CellVolumes;
-
-        public AgglomerationChain(CellAgglomerator.AgglomerationPair FirstPair, GridData grdDat, MultidimensionalArray CellVolumes) {
-            var pair = FirstPair;
-            this.jCellChainTarget = pair.jCellTarget;
-            this.OwnerRank4ChainTarget = pair.OwnerRank4Target;
-            this.m_grdDat = grdDat;
-            this.ChainSources = new List<CellAgglomerator.AgglomerationPair>();
-            this.NeighborCells = new List<int>();
-            this.m_CellVolumes = CellVolumes;
-
-            this.sumFractions = Math.Round(m_CellVolumes[pair.jCellTarget] / m_grdDat.Cells.GetCellVolume(pair.jCellTarget), 2);
-            AddNeighbors(pair.jCellTarget);
-
-            this.Add(pair);
-        }
-
-        public AgglomerationChain(int TargetCell, int TargetRank, GridData grdDat, MultidimensionalArray CellVolumes) {
-            this.jCellChainTarget = TargetCell;
-            this.OwnerRank4ChainTarget = TargetRank;
-            this.m_grdDat = grdDat;
-            this.ChainSources = new List<CellAgglomerator.AgglomerationPair>();
-            this.NeighborCells = new List<int>();
-            this.m_CellVolumes = CellVolumes;
-
-            this.sumFractions =  Math.Round(m_CellVolumes[TargetCell] / m_grdDat.Cells.GetCellVolume(TargetCell), 2);
-            AddNeighbors(TargetCell);
-
-        }
-
-        public bool IsConnected(int CellNumber) {
-            return NeighborCells.Contains(CellNumber);
-        }
- 
-        public bool IsPart(int CellNumber) {
-            bool IsInSources = ChainSources.Where(p => p.jCellSource == CellNumber).Any();
-            bool IsTarget = jCellChainTarget == CellNumber;
-            return IsInSources || IsTarget;
-        }
-
-        public double sumFractions;
-
-        /// <summary>
-        /// GetHashCode
-        /// </summary>
-        /// <returns></returns>
-        public override int GetHashCode() {
-            int hashCode = 0;
-            foreach (var Cell in ChainSources)
-                hashCode += Cell.GetHashCode();
-            return hashCode;
-        }
-
-        public void Add(CellAgglomerator.AgglomerationPair pair) {
-            if (pair.jCellTarget !=  jCellChainTarget) {
-                throw new ArgumentException("Wrong chain is selected as target");
-            }
-
-            //Console.WriteLine("Source cell id:" + pair.jCellSource);
-            
-            //Console.Write("Connected Cells: ");
-
-            //foreach (var Cell in ConnectedCells)
-            //    Console.Write(Cell + " - ");
-
-
-            if (!IsConnected (pair.jCellSource)) {
-                throw new ArgumentException("Chain has not any connection to the target cell");
-            }
-
-            //if (IsPart(pair.jCellSource))
-            //    return;
-
-            this.sumFractions += Math.Round(m_CellVolumes[pair.jCellSource] / m_grdDat.Cells.GetCellVolume(pair.jCellSource), 2);
-
-            ChainSources.Add(pair);
-            AddNeighbors(pair.jCellSource);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="other"></param>
-        /// <returns></returns>
-        public bool Equals(AgglomerationChain other) {
-            if (object.ReferenceEquals(this, other)) {
-                return true;
-            } else if (this.GetHashCode() != other.GetHashCode()) {
-                return false;
-            }
-
-            if (this.ChainSources.Count != other.ChainSources.Count)
-                return false;
-
-            bool result = true;
-
-            for (int k = 0; k < this.ChainSources.Count; k++)
-                result = result && this.ChainSources.Take(k).Equals(other.ChainSources.Take(k));
-
-            return result;
-        }
-
-        /// <summary>
-        /// Returns a string listing the chain target cell and the agglomeration pairs in the chain 
-        /// </summary>
-        public override string ToString() {
-            string str = $"AggChain to {jCellChainTarget} [rnk {OwnerRank4ChainTarget}]) with total frac={sumFractions} \n";
-            foreach (var Cell in ChainSources)
-            str += $"- ({Cell.jCellSource} [rnk {Cell.OwnerRank4Source}] -> {Cell.jCellTarget} [rnk {Cell.OwnerRank4Target}], Level {Cell.AgglomerationLevel}) \n";
-
-            str += "NeighborCells: ";
-            foreach (var Cell in NeighborCells) {
-                str += Cell.ToString() + ", ";
-            }
-
-            return str;
-        }
-    }
 
     /// <summary>
     /// Sometimes, this provides indeed a correct agglomeration graph ;), 
@@ -471,7 +314,7 @@ namespace BoSSS.Foundation.XDG {
             // execute algorithm
 
             var src = FindAgglomerationSources();
-            FindAgglomerationTargets_Mk2(src.AgglomCellsList, src.AgglomCellsBitmask, src.AggCandidates);
+            FindAgglomerationTargets_Mk3(src.AgglomCellsList, src.AgglomCellsBitmask, src.AggCandidates);
         }
 
         double AgglomerationThreshold;
@@ -1073,7 +916,7 @@ namespace BoSSS.Foundation.XDG {
 
 
                     if (NoFailedCells > 0)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastropheOf{spId.ToString()}");
+                        PlotFail(CellVolumes, oldCellVolumes, AgglomCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
 
 
                     if (PlotAgglomeration)
@@ -1317,7 +1160,7 @@ namespace BoSSS.Foundation.XDG {
         /// <remarks>
         /// Revised algorithm, in use since Dec. 2021
         /// </remarks>
-        [MethodImpl(MethodImplOptions.NoInlining)] //too see which lines throw exception.
+        //[MethodImpl(MethodImplOptions.NoInlining)] //too see which lines throw exception.
         protected virtual void FindAgglomerationTargets_Mk2(
             List<int> AgglomSourceCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates
             ) {
@@ -1826,7 +1669,7 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     if (NoFailedCells > 0)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastropheOf{spId.ToString()}");
+                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
 
 
                     if (PlotAgglomeration)
@@ -1989,7 +1832,7 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     if (NoFailedCells > 0)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastropheOf{spId.ToString()}");
+                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
 
 
                     if (PlotAgglomeration)

@@ -314,7 +314,6 @@ namespace BoSSS.Foundation.XDG {
                     Debug.Assert(NoOfChangedPairs == InterProcessAgglomeration);
                 }
 
-
                 var AggPairs = AgglomerationPairs.ToList();
 
                 int[] Cells2Aggpairs = new int[JE];
@@ -408,23 +407,37 @@ namespace BoSSS.Foundation.XDG {
                     AggPairs[iPair] = currentPair;
                 }
 
-
                 // mark and check all edges which are used for agglomeration
                 // =========================================================
 
-                BitArray AgglomerationEdgesBitMask = new BitArray(g.Edges.Count);
+                BitArray AgglomerationEdgesBitMask = new BitArray(g.Edges.Count, false);
                 int[,] E2C = g.Edges.CellIndices;
                 int[][] C2E = g.Cells.Cells2Edges;
                 {
-                    foreach (var pair in AgglomerationPairs) {
-                        int j1 = pair.jCellSource;
-                        int j2 = pair.jCellTarget;
+                    // Since we are forming agg groups, too, the agg edges can be between a source and a target as well as between two source cells with the same target, which need to be also removed.
+                    // First, we need to distinguish individual agg groups
+                    int[] targetCells = AggPairs.Select(p => p.jCellTarget).Distinct().ToArray(); //each group can be identified w.r.t. target cells, which should be unique.
+                    foreach (int targetCell in targetCells) { //for each group 
+                        var linkedCells = AggPairs.Where(p => p.jCellTarget == targetCell).Select(p => p.jCellSource).ToList(); //gather the source cells of that group
+                        linkedCells.Add(targetCell); //target + sources
 
-                        Debug.Assert(j1 < J || j2 < J);
-                        if (j1 >= J) {
-                            int a = j2;
-                            j2 = j1;
-                            j1 = a;
+                        foreach (int linkedCell in linkedCells) { //for each cell in the agg group
+                            // exclude non-local cells (if they share an edge with a local cell, then the edge would be marked during the loop of local cell)
+                            if (linkedCell >= J)
+                                continue;
+
+                            var edges = C2E[linkedCell];
+                            foreach (var edge in edges) {
+                                int iEdge = Math.Abs(edge) - 1;
+                                Debug.Assert(linkedCell == E2C[iEdge, 0] || linkedCell == E2C[iEdge, 1]);
+
+                                int jCellNeighbor = edge > 0 ? E2C[iEdge, 1] : E2C[iEdge, 0];
+                                if (linkedCells.Contains(jCellNeighbor)) {
+                                    if (iEdge >= 0 && iEdge < AgglomerationEdgesBitMask.Count) { //check if edge is local
+                                        AgglomerationEdgesBitMask[iEdge] = true;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
