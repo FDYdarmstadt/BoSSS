@@ -2054,26 +2054,27 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
+
                 #region update lists and variables for the while loop
+                ChainCountMax = CellsNeedChainAgglomeration.Count;
+
                 // Exchange the new pairs with neighbor cells and their processors
                 if (InterProcessChainAgglomeration > 0) {
                     // add new neighbor pairs to external pairs lists 
                     InterProcessChainAgglomeration = DoAggPairsMPIexchangeForGhostCells(LoopChainAgglomerationPairs, ref AggPairsOnExtNeighborPairs);
                     anyUpdate = anyUpdate.MPIOr();
+                    ChainCountMax = ChainCountMax.MPIMax();
                     //AggPairsOnExtNeighborPairs.SaveToTextFileDebugUnsteady("e_AggPairsOnExtNeighborPairs", ".txt");
                 }
 
                 // Add loop chain aggs to the lists
                 ChainAgglomerationPairs.AddRange(LoopChainAgglomerationPairs);
                 m_AggPairs.AddRange(LoopChainAgglomerationPairs);
-
-                ChainCountMax = CellsNeedChainAgglomeration.Count;
-                ChainCountMax = ChainCountMax.MPIMax();
                 #endregion
             }
 
-            if (ChainAgglomerationPairs.Any()) //for debugging purposes
-                ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("ChainAgglomerationPairs" + Tag, ".txt");
+            //if (ChainAgglomerationPairs.Any()) //for debugging purposes
+            //    ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("ChainAgglomerationPairs" + Tag, ".txt");
 
         }
 
