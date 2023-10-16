@@ -30,6 +30,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.AccessControl;
 
 namespace BoSSS.Foundation.XDG {
 
@@ -62,6 +63,10 @@ namespace BoSSS.Foundation.XDG {
             private set;
         }
 
+        /// <summary>
+        /// If agglomeration plots are demanded. A flag for debugging purposes in the agglomeration algorithm.
+        /// </summary>
+        private static bool plotAgglomeration = false;
 
         /// <summary>
         /// The quadrature order used for computing cell volumes and edge areas.
@@ -256,15 +261,15 @@ namespace BoSSS.Foundation.XDG {
 
             this.TotalNumberOfAgglomerations = this.DictAgglomeration.Values.Sum(agg => agg.TotalNumberOfAgglomerations);
 
-            string[] AggNumberWrite = new string[this.DictAgglomeration.Values.Count()];
-            for (int i = 0; i < this.DictAgglomeration.Values.Count(); i++) {
-                AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString()}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
+            if (PlotAgglomeration) {
+                string[] AggNumberWrite = new string[this.DictAgglomeration.Values.Count()];
+                for (int i = 0; i < this.DictAgglomeration.Values.Count(); i++) {
+                    AggNumberWrite[i] = $"{SpeciesList.ToList()[i].ToString()}: {(int)DictAgglomeration.Values.Select(agg => agg.TotalNumberOfAgglomerations).ToList()[i]}";
+                }
+                Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite) + " in " + Tag);
+                AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt");
             }
 
-            Console.WriteLine("Agglomerated cell numbers for " + string.Join(", ", AggNumberWrite) + " in " + Tag);
-
-
-            //AggNumberWrite.SaveToTextFileDebugUnsteady(Tag + "AggNumberWrite", ".txt");
             // compute metrics of AGGLOMERATED cut cells
             this.LengthScaleAgg();
         }
@@ -732,6 +737,8 @@ namespace BoSSS.Foundation.XDG {
                 return gMaxLevel + 1;
             }
         }
+
+        public static bool PlotAgglomeration { get => plotAgglomeration; set => plotAgglomeration = value; }
 
         /// <summary>
         /// Initializes <see cref="CellLengthScales"/>,

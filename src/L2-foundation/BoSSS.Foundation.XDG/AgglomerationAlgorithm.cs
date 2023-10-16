@@ -187,7 +187,7 @@ namespace BoSSS.Foundation.XDG {
                 m_sumFractions = m_sumFractions + newVolume;
                 Sources.Add((jCell, jCellRank));
                 AddNeighbors(jCell);
-                Console.WriteLine($"Added jcell={jCell} with fraction {Math.Round(m_CellVolumes[jCell] / m_grdDat.Cells.GetCellVolume(jCell), 2)}");
+                //Console.WriteLine($"Added jcell={jCell} with fraction {Math.Round(m_CellVolumes[jCell] / m_grdDat.Cells.GetCellVolume(jCell), 2)}");
             }
 
             public List<CellAgglomerator.AgglomerationPair> GetAggPairs {
@@ -256,9 +256,11 @@ namespace BoSSS.Foundation.XDG {
         /// Plotting if agglomeration fails.
         /// </summary>
         public static Action<DGField[], string> Katastrophenplot;
-        public static bool PlotAgglomeration = false;
 
-        //public List<AgglomerationChain> m_AgglomerationChains;
+        /// <summary>
+        /// If agglomeration plots are demanded. A flag for debugging purposes in the agglomeration algorithm.
+        /// </summary>
+        public static bool PlotAgglomeration = false;
 
         /// <summary>
         /// 
@@ -1539,7 +1541,7 @@ namespace BoSSS.Foundation.XDG {
                         // sort remaining edges
                         weightedEdges = weightedEdges.OrderByDescending(p => p.SpeciesFrac).ThenBy(p => p.Dist).ToList(); // (descending, ascending)
 
-                        weightedEdges.SaveToTextFileDebugUnsteady("weightedEdges", ".txt");
+                        //weightedEdges.SaveToTextFileDebugUnsteady("weightedEdges", ".txt");
 
                         // if any target available in case a target needed?
                         Debug.Assert(weightedEdges.Any() || ImmediateConnectionCells.Any() || !CellsNeedChainAgglomeration.Any(), "Cell agglomeration failed." +
@@ -1619,9 +1621,6 @@ namespace BoSSS.Foundation.XDG {
                     #region AgglomerationKatastrophe
                     if (CellsNeedChainAgglomeration.Count > 0) {
                         Console.WriteLine($"## Chain Agglomeration is failed on proc-{ilPSP.Environment.MPIEnv.MPI_Rank} ##");
-
-
-
                     }
 
                 // Save the data for debugging purposes
@@ -1669,7 +1668,7 @@ namespace BoSSS.Foundation.XDG {
                     }
 
                     if (NoFailedCells > 0)
-                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, false, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
+                        PlotFail(CellVolumes, oldCellVolumes, AgglomSourceCellsList, ExceptionOnFailedAgglomeration, m_failCells, AggCandidates, pairIdentification, pairColor, aggDirection, volFrac, $"{Tag}AgglomerationKatastrophe{spId.ToString()}");
 
 
                     if (PlotAgglomeration)
@@ -1780,7 +1779,7 @@ namespace BoSSS.Foundation.XDG {
                     possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList();
                 }
 
-                 if (m_aggGroups.Any())
+                 if (m_aggGroups.Any() && PlotAgglomeration)
                     m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag,".txt");
 
                 // add successful groups into the pairs list
@@ -2073,8 +2072,8 @@ namespace BoSSS.Foundation.XDG {
                 #endregion
             }
 
-            //if (ChainAgglomerationPairs.Any()) //for debugging purposes
-            //    ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("ChainAgglomerationPairs" + Tag, ".txt");
+            if (ChainAgglomerationPairs.Any() && PlotAgglomeration) //for debugging purposes
+                ChainAgglomerationPairs.SaveToTextFileDebugUnsteady("ChainAgglomerationPairs" + Tag, ".txt");
 
         }
 
@@ -2284,7 +2283,7 @@ namespace BoSSS.Foundation.XDG {
 
             if (failCells.Count > 0) {
                 CellMask FailCells = new CellMask(grdDat, FailCellsMarker);
-                FailCells.SaveToTextFile($"failCells{grdDat.MpiRank}.csv");
+                FailCells.SaveToTextFile($"aggFailCells{grdDat.MpiRank}.csv");
             }
 
 
