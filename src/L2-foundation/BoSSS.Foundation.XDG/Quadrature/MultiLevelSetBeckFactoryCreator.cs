@@ -494,6 +494,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         void Initialize(int resolution);
     }
+
     internal abstract class BeckBaseScheme : ISchemeWO
     {
         public LevelSetData[] data;
@@ -865,6 +866,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             }
         }
     }
+
     internal class BeckEdgeScheme : BeckBaseScheme
     {
         public BeckEdgeScheme( LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode = false) : base(data, lscomb, isGlobalMode)
@@ -932,6 +934,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return 1;
         }
     }
+
     internal class BeckSurfaceScheme : BeckBaseScheme
     {
         public BeckSurfaceScheme(LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode = false) : base(data, lscomb, isGlobalMode)
@@ -1035,6 +1038,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             throw new NotImplementedException();
         }
     }
+
     internal class BeckEdgePointScheme : BeckBaseScheme
     {
         public BeckEdgePointScheme(LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode = false) : base(data, lscomb, isGlobalMode)
@@ -1066,6 +1070,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             throw new NotImplementedException();
         }
     }
+
     internal class lSEvalEdge : IScalarFunction
     {
         //levelSet which is evaluated by this class
@@ -1193,6 +1198,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             return (gradOut, hessOut);
         }
     }
+
     internal class lSEvalLocal : lSEvalBase
     {
         public lSEvalLocal(LevelSet levelSet, int j) : base(levelSet, j)
@@ -1275,6 +1281,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         }
 
     }
+
     internal static class lSEvalUtil {
         
         public static Vector TensorToVector(Tensor1 x)
