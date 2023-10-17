@@ -486,6 +486,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
 
         }
     }
+
     internal interface ISchemeWO
     {
         RefElement ReferenceElement { get; }
@@ -536,6 +537,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
                 return (neededNodes, 0);
             }
         }
+
         public QuadRule GetQuadRule(int j, int order)
         {
             //get GridData 
@@ -681,6 +683,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
             HR.Diameters = dC;
             return HR;
         }
+
         /// <summary>
         /// Creates a HyperRectangle From an Edge
         /// </summary>
@@ -940,6 +943,7 @@ namespace BoSSS.Foundation.XDG.Quadrature
         public BeckSurfaceScheme(LevelSetData[] data, LevelSetCombination lscomb, bool isGlobalMode = false) : base(data, lscomb, isGlobalMode)
         {
         }
+
         public override void PointsToNodes(MultidimensionalArray rNode, QuadratureNode qNode, int D, int j)
         {
             for (int d = 0; d < D; d++)

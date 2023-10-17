@@ -613,19 +613,10 @@ namespace BoSSS.Foundation.XDG {
         /// This is a point in 2D, a line in 3D.
         /// </summary>
         public IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            //switch (CutCellQuadratureType)
-            //{
-            //    case MomentFittingVariants.OneStepGauss:
-            //        if (zwoLSSayeFactories == null)
-            //        {
-            //            zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
-            //        }
-            //        return zwoLSSayeFactories.GetIntersectionFactory(levSetIndex0, levSetIndex1, backupFactory);
-            //    default:
-                    if (zwoLSBruteForceFactories == null) {
-                zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+            if (zwoLSSayeFactories == null) {
+                zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
             }
-            return zwoLSBruteForceFactories.GetIntersectionFactory(levSetIndex0, levSetIndex1, backupFactory);
+            return zwoLSSayeFactories.GetIntersectionFactory(levSetIndex0, levSetIndex1, backupFactory);
                     //}
         }
 
