@@ -37,7 +37,13 @@ using System.Linq;
 using BoSSS.Foundation;
 using BoSSS.Solution.Statistic;
 using BoSSS.Solution.AdvancedSolvers;
+<<<<<<< HEAD
 using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
+=======
+using BoSSS.Solution.LevelSetTools.EllipticReInit;
+using System.IO;
+using BoSSS.Foundation.IO;
+>>>>>>> 7c3a165f9c (third stage of parameterized LS implementation)
 
 namespace BoSSS.Application.XNSE_Solver.Tests {
 
@@ -121,41 +127,6 @@ namespace BoSSS.Application.XNSE_Solver.Tests {
             }
 
             ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "ScalingViscosityJumpTest-p" + deg });
-        }
-
-        /// <summary>
-        /// <see cref="BoSSS.Application.XNSE_Solver.Tests.ParameterizedLevelSetTest"/>
-        /// </summary>
-        [Test]
-        public static void ParameterizedLevelSetTest(
-#if DEBUG
-            //[Values(2)] int spatialDimension,
-            [Values(2)] int deg,
-            //[Values(0.0)] double AgglomerationTreshold,
-            //[Values( ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            //[Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
-            //[Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)] SurfaceStressTensor_IsotropicMode SurfTensionMode
-#else
-            //[Values(2)] int spatialDimension,
-            [Values(2)] int deg
-            //[Values(0.0)] double AgglomerationTreshold,
-            //[Values( ViscosityMode.FullySymmetric)] ViscosityMode vmode,
-            //[Values(XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes)] XQuadFactoryHelper.MomentFittingVariants CutCellQuadratureType,
-            //[Values(SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine)] SurfaceStressTensor_IsotropicMode SurfTensionMode
-#endif
-            ) {
-            double AgglomerationTreshold = 0.1;
-
-            double DomainLength = 0.00001;
-            double Twall = 163.75;
-            var Tst = new ParameterizedLevelSetTest(DomainLength, Twall);
-            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine);
-            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.None;
-            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;//ParameterizedLevelSet;
-            C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
-
-            XNSESolverTest(Tst, C);
         }
 
 

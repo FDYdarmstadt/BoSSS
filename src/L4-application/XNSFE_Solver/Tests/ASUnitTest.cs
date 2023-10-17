@@ -37,9 +37,15 @@ using BoSSS.Application.XNSE_Solver.Tests;
 using BoSSS.Application.XNSE_Solver;
 using BoSSS.Solution.Gnuplot;
 using System.Diagnostics;
+<<<<<<< HEAD
 //using BoSSS.Foundation.Quadrature;
 //using ilPSP.LinSolvers.MUMPS;
 using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
+=======
+using System.IO;
+using BoSSS.Foundation.IO;
+
+>>>>>>> 7c3a165f9c (third stage of parameterized LS implementation)
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
 
@@ -82,6 +88,50 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             }
 
             ConditionNumberScalingTest.Perform(LaLa, new ConditionNumberScalingTest.Config() { plot = true, title = "XSNFEScalingTest-p" + deg+"-Setup" + Setup });
+        }
+
+        /// <summary>
+        /// <see cref="BoSSS.Application.XNSFE_Solver.Tests.ParameterizedLevelSetTest"/>
+        /// </summary>
+        [Test]
+        public static void ParameterizedLevelSetTest(
+
+            [Values(2)] int deg
+
+            ) {
+
+            string basepath = System.Environment.GetEnvironmentVariable("USERPROFILE");
+            if (basepath.IsEmptyOrWhite())
+                basepath = System.Environment.GetEnvironmentVariable("HOME");
+
+            string path = Path.Combine(basepath, "CapillaryHeatTest");
+            var db = DatabaseInfo.CreateOrOpen(path);
+
+            double AgglomerationTreshold = 0.1;
+
+            var Tst = new ParameterizedLevelSetTest();
+            var C = TstObj2CtrlObj(Tst, deg, AgglomerationTreshold, ViscosityMode.FullySymmetric, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine, 16);
+
+            C.ProjectName = "XNSFE_ParamLevelSetTestInCapillary";
+            string jobName = C.ProjectName;
+            C.SessionName = " " + jobName;
+
+            C.savetodb = true;
+            C.DbPath = db.Path;
+
+            C.ImmediatePlotPeriod = 1;
+
+            //C.solveCoupledHeatEquation = true;
+            //C.IncludeRecoilPressure = true;
+
+            //C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+            //C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;//ParameterizedLevelSet;
+            //C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
+            //C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            //C.SkipSolveAndEvaluateResidual = false;
+            //C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
+
+            XNSFESolverTest(Tst, C);
         }
 
         /// <summary>

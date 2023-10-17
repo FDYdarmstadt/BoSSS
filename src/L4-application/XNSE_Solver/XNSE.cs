@@ -75,8 +75,6 @@ namespace BoSSS.Application.XNSE_Solver {
         //  Main file
         // ===========
         static void Main(string[] args) {
-
-<<<<<<< HEAD
             //ilPSP.Environment.NumThreads = 8;
             //InitMPI();
             //BoSSS.Application.XNSE_Solver.Tests.RestartTest.Run_RestartTests(false, LevelSetHandling.Coupled_Once, TimeSteppingScheme.BDF2, false, 3);
@@ -84,14 +82,11 @@ namespace BoSSS.Application.XNSE_Solver {
             ////DeleteOldPlotFiles();
             ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ChannelTest(1, 0.0d, ViscosityMode.FullySymmetric, 0.0d, true, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Picard);
             ////BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ViscosityJumpTest(2, 1, 0.1, ViscosityMode.Standard, XQuadFactoryHelper.MomentFittingVariants.Saye, SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_Flux);
-=======
-
-            InitMPI();
-            DeleteOldPlotFiles();
-            BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2); 
-
+            //DeleteOldPlotFiles();
+            //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2); 
+            //System.Environment.Exit(111);
             //BoSSS.Application.XNSE_Solver.Tests.ASUnitTest.ScalingStaticDropletTest(2, ViscosityMode.TransposeTermMissing, XQuadFactoryHelper.MomentFittingVariants.Saye);
->>>>>>> 07fb6cf67f (second stage of parameterized LS implementation)
+
             //NUnit.Framework.Assert.IsTrue(false, "remove me");
 
             /*
@@ -731,6 +726,8 @@ namespace BoSSS.Application.XNSE_Solver {
                 return dt;
             }
         }
+
+
         protected virtual List<DGField> GetInterfaceVelocity(){
             MPICollectiveWatchDog.Watch();
             int D = this.GridData.SpatialDimension;
