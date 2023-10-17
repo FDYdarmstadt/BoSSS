@@ -42,6 +42,11 @@ namespace BoSSS.Application.XNSFE_Solver {
             //BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.InterfaceSlipTestLin(3, 0.0d, ViscosityMode.FullySymmetric, 0.0d, XQuadFactoryHelper.MomentFittingVariants.Saye, NonLinearSolverCode.Newton, 1.0d, 1.0d, 1.2d);
             //Assert.IsTrue(false, "remove me");
 
+            InitMPI();
+            //DeleteOldPlotFiles();
+            BoSSS.Application.XNSFE_Solver.Tests.ASUnitTest.ParameterizedLevelSetTest(2);
+            System.Environment.Exit(111);
+
             XNSFE._Main(args, false, delegate () {
                 var p = new XNSFE();
                 return p;
