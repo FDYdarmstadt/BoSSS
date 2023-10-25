@@ -341,6 +341,16 @@ namespace BoSSS.Solution {
                     Console.WriteLine($"Working path: {Directory.GetCurrentDirectory()}");
                     Console.WriteLine($"Binary path: {Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}");
 
+                    {
+                        Assembly assembly = Assembly.GetExecutingAssembly();
+                        using (Stream stream = assembly.GetManifestResourceStream("BoSSS.Solution.commit_hash.txt")) {
+                            using(StreamReader reader = new StreamReader(stream)) {
+                                string commitHash = reader.ReadToEnd().Trim();
+                                Console.WriteLine($"Current commit hash: {commitHash}");
+                            }
+                        }
+                    }
+
                     Console.WriteLine("User: " + System.Environment.UserName);
 
                     using (var stw = new StringWriter()) {
