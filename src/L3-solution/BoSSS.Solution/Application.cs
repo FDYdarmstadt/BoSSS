@@ -303,7 +303,7 @@ namespace BoSSS.Solution {
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             m_Logger.Info("Bootstrapping.");
-
+            m_Logger.Info("Git commit: " + GitCommitHash);
 
             ilPSP.Environment.Bootstrap(
                 args,
@@ -340,16 +340,8 @@ namespace BoSSS.Solution {
 
                     Console.WriteLine($"Working path: {Directory.GetCurrentDirectory()}");
                     Console.WriteLine($"Binary path: {Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)}");
+                    Console.WriteLine($"Current commit hash: {GitCommitHash}");
 
-                    {
-                        Assembly assembly = Assembly.GetExecutingAssembly();
-                        using (Stream stream = assembly.GetManifestResourceStream("BoSSS.Solution.commit_hash.txt")) {
-                            using(StreamReader reader = new StreamReader(stream)) {
-                                string commitHash = reader.ReadToEnd().Trim();
-                                Console.WriteLine($"Current commit hash: {commitHash}");
-                            }
-                        }
-                    }
 
                     Console.WriteLine("User: " + System.Environment.UserName);
 
@@ -400,11 +392,28 @@ namespace BoSSS.Solution {
 
             m_Logger.Info("Hello from MPI rank " + rank + " of " + size + "!");
 
+
             ReadBatchModeConnectorConfig();
 
             System.Threading.Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
 
             return _MustFinalizeMPI;
+        }
+
+        public static string GitCommitHash {
+            get {
+
+                Assembly assembly = Assembly.GetExecutingAssembly();
+                using (Stream stream = assembly.GetManifestResourceStream("BoSSS.Solution.commit_hash.txt")) {
+                    if (stream == null)
+                        return "unkonwn";
+                    using (StreamReader reader = new StreamReader(stream)) {
+                        string commitHash = reader.ReadToEnd().Trim();
+                        return commitHash;
+                    }
+                }
+
+            }
         }
 
         /// <summary>
@@ -1946,6 +1955,7 @@ namespace BoSSS.Solution {
         protected virtual void SetInitial(double time) {
             using (var tr = new FuncTrace()) {
 
+                
                 this.QueryResultTable.UpdateKey("Timestep", ((int)0));
 
                 if (this.Control == null) {
@@ -3028,6 +3038,7 @@ namespace BoSSS.Solution {
             stw.WriteLine($"User Name  : {System.Environment.UserName}");
             stw.WriteLine($"MPI rank   : {this.MPIRank}");
             stw.WriteLine($"MPI size   : {this.MPISize}");
+            stw.WriteLine($"GIT hash   : {GitCommitHash}");
 
             void TryWrite(string s, Func<object> o) {
                 try {
@@ -3153,6 +3164,7 @@ namespace BoSSS.Solution {
                         } else {
                             Console.WriteLine("Warning: unable to obtain grid resolution");
                         }
+                        nlog.LogValue("GitCommitHash", GitCommitHash);
 #if DEBUG
                     }
 #else
