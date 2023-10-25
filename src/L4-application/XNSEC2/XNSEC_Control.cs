@@ -76,7 +76,7 @@ namespace BoSSS.Application.XNSEC {
     public class XNSEC_Control : XNSFE_Control {
 
         public XNSEC_Control() {
-            base.NoOfMultigridLevels = 1;
+            //base.NoOfMultigridLevels = 1;
             base.SuperSampling = 2;
             base.NonLinearSolver.SolverCode = NonLinearSolverCode.Newton;
             base.CutCellQuadratureType = Foundation.XDG.XQuadFactoryHelper.MomentFittingVariants.OneStepGaussAndStokes;

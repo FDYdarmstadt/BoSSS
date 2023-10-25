@@ -911,6 +911,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 int NoOfBlocks = config.NoOfBlocks;
                 SchwarzBlock[] Blocks = GetCellsFromPart(SwzBlkLocal, NoOfBlocks);
 
+                // overlap
+                for (int iBlock = 0; iBlock < Blocks.Length; iBlock++)
+                    Blocks[iBlock] = EnlargeSchwarzBlock(Blocks[iBlock], op);
 
                 // determine the Owner processor for the respective Schwarz block:
                 for (int i = 0; i < Blocks.Length; i++) {
