@@ -26,9 +26,9 @@ FOR /F "tokens=* USEBACKQ" %%F IN (`git rev-parse HEAD`) DO (
 )
 
 echo %NEW_HASH%
+echo "equality " "!CURRENT_HASH!" equ "!NEW_HASH!"
 
-
-if not "!CURRENT_HASH!"=="!NEW_HASH!" (
+if not %CURRENT_HASH% equ %NEW_HASH% (
     echo "writing new"
     echo !NEW_HASH! > commit_hash.txt
 )
