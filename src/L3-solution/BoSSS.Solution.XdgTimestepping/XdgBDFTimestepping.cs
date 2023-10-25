@@ -1571,7 +1571,6 @@ namespace BoSSS.Solution.XdgTimestepping {
                                 System, MaMa,
                                 this.Config_MultigridOperator,
                                 dummy);
-                            OrthonormalizationMultigrid.AgglomMassMatrix = MaMa;
                         }
 
                         //string path = Directory.GetCurrentDirectory();

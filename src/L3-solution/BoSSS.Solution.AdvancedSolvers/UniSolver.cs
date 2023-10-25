@@ -580,7 +580,6 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                     tr.Info("Setting up multigrid operator...");
 
-                    OrthonormalizationMultigrid.AgglomMassMatrix = MassMatrix;
                     var MultigridOp = new MultigridOperator(G.AggBasisS, Solution,
                         opMtx, MassMatrix, G.MgConfig,
                         op);
