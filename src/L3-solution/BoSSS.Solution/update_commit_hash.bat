@@ -1,6 +1,8 @@
 @echo off
 setlocal enabledelayedexpansion
 
+
+
 :: Check if git is available
 git --version 2>nul || (
     echo. > commit_hash.txt
@@ -12,13 +14,11 @@ git --version 2>nul || (
 :: otherwise, the incremental build will not work
 ::
 
-
 if exist commit_hash.txt (
     set /p CURRENT_HASH=<commit_hash.txt
 ) else (
     set CURRENT_HASH=
 )
-
 
 FOR /F "tokens=* USEBACKQ" %%F IN (`git rev-parse HEAD`) DO (
     SET NEW_HASH=%%F
@@ -26,6 +26,7 @@ FOR /F "tokens=* USEBACKQ" %%F IN (`git rev-parse HEAD`) DO (
 
 echo new is ---%NEW_HASH%---
 echo cur is ---%CURRENT_HASH%---
+
 ::echo "equality " "!CURRENT_HASH!" equ "!NEW_HASH!"
 
 ::if not "%CURRENT_HASH%" equ "%NEW_HASH%" (
