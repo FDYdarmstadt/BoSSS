@@ -316,7 +316,9 @@ namespace BoSSS.Foundation.XDG {
             // execute algorithm
 
             var src = FindAgglomerationSources();
-            FindAgglomerationTargets_Mk3(src.AgglomCellsList, src.AgglomCellsBitmask, src.AggCandidates);
+            //FindAgglomerationTargets_Mk3(src.AgglomCellsList, src.AgglomCellsBitmask, src.AggCandidates);
+
+            FindAgglomerationTargets_Mk3(src.AgglomCellsList, src.AgglomCellsBitmask, src.AggCandidates, src.NewbornCellsList, src.VanishingCellsList);
         }
 
         double AgglomerationThreshold;
@@ -364,7 +366,7 @@ namespace BoSSS.Foundation.XDG {
         /// - `AgglomCellsBitmask`: the same as `AgglomCellsList`, just in bit-mask form
         /// - `AggCandidates`: all cells which are allowed as **potential** agglomeration **targets*
         /// </returns>
-        protected virtual (List<int> AgglomCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates) FindAgglomerationSources(
+        protected virtual (List<int> AgglomCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates, List<int> NewbornCellsList, List<int> VanishingCellsList) FindAgglomerationSources(
             ) //
         {
 
@@ -415,6 +417,9 @@ namespace BoSSS.Foundation.XDG {
                 // pass 1: determine agglomeration sources
                 // ---------------------------------------
                 List<int> AgglomCellsList = new List<int>();
+                List<int> VanishingCellsList = new List<int>();
+                List<int> NewbornCellsList = new List<int>();
+
                 {
                     // for the present timestep
                     // - - - - - - - - - - - - - 
@@ -487,7 +492,9 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
-                if (AgglomerateNewborn) {
+                // Topological changes (only valid for dynamic meshes)
+                // Determine newborn cells
+                if (AgglomerateNewborn) { 
 
                     for (int j = 0; j < Jup; j++) {
                         double vol = grdDat.Cells.GetCellVolume(j);
@@ -504,6 +511,7 @@ namespace BoSSS.Foundation.XDG {
                                     // cell exists at new time, but not at some old time -> newborn
 
                                     int jNewbornCell = j;
+                                    NewbornCellsList.Add(jNewbornCell);
                                     AggCandidates[jNewbornCell] = false;
                                     if (!AgglomCellsBitmask[jNewbornCell]) {
                                         AgglomCellsList.Add(jNewbornCell);
@@ -518,6 +526,7 @@ namespace BoSSS.Foundation.XDG {
                     }
                 }
 
+                // Determine vanishing cells
                 if (AgglomerateDeceased) {
 
                     for (int j = 0; j < Jup; j++) {
@@ -534,13 +543,15 @@ namespace BoSSS.Foundation.XDG {
                                 if (volOldFrac_j > NewbornAndDecasedThreshold) {
                                     // cell does not exist at new time, but at some old time -> decased
 
-                                    int jNewbornCell = j;
-                                    AggCandidates[jNewbornCell] = false;
-                                    if (!AgglomCellsBitmask[jNewbornCell]) {
-                                        AgglomCellsList.Add(jNewbornCell);
-                                        AgglomCellsBitmask[jNewbornCell] = true;
+                                    int jVanishingCell = j;
+                                    VanishingCellsList.Add(jVanishingCell);
+                                    AggCandidates[jVanishingCell] = false;
+                                    if (!AgglomCellsBitmask[jVanishingCell]) {
+                                        AgglomCellsList.Add(jVanishingCell);
+                                        VanishingCellsList.Add(jVanishingCell);
+                                        AgglomCellsBitmask[jVanishingCell] = true;
 
-                                        Console.WriteLine("Must agglom DEAD cell " + jNewbornCell + "#" + Tracker.GetSpeciesName(spId) + " on RANK-" + myMpiRank);
+                                        Console.WriteLine("Must agglom DEAD cell " + jVanishingCell + "#" + Tracker.GetSpeciesName(spId) + " on RANK-" + myMpiRank);
 
                                     }
                                 }
@@ -625,7 +636,7 @@ namespace BoSSS.Foundation.XDG {
                 }
                 //*/
 
-                return (AgglomCellsList, AgglomCellsBitmask, AggCandidates);
+                return (AgglomCellsList, AgglomCellsBitmask, AggCandidates, NewbornCellsList, VanishingCellsList);
 
             }
         }
@@ -1701,7 +1712,7 @@ namespace BoSSS.Foundation.XDG {
         /// Revised algorithm for chains, in use since Sept. 2023
         /// </remarks>
         protected virtual void FindAgglomerationTargets_Mk3(
-            List<int> AgglomSourceCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates
+            List<int> AgglomSourceCellsList, BitArray AgglomCellsBitmask, BitArray AggCandidates, List<int>NewbornCellsList, List<int> VanishingCellsList
             ) {
             using (new FuncTrace()) {
                 int myMpiRank = Tracker.GridDat.MpiRank;
@@ -1709,11 +1720,7 @@ namespace BoSSS.Foundation.XDG {
                 int Jup = grdDat.Cells.NoOfLocalUpdatedCells;
 
                 // The incoming AggCandidates represent newborn or vanishing cells if they are false
-                List<int> CellsRequireTopologyChanges = new List<int>();
-
-                for (int jCell = 0; jCell < AggCandidates.Count; jCell++)
-                    if (!AggCandidates[jCell]) // if it cannot be candidate it should be either a newborn or vanishing cell
-                        CellsRequireTopologyChanges.Add(jCell);
+                List<int> CellsRequireTopologyChanges = NewbornCellsList.Union(VanishingCellsList).ToList();
 
                 // Initiate new agglomeration pair list
                 var AgglomerationPairs = new List<CellAgglomerator.AgglomerationPair>();
@@ -1779,21 +1786,26 @@ namespace BoSSS.Foundation.XDG {
                     possibleGroupTargets = m_CellsNeedChainAgglomeration.Except(CellsRequireTopologyChanges).ToList();
                 }
 
-                 if (m_aggGroups.Any() && PlotAgglomeration)
+                // So far if a cell that requires topology change cannot be mapped, this means a topologicalFailure
+                m_failCells.AddRange(m_CellsNeedChainAgglomeration);
+                var topologicalFailures = m_failCells.Intersect(CellsRequireTopologyChanges);
+                if (topologicalFailures.Any())
+                    topologicalFailures.SaveToTextFileDebugUnsteady("failedTopologicalCells", ".txt");
+
+                // Debugging info
+                if (m_aggGroups.Any() && PlotAgglomeration)
                     m_aggGroups.SaveToTextFileDebugUnsteady("m_aggGroups" + Tag,".txt");
 
-                // add successful groups into the pairs list
+                // add groups into the pairs list
                 foreach (var group in  m_aggGroups) {
-                    if (group.SumFractions > AgglomerationThreshold) {
-                        AgglomerationPairs.AddRange(group.GetAggPairs);
-                    } else { //if not, add them the fail list
+                    AgglomerationPairs.AddRange(group.GetAggPairs); 
+                    if (group.SumFractions < AgglomerationThreshold) {  //mark unsuccessful groups as failure and add them the fail list
                         m_failCells.AddRange(group.GetCells);
                     }
                 }
 
                 // In case of still failed cases
-                #region AgglomerationKatastrophe
-                m_failCells.AddRange(m_CellsNeedChainAgglomeration);
+                #region AgglomerationKatastrophe               
                 var NoFailedCells = m_failCells.Count.MPISum();
                 if (NoFailedCells > 0 || PlotAgglomeration) {
                     int[] pairIdentification = new int[Jup];
