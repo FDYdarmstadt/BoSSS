@@ -271,11 +271,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
         /// <summary>
         /// Uses METIS to assign a Schwarz block index to each cell on this processor.
-        /// Note that the Schwarz block index is **not** the MPI rank, since the number of Schwarz blocks here is typically different than theMPI size
+        /// Note that the Schwarz block index is **not** the MPI rank, since the number of Schwarz blocks here is typically different than the MPI size
         /// </summary>
         /// <returns>
-        /// - index: global (among all MPI processors) Schwarz block index
-        /// - content: semi-initialized Schwarz block
+        /// Mapping from local cell index to Schwarz block
+        /// - index: local cell index `j
+        /// - content: for cell `j`, the global (among all MPI processors) Schwarz block index to which this cell belongs
         /// Note: at first, all processors have all blocks, although the block might be empty on the respective processor.
         /// </returns>
         int[] ComputeSchwarzBlockIndexMETIS(MultigridOperator op) {
@@ -658,7 +659,18 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-
+        /// <summary>
+        /// Re-distribution of operator matrix to the Schwarz blocks on the respective processors.
+        /// </summary>
+        /// <param name="op"></param>
+        /// <param name="SchwarzBlocksGlobal"></param>
+        /// <returns>
+        /// - `Redist`: redistribution matrix; The local Schwarz blocks can than be extracted from the product `Redist*OperatorMatrix`;
+        /// - `RowIndices`, `ColIndices`: index lists into the product `Redist*OperatorMatrix`, in order to extract Schwarz blocks,
+        ///    (e.g., by <see cref="BlockMsrMatrix.AccSubMatrixTo{V1, V2, V3, V4}(double, IMutableMatrixEx, V1, V2, V3, V4)"/>).
+        ///   - 1st index: Schwarz block index `i`; the respective list at `i` is only non-null, if block `i` is beeing owned by the current process
+        ///   - 2nd index: Enumeration of matrix rows
+        /// </returns>
         private (BlockMsrMatrix Redist, List<long>[] RowIndices, List<long>[] ColIndices) GetRedistributionMatrix(MultigridOperator op, (long i0Global, int CellLen)[][] SchwarzBlocksGlobal) {
             using (new FuncTrace()) {
                 int NoOfBlocks = SchwarzBlocksGlobal.Length;
@@ -725,19 +737,25 @@ namespace BoSSS.Solution.AdvancedSolvers {
             }
         }
 
-        public PARDISOSolver[] GetBlockSolvers(BlockMsrMatrix Redist, List<long>[] RowIndices, List<long>[] ColIndices) {
+        PARDISOSolver[] GetBlockSolvers(BlockMsrMatrix Redist, List<long>[] RowIndices, List<long>[] ColIndices, int[] metisCellsPerBlockGlobal) {
             Debug.Assert(RowIndices.Length == ColIndices.Length);
             int NoOfBlocks = RowIndices.Length;
             Debug.Assert(NoOfBlocks == m_config.NoOfBlocks);
 
-#if DEBUG
-            int[] OwnedByProc = RowIndices.Select(ary => ary != null ? 1 : 0).ToArray().MPISum(Redist.MPI_Comm);
-            for(int i = 0; i < OwnedByProc.Length; i++) {
-                Debug.Assert(OwnedByProc[i] == 1);
-                Debug.Assert((RowIndices[i] != null) == (ColIndices[i] != null));
+//#if DEBUG
+            {
+                // verify that each block is owned by exactly one process.
+                int[] local_OwnedByProc = RowIndices.Select(ary => ary != null ? 1 : 0).ToArray();
+                int[] OwnedByProc = local_OwnedByProc.MPISum(Redist.MPI_Comm);
+                for (int i = 0; i < OwnedByProc.Length; i++) {
+                    if (!(OwnedByProc[i] == 1 || metisCellsPerBlockGlobal[i] == 0)) {
+                        throw new ApplicationException($"Block {i} is owned by {OwnedByProc[i]} process(es); (expecting that each block is owned by exactly one processor, if not initially empty).");
+                    }
+                    Debug.Assert((RowIndices[i] != null) == (ColIndices[i] != null));
+                }
             }
 
-#endif
+//#endif
 
 
             PARDISOSolver[] ret = new PARDISOSolver[NoOfBlocks];
@@ -903,12 +921,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 
                 //
-                int[] SwzBlkLocal = ComputeSchwarzBlockIndexMETIS(op); // index: global Schwarz block index
+                int[] SwzBlkLocal = ComputeSchwarzBlockIndexMETIS(op); // index: local cell index; content: Schwarz block index
                                                                        // at first, all processors have all blocks, although the block might be empty on the respective processor.
                 Debug.Assert(SwzBlkLocal.Min() >= 0);
                 Debug.Assert(SwzBlkLocal.Max() < config.NoOfBlocks);
 
                 int NoOfBlocks = config.NoOfBlocks;
+                int[] metisCellsPerBlockGlobal;
+                {
+                    var metisCellsPerBlockLocal = new int[NoOfBlocks];
+                    foreach(int iBlk in SwzBlkLocal) {
+                        metisCellsPerBlockLocal[iBlk]++;
+                    }
+
+                    metisCellsPerBlockGlobal = metisCellsPerBlockLocal.MPISum();
+                }
+
+
+                
                 SchwarzBlock[] Blocks = GetCellsFromPart(SwzBlkLocal, NoOfBlocks);
 
                 // overlap
@@ -923,6 +953,16 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                 // perform the data exchange
                 var SchwarzBlocksGlobal = SanitizeSchwarzBlocks(ExchangeBlocks(Blocks, op), op);
+                {
+                    for(int iBlk = 0; iBlk < NoOfBlocks; iBlk++) {
+                        if (metisCellsPerBlockGlobal[iBlk] == 0) {
+                            // metis left the block completly empty
+                            if (SchwarzBlocksGlobal[iBlk] != null) {
+                                throw new ApplicationException($"Algorithm produced non-empty Block containing {SchwarzBlocksGlobal[iBlk].Length} elements from initially empty block.");
+                            }
+                        }
+                    }
+                }
                 
                 //  BlockPartitioning(int LocalLength, IEnumerable<long> BlockI0, IEnumerable<int> BlockLen, MPI_Comm MpiComm, bool i0isLocal = false) 
                 var RedistAndIndices = GetRedistributionMatrix(op, SchwarzBlocksGlobal);
@@ -931,7 +971,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 var LocalBlocks = BlockMsrMatrix.Multiply(RedistAndIndices.Redist, op.OperatorMatrix);
 
                 // create the local block solvers
-                m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices);
+                m_BlockSolvers = GetBlockSolvers(LocalBlocks, RedistAndIndices.RowIndices, RedistAndIndices.ColIndices, metisCellsPerBlockGlobal);
                 m_BlockSizes = RedistAndIndices.RowIndices.Select(IDXs => IDXs?.Count ?? -12345).ToArray();
 
                 m_comm = new CommunicationStuff(this, op.OperatorMatrix._ColPartitioning, RedistAndIndices.ColIndices);
