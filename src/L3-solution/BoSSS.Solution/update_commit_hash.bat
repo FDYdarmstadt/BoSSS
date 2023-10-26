@@ -1,6 +1,8 @@
 @echo off
 setlocal enabledelayedexpansion
 
+
+
 :: Check if git is available
 git --version 2>nul || (
     echo. > commit_hash.txt
@@ -13,17 +15,22 @@ git --version 2>nul || (
 ::
 
 
+
 if exist commit_hash.txt (
     set /p CURRENT_HASH=<commit_hash.txt
 ) else (
     set CURRENT_HASH=
 )
 
-echo %CURRENT_HASH%
+echo "current hash:" %CURRENT_HASH%
+
+
 
 FOR /F "tokens=* USEBACKQ" %%F IN (`git rev-parse HEAD`) DO (
     SET NEW_HASH=%%F
 )
+
+
 
 ::echo %NEW_HASH%
 ::echo "equality " "!CURRENT_HASH!" equ "!NEW_HASH!"
