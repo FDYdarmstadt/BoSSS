@@ -928,10 +928,15 @@ namespace BoSSS.Solution.AdvancedSolvers {
 
                             // orthonormalization and residual minimization
                             if (vl.ContainsNanOrInf().MPIOr() && CoarseArithmeticExceptionCount < 20) {
+                                CoarseArithmeticExceptionCount++;
+                                Console.WriteLine("Coarse solver failed " + CoarseArithmeticExceptionCount);
+                                if(CoarseArithmeticExceptionCount == 1) {
+                                    BlockMsrMatrix coarseMtx = myConfig.CoarseOnLovwerLevel ? (m_OpMapPair as MultigridOperator).CoarserLevel.OperatorMatrix : m_OpMapPair.OperatorMatrix;
+                                    coarseMtx.SaveToTextFileSparse("FailedCoarseMatrix.txt");
+                                }
                                 vl = null;
                                 this.CoarserLevelSolver.Dispose();
                                 this.InitCoarse();
-                                CoarseArithmeticExceptionCount++;
                             } else {
                                 resNorm = ortho.AddSolAndMinimizeResidual(ref vl, X, Sol0, Res0, Res, "coarsecorL" + iLevel);
                             }

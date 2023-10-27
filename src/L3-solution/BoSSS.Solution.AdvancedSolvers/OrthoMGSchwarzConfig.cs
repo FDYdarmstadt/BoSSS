@@ -106,8 +106,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
         public int CoarseKickIn = 90000;
 
         /// <summary>
-        /// - if true, a p-two-grid method (<see cref="PTGconfig"/>) is used for the coarse solver
-        /// - if false, a direct solver (<see cref="DirectSolver"/>) is used at the coarsest solver
+        /// - if true, a p-two-grid method (<see cref="PTGconfig"/>) is used for the coarsest level
+        /// - if false, a direct solver (<see cref="DirectSolver"/>) is used at the coarsest level
         /// </summary>
         [DataMember]
         public bool CoarseUsepTG = true;
@@ -334,7 +334,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         long CoarseLength = ((long)this.GetLowOrderLength(op_lv)).MPISum();
 
                         if (CoarseLength <= this.CoarseKickIn) {
-                            tr.Info($"KcycleMultiSchwarz: lv {iLevel}, using p-two-grid (pTG), low-order DOF {CoarseLength} <= kick-in-value ({this.CoarseKickIn}). ");
+                            tr.Info($"KcycleMultiSchwarz: lv {iLevel}, using p-two-grid (pTG), low-degree is {this.Get_pMaxOfCoarseSolver(op_lv.Degrees.Max())}, low-order DOF {CoarseLength} <= kick-in-value ({this.CoarseKickIn}). ");
                             TerminateMultigrid = true;
                         }
 
