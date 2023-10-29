@@ -110,7 +110,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// - if false, a direct solver (<see cref="DirectSolver"/>) is used at the coarsest level
         /// </summary>
         [DataMember]
-        public bool CoarseUsepTG = true;
+        public bool CoarseUsepTG = false;
 
 
         /// <summary>
