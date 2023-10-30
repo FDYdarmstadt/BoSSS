@@ -1280,7 +1280,7 @@ namespace MPI.Wrappers {
         /// </summary>
         static public double[] MPIAllGather(this double[] i, MPI_Comm comm) {
             csMPI.Raw.Comm_Size(comm, out int size);
-            csMPI.Raw.Comm_Rank(comm, out int rank);
+            //csMPI.Raw.Comm_Rank(comm, out int rank);
 
             int L = i.Length;
             double[] result = new double[size*L];

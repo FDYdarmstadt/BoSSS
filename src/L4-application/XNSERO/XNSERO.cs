@@ -56,6 +56,13 @@ namespace BoSSS.Application.XNSERO_Solver {
             });
         }
 
+        protected override void Bye() {
+            base.Bye();
+            LogParticleData?.Flush();
+            LogParticleData?.Close();
+            LogParticleData?.Dispose();
+        }
+
         /// <summary>
         /// An array of all particles (rigid objects). Particles can only be added at the initialization of the simulation. 
         /// </summary>
@@ -496,12 +503,15 @@ namespace BoSSS.Application.XNSERO_Solver {
                         }
                     }
 
-                    double[] CheckReceive = new double[NoOfParticles * NoOfVars * MPISize];
-                    unsafe {
-                        fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive) {
-                            csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
-                        }
-                    }
+                    //double[] CheckReceive = new double[NoOfParticles * NoOfVars * MPISize];
+                    //unsafe {
+                    //    fixed (double* pCheckSend = CheckSend, pCheckReceive = CheckReceive) {
+                    //        csMPI.Raw.Allgather((IntPtr)pCheckSend, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, (IntPtr)pCheckReceive, CheckSend.Length, csMPI.Raw._DATATYPE.DOUBLE, csMPI.Raw._COMM.WORLD);
+                    //    }
+                    //}
+                    double[] CheckReceive = CheckSend.MPIAllGather();
+
+
 
                     for (int iP = 0; iP < NoOfParticles; iP++) {
                         for (int iVar = 0; iVar < NoOfVars; iVar++) {

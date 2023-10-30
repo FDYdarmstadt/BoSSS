@@ -20,6 +20,7 @@ namespace AdvancedSolverTests {
 
         public static void Main() {
             BoSSS.Solution.Application.InitMPI();
+            //Debugger.Launch();
             Test();
             BoSSS.Solution.Application.FinalizeMPI();
         }
@@ -30,8 +31,9 @@ namespace AdvancedSolverTests {
             //AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var_spec, 4);
             //AdvancedSolverTests.SubBlocking.ExternalTests.SubMatrixExtraction(XDGusage.all, 2, MatrixShape.full_var, 4);
             //AdvancedSolverTests.SubBlocking.ExternalTests.GetExternalRowsTest(XDGusage.all, 2, 4);
-            AdvancedSolverTests.Solver.addSchwarzTest.RunTest();
-            AdvancedSolverTests.SubBlocking.ExternalTests.GetExternalRowsTest(XDGusage.none, 2, 4);
+            AdvancedSolverTestsMPI.Solver.SchwarzForCoarseMeshTest.TestInit(XDGusage.all, 2, 4, 2, 2);
+            //AdvancedSolverTests.Solver.addSchwarzTest.RunTest();
+            //AdvancedSolverTests.SubBlocking.ExternalTests.GetExternalRowsTest(XDGusage.none, 2, 4);
 
         }
 
