@@ -522,13 +522,13 @@ namespace ApplicationWithIDT {
             SaveStepToField(stepIN, StepOptiLevelSet);
 
             // makes the step continues if SinglePhaseField as OptiLevelSet is used
-            if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOpti.GetGrid().iGeomCells.Count > 1) {
-                // Does a continuity projection (hopefully) of the step
-                MakeLevelSetContinous(StepOptiLevelSet);
-                SaveStepFieldToStep(stepIN, StepOptiLevelSet);
-                var StepOptiLevelSet_afterprojection = GetStepOptiLevelSet(stepIN);
-                SaveStepToField(stepIN, StepOptiLevelSet_afterprojection);
-            }
+            //if(Control.OptiLevelSetType == OptiLevelSetType.SinglePhaseField && LevelSetOpti.GetGrid().iGeomCells.Count > 1) {
+            //    // Does a continuity projection (hopefully) of the step
+            //    MakeLevelSetContinous(StepOptiLevelSet);
+            //    SaveStepFieldToStep(stepIN, StepOptiLevelSet);
+            //    var StepOptiLevelSet_afterprojection = GetStepOptiLevelSet(stepIN);
+            //    SaveStepToField(stepIN, StepOptiLevelSet_afterprojection);
+            //}
 
             var orgStep = stepIN.CloneAs();
             // 
