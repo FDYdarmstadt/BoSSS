@@ -680,22 +680,23 @@ namespace BoSSS.Solution.AdvancedSolvers {
                         this.AggBasis[ifld].GetRestrictionMatrix(RestMtx, this, ifld);  //     ... and restrict to this level          
                 }
                 var result = BlockMsrMatrix.Multiply(RestMtx, PrlgMtx);
-#if DEBUG
-            {
-                var resultT = result.Transpose();
-                BlockMsrMatrix ShoudBeId;
-                if(result.RowPartitioning.TotalLength < result.ColPartition.TotalLength)
-                    ShoudBeId = BlockMsrMatrix.Multiply(result, resultT);
-                else
-                    ShoudBeId = BlockMsrMatrix.Multiply(resultT, result);
+//#if DEBUG
+                {
+                    var resultT = result.Transpose();
+                    BlockMsrMatrix ShoudBeId;
+                    if (result.RowPartitioning.TotalLength < result.ColPartition.TotalLength)
+                        ShoudBeId = BlockMsrMatrix.Multiply(result, resultT);
+                    else
+                        ShoudBeId = BlockMsrMatrix.Multiply(resultT, result);
 
-                ShoudBeId.AccEyeSp(-1.0);
+                    ShoudBeId.AccEyeSp(-1.0);
 
-                double ShouldBeID_Norm = ShoudBeId.InfNorm();
-                Debug.Assert(ShouldBeID_Norm < 1.0e-8);
-                //Console.WriteLine("Id norm {0} \t (level {1})", ShouldBeID_Norm, this.AggGrid.MgLevel);
-            }
-#endif
+                    double ShouldBeID_Norm = ShoudBeId.InfNorm();
+                    if (ShouldBeID_Norm > 1.0e-8)
+                        throw new ArithmeticException("expecting an identity matrix");
+                    //Console.WriteLine("Id norm {0} \t (level {1})", ShouldBeID_Norm, this.AggGrid.MgLevel);
+                }
+//#endif
                 return result;
             }
         }

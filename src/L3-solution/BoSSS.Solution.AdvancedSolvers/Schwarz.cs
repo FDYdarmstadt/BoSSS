@@ -1399,6 +1399,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             //    this.CoarseSolver.Dispose();
             //    //this.CoarseSolver = null; // don't delete - we need this again for the next init
             //}
+            m_MgOp = null;
         }
 
         /// <summary>
