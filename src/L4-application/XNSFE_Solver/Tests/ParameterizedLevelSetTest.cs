@@ -35,16 +35,15 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public int SpatialDimension => 2;
 
-        public Func<double[], double, double> GetPhi() {
-            double xSemiAxis = 2e-04 / (3.0).Sqrt();
-            double ySemiAxis = 2e-04 / (3.0).Sqrt();
-            double yCenter = 3e-04;
-            return (X, t) => X[1] - yCenter + ySemiAxis * (1 - (X[0]/xSemiAxis).Pow2()).Sqrt();//X[1] -3e-4;
-        }
-
         double DomainLength = 1e-04;
         double Twall = 37.5;
 
+        public Func<double[], double, double> GetPhi() {
+            double xSemiAxis = 2 * DomainLength / (3.0).Sqrt();
+            double ySemiAxis = 2 * DomainLength / (3.0).Sqrt();
+            double yCenter = 3e-04; ;
+            return (X, t) => X[1] - yCenter + ySemiAxis * (1 - (X[0] / xSemiAxis).Pow2()).Sqrt();
+        }
 
         public GridCommons CreateGrid(int Resolution) {
 
@@ -147,8 +146,8 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
   
         public double T_sat => 0;
 
-        //public double theta_e =>  Math.PI / 6.0;
-   
+        public double theta_e => Math.PI / 6.0;
+
         public bool Material => false;
 
         public bool steady => true;

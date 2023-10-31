@@ -44,5 +44,22 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
     }
 
+    public static class ParameterizedLevelSetFactory {
 
+        public static ParameterizedLevelSetTimeStepper Build_Timestepper(ParameterizedLevelSetControl Control) {
+
+            RungeKuttaScheme RKscheme;
+            switch (Control.Timestepper) {
+                case Parameterized_Timestepper.ExplicitEuler:
+                    RKscheme = RungeKuttaScheme.ExplicitEuler;
+                    break;
+                default:
+                    throw new ArgumentException();
+            }
+            return new ParameterizedLevelSetTimeStepper(Control, RKscheme);
+
+        }
+
+    }
+    
 }

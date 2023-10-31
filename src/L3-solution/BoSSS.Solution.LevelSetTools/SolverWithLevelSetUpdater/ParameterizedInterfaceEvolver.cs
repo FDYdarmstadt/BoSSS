@@ -87,6 +87,12 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
             parameters = BoSSS.Solution.NSECommon.VariableNames.LevelSetGradient(D);
             parameters = BoSSS.Solution.NSECommon.VariableNames.AsLevelSetVariable(interfaceName, BoSSS.Solution.NSECommon.VariableNames.VelocityVector(D));
 
+
+            if (control == null)
+                throw new ArgumentNullException("LevelSetEvolution needs and instance of FourierLevSetControl!");
+
+            //create specialized parameterized timestepper
+            Parameterized_TimeStepper = ParameterizedLevelSetFactory.Build_Timestepper(control);
         }
 
 
@@ -98,7 +104,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             double forceX = ComputeForceX(levelSet, ParameterVarFields);
 
-            Parameterized_TimeStepper.UpdateParameterizedLevelSet();
+            //Parameterized_TimeStepper.UpdateParameterizedLevelSet();
             var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, forceX, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter);
             
             
@@ -143,8 +149,8 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
                         for (int j = 0; j < Length; j++) { // loop over cells
                             for (int k = 0; k < QR.NoOfNodes; k++) { // loop over nodes
+
                                 double acc = 0;
-                                //double acc1 = 0;
                                 for (int d = 0; d < D; d++) {
                                     acc += VelocityValues[j, k, d] * LevelSetGradValues[j, k, d];//Normals[j, k, d];
                                                                                                  //acc1 += LevelSetGradValues[j, k, d];
@@ -168,5 +174,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
             return forceX;
         }
+
+            
     }
 }
