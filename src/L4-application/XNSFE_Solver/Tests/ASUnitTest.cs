@@ -45,7 +45,14 @@ using static BoSSS.Solution.AdvancedSolvers.Testing.ConditionNumberScalingTest;
 using System.IO;
 using BoSSS.Foundation.IO;
 
+<<<<<<< HEAD
 >>>>>>> 7c3a165f9c (third stage of parameterized LS implementation)
+=======
+using BoSSS.Solution.LevelSetTools.ParameterizedLevelSet;
+using BoSSS.Solution.Timestepping;
+using BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater;
+
+>>>>>>> 716f72fae4 (forth stage of parameterized LS implementation)
 
 namespace BoSSS.Application.XNSFE_Solver.Tests {
 
@@ -125,11 +132,19 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             //C.IncludeRecoilPressure = true;
 
             //C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
-            //C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;//ParameterizedLevelSet;
+            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;//ParameterizedLevelSet;
+            //if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet){
+            //    C.ParameterizedLevelSetControl = new ParameterizedLevelSetControl(2 * 1e-04 / (3.0).Sqrt(), 2 * 1e-04 / (3.0).Sqrt(), 3e-04);
+                
+            //}
+            //C.PhysicalParameters.theta_e = Math.PI / 6.0;
+            //C.PhysicalParameters.betaS_A = 0;
+            //C.PhysicalParameters.betaS_B = 0;
+            //C.PhysicalParameters.betaL = 0.0;
+            //C.PhysicalParameters.sliplength = 0.0;
             //C.Timestepper_LevelSetHandling = LevelSetHandling.LieSplitting;
-            //C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
+            C.AdvancedDiscretizationOptions.SST_isotropicMode = SurfaceStressTensor_IsotropicMode.LaplaceBeltrami_ContactLine;
             //C.SkipSolveAndEvaluateResidual = false;
-            //C.LinearSolver = LinearSolverCode.direct_pardiso.GetConfig();
 
             XNSFESolverTest(Tst, C);
         }
@@ -932,6 +947,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
             C.PhysicalParameters.mu_B = tst.mu_B;
             C.PhysicalParameters.Sigma = tst.Sigma;
             C.PhysicalParameters.IncludeConvection = tst.IncludeConvection;
+            C.PhysicalParameters.theta_e = tst.theta_e;
             // initial values and exact solution
             // =================================
 
