@@ -35,14 +35,22 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public int SpatialDimension => 2;
 
-        double DomainLength = 1e-04;
-        double Twall = 37.5;
+        const double DomainLength = 1e-04;
+        const double Twall = 37.5;
+
+
+        public double xSemiAxis0 {
+            get {
+                return 2 * DomainLength / (3.0).Sqrt();
+            }
+        }
+        public double ySemiAxis0 => (2 * DomainLength / (3.0).Sqrt());
+            
+        public double yCenter0 => 3e-04; 
+
 
         public Func<double[], double, double> GetPhi() {
-            double xSemiAxis = 2 * DomainLength / (3.0).Sqrt();
-            double ySemiAxis = 2 * DomainLength / (3.0).Sqrt();
-            double yCenter = 3e-04; ;
-            return (X, t) => X[1] - yCenter + ySemiAxis * (1 - (X[0] / xSemiAxis).Pow2()).Sqrt();
+            return (X, t) => X[1] - yCenter0 + ySemiAxis0 * (1 - (X[0] / xSemiAxis0).Pow2()).Sqrt();
         }
 
         public GridCommons CreateGrid(int Resolution) {

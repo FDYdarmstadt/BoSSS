@@ -11,6 +11,7 @@ using BoSSS.Foundation;
 using BoSSS.Solution.Timestepping;
 using BoSSS.Foundation.Grid;
 using BoSSS.Solution.LevelSetTools.ParameterizedLevelSet;
+using BoSSS.Foundation.Quadrature;
 
 namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
@@ -45,7 +46,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             this.RKscheme = _RKscheme;
         }
 
-        public (double xSemi1, double ySemi1, double yCenter1) MoveLevelSet(double dt, double forceX, double xSemi0, double ySemi0, double yCenter0) {
+        public (double xSemi1, double ySemi1, double yCenter1) MoveLevelSet(double dt, double forceX, double xSemi0, double ySemi0, double yCenter0, CellQuadratureScheme levSetQuadScheme) {
 
             double[] CoeffValues0 = new double[3] { 0, 0, 0 };
             double[] ParamValues0 = new double[3] { xSemi0, ySemi0, yCenter0 };
@@ -62,9 +63,7 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         }
 
     }
-    /// <summary>
-    /// 
-    /// </summary>
+
     public static class GradientMinimizationMethod {
 
         /// <summary>
@@ -138,9 +137,13 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         }
 
     }
-
+ 
     public static class NumericalGradient {
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="F"></param>
+        /// <returns></returns>
         static public Func<double[], double[], double, double, double[]> Differentiate(Func<double[], double[], double, double, double> F) {
 
             return delegate (double[] X, double[] EllPar0, double dt, double forceX) {
@@ -178,7 +181,18 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
         static double stepNumber = 100000;
 
-
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="EllipseCoeff"></param>
+        /// <param name="EllipsePar0"></param>
+        /// <param name="f"></param>
+        /// <param name="alphaMin"></param>
+        /// <param name="alphaMax"></param>
+        /// <param name="dt"></param>
+        /// <param name="forceX"></param>
+        /// <returns></returns>
+        /// <exception cref="ArithmeticException"></exception>
         public static double IntegralCalculation(double[] EllipseCoeff, double[] EllipsePar0, Func<double[], double[], double, double, double, double, double> f, double alphaMin, double alphaMax, double dt, double forceX) {
 
             Console.WriteLine($"IntegralCalculation {EllipseCoeff[0]},{EllipseCoeff[1]},{EllipseCoeff[2]} {alphaMin} {alphaMax} {stepNumber}");
@@ -222,10 +236,20 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
     }
 
     public static class MyRealF {
-        public static double f(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double force) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="EllipseCoeff"></param>
+        /// <param name="EllipsePar0"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="timeStep"></param>
+        /// <param name="force"></param>
+        /// <returns></returns>
+        static double f(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double force) {
 
             // double timeStep = 0.2;
-            double time0 = 0.2;
+            double time0 = 0;
             double time1 = time0 + timeStep;
 
             double SquareRoot = (EllipsePar0[0].Pow2() - x.Pow2()).Sqrt(); //sqrt(a^2 - x^2)
@@ -244,15 +268,35 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             //return term1 + term2 + term3 + Velocity[0] * Grad[0] + Velocity[1] * Grad[1];
             return term1 + term2 + term3 + force;
         }
-
-        public static double fsqr(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double force) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="EllipseCoeff"></param>
+        /// <param name="EllipsePar0"></param>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="timeStep"></param>
+        /// <param name="force"></param>
+        /// <returns></returns>
+        static double fsqr(double[] EllipseCoeff, double[] EllipsePar0, double x, double y, double timeStep, double force) {
             var fval = f(EllipseCoeff, EllipsePar0, x, y, timeStep, force);
             return fval * fval;
         }
 
-        public static double F(double[] EllipseCoeff, double[] EllipsePar0, double dt, double forceX) {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="EllipseCoeff"></param>
+        /// <param name="EllipsePar0"></param>
+        /// <param name="dt"></param>
+        /// <param name="forceX"></param>
+        /// <returns></returns>
+        public static double F(double[] EllipseCoeff, double[] EllipsePar0, double dt, double forceX, CellQuadratureScheme levSetQuadScheme) {
             const double alphaMin = -Math.PI * 5 / 6;
             const double alphaMax = -Math.PI / 6;
+
+            sfdsf
+
 
             return IntegrationOverEllipse.IntegralCalculation(EllipseCoeff, EllipsePar0, fsqr, alphaMin, alphaMax, dt, forceX);
         }

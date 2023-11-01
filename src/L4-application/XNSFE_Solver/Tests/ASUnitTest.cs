@@ -128,15 +128,19 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
             C.ImmediatePlotPeriod = 1;
 
+            C.TracingNamespaces = "*";
+
             //C.solveCoupledHeatEquation = true;
             //C.IncludeRecoilPressure = true;
 
-            //C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
-            C.Option_LevelSetEvolution = LevelSetEvolution.StokesExtension;//ParameterizedLevelSet;
-            //if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet){
-            //    C.ParameterizedLevelSetControl = new ParameterizedLevelSetControl(2 * 1e-04 / (3.0).Sqrt(), 2 * 1e-04 / (3.0).Sqrt(), 3e-04);
-                
-            //}
+            C.LSContiProjectionMethod = Solution.LevelSetTools.ContinuityProjectionOption.ConstrainedDG;
+            C.Option_LevelSetEvolution = LevelSetEvolution.ParameterizedLevelSet;
+            if (C.Option_LevelSetEvolution == LevelSetEvolution.ParameterizedLevelSet){
+                C.ParameterizedLevelSetControl = new ParameterizedLevelSetControl(Tst.xSemiAxis0, Tst.ySemiAxis0, Tst.yCenter0);
+            }
+
+
+
             //C.PhysicalParameters.theta_e = Math.PI / 6.0;
             //C.PhysicalParameters.betaS_A = 0;
             //C.PhysicalParameters.betaS_B = 0;
