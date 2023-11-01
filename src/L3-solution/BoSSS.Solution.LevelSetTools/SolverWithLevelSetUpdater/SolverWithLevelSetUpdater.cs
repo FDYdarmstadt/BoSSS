@@ -293,7 +293,7 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     case LevelSetEvolution.ParameterizedLevelSet: {
                             ParameterizedLevelSet ls = (ParameterizedLevelSet)DGlevelSets[iLevSet];
 
-                            var paramEvolver = new ParameterizedLevelSetEvolver(LevelSetCG, ls, this.Control.ParameterizedLevelSetControl, this.GetOperatorQuadOrder(), ls.GridDat.SpatialDimension);
+                            var paramEvolver = new ParameterizedLevelSetEvolver(LevelSetCG, ls, this.Control.ParameterizedLevelSetControl, QuadOrder(), ls.GridDat.SpatialDimension);
                             break;
                         }
 
@@ -400,6 +400,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                     }
                     case LevelSetEvolution.RigidObject:
                         break;
+                    case LevelSetEvolution.ParameterizedLevelSet: {
+                        (pair.DGLevelSet as ParameterizedLevelSet).Project();
+                        break;
+                    }
                     default:
                         throw new NotImplementedException($"Unknown option for level-set evolution: {Control.Option_LevelSetEvolution}");
                 }

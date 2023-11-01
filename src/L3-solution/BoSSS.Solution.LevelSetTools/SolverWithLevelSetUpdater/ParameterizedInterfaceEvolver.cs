@@ -5,6 +5,7 @@ using BoSSS.Foundation.XDG;
 using BoSSS.Foundation.XDG.OperatorFactory;
 using BoSSS.Solution.LevelSetTools.ParameterizedLevelSet;
 using ilPSP;
+using ilPSP.Tracing;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -97,21 +98,25 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
 
 
         public void MovePhaseInterface(DualLevelSet levelSet, double time, double dt, bool incremental, IReadOnlyDictionary<string, DGField> DomainVarFields, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
-            ParameterizedLevelSet ls = (ParameterizedLevelSet)levelSet.DGLevelSet;
-            if (!object.ReferenceEquals(ls, m_ls)) {
-                throw new ApplicationException("level-set mismatch");
+            using (var tr = new FuncTrace()) {
+
+                ParameterizedLevelSet ls = (ParameterizedLevelSet)levelSet.DGLevelSet;
+                if (!object.ReferenceEquals(ls, m_ls)) {
+                    throw new ApplicationException("level-set mismatch");
+                }
+
+                double forceX = ComputeForceX(levelSet, ParameterVarFields);
+                tr.Info("forceX = " + forceX);
+
+                //Parameterized_TimeStepper.UpdateParameterizedLevelSet();
+                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, forceX, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter);
+
+
+                ls.xSemiAxis = Param1.xSemi1;
+                ls.ySemiAxis = Param1.ySemi1;
+                ls.yCenter = Param1.yCenter1;
+                ((ParameterizedLevelSet)levelSet.DGLevelSet).Project();
             }
-
-            double forceX = ComputeForceX(levelSet, ParameterVarFields);
-
-            //Parameterized_TimeStepper.UpdateParameterizedLevelSet();
-            var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, forceX, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter);
-            
-            
-            ls.xSemiAxis = Param1.xSemi1;
-            ls.ySemiAxis = Param1.ySemi1;
-            ls.yCenter = Param1.yCenter1;
-            ((ParameterizedLevelSet)levelSet.DGLevelSet).Project();
         }
 
         private double ComputeForceX(DualLevelSet levelSet, IReadOnlyDictionary<string, DGField> ParameterVarFields) {
