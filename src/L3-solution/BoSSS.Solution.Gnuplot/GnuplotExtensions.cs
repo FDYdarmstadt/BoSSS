@@ -412,9 +412,9 @@ namespace BoSSS.Solution.Gnuplot {
         /// Writes a 2D multi-plot to Gnuplot and saves the 
         /// plot to a PNG file ('set terminal png').
         /// </summary>
-        static public void SaveToGIF(this Plot2Ddata[,] _2DData, string OutfileName, GnuplotPageLayout layout = null) {
-            using (var gp = _2DData.ToGnuplot(layout)) {
-                gp.SaveToGIF(OutfileName);
+        static public void SaveToGIF(this Plot2Ddata[,] _2DData, string OutfileName, int xRes = 800, int yRes = 600) {
+            using (var gp = _2DData.ToGnuplot()) {
+                gp.SaveToGIF(OutfileName, xRes, yRes);
             }
         }
 

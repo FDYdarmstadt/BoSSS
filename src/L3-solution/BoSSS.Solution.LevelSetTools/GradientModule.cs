@@ -225,7 +225,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
                 
 
-                SpatialOperator op = new SpatialOperator(1, 2, QuadOrderFunc.Linear(), "Phi", "g0", "g1");
+                DifferentialOperator op = new DifferentialOperator(1, 2, QuadOrderFunc.Linear(), "Phi", "g0", "g1");
                 op.EquationComponents["g0"].Add(new Gradient(0, jCell, AcceptedMask));
                 op.EquationComponents["g1"].Add(new Gradient(1, jCell, AcceptedMask));
                 op.EdgeQuadraturSchemeProvider = g => new EdgeQuadratureScheme(domain: Sgrd.AllEdgesMask);
@@ -258,7 +258,7 @@ namespace BoSSS.Solution.LevelSetTools.Reinit.FastMarch {
 
             string[] varNames = new string[] { "Phi", "g0", "g1", "g2" };
 
-            SpatialOperator op = new SpatialOperator(1, D, QuadOrderFunc.Linear(), varNames.GetSubVector(0, 1 + D));
+            DifferentialOperator op = new DifferentialOperator(1, D, QuadOrderFunc.Linear(), varNames.GetSubVector(0, 1 + D));
             for (int d = 0; d < D; d++) 
                 op.EquationComponents[varNames.ElementAt(d+1)].Add(new Gradient2(d, PhiMean));
 

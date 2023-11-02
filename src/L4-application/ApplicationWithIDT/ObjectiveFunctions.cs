@@ -22,13 +22,13 @@ namespace ApplicationWithIDT {
         public MsrMatrix GetConsJacobian(XDGField[] ConservativeFields, LinearizationHint lHint);
         public XDGField[] CreateObjField(XDGField[] ConservativeFields);
         public (MsrMatrix,MsrMatrix) GetJacobians(XDGField[] ConservativeFields, LinearizationHint lHint);
-        public XSpatialOperatorMk2 GetConsOperator();
+        public XDifferentialOperatorMk2 GetConsOperator();
     }
 
 
     public abstract class OptProbBase:IOptProb {
 
-        public OptProbBase(XSpatialOperatorMk2 Op_cons, XSpatialOperatorMk2 Op_obj) {
+        public OptProbBase(XDifferentialOperatorMk2 Op_cons, XDifferentialOperatorMk2 Op_obj) {
             this.Op_cons = Op_cons;
             this.Op_obj = Op_obj;
         }
@@ -36,12 +36,12 @@ namespace ApplicationWithIDT {
         /// <summary>
         /// This is the Spatial Operator from the PDE (Advection, Burgers, Euler,...)
         /// </summary>
-        public XSpatialOperatorMk2 Op_cons { get; set; }
+        public XDifferentialOperatorMk2 Op_cons { get; set; }
 
         /// <summary>
         /// This is the Spatial Operator defining the obj f = || R(U,\phi) ||, can be the same as Op_cons but can be different
         /// </summary>
-        public XSpatialOperatorMk2 Op_obj { get; set; }
+        public XDifferentialOperatorMk2 Op_obj { get; set; }
        
         /// <summary>
         /// Defines if Constraint can be evaluated from using the return from the objective
@@ -78,7 +78,7 @@ namespace ApplicationWithIDT {
 
         public abstract int GetObjLength(XDGField[] ConservativeFields);
 
-        public XSpatialOperatorMk2 GetConsOperator() {
+        public XDifferentialOperatorMk2 GetConsOperator() {
             return Op_cons;
         }
 
@@ -160,7 +160,7 @@ namespace ApplicationWithIDT {
     public class SFFullEnRes : OptProbBase {
 
         int pDiff;
-        public SFFullEnRes(XSpatialOperatorMk2 Op_cons,int pDiff)
+        public SFFullEnRes(XDifferentialOperatorMk2 Op_cons,int pDiff)
                             : base(Op_cons,Op_cons) {
             this.pDiff = pDiff;
             is_GetConsFromObj = true;
@@ -258,7 +258,7 @@ namespace ApplicationWithIDT {
 
     }
     public class SFNearBandEnRes : SFFullEnRes {
-        public SFNearBandEnRes(XSpatialOperatorMk2 Op_cons, int pDiff) : base(Op_cons, pDiff) {
+        public SFNearBandEnRes(XDifferentialOperatorMk2 Op_cons, int pDiff) : base(Op_cons, pDiff) {
             is_GetConsFromObj = false;
         }
         public override void EvalObjective<V>(V obj_out, XDGField[] ConservativeFields) {
@@ -296,7 +296,7 @@ namespace ApplicationWithIDT {
         }
     }
     public class SFCutCellEnRes : SFFullEnRes {
-        public SFCutCellEnRes(XSpatialOperatorMk2 Op_cons, int pDiff) : base(Op_cons, pDiff) {
+        public SFCutCellEnRes(XDifferentialOperatorMk2 Op_cons, int pDiff) : base(Op_cons, pDiff) {
             is_GetConsFromObj = false;
         }
         public override void EvalObjective<V>(V obj_out, XDGField[] ConservativeFields) {
@@ -336,7 +336,7 @@ namespace ApplicationWithIDT {
 
     public class SFRankineHugoniotBase : OptProbBase {
         int pDiff;
-        public SFRankineHugoniotBase(XSpatialOperatorMk2 Op_cons, XSpatialOperatorMk2 Op_obj, int pDiff)
+        public SFRankineHugoniotBase(XDifferentialOperatorMk2 Op_cons, XDifferentialOperatorMk2 Op_obj, int pDiff)
                             : base(Op_cons, Op_obj) {
             is_GetConsFromObj = false;
             this.pDiff = pDiff;

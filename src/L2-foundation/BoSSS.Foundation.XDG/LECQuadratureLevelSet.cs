@@ -115,7 +115,7 @@ namespace BoSSS.Foundation.XDG {
         /// ctor.
         /// </summary>
         internal LECQuadratureLevelSet(IGridData context,
-                                     XSpatialOperatorMk2 DiffOp,
+                                     XDifferentialOperatorMk2 DiffOp,
                                      M Matrix, V OffsetVec,
                                      UnsetteledCoordinateMapping RowMap, IList<DGField> ParamsMap, UnsetteledCoordinateMapping ColMap,
                                      LevelSetTracker lsTrk, int _iLevSet, int TrackerHistoryIndex,

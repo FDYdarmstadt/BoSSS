@@ -213,7 +213,7 @@ namespace BoSSS.Foundation.Comm {
         /// </summary>
         /// <returns></returns>
         public Permutation Invert() {
-            using(new FuncTrace()) {
+            using(var tr = new FuncTrace()) {
                 Permutation inv = new Permutation(this);
                 int localLength = m_Partition.LocalLength; //m_LocalLengths[m_Master.MyRank];
                 int size;
@@ -235,7 +235,6 @@ namespace BoSSS.Foundation.Comm {
                         i0[i] = i0[i - 1] + m_Partition.GetLocalLength(i - 1);// m_LocalLengths[i - 1];
 
 
-
                     // do local inversion and collect items 
                     // ====================================
                     List<PermutationEntry>[] itemsToSend = new List<PermutationEntry>[size];
@@ -244,7 +243,7 @@ namespace BoSSS.Foundation.Comm {
 
                     for (int i = 0; i < localLength; i++) {
 
-                        // decide wether inversion of entry i is local or has to be transmitted ...
+                        // decide whether inversion of entry i is local or has to be transmitted ...
                         if (m_Values[i] >= myi0Offset && m_Values[i] < (myi0Offset + localLength)) {
                             // local 
                             inv.m_Values[this.m_Values[i] - myi0Offset] = i + myi0Offset;
@@ -270,8 +269,10 @@ namespace BoSSS.Foundation.Comm {
                     // ===============
 
                     for (int i = 0; i < size; i++) {
-                        if (NoOfItemsToSent[i] > 0)
+                        if (NoOfItemsToSent[i] > 0) {
+                            tr.Info($"setting com path for {NoOfItemsToSent[i]} items to processor #{i}");
                             m2m.SetCommPath(i, NoOfItemsToSent[i]);
+                        }
                     }
                     m2m.CommitCommPaths();
 
@@ -294,11 +295,13 @@ namespace BoSSS.Foundation.Comm {
                         //Many2ManyMessenger.Buffer<PermEntry> sndbuf = new Many2ManyMessenger.Buffer<PermEntry>(m2m, false, p);
                         PermutationEntry[] items = itemsToSend[p].ToArray();
                         m2m.SendBuffers(p).CopyFrom(items, 0);
+                        tr.Info($"sending {items.Length} items to processor #{p}...");
 
                         m2m.TransmittData(p);
                     }
 
                     m2m.FinishBlocking();
+                    tr.Info("finished transmission.");
 
                     // invert received items
                     // =====================
@@ -313,7 +316,7 @@ namespace BoSSS.Foundation.Comm {
 
                         PermutationEntry[] items = new PermutationEntry[cnt];
                         rcvbuf.CopyTo(items, 0);
-
+                        tr.Info($"received {items.Length} items from processor {p}");
 
                         for (int i = 0; i < cnt; i++) {
                             inv.m_Values[items[i].PermVal - myi0Offset] = items[i].Index;

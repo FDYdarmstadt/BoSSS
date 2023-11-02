@@ -268,12 +268,12 @@ namespace BoSSS.Foundation.XDG {
         }
 
 
-        private Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>> GetFrameMatrices<M>(M Matrix, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap)
+        private Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>> GetFrameMatrices<M>(M Matrix, UnsetteledCoordinateMapping RowMap, UnsetteledCoordinateMapping ColMap)
             where M : IMutableMatrixEx {
-            var ret = new Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>>();
+            var ret = new Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>>();
             foreach (var kv in DictAgglomeration) {
                 var Species = kv.Key;
-                var mtx_spc = new XSpatialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>(Matrix, this.Tracker.Regions, Species, RowMap, ColMap);
+                var mtx_spc = new XDifferentialOperatorMk2.SpeciesFrameMatrix<IMutableMatrixEx>(Matrix, this.Tracker.Regions, Species, RowMap, ColMap);
                 ret.Add(Species, mtx_spc);
             }
 
@@ -500,12 +500,12 @@ namespace BoSSS.Foundation.XDG {
             }
         }
 
-        Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameVector<T>> GetFrameVectors<T>(T vec, UnsetteledCoordinateMapping Map)
+        Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameVector<T>> GetFrameVectors<T>(T vec, UnsetteledCoordinateMapping Map)
             where T : IList<double> {
-            var ret = new Dictionary<SpeciesId, XSpatialOperatorMk2.SpeciesFrameVector<T>>();
+            var ret = new Dictionary<SpeciesId, XDifferentialOperatorMk2.SpeciesFrameVector<T>>();
             foreach (var kv in DictAgglomeration) {
                 var Species = kv.Key;
-                var vec_spc = new XSpatialOperatorMk2.SpeciesFrameVector<T>(this.Tracker.Regions, Species, vec, Map);
+                var vec_spc = new XDifferentialOperatorMk2.SpeciesFrameVector<T>(this.Tracker.Regions, Species, vec, Map);
                 ret.Add(Species, vec_spc);
             }
             return ret;

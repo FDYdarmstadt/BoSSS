@@ -50,6 +50,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
         public static void Main(string[] args) {
             Application.InitMPI();
 
+            
             SetUp();
             //TestRebalancingForDG0WithRK1();
             //TestRebalancingForDG0WithAB1();
@@ -633,9 +634,10 @@ namespace CNS_MPITests.Tests.LoadBalancing {
             //    loadBalControl.DynamicLoadBalancing_CellClassifier = new LTSCellClassifier();
             //    loadBalControl.DynamicLoadBalancing_CellCostEstimatorFactories.AddRange(LTSCellCostEstimator.Factory(loadBalControl.NumberOfSubGrids));
             //} else {
-            loadBalControl.DynamicLoadBalancing_CellCostEstimators.Add(new StaticCellCostEstimator(new[] { 1, 10 }) {
-                CellClassifier = new RandomCellClassifier(2)
-            });
+            loadBalControl.DynamicLoadBalancing_CellCostEstimators.Add(
+                new StaticCellCostEstimator(new[] { 1, 10 }) {
+                    CellClassifier = new RandomCellClassifier(2)
+                });
             //}
 
             //// TEST ONLY SUCCEEDS IF THESE LINES ARE IN
@@ -645,7 +647,7 @@ namespace CNS_MPITests.Tests.LoadBalancing {
 
             Debug.Assert(loadBalControl.DynamicLoadBalancing_On == true);
             Debug.Assert(loadBalControl.DynamicLoadBalancing_Period > 0);
-            Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimators.Count > 0);
+            Debug.Assert(loadBalControl.DynamicLoadBalancing_CellCostEstimators.Count() > 0);
 
             ShockTubeLoadBalancingTests hilbertSolver = null;
             List<IProgram<CNSControl>> loadBalSolvers = new List<IProgram<CNSControl>>();

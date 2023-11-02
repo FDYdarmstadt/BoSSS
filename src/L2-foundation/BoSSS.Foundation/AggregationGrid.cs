@@ -488,7 +488,7 @@ namespace BoSSS.Foundation.Grid.Aggregation {
             }
         }
 
-        public void Redistribute(IDatabaseDriver iom, GridPartType method, string PartOptions) {
+        public void Redistribute(IDatabaseInfo iom, GridPartType method, string PartOptions) {
             if (Size <= 1)
                 return; // nothing to do
 

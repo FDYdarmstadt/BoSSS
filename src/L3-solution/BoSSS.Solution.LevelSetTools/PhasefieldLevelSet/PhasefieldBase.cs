@@ -144,12 +144,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
         /// <summary>
         /// Cahn-Hilliard spatial Operator
         /// </summary>
-        SpatialOperator CHOp;
+        DifferentialOperator CHOp;
 
         /// <summary>
         /// Operator for Jacobian
         /// </summary>
-        SpatialOperator JacobiOp;
+        DifferentialOperator JacobiOp;
 
         /// <summary>
         /// Boundary Condition map for Cahn Hilliard
@@ -287,12 +287,12 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
             SetCHCoefficents();
         }
 
-        SpatialOperator m_SOperator;
+        DifferentialOperator m_SOperator;
 
         /// <summary>
         /// Cache for <see cref="GetOperatorInstance"/>
         /// </summary>
-        public override SpatialOperator SOperator {
+        public override DifferentialOperator SOperator {
             get {
                 if(m_SOperator == null) {
                     m_SOperator = GetOperatorInstance(this.DGLevSet.GridDat.SpatialDimension);
@@ -301,7 +301,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
             }
         }
 
-        protected override SpatialOperator GetOperatorInstance(int D) {
+        protected override DifferentialOperator GetOperatorInstance(int D) {
             // create operator
             // ===============
             {
@@ -348,7 +348,7 @@ namespace BoSSS.Solution.LevelSetTools.PhasefieldLevelSet {
 
                 #endregion
 
-                CHOp = new SpatialOperator(
+                CHOp = new DifferentialOperator(
                             domainVar,
                             paramVar,
                             codomainVar,

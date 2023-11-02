@@ -65,9 +65,9 @@ namespace BoSSS.Solution.LevelSetTools.EllipticReInit {
 
         /// <summary>
         /// Called by 
-        /// <see cref="XSpatialOperatorMk2.XEvaluatorNonlin.Evaluate{Tout}(double, double, Tout, double[])"/>
+        /// <see cref="XDifferentialOperatorMk2.XEvaluatorNonlin.Evaluate{Tout}(double, double, Tout, double[])"/>
         /// resp.
-        /// <see cref="XSpatialOperatorMk2.XEvaluatorLinear.ComputeMatrix{M, V}(M, V)"/>.
+        /// <see cref="XDifferentialOperatorMk2.XEvaluatorLinear.ComputeMatrix{M, V}(M, V)"/>.
         /// </summary>
         public void CoefficientUpdate(CoefficientSet csA, CoefficientSet csB, int[] DomainDGdeg, int TestDGdeg) {
             NegCellLengthScaleS = csA.CellLengthScales;

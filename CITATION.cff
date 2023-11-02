@@ -1,0 +1,47 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: BoSSS
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Florian
+    family-names: Kummer
+    email: kummer@fdy.tu-darmstadt.de
+    orcid: 'https://orcid.org/0000-0002-2827-7576'
+  - given-names: Björn
+    family-names: Müller
+  - given-names: Benedikt 
+    family-names: Klein
+  - given-names: Nehzat
+    family-names: Emamy
+  - given-names: Roozbeh
+    family-names: Mousavi
+  - given-names: Dario
+    family-names: Klingenberg
+    orcid: 'https://orcid.org/0000-1234-5678-0000'
+  - given-names: Deußen
+    family-names: Benjamin
+  - given-names: Markus
+    family-names: Geisenhofer
+  - given-names: Martin
+    family-names: Smuda
+  - given-names: Dominik
+    family-names: Dierkes
+  - given-names: Anne
+    family-names: Kikker
+  - given-names: Dennis
+    family-names: Krause
+  - given-names: Thomas
+    family-names: Utz
+  - given-names: Christina
+    family-names: Kallendorf
+  - given-names: Stephan
+    family-names: Krämer-Eis
+  - given-names: Jakob
+    family-names: Vandergrift
+
+

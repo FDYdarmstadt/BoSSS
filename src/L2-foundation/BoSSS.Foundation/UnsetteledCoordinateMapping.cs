@@ -424,7 +424,7 @@ namespace BoSSS.Foundation {
         /// <summary>
         /// DG context
         /// </summary>
-        protected internal IGridData m_Context;
+        readonly protected internal IGridData m_Context;
 
 		/// <summary>
 		/// The grid on which this mapping relies on.

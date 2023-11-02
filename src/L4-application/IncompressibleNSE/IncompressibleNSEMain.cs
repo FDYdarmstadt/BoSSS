@@ -77,7 +77,7 @@ namespace BoSSS.Application.IncompressibleNSE {
         /// <summary>
         /// Declaration of the spatial operator
         /// </summary>
-        protected override SpatialOperator GetOperatorInstance(int D) {
+        protected override DifferentialOperator GetOperatorInstance(int D) {
 
             // instantiate boundary condition mapping
             // ======================================
@@ -87,7 +87,7 @@ namespace BoSSS.Application.IncompressibleNSE {
             // ====================
             string[] CodName = (new[] { "ResidualMomentumX", "ResidualMomentumY", "ResidualMomentumZ" }).GetSubVector(0, D).Cat("ResidualConti");
 
-            var op = new SpatialOperator(
+            var op = new DifferentialOperator(
                 __DomainVar: VariableNames.VelocityVector(D).Cat(VariableNames.Pressure),
                 __ParameterVar: VariableNames.GravityVector(D),
                 __CoDomainVar: CodName,

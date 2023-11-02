@@ -29,7 +29,7 @@ namespace CNS.IBM {
 
     public class IBMMovingFrameRungeKutta : IBMRungeKutta {
 
-        public IBMMovingFrameRungeKutta(SpatialOperator standardOperator, SpatialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping parametersMap, ImmersedSpeciesMap speciesMap, IList<TimeStepConstraint> timeStepConstraints)
+        public IBMMovingFrameRungeKutta(DifferentialOperator standardOperator, DifferentialOperator boundaryOperator, CoordinateMapping fieldsMap, CoordinateMapping parametersMap, ImmersedSpeciesMap speciesMap, IList<TimeStepConstraint> timeStepConstraints)
             : base(standardOperator, boundaryOperator, fieldsMap, parametersMap, speciesMap, timeStepConstraints) {
 
             if (speciesMap.Control.DomainType != DomainTypes.MovingImmersedBoundary) {

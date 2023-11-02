@@ -60,12 +60,12 @@ namespace ilPSP.LinSolvers {
             double[] Residual = B.ToArray();
             if (object.ReferenceEquals(B, Residual))
                 throw new ApplicationException("ToArray does not work as expected.");
-            double RhsNorm = B.L2NormPow2().MPISum().Sqrt();
+            double RhsNorm = B.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
             double MatrixInfNorm = Matrix.InfNorm();
             Matrix.SpMV(-1.0, X, 1.0, Residual);
 
-            double ResidualNorm = Residual.L2NormPow2().MPISum().Sqrt();
-            double SolutionNorm = X.L2NormPow2().MPISum().Sqrt();
+            double ResidualNorm = Residual.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
+            double SolutionNorm = X.L2NormPow2().MPISum(Matrix.MPI_Comm).Sqrt();
             double Denom = Math.Max(MatrixInfNorm, Math.Max(RhsNorm, Math.Max(SolutionNorm, Math.Sqrt(BLAS.MachineEps))));
             double RelResidualNorm = ResidualNorm / Denom;
 
@@ -271,7 +271,7 @@ namespace ilPSP.LinSolvers {
         static public double condestArnoldi(this IMutableMatrixEx Mtx, double tol = 1.0e-6) {
             (double lambdaMax, _) = MaximalEigen(Mtx, tol);
             (double lambdaMin, _) = MinimalEigen(Mtx, tol);
-            return lambdaMax / lambdaMin;
+            return Math.Abs(lambdaMax / lambdaMin);
         }
     }
 }

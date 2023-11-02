@@ -125,7 +125,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         long m_ReferenceCell;
 
         /// <summary>
-        /// (MPI) global index of cell in which the reference point for floating/free-mean-value solutions (<see cref="ISpatialOperator.FreeMeanValue"/>) is located
+        /// (MPI) global index of cell in which the reference point for floating/free-mean-value solutions (<see cref="IDifferentialOperator.FreeMeanValue"/>) is located
         /// </summary>
         public long ReferenceCell {
             get {
@@ -346,12 +346,12 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 
         }
 
-        ISpatialOperator m_AbstractOperator;
+        IDifferentialOperator m_AbstractOperator;
 
         /// <summary>
         /// DG operatior which is the foundation of this linearization
         /// </summary>
-        public ISpatialOperator AbstractOperator {
+        public IDifferentialOperator AbstractOperator {
             get {
                 if(m_AbstractOperator == null) {
                     m_AbstractOperator = FinerLevel?.AbstractOperator;
@@ -433,7 +433,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         bool[] m__FreeMeanValue;
 
         /// <summary>
-        /// pass-through from <see cref="ISpatialOperator.FreeMeanValue"/>
+        /// pass-through from <see cref="IDifferentialOperator.FreeMeanValue"/>
         /// </summary>
         public bool[] FreeMeanValue {
             get {
@@ -470,11 +470,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// (Remark: this kind of preconditioning is mathematically equivalent to a change of the DG resp. XDG basis.)
         /// </param>
         /// <param name="__AbstractOperator">
-        /// information such as <see cref="ISpatialOperator.FreeMeanValue"/>,...
+        /// information such as <see cref="IDifferentialOperator.FreeMeanValue"/>,...
         /// </param>
         public MultigridOperator(IEnumerable<AggregationGridBasis[]> basisSeq,
             UnsetteledCoordinateMapping _ProblemMapping, BlockMsrMatrix OperatorMatrix, BlockMsrMatrix MassMatrix,
-            IEnumerable<ChangeOfBasisConfig[]> cobc, ISpatialOperator __AbstractOperator)
+            IEnumerable<ChangeOfBasisConfig[]> cobc, IDifferentialOperator __AbstractOperator)
             : this(null, basisSeq, _ProblemMapping, cobc) //
         {
             using(new FuncTrace()) {
@@ -573,9 +573,9 @@ namespace BoSSS.Solution.AdvancedSolvers {
         /// deferred initialization of matrices; only executed if an actual matrix is requested.
         /// </summary>
         void Setup() {
+            if (setupdone)
+                return;
             using (var tr = new FuncTrace()) {
-                if (setupdone)
-                    return;
                 setupdone = true;
 
                 using(new BlockTrace("FinerLevel", tr)) {
@@ -1201,7 +1201,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
         {
             using(new FuncTrace()) {
                 if(this.LevelIndex != 0)
-                    throw new NotSupportedException("Not Inteded to be called on any multi-grid level but the finest one.");
+                    throw new NotSupportedException("Not Intended to be called on any multi-grid level but the finest one.");
 
                 int I = this.Mapping.ProblemMapping.LocalLength;
                 if(INOUT_X.Count != I)
@@ -1225,6 +1225,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     this.TransformSolInto(INOUT_X, X);
 
                 solver.ResetStat();
+                //Console.WriteLine("REM testcode: random vlaue init!!!!!");
+                //X.FillRandom();
                 solver.Solve(X, B);
 
                 this.TransformSolFrom(INOUT_X, X);

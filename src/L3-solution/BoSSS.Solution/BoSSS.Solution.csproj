@@ -33,9 +33,6 @@
     <ProjectReference Include="..\..\L2-foundation\BoSSS.Foundation\BoSSS.Foundation.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="MasterGitCommit.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -55,4 +52,20 @@
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.5.0" />
   </ItemGroup>
+  <!--Target Name="WriteGitHash" BeforeTargets="BeforeBuild">
+    <Exec Command="git rev-parse HEAD &gt; $(ProjectDir)commit_hash.txt" IgnoreExitCode="true"/>
+  </Target-->
+  <Target Name="UpdateGitHash" BeforeTargets="BeforeBuild">
+    <!-- For Windows -->
+    <Exec Command="$(ProjectDir)update_commit_hash.bat" Condition="'$(OS)' == 'Windows_NT'" />
+
+    <!-- For Unix-like systems (Linux/macOS) -->
+    <Exec Command="sh $(ProjectDir)update_commit_hash.sh" Condition="'$(OS)' != 'Windows_NT'" />
+  </Target>
+  
+  
+  <ItemGroup>
+    <EmbeddedResource Include="commit_hash.txt" />
+  </ItemGroup>
+  
 </Project>
