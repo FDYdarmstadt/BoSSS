@@ -53,6 +53,28 @@ namespace IntersectingLevelSetTest {
             p.RunSolverMode();
         }
 
+
+        [Test]
+        // Test two LS-line in one single cell.
+        // For a straight horizontal line + straight vertical line.
+        // The error magnitude is E-15 for good cases, E-4 for bad cases. 
+        public static void SquareTest(
+            [Values(1, 2, 3)] int DGdegree) {
+            BoSSS.Solution.Application.InitMPI();
+            //BoSSS.Solution.Application.DeleteOldPlotFiles();
+            Func<double, double, double, double> levelSet0 = (x, y, t) => (x + 0.02 * t);
+            Func<double, double, double, double> levelSet1 = (x, y, t) => -(y + 0.02 * t);
+            var C = new TestControl(levelSet0, levelSet1);
+            C.Resolution = 2; //number of nodes per line
+            C.NoOfTimesteps = 5;
+            C.ErrorThreshold = 1e-6;
+            var p = new ZwoLsSolver<TestControl>();
+            p.DEGREE = DGdegree;
+            p.MomentFittingVariant = XQuadFactoryHelper.MomentFittingVariants.Saye;
+            p.Init(C);
+            p.RunSolverMode();
+        }
+
         [Test]
         // Test two LS-line in one single cell.
         // For one straight horizontal line + the other moving straight line with slope line.
