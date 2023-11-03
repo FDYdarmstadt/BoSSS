@@ -89,6 +89,31 @@ namespace ilPSP.Utils {
         /// <typeparam name="T"></typeparam>
         /// <param name="list"></param>
         /// <param name="filename"></param>
+        public static void SaveToTextFileDebugUnsteady(this string str, string filename, string ext = "") {
+            int Rank;
+            MPI_Comm comm = csMPI.Raw._COMM.WORLD;
+            csMPI.Raw.Comm_Rank(comm, out Rank);
+
+            int c = 0;
+            string fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
+
+            while (File.Exists(fullfilename)) {
+                c++;
+                fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
+            }
+
+            using (var sw = new StreamWriter(fullfilename)) {
+                    sw.WriteLine(str);            
+            }
+
+        }
+
+        /// <summary>
+        /// For parallel debugging for re-called elements 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="filename"></param>
         public static void SaveToTextFileDebugUnsteady<T1,T2>(this IDictionary<T1,T2> list, string filename, string ext = "") {
             int Rank;
             MPI_Comm comm = csMPI.Raw._COMM.WORLD;

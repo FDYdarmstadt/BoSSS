@@ -16,6 +16,7 @@ limitations under the License.
 
 using ilPSP.LinSolvers;
 using ilPSP.Utils;
+using MPI.Wrappers;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,6 +24,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using static System.Net.Mime.MediaTypeNames;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace ilPSP {
 
@@ -54,7 +57,7 @@ namespace ilPSP {
         }
 
         /// <summary>
-        /// writes this matrix into a text file;
+        /// writes this matrix into a single text file;
         /// </summary>
         /// <param name="name">path to the text file</param>
         /// <param name="M">matrix</param>
@@ -67,6 +70,29 @@ namespace ilPSP {
                 txt.Flush();
             }
         }
+
+        /// <summary>
+        /// writes this matrix into a text file for each call;
+        /// </summary>
+        /// <param name="name">path to the text file</param>
+        /// <param name="M">matrix</param>
+        /// <param name="fm">file creation mode</param>
+        static public void SaveToTextFileUnsteady(this IMatrix M, string filename, FileMode fm = FileMode.Create) {
+            int Rank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out Rank);
+            string ext = ".txt";
+
+            int c = 0;
+            string fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
+
+            while (File.Exists(fullfilename)) {
+                c++;
+                fullfilename = String.Concat(filename, "_proc", Rank, "_t", c, ext);
+            }
+
+            M.SaveToTextFile(fullfilename, fm);
+        }
+
 
         /// <summary>
         /// Writes this matrix to a stream, in text format.
