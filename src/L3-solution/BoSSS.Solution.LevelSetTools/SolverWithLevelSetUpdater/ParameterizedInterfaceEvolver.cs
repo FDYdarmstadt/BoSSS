@@ -109,7 +109,10 @@ namespace BoSSS.Solution.LevelSetTools.SolverWithLevelSetUpdater {
                 tr.Info("forceX = " + forceX);
 
                 //Parameterized_TimeStepper.UpdateParameterizedLevelSet();
-                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, forceX, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter);
+
+                var quadScheme = levelSet.Tracker.GetXDGSpaceMetrics(levelSet.Tracker.SpeciesIdS, this.m_HMForder).XQuadSchemeHelper.GetLevelSetquadScheme(levelSet.LevelSetIndex, levelSet.Tracker.Regions.GetCutCellMask4LevSet(levelSet.LevelSetIndex));
+
+                var Param1 = Parameterized_TimeStepper.MoveLevelSet(dt, forceX, ls.xSemiAxis, ls.ySemiAxis, ls.yCenter, levelSet.CGLevelSet.GridDat, quadScheme, m_HMForder);
 
 
                 ls.xSemiAxis = Param1.xSemi1;

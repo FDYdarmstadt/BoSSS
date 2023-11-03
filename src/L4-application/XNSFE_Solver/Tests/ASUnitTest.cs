@@ -843,7 +843,7 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
                 C.Option_LevelSetEvolution = LevelSetEvolution.FastMarching;
                 C.Timestepper_LevelSetHandling = LevelSetHandling.Coupled_Once;
 
-                C.NoOfTimesteps = 1;
+                C.NoOfTimesteps = 10;
                 C.dtFixed = tst.dt;
             }
 
