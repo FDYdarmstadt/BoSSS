@@ -46,14 +46,17 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
             this.RKscheme = _RKscheme;
         }
 
-        public (double xSemi1, double ySemi1, double yCenter1) MoveLevelSet(double dt, double forceX, double xSemi0, double ySemi0, double yCenter0, CellQuadratureScheme levSetQuadScheme) {
+        public (double xSemi1, double ySemi1, double yCenter1) MoveLevelSet(double dt, double forceX, double xSemi0, double ySemi0, double yCenter0, IGridData gdat, CellQuadratureScheme levSetQuadScheme, int quadOrder) {
 
             double[] CoeffValues0 = new double[3] { 0, 0, 0 };
             double[] ParamValues0 = new double[3] { xSemi0, ySemi0, yCenter0 };
             double[] LowerBoundaryValues = new double[3] { -10, -10, -10 };
             double[] UpperBoundaryValues = new double[3] { 10, 10, 10 };
 
-            var CoeffValues1 = GradientMinimizationMethod.Minimi(CoeffValues0, ParamValues0, MyRealF.F, NumericalGradient.Differentiate(MyRealF.F), LowerBoundaryValues, UpperBoundaryValues, dt, forceX);
+            var myf = new MyRealF(levSetQuadScheme, gdat, quadOrder);
+
+
+            var CoeffValues1 = GradientMinimizationMethod.Minimi(CoeffValues0, ParamValues0, myf.F, NumericalGradient.Differentiate(myf.F), LowerBoundaryValues, UpperBoundaryValues, dt, forceX);
 
             var xSemi1 = CoeffValues1[0] * dt + ParamValues0[0];
             var ySemi1 = CoeffValues1[1] * dt + ParamValues0[1];
@@ -235,7 +238,18 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
 
     }
 
-    public static class MyRealF {
+    public class MyRealF {
+
+        CellQuadratureScheme levSetQuadScheme;
+        IGridData gdat;
+        int quadOrder;
+
+        public MyRealF(CellQuadratureScheme _levSetQuadScheme, IGridData _gdat, int _quadOrder) {
+            levSetQuadScheme = _levSetQuadScheme;
+            gdat = _gdat;
+            quadOrder = _quadOrder;
+        }
+
         /// <summary>
         /// 
         /// </summary>
@@ -291,14 +305,46 @@ namespace BoSSS.Solution.LevelSetTools.ParameterizedLevelSet {
         /// <param name="dt"></param>
         /// <param name="forceX"></param>
         /// <returns></returns>
-        public static double F(double[] EllipseCoeff, double[] EllipsePar0, double dt, double forceX, CellQuadratureScheme levSetQuadScheme) {
-            const double alphaMin = -Math.PI * 5 / 6;
-            const double alphaMax = -Math.PI / 6;
-
-            sfdsf
+        public double F(double[] EllipseCoeff, double[] EllipsePar0, double dt, double forceX) {
+            
 
 
-            return IntegrationOverEllipse.IntegralCalculation(EllipseCoeff, EllipsePar0, fsqr, alphaMin, alphaMax, dt, forceX);
+
+
+            void VectorizedEvaluate(int i0, int Length, QuadRule rule, MultidimensionalArray EvalResult) {
+                var PhysicalNodes = gdat.GlobalNodes.GetValue_Cell(rule.Nodes, i0, Length);
+                for (int i = 0; i < Length; i++) {
+                    for (int k = 0; k < rule.NoOfNodes; k++) {
+                        double x = PhysicalNodes[i, k, 0];
+                        double y = PhysicalNodes[i, k, 1];
+                        EvalResult[i, k, 0] = fsqr(EllipseCoeff, EllipsePar0, x, y, dt, forceX);
+                    }
+                }
+            }
+
+            double TotalIntegral = 0;
+            void SafeResult(int i0, int Length, MultidimensionalArray ResultsOfIntegration) {
+                for (int i = 0; i < Length; i++) {
+                    //int jCell = i + i0;
+                    TotalIntegral += ResultsOfIntegration[i, 0];
+                }
+            }
+
+
+            var q = CellQuadrature.GetQuadrature(new int[] { 1 }, gdat, levSetQuadScheme.Compile(gdat, quadOrder),
+                VectorizedEvaluate, SafeResult);
+            q.Execute();
+
+            {
+                const double alphaMin = -Math.PI * 5 / 6;
+                const double alphaMax = -Math.PI / 6;
+                double TotalIntegral_RefVal = IntegrationOverEllipse.IntegralCalculation(EllipseCoeff, EllipsePar0, fsqr, alphaMin, alphaMax, dt, forceX);
+                Console.WriteLine(TotalIntegral_RefVal - TotalIntegral);
+            }
+
+            return TotalIntegral;
+
+
         }
 
     }

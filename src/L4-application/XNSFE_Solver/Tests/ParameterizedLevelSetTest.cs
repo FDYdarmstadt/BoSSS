@@ -158,9 +158,9 @@ namespace BoSSS.Application.XNSFE_Solver.Tests {
 
         public bool Material => false;
 
-        public bool steady => true;
+        public bool steady => false;
 
-        public double dt => 0.0;
+        public double dt => 1e-4;
 
         public bool IncludeConvection => true;
 
