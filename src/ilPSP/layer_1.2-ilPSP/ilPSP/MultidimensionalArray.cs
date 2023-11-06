@@ -235,7 +235,7 @@ namespace ilPSP {
         /// true if all entries of the array lie in a continuous index region of the 
         /// memory <see cref="Storage"/>.
         /// </summary>
-        public bool IsContinious {
+        public bool IsContinuous {
             get {
                 int Dim = this.Dimension;
                 int Cyc_d_cont = 1;
@@ -596,7 +596,7 @@ namespace ilPSP {
         /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public MultidimensionalArray ResizeShallow(params int[] NewLengths) {
-            if (this.IsContinious == false)
+            if (this.IsContinuous == false)
                 throw new NotSupportedException("currently, resizing is only available for continuous arrays.");
 
             // check
@@ -840,7 +840,7 @@ namespace ilPSP {
                 throw new ApplicationException("illegal call - object is locked.");
 
             //int[] ind = new int[this.Dimension];
-            if (this.IsContinious) {
+            if (this.IsContinuous) {
                 int L = this.Length;
                 if (L > 0)
                     Array.Clear(m_Storage, this.m_Offset, L);
@@ -1378,14 +1378,14 @@ namespace ilPSP {
                 // concatenate rows
                 // ++++++++++++++++
 
-                if (IsContinious && typeof(T).Equals(typeof(double[]))) {
+                if (IsContinuous && typeof(T).Equals(typeof(double[]))) {
                     // optimized version
 
                     double[] _array = array as double[];
                     Array.Copy(this.m_Storage, this.Index(0, 0), _array, arrayoffset, this.Length);
                 } else {
 
-                    if (IsContinious) {
+                    if (IsContinuous) {
                         // still somewhat optimized
 
                         int srcInd = this.Index(0, 0);
@@ -1440,7 +1440,7 @@ namespace ilPSP {
         /// </summary>
         public MultidimensionalArray CloneAs() {
             MultidimensionalArray ret = MultidimensionalArray.Create(this.Lengths);
-            if (this.IsContinious) {
+            if (this.IsContinuous) {
                 int iSrc0 = this.m_Offset;
                 int Len = this.Length;
                 Array.Copy(this.m_Storage, iSrc0, ret.m_Storage, 0, Len);
@@ -1622,7 +1622,7 @@ namespace ilPSP {
             }
 
 
-            if (this.IsContinious && x.IsContinious) {
+            if (this.IsContinuous && x.IsContinuous) {
                 Array.Copy(x.m_Storage, x.m_Offset, this.Storage, this.m_Offset, this.Length);
             } else {
                 int[] insert = new int[this.Dimension];
@@ -1729,7 +1729,7 @@ namespace ilPSP {
                 }
             }
 
-            if (this.IsContinious && other.IsContinious) {
+            if (this.IsContinuous && other.IsContinuous) {
                 // accelerated version
                 unsafe {
                     fixed (double* pThis = &this.m_Storage[0], pOthr = &other.m_Storage[0]) {
