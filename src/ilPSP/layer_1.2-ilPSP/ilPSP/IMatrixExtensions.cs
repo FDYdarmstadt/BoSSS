@@ -2716,7 +2716,7 @@ namespace ilPSP {
 
                 //double[] _this_Entries;
                 //int BufOffset;
-                //if (M is MultidimensionalArray Mda && Mda.IsContinious) {
+                //if (M is MultidimensionalArray Mda && Mda.IsContinuous) {
                 //    _this_Entries = Mda.Storage; // fk, 06apr22: does not work, because MultidimensionalArray is in C-order
                 //    iBuf = -1;
                 //    BufOffset = Mda.Index(0, 0);
