@@ -117,6 +117,13 @@ namespace ilPSP {
         private int m_Offset;
 
         /// <summary>
+        /// Matrix structure, general, diagonal, lower triangular etc.
+        /// Relevant for matrix operations stored as MultidimensionalArray
+        /// </summary>
+        [DataMember]
+        private MatrixStructure m_matrixStructure = MatrixStructure.General;
+
+        /// <summary>
         /// Retrieves the value of the cycle (see
         /// <see cref="StorageLayout.m_Cycle0"/>,
         /// <see cref="StorageLayout.m_Cycle1"/>, ...) indexed by
@@ -250,6 +257,12 @@ namespace ilPSP {
                 return true;
             }
         }
+
+        public MatrixStructure StructureType {
+            get { return m_matrixStructure; }
+            set { m_matrixStructure = value; }
+        }
+
 
         /// <summary>
         /// set/get one element; 2D - version;
