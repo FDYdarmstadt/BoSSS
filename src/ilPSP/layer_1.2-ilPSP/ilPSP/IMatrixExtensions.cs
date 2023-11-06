@@ -1432,46 +1432,65 @@ namespace ilPSP {
                     }
                 }
             }
+
+            // If it is L type, convert it to U or vice versa
+            target.SwitchStructure();
+
         }
 
-        /*
-        /// <summary>
-        /// standard gemm: 
-        /// <paramref name="C"/> = <paramref name="beta"/>*<paramref name="C"/>
-        /// + <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/>;
-        /// </summary>
-        /// <param name="A"></param>
-        /// <param name="alpha"></param>
-        /// <param name="B"></param>
-        /// <param name="C"></param>
-        /// <param name="beta"></param>
-        static public void Gemm(IMatrix A, double alpha, IMatrix B, IMatrix C, double beta) {
-            if (A.NoOfCols != B.NoOfRows)
-                throw new ArgumentException("Matrix size mismatch.");
-            if (A.NoOfRows != C.NoOfRows)
-                throw new ArgumentException("Matrix size mismatch.");
-            if (B.NoOfCols != C.NoOfCols)
-                throw new ArgumentException("Matrix size mismatch.");
+            static public void SwitchStructure<M1>(this M1 source) where M1 : IMatrix {
 
-            int M = A.NoOfRows, N = A.NoOfCols, K = B.NoOfCols;
-
-            for (int i = 0; i < M; i++) {
-                for (int j = 0; j < K; j++) {
-                    double r = 0;
-
-                    for (int k = 0; k < N; k++)
-                        r += A[i, k] * B[k, j];
-
-                    C[i, j] = C[i, j] * beta + r * alpha;
+                switch (source.StructureType) {
+                case MatrixStructure.LowerTriangular:
+                    source.StructureType = MatrixStructure.UpperTriangular;
+                    break;
+                case MatrixStructure.UpperTriangular:
+                    source.StructureType = MatrixStructure.LowerTriangular;
+                    break;
                 }
-            }
-        }*/
 
-        /// <summary>
-        /// only supported for 1x1, 2x2, 3x3 and 4x4 - matrices;
-        /// </summary>
-        /// <returns></returns>
-        static public double Determinant<T>(this T M) where T : IMatrix {
+
+            }
+
+
+                /*
+                /// <summary>
+                /// standard gemm: 
+                /// <paramref name="C"/> = <paramref name="beta"/>*<paramref name="C"/>
+                /// + <paramref name="alpha"/>*<paramref name="A"/>*<paramref name="B"/>;
+                /// </summary>
+                /// <param name="A"></param>
+                /// <param name="alpha"></param>
+                /// <param name="B"></param>
+                /// <param name="C"></param>
+                /// <param name="beta"></param>
+                static public void Gemm(IMatrix A, double alpha, IMatrix B, IMatrix C, double beta) {
+                    if (A.NoOfCols != B.NoOfRows)
+                        throw new ArgumentException("Matrix size mismatch.");
+                    if (A.NoOfRows != C.NoOfRows)
+                        throw new ArgumentException("Matrix size mismatch.");
+                    if (B.NoOfCols != C.NoOfCols)
+                        throw new ArgumentException("Matrix size mismatch.");
+
+                    int M = A.NoOfRows, N = A.NoOfCols, K = B.NoOfCols;
+
+                    for (int i = 0; i < M; i++) {
+                        for (int j = 0; j < K; j++) {
+                            double r = 0;
+
+                            for (int k = 0; k < N; k++)
+                                r += A[i, k] * B[k, j];
+
+                            C[i, j] = C[i, j] * beta + r * alpha;
+                        }
+                    }
+                }*/
+
+                /// <summary>
+                /// only supported for 1x1, 2x2, 3x3 and 4x4 - matrices;
+                /// </summary>
+                /// <returns></returns>
+                static public double Determinant<T>(this T M) where T : IMatrix {
             int m_NoOfCols = M.NoOfCols, m_NoOfRows = M.NoOfRows;
             if (m_NoOfCols != m_NoOfRows)
                 throw new NotSupportedException("Determinate only defined for quadratic matrices.");
