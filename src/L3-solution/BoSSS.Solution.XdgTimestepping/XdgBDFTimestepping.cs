@@ -1153,7 +1153,11 @@ namespace BoSSS.Solution.XdgTimestepping {
                     for (int s = 1; s <= Tsc.S; s++) { // loop over BDF stages
                         if (CurrentAffine != null) {
                             if (CurrentMassMatrix != null) {
+                                //RHS.SaveToTextFile("RHS_Before_Initial_Values.txt");
                                 CurrentMassMatrix.SpMV(Tsc.beta[s - 1] / dt, this.m_Stack_u[s], 1.0, RHS); //   (1/dt)*M0*u0 
+                                //RHS.SaveToTextFile("RHS_After_Initial_Values.txt");
+                                //OpAffine.SaveToTextFile($"RHS_After_R0_fix_{phystime.ToString()}.txt
+                                //OpMatrixMod.SaveToTextFileSparse("matrixAfterR0Fix.txt");
                             } else {
                                 Debug.Assert(Config_MassMatrixShapeandDependence == MassMatrixShapeandDependence.IsIdentity);
                                 RHS.AccV(Tsc.beta[s - 1] / dt, this.m_Stack_u[s]);
@@ -1184,6 +1188,7 @@ namespace BoSSS.Solution.XdgTimestepping {
                 // left-hand-side
                 if(Linearization) {
                     System = CurrentOpMatrix.CloneAs();
+                    //System.SaveToTextFile("Stokes_Anteil_Left_Hand_Side.txt");
                     if(Tsc.theta1 != 1.0)
                         System.Scale(Tsc.theta1);
                 } else {
@@ -1191,7 +1196,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                 }
                 if (CurrentMassMatrix != null) {
                     if(Linearization) {
-                        System.Acc(1.0 / dt, CurrentMassMatrix);
+                        System.Acc(1.0 / dt, CurrentMassMatrix);  
+                        //System.SaveToTextFile("Stokes_Anteil_and_Mass_Left_Hand_Side.txt");
                     } else {
                         CurrentMassMatrix.SpMV(1.0 / dt, new CoordinateVector(CurrentStateMapping), 1.0, Affine);
                     }
@@ -1563,6 +1569,8 @@ namespace BoSSS.Solution.XdgTimestepping {
                         this.AssembleMatrixCallback(out System, out RHS, out MaMa, CurrentStateMapping.Fields.ToArray(), true, out var dummy);
                         RHS.ScaleV(-1);
 
+                        //MaMa.SaveToTextFile("Suche_den_Stokes_Anteil.txt");
+                        //System.SaveToTextFile("Suche_den_Stokes_Anteil2.txt");
                         // update the multigrid operator
                         csMPI.Raw.Barrier(csMPI.Raw._COMM.WORLD);
                         MultigridOperator mgOperator;

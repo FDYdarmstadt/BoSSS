@@ -316,7 +316,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             return solver;
         }
 
-        BlockMsrMatrix m_Mtx;
+        public BlockMsrMatrix m_Mtx;
         int IterCnt = 1;
 
 
