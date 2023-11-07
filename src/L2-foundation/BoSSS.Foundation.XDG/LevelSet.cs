@@ -22,11 +22,9 @@ using BoSSS.Platform;
 using ilPSP.Tracing;
 using MPI.Wrappers;
 using ilPSP;
-using IntersectingQuadrature;
 using BoSSS.Foundation.Grid.RefElements;
 using System.Collections;
 using BoSSS.Foundation.XDG.Quadrature;
-using IntersectingQuadrature.TensorAnalysis;
 
 namespace BoSSS.Foundation.XDG {
 
