@@ -28,6 +28,8 @@ using ilPSP.Utils;
 using BoSSS.Foundation.Grid;
 using System.Collections;
 using System.IO;
+using BoSSS.Foundation.Grid.Classic;
+using MPI.Wrappers;
 
 namespace BoSSS.Solution.AdvancedSolvers {
     partial class MultigridOperator {
@@ -116,8 +118,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
             IdMass_DropIndefinite,
 
             /// <summary>
-            /// Highly experimental option, Cholesky decomposition for indefinite matrices, will drop indefinite entries.
-            /// See "Extended Discontinuous Galerkin methods for two-phase flows: the spatial discretization" by Florian Kummer, https://doi.org/10.1002/nme.5288
+            /// Highly experimental option, blah blah blah.
             /// </summary>
             SymPart_DiagBlockEquilib_DropIndefinite,
 
@@ -421,7 +422,8 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                 if (Rank == NN)
                                     PCrightBlock[i].InvertTo(PCrightBlock_inv[i]);
                                 else
-                                    RankDefInvert(PCrightBlock[i], PCrightBlock_inv[i]);
+                                     RankDefInvert(PCrightBlock[i], PCrightBlock_inv[i]);
+
                                 ExtractBlock(_i0s, _Lns, false, RightPreCondInv, ref PCrightBlock_inv[i]);
 
                                 // left-inverse: (required for analysis purposes, to transform residuals back onto original grid)
@@ -432,6 +434,7 @@ namespace BoSSS.Solution.AdvancedSolvers {
                                     PCleftBlock[i].InvertTo(PCleftBlock_inv[i]);
                                 else
                                     RankDefInvert(PCleftBlock[i], PCleftBlock_inv[i]);
+
                                 ExtractBlock(_i0s, _Lns, false, LeftPreCondInv, ref PCleftBlock_inv[i]);
 
                                 stw_Data.Stop();
@@ -761,6 +764,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray OUT_LeftPC, MultidimensionalArray OUT_rightPC, Mode PCMode, out int Rank,
             MultidimensionalArray work) //
         {
+            var MMclone = In_MassMatrixBlock.CloneAs();
+            var OPclone = In_OperatorMatrixBlock.CloneAs();
+            try {
+
+
                 Rank = In_MassMatrixBlock.NoOfCols;
 
                 int[] IndefRows = null;
@@ -958,6 +966,14 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 }
 
                 return IndefRows;
+            } catch (Exception e) {
+                int MPIrank;
+                csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MPIrank);
+                MMclone.SaveToTextFile("MassMatrixBlock_" + MPIrank + ".txt");
+                OPclone.SaveToTextFile("OperatorMatrixBlock_" + MPIrank + ".txt");
+
+                throw e;
+            }
         }
 
 
@@ -990,23 +1006,24 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     case MatrixStructure.LowerTriangular:
                         if (row_i.L2NormPow2() == 0.0)
                             NonzeroIdx.Add(i);
-                        break;
+                    break;
                     case MatrixStructure.UpperTriangular:
                         if (col_i.L2NormPow2() == 0.0)
                             NonzeroIdx.Add(i);
-                        break;
+                    break;
                     default: //check if both row and columns are zero since it is not a triangular matrix
                         if (row_i.L2NormPow2() == 0.0)
                             if (col_i.L2NormPow2() == 0.0) {
-                                NonzeroIdx.Add(i);
+                    NonzeroIdx.Add(i);
                             } else {
                                 throw new ArgumentException("Row is zero, but column is not.");
                             }
                         break;
-                }                   
+                }
             }
 
             if (NonzeroIdx.Count == M) {
+                MtxIn.SaveToTextFileUnsteady("d_problemMatrix");
                 throw new ArgumentException("Unable to find zero row/column.");
             }
 
@@ -1033,12 +1050,21 @@ namespace BoSSS.Solution.AdvancedSolvers {
             MultidimensionalArray In_MassMatrixBlock, MultidimensionalArray In_OperatorMatrixBlock, 
             MultidimensionalArray OUT_LeftPC, MultidimensionalArray OUT_rightPC,
             MultidimensionalArray work ) {
+            int MPIrank;
+            csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MPIrank);
+
+            var Owork = work.CloneAs();
+
             var SymmPart = work;
             In_OperatorMatrixBlock.TransposeTo(SymmPart);
             SymmPart.Acc(1.0, In_OperatorMatrixBlock);
             SymmPart.Scale(0.5);
+            var ASymmPart = SymmPart.CloneAs();
+            var AOUT_rightPC = OUT_rightPC.CloneAs();
 
             int[] ZerosEntries = ModifiedInverseChol(In_MassMatrixBlock, OUT_rightPC, 1.0e-12, false);
+            var BOUT_rightPC = OUT_rightPC.CloneAs();
+
             int NoOfZeros = ZerosEntries == null ? 0 : ZerosEntries.Length;
             int[] _IndefRows = ZerosEntries;
             int _Rank = OUT_LeftPC.NoOfCols - NoOfZeros;
@@ -1052,20 +1078,68 @@ namespace BoSSS.Solution.AdvancedSolvers {
                 // problem-cell
                 // ++++++++++++++
 
-                //OUT_rightPC.TransposeTo(OUT_LeftPC);
+                var SymmPartTest = SymmPart.CloneAs();
+                var OUT_rightPCTest = OUT_rightPC.CloneAs();
+                var OUT_leftPCTest = OUT_LeftPC.CloneAs();
+                SymmInv(SymmPartTest, OUT_leftPCTest, OUT_rightPCTest);
+
+                SymmPartTest.SaveToTextFileUnsteady($"d_SymmPartTest.txt");
+                OUT_rightPCTest.SaveToTextFileUnsteady($"d_OUT_rightPCTest.txt");
+                OUT_leftPCTest.SaveToTextFileUnsteady($"d_OUT_leftPCTest.txt");
+
+
+
+                OUT_rightPC.TransposeTo(OUT_LeftPC);
+                //SymmInv(SymmPart, OUT_LeftPC, OUT_rightPC);
+
                 //SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC); //SymmPart = IMatrixExtensions.GEMM(OUT_LeftPC, SymmPart, OUT_rightPC);
+                var dummyOUT_rightPC = OUT_rightPC.CloneAs();
+                int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, dummyOUT_rightPC, 1.0e-12, true);
 
-                int[] ZerosEntries2 = ModifiedInverseChol(SymmPart, OUT_rightPC, 1.0e-12, true); //due to the tolerance and negative norms arising from HMF, this could lead to different zero entries.
-
-                //check if the zero entries are the same with mass matrix
-                if (!ZerosEntries2.SetEquals(ZerosEntries)) { //if not, impose the same zero entries
+                if (!ZerosEntries2.SetEquals(ZerosEntries)) {
 
                     foreach (int n in ZerosEntries) {
-                        OUT_rightPC.ColScale(n, 0.0);  //this the R part, hence we need to make columns zero
+                        dummyOUT_rightPC.ColScale(n, 0.0);  //this the R part, hence we need to make columns zero
+
+                        if (dummyOUT_rightPC.GetColumn(n).L2NormPow2() != 0.0)
+                            throw new Exception("Column infinity is still non-zero");
 
                         SymmPart.ColScale(n, 0.0);
                         SymmPart.RowScale(n, 0.0);
+
+
+                        if (SymmPart.GetRow(n).L2NormPow2() != 0.0)
+                            throw new Exception("SymmPart Row infinity is still non-zero");
+
+
+                        if (SymmPart.GetColumn(n).L2NormPow2() != 0.0)
+                            throw new Exception("SymmPart column infinity is still non-zero");
+
                     }
+                    dummyOUT_rightPC.TransposeTo(OUT_LeftPC);
+
+                    In_MassMatrixBlock.SaveToTextFileUnsteady($"d_In_MassMatrixBlock.txt");
+                    In_OperatorMatrixBlock.SaveToTextFileUnsteady($"d_In_OperatorMatrixBlock.txt");
+                    
+                    Owork.SaveToTextFileUnsteady($"d_work.txt");
+                    ASymmPart.SaveToTextFileUnsteady($"d_SymmPart_A.txt");
+                    SymmPart.SaveToTextFileUnsteady($"d_SymmPart_B.txt");
+                    if (ZerosEntries == null)
+                        ZerosEntries = new int[] { };
+
+                    if (ZerosEntries2 == null)
+                        ZerosEntries2 = new int[] { };
+
+
+                    ZerosEntries.SaveToTextFileDebugUnsteady($"d_ZerosEntries", ".txt");
+                    ZerosEntries2.SaveToTextFileDebugUnsteady($"d_ZerosEntries2", ".txt");
+
+                    AOUT_rightPC.SaveToTextFileUnsteady($"d_OUT_rightPC_A.txt");
+                    BOUT_rightPC.SaveToTextFileUnsteady($"d_OUT_rightPC_B.txt");
+                    OUT_rightPC.SaveToTextFileUnsteady($"d_OUT_rightPC_C.txt");
+                    dummyOUT_rightPC.SaveToTextFileUnsteady($"d_OUT_rightPC_D.txt");
+
+                    //throw new ArithmeticException("Zero entries are not identical with the symmetric part");
                 }
             }
 
@@ -1148,6 +1222,11 @@ namespace BoSSS.Solution.AdvancedSolvers {
                     if (zeros == null)
                         zeros = new List<int>();
                     zeros.Add(n);
+                    string str = $"n={n} discriminator={discriminator} - threshold={threshold}";
+                    int MPIrank;
+                    csMPI.Raw.Comm_Rank(csMPI.Raw._COMM.WORLD, out MPIrank);
+                    str.SaveToTextFileDebugUnsteady("d_ZeroColumn",".txt");
+
                 } else {
                     double sign_mnn = Math.Sign(m_nn);
                     if(sign_mnn == 0.0)
