@@ -47,17 +47,6 @@ namespace IntersectingLevelSetTest {
             return Evaluate(LsTrk, quadOrder);
         }
 
-        static (double edge, double volume, double surface) Evaluate(LevelSetTracker LsTrk, int quadOrder) {
-            //var schemes = new XQuadSchemeHelper(LsTrk, this.momentFittingVariant, LsTrk.SpeciesIdS.ToArray());
-            SpeciesId id = LsTrk.GetSpeciesId("B");
-            var schemes = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), quadOrder, 1).XQuadSchemeHelper;
-
-            double edge = EvaluateEdges(LsTrk.GridDat, quadOrder, schemes, id);
-            double volume = EvaluateVolume(LsTrk.GridDat, quadOrder, schemes, id);
-            double surface = EvaluateSurface(LsTrk, quadOrder, schemes, id);
-            return (edge, volume, surface);
-        }
-
         static LevelSetTracker CreateTracker(ScalarFunction alpha, ScalarFunction beta, int resolution, int degree, int dim) {
             double[] tics = GenericBlas.Linspace(-0.5, 0.5, resolution + 1);
 
@@ -87,6 +76,17 @@ namespace IntersectingLevelSetTest {
             return tracker;
         }
 
+        static (double edge, double volume, double surface) Evaluate(LevelSetTracker LsTrk, int quadOrder) {
+            //var schemes = new XQuadSchemeHelper(LsTrk, this.momentFittingVariant, LsTrk.SpeciesIdS.ToArray());
+            SpeciesId id = LsTrk.GetSpeciesId("B");
+            var schemes = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), quadOrder, 1).XQuadSchemeHelper;
+
+            double edge = EvaluateEdges(LsTrk.GridDat, quadOrder, schemes, id);
+            double volume = EvaluateVolume(LsTrk.GridDat, quadOrder, schemes, id);
+            double surface = EvaluateSurface(LsTrk, quadOrder, schemes, id);
+            return (edge, volume, surface);
+        }
+
         static double EvaluateEdges(GridData gridData, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
             var edgeScheme = schemes.GetEdgeQuadScheme(id);
             var EdgeB = EdgeQuadrature(edgeScheme.Compile(gridData, quadOrder), gridData);
@@ -94,13 +94,13 @@ namespace IntersectingLevelSetTest {
             return integral;
         }
 
-        static MultidimensionalArray EdgeQuadrature(ICompositeQuadRule<QuadRule> surfRule, GridData gridData) {
+        static MultidimensionalArray EdgeQuadrature(ICompositeQuadRule<QuadRule> rule, GridData gridData) {
             int E = gridData.iLogicalEdges.Count;
             var ret = MultidimensionalArray.Create(E);
 
             BoSSS.Foundation.Quadrature.EdgeQuadrature.GetQuadrature(
                 new int[] { 1 }, gridData,
-                surfRule,
+                rule,
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
                     EvalResult.SetAll(1.0);
                 },

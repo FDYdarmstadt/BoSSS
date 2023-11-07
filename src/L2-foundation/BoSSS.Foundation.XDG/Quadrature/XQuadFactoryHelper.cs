@@ -222,22 +222,17 @@ namespace BoSSS.Foundation.XDG {
         /// </returns>
         public IQuadRuleFactory<QuadRule> GetSurfaceElement_BoundaryRuleFactory(int levSetIndex0, int levSetIndex1, JumpTypes jmp1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory)
         {
-            //switch (CutCellQuadratureType)
-            //{
-                //case MomentFittingVariants.Saye:
-                //    if (zwoLSSayeFactories == null)
-                //    {
-                //        zwoLSSayeFactories = new MultiLevelSetBeckFactoryCreator(m_LevelSetDatas);
-                //    }
-                //    return zwoLSSayeFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
-                //default:
-                    //old stuff 
-                    if (zwoLSBruteForceFactories == null)
-                    {
-                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-                    }
-                    return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
-            //}
+            switch (CutCellQuadratureType) {
+                case MomentFittingVariants.Saye:
+                return IntersectingQuadratureFactories.EdgePoint(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1], jmp1);
+                default:
+                //old stuff 
+                if (zwoLSBruteForceFactories == null)
+                {
+                    zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                }
+                return zwoLSBruteForceFactories.GetEdgePointRuleFactory(levSetIndex0, levSetIndex1, jmp1, backupFactory);
+            }
         }
 
 
@@ -344,15 +339,13 @@ namespace BoSSS.Foundation.XDG {
             switch (CutCellQuadratureType)
             {
                 case MomentFittingVariants.Saye:
-                return IntersectingFactories.Edge(m_LevelSetDatas[levSetIndex0], jmp0, m_LevelSetDatas[levSetIndex1], jmp1);
+                return IntersectingQuadratureFactories.Edge(m_LevelSetDatas[levSetIndex0], jmp0, m_LevelSetDatas[levSetIndex1], jmp1);
 
                 default:
-
-                    if (zwoLSBruteForceFactories == null)
-                    {
-                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-                    }
-                    return zwoLSBruteForceFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
+                if (zwoLSBruteForceFactories == null){
+                    zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                }
+                return zwoLSBruteForceFactories.GetEdgeRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
             }
         }
 
@@ -456,13 +449,13 @@ namespace BoSSS.Foundation.XDG {
             switch (CutCellQuadratureType)
             {
                 case MomentFittingVariants.Saye:
-                return IntersectingFactories.Volume(m_LevelSetDatas[levSetIndex0], jmp0, m_LevelSetDatas[levSetIndex1], jmp1);
+                return IntersectingQuadratureFactories.Volume(m_LevelSetDatas[levSetIndex0], jmp0, m_LevelSetDatas[levSetIndex1], jmp1);
                 default:
                 if (zwoLSBruteForceFactories == null)
-                    {
-                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-                    }
-                    return zwoLSBruteForceFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
+                {
+                    zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                }
+                return zwoLSBruteForceFactories.GetVolRuleFactory(levSetIndex0, jmp0, levSetIndex1, jmp1, backupFactory);
             }
         }
 
@@ -581,14 +574,14 @@ namespace BoSSS.Foundation.XDG {
         {
             switch (CutCellQuadratureType){
                 case MomentFittingVariants.Saye:
-                return IntersectingFactories.Surface(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1], jmp1);
+                return IntersectingQuadratureFactories.Surface(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1], jmp1);
                 default:
-                    if (zwoLSBruteForceFactories == null){
-                        zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
-                    }
-                    return zwoLSBruteForceFactories.GetSurfaceFactory(levSetIndex0,
-                        levSetIndex1,
-                        jmp1, backupFactory);
+                if (zwoLSBruteForceFactories == null){
+                    zwoLSBruteForceFactories = new MultiLevelSetBruteForceQuadratureFactory(m_LevelSetDatas);
+                }
+                return zwoLSBruteForceFactories.GetSurfaceFactory(levSetIndex0,
+                    levSetIndex1,
+                    jmp1, backupFactory);
             }
         }
 
@@ -598,7 +591,7 @@ namespace BoSSS.Foundation.XDG {
         /// This is a point in 2D, a line in 3D.
         /// </summary>
         public IQuadRuleFactory<QuadRule> GetIntersectionRuleFactory(int levSetIndex0, int levSetIndex1, RefElement KrefVol, IQuadRuleFactory<QuadRule> backupFactory) {
-            return IntersectingFactories.Intersection(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1]);
+            return IntersectingQuadratureFactories.Intersection(m_LevelSetDatas[levSetIndex0], m_LevelSetDatas[levSetIndex1]);
         }
 
         /// <summary>

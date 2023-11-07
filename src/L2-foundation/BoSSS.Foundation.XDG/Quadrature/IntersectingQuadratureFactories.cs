@@ -19,7 +19,7 @@ using System.Collections;
 using BoSSS.Platform.LinAlg;
 
 namespace BoSSS.Foundation.XDG.Quadrature {
-    internal static class IntersectingFactories {
+    internal static class IntersectingQuadratureFactories {
 
         static Symbol ToSymbol(JumpTypes sign) {
             switch (sign) {

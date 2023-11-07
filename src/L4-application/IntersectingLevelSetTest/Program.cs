@@ -4,7 +4,7 @@ namespace IntersectingLevelSetTest {
     class Program {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
-            IntegrationTests.CubeTest(3);
+            IntegrationTests.SquareTest(3);
             //AllUpTest.AllUp(2, XQuadFactoryHelper.MomentFittingVariants.Saye);
             //AllUpTest.LocalTestWithPlotting(2, XQuadFactoryHelper.MomentFittingVariants.Saye);
 
