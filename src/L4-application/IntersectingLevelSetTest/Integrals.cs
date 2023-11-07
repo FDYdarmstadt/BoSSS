@@ -1,37 +1,100 @@
-﻿using BoSSS.Foundation.Grid;
+﻿using BoSSS.Foundation;
+using BoSSS.Foundation.Grid;
 using BoSSS.Foundation.Grid.Classic;
 using BoSSS.Foundation.Quadrature;
 using BoSSS.Foundation.XDG;
+using BoSSS.Solution.Utils;
 using ilPSP;
+using ilPSP.Utils;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace IntersectingLevelSetTest {
-    class Integrals {
+    static class Integrals {
 
-        public void Evaluate(LevelSetTracker LsTrk, int quadOrder, SpeciesId id, SpeciesId id1) {
+        /// <summary>
+        /// Evaluate on domain definde by negative region of both level sets
+        /// on grid [-1,1]^2
+        /// </summary>
+        /// <param name="alpha">level set</param>
+        /// <param name="beta">level set</param>
+        /// <param name="resolution">Cells per dimension</param>
+        /// <param name="levelSetDegree"></param>
+        /// <param name="quadOrder"></param>
+        /// <returns></returns>
+        public static (double edge, double volume, double surface) Evaluate2D(Func<Vector, double> alpha, Func<Vector, double> beta, int resolution, int levelSetDegree, int quadOrder) {
+            LevelSetTracker LsTrk = CreateTracker(alpha.Vectorize(), beta.Vectorize(), resolution, levelSetDegree, 2);
+            return Evaluate(LsTrk, quadOrder);
+        }
+
+        /// <summary>
+        /// Evaluate on domain definde by negative region of both level sets
+        /// on grid [-1,1]^3
+        /// </summary>
+        /// <param name="alpha">level set</param>
+        /// <param name="beta">level set</param>
+        /// <param name="resolution">Cells per dimension</param>
+        /// <param name="levelSetDegree"></param>
+        /// <param name="quadOrder"></param>
+        /// <returns></returns>
+        public static (double edge, double volume, double surface) Evaluate3D(Func<Vector, double> alpha, Func<Vector, double> beta, int resolution, int levelSetDegree, int quadOrder) {
+            LevelSetTracker LsTrk = CreateTracker(alpha.Vectorize(), beta.Vectorize(), resolution, levelSetDegree, 3);
+            return Evaluate(LsTrk, quadOrder);
+        }
+
+        static (double edge, double volume, double surface) Evaluate(LevelSetTracker LsTrk, int quadOrder) {
             //var schemes = new XQuadSchemeHelper(LsTrk, this.momentFittingVariant, LsTrk.SpeciesIdS.ToArray());
+            SpeciesId id = LsTrk.GetSpeciesId("B");
             var schemes = LsTrk.GetXDGSpaceMetrics(LsTrk.SpeciesIdS.ToArray(), quadOrder, 1).XQuadSchemeHelper;
-
-            var cutCells = LsTrk.Regions.GetCutCellSubGrid().VolumeMask;
-
 
             double edge = EvaluateEdges(LsTrk.GridDat, quadOrder, schemes, id);
             double volume = EvaluateVolume(LsTrk.GridDat, quadOrder, schemes, id);
             double surface = EvaluateSurface(LsTrk, quadOrder, schemes, id);
+            return (edge, volume, surface);
         }
 
-        double EvaluateEdges(GridData gridData, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
+        static LevelSetTracker CreateTracker(ScalarFunction alpha, ScalarFunction beta, int resolution, int degree, int dim) {
+            double[] tics = GenericBlas.Linspace(-0.5, 0.5, resolution + 1);
+
+            GridData grid = null;
+            if(dim == 2) {
+                grid = Grid2D.Cartesian2DGrid(tics, tics).GridData;
+            } else if (dim == 3){
+                grid = Grid3D.Cartesian3DGrid(tics, tics, tics).GridData;
+            } else {
+                throw new NotSupportedException();
+            }
+
+            string[,] speciesTable = new string[2, 2];
+            speciesTable[0, 0] = "B"; // Liquid
+            speciesTable[0, 1] = "C"; // Solid
+            speciesTable[1, 0] = "A"; // Gas
+            speciesTable[1, 1] = "C"; // Solid
+
+            Basis basis = new Basis(grid, degree);
+            LevelSet Alpha = new LevelSet(basis, "alpha");
+            LevelSet Beta = new LevelSet(basis, "beta");
+            Alpha.ProjectField(alpha);
+            Beta.ProjectField(beta);
+
+            LevelSetTracker tracker = new LevelSetTracker(grid, XQuadFactoryHelper.MomentFittingVariants.Saye, 2,
+                speciesTable, Alpha, Beta);
+            return tracker;
+        }
+
+        static double EvaluateEdges(GridData gridData, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
             var edgeScheme = schemes.GetEdgeQuadScheme(id);
             var EdgeB = EdgeQuadrature(edgeScheme.Compile(gridData, quadOrder), gridData);
             double integral = EdgeB.Sum();
             return integral;
         }
 
-        private MultidimensionalArray EdgeQuadrature(ICompositeQuadRule<QuadRule> surfRule, GridData gridData) {
+        static MultidimensionalArray EdgeQuadrature(ICompositeQuadRule<QuadRule> surfRule, GridData gridData) {
             int E = gridData.iLogicalEdges.Count;
             var ret = MultidimensionalArray.Create(E);
 
@@ -49,7 +112,7 @@ namespace IntersectingLevelSetTest {
             return ret;
         }
 
-        double EvaluateVolume(GridData gridData, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
+        static double EvaluateVolume(GridData gridData, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
             var volScheme = schemes.GetVolumeQuadScheme(id);
             var Vol = CellQuadrature(volScheme.Compile(gridData, quadOrder), gridData);
             double integral = Vol.Sum();
@@ -57,15 +120,15 @@ namespace IntersectingLevelSetTest {
         }
 
         /// <summary>
-        /// Computes the volume of the cut cells/surface of the level-set according to <paramref name="surfRule"/>
+        /// Computes the volume of the cut cells/surface of the level-set according to <paramref name="rule"/>
         /// </summary>
-        private MultidimensionalArray CellQuadrature(ICompositeQuadRule<QuadRule> surfRule, GridData gridData) {
+        static MultidimensionalArray CellQuadrature(ICompositeQuadRule<QuadRule> rule, GridData gridData) {
             int J = gridData.iLogicalCells.NoOfLocalUpdatedCells;
             var ret = MultidimensionalArray.Create(J);
 
             BoSSS.Foundation.Quadrature.CellQuadrature.GetQuadrature(
                 new int[] { 1 }, gridData,
-                surfRule,
+                rule,
                 delegate (int i0, int Length, QuadRule QR, MultidimensionalArray EvalResult) { // Evaluate
                     //Integrand.Evaluate(i0, Length, 0, EvalResult.ExtractSubArrayShallow(-1, -1, 0));
                     EvalResult.SetAll(1.0);
@@ -80,7 +143,7 @@ namespace IntersectingLevelSetTest {
             return ret;
         }
 
-        double EvaluateSurface(LevelSetTracker lsTrkr, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
+        static double EvaluateSurface(LevelSetTracker lsTrkr, int quadOrder, XQuadSchemeHelper schemes, SpeciesId id) {
             double integral = 0;
             for (int i = 0; i < lsTrkr.NoOfLevelSets; ++i) {
                 CellQuadratureScheme surfScheme = schemes.GetLevelSetquadScheme(i, id, lsTrkr.Regions.GetCutCellMask4LevSet(i));

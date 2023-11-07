@@ -4,11 +4,11 @@ namespace IntersectingLevelSetTest {
     class Program {
         static void Main(string[] args) {
             XQuadFactoryHelper.CheckQuadRules = true;
+            IntegrationTests.CubeTest(3);
             //AllUpTest.AllUp(2, XQuadFactoryHelper.MomentFittingVariants.Saye);
             //AllUpTest.LocalTestWithPlotting(2, XQuadFactoryHelper.MomentFittingVariants.Saye);
 
             //AllUpTest.ParabolaTest(2);
-            AllUpTest.SquareTest(1);
             //AllUpTest.TwoStraightTest(2);
             //AllUpTest.TransformTest(2);
 

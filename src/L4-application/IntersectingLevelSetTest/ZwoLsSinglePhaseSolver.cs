@@ -221,13 +221,6 @@ namespace IntersectingLevelSetTest {
             OperatorMatrix.SpMVpara(1.0, u.CoordinateVector, 1.0, x);
             MassInv.SpMV(1.0, x, 0.0, du_dx.CoordinateVector);
 
-            
-
-            // compute integrals 
-            Integrals integrals = new Integrals();
-            //integrals.Evaluate(LsTrk, 2, LsTrk.GetSpeciesId("B"), LsTrk.GetSpeciesId("A"));
-
-
             // compute error
             ERR.Clear();
             ERR.Acc(1.0, du_dx_Exact);
